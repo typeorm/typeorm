@@ -5,7 +5,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Repository} from "../../../../src/repository/Repository";
 import {Post} from "./entity/Post";
 import {CreateConnectionOptions} from "../../../../src/connection-manager/CreateConnectionOptions";
-import {createConnection} from "../../../../src/index";
+import {createConnection} from "../../../../src/backend";
 
 chai.should();
 chai.use(require("sinon-chai"));

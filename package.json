@@ -42,7 +42,7 @@
     "ts-node": "^0.8.0",
     "tslint": "next",
     "tslint-stylish": "^2.1.0-beta",
-    "typescript": "next",
+    "typescript": "1.9.0-dev.20160624-1.0",
     "typings": "^1.0.4"
   },
   "dependencies": {
@@ -57,8 +57,8 @@
     "sha1": "^1.1.1"
   },
   "scripts": {
-    "postversion": "./node_modules/.bin/gulp package",
-    "postinstall": "./node_modules/.bin/typings install",
-    "test": "node_modules/.bin/gulp tests"
+    "postversion": "gulp package",
+    "postinstall": "typings install",
+    "test": "gulp tests"
   }
 }

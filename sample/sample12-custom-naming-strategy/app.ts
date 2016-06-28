@@ -1,5 +1,6 @@
 import "reflect-metadata";
-import {createConnection, CreateConnectionOptions} from "../../src/index";
+import {createConnection, CreateConnectionOptions} from "../../src/backend";
+
 import {Post} from "./entity/Post";
 import {CustomNamingStrategy} from "./naming-strategy/CustomNamingStrategy";
 

@@ -6,7 +6,7 @@ import {Repository} from "../../../../src/repository/Repository";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {CreateConnectionOptions} from "../../../../src/connection-manager/CreateConnectionOptions";
-import {createConnection} from "../../../../src/index";
+import {createConnection} from "../../../../src/backend";
 import {CategoryMetadata} from "./entity/CategoryMetadata";
 import {setupConnection} from "../../../utils/test-utils";
 

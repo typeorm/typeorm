@@ -1,5 +1,5 @@
 import {CreateConnectionOptions} from "../../src/connection-manager/CreateConnectionOptions";
-import {createConnection} from "../../src/index";
+import {createConnection} from "../../src/backend";
 import {Connection} from "../../src/connection/Connection";
 import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
 import {EntitySchema} from "../../src/metadata/entity-schema/EntitySchema";

@@ -2,12 +2,7 @@
  
  */
 
-import {ConnectionOptions} from "./connection/ConnectionOptions";
-import {ConnectionManager} from "./connection-manager/ConnectionManager";
-import {Connection} from "./connection/Connection";
-import {MysqlDriver} from "./driver/MysqlDriver";
 import {MetadataArgsStorage} from "./metadata-args/MetadataArgsStorage";
-import {CreateConnectionOptions} from "./connection-manager/CreateConnectionOptions";
 
 // -------------------------------------------------------------------------
 // Global Container
@@ -67,45 +62,8 @@ export function getMetadataArgsStorage() {
 }
 
 // -------------------------------------------------------------------------
-// Global Connection Manager
-// -------------------------------------------------------------------------
-
-/**
- * Default export. Global connection manager.
- */
-let connectionManager: ConnectionManager;
-
-/**
- * Gets a ConnectionManager which creates connections.
- */
-export function getConnectionManager() {
-    if (!connectionManager && container) {
-        connectionManager = container.get(ConnectionManager);
-
-    } else if (!connectionManager) {
-        connectionManager = new ConnectionManager();
-    }
-
-    return connectionManager;
-}
-
-/**
- * Allows to quickly create a connection based on the given options. Uses ConnectionManager.
- */
-export function createConnection(options: CreateConnectionOptions) {
-    return getConnectionManager().create(options).connect();
-}
-
-// -------------------------------------------------------------------------
 // Commonly Used exports
 // -------------------------------------------------------------------------
-
-export {Connection} from "./connection/Connection";
-export {ConnectionOptions} from "./connection/ConnectionOptions";
-export {ConnectionManager} from "./connection-manager/ConnectionManager";
-export {CreateConnectionOptions} from "./connection-manager/CreateConnectionOptions";
-export {Driver} from "./driver/Driver";
-export {MysqlDriver} from "./driver/MysqlDriver";
 export {QueryBuilder} from "./query-builder/QueryBuilder";
 export {EntityManager} from "./entity-manager/EntityManager";
 export {Repository} from "./repository/Repository";

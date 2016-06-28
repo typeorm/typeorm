@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createConnection, CreateConnectionOptions} from "../../src/index";
+import {createConnection, CreateConnectionOptions} from "../../src/backend";
 import {Post} from "./entity/Post";
 
 // NOTE: this example is not working yet, only concepts of how this feature must work described here
