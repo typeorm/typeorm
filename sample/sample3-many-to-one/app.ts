@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {CreateConnectionOptions, createConnection} from "../../src/index";
+import {CreateConnectionOptions, createConnection} from "../../src/backend";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
 import {PostCategory} from "./entity/PostCategory";
