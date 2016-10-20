@@ -884,7 +884,7 @@ export class Album {
     @Column()
     name: string;
 
-    @ManyToMany(type => Photo, album => photo.albums, {  // note: we will create "albums" property in the Photo class below
+    @ManyToMany(type => Photo, photo => photo.albums, {  // note: we will create "albums" property in the Photo class below
         cascadeInsert: true, // allow to insert a new photo on album save
         cascadeUpdate: true, // allow to update a photo on album save
         cascadeRemove: true  // allow to remove a photo on album remove
