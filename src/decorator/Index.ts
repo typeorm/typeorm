@@ -40,7 +40,7 @@ export function Index(nameOrFields: string|string[]|((object: any) => any[]),
                       maybeOptions?: IndexOptions): Function {
     const name = typeof nameOrFields === "string" ? nameOrFields : undefined;
     const fields = typeof nameOrFields === "string" ? <((object: any) => any[])|string[]> maybeFieldsOrOptions : nameOrFields;
-    const options = typeof maybeFieldsOrOptions === "object" ? <IndexOptions> maybeFieldsOrOptions : maybeOptions;
+    const options = (typeof maybeFieldsOrOptions === "object" && !Array.isArray(maybeFieldsOrOptions)) ? <IndexOptions> maybeFieldsOrOptions : maybeOptions;
 
     return function (clsOrObject: Function|Object, propertyName?: string) {
         const args: IndexMetadataArgs = {
