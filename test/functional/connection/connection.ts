@@ -367,5 +367,103 @@ describe("Connection", () => {
         })));
 
     });
+
+    describe("transaction function that accepts multiple entity parameters", function() {
+        let connections: Connection[];
+        beforeEach(() => setupTestingConnections({ entities: [View] }).then(all => connections = all));
+
+        afterEach(() => closeConnections(connections));
+        it("executed queries must success", () => Promise.all(connections.map(async connection => {
+            const blogRepository = connection.getRepository(Blog);
+            let blogs = await blogRepository.find();
+            blogs.should.be.eql([]);
+            const postRepository = connection.getRepository(Post);
+            let posts = await postRepository.find();
+            posts.should.be.eql([]);
+
+            const blog = new Blog();
+            blog.name = "hello blog title";
+            await blogRepository.persist(blog);
+            blogs.should.be.eql([]);
+
+            blogs = await blogRepository.find();
+            blogs.length.should.be.equal(1);
+
+            const post = new Post();
+            post.title = "hello blog title";
+            await postRepository.persist(post);
+            posts.should.be.eql([]);
+
+            posts = await postRepository.find();
+            posts.length.should.be.equal(1);
+
+            await connection.transaction([Blog, Post], async ([BlogRepository, PostRepository]) => {
+                await _.range(0, 100).map(async i => {
+                    const blog = new Blog();
+                    const post = new Post();
+                    blog.name = "hello blog #" + i;
+                    await BlogRepository.persist(blog);
+                    return PostRepository.persist(post);
+                });
+
+                blogs = await BlogRepository.find();
+                blogs.length.should.be.equal(101);
+                posts = await PostRepository.find();
+                posts.length.should.be.equal(101);
+            }).should.be.rejected;
+
+            blogs = await blogRepository.find();
+            blogs.length.should.be.equal(101);
+            posts = await postRepository.find();
+            posts.length.should.be.equal(101);
+        })));
+
+        it("executed queries must rollback in the case if error in transaction", () => Promise.all(connections.map(async connection => {
+            const blogRepository = connection.getRepository(Blog);
+            let blogs = await blogRepository.find();
+            blogs.should.be.eql([]);
+            const postRepository = connection.getRepository(Post);
+            let posts = await postRepository.find();
+            posts.should.be.eql([]);
+
+            const blog = new Blog();
+            blog.name = "hello blog title";
+            await blogRepository.persist(blog);
+            blogs.should.be.eql([]);
+
+            blogs = await blogRepository.find();
+            blogs.length.should.be.equal(1);
+
+            const post = new Post();
+            post.title = "hello blog title";
+            await postRepository.persist(post);
+            posts.should.be.eql([]);
+
+            posts = await postRepository.find();
+            posts.length.should.be.equal(1);
+
+            await connection.transaction([Blog, Post], async ([BlogRepository, PostRepository]) => {
+                await _.range(0, 100).map(async i => {
+                    const blog = new Blog();
+                    const post = new Post();
+                    blog.name = "hello blog #" + i;
+                    await BlogRepository.persist(blog);
+                    return PostRepository.persist(post);
+                });
+
+                blogs = await BlogRepository.find();
+                blogs.length.should.be.equal(101);
+                posts = await PostRepository.find();
+                posts.length.should.be.equal(101);
+
+                throw new Error("this error will cancel all persist operations");
+            }).should.be.rejected;
+
+            blogs = await blogRepository.find();
+            blogs.length.should.be.equal(1);
+            posts = await postRepository.find();
+            posts.length.should.be.equal(1);
+        })));
+    });
     
 });
