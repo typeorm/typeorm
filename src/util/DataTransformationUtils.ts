@@ -8,7 +8,8 @@ export class DataTransformationUtils {
      */
     static mixedDateToDateString(value: Date|any): string|any {
         if (value instanceof Date)
-            return value.getFullYear() + "-" + (value.getMonth() + 1) + "-" + value.getDate();
+            value = DataTransformationUtils.localizeDate(value);
+            return value.toISOString().substring(0, 10);
 
         return value;
     }
@@ -17,9 +18,10 @@ export class DataTransformationUtils {
      * Converts given value into time string in a "HH:mm:ss" format.
      */
     static mixedDateToTimeString(value: Date|any): string|any {
-        if (value instanceof Date)
-            return value.getHours() + ":" + value.getMinutes() + ":" + value.getSeconds();
-
+        if (value instanceof Date) {
+            value = DataTransformationUtils.localizeDate(value);
+            return value.toISOString().substr(11, 8);
+        }
         return value;
     }
 
@@ -44,12 +46,8 @@ export class DataTransformationUtils {
             value = new Date(value);
         }
         if (value instanceof Date) {
-            return value.getFullYear() + "-" +
-                (value.getMonth() + 1) + "-" +
-                value.getDate() + " " +
-                value.getHours() + ":" +
-                value.getMinutes() + ":" +
-                value.getSeconds();
+            value = DataTransformationUtils.localizeDate(value);
+            return value.toISOString().slice(0, 19).replace('T', ' ');
         }
 
         return value;
@@ -63,12 +61,7 @@ export class DataTransformationUtils {
             value = new Date(value);
         }
         if (value instanceof Date) {
-            return value.getUTCFullYear() + "-" +
-                (value.getUTCMonth() + 1) + "-" +
-                value.getUTCDate() + " " +
-                value.getUTCHours() + ":" +
-                value.getUTCMinutes() + ":" +
-                value.getUTCSeconds();
+            return value.toISOString().slice(0, 19).replace('T', ' ');
         }
 
         return value;
@@ -98,4 +91,7 @@ export class DataTransformationUtils {
         return value;
     }
 
+    private static localizeDate(date: Date): Date {
+        return new Date(date.getTime() - (date.getTimezoneOffset() * 60000));   
+    }
 }
