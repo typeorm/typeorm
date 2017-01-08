@@ -7,10 +7,10 @@ export class DataTransformationUtils {
      * Converts given value into date string in a "YYYY-MM-DD" format.
      */
     static mixedDateToDateString(value: Date|any): string|any {
-        if (value instanceof Date)
+        if (value instanceof Date) {
             value = DataTransformationUtils.localizeDate(value);
             return value.toISOString().substring(0, 10);
-
+        }
         return value;
     }
 
