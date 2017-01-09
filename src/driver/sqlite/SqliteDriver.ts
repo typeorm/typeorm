@@ -139,23 +139,18 @@ export class SqliteDriver implements Driver {
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return null;
-
         switch (columnMetadata.type) {
             case ColumnTypes.BOOLEAN:
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataTransformationUtils.mixedDateToDateString(value, columnMetadata.storeInLocalTimezone);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
+                return DataTransformationUtils.mixedDateToTimeString(value, columnMetadata.storeInLocalTimezone);
 
             case ColumnTypes.DATETIME:
-                if (columnMetadata.storeInLocalTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
-                } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
-                }
+                return DataTransformationUtils.mixedDateToDatetimeString(value, columnMetadata.storeInLocalTimezone);
 
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
@@ -175,18 +170,8 @@ export class SqliteDriver implements Driver {
             case ColumnTypes.BOOLEAN:
                 return value ? true : false;
 
-            // case ColumnTypes.DATETIME:
-            //     if (value instanceof Date)
-            //         return value;
-            //
-            //     if (columnMetadata.loadInLocalTimezone) {
-            //         return DataTransformationUtils.mixedDateToDatetimeString(value);
-            //     } else {
-            //         return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
-            //     }
-
-            case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
+            case ColumnTypes.DATETIME:
+                return DataTransformationUtils.mixedDateTimeToDate(value, columnMetadata.loadInLocalTimezone);
 
             case ColumnTypes.JSON:
                 return JSON.parse(value);

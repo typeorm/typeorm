@@ -215,17 +215,13 @@ export class PostgresDriver implements Driver {
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DataTransformationUtils.mixedDateToDateString(value, column.storeInLocalTimezone);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
+                return DataTransformationUtils.mixedDateToTimeString(value, column.storeInLocalTimezone);
 
             case ColumnTypes.DATETIME:
-                if (column.storeInLocalTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
-                } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
-                }
+                return DataTransformationUtils.mixedDateToDatetimeString(value, column.storeInLocalTimezone);
 
             case ColumnTypes.JSON:
             case ColumnTypes.JSONB:
@@ -248,18 +244,8 @@ export class PostgresDriver implements Driver {
             case ColumnTypes.BOOLEAN:
                 return value ? true : false;
 
-            // case ColumnTypes.DATETIME:
-            //     if (value instanceof Date)
-            //         return value;
-            //
-            //     if (columnMetadata.loadInLocalTimezone) {
-            //         return DataTransformationUtils.mixedDateToDatetimeString(value);
-            //     } else {
-            //         return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
-            //     }
-
-            case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
+            case ColumnTypes.DATETIME:
+                return DataTransformationUtils.mixedDateTimeToDate(value, columnMetadata.loadInLocalTimezone);
 
             case ColumnTypes.JSON:
             case ColumnTypes.JSONB:

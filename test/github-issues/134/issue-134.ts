@@ -31,9 +31,9 @@ describe("github issues > #134 Error TIME is converted to 'HH-mm' instead of 'HH
             .getOne();
 
         // create a correct minutes:hours:seconds string
-        let hours = String(currentDate.getHours());
-        let minutes = String(currentDate.getMinutes());
-        let seconds = String(currentDate.getSeconds());
+        let hours = String(currentDate.getUTCHours());
+        let minutes = String(currentDate.getUTCMinutes());
+        let seconds = String(currentDate.getUTCSeconds());
         hours = hours.length === 1 ? "0" + hours : hours;
         minutes = minutes.length === 1 ? "0" + minutes : minutes;
         seconds = seconds.length === 1 ? "0" + seconds : seconds;

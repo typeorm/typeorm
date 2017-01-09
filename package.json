@@ -74,6 +74,7 @@
     "@types/node": "^6.0.54",
     "app-root-path": "^2.0.1",
     "glob": "^7.1.1",
+    "moment": "^2.17.1",
     "reflect-metadata": "^0.1.8",
     "yargonaut": "^1.1.2",
     "yargs": "^6.5.0"

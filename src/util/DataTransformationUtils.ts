@@ -1,3 +1,5 @@
+import * as moment from "moment";
+
 /**
  * Provides utilities to transform hydrated and persisted data.
  */
@@ -6,65 +8,35 @@ export class DataTransformationUtils {
     /**
      * Converts given value into date string in a "YYYY-MM-DD" format.
      */
-    static mixedDateToDateString(value: Date|any): string|any {
-        if (value instanceof Date) {
-            value = DataTransformationUtils.localizeDate(value);
-            return value.toISOString().substring(0, 10);
-        }
-        return value;
+    static mixedDateToDateString(value: Date|any, localize: boolean = false): string|any {
+        return DataTransformationUtils.formatMixedDateWithMoment(value, "YYYY-MM-DD", localize);
     }
 
     /**
      * Converts given value into time string in a "HH:mm:ss" format.
      */
-    static mixedDateToTimeString(value: Date|any): string|any {
-        if (value instanceof Date) {
-            value = DataTransformationUtils.localizeDate(value);
-            return value.toISOString().substr(11, 8);
+    static mixedDateToTimeString(value: Date|any, localize: boolean = false): string|any {
+        let inputFormat;
+        // specify format if we think this string contains time only or else moment will return invalid date
+        if (typeof value === "string" && value.length < 19) {
+            inputFormat = "HH:mm:ss";
         }
-        return value;
+        return DataTransformationUtils.formatMixedDateWithMoment(value, "HH:mm:ss", localize, inputFormat);
     }
 
     /**
-     * Converts given string value with "-" separator into a "HH:mm:ss" format.
+     * Converts given value into datetime string in a "YYYY-MM-DD HH:mm:ss" format.
      */
-    static mixedTimeToString(value: string|any): string|any {
-        if (typeof value === "string") {
-            return value.split(":")
-                .map(v => v.length === 1 ? "0" + v : v) // append zero at beginning if we have a first-zero-less number
-                .join(":");
-        }
-
-        return value;
+    static mixedDateToDatetimeString(value: Date|any, localize: boolean = false): string|any {
+        return DataTransformationUtils.formatMixedDateWithMoment(value, "YYYY-MM-DD HH:mm:ss", localize);
     }
 
     /**
-     * Converts given value into datetime string in a "YYYY-MM-DD HH-mm-ss" format.
+     * Converts given value into Date object
      */
-    static mixedDateToDatetimeString(value: Date|any): string|any {
-        if (typeof value === "string") {
-            value = new Date(value);
-        }
-        if (value instanceof Date) {
-            value = DataTransformationUtils.localizeDate(value);
-            return value.toISOString().slice(0, 19).replace('T', ' ');
-        }
-
-        return value;
-    }
-
-    /**
-     * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss" format.
-     */
-    static mixedDateToUtcDatetimeString(value: Date|any): string|any {
-        if (typeof value === "string") {
-            value = new Date(value);
-        }
-        if (value instanceof Date) {
-            return value.toISOString().slice(0, 19).replace('T', ' ');
-        }
-
-        return value;
+    static mixedDateTimeToDate(value: Date|any, localize: boolean = false): Date {
+        const instance = localize ? moment(value) : moment.utc(value);
+        return instance.toDate();
     }
 
     /**
@@ -91,7 +63,12 @@ export class DataTransformationUtils {
         return value;
     }
 
-    private static localizeDate(date: Date): Date {
-        return new Date(date.getTime() - (date.getTimezoneOffset() * 60000));   
+    /**
+     * Formats given value to a given format
+     */
+    private static formatMixedDateWithMoment(value: any, outputFormat: string, localize?: boolean, inputFormat?: string) {
+        const instance = localize ? moment(value, inputFormat) : moment.utc(value, inputFormat);
+        return instance.format(outputFormat);
     }
+
 }

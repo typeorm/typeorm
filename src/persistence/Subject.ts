@@ -311,19 +311,14 @@ export class Subject {
             // normalize special values to make proper comparision
             if (entityValue !== null && entityValue !== undefined) {
                 if (column.type === ColumnTypes.DATE) {
-                    entityValue = DataTransformationUtils.mixedDateToDateString(entityValue);
+                    entityValue = DataTransformationUtils.mixedDateToDateString(entityValue, true);
 
                 } else if (column.type === ColumnTypes.TIME) {
-                    entityValue = DataTransformationUtils.mixedDateToTimeString(entityValue);
+                    entityValue = DataTransformationUtils.mixedDateToTimeString(entityValue, true);
 
                 } else if (column.type === ColumnTypes.DATETIME) {
-                    if (column.loadInLocalTimezone) {
-                        entityValue = DataTransformationUtils.mixedDateToDatetimeString(entityValue);
-                        databaseValue = DataTransformationUtils.mixedDateToDatetimeString(databaseValue);
-                    } else {
-                        entityValue = DataTransformationUtils.mixedDateToUtcDatetimeString(entityValue);
-                        databaseValue = DataTransformationUtils.mixedDateToUtcDatetimeString(databaseValue);
-                    }
+                    entityValue = DataTransformationUtils.mixedDateToDatetimeString(entityValue, column.loadInLocalTimezone);
+                    databaseValue = DataTransformationUtils.mixedDateToDatetimeString(databaseValue, column.loadInLocalTimezone);
 
                 } else if (column.type === ColumnTypes.JSON) {
                     entityValue = JSON.stringify(entityValue);
