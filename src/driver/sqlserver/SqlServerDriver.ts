@@ -242,6 +242,12 @@ export class SqlServerDriver implements Driver {
             case ColumnTypes.BOOLEAN:
                 return value ? true : false;
 
+            case ColumnTypes.DATE:
+                return DataTransformationUtils.mixedDateStringToDate(value, columnMetadata.loadInLocalTimezone);
+
+            case ColumnTypes.TIME:
+                return DataTransformationUtils.mixedTimeStringToDate(value, columnMetadata.loadInLocalTimezone);
+
             case ColumnTypes.DATETIME:
                 return DataTransformationUtils.mixedDateTimeToDate(value, columnMetadata.loadInLocalTimezone);
 

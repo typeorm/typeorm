@@ -40,6 +40,22 @@ export class DataTransformationUtils {
     }
 
     /**
+     * Converts given value into Date object
+     */
+    static mixedDateStringToDate(value: Date|any, localize: boolean = false): Date {
+        const instance = localize ? moment(value) : moment.utc(value);
+        return instance.toDate();
+    }
+
+    /**
+     * Converts given value into Date object
+     */
+    static mixedTimeStringToDate(value: Date|any, localize: boolean = false): Date {
+        const instance = localize ? moment(value, "HH:mm:ss") : moment.utc(value, "HH:mm:ss");
+        return instance.toDate();
+    }
+
+    /**
      * Converts each item in the given array to string joined by "," separator.
      */
     static simpleArrayToString(value: any[]|any): string[]|any {

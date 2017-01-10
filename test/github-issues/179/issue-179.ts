@@ -4,16 +4,21 @@ import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {DataTransformationUtils} from "../../../src/util/DataTransformationUtils";
 import {expect} from "chai";
-
+import * as moment from "moment";
 
 describe("other issues > date", () => {
-    const localTimeString = "01:00:00";
     const localDateString = "2017-01-01";
+    const localTimeString = "01:00:00";
     const localDateTimeString = localDateString + " " + localTimeString;
-    const baseDate = new Date(localDateString + " " + localTimeString);
+    const baseDate = new Date(localDateTimeString);
     const utcDateString = baseDate.toISOString().substring(0, 10);
     const utcTimeString = baseDate.toISOString().substr(11, 8);
     const utcDateTimeString = utcDateString + " " + utcTimeString;
+    const localBaseDate = moment(localDateTimeString).toDate();
+    const localTimeOnly = moment(localTimeString, "HH:mm:ss").toDate(); // convert to Date object
+    const localDateOnly = moment(localDateString).toDate(); // convert to Date object
+    const utcTimeOnly = moment.utc(utcTimeString, "HH:mm:ss").toDate(); // convert to Date object
+    const utcDateOnly = moment.utc(utcDateString).toDate(); // convert to Date object
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -43,7 +48,7 @@ describe("other issues > date", () => {
 
     });
 
-    it("should persist and return correct persisted dates", () => Promise.all(connections.map(async function(connection) {
+    it("should persist and return correctly persisted dates", () => Promise.all(connections.map(async function(connection) {
 
         let post = new Post();
         // Local time
@@ -57,6 +62,7 @@ describe("other issues > date", () => {
 
         await connection.entityManager.persist(post);
 
+        // test if accepts partial strings
         post = new Post();
         // Local
         post.localTimeOnly = localTimeString;
@@ -85,21 +91,20 @@ describe("other issues > date", () => {
         const loadedPosts = await connection.entityManager.find(Post);
 
         expect(loadedPosts).not.to.be.empty;
+
+        // compares if dates are equal
+        const compareDate = (date: any, compareTo: Date) => (<Date> date).getTime() === compareTo.getTime();
+
         for (let post of loadedPosts) {
-            DataTransformationUtils.mixedDateToDatetimeString(post.dateTime).should.be.equal(utcDateTimeString);
 
-            post.timeOnly.should.be.equal(utcTimeString);
-            post.dateOnly.should.be.equal(utcDateString);
+            expect(compareDate(post.dateTime, baseDate)).to.be.true;
+            expect(compareDate(post.dateOnly, utcDateOnly)).to.be.true;
+            expect(compareDate(post.timeOnly, utcTimeOnly)).to.be.true;
 
-            if (new Date().getTimezoneOffset() === 0) { // if testing machine is +0 zone, then local time should be the same as UTC
-                DataTransformationUtils.mixedDateToDatetimeString(post.localDateTime, true).should.be.equal(utcDateTimeString);
-                post.localDateOnly.should.be.equal(utcDateString);
-                post.localTimeOnly.should.be.equal(utcTimeString);
-            } else {
-                DataTransformationUtils.mixedDateToDatetimeString(post.localDateTime, true).should.be.equal(localDateTimeString);
-                post.localDateOnly.should.be.equal(localDateString);
-                post.localTimeOnly.should.be.equal(localTimeString);
-            }
+            expect(compareDate(post.localDateTime, localBaseDate)).to.be.true;
+            expect(compareDate(post.localTimeOnly, localTimeOnly)).to.be.true;
+            expect(compareDate(post.localDateOnly, localDateOnly)).to.be.true;
+
         }
 
     })));
