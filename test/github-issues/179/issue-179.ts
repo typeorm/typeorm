@@ -15,10 +15,6 @@ describe("other issues > date", () => {
     const utcTimeString = baseDate.toISOString().substr(11, 8);
     const utcDateTimeString = utcDateString + " " + utcTimeString;
     const localBaseDate = moment(localDateTimeString).toDate();
-    const localTimeOnly = moment(localTimeString, "HH:mm:ss").toDate(); // convert to Date object
-    const localDateOnly = moment(localDateString).toDate(); // convert to Date object
-    const utcTimeOnly = moment.utc(utcTimeString, "HH:mm:ss").toDate(); // convert to Date object
-    const utcDateOnly = moment.utc(utcDateString).toDate(); // convert to Date object
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -97,13 +93,18 @@ describe("other issues > date", () => {
 
         for (let post of loadedPosts) {
 
+            expect(post.dateOnly).to.be.a("string");
+            expect(post.timeOnly).to.be.a("string");
+            expect(post.localTimeOnly).to.be.a("string");
+            expect(post.localDateOnly).to.be.a("string");
+
             expect(compareDate(post.dateTime, baseDate)).to.be.true;
-            expect(compareDate(post.dateOnly, utcDateOnly)).to.be.true;
-            expect(compareDate(post.timeOnly, utcTimeOnly)).to.be.true;
+            expect(post.dateOnly === utcDateString).to.be.true;
+            expect(post.timeOnly === utcTimeString).to.be.true;
 
             expect(compareDate(post.localDateTime, localBaseDate)).to.be.true;
-            expect(compareDate(post.localTimeOnly, localTimeOnly)).to.be.true;
-            expect(compareDate(post.localDateOnly, localDateOnly)).to.be.true;
+            expect(post.localTimeOnly === localTimeString).to.be.true;
+            expect(post.localDateOnly === localDateString).to.be.true;
 
         }
 

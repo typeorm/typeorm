@@ -248,10 +248,10 @@ export class MysqlDriver implements Driver {
                 return value ? true : false;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateStringToDate(value, columnMetadata.loadInLocalTimezone);
+                return DataTransformationUtils.mixedDateToDateString(value, columnMetadata.loadInLocalTimezone);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeStringToDate(value, columnMetadata.loadInLocalTimezone);
+                return DataTransformationUtils.mixedDateToTimeString(value, columnMetadata.loadInLocalTimezone);
 
             case ColumnTypes.DATETIME:
                 return DataTransformationUtils.mixedDateTimeToDate(value, columnMetadata.loadInLocalTimezone);
