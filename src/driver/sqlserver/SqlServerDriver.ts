@@ -14,6 +14,7 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {DateUtils} from "../../util/DateUtils";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -216,13 +217,13 @@ export class SqlServerDriver implements Driver {
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value, columnMetadata.storeInLocalTimezone);
+                return DateUtils.dateToDateString(value, columnMetadata.storeInLocalTimezone);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value, columnMetadata.storeInLocalTimezone);
+                return DateUtils.dateToTimeString(value, columnMetadata.storeInLocalTimezone);
 
             case ColumnTypes.DATETIME:
-                return DataTransformationUtils.mixedDateToDatetimeString(value, columnMetadata.storeInLocalTimezone);
+                return DateUtils.dateToDateTimeString(value, columnMetadata.storeInLocalTimezone);
 
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
@@ -243,13 +244,13 @@ export class SqlServerDriver implements Driver {
                 return value ? true : false;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value, columnMetadata.loadInLocalTimezone);
+                return DateUtils.dateToDateString(value, columnMetadata.loadInLocalTimezone);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value, columnMetadata.loadInLocalTimezone);
+                return DateUtils.dateToTimeString(value, columnMetadata.loadInLocalTimezone);
 
             case ColumnTypes.DATETIME:
-                return DataTransformationUtils.mixedDateTimeToDate(value, columnMetadata.loadInLocalTimezone);
+                return DateUtils.toDateObject(value, columnMetadata.loadInLocalTimezone);
 
             case ColumnTypes.JSON:
                 return JSON.parse(value);

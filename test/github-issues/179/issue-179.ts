@@ -2,9 +2,8 @@ import "reflect-metadata";
 import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
-import {DataTransformationUtils} from "../../../src/util/DataTransformationUtils";
 import {expect} from "chai";
-import * as moment from "moment";
+import { DateUtils } from "../../../src/util/DateUtils";
 
 describe("other issues > date", () => {
     const localDateString = "2017-01-01";
@@ -14,7 +13,7 @@ describe("other issues > date", () => {
     const utcDateString = baseDate.toISOString().substring(0, 10);
     const utcTimeString = baseDate.toISOString().substr(11, 8);
     const utcDateTimeString = utcDateString + " " + utcTimeString;
-    const localBaseDate = moment(localDateTimeString).toDate();
+    const localBaseDate = DateUtils.toDateObject(localDateTimeString, true);
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -27,19 +26,19 @@ describe("other issues > date", () => {
 
     it("should convert and format between UTC and local", () => {
         // UTC
-        DataTransformationUtils.mixedDateToDateString(baseDate, false).should.be.equal(utcDateString);
-        DataTransformationUtils.mixedDateToTimeString(baseDate, false).should.be.equal(utcTimeString);
-        DataTransformationUtils.mixedDateToDatetimeString(baseDate, false).should.be.equal(utcDateTimeString);
+        DateUtils.dateToDateString(baseDate, false).should.be.equal(utcDateString);
+        DateUtils.dateToTimeString(baseDate, false).should.be.equal(utcTimeString);
+        DateUtils.dateToDateTimeString(baseDate, false).should.be.equal(utcDateTimeString);
 
         // local
         if (new Date().getTimezoneOffset() === 0) { // if testing machine is +0 zone, then local time should be the same as UTC
-            DataTransformationUtils.mixedDateToDateString(baseDate, true).should.be.equal(utcDateString);
-            DataTransformationUtils.mixedDateToTimeString(baseDate, true).should.be.equal(utcTimeString);
-            DataTransformationUtils.mixedDateToDatetimeString(baseDate, true).should.be.equal(utcDateTimeString);
+            DateUtils.dateToDateString(baseDate, true).should.be.equal(utcDateString);
+            DateUtils.dateToTimeString(baseDate, true).should.be.equal(utcTimeString);
+            DateUtils.dateToDateTimeString(baseDate, true).should.be.equal(utcDateTimeString);
         } else {
-            DataTransformationUtils.mixedDateToDateString(baseDate, true).should.be.equal(localDateString);
-            DataTransformationUtils.mixedDateToTimeString(baseDate, true).should.be.equal(localTimeString);
-            DataTransformationUtils.mixedDateToDatetimeString(baseDate, true).should.be.equal(localDateTimeString);
+            DateUtils.dateToDateString(baseDate, true).should.be.equal(localDateString);
+            DateUtils.dateToTimeString(baseDate, true).should.be.equal(localTimeString);
+            DateUtils.dateToDateTimeString(baseDate, true).should.be.equal(localDateTimeString);
         }
 
     });

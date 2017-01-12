@@ -14,6 +14,7 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {DateUtils} from "../../util/DateUtils";
 
 // todo(tests):
 // check connection with url
@@ -215,13 +216,13 @@ export class PostgresDriver implements Driver {
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value, column.storeInLocalTimezone);
+                return DateUtils.dateToDateString(value, column.storeInLocalTimezone);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value, column.storeInLocalTimezone);
+                return DateUtils.dateToTimeString(value, column.storeInLocalTimezone);
 
             case ColumnTypes.DATETIME:
-                return DataTransformationUtils.mixedDateToDatetimeString(value, column.storeInLocalTimezone);
+                return DateUtils.dateToDateTimeString(value, column.storeInLocalTimezone);
 
             case ColumnTypes.JSON:
             case ColumnTypes.JSONB:
@@ -245,13 +246,13 @@ export class PostgresDriver implements Driver {
                 return value ? true : false;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value, columnMetadata.loadInLocalTimezone);
+                return DateUtils.dateToDateString(value, columnMetadata.loadInLocalTimezone);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value, columnMetadata.loadInLocalTimezone);
+                return DateUtils.dateToTimeString(value, columnMetadata.loadInLocalTimezone);
 
             case ColumnTypes.DATETIME:
-                return DataTransformationUtils.mixedDateTimeToDate(value, columnMetadata.loadInLocalTimezone);
+                return DateUtils.toDateObject(value, columnMetadata.loadInLocalTimezone);
 
             case ColumnTypes.JSON:
             case ColumnTypes.JSONB:
