@@ -6,6 +6,8 @@ export class DateUtils {
      * Converts given value into date string in a "YYYY-MM-DD" format
      */
     public static dateToDateString(date: Date|string|number, localize?: boolean) {
+        if (!date)
+            return date;
         const dateObject = DateUtils.toDateObject(date, localize);
         return strPad(dateObject.getUTCFullYear(), 4) + "-" +
             strPad(dateObject.getUTCMonth() + 1, 2) + "-" +
@@ -16,6 +18,8 @@ export class DateUtils {
      * Converts given value into time string in a "HH:mm:ss" format
      */
     public static dateToTimeString(date: Date|string|number, localize?: boolean) {
+        if (!date)
+            return date;
         if (typeof date === "string" && date.length === 8) { // guess this is time only string
             date = "1970-01-01 " + date; // convert to full date
         }
@@ -29,6 +33,8 @@ export class DateUtils {
      * Converts given value into datetime string in a "YYYY-MM-DD HH:mm:ss" format
      */
     public static dateToDateTimeString(date: Date|string|number, localize?: boolean) {
+        if (!date)
+            return date;
         return DateUtils.dateToDateString(date, localize) + " " + DateUtils.dateToTimeString(date, localize);
     }
 
