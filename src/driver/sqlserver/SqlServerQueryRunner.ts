@@ -839,6 +839,21 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
         throw new DataTypeNotSupportedByDriverError(typeOptions.type, "SQLServer");
     }
 
+    /**
+     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
+     */
+    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean {
+
+        if (typeof columnMetadataValue === "number")
+            return columnMetadataValue === parseInt(databaseValue);
+        if (typeof columnMetadataValue === "boolean")
+            return columnMetadataValue === (!!databaseValue || databaseValue === "false");
+        if (typeof columnMetadataValue === "function")
+            return columnMetadataValue() === databaseValue;
+
+        return columnMetadataValue === databaseValue;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -872,8 +887,19 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
         //     c += " PRIMARY KEY";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";
-        if (column.default)
-            c += " DEFAULT '" + column.default + "'";
+        if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
+            if (typeof column.default === "number") {
+                c += " DEFAULT " + column.default + "";
+            } else if (typeof column.default === "boolean") {
+                c += " DEFAULT " + (column.default === true ? "TRUE" : "FALSE") + "";
+            } else if (typeof column.default === "function") {
+                c += " DEFAULT " + column.default() + "";
+            } else if (typeof column.default === "string") {
+                c += " DEFAULT '" + column.default + "'";
+            } else {
+                c += " DEFAULT " + column.default + "";
+            }
+        }
         return c;
     }
 

@@ -22,7 +22,7 @@ export class ColumnSchema {
     /**
      * Column's default value.
      */
-    default: string;
+    default: any;
 
     /**
      * Indicates if column is NULL, or is NOT NULL in the database.

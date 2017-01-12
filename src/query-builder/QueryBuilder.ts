@@ -968,8 +968,15 @@ export class QueryBuilder<Entity> {
                                 }).join(" AND ");
                             }).join(" OR ");
                         } else {
-                            parameters["ids"] = results.map(result => result["ids_" + metadata.firstPrimaryColumn.propertyName]);
-                            condition = mainAliasName + "." + metadata.firstPrimaryColumn.propertyName + " IN (:ids)";
+                            const ids = results.map(result => result["ids_" + metadata.firstPrimaryColumn.propertyName]);
+                            const areAllNumbers = ids.map((id: any) => typeof id === "number");
+                            if (areAllNumbers) {
+                                // fixes #190. if all numbers then its safe to perform query without parameter
+                                condition = `${mainAliasName}.${metadata.firstPrimaryColumn.propertyName} IN (${ids.join(", ")})`;
+                            } else {
+                                parameters["ids"] = ids;
+                                condition = mainAliasName + "." + metadata.firstPrimaryColumn.propertyName + " IN (:ids)";
+                            }
                         }
                         const [queryWithIdsSql, queryWithIdsParameters] = this.clone({queryRunnerProvider: this.queryRunnerProvider})
                             .andWhere(condition, parameters)
@@ -1095,14 +1102,14 @@ export class QueryBuilder<Entity> {
     /**
      * Gets all raw results returned by execution of generated query builder sql.
      */
-    getRawMany<T>(): Promise<T[]> { // todo: rename to getRawMany
+    getRawMany(): Promise<any[]> { // todo: rename to getRawMany
         return this.execute();
     }
 
     /**
      * Gets first raw result returned by execution of generated query builder sql.
      */
-    getRawOne<T>(): Promise<T> { // todo: rename to getRawOne
+    getRawOne(): Promise<any> { // todo: rename to getRawOne
         return this.getRawMany().then(results => results[0]);
 
     }
@@ -1445,7 +1452,8 @@ export class QueryBuilder<Entity> {
             case "select":
                 return "SELECT " + allSelects.join(", ") + " FROM " + this.connection.driver.escapeTableName(tableName) + " " + this.connection.driver.escapeAliasName(alias);
             case "delete":
-                return "DELETE " + (alias ? this.connection.driver.escapeAliasName(alias) : "") + " FROM " + this.connection.driver.escapeTableName(tableName) + " " + (alias ? this.connection.driver.escapeAliasName(alias) : "");
+                return "DELETE FROM " + this.connection.driver.escapeTableName(tableName);
+                // return "DELETE " + (alias ? this.connection.driver.escapeAliasName(alias) : "") + " FROM " + this.connection.driver.escapeTableName(tableName) + " " + (alias ? this.connection.driver.escapeAliasName(alias) : ""); // TODO: only mysql supports aliasing, so what to do with aliases in DELETE queries? right now aliases are used however we are relaying that they will always match a table names
             case "update":
                 const updateSet = Object.keys(this.updateQuerySet).map(key => key + "=:updateQuerySet_" + key);
                 const params = Object.keys(this.updateQuerySet).reduce((object, key) => {
@@ -1496,12 +1504,13 @@ export class QueryBuilder<Entity> {
                     const expression = alias.name + "." + embedded.propertyName + "." + column.propertyName + "([ =]|.{0}$)";
                     statement = statement.replace(new RegExp(expression, "gm"), this.connection.driver.escapeAliasName(alias.name) + "." + this.connection.driver.escapeColumnName(column.name) + "$1");
                 });
+                // todo: what about embedded relations here?
             });
-            metadata.columns.forEach(column => {
+            metadata.columns.filter(column => !column.isInEmbedded).forEach(column => {
                 const expression = alias.name + "." + column.propertyName + "([ =]|.{0}$)";
                 statement = statement.replace(new RegExp(expression, "gm"), this.connection.driver.escapeAliasName(alias.name) + "." + this.connection.driver.escapeColumnName(column.name) + "$1");
             });
-            metadata.relationsWithJoinColumns.forEach(relation => {
+            metadata.relationsWithJoinColumns/*.filter(relation => !relation.isInEmbedded)*/.forEach(relation => {
                 const expression = alias.name + "." + relation.propertyName + "([ =]|.{0}$)";
                 statement = statement.replace(new RegExp(expression, "gm"), this.connection.driver.escapeAliasName(alias.name) + "." + this.connection.driver.escapeColumnName(relation.name) + "$1");
             });

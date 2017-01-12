@@ -1,9 +1,7 @@
 import "reflect-metadata";
-import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { Connection } from "../../../src/connection/Connection";
-import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver";
-import { Logger } from "../../../src/logger/Logger";
-import { expect } from "chai";
+import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
+import {Logger} from "../../../src/logger/Logger";
+import {expect} from "chai";
 
 describe("github issues > #114 Can not be parsed correctly the URL of pg.", () => {
 

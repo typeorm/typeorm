@@ -216,13 +216,13 @@ export class PostgresDriver implements Driver {
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DateUtils.dateToDateString(value, column.storeInLocalTimezone);
+                return DateUtils.dateToDateString(value, column.localTimezone);
 
             case ColumnTypes.TIME:
-                return DateUtils.dateToTimeString(value, column.storeInLocalTimezone);
+                return DateUtils.dateToTimeString(value, column.localTimezone);
 
             case ColumnTypes.DATETIME:
-                return DateUtils.dateToDateTimeString(value, column.storeInLocalTimezone);
+                return DateUtils.dateToDateTimeString(value, column.localTimezone);
 
             case ColumnTypes.JSON:
             case ColumnTypes.JSONB:
@@ -246,13 +246,13 @@ export class PostgresDriver implements Driver {
                 return value ? true : false;
 
             case ColumnTypes.DATE:
-                return DateUtils.dateToDateString(value, columnMetadata.loadInLocalTimezone);
+                return DateUtils.dateToDateString(value, columnMetadata.localTimezone);
 
             case ColumnTypes.TIME:
-                return DateUtils.dateToTimeString(value, columnMetadata.loadInLocalTimezone);
+                return DateUtils.dateToTimeString(value, columnMetadata.localTimezone);
 
             case ColumnTypes.DATETIME:
-                return DateUtils.toDateObject(value, columnMetadata.loadInLocalTimezone);
+                return DateUtils.toDateObject(value, columnMetadata.localTimezone);
 
             case ColumnTypes.JSON:
             case ColumnTypes.JSONB:

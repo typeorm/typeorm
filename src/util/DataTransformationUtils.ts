@@ -4,6 +4,10 @@
  */
 export class DataTransformationUtils {
 
+    // -------------------------------------------------------------------------
+    // Public Static Methods
+    // -------------------------------------------------------------------------
+
     /**
      * Converts each item in the given array to string joined by "," separator.
      */

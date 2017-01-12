@@ -785,6 +785,21 @@ export class SqliteQueryRunner implements QueryRunner {
         throw new DataTypeNotSupportedByDriverError(typeOptions.type, "SQLite");
     }
 
+    /**
+     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
+     */
+    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean {
+
+        if (typeof columnMetadataValue === "number")
+            return columnMetadataValue === parseInt(databaseValue);
+        if (typeof columnMetadataValue === "boolean")
+            return columnMetadataValue === (!!databaseValue || databaseValue === "false");
+        if (typeof columnMetadataValue === "function")
+            return columnMetadataValue() === databaseValue;
+
+        return columnMetadataValue === databaseValue;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -812,8 +827,19 @@ export class SqliteQueryRunner implements QueryRunner {
             c += " UNIQUE";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " PRIMARY KEY AUTOINCREMENT";
-        if (column.default)
-            c += " DEFAULT '" + column.default + "'";
+        if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
+            if (typeof column.default === "number") {
+                c += " DEFAULT " + column.default + "";
+            } else if (typeof column.default === "boolean") {
+                c += " DEFAULT " + (column.default === true ? "1" : "0") + "";
+            } else if (typeof column.default === "function") {
+                c += " DEFAULT " + column.default() + "";
+            } else if (typeof column.default === "string") {
+                c += " DEFAULT '" + column.default + "'";
+            } else {
+                c += " DEFAULT " + column.default + "";
+            }
+        }
 
         return c;
     }

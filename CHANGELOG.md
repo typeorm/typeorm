@@ -1,6 +1,7 @@
 # 0.0.7 (upcoming)
 
-* fixed bug when new column was'nt added properly in sqlite #157
+* fixed bug when new column was'nt added properly in sqlite [#157](https://github.com/typeorm/typeorm/issues/157)
+* added ability to set different types of values for DEFAULT value of the column [#150](https://github.com/typeorm/typeorm/issues/150)
 
 # 0.0.6 (latest)
 

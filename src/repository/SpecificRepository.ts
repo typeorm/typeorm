@@ -13,24 +13,12 @@ import {QueryBuilder} from "../query-builder/QueryBuilder";
 export class SpecificRepository<Entity extends ObjectLiteral> {
 
     // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    protected queryRunnerProvider: QueryRunnerProvider;
-
-    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
                 protected metadata: EntityMetadata,
-                queryRunnerProvider?: QueryRunnerProvider) {
-
-        if (queryRunnerProvider) {
-            this.queryRunnerProvider = queryRunnerProvider;
-        } else {
-            this.queryRunnerProvider = new QueryRunnerProvider(connection.driver);
-        }
+                protected queryRunnerProvider?: QueryRunnerProvider) {
     }
 
     // -------------------------------------------------------------------------
@@ -78,9 +66,12 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             conditions[relation.inverseRelation.joinColumn.referencedColumn.name] = entityId;
         }
 
-        const queryRunner = await this.queryRunnerProvider.provide();
+
+        const queryRunnerProvider = this.queryRunnerProvider ? this.queryRunnerProvider : new QueryRunnerProvider(this.connection.driver);
+        const queryRunner = await queryRunnerProvider.provide();
         await queryRunner.update(table, values, conditions);
-        await this.queryRunnerProvider.release(queryRunner);
+        if (!this.queryRunnerProvider) // means created by this method
+            await queryRunnerProvider.release(queryRunner);
     }
 
     /**
@@ -124,9 +115,11 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             conditions[relation.joinColumn.referencedColumn.name] = entityId;
         }
 
-        const queryRunner = await this.queryRunnerProvider.provide();
+        const queryRunnerProvider = this.queryRunnerProvider ? this.queryRunnerProvider : new QueryRunnerProvider(this.connection.driver);
+        const queryRunner = await queryRunnerProvider.provide();
         await queryRunner.update(table, values, conditions);
-        await this.queryRunnerProvider.release(queryRunner);
+        if (!this.queryRunnerProvider) // means created by this method
+            await queryRunnerProvider.release(queryRunner);
     }
 
     /**
@@ -157,7 +150,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
 
-        const queryRunner = await this.queryRunnerProvider.provide();
+        const queryRunnerProvider = this.queryRunnerProvider ? this.queryRunnerProvider : new QueryRunnerProvider(this.connection.driver);
+        const queryRunner = await queryRunnerProvider.provide();
         const insertPromises = relatedEntityIds.map(relatedEntityId => {
             const values: any = {};
             if (relation.isOwning) {
@@ -171,7 +165,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             return queryRunner.insert(relation.junctionEntityMetadata.table.name, values);
         });
         await Promise.all(insertPromises);
-        await this.queryRunnerProvider.release(queryRunner);
+
+        if (!this.queryRunnerProvider) // means created by this method
+            await queryRunnerProvider.release(queryRunner);
     }
 
     /**
@@ -202,7 +198,9 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
         if (!relation.isManyToMany)
             throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
 
-        const queryRunner = await this.queryRunnerProvider.provide();
+
+        const queryRunnerProvider = this.queryRunnerProvider ? this.queryRunnerProvider : new QueryRunnerProvider(this.connection.driver);
+        const queryRunner = await queryRunnerProvider.provide();
         try {
             const insertPromises = entityIds.map(entityId => {
                 const values: any = {};
@@ -219,7 +217,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             await Promise.all(insertPromises);
 
         } finally {
-            await this.queryRunnerProvider.release(queryRunner);
+            if (!this.queryRunnerProvider) // means created by this method
+                await queryRunnerProvider.release(queryRunner);
         }
     }
 
@@ -259,8 +258,8 @@ export class SpecificRepository<Entity extends ObjectLiteral> {
             .delete()
             .fromTable(relation.junctionEntityMetadata.table.name, "junctionEntity");
 
-        const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[0].name : relation.junctionEntityMetadata.columns[1].name;
-        const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata.columns[1].name : relation.junctionEntityMetadata.columns[0].name;
+        const firstColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata.columns[0].name : relation.junctionEntityMetadata.columns[1].name);
+        const secondColumnName = this.connection.driver.escapeColumnName(relation.isOwning ? relation.junctionEntityMetadata.columns[1].name : relation.junctionEntityMetadata.columns[0].name);
 
         relatedEntityIds.forEach((relatedEntityId, index) => {
             qb.orWhere(`(${firstColumnName}=:entityId AND ${secondColumnName}=:relatedEntity_${index})`)

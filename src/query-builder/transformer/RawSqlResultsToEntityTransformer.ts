@@ -145,7 +145,7 @@ export class RawSqlResultsToEntityTransformer {
                 const isResultArray = relation.isManyToMany || relation.isOneToMany;
                 const result = !isResultArray ? relatedEntities[0] : relatedEntities;
 
-                if (result && (!isResultArray || result.length > 0)) {
+                if (result) {
                     let propertyName = relation.propertyName;
                     if (joinMapping) {
                         propertyName = joinMapping.propertyName;

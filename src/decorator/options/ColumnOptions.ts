@@ -78,13 +78,6 @@ export interface ColumnOptions {
      * By default date is saved in UTC timezone.
      * Works only with "datetime" columns.
      */
-    readonly storeInLocalTimezone?: boolean;
-
-    /**
-     * Indicates if date object must be loaded and set to the Date object in local timezone.
-     * By default date is loaded in UTC timezone.
-     * Works only with "datetime" columns.
-     */
-    readonly loadInLocalTimezone?: boolean;
+    readonly localTimezone?: boolean;
 
 }

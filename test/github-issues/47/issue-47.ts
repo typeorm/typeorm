@@ -47,31 +47,23 @@ describe("github issues > #47 wrong sql syntax when loading lazy relation", () =
 
         const loadedCategory1 = await loadedPost[0].category;
         expect(loadedCategory1!).not.to.be.empty;
-        loadedCategory1!.should.be.eql({
-            id: 1,
-            name: "category #1"
-        });
+        loadedCategory1!.id.should.equal(1);
+        loadedCategory1!.name.should.equal("category #1");
 
         const loadedCategory2 = await loadedPost[1].category;
         expect(loadedCategory2!).not.to.be.empty;
-        loadedCategory2!.should.be.eql({
-            id: 2,
-            name: "category #2"
-        });
+        loadedCategory2!.id.should.equal(2);
+        loadedCategory2!.name.should.equal("category #2");
 
         const loadedPosts1 = await loadedCategory1.posts;
         expect(loadedPosts1!).not.to.be.empty;
-        loadedPosts1!.should.be.eql([{
-            id: 1,
-            title: "Hello Post #1"
-        }]);
+        loadedPosts1![0].id.should.equal(1);
+        loadedPosts1![0].title.should.equal("Hello Post #1");
 
         const loadedPosts2 = await loadedCategory2.posts;
         expect(loadedPosts2!).not.to.be.empty;
-        loadedPosts2!.should.be.eql([{
-            id: 2,
-            title: "Hello Post #2"
-        }]);
+        loadedPosts2![0].id.should.equal(2);
+        loadedPosts2![0].title.should.equal("Hello Post #2");
 
         // todo: need to test somehow how query is being generated, or how many raw data is returned
 

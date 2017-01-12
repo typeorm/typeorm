@@ -80,6 +80,11 @@ export interface QueryRunner {
     normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }): any;
 
     /**
+     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
+     */
+    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean;
+
+    /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
     loadTableSchema(tableName: string): Promise<TableSchema|undefined>;

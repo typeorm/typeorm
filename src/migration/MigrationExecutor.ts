@@ -207,10 +207,10 @@ export class MigrationExecutor {
      * Loads all migrations that were executed and saved into the database.
      */
     protected async loadExecutedMigrations(): Promise<Migration[]> {
-        const migrationsRaw = await new QueryBuilder(this.connection, this.queryRunnerProvider)
+        const migrationsRaw: ObjectLiteral[] = await new QueryBuilder(this.connection, this.queryRunnerProvider)
             .select()
             .fromTable("migrations", "migrations")
-            .getRawMany<ObjectLiteral>();
+            .getRawMany();
 
         return migrationsRaw.map(migrationRaw => {
             return new Migration(parseInt(migrationRaw["timestamp"]), migrationRaw["name"]);

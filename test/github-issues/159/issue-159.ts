@@ -29,6 +29,13 @@ describe("github issues > #159 Referencing ClassTableChild build table error", (
 
         await connection.entityManager.persist(department);
 
+        department.id.should.be.equal(1);
+        department.name.should.be.equal("Software");
+        department.manager.id.should.be.equal(1);
+        department.manager.firstName.should.be.equal("Hello");
+        department.manager.lastName.should.be.equal("World");
+        department.manager.salary.should.be.equal(1);
+
     })));
 
 });

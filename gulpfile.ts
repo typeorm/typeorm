@@ -327,7 +327,7 @@ export class Gulpfile {
 
         return gulp.src(["./build/compiled/test/**/*.js"])
             .pipe(mocha({
-                timeout: 10000
+                timeout: 15000
             }))
             .pipe(istanbul.writeReports());
     }

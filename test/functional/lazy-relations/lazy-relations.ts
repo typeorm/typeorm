@@ -148,4 +148,78 @@ describe("lazy-relations", () => {
         lazyLoadedProfile.country.should.be.equal("Japan");
     })));
 
+    it("should persist and hydrate successfully on a many-to-one relation without inverse side", () => Promise.all(connections.map(async connection => {
+
+        // create some fake posts and categories to make sure that there are several post ids in the db
+        const fakePosts: Post[] = [];
+        for (let i = 0; i < 30; i++) {
+            const fakePost = new Post();
+            fakePost.title = "post #" + i;
+            fakePost.text = "post #" + i;
+            fakePosts.push(fakePost);
+        }
+        await connection.entityManager.persist(fakePosts);
+
+        const fakeCategories: Category[] = [];
+        for (let i = 0; i < 8; i++) {
+            const fakeCategory = new Category();
+            fakeCategory.name = "category #" + i;
+            fakeCategories.push(fakeCategory);
+        }
+        await connection.entityManager.persist(fakeCategories);
+
+        const category = new Category();
+        category.name = "category of great post";
+
+        const post = new Post();
+        post.title = "post with great category";
+        post.text = "post with great category and great text";
+        post.category = Promise.resolve(category);
+
+        await connection.entityManager.persist(category);
+        await connection.entityManager.persist(post);
+
+        const loadedPost = await connection.entityManager.findOne(Post, { title: "post with great category" });
+        const loadedCategory = await loadedPost!.category;
+
+        loadedCategory.name.should.be.equal("category of great post");
+    })));
+
+    it("should persist and hydrate successfully on a many-to-one relation with inverse side", () => Promise.all(connections.map(async connection => {
+
+        // create some fake posts and categories to make sure that there are several post ids in the db
+        const fakePosts: Post[] = [];
+        for (let i = 0; i < 8; i++) {
+            const fakePost = new Post();
+            fakePost.title = "post #" + i;
+            fakePost.text = "post #" + i;
+            fakePosts.push(fakePost);
+        }
+        await connection.entityManager.persist(fakePosts);
+
+        const fakeCategories: Category[] = [];
+        for (let i = 0; i < 30; i++) {
+            const fakeCategory = new Category();
+            fakeCategory.name = "category #" + i;
+            fakeCategories.push(fakeCategory);
+        }
+        await connection.entityManager.persist(fakeCategories);
+
+        const category = new Category();
+        category.name = "category of great post";
+
+        const post = new Post();
+        post.title = "post with great category";
+        post.text = "post with great category and great text";
+        post.twoSideCategory = Promise.resolve(category);
+
+        await connection.entityManager.persist(category);
+        await connection.entityManager.persist(post);
+
+        const loadedPost = await connection.entityManager.findOne(Post, { title: "post with great category" });
+        const loadedCategory = await loadedPost!.twoSideCategory;
+
+        loadedCategory.name.should.be.equal("category of great post");
+    })));
+
 });

@@ -3,13 +3,12 @@ import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {View} from "./entity/View";
 import {Category} from "./entity/Category";
-import {createTestingConnections, closeTestingConnections, setupSingleTestingConnection, setupTestingConnections} from "../../utils/test-utils";
+import {createTestingConnections, closeTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Repository} from "../../../src/repository/Repository";
 import {TreeRepository} from "../../../src/repository/TreeRepository";
-import {getConnectionManager, createConnection} from "../../../src/index";
+import {getConnectionManager} from "../../../src/index";
 import {NoConnectionForRepositoryError} from "../../../src/connection/error/NoConnectionForRepositoryError";
-import {DefaultNamingStrategy} from "../../../src/naming-strategy/DefaultNamingStrategy";
 import {FirstCustomNamingStrategy} from "./naming-strategy/FirstCustomNamingStrategy";
 import {SecondCustomNamingStrategy} from "./naming-strategy/SecondCustomNamingStrategy";
 import {EntityManager} from "../../../src/entity-manager/EntityManager";
@@ -84,7 +83,7 @@ describe("Connection", () => {
     describe("after connection is established successfully", function() {
 
         let connections: Connection[];
-        beforeEach(() => createTestingConnections({ entities: [Post, Category], schemaCreate: true }).then(all => connections = all));
+        beforeEach(() => createTestingConnections({ entities: [Post, Category], schemaCreate: true, dropSchemaOnConnection: true }).then(all => connections = all));
         afterEach(() => closeTestingConnections(connections));
 
         it("connection.isConnected should be true", () => connections.forEach(connection => {
@@ -125,7 +124,7 @@ describe("Connection", () => {
     describe("working with repositories after connection is established successfully", function() {
 
         let connections: Connection[];
-        before(() => createTestingConnections({ entities: [Post, Category], schemaCreate: true }).then(all => connections = all));
+        before(() => createTestingConnections({ entities: [Post, Category], schemaCreate: true, dropSchemaOnConnection: true }).then(all => connections = all));
         after(() => closeTestingConnections(connections));
 
         it("should be able to get simple entity repository", () => connections.forEach(connection => {
@@ -167,8 +166,8 @@ describe("Connection", () => {
     describe("generate a schema when connection.syncSchema is called", function() {
 
         let connections: Connection[];
-        beforeEach(() => createTestingConnections({ entities: [Post], schemaCreate: true }).then(all => connections = all));
-        afterEach(() => closeTestingConnections(connections));
+        before(() => createTestingConnections({ entities: [Post], schemaCreate: true, dropSchemaOnConnection: true }).then(all => connections = all));
+        after(() => closeTestingConnections(connections));
 
         it("database should be empty after schema is synced with dropDatabase flag", () => Promise.all(connections.map(async connection => {
             const postRepository = connection.getRepository(Post);
@@ -188,7 +187,7 @@ describe("Connection", () => {
 
         // open a close connections
         let connections: Connection[] = [];
-        before(() => createTestingConnections({ entities: [Post], schemaCreate: true }).then(all => {
+        before(() => createTestingConnections({ entities: [Post], schemaCreate: true, dropSchemaOnConnection: true }).then(all => {
             connections = all;
             return Promise.all(connections.map(connection => connection.close()));
         }));
@@ -349,7 +348,7 @@ describe("Connection", () => {
     describe("skip schema generation when skipSchemaSync option is used", function() {
 
         let connections: Connection[];
-        beforeEach(() => createTestingConnections({ entities: [View] }).then(all => connections = all));
+        beforeEach(() => createTestingConnections({ entities: [View], dropSchemaOnConnection: true }).then(all => connections = all));
         afterEach(() => closeTestingConnections(connections));
         it("database should be empty after schema sync", () => Promise.all(connections.map(async connection => {
             await connection.syncSchema(true);
@@ -366,7 +365,8 @@ describe("Connection", () => {
             connections = await createTestingConnections({ 
                 enabledDrivers: ["postgres"],
                 entities: [Post],
-                schemaName: "test-schema"
+                schemaName: "test-schema",
+                dropSchemaOnConnection: true
             });
         });
         afterEach(() => closeTestingConnections(connections));        

@@ -7,7 +7,7 @@ import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 /**
  * Interface in which data is stored in ormconfig.json of the project.
  */
-interface TestingConnectionOptions extends ConnectionOptions {
+export interface TestingConnectionOptions extends ConnectionOptions {
 
     /**
      * Indicates if this connection should be skipped.
@@ -80,20 +80,18 @@ export function setupSingleTestingConnection(driverType: DriverType, options: Te
     return testingConnections[0];
 }
 
-/**
- * Creates a testing connections options based on the configuration in the ormconfig.json
- * and given options that can override some of its configuration for the test-specific use case.
- */
-export function setupTestingConnections(options?: TestingOptions) {
-    let ormConfigConnectionOptionsArray: TestingConnectionOptions[] = [];
 
+/**
+ * Loads test connection options from ormconfig.json file.
+ */
+export function getTypeOrmConfig(): TestingConnectionOptions[] {
     try {
 
         try {
-            ormConfigConnectionOptionsArray = require(__dirname + "/../../../../ormconfig.json");
+            return require(__dirname + "/../../../../ormconfig.json");
 
         } catch (err) {
-            ormConfigConnectionOptionsArray = require(__dirname + "/../../ormconfig.json");
+            return require(__dirname + "/../../ormconfig.json");
         }
 
     } catch (err) {
@@ -101,6 +99,14 @@ export function setupTestingConnections(options?: TestingOptions) {
             ` in the root of the project (near ormconfig.json.dist, you need to copy ormconfig.json.dist into ormconfig.json` +
             ` and change all database settings to match your local environment settings).`);
     }
+}
+
+/**
+ * Creates a testing connections options based on the configuration in the ormconfig.json
+ * and given options that can override some of its configuration for the test-specific use case.
+ */
+export function setupTestingConnections(options?: TestingOptions) {
+    const ormConfigConnectionOptionsArray = getTypeOrmConfig();
 
     if (!ormConfigConnectionOptionsArray.length)
         throw new Error(`No connections setup in ormconfig.json file. Please create configurations for each database type to run tests.`);

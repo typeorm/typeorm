@@ -204,7 +204,7 @@ export class TableSchema {
             return  columnSchema.name !== columnMetadata.name ||
                     columnSchema.type !== queryRunner.normalizeType(columnMetadata) ||
                     columnSchema.comment !== columnMetadata.comment ||
-                    (!columnSchema.isGenerated && columnSchema.default !== columnMetadata.default) || // we included check for generated here, because generated columns already can have default values
+                    (!columnSchema.isGenerated && !queryRunner.compareDefaultValues(columnMetadata.default, columnSchema.default)) || // we included check for generated here, because generated columns already can have default values
                     columnSchema.isNullable !== columnMetadata.isNullable ||
                     columnSchema.isUnique !== columnMetadata.isUnique ||
                     // columnSchema.isPrimary !== columnMetadata.isPrimary ||

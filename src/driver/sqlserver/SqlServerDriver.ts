@@ -217,13 +217,13 @@ export class SqlServerDriver implements Driver {
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DateUtils.dateToDateString(value, columnMetadata.storeInLocalTimezone);
+                return DateUtils.dateToDateString(value, columnMetadata.localTimezone);
 
             case ColumnTypes.TIME:
-                return DateUtils.dateToTimeString(value, columnMetadata.storeInLocalTimezone);
+                return DateUtils.dateToTimeString(value, columnMetadata.localTimezone);
 
             case ColumnTypes.DATETIME:
-                return DateUtils.dateToDateTimeString(value, columnMetadata.storeInLocalTimezone);
+                return DateUtils.dateToDateTimeString(value, columnMetadata.localTimezone);
 
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
@@ -244,13 +244,13 @@ export class SqlServerDriver implements Driver {
                 return value ? true : false;
 
             case ColumnTypes.DATE:
-                return DateUtils.dateToDateString(value, columnMetadata.loadInLocalTimezone);
+                return DateUtils.dateToDateString(value, columnMetadata.localTimezone);
 
             case ColumnTypes.TIME:
-                return DateUtils.dateToTimeString(value, columnMetadata.loadInLocalTimezone);
+                return DateUtils.dateToTimeString(value, columnMetadata.localTimezone);
 
             case ColumnTypes.DATETIME:
-                return DateUtils.toDateObject(value, columnMetadata.loadInLocalTimezone);
+                return DateUtils.toDateObject(value, columnMetadata.localTimezone);
 
             case ColumnTypes.JSON:
                 return JSON.parse(value);

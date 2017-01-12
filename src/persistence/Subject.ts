@@ -215,10 +215,7 @@ export class Subject {
      */
     set databaseEntity(databaseEntity: ObjectLiteral) {
         this._databaseEntity = databaseEntity;
-        if (this.hasEntity && databaseEntity) {
-            this.diffColumns = this.buildDiffColumns();
-            this.diffRelations = this.buildDiffRelationalColumns();
-        }
+        this.recompute();
     }
 
     /**
@@ -295,6 +292,16 @@ export class Subject {
 
     }
 
+    /**
+     * Performs entity re-computations.
+     */
+    recompute() {
+        if (this.hasEntity && this._databaseEntity) {
+            this.computeDiffColumns();
+            this.computeDiffRelationalColumns();
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -302,8 +309,8 @@ export class Subject {
     /**
      * Differentiate columns from the updated entity and entity stored in the database.
      */
-    protected buildDiffColumns(): ColumnMetadata[] {
-        return this.metadata.allColumns.filter(column => {
+    protected computeDiffColumns(): void {
+        this.diffColumns = this.metadata.allColumns.filter(column => {
 
             // prepare both entity and database values to make comparision
             let entityValue = column.getEntityValue(this.entity);
@@ -318,8 +325,8 @@ export class Subject {
                     entityValue = DateUtils.dateToTimeString(entityValue, true);
 
                 } else if (column.type === ColumnTypes.DATETIME) {
-                    entityValue = DateUtils.dateToDateTimeString(entityValue, column.loadInLocalTimezone);
-                    databaseValue = DateUtils.dateToDateTimeString(databaseValue, column.loadInLocalTimezone);
+                    entityValue = DateUtils.dateToDateTimeString(entityValue, column.localTimezone);
+                    databaseValue = DateUtils.dateToDateTimeString(databaseValue, column.localTimezone);
 
                 } else if (column.type === ColumnTypes.JSON) {
                     entityValue = JSON.stringify(entityValue);
@@ -364,8 +371,8 @@ export class Subject {
     /**
      * Difference columns of the owning one-to-one and many-to-one columns.
      */
-    protected buildDiffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */): RelationMetadata[] {
-        return this.metadata.allRelations.filter(relation => {
+    protected computeDiffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */): void {
+        this.diffRelations = this.metadata.allRelations.filter(relation => {
             if (!relation.isManyToOne && !(relation.isOneToOne && relation.isOwning))
                 return false;
 
