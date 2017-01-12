@@ -14,19 +14,19 @@ export class Post {
     @Column(ColumnTypes.TIME)
     timeOnly: Date|string|number;
 
-    @Column(ColumnTypes.TIME, { storeInLocalTimezone: true, loadInLocalTimezone: true })
+    @Column(ColumnTypes.TIME, { localTimezone: true })
     localTimeOnly: Date|string|number;
 
     @Column(ColumnTypes.DATE)
     dateOnly: Date|string|number;
 
-    @Column(ColumnTypes.DATE, { storeInLocalTimezone: true, loadInLocalTimezone: true })
+    @Column(ColumnTypes.DATE, { localTimezone: true })
     localDateOnly: Date|string|number;
 
     @Column(ColumnTypes.DATETIME)
     dateTime: Date|string|number;
 
-    @Column(ColumnTypes.DATETIME, { storeInLocalTimezone: true, loadInLocalTimezone: true })
+    @Column(ColumnTypes.DATETIME, { localTimezone: true })
     localDateTime: Date|string|number;
 
     @CreateDateColumn()
