@@ -12,6 +12,7 @@ import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
 import {DataTransformationUtils} from "../../util/DataTransformationUtils";
 import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
 import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {DateUtils} from "../../util/DateUtils";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -185,17 +186,13 @@ export class WebsqlDriver implements Driver {
                 return value === true ? 1 : 0;
 
             case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+                return DateUtils.dateToDateString(value, columnMetadata.localTimezone);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
+                return DateUtils.dateToTimeString(value, columnMetadata.localTimezone);
 
             case ColumnTypes.DATETIME:
-                if (columnMetadata.localTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
-                } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
-                }
+                return DateUtils.dateToDateTimeString(value, columnMetadata.localTimezone);
 
             case ColumnTypes.JSON:
                 return JSON.stringify(value);
@@ -215,11 +212,14 @@ export class WebsqlDriver implements Driver {
             case ColumnTypes.BOOLEAN:
                 return value ? true : false;
 
-            case ColumnTypes.DATETIME:
-                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+            case ColumnTypes.DATE:
+                return DateUtils.dateToDateString(value, columnMetadata.localTimezone);
 
             case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
+                return DateUtils.dateToTimeString(value, columnMetadata.localTimezone);
+
+            case ColumnTypes.DATETIME:
+                return DateUtils.toDateObject(value, columnMetadata.localTimezone);
 
             case ColumnTypes.JSON:
                 return JSON.parse(value);

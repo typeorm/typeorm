@@ -18,3 +18,15 @@ export function camelCase(str: string) {
 export function snakeCase(str: string) {
     return str.replace(/(?:^|\.?)([A-Z])/g, (x, y) => "_" + y.toLowerCase()).replace(/^_/, "");
 }
+
+/**
+ * Pads a string to a certain length with another string
+ */
+export function strPad(str: any, length: number, char: string = "0"): string {
+    if (typeof str !== "string") {
+        str = str + "";
+    }
+    while (str.length < length)
+        str = char + str;
+    return str;
+}

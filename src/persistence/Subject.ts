@@ -4,6 +4,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ColumnTypes} from "../metadata/types/ColumnTypes";
 import {DataTransformationUtils} from "../util/DataTransformationUtils";
+import {DateUtils} from "../util/DateUtils";
 
 /**
  * Holds information about insert operation into junction table.
@@ -318,19 +319,14 @@ export class Subject {
             // normalize special values to make proper comparision
             if (entityValue !== null && entityValue !== undefined) {
                 if (column.type === ColumnTypes.DATE) {
-                    entityValue = DataTransformationUtils.mixedDateToDateString(entityValue);
+                    entityValue = DateUtils.dateToDateString(entityValue, true);
 
                 } else if (column.type === ColumnTypes.TIME) {
-                    entityValue = DataTransformationUtils.mixedDateToTimeString(entityValue);
+                    entityValue = DateUtils.dateToTimeString(entityValue, true);
 
                 } else if (column.type === ColumnTypes.DATETIME) {
-                    // if (column.loadInLocalTimezone) {
-                    //     entityValue = DataTransformationUtils.mixedDateToDatetimeString(entityValue);
-                    //     databaseValue = DataTransformationUtils.mixedDateToDatetimeString(databaseValue);
-                    // } else {
-                        entityValue = DataTransformationUtils.mixedDateToUtcDatetimeString(entityValue);
-                        databaseValue = DataTransformationUtils.mixedDateToUtcDatetimeString(databaseValue);
-                    // }
+                    entityValue = DateUtils.dateToDateTimeString(entityValue, column.localTimezone);
+                    databaseValue = DateUtils.dateToDateTimeString(databaseValue, column.localTimezone);
 
                 } else if (column.type === ColumnTypes.JSON) {
                     entityValue = JSON.stringify(entityValue);
