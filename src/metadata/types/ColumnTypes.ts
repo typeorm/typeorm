@@ -2,7 +2,7 @@
  * All data types that column can be.
  */
 export type ColumnType = "string"|"text"|"number"|"integer"|"int"|"smallint"|"bigint"|"float"|"double"|
-                         "decimal"|"date"|"time"|"datetime"|"boolean"|"json"|"jsonb"|"simple_array";
+                         "decimal"|"date"|"time"|"datetime"|"boolean"|"json"|"jsonb"|"simple_array"|"uuid";
 
 /**
  * All data types that column can be.
@@ -96,6 +96,11 @@ export class ColumnTypes {
     static SIMPLE_ARRAY: ColumnType = "simple_array";
 
     /**
+     * UUID type. Serialized to a string in typescript or javascript
+     */
+    static UUID: ColumnType = "uuid";
+
+    /**
      * Checks if given type in a string format is supported by ORM.
      */
     static isTypeSupported(type: string) {
@@ -123,7 +128,8 @@ export class ColumnTypes {
             this.BOOLEAN,
             this.JSON,
             this.JSONB,
-            this.SIMPLE_ARRAY
+            this.SIMPLE_ARRAY,
+            this.UUID
         ];
     }
 

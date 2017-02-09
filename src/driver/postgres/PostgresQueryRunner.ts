@@ -811,6 +811,8 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
                 return "jsonb";
             case "simple_array":
                 return typeOptions.length ? "character varying(" + typeOptions.length + ")" : "text";
+            case "uuid":
+                return "uuid";
         }
 
         throw new DataTypeNotSupportedByDriverError(typeOptions.type, "Postgres");
