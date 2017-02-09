@@ -710,23 +710,37 @@ export class MysqlQueryRunner implements QueryRunner {
             case "decimal":
                 if (typeOptions.precision && typeOptions.scale) {
                     return `decimal(${typeOptions.precision},${typeOptions.scale})`;
-
                 } else if (typeOptions.scale) {
                     return `decimal(${typeOptions.scale})`;
-
                 } else if (typeOptions.precision) {
                     return `decimal(${typeOptions.precision})`;
-
                 } else {
                     return "decimal";
-
                 }
             case "date":
-                return "date";
+                if (!typeOptions.length) {
+                    return "date";
+                } else if (typeOptions.length <= 6) {
+                    return "date(" + typeOptions.length + ")";
+                } else {
+                    return "date(6)"; // max position
+                }
             case "time":
-                return "time";
+                if (!typeOptions.length) {
+                    return "time";
+                } else if (typeOptions.length <= 6) {
+                    return "time(" + typeOptions.length + ")";
+                } else {
+                    return "time(6)"; // max position
+                }
             case "datetime":
-                return "datetime";
+                if (!typeOptions.length) {
+                    return "datetime";
+                } else if (typeOptions.length <= 6) {
+                    return "datetime(" + typeOptions.length + ")";
+                } else {
+                    return "datetime(6)"; // max position
+                }
             case "json":
                 return "text";
             case "simple_array":

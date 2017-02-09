@@ -766,30 +766,44 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
             case "decimal":
                 if (typeOptions.precision && typeOptions.scale) {
                     return `decimal(${typeOptions.precision},${typeOptions.scale})`;
-
                 } else if (typeOptions.scale) {
                     return `decimal(${typeOptions.scale})`;
-
                 } else if (typeOptions.precision) {
                     return `decimal(${typeOptions.precision})`;
-
                 } else {
                     return "decimal";
-
                 }
             case "date":
                 return "date";
             case "time":
-                if (typeOptions.timezone) {
-                    return "time with time zone";
+                let t;
+                if (!typeOptions.length) {
+                    t = "time";
+                } else if (typeOptions.length <= 6) {
+                    t = "time(" + typeOptions.length + ")";
                 } else {
-                    return "time without time zone";
+                    t = "time(6)";
+                }
+
+                if (typeOptions.timezone) {
+                    return t + " with time zone";
+                } else {
+                    return t + " without time zone";
                 }
             case "datetime":
-                if (typeOptions.timezone) {
-                    return "timestamp with time zone";
+                let dt;
+                if (!typeOptions.length) {
+                    dt = "timestamp";
+                } else if (typeOptions.length <= 6) {
+                    dt = "timestamp(" + typeOptions.length + ")";
                 } else {
-                    return "timestamp without time zone";
+                    dt = "timestamp(6)";
+                }
+
+                if (typeOptions.timezone) {
+                    return dt + " with time zone";
+                } else {
+                    return dt + " without time zone";
                 }
             case "json":
                 return "json";

@@ -797,7 +797,13 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             case "time":
                 return "date";
             case "datetime":
-                return "timestamp(0)";
+                if (!typeOptions.length) {
+                    return "timestamp(0)";
+                } else if (typeOptions.length <= 9) {
+                    return "timestamp(" + typeOptions.length + ")";
+                } else {
+                    return "timestamp(9)"; // max supported
+                }
             case "json":
                 return "clob";
             case "simple_array":

@@ -63,7 +63,7 @@ export class DataTransformationUtils {
     }
 
     /**
-     * Converts given value into datetime string in a "YYYY-MM-DD HH-mm-ss" format.
+     * Converts given value into datetime string in a "YYYY-MM-DD HH-mm-ss.ffffff" format.
      */
     static mixedDateToDatetimeString(value: Date|any): string|any {
         if (typeof value === "string") {
@@ -75,14 +75,15 @@ export class DataTransformationUtils {
                 this.formatZerolessValue(value.getDate()) + " " +
                 this.formatZerolessValue(value.getHours()) + ":" +
                 this.formatZerolessValue(value.getMinutes()) + ":" +
-                this.formatZerolessValue(value.getSeconds());
+                this.formatZerolessValue(value.getSeconds()) + "." +
+                this.formatZerolessValue(value.getMilliseconds());
         }
 
         return value;
     }
 
     /**
-     * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss" format.
+     * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss.ffffff" format.
      */
     static mixedDateToUtcDatetimeString(value: Date|any): string|any {
         if (typeof value === "string") {
@@ -94,7 +95,8 @@ export class DataTransformationUtils {
                 this.formatZerolessValue(value.getUTCDate()) + " " +
                 this.formatZerolessValue(value.getUTCHours()) + ":" +
                 this.formatZerolessValue(value.getUTCMinutes()) + ":" +
-                this.formatZerolessValue(value.getUTCSeconds());
+                this.formatZerolessValue(value.getUTCSeconds()) + "." +
+                this.formatZerolessValue(value.getUTCMilliseconds());
         }
 
         return value;
