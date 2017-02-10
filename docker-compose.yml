@@ -27,7 +27,7 @@ services:
 
   # postgres
   postgres:
-    image: "postgres:9.5.3"
+    image: "postgres:9.6.1"
     container_name: "postgres"
     ports:
       - "5432:5432"

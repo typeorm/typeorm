@@ -16,6 +16,18 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     // -------------------------------------------------------------------------
 
     /**
+     * Gets complete trees for all roots in the table.
+     */
+    async findTrees(): Promise<Entity[]> {
+        const roots = await this.findRoots();
+        await Promise.all(roots.map(async root => {
+            await this.findDescendantsTree(root);
+        }));
+
+        return roots;
+    }
+
+    /**
      * Roots are entities that have no ancestors. Finds them all.
      */
     findRoots(): Promise<Entity[]> {

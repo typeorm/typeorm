@@ -151,5 +151,67 @@ describe("closure-table", () => {
 
     })));
 
+    it("should be able to retrieve the whole tree", () => Promise.all(connections.map(async connection => {
+        const categoryRepository = connection.getTreeRepository(Category);
+
+        const a1 = new Category();
+        a1.name = "a1";
+
+        const b1 = new Category();
+        b1.name = "b1";
+
+        const c1 = new Category();
+        c1.name = "c1";
+
+        const c11 = new Category();
+        c11.name = "c11";
+
+        const c12 = new Category();
+        c12.name = "c12";
+
+        c1.childCategories = [c11];
+
+        await categoryRepository.persist(a1);
+        await categoryRepository.persist(b1);
+        await categoryRepository.persist(c1);
+
+        c1.childCategories.push(c12);
+        await categoryRepository.persist(c1);
+
+        const tree = await categoryRepository.findTrees();
+        tree!.should.be.eql(
+            [
+                {
+                    id: 1,
+                    name: "a1",
+                    level: 1,
+                    childCategories: []
+                },
+                {
+                    id: 2,
+                    name: "b1",
+                    level: 1,
+                    childCategories: []
+                },
+                {
+                    id: 3,
+                    name: "c1",
+                    level: 1,
+                    childCategories: [{
+                        id: 4,
+                        name: "c11",
+                        level: 2,
+                        childCategories: []
+                    }, {
+                        id: 5,
+                        name: "c12",
+                        level: 2,
+                        childCategories: []
+                    }]
+                }
+            ]);
+
+    })));
+
 
 });
