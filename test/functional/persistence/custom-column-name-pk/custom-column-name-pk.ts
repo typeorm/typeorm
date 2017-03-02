@@ -35,12 +35,14 @@ describe("persistence > cascade operations with custom name", () => {
 
             // now check
             const posts = await connection.entityManager.find(Post, {
-                alias: "post",
-                leftJoinAndSelect: {
-                    category: "post.category"
+                join: {
+                    alias: "post",
+                    leftJoinAndSelect: {
+                        category: "post.category"
+                    }
                 },
-                orderBy: {
-                    "post.id": "ASC"
+                order: {
+                    id: "ASC"
                 }
             });
 

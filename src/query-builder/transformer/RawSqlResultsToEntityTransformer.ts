@@ -4,6 +4,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {Driver} from "../../driver/Driver";
 import {JoinMapping, RelationCountMeta} from "../QueryBuilder";
+import {EmbeddedMetadata} from "../../metadata/EmbeddedMetadata";
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -47,7 +48,7 @@ export class RawSqlResultsToEntityTransformer {
 
         const groupedResults = OrmUtils.groupBy(rawSqlResults, result => {
             if (!metadata) return;
-            return metadata.primaryColumnsWithParentIdColumns.map(column => result[alias.name + "_" + column.name]).join("_"); // todo: check it
+            return metadata.primaryColumnsWithParentIdColumns.map(column => result[alias.name + "_" + column.fullName]).join("_"); // todo: check it
         });
         // console.log("groupedResults: ", groupedResults);
         return groupedResults
@@ -73,7 +74,7 @@ export class RawSqlResultsToEntityTransformer {
             metadata.columns
                 .filter(column => !!column.relationMetadata)
                 .forEach(column => {
-                    const valueInObject = rawSqlResults[0][alias.name + "_" + column.name]; // we use zero index since its grouped data
+                    const valueInObject = rawSqlResults[0][alias.name + "_" + column.fullName]; // we use zero index since its grouped data
                     if (valueInObject !== undefined && valueInObject !== null && column.propertyName) {
                         const value = this.driver.prepareHydratedValue(valueInObject, column);
                         entity[column.propertyName] = value;
@@ -96,44 +97,65 @@ export class RawSqlResultsToEntityTransformer {
             });
 
         // get value from columns selections and put them into object
-        metadata.columns.forEach(column => {
-            const columnName = column.name;
+        metadata.columnsWithoutEmbeddeds.forEach(column => {
+            const columnName = column.fullName;
             const valueInObject = rawSqlResults[0][alias.name + "_" + columnName]; // we use zero index since its grouped data
             if (valueInObject !== undefined && valueInObject !== null && column.propertyName && !column.isVirtual && !column.isParentId && !column.isDiscriminator) {
                 const value = this.driver.prepareHydratedValue(valueInObject, column);
 
-                if (column.isInEmbedded) {
-                    if (!entity[column.embeddedProperty])
-                        entity[column.embeddedProperty] = column.embeddedMetadata.create();
-
-                    entity[column.embeddedProperty][column.propertyName] = value;
-                } else {
-                    entity[column.propertyName] = value;
-                }
+                // if (column.isInEmbedded) {
+                //     if (!entity[column.embeddedProperty])
+                //         entity[column.embeddedProperty] = column.embeddedMetadata.create();
+                //
+                //     entity[column.embeddedProperty][column.propertyName] = value;
+                // } else {
+                entity[column.propertyName] = value;
+                // }
                 hasData = true;
             }
         });
 
+        const addEmbeddedValuesRecursively = (entity: any, embeddeds: EmbeddedMetadata[]) => {
+            embeddeds.forEach(embedded => {
+                embedded.columns.forEach(column => {
+                    const value = rawSqlResults[0][alias.name + "_" + column.fullName];
+                    if (!value) return;
+
+                    if (!entity[embedded.propertyName])
+                        entity[embedded.propertyName] = embedded.create();
+
+                    entity[embedded.propertyName][column.propertyName] = value;
+                    hasData = true;
+                });
+                addEmbeddedValuesRecursively(entity[embedded.propertyName], embedded.embeddeds);
+            });
+        };
+
+        addEmbeddedValuesRecursively(entity, metadata.embeddeds);
+
         // add parent tables metadata
         // console.log(rawSqlResults);
+        // todo: duplication
         if (metadata.parentEntityMetadata) {
-            metadata.parentEntityMetadata.columns.forEach(column => {
-                const columnName = column.name;
+            metadata.parentEntityMetadata.columnsWithoutEmbeddeds.forEach(column => {
+                const columnName = column.fullName;
                 const valueInObject = rawSqlResults[0]["parentIdColumn_" + metadata.parentEntityMetadata.table.name + "_" + columnName]; // we use zero index since its grouped data
                 if (valueInObject !== undefined && valueInObject !== null && column.propertyName && !column.isVirtual && !column.isParentId && !column.isDiscriminator) {
                     const value = this.driver.prepareHydratedValue(valueInObject, column);
 
-                    if (column.isInEmbedded) {
-                        if (!entity[column.embeddedProperty])
-                            entity[column.embeddedProperty] = column.embeddedMetadata.create();
-
-                        entity[column.embeddedProperty][column.propertyName] = value;
-                    } else {
-                        entity[column.propertyName] = value;
-                    }
+                    // if (column.isInEmbedded) {
+                    //     if (!entity[column.embeddedProperty])
+                    //         entity[column.embeddedProperty] = column.embeddedMetadata.create();
+                    //
+                    //     entity[column.embeddedProperty][column.propertyName] = value;
+                    // } else {
+                    entity[column.propertyName] = value;
+                    // }
                     hasData = true;
                 }
             });
+
+            addEmbeddedValuesRecursively(entity, metadata.parentEntityMetadata.embeddeds);
         }
 
         // if relation is loaded then go into it recursively and transform its values too
@@ -171,7 +193,7 @@ export class RawSqlResultsToEntityTransformer {
                     if (relation.idField || joinMapping) {
                         const propertyName = joinMapping ? joinMapping.propertyName : relation.idField as string;
                         const junctionMetadata = relation.junctionEntityMetadata;
-                        const columnName = relation.isOwning ? junctionMetadata.columns[1].name : junctionMetadata.columns[0].name;
+                        const columnName = relation.isOwning ? junctionMetadata.columns[1].fullName : junctionMetadata.columns[0].fullName;
 
                         rawSqlResults.forEach(results => {
                             if (relationAlias) {

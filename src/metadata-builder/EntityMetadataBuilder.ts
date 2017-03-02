@@ -22,6 +22,7 @@ import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {Driver} from "../driver/Driver";
+import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 
 /**
  * Aggregates all metadata: table, column, relation into one collection grouped by tables for a given set of classes.
@@ -195,15 +196,20 @@ export class EntityMetadataBuilder {
             tables.forEach(tableArgs => {
 
                 // find embeddable tables for embeddeds registered in this table and create EmbeddedMetadatas from them
-                const embeddeds: EmbeddedMetadata[] = [];
-                mergedArgs.embeddeds.toArray().forEach(embedded => {
-                    const embeddableTable = embeddableMergedArgs.find(embeddedMergedArgs => embeddedMergedArgs.table.target === embedded.type());
-                    if (embeddableTable) {
-                        const table = new TableMetadata(embeddableTable.table);
-                        const columns = embeddableTable.columns.toArray().map(args => new ColumnMetadata(args));
-                        embeddeds.push(new EmbeddedMetadata(embedded.type(), embedded.propertyName, table, columns));
-                    }
-                });
+                const findEmbeddedsRecursively = (embeddedArgs: EmbeddedMetadataArgs[]) => {
+                    const embeddeds: EmbeddedMetadata[] = [];
+                    embeddedArgs.forEach(embedded => {
+                        const embeddableTable = embeddableMergedArgs.find(embeddedMergedArgs => embeddedMergedArgs.table.target === embedded.type());
+                        if (embeddableTable) {
+                            const table = new TableMetadata(embeddableTable.table);
+                            const columns = embeddableTable.columns.toArray().map(args => new ColumnMetadata(args));
+                            const subEmbeddeds = findEmbeddedsRecursively(embeddableTable.embeddeds.toArray());
+                            embeddeds.push(new EmbeddedMetadata(table, columns, subEmbeddeds, embedded));
+                        }
+                    });
+                    return embeddeds;
+                };
+                const embeddeds = findEmbeddedsRecursively(mergedArgs.embeddeds.toArray());
 
                 // create metadatas from args
                 const argsForTable = mergedArgs.inheritance && mergedArgs.inheritance.type === "single-table" ? mergedArgs.table : tableArgs;
@@ -340,7 +346,7 @@ export class EntityMetadataBuilder {
             .forEach(metadata => {
                 const indexForKey = new IndexMetadata({
                     target: metadata.target,
-                    columns: [metadata.discriminatorColumn.name],
+                    columns: [metadata.discriminatorColumn.fullName],
                     unique: false
                 });
                 indexForKey.entityMetadata = metadata;
@@ -395,7 +401,7 @@ export class EntityMetadataBuilder {
 
                 // find relational column and if it does not exist - add it
                 const inverseSideColumn = relation.joinColumn.referencedColumn;
-                let relationalColumn = metadata.columns.find(column => column.name === relation.name);
+                let relationalColumn = metadata.columns.find(column => column.fullName === relation.name);
                 if (!relationalColumn) {
                     relationalColumn = new ColumnMetadata({
                         target: metadata.target,

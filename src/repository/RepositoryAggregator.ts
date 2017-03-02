@@ -2,10 +2,10 @@ import {Repository} from "./Repository";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SpecificRepository} from "./SpecificRepository";
 import {Connection} from "../connection/Connection";
-import {getFromContainer} from "../index";
-import {RepositoryFactory} from "./RepositoryFactory";
 import {TreeRepository} from "./TreeRepository";
 import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
+import {RepositoryFactory} from "./RepositoryFactory";
+import {getFromContainer} from "../container";
 
 /**
  * Aggregates all repositories of the specific metadata.
@@ -41,16 +41,17 @@ export class RepositoryAggregator {
     // -------------------------------------------------------------------------
 
     constructor(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider) {
-        const repositoryFactory = getFromContainer(RepositoryFactory);
         this.metadata = metadata;
 
+        const factory = getFromContainer(RepositoryFactory);
+
         if (metadata.table.isClosure) {
-            this.repository = this.treeRepository = repositoryFactory.createTreeRepository(connection, metadata, queryRunnerProvider);
+            this.repository = this.treeRepository = factory.createTreeRepository(connection, metadata, queryRunnerProvider);
         } else {
-            this.repository = repositoryFactory.createRepository(connection, metadata, queryRunnerProvider);
+            this.repository = factory.createRepository(connection, metadata, queryRunnerProvider);
         }
 
-        this.specificRepository = repositoryFactory.createSpecificRepository(connection, metadata, this.repository, queryRunnerProvider);
+        this.specificRepository = factory.createSpecificRepository(connection, metadata, queryRunnerProvider);
     }
 
 }

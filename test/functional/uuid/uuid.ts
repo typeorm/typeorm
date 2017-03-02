@@ -7,10 +7,16 @@ import {createTestingConnections, closeTestingConnections} from "../../utils/tes
 describe("uuid type", () => {
 
     let connections: Connection[];
-    before(async () => connections = await createTestingConnections({
-        entities: [Record],
-        enabledDrivers: ["postgres"] // because only postgres supports jsonb type
-    }));
+    before(async () => {
+        connections = await createTestingConnections({
+            entities: [Record],
+            enabledDrivers: ["postgres"] // because only postgres supports uuid type
+        });
+
+        await Promise.all(connections.map(connection => {
+            return connection.entityManager.query(`CREATE extension IF NOT EXISTS "uuid-ossp"`);
+        }));
+    });
     // beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
@@ -19,7 +25,7 @@ describe("uuid type", () => {
         const queryRunner = await connection.driver.createQueryRunner();
         let schema = await queryRunner.loadTableSchema("record");
         expect(schema).not.to.be.empty;
-        expect(schema!.columns.find(columnSchema => columnSchema.name === "id" && columnSchema.type === "uuid")).to.be.not.empty;
+        expect(schema!.columns.find(columnSchema => columnSchema.name === "id" && columnSchema.type === "uuid" && columnSchema.isGenerated)).to.be.not.empty;
     })));
 
     it("should persist uuid correctly", () => Promise.all(connections.map(async connection => {

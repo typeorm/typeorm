@@ -104,6 +104,8 @@ export class EntityMetadataValidator {
             // todo: with message like: "Inverse side is specified only on one side of the relationship. Specify on other side too to prevent confusion".
             // todo: add validation if there two entities with the same target, and show error message with description of the problem (maybe file was renamed/moved but left in output directory)
             // todo: check if there are multiple columns on the same column applied.
+            // todo: check column type if is missing in relational databases (throw new Error(`Column type of ${type} cannot be determined.`);)
+            // todo: include driver-specific checks. for example in mongodb empty prefixes are not allowed
 
         });
 

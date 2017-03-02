@@ -41,7 +41,7 @@ export class IndexMetadata {
     /**
      * Columns combination to be used as index.
      */
-    private readonly _columns: ((object: any) => any[])|string[];
+    private readonly _columns: ((object?: any) => (any[]|{ [key: string]: number }))|string[];
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -84,17 +84,53 @@ export class IndexMetadata {
         } else {
             // if columns is a function that returns array of field names then execute it and get columns names from it
             const propertiesMap = this.entityMetadata.createPropertiesMap();
-            columnPropertyNames = this._columns(propertiesMap).map((i: any) => String(i));
+            const columnsFnResult = this._columns(propertiesMap);
+            const columnsNamesFromFnResult = columnsFnResult instanceof Array ? columnsFnResult : Object.keys(columnsFnResult);
+            columnPropertyNames = columnsNamesFromFnResult.map((i: any) => String(i));
         }
 
         const columns = this.entityMetadata.columns.filter(column => columnPropertyNames.indexOf(column.propertyName) !== -1);
         const missingColumnNames = columnPropertyNames.filter(columnPropertyName => !this.entityMetadata.columns.find(column => column.propertyName === columnPropertyName));
-        if (missingColumnNames.length > 0) {
+        if (missingColumnNames.length > 0) { // todo: better to extract all validation into single place is possible
             // console.log(this.entityMetadata.columns);
             throw new Error(`Index ${this._name ? "\"" + this._name + "\" " : ""}contains columns that are missing in the entity: ` + missingColumnNames.join(", "));
         }
 
-        return columns.map(column => column.name);
+        return columns.map(column => column.fullName);
+    }
+
+    /**
+     * Builds columns as a map of values where column name is key of object and value is a value provided by
+     * function or default value given to this function.
+     */
+    buildColumnsAsMap(defaultValue = 0): { [key: string]: number } {
+
+        const map: { [key: string]: number } = {};
+
+        // if columns already an array of string then simply create a map from it
+        if (this._columns instanceof Array) {
+            this._columns.forEach(columnName => map[columnName] = defaultValue);
+
+        } else {
+            // if columns is a function that returns array of field names then execute it and get columns names from it
+            const propertiesMap = this.entityMetadata.createPropertiesMap();
+            const columnsFnResult = this._columns(propertiesMap);
+            if (columnsFnResult instanceof Array) {
+                columnsFnResult.forEach(columnName => map[columnName] = defaultValue);
+            } else {
+                Object.keys(columnsFnResult).forEach(columnName => map[columnName] = columnsFnResult[columnName]);
+            }
+        }
+
+        // replace each propertyNames with column names
+        return Object.keys(map).reduce((updatedMap, key) => {
+            const column = this.entityMetadata.columns.find(column => column.propertyName === key);
+            if (!column)
+                throw new Error(`Index ${this._name ? "\"" + this._name + "\" " : ""}contains columns that are missing in the entity: ${key}`);
+
+            updatedMap[column.name] = map[key];
+            return updatedMap;
+        }, {} as { [key: string]: number });
     }
 
 }

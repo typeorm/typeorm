@@ -15,8 +15,11 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return customName ? customName : propertyName;
     }
 
-    embeddedColumnName(embeddedPropertyName: string, columnPropertyName: string, columnCustomName?: string): string {
-        return camelCase(embeddedPropertyName + "_" + (columnCustomName ? columnCustomName : columnPropertyName));
+    embeddedColumnName(prefixes: string[], columnPropertyName: string, columnCustomName?: string): string {
+        // todo: need snake case property name but only if its a property name and not a custom embedded prefix
+        prefixes = prefixes.filter(prefix => !!prefix);
+        const embeddedPropertyName = prefixes.length ? prefixes.join("_") + "_" : "";
+        return camelCase(embeddedPropertyName + (columnCustomName ? columnCustomName : columnPropertyName));
     }
 
     relationName(propertyName: string): string {

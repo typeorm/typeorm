@@ -65,7 +65,7 @@ describe("many-to-many", function() {
             newPost.details = [];
             newPost.details.push(details);
             
-            return postRepository.persist(newPost).then(post => savedPost = post);
+            return postRepository.persist(newPost).then(post => savedPost = post as Post);
         });
 
         it("should return the same post instance after its created", function () {
@@ -190,7 +190,7 @@ describe("many-to-many", function() {
             newPost.categories = [];
             newPost.categories.push(category);
 
-            return postRepository.persist(newPost).then(post => savedPost = post);
+            return postRepository.persist(newPost).then(post => savedPost = post as Post);
         });
 
         it("should return the same post instance after its created", function () {
@@ -271,13 +271,13 @@ describe("many-to-many", function() {
 
             return postRepository
                 .persist(newPost)
-                .then(post => savedPost = post);
+                .then(post => savedPost = post as Post);
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
             newPost.details[0].comment = "i am updated comment";
-            return postRepository.persist(newPost).then(updatedPost => {
-                updatedPost.details[0].comment.should.be.equal("i am updated comment");
+            return postRepository.persist(newPost).then((updatedPost: any) => { // temporary
+                updatedPost!.details![0]!.comment!.should.be.equal("i am updated comment");
                 return postRepository
                     .createQueryBuilder("post")
                     .leftJoinAndSelect("post.details", "details")
@@ -285,7 +285,7 @@ describe("many-to-many", function() {
                     .setParameter("id", updatedPost.id)
                     .getOne();
             }).then(updatedPostReloaded => {
-                updatedPostReloaded.details[0].comment.should.be.equal("this is post");
+                updatedPostReloaded!.details[0].comment.should.be.equal("this is post");
             });
         }); // todo: also check that updates throw exception in strict cascades mode
     });
@@ -310,7 +310,7 @@ describe("many-to-many", function() {
 
             return postRepository
                 .persist(newPost)
-                .then(post => savedPost = post);
+                .then(post => savedPost = post as Post);
         });
 
         it("should remove relation however should not remove details itself", function () {
@@ -323,7 +323,7 @@ describe("many-to-many", function() {
                     .setParameter("id", updatedPost.id)
                     .getOne();
             }).then(updatedPostReloaded => {
-                expect(updatedPostReloaded.details).to.be.empty;
+                expect(updatedPostReloaded!.details).to.be.empty;
 
                 return postDetailsRepository
                     .createQueryBuilder("details")
@@ -355,13 +355,13 @@ describe("many-to-many", function() {
             return postImageRepository
                 .persist(newImage)
                 .then(image => {
-                    savedImage = image;
+                    savedImage = image as PostImage;
                     newPost.images = [];
-                    newPost.images.push(image);
+                    newPost.images.push(image as PostImage);
                     return postRepository.persist(newPost);
 
                 }).then(post => {
-                    newPost = post;
+                    newPost = post as Post;
                     return postRepository
                         .createQueryBuilder("post")
                         .leftJoinAndSelect("post.images", "images")
@@ -370,8 +370,8 @@ describe("many-to-many", function() {
                         .getOne();
 
                 }).then(loadedPost => {
-                    loadedPost.images[0].url = "new-logo.png";
-                    return postRepository.persist(loadedPost);
+                    loadedPost!.images[0].url = "new-logo.png";
+                    return postRepository.persist(loadedPost!);
 
                 }).then(() => {
                     return postRepository
@@ -382,7 +382,7 @@ describe("many-to-many", function() {
                         .getOne();
                     
                 }).then(reloadedPost => {
-                    reloadedPost.images[0].url.should.be.equal("new-logo.png");
+                    reloadedPost!.images[0].url.should.be.equal("new-logo.png");
                 });
         });
 
@@ -405,13 +405,13 @@ describe("many-to-many", function() {
             return postMetadataRepository
                 .persist(newMetadata)
                 .then(metadata => {
-                    savedMetadata = metadata;
+                    savedMetadata = metadata as PostMetadata;
                     newPost.metadatas = [];
-                    newPost.metadatas.push(metadata);
+                    newPost.metadatas.push(metadata as PostMetadata);
                     return postRepository.persist(newPost);
 
                 }).then(post => {
-                    newPost = post;
+                    newPost = post as Post;
                     return postRepository
                         .createQueryBuilder("post")
                         .leftJoinAndSelect("post.metadatas", "metadatas")
@@ -420,8 +420,8 @@ describe("many-to-many", function() {
                         .getOne();
 
                 }).then(loadedPost => {
-                    loadedPost.metadatas = [];
-                    return postRepository.persist(loadedPost);
+                    loadedPost!.metadatas = [];
+                    return postRepository.persist(loadedPost as Post);
 
                 }).then(() => {
                     return postRepository
@@ -432,7 +432,7 @@ describe("many-to-many", function() {
                         .getOne();
 
                 }).then(reloadedPost => {
-                    expect(reloadedPost.metadatas).to.be.empty;
+                    expect(reloadedPost!.metadatas).to.be.empty;
                 });
         });
 
@@ -453,7 +453,7 @@ describe("many-to-many", function() {
             details.posts = [];
             details.posts.push(newPost);
 
-            return postDetailsRepository.persist(details).then(details => savedDetails = details);
+            return postDetailsRepository.persist(details).then(details => savedDetails = details as PostDetails);
         });
 
         it("should return the same post instance after its created", function () {
@@ -526,7 +526,7 @@ describe("many-to-many", function() {
             return postRepository
                 .persist(newPost) // first save
                 .then(savedPost => {
-                    savedPostId = savedPost.id;
+                    savedPostId = (savedPost as Post).id;
                     savedDetailsId = details.id;
                     return postRepository.remove(newPost);
                 }); // now remove newly saved

@@ -5,6 +5,7 @@ import {PrimaryKeySchema} from "./PrimaryKeySchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Table schema in the database represented in this class.
@@ -54,7 +55,7 @@ export class TableSchema {
     constructor(name: string, columns?: ColumnSchema[]|ObjectLiteral[], justCreated?: boolean) {
         this.name = name;
         if (columns) {
-            this.columns = columns.map(column => {
+            this.columns = (columns as any[]).map(column => { // as any[] is a temporary fix (some weird compiler error)
                 if (column instanceof ColumnSchema) {
                     return column;
                 } else {
@@ -197,11 +198,11 @@ export class TableSchema {
      */
     findChangedColumns(queryRunner: QueryRunner, columnMetadatas: ColumnMetadata[]): ColumnSchema[] {
         return this.columns.filter(columnSchema => {
-            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.name === columnSchema.name);
+            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.fullName === columnSchema.name);
             if (!columnMetadata)
                 return false; // we don't need new columns, we only need exist and changed
 
-            return  columnSchema.name !== columnMetadata.name ||
+            return  columnSchema.name !== columnMetadata.fullName ||
                     columnSchema.type !== queryRunner.normalizeType(columnMetadata) ||
                     columnSchema.comment !== columnMetadata.comment ||
                     (!columnSchema.isGenerated && !queryRunner.compareDefaultValues(columnMetadata.default, columnSchema.default)) || // we included check for generated here, because generated columns already can have default values
@@ -210,6 +211,24 @@ export class TableSchema {
                     // columnSchema.isPrimary !== columnMetadata.isPrimary ||
                     columnSchema.isGenerated !== columnMetadata.isGenerated;
         });
+    }
+
+    // -------------------------------------------------------------------------
+    // Static Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates table schema from a given entity metadata.
+     *
+     * todo: need deeper implementation
+     */
+    static create(entityMetadata: EntityMetadata, queryRunner: QueryRunner) {
+        const tableSchema = new TableSchema(entityMetadata.table.name);
+        entityMetadata.columns.forEach(column => {
+            tableSchema.columns.push(ColumnSchema.create(column, queryRunner.normalizeType(column)));
+        });
+
+        return tableSchema;
     }
 
 }

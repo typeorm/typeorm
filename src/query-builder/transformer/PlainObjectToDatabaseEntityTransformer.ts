@@ -1,12 +1,80 @@
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {QueryBuilder} from "../QueryBuilder";
+import {EntityManager} from "../../entity-manager/EntityManager";
+import {RelationMetadata} from "../../metadata/RelationMetadata";
 
 /**
  */
-interface LoadMap {
-    name: string;
-    child: LoadMap[];
+class LoadMapItem {
+
+    entity?: ObjectLiteral;
+    plainEntity: ObjectLiteral;
+    metadata: EntityMetadata;
+    parentLoadMapItem?: LoadMapItem;
+    relation?: RelationMetadata;
+
+    constructor(plainEntity: ObjectLiteral,
+                metadata: EntityMetadata,
+                parentLoadMapItem?: LoadMapItem,
+                relation?: RelationMetadata) {
+        this.plainEntity = plainEntity;
+        this.metadata = metadata;
+        this.parentLoadMapItem = parentLoadMapItem;
+        this.relation = relation;
+    }
+
+    get target(): Function|string {
+        return this.metadata.target;
+    }
+
+    get id(): any {
+        return this.metadata.getEntityIdMixedMap(this.plainEntity);
+    }
+
+    compareEntities(entity1: any, entity2: any) {
+        return this.metadata.compareEntities(entity1, entity2);
+    }
+
+}
+
+class LoadMap {
+
+    loadMapItems: LoadMapItem[] = [];
+
+    get mainLoadMapItem(): LoadMapItem|undefined {
+        return this.loadMapItems.find(item => !item.relation && !item.parentLoadMapItem);
+    }
+
+    addLoadMap(newLoadMap: LoadMapItem) {
+        const item = this.loadMapItems.find(item => item.target === newLoadMap.target && item.id === newLoadMap.id);
+        if (!item)
+            this.loadMapItems.push(newLoadMap);
+    }
+
+    fillEntities(target: Function|string, entities: any[]) {
+        entities.forEach(entity => {
+            const item = this.loadMapItems.find(loadMapItem => {
+                return loadMapItem.target === target && loadMapItem.compareEntities(entity, loadMapItem.plainEntity);
+            });
+            if (item)
+                item.entity = entity;
+        });
+    }
+
+    groupByTargetIds(): { target: Function|string, ids: any[] }[] {
+        const groups: { target: Function|string, ids: any[] }[] = [];
+        this.loadMapItems.forEach(loadMapItem => {
+            let group = groups.find(group => group.target === loadMapItem.target);
+            if (!group) {
+                group = { target: loadMapItem.target, ids: [] };
+                groups.push(group);
+            }
+
+            group.ids.push(loadMapItem.id);
+        });
+        return groups;
+    }
+
 }
 
 /**
@@ -15,79 +83,58 @@ interface LoadMap {
  */
 export class PlainObjectToDatabaseEntityTransformer {
 
-    // constructor(protected namingStrategy: NamingStrategyInterface) {
-    // }
+    constructor(private entityManager: EntityManager) {
+    }
 
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
-    async transform<Entity extends ObjectLiteral>(plainObject: ObjectLiteral, metadata: EntityMetadata, queryBuilder: QueryBuilder<Entity>): Promise<Entity|undefined> {
+    async transform(plainObject: ObjectLiteral, metadata: EntityMetadata): Promise<ObjectLiteral|undefined> {
 
         // if plain object does not have id then nothing to load really
         if (!metadata.checkIfObjectContainsAllPrimaryKeys(plainObject))
-            return Promise.reject<Entity>("Given object does not have a primary column, cannot transform it to database entity.");
+            return Promise.reject("Given object does not have a primary column, cannot transform it to database entity.");
 
-        const alias = queryBuilder.alias;
-        const needToLoad = this.buildLoadMap(plainObject, metadata, true);
+        // create a special load map that will hold all metadata that will be used to operate with entities easily
+        const loadMap = new LoadMap();
+        const fillLoadMap = (entity: ObjectLiteral, entityMetadata: EntityMetadata, parentLoadMapItem?: LoadMapItem, relation?: RelationMetadata) => {
+            const item = new LoadMapItem(entity, entityMetadata, parentLoadMapItem, relation);
+            loadMap.addLoadMap(item);
 
-        this.join(queryBuilder, needToLoad, alias);
+            entityMetadata
+                .extractRelationValuesFromEntity(entity, metadata.relations)
+                .filter(value => value !== null && value !== undefined)
+                .forEach(([relation, value, inverseEntityMetadata]) => fillLoadMap(value, inverseEntityMetadata, item, relation));
+        };
+        fillLoadMap(plainObject, metadata);
 
-        metadata.primaryColumns.forEach(primaryColumn => {
-            queryBuilder
-                .andWhere(alias + "." + primaryColumn.propertyName + "=:" + primaryColumn.propertyName)
-                .setParameter(primaryColumn.propertyName, plainObject[primaryColumn.propertyName]);
+        // load all entities and store them in the load map
+        await Promise.all(loadMap.groupByTargetIds().map(targetWithIds => { // todo: fix type hinting
+            return this.entityManager
+                .findByIds<ObjectLiteral>(targetWithIds.target as any, targetWithIds.ids)
+                .then(entities => loadMap.fillEntities(targetWithIds.target, entities));
+        }));
+
+        // go through each item in the load map and set their entity relationship using metadata stored in load map
+        loadMap.loadMapItems.forEach(loadMapItem => {
+            if (!loadMapItem.relation ||
+                !loadMapItem.entity ||
+                !loadMapItem.parentLoadMapItem ||
+                !loadMapItem.parentLoadMapItem.entity)
+                return;
+
+            if (loadMapItem.relation.isManyToMany || loadMapItem.relation.isOneToMany) {
+                if (!loadMapItem.parentLoadMapItem.entity[loadMapItem.relation.propertyName])
+                    loadMapItem.parentLoadMapItem.entity[loadMapItem.relation.propertyName] = [];
+                loadMapItem.parentLoadMapItem.entity[loadMapItem.relation.propertyName].push(loadMapItem.entity);
+
+            } else {
+                loadMapItem.parentLoadMapItem.entity[loadMapItem.relation.propertyName] = loadMapItem.entity;
+            }
         });
-        if (metadata.parentEntityMetadata) {
-            metadata.parentEntityMetadata.primaryColumns.forEach(primaryColumn => {
-                const parentIdColumn = metadata.parentIdColumns.find(parentIdColumn => {
-                    return parentIdColumn.propertyName === primaryColumn.propertyName;
-                });
-                if (!parentIdColumn)
-                    throw new Error(`Prent id column for the given primary column was not found.`);
 
-                queryBuilder
-                    .andWhere(alias + "." + parentIdColumn.propertyName + "=:" + primaryColumn.propertyName)
-                    .setParameter(primaryColumn.propertyName, plainObject[primaryColumn.propertyName]);
-            });
-        }
-
-        return queryBuilder.getOne();
-    }
-
-    // -------------------------------------------------------------------------
-    // Private Methods
-    // -------------------------------------------------------------------------
-
-    private join<Entity extends ObjectLiteral>(qb: QueryBuilder<Entity>, needToLoad: LoadMap[], parentAlias: string) {
-        needToLoad.forEach(i => {
-            const alias = parentAlias + "_" + i.name;
-            qb.leftJoinAndSelect(parentAlias + "." + i.name, alias);
-            if (i.child && i.child.length)
-                this.join(qb, i.child, alias);
-        });
-    }
-
-    private buildLoadMap(object: any, metadata: EntityMetadata, isFirstLevelDepth = false): LoadMap[] {
-        // todo: rething the way we are trying to load things using left joins cause there are situations when same
-        // todo: entities are loaded multiple times and become different objects (problem with duplicate entities in dbEntities)
-        return metadata.relations
-            .filter(relation => object.hasOwnProperty(relation.propertyName))
-            .filter(relation => {
-                // we only need to load empty relations for first-level depth objects, otherwise removal can break
-                // this is not reliable, refactor this part later
-                const value = (object[relation.propertyName] instanceof Promise && relation.isLazy) ? object["__" + relation.propertyName + "__"] : object[relation.propertyName];
-                return isFirstLevelDepth || !(value instanceof Array) || value.length > 0;
-            })
-            .map(relation => {
-                let value = (object[relation.propertyName] instanceof Promise && relation.isLazy) ? object["__" + relation.propertyName + "__"] : object[relation.propertyName];
-                // let value = object[relation.propertyName];
-                if (value instanceof Array)
-                    value = Object.assign({}, ...value);
-
-                const child = value ? this.buildLoadMap(value, relation.inverseEntityMetadata) : [];
-                return <LoadMap> { name: relation.propertyName, child: child };
-            });
+        return loadMap.mainLoadMapItem ? loadMap.mainLoadMapItem.entity : undefined;
     }
 
 }

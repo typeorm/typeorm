@@ -10,8 +10,10 @@ import {ObjectType} from "./common/ObjectType";
 import {Repository} from "./repository/Repository";
 import {EntityManager} from "./entity-manager/EntityManager";
 import {PlatformTools} from "./platform/PlatformTools";
+import {TreeRepository} from "./repository/TreeRepository";
+import {MongoRepository} from "./repository/MongoRepository";
 
-// -------------------------------------------------------------------------
+// -----------------------------------------------------------------   --------
 // Commonly Used exports
 // -------------------------------------------------------------------------
 
@@ -23,6 +25,7 @@ export * from "./decorator/columns/PrimaryGeneratedColumn";
 export * from "./decorator/columns/PrimaryColumn";
 export * from "./decorator/columns/UpdateDateColumn";
 export * from "./decorator/columns/VersionColumn";
+export * from "./decorator/columns/ObjectIdColumn";
 export * from "./decorator/listeners/AfterInsert";
 export * from "./decorator/listeners/AfterLoad";
 export * from "./decorator/listeners/AfterRemove";
@@ -78,13 +81,15 @@ export {Driver} from "./driver/Driver";
 export {QueryBuilder} from "./query-builder/QueryBuilder";
 export {QueryRunner} from "./query-runner/QueryRunner";
 export {EntityManager} from "./entity-manager/EntityManager";
+export {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 export {MigrationInterface} from "./migration/MigrationInterface";
 export {DefaultNamingStrategy} from "./naming-strategy/DefaultNamingStrategy";
 export {NamingStrategyInterface} from "./naming-strategy/NamingStrategyInterface";
 export {Repository} from "./repository/Repository";
 export {TreeRepository} from "./repository/TreeRepository";
 export {SpecificRepository} from "./repository/SpecificRepository";
-export {FindOptions} from "./find-options/FindOptions";
+export {MongoRepository} from "./repository/MongoRepository";
+export {FindManyOptions} from "./find-options/FindManyOptions";
 export {InsertEvent} from "./subscriber/event/InsertEvent";
 export {UpdateEvent} from "./subscriber/event/UpdateEvent";
 export {RemoveEvent} from "./subscriber/event/RemoveEvent";
@@ -93,14 +98,6 @@ export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface"
 // -------------------------------------------------------------------------
 // Deprecated
 // -------------------------------------------------------------------------
-
-export * from "./decorator/tables/Table";
-export * from "./decorator/tables/AbstractTable";
-export * from "./decorator/tables/ClassTableChild";
-export * from "./decorator/tables/ClosureTable";
-export * from "./decorator/tables/EmbeddableTable";
-export * from "./decorator/tables/SingleTableChild";
-export * from "./decorator/tables/Table";
 
 // -------------------------------------------------------------------------
 // Commonly used functionality
@@ -268,4 +265,38 @@ export function getRepository<Entity>(entityName: string, connectionName: string
  */
 export function getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, connectionName: string = "default"): Repository<Entity> {
     return getConnectionManager().get(connectionName).getRepository<Entity>(entityClassOrName as any);
+}
+
+/**
+ * Gets tree repository for the given entity class.
+ */
+export function getTreeRepository<Entity>(entityClass: ObjectType<Entity>, connectionName: string): TreeRepository<Entity>;
+
+/**
+ * Gets tree repository for the given entity name.
+ */
+export function getTreeRepository<Entity>(entityName: string, connectionName: string): TreeRepository<Entity>;
+
+/**
+ * Gets tree repository for the given entity class or name.
+ */
+export function getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, connectionName: string = "default"): TreeRepository<Entity> {
+    return getConnectionManager().get(connectionName).getTreeRepository<Entity>(entityClassOrName as any);
+}
+
+/**
+ * Gets mongodb repository for the given entity class.
+ */
+export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>, connectionName: string): MongoRepository<Entity>;
+
+/**
+ * Gets mongodb repository for the given entity name.
+ */
+export function getMongoRepository<Entity>(entityName: string, connectionName: string): MongoRepository<Entity>;
+
+/**
+ * Gets mongodb repository for the given entity class or name.
+ */
+export function getMongoRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, connectionName: string = "default"): MongoRepository<Entity> {
+    return getConnectionManager().get(connectionName).getMongoRepository<Entity>(entityClassOrName as any);
 }

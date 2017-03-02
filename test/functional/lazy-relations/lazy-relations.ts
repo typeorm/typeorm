@@ -179,7 +179,7 @@ describe("lazy-relations", () => {
         await connection.entityManager.persist(category);
         await connection.entityManager.persist(post);
 
-        const loadedPost = await connection.entityManager.findOne(Post, { title: "post with great category" });
+        const loadedPost = await connection.entityManager.findOne(Post, { where: { title: "post with great category" } });
         const loadedCategory = await loadedPost!.category;
 
         loadedCategory.name.should.be.equal("category of great post");
@@ -216,7 +216,7 @@ describe("lazy-relations", () => {
         await connection.entityManager.persist(category);
         await connection.entityManager.persist(post);
 
-        const loadedPost = await connection.entityManager.findOne(Post, { title: "post with great category" });
+        const loadedPost = await connection.entityManager.findOne(Post, { where: { title: "post with great category" } });
         const loadedCategory = await loadedPost!.twoSideCategory;
 
         loadedCategory.name.should.be.equal("category of great post");

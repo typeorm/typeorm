@@ -13,7 +13,6 @@ import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
 import {ColumnType} from "../../metadata/types/ColumnTypes";
 
 /**

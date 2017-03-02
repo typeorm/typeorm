@@ -41,12 +41,14 @@ describe.skip("relations > relation with primary key", () => {
 
             // now check
             const posts = await connection.entityManager.find(Post, {
-                alias: "post",
-                innerJoinAndSelect: {
-                    category: "post.category"
+                join: {
+                    alias: "post",
+                    innerJoinAndSelect: {
+                        category: "post.category"
+                    }
                 },
-                orderBy: {
-                    "post.category": "ASC"
+                order: {
+                    category: "ASC"
                 }
             });
 

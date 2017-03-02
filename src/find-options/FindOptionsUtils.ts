@@ -1,5 +1,7 @@
-import {FindOptions} from "./FindOptions";
+import {FindManyOptions} from "./FindManyOptions";
 import {QueryBuilder} from "../query-builder/QueryBuilder";
+import {FindOneOptions} from "./FindOneOptions";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Utilities to work with FindOptions.
@@ -7,112 +9,142 @@ import {QueryBuilder} from "../query-builder/QueryBuilder";
 export class FindOptionsUtils {
 
     /**
+     * Checks if given object is really instance of FindOneOptions interface.
+     */
+    static isFindOneOptions(object: any): object is FindOneOptions<any> {
+        const possibleOptions: FindOneOptions<any> = object;
+        return possibleOptions &&
+                (
+                    possibleOptions.where instanceof Object ||
+                    possibleOptions.join instanceof Object ||
+                    possibleOptions.order instanceof Object
+                );
+    }
+
+    /**
+     * Checks if given object is really instance of FindManyOptions interface.
+     */
+    static isFindManyOptions(object: any): object is FindManyOptions<any> {
+        const possibleOptions: FindManyOptions<any> = object;
+        return possibleOptions &&
+                (
+                    possibleOptions.where instanceof Object ||
+                    possibleOptions.join instanceof Object ||
+                    possibleOptions.order instanceof Object ||
+                    typeof possibleOptions.skip === "number" ||
+                    typeof possibleOptions.take === "number"
+                );
+    }
+
+    /**
      * Checks if given object is really instance of FindOptions interface.
      */
-    static isFindOptions(object: any): object is FindOptions {
-        const possibleOptions: FindOptions = object;
-        return  possibleOptions && !!possibleOptions.alias && typeof possibleOptions.alias === "string" && (
-                    !!possibleOptions.limit ||
-                    !!possibleOptions.offset ||
-                    !!possibleOptions.firstResult ||
-                    !!possibleOptions.maxResults ||
-                    !!possibleOptions.where ||
-                    !!possibleOptions.having ||
-                    !!possibleOptions.whereConditions ||
-                    !!possibleOptions.havingConditions ||
-                    !!possibleOptions.orderBy ||
-                    !!possibleOptions.groupBy ||
-                    !!possibleOptions.leftJoinAndSelect ||
-                    !!possibleOptions.innerJoinAndSelect ||
-                    !!possibleOptions.leftJoin ||
-                    !!possibleOptions.innerJoin ||
-                    !!possibleOptions.parameters ||
-                    !!possibleOptions.enabledOptions
-                );
+    static extractFindOneOptionsAlias(object: any): string|undefined {
+        if (this.isFindOneOptions(object) && object.join)
+            return object.join.alias;
+
+        return undefined;
+    }
+
+    /**
+     * Checks if given object is really instance of FindOptions interface.
+     */
+    static extractFindManyOptionsAlias(object: any): string|undefined {
+        if (this.isFindManyOptions(object) && object.join)
+            return object.join.alias;
+
+        return undefined;
+    }
+
+    /**
+     * Applies give find one options to the given query builder.
+     */
+    static applyFindOneOptionsOrConditionsToQueryBuilder<T>(qb: QueryBuilder<T>, options: FindOneOptions<T>|Partial<T>|undefined): QueryBuilder<T> {
+        if (this.isFindOneOptions(options))
+            return this.applyOptionsToQueryBuilder(qb, options);
+
+        if (options)
+            return this.applyConditions(qb, options);
+
+        return qb;
+    }
+
+    /**
+     * Applies give find many options to the given query builder.
+     */
+    static applyFindManyOptionsOrConditionsToQueryBuilder<T>(qb: QueryBuilder<T>, options: FindManyOptions<T>|Partial<T>|undefined): QueryBuilder<T> {
+        if (this.isFindManyOptions(options))
+            return this.applyOptionsToQueryBuilder(qb, options);
+
+        if (options)
+            return this.applyConditions(qb, options);
+
+        return qb;
     }
 
     /**
      * Applies give find options to the given query builder.
      */
-    static applyOptionsToQueryBuilder(qb: QueryBuilder<any>, options: FindOptions): QueryBuilder<any> {
+    static applyOptionsToQueryBuilder<T>(qb: QueryBuilder<T>, options: FindOneOptions<T>|FindManyOptions<T>|undefined): QueryBuilder<T> {
 
-        if (options.limit)
-            qb.setLimit(options.limit);
-        if (options.offset)
-            qb.setOffset(options.offset);
-        if (options.firstResult)
-            qb.setFirstResult(options.firstResult);
-        if (options.maxResults)
-            qb.setMaxResults(options.maxResults);
+        // if options are not set then simply return query builder. This is made for simplicity of usage.
+        if (!options || !this.isFindOneOptions(options))
+            return qb;
+
+        // apply all options from FindOptions
         if (options.where)
-            qb.where(options.where);
-        if (options.having)
-            qb.having(options.having);
+            this.applyConditions(qb, options.where);
 
-        if (options.whereConditions) {
-            Object.keys(options.whereConditions).forEach((key, index) => {
-                const name = key.indexOf(".") === -1 ? options.alias + "." + key : key;
-                if (options.whereConditions![key] === null) {
-                    qb.andWhere(name + " IS NULL");
+        if ((options as FindManyOptions<T>).skip)
+            qb.skip((options as FindManyOptions<T>).skip!);
 
-                } else {
-                    const parameterName = "whereConditions_" + index;
-                    qb.andWhere(name + "=:" + parameterName, { [parameterName]: options.whereConditions![key] });
-                }
+        if ((options as FindManyOptions<T>).take)
+            qb.take((options as FindManyOptions<T>).take!);
+
+        if (options.order)
+            Object.keys(options.order).forEach(key => {
+                qb.addOrderBy(qb.alias + "." + key, (options as FindOneOptions<T>).order![key as any]);
             });
+
+        if (options.join) {
+            if (options.join.leftJoin)
+                Object.keys(options.join.leftJoin).forEach(key => {
+                    qb.leftJoin(options.join!.leftJoin![key], key);
+                });
+
+            if (options.join.innerJoin)
+                Object.keys(options.join.innerJoin).forEach(key => {
+                    qb.innerJoin(options.join!.innerJoin![key], key);
+                });
+
+            if (options.join.leftJoinAndSelect)
+                Object.keys(options.join.leftJoinAndSelect).forEach(key => {
+                    qb.leftJoinAndSelect(options.join!.leftJoinAndSelect![key], key);
+                });
+
+            if (options.join.innerJoinAndSelect)
+                Object.keys(options.join.innerJoinAndSelect).forEach(key => {
+                    qb.innerJoinAndSelect(options.join!.innerJoinAndSelect![key], key);
+                });
         }
 
-        if (options.havingConditions) {
-            Object.keys(options.havingConditions).forEach((key, index) => {
-                const name = key.indexOf(".") === -1 ? options.alias + "." + key : key;
-                if (options.havingConditions![key] === null) {
-                    qb.andHaving(name + " IS NULL");
+        return qb;
+    }
 
-                } else {
-                    const parameterName = "havingConditions_" + index;
-                    qb.andHaving(name + "=:" + parameterName, { [parameterName]: options.whereConditions![key] });
-                }
-            });
-        }
+    /**
+     * Applies given simple conditions set to a given query builder.
+     */
+    static applyConditions<T>(qb: QueryBuilder<T>, conditions: ObjectLiteral): QueryBuilder<T> {
+        Object.keys(conditions).forEach((key, index) => {
+            if (conditions![key] === null) {
+                qb.andWhere(`${qb.alias}.${key} IS NULL`);
 
-        if (options.orderBy)
-            Object.keys(options.orderBy).forEach(columnName => qb.addOrderBy(columnName, options.orderBy![columnName]));
-
-        if (options.groupBy)
-            options.groupBy.forEach(groupBy => qb.addGroupBy(groupBy));
-
-        if (options.leftJoin)
-            Object.keys(options.leftJoin).forEach(key => {
-                if (options.leftJoin) // this check because of tsc bug
-                    qb.leftJoin(options.leftJoin[key], key);
-            });
-
-        if (options.innerJoin)
-            Object.keys(options.innerJoin).forEach(key => {
-                if (options.innerJoin) // this check because of tsc bug
-                    qb.innerJoin(options.innerJoin[key], key);
-            });
-
-        if (options.leftJoinAndSelect)
-            Object.keys(options.leftJoinAndSelect).forEach(key => {
-                if (options.leftJoinAndSelect) // this check because of tsc bug
-                    qb.leftJoinAndSelect(options.leftJoinAndSelect[key], key);
-            });
-
-        if (options.innerJoinAndSelect)
-            Object.keys(options.innerJoinAndSelect).forEach(key => {
-                if (options.innerJoinAndSelect) // this check because of tsc bug
-                    qb.innerJoinAndSelect(options.innerJoinAndSelect[key], key);
-            });
-
-        if (options.parameters)
-            qb.setParameters(options.parameters);
-
-        if (options.enabledOptions) {
-            options.enabledOptions.forEach(option => {
-                qb.enableOption(option);
-            });
-        }
+            } else {
+                const parameterName = "where_" + index;
+                qb.andWhere(`${qb.alias}.${key}=:${parameterName}`)
+                    .setParameter(parameterName, conditions![key]);
+            }
+        });
 
         return qb;
     }

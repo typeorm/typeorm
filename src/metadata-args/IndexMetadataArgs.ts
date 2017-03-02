@@ -16,7 +16,7 @@ export interface IndexMetadataArgs {
     /**
      * Columns combination to be used as index.
      */
-    readonly columns: ((object: any) => any[])|string[];
+    readonly columns: ((object?: any) => (any[]|{ [key: string]: number }))|string[];
 
     /**
      * Indicates if index must be unique or not.

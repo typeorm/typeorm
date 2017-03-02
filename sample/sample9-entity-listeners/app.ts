@@ -44,22 +44,22 @@ createConnection(options).then(connection => {
             return postRepository.findOneById(post.id);
         })
         .then(loadedPost => {
-            console.log("post is loaded. Its uid is " + loadedPost.uid);
+            console.log("post is loaded. Its uid is " + loadedPost!.uid);
             console.log("Lets now load it with relations.");
             console.log("---------------------------");
             return postRepository
                 .createQueryBuilder("p")
                 .leftJoinAndSelect("p.author", "author")
                 .leftJoinAndSelect("p.categories", "categories")
-                .where("p.id = :id", { id: loadedPost.id })
+                .where("p.id = :id", { id: loadedPost!.id })
                 .getOne();
         })
         .then(loadedPost => {
             console.log("load finished. Now lets update entity");
             console.log("---------------------------");
-            loadedPost.text = "post updated";
-            loadedPost.author.name = "Bakha";
-            return postRepository.persist(loadedPost);
+            loadedPost!.text = "post updated";
+            loadedPost!.author.name = "Bakha";
+            return postRepository.persist(loadedPost!);
         })
         .then(loadedPost => {
             console.log("update finished. Now lets remove entity");

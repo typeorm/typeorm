@@ -53,8 +53,10 @@ describe("persistence > many-to-many", function() {
 
         // load a post
         const loadedUser = await userRepository.findOneById(1, {
-            alias: "user",
-            leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
+            join: {
+                alias: "user",
+                leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
+            }
         });
 
         expect(loadedUser!).not.to.be.empty;

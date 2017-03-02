@@ -29,9 +29,11 @@ describe.skip("cascades > should insert by cascades from both sides (#57)", () =
 
         // now check
         const posts = await connection.entityManager.find(Post, {
-            alias: "post",
-            innerJoinAndSelect: {
-                details: "post.details"
+            join: {
+                alias: "post",
+                innerJoinAndSelect: {
+                    details: "post.details"
+                }
             }
         });
 

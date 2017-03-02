@@ -41,7 +41,7 @@ describe("other issues > using limit in conjunction with order by", () => {
         const loadedPosts1 = await connection.entityManager
             .createQueryBuilder(Post, "post")
             .innerJoinAndSelect("post.categories", "categories")
-            .setMaxResults(10)
+            .take(10)
             .orderBy("post.id", "DESC")
             .getMany();
 

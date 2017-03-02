@@ -136,7 +136,7 @@ export class ColumnTypes {
     /**
      * Tries to guess a column type from the given function.
      */
-    static determineTypeFromFunction(type: Function): ColumnType {
+    static determineTypeFromFunction(type: Function): ColumnType|undefined {
         if (type instanceof Date) {
             return ColumnTypes.DATETIME;
 
@@ -159,8 +159,8 @@ export class ColumnTypes {
             return ColumnTypes.JSON;
 
         }
-        throw new Error(`Column type of ${type} cannot be determined.`);
-        // return undefined;
+
+        return undefined;
     }
 
     static typeToString(type: Function): string {

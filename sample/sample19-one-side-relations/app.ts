@@ -56,11 +56,13 @@ createConnection(options).then(connection => {
 
             console.log("Now lets load posts with all their relations:");
             return postRepository.find({
-                alias: "post",
-                leftJoinAndSelect: {
-                    author: "post.author",
-                    metadata: "post.metadata",
-                    categories: "post.categories"
+                join: {
+                    alias: "post",
+                    leftJoinAndSelect: {
+                        author: "post.author",
+                        metadata: "post.metadata",
+                        categories: "post.categories"
+                    }
                 }
             });
 

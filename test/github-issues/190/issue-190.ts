@@ -26,7 +26,7 @@ describe("github issues > #190 too many SQL variables when using setMaxResults i
         const loadedPosts = await connection.entityManager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
-            .setMaxResults(1000)
+            .take(1000)
             .getMany();
 
         loadedPosts.length.should.be.equal(1000);

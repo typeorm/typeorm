@@ -32,7 +32,7 @@ export class SchemaSyncCommand {
             if (argv.connection) {
                 connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
                 await connection.syncSchema(false);
-                await connection.close();
+
             } else {
                 connections = await createConnections();
                 await Promise.all(connections.map(connection => connection.syncSchema(false)));

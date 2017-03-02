@@ -3,7 +3,7 @@ import {expect} from "chai";
 import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
-import {FindOptions} from "../../../../src/find-options/FindOptions";
+import {FindManyOptions} from "../../../../src/find-options/FindManyOptions";
 import {User} from "./model/User";
 
 describe("repository > find methods", () => {
@@ -27,6 +27,118 @@ describe("repository > find methods", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
+    describe("count", function () {
+        it("should return a full count when no criteria given", () => Promise.all(connections.map(async connection => {
+            const postRepository            = connection.getRepository(Post);
+            const promises: Promise<Post>[] = [];
+            for (let i = 0; i < 100; i++) {
+                const post        = new Post();
+                post.id           = i;
+                post.title        = "post #" + i;
+                post.categoryName = "other";
+                promises.push(postRepository.persist(post));
+            }
+
+            const savedPosts = await Promise.all(promises);
+            savedPosts.length.should.be.equal(100); // check if they all are saved
+
+            // check count method
+            const count = await postRepository.count({ order: { id: "ASC" }});
+            count.should.be.equal(100);
+        })));
+
+        it("should return a count of posts that match given criteria", () => Promise.all(connections.map(async connection => {
+            const postRepository            = connection.getRepository(Post);
+            const promises: Promise<Post>[] = [];
+            for (let i = 1; i <= 100; i++) {
+                const post        = new Post();
+                post.id           = i;
+                post.title        = "post #" + i;
+                post.categoryName = i % 2 === 0 ? "even" : "odd";
+                promises.push(postRepository.persist(post));
+            }
+
+            const savedPosts = await Promise.all(promises);
+            savedPosts.length.should.be.equal(100); // check if they all are saved
+
+            // check count method
+            const count = await postRepository.count({
+                where: { categoryName: "odd" },
+                order: { id: "ASC" }
+            });
+            count.should.be.equal(50);
+        })));
+
+        it("should return a count of posts that match given multiple criteria", () => Promise.all(connections.map(async connection => {
+            const postRepository            = connection.getRepository(Post);
+            const promises: Promise<Post>[] = [];
+            for (let i = 1; i <= 100; i++) {
+                const post        = new Post();
+                post.id           = i;
+                post.title        = "post #" + i;
+                post.categoryName = i % 2 === 0 ? "even" : "odd";
+                post.isNew        = i > 90;
+                promises.push(postRepository.persist(post));
+            }
+
+            const savedPosts = await Promise.all(promises);
+            savedPosts.length.should.be.equal(100); // check if they all are saved
+
+            // check count method
+            const count = await postRepository.count({
+                where: { categoryName: "odd", isNew: true },
+                order: { id: "ASC" }
+            });
+            count.should.be.equal(5);
+        })));
+
+        it("should return a count of posts that match given find options", () => Promise.all(connections.map(async connection => {
+            const postRepository            = connection.getRepository(Post);
+            const promises: Promise<Post>[] = [];
+            for (let i = 1; i <= 100; i++) {
+                const post        = new Post();
+                post.id           = i;
+                post.isNew        = i > 90;
+                post.title        = post.isNew ? "new post #" + i : "post #" + i;
+                post.categoryName = i % 2 === 0 ? "even" : "odd";
+                promises.push(postRepository.persist(post));
+            }
+
+            const savedPosts = await Promise.all(promises);
+            savedPosts.length.should.be.equal(100); // check if they all are saved
+
+            // check count method
+            const count = await postRepository.count();
+            count.should.be.equal(100);
+        })));
+
+        it("should return a count of posts that match both criteria and find options", () => Promise.all(connections.map(async connection => {
+            const postRepository            = connection.getRepository(Post);
+            const promises: Promise<Post>[] = [];
+            for (let i = 1; i <= 100; i++) {
+                const post        = new Post();
+                post.id           = i;
+                post.isNew        = i > 90;
+                post.title        = post.isNew ? "new post #" + i : "post #" + i;
+                post.categoryName = i % 2 === 0 ? "even" : "odd";
+                promises.push(postRepository.persist(post));
+            }
+
+            const savedPosts = await Promise.all(promises);
+            savedPosts.length.should.be.equal(100); // check if they all are saved
+
+            // check count method
+            const count = await postRepository.count({
+                where: { categoryName: "even", isNew: true },
+                skip: 1,
+                take:  2,
+                order: { id: "ASC" }
+            });
+            count.should.be.equal(5);
+        })));
+        
+    });
+
     describe("find and findAndCount", function() {
 
         it("should return everything when no criteria given", () => Promise.all(connections.map(async connection => {
@@ -44,7 +156,7 @@ describe("repository > find methods", () => {
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
-            const loadedPosts = await postRepository.find({ alias: "post", orderBy: { "post.id": "ASC" }});
+            const loadedPosts = await postRepository.find({ order: { id: "ASC" }});
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(100);
             loadedPosts[0].id.should.be.equal(0);
@@ -53,7 +165,7 @@ describe("repository > find methods", () => {
             loadedPosts[99].title.should.be.equal("post #99");
 
             // check findAndCount method
-            let [loadedPosts2, count] = await postRepository.findAndCount({ alias: "post", orderBy: { "post.id": "ASC" }});
+            let [loadedPosts2, count] = await postRepository.findAndCount({ order: { id: "ASC" }});
             count.should.be.equal(100);
             loadedPosts2.should.be.instanceOf(Array);
             loadedPosts2.length.should.be.equal(100);
@@ -78,7 +190,10 @@ describe("repository > find methods", () => {
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
-            const loadedPosts = await postRepository.find({ categoryName: "odd" }, { alias: "post", orderBy: { "post.id": "ASC" }});
+            const loadedPosts = await postRepository.find({
+                where: { categoryName: "odd" },
+                order: { id: "ASC" }
+            });
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(50);
             loadedPosts[0].id.should.be.equal(1);
@@ -87,7 +202,10 @@ describe("repository > find methods", () => {
             loadedPosts[49].title.should.be.equal("post #99");
 
             // check findAndCount method
-            let [loadedPosts2, count] = await postRepository.findAndCount({ categoryName: "odd" }, { alias: "post", orderBy: { "post.id": "ASC" }});
+            let [loadedPosts2, count] = await postRepository.findAndCount({
+                where: { categoryName: "odd" },
+                order: { id: "ASC" }
+            });
             count.should.be.equal(50);
             loadedPosts2.should.be.instanceOf(Array);
             loadedPosts2.length.should.be.equal(50);
@@ -113,7 +231,10 @@ describe("repository > find methods", () => {
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
-            const loadedPosts = await postRepository.find({ categoryName: "odd", isNew: true }, { alias: "post", orderBy: { "post.id": "ASC" }});
+            const loadedPosts = await postRepository.find({
+                where: { categoryName: "odd", isNew: true },
+                order: { id: "ASC" }
+            });
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(5);
             loadedPosts[0].id.should.be.equal(91);
@@ -122,7 +243,10 @@ describe("repository > find methods", () => {
             loadedPosts[4].title.should.be.equal("post #99");
 
             // check findAndCount method
-            let [loadedPosts2, count] = await postRepository.findAndCount({ categoryName: "odd", isNew: true }, { alias: "post", orderBy: { "post.id": "ASC" }});
+            let [loadedPosts2, count] = await postRepository.findAndCount({
+                where: { categoryName: "odd", isNew: true },
+                order: { id: "ASC" }
+            });
             count.should.be.equal(5);
             loadedPosts2.should.be.instanceOf(Array);
             loadedPosts2.length.should.be.equal(5);
@@ -147,20 +271,15 @@ describe("repository > find methods", () => {
             const savedPosts = await Promise.all(promises);
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
-            const findOptions: FindOptions = {
-                alias: "post",
-                where: "post.title LIKE :likeTitle AND post.categoryName = :categoryName",
-                parameters: {
+            // check find method
+            const loadedPosts = await postRepository.createQueryBuilder("post")
+                .where("post.title LIKE :likeTitle AND post.categoryName = :categoryName")
+                .setParameters({
                     likeTitle: "new post #%",
                     categoryName: "even"
-                },
-                orderBy: {
-                    "post.id": "ASC"
-                }
-            };
-
-            // check find method
-            const loadedPosts = await postRepository.find(findOptions);
+                })
+                .orderBy("post.id", "ASC")
+                .getMany();
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(5);
             loadedPosts[0].id.should.be.equal(92);
@@ -169,7 +288,14 @@ describe("repository > find methods", () => {
             loadedPosts[4].title.should.be.equal("new post #100");
 
             // check findAndCount method
-            let [loadedPosts2, count] = await postRepository.findAndCount(findOptions);
+            const [loadedPosts2, count] = await postRepository.createQueryBuilder("post")
+                .where("post.title LIKE :likeTitle AND post.categoryName = :categoryName")
+                .setParameters({
+                    likeTitle: "new post #%",
+                    categoryName: "even"
+                })
+                .orderBy("post.id", "ASC")
+                .getManyAndCount();
             count.should.be.equal(5);
             loadedPosts2.should.be.instanceOf(Array);
             loadedPosts2.length.should.be.equal(5);
@@ -194,17 +320,18 @@ describe("repository > find methods", () => {
             const savedPosts = await Promise.all(promises);
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
-            const findOptions: FindOptions = {
-                alias: "post",
-                firstResult: 1,
-                maxResults: 2,
-                orderBy: {
-                    "post.id": "ASC"
-                }
-            };
-
             // check find method
-            const loadedPosts = await postRepository.find({ categoryName: "even", isNew: true }, findOptions);
+            const loadedPosts = await postRepository.find({
+                where: {
+                    categoryName: "even",
+                    isNew: true
+                },
+                skip: 1,
+                take: 2,
+                order: {
+                    id: "ASC"
+                }
+            });
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(2);
             loadedPosts[0].id.should.be.equal(94);
@@ -213,7 +340,17 @@ describe("repository > find methods", () => {
             loadedPosts[1].title.should.be.equal("new post #96");
 
             // check findAndCount method
-            let [loadedPosts2, count] = await postRepository.findAndCount({ categoryName: "even", isNew: true }, findOptions);
+            let [loadedPosts2, count] = await postRepository.findAndCount({
+                where: {
+                    categoryName: "even",
+                    isNew: true
+                },
+                skip: 1,
+                take: 2,
+                order: {
+                    id: "ASC"
+                }
+            });
             count.should.be.equal(5);
             loadedPosts2.should.be.instanceOf(Array);
             loadedPosts2.length.should.be.equal(2);
@@ -242,7 +379,7 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            const loadedUser = (await userRepository.findOne({ alias: "user", orderBy: { "user.id": "ASC" }}))!;
+            const loadedUser = (await userRepository.findOne({ order: { id: "ASC" }}))!;
             loadedUser.id.should.be.equal(0);
             loadedUser.firstName.should.be.equal("name #0");
             loadedUser.secondName.should.be.equal("Doe");
@@ -263,7 +400,7 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            const loadedUser = (await userRepository.findOne({ firstName: "name #1" }, { alias: "user", orderBy: { "user.id": "ASC" }}))!;
+            const loadedUser = (await userRepository.findOne({ where: { firstName: "name #1" }, order: { id: "ASC" } }))!;
             loadedUser.id.should.be.equal(1);
             loadedUser.firstName.should.be.equal("name #1");
             loadedUser.secondName.should.be.equal("Doe");
@@ -284,18 +421,18 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            const findOptions: FindOptions = {
-                alias: "user",
-                where: "user.firstName=:firstName AND user.secondName =:secondName",
-                parameters: {
+            const loadedUser = await userRepository.findOne({
+                where: {
                     firstName: "name #99",
                     secondName: "Doe"
+                },
+                order: {
+                    id: "ASC"
                 }
-            };
-            const loadedUser = (await userRepository.findOne(findOptions, { alias: "user", orderBy: { "user.id": "ASC" }}))!;
-            loadedUser.id.should.be.equal(99);
-            loadedUser.firstName.should.be.equal("name #99");
-            loadedUser.secondName.should.be.equal("Doe");
+            });
+            loadedUser!.id.should.be.equal(99);
+            loadedUser!.firstName.should.be.equal("name #99");
+            loadedUser!.secondName.should.be.equal("Doe");
         })));
 
     });
@@ -345,29 +482,23 @@ describe("repository > find methods", () => {
                 promises.push(userRepository.persist(user));
             }
 
-            const findOptions1: FindOptions = {
-                alias: "user",
-                whereConditions: {
-                    secondName: "Doe"
-                }
-            };
-
-            const findOptions2: FindOptions = {
-                alias: "user",
-                whereConditions: {
-                    secondName: "Dorian"
-                }
-            };
-
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            let loadedUser = await userRepository.findOneById(0, findOptions1);
+            let loadedUser = await userRepository.findOneById(0, {
+                where: {
+                    secondName: "Doe"
+                }
+            });
             loadedUser!.id.should.be.equal(0);
             loadedUser!.firstName.should.be.equal("name #0");
             loadedUser!.secondName.should.be.equal("Doe");
 
-            loadedUser = await userRepository.findOneById(1, findOptions2);
+            loadedUser = await userRepository.findOneById(1, {
+                where: {
+                    secondName: "Dorian"
+                }
+            });
             expect(loadedUser).to.be.undefined;
         })));
 

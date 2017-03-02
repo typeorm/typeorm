@@ -46,8 +46,8 @@ createConnection(options).then(connection => {
         .createQueryBuilder("p")
         .leftJoinAndSelect("p.author", "author")
         .leftJoinAndSelect("p.categories", "categories")
-        .setFirstResult(5)
-        .setMaxResults(10);
+        .skip(5)
+        .take(10);
 
     Promise.all(posts.map(post => postRepository.persist(post)))
         .then(savedPosts => {

@@ -51,7 +51,6 @@ describe("jsonb type", () => {
         record.data = [1, "2", { a: 3 }];
         let persistedRecord = await recordRepo.persist(record);
         let foundRecord = await recordRepo.findOneById(persistedRecord.id);
-        console.log("array", foundRecord!.data);        
         expect(foundRecord).to.be.not.undefined;
         expect(foundRecord!.data).to.deep.include.members([1, "2", { a: 3 }]);
     })));

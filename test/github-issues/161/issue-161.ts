@@ -30,9 +30,11 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
         await connection.entityManager.persist(ticket);
 
         const loadedTicketWithRequest = await connection.entityManager.findOneById(Ticket, 1, {
-            alias: "ticket",
-            innerJoinAndSelect: {
-                "request": "ticket.request"
+            join: {
+                alias: "ticket",
+                innerJoinAndSelect: {
+                    "request": "ticket.request"
+                }
             }
         });
 
@@ -49,9 +51,11 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
         });
 
         const loadedRequestWithTicket = await connection.entityManager.findOneById(Request, 1, {
-            alias: "request",
-            innerJoinAndSelect: {
-                "ticket": "request.ticket"
+            join: {
+                alias: "request",
+                innerJoinAndSelect: {
+                    "ticket": "request.ticket"
+                }
             }
         });
 
@@ -91,8 +95,10 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
         await connection.entityManager.persist(request);
 
         const loadedRequest = await connection.entityManager.findOneById(Request, 2, {
-            alias: "request",
-            innerJoinAndSelect: { ticket: "request.ticket" }
+            join: {
+                alias: "request",
+                innerJoinAndSelect: { ticket: "request.ticket" }
+            }
         });
 
         expect(loadedRequest).not.to.be.undefined;

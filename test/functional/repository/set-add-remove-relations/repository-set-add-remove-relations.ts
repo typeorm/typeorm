@@ -49,8 +49,14 @@ describe("repository > set/add/remove relation methods", function() {
         await postSpecificRepository.addToRelation(post => post.manyCategories, newPost.id, [newCategory1.id, newCategory2.id]);
 
         // load a post, want to have categories count
-        const loadedPost = await postRepository
-            .findOneById(1, { alias: "post", leftJoinAndSelect: { manyCategories: "post.manyCategories" } });
+        const loadedPost = await postRepository.findOneById(1, {
+            join: {
+                alias: "post",
+                leftJoinAndSelect: {
+                    manyCategories: "post.manyCategories"
+                }
+            }
+        });
 
         expect(loadedPost!).not.to.be.empty;
         expect(loadedPost!.manyCategories).not.to.be.empty;
@@ -85,8 +91,10 @@ describe("repository > set/add/remove relation methods", function() {
 
         // load a post, want to have categories count
         const loadedCategory = await categoryRepository.findOneById(1, {
-            alias: "category",
-            leftJoinAndSelect: { manyPosts: "category.manyPosts" } }
+            join: {
+                alias: "category",
+                leftJoinAndSelect: { manyPosts: "category.manyPosts" } }
+            }
         );
 
         expect(loadedCategory).not.to.be.empty;
@@ -127,8 +135,10 @@ describe("repository > set/add/remove relation methods", function() {
 
         // load a post, want to have categories count
         const loadedPost = await postRepository.findOneById(1, {
-            alias: "post",
-            leftJoinAndSelect: { manyCategories: "post.manyCategories" }
+            join: {
+                alias: "post",
+                leftJoinAndSelect: { manyCategories: "post.manyCategories" }
+            }
         });
 
         expect(loadedPost!).not.to.be.empty;
@@ -170,8 +180,10 @@ describe("repository > set/add/remove relation methods", function() {
 
         // load a post, want to have categories count
         const loadedCategory = await categoryRepository.findOneById(1, {
-            alias: "category",
-            leftJoinAndSelect: { manyPosts: "category.manyPosts" }
+            join: {
+                alias: "category",
+                leftJoinAndSelect: { manyPosts: "category.manyPosts" }
+            }
         });
 
         expect(loadedCategory!).not.to.be.empty;
@@ -202,8 +214,10 @@ describe("repository > set/add/remove relation methods", function() {
 
         // load a post, want to have categories count
         const loadedPost = await postRepository.findOneById(1, {
-            alias: "post",
-            leftJoinAndSelect: { categories: "post.categories" }
+            join: {
+                alias: "post",
+                leftJoinAndSelect: { categories: "post.categories" }
+            }
         });
 
         expect(loadedPost!).not.to.be.empty;
@@ -233,8 +247,10 @@ describe("repository > set/add/remove relation methods", function() {
 
         // load a post, want to have categories count
         const loadedCategory = await categoryRepository.findOneById(1, {
-            alias: "category",
-            leftJoinAndSelect: { post: "category.post" }
+            join: {
+                alias: "category",
+                leftJoinAndSelect: { post: "category.post" }
+            }
         });
 
         expect(loadedCategory!).not.to.be.empty;
@@ -263,8 +279,10 @@ describe("repository > set/add/remove relation methods", function() {
 
         // load a post, want to have categories count
         const loadedPost = await postRepository.findOneById(1, {
-            alias: "post",
-            leftJoinAndSelect: { categories: "post.categories" }
+            join: {
+                alias: "post",
+                leftJoinAndSelect: { categories: "post.categories" }
+            }
         });
 
         expect(loadedPost!).not.to.be.empty;
@@ -293,8 +311,10 @@ describe("repository > set/add/remove relation methods", function() {
 
         // load a post, want to have categories count
         const loadedCategory = await categoryRepository.findOneById(1, {
-            alias: "category",
-            leftJoinAndSelect: { post: "category.post" }
+            join: {
+                alias: "category",
+                leftJoinAndSelect: { post: "category.post" }
+            }
         });
 
         expect(loadedCategory).not.to.be.empty;

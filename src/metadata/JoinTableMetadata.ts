@@ -95,8 +95,8 @@ export class JoinTableMetadata {
             this.relation.inverseEntityMetadata.table.nameWithoutPrefix,
             this.relation.propertyName,
             this.relation.hasInverseSide ? this.relation.inverseRelation.propertyName : "",
-            this.referencedColumn.name,
-            this.inverseReferencedColumn.name
+            this.referencedColumn.fullName,
+            this.inverseReferencedColumn.fullName
         );
     }
 
@@ -112,9 +112,9 @@ export class JoinTableMetadata {
             .namingStrategy
             .joinTableColumnName(
                 this.relation.entityMetadata.table.nameWithoutPrefix,
-                this.referencedColumn.name,
+                this.referencedColumn.fullName,
                 this.relation.inverseEntityMetadata.table.nameWithoutPrefix,
-                this.inverseReferencedColumn.name
+                this.inverseReferencedColumn.fullName
             );
     }
 
@@ -130,9 +130,9 @@ export class JoinTableMetadata {
             .namingStrategy
             .joinTableInverseColumnName(
                 this.relation.inverseEntityMetadata.table.nameWithoutPrefix,
-                this.inverseReferencedColumn.name,
+                this.inverseReferencedColumn.fullName,
                 this.relation.entityMetadata.table.nameWithoutPrefix,
-                this.referencedColumn.name
+                this.referencedColumn.fullName
             );
     }
 
@@ -141,7 +141,7 @@ export class JoinTableMetadata {
      */
     get referencedColumn(): ColumnMetadata {
         if (this._joinColumnReferencedColumnName) {
-            const referencedColumn = this.relation.entityMetadata.columns.find(column => column.name === this._joinColumnReferencedColumnName);
+            const referencedColumn = this.relation.entityMetadata.columns.find(column => column.fullName === this._joinColumnReferencedColumnName);
             if (!referencedColumn)
                 throw new Error(`Referenced column ${this._joinColumnReferencedColumnName} was not found in entity ${this.name}`);
 
@@ -159,7 +159,7 @@ export class JoinTableMetadata {
      */
     get inverseReferencedColumn(): ColumnMetadata {
         if (this._inverseJoinColumnReferencedColumnName) {
-            const referencedColumn = this.relation.inverseEntityMetadata.columns.find(column => column.name === this._inverseJoinColumnReferencedColumnName);
+            const referencedColumn = this.relation.inverseEntityMetadata.columns.find(column => column.fullName === this._inverseJoinColumnReferencedColumnName);
             if (!referencedColumn)
                 throw new Error(`Referenced column ${this._inverseJoinColumnReferencedColumnName} was not found in entity ${this.name}`);
 

@@ -86,7 +86,7 @@ createConnection(options).then(connection => {
         .then(entity => {
             console.log("Entity is loaded: ", entity);
             console.log("Now remove it");
-            return postRepository.remove(entity);
+            return postRepository.remove(entity!);
         })
         .then(entity => {
             console.log("Entity has been removed");
