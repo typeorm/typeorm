@@ -1,5 +1,5 @@
 import { Entity } from "../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
+import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
 
 /**
  * For testing Postgres jsonb
@@ -7,7 +7,7 @@ import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
 @Entity()
 export class Record {
 
-    @PrimaryColumn("uuid")
+    @PrimaryGeneratedColumn({type: "uuid"})
     id: string;
 
 }

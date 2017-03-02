@@ -60,7 +60,7 @@ export class EverythingEntity {
     jsonColumn: any;
 
     @Column()
-    alsoJson: Object;
+    alsoJson: any;
 
     @Column("simple_array")
     simpleArrayColumn: string[];

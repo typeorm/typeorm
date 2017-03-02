@@ -47,7 +47,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
         const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
 
-        const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.firstPrimaryColumn.name)}=${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}`;
+        const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.firstPrimaryColumn.fullName)}=${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}`;
         return this.createQueryBuilder(alias)
             .innerJoin(this.metadata.closureJunctionTable.table.name, closureTableAlias, joinCondition)
             .where(`${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
@@ -95,7 +95,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
         const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
 
-        const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.firstPrimaryColumn.name)}=${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}`;
+        const joinCondition = `${escapeAlias(alias)}.${escapeColumn(this.metadata.firstPrimaryColumn.fullName)}=${escapeAlias(closureTableAlias)}.${escapeColumn("ancestor")}`;
         return this.createQueryBuilder(alias)
             .innerJoin(this.metadata.closureJunctionTable.table.name, closureTableAlias, joinCondition)
             .where(`${escapeAlias(closureTableAlias)}.${escapeColumn("descendant")}=${this.metadata.getEntityIdMap(entity)![this.metadata.firstPrimaryColumn.propertyName]}`);
@@ -148,7 +148,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     protected createRelationMaps(alias: string, rawResults: any[]): { id: any, parentId: any }[] {
         return rawResults.map(rawResult => {
             return {
-                id: rawResult[alias + "_" + this.metadata.firstPrimaryColumn.name],
+                id: rawResult[alias + "_" + this.metadata.firstPrimaryColumn.fullName],
                 parentId: rawResult[alias + "_" + this.metadata.treeParentRelation.name]
             };
         });

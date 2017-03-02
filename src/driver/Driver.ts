@@ -20,6 +20,21 @@ export interface Driver {
     readonly options: DriverOptions;
 
     /**
+     * Creates repository instance of this driver.
+     */
+    // createRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): Repository<any>;
+
+    /**
+     * Creates tree repository instance of this driver.
+     */
+    // createTreeRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): TreeRepository<any>;
+
+    /**
+     * Creates specific repository instance of this driver.
+     */
+    // createSpecificRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): SpecificRepository<any>;
+
+    /**
      * Performs connection to the database.
      * Based on pooling options, it can either create connection immediately,
      * either create a pool and create connection when needed.

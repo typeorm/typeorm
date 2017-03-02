@@ -78,9 +78,9 @@ createConnection(options).then(connection => {
             console.log("Lets update a post - return old author back:");
 
             console.log("updating with: ", author);
-            loadedPost.title = "Umed's post";
-            loadedPost.author = author;
-            return postRepository.persist(loadedPost);
+            loadedPost!.title = "Umed's post";
+            loadedPost!.author = author;
+            return postRepository.persist(loadedPost!);
         })
         .then(updatedPost => {
             return postRepository

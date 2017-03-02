@@ -1,8 +1,42 @@
-# 0.0.9 (next)
+# 0.1.0 (future)
+
+### BREAKING CHANGES
+
+* `Table`, `AbstractTable`, `ClassTableChild`, `ClosureTable`, `EmbeddableTable`, `SingleTableChild` deprecated decorators has been removed.
+Use `Entity`, `AbstractEntity`, `ClassEntityChild`, `ClosureEntity`, `EmbeddableEntity`, `SingleEntityChild` decorators instead.
+* `EntityManager#create` and `Repository#create`, `EntityManager#preload` and `Repository#preload` methods now accept 
+`DeepPartial<Entity>` instead of `Object`
+* `EntityManager#merge` and `Repository#merge` methods now accepts `DeepPartial<Entity>` instead of `Object`,
+also their first argument is an entity where to need to merge all given entity-like objects.
+* changed `find*` repository methods. Now conditions are `Partial<Entity>` which makes them type-safe. 
+However now `FindOptions` cannot be used with `findOne`, `findAndCount`, `find` and other methods. 
+Use `fineOneByOptions`, `findAndCountByOptions`, `findByOptions` methods instead
+* removed `FindOptions` interface and introduced two new interfaces: `FindOneOptions` and `FindManyOptions` - 
+each for its own `findOne*` or `find*` methods
+* dropped out some of options of `FindOptions`. Use `QueryBuilder` instead.
+* deprecated method `addParameters` has been removed from `QueryBuilder`. Use `setParameters` instead.
+* table decorators were not removed in the release, however they will be removed in next. Be sure to replace them before that.
+* `QueryBuilder#setFirstResult` has been renamed to `QueryBuilder#skip`
+* `QueryBuilder#setMaxResults` has been renamed to `QueryBuilder#take`
+
+### NEW FEATURES
+
+* added `mongodb` support
+* entity now can be saved partially within `update` method
+* added prefix support to embeddeds
+
+### BUG FIXES
+
+* fixes [#285](https://github.com/typeorm/typeorm/issues/285) - issue when cli commands rise `CannotCloseNotConnectedError`
+* fixes [#309](https://github.com/typeorm/typeorm/issues/309) - issue when `andHaving` didn't work without calling `having` on `QueryBuilder`
+
+# 0.0.9 (latest)
 
 * fixed bug with indices from columns are not being inherited from parent entity [#242](https://github.com/typeorm/typeorm/issues/242)
+* added support of UUID primary columns (thanks [@seanski](https://github.com/seanski))
+* added `count` method to repository and entity manager (thanks [@aequasi](https://github.com/aequasi))
 
-# 0.0.8 (latest)
+# 0.0.8
 
 * added complete babel support
 * added `clear` method to `Repository` and `EntityManager` which allows to truncate entity table

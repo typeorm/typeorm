@@ -65,5 +65,17 @@
       "port": 1521,
       "sid": "xe.oracle.docker"
     }
+  },
+  {
+    "skip": false,
+    "disabledIfNotEnabledImplicitly": true,
+    "name": "mongodb",
+    "driver": {
+      "type": "mongodb",
+      "database": "test"
+    },
+    "logging": {
+      "logQueries": false
+    }
   }
 ]

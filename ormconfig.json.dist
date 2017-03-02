@@ -83,5 +83,17 @@
     "logging": {
       "logQueries": false
     }
+  },
+  {
+    "skip": false,
+    "disabledIfNotEnabledImplicitly": true,
+    "name": "mongodb",
+    "driver": {
+      "type": "mongodb",
+      "database": "test"
+    },
+    "logging": {
+      "logQueries": false
+    }
   }
 ]

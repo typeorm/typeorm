@@ -29,9 +29,11 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
         await connection.entityManager.persist(post);
 
         const loadedPost = await connection.entityManager.findOneById(Post, 1, {
-            alias: "post",
-            innerJoinAndSelect: {
-                category: "post.category"
+            join: {
+                alias: "post",
+                innerJoinAndSelect: {
+                    category: "post.category"
+                }
             }
         });
 
@@ -63,17 +65,17 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
         await connection.entityManager.persist(post);
 
         const loadedPostWithCategory = await connection.entityManager.findOneById(Post, 1, {
-            alias: "post",
-            innerJoinAndSelect: {
-                category: "post.category"
+            join: {
+                alias: "post",
+                innerJoinAndSelect: {
+                    category: "post.category"
+                }
             }
         });
 
         expect(loadedPostWithCategory).to.be.empty;
 
-        const loadedPostWithoutCategory = await connection.entityManager.findOneById(Post, 1, {
-            alias: "post"
-        });
+        const loadedPostWithoutCategory = await connection.entityManager.findOneById(Post, 1);
 
         expect(loadedPostWithoutCategory).not.to.be.empty;
         loadedPostWithoutCategory!.should.be.eql({
@@ -102,16 +104,16 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
         await connection.entityManager.persist(post);
 
         const loadedPostWithMetadata = await connection.entityManager.findOneById(Post, 1, {
-            alias: "post",
-            innerJoinAndSelect: {
-                metadata: "post.metadata"
+            join: {
+                alias: "post",
+                innerJoinAndSelect: {
+                    metadata: "post.metadata"
+                }
             }
         });
         expect(loadedPostWithMetadata).to.be.empty;
 
-        const loadedPostWithoutMetadata = await connection.entityManager.findOneById(Post, 1, {
-            alias: "post"
-        });
+        const loadedPostWithoutMetadata = await connection.entityManager.findOneById(Post, 1);
         expect(loadedPostWithoutMetadata).not.to.be.empty;
         loadedPostWithoutMetadata!.should.be.eql({
             id: 1,

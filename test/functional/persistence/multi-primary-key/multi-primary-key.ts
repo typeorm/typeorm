@@ -41,12 +41,14 @@ describe("persistence > multi primary keys", () => {
 
             // now check
             const posts = await connection.entityManager.find(Post, {
-                alias: "post",
-                innerJoinAndSelect: {
-                    category: "post.category"
+                join: {
+                    alias: "post",
+                    innerJoinAndSelect: {
+                        category: "post.category"
+                    }
                 },
-                orderBy: {
-                    "post.firstId": "ASC"
+                order: {
+                    firstId: "ASC"
                 }
             });
 

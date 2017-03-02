@@ -44,10 +44,10 @@ createConnection(options).then(connection => {
         .then(loadedQuestion => {
             console.log("question has been loaded: ", loadedQuestion);
 
-            loadedQuestion.counters.commentCount = 7;
-            loadedQuestion.counters.metadata = "#updated question";
+            loadedQuestion!.counters.commentCount = 7;
+            loadedQuestion!.counters.metadata = "#updated question";
             
-            return questionRepository.persist(loadedQuestion);
+            return questionRepository.persist(loadedQuestion!);
         })
         .then(updatedQuestion => {
             console.log("question has been updated: ", updatedQuestion);

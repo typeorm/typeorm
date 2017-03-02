@@ -25,7 +25,7 @@ export function PrimaryColumn(type?: ColumnType, options?: ColumnOptions): Funct
  * Primary columns also creates a PRIMARY KEY for this column in a db.
  */
 export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?: ColumnOptions): Function {
-    let type: ColumnType;
+    let type: ColumnType|undefined;
     if (typeof typeOrOptions === "string") {
         type = <ColumnType> typeOrOptions;
     } else {

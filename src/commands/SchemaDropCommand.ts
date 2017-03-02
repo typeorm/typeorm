@@ -32,7 +32,7 @@ export class SchemaDropCommand {
             if (argv.connection) {
                 connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
                 await connection.dropDatabase();
-                await connection.close();
+
             } else {
                 connections = await createConnections();
                 await Promise.all(connections.map(connection => connection.dropDatabase()));

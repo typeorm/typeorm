@@ -59,7 +59,7 @@ export class SqlServerDriver implements Driver {
     protected databaseConnectionPool: DatabaseConnection[] = [];
 
     /**
-     * Logger used go log queries and errors.
+     * Logger used to log queries and errors.
      */
     protected logger: Logger;
 

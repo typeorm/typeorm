@@ -262,6 +262,7 @@ export class MetadataArgsStorage {
     protected mergeWithEmbeddable(allTableMetadatas: TargetMetadataArgsCollection<TableMetadataArgs>,
                                   tableMetadata: TableMetadataArgs) {
         const columns = this.columns.filterByTarget(tableMetadata.target);
+        const embeddeds = this.embeddeds.filterByTarget(tableMetadata.target);
 
         allTableMetadatas
             .filter(metadata => {
@@ -277,11 +278,17 @@ export class MetadataArgsStorage {
                     .filterRepeatedMetadatas(columns.toArray())
                     .toArray()
                     .forEach(metadata => columns.add(metadata));
+
+                metadatasFromParents.embeddeds
+                    .filterRepeatedMetadatas(embeddeds.toArray())
+                    .toArray()
+                    .forEach(metadata => embeddeds.add(metadata));
             });
 
         return {
             table: tableMetadata,
-            columns: columns
+            columns: columns,
+            embeddeds: embeddeds
         };
     }
 

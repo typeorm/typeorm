@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/typeorm/typeorm.svg?branch=master)](https://travis-ci.org/typeorm/typeorm)
 [![npm version](https://badge.fury.io/js/typeorm.svg)](https://badge.fury.io/js/typeorm)
+[![Dependency Status](https://david-dm.org/typeorm/typeorm.svg)](https://david-dm.org/typeorm/typeorm)
+[![devDependency Status](https://david-dm.org/typeorm/typeorm/dev-status.svg)](https://david-dm.org/typeorm/typeorm#info=devDependencies)
 [![Join the chat at https://gitter.im/typeorm/typeorm](https://badges.gitter.im/typeorm/typeorm.svg)](https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 > Please support a project by simply putting a github star. 
@@ -11,7 +13,7 @@ Share this library with friends on twitter and everywhere else you can.
 If you notice bug or have something not working please report an issue, we'll try to fix it as soon as possible.
 More documentation and features expected to be soon. Feel free to contribute.
 
-> 0.0.8 is released! Most notable changes are in the [changelog](./CHANGELOG.md).
+> 0.0.9 is released! Most notable changes are in the [changelog](./CHANGELOG.md).
 
 TypeORM is an [Object Relational Mapper](1) (ORM) for node.js written in
 TypeScript that can be used with TypeScript or JavaScript (ES5, ES6, ES7).

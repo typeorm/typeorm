@@ -164,7 +164,7 @@ export class SchemaBuilder {
 
             // find columns that exist in the database but does not exist in the metadata
             const droppedColumnSchemas = tableSchema.columns.filter(columnSchema => {
-                return !metadata.columns.find(columnMetadata => columnMetadata.name === columnSchema.name);
+                return !metadata.columns.find(columnMetadata => columnMetadata.fullName === columnSchema.name);
             });
             if (droppedColumnSchemas.length === 0)
                 return;
@@ -202,12 +202,12 @@ export class SchemaBuilder {
 
             // find which columns are new
             const newColumnMetadatas = metadata.columns.filter(columnMetadata => {
-                return !tableSchema.columns.find(columnSchema => columnSchema.name === columnMetadata.name);
+                return !tableSchema.columns.find(columnSchema => columnSchema.name === columnMetadata.fullName);
             });
             if (newColumnMetadatas.length === 0)
                 return;
 
-            this.logger.logSchemaBuild(`new columns added: ` + newColumnMetadatas.map(column => column.name).join(", "));
+            this.logger.logSchemaBuild(`new columns added: ` + newColumnMetadatas.map(column => column.fullName).join(", "));
 
             // create columns in the database
             const newColumnSchemas = this.metadataColumnsToColumnSchemas(newColumnMetadatas);
@@ -234,7 +234,7 @@ export class SchemaBuilder {
 
             // drop all foreign keys that point to this column
             const dropRelatedForeignKeysPromises = updatedColumnSchemas
-                .filter(changedColumnSchema => !!metadata.columns.find(columnMetadata => columnMetadata.name === changedColumnSchema.name))
+                .filter(changedColumnSchema => !!metadata.columns.find(columnMetadata => columnMetadata.fullName === changedColumnSchema.name))
                 .map(changedColumnSchema => this.dropColumnReferencedForeignKeys(metadata.table.name, changedColumnSchema.name));
 
             // wait until all related foreign keys are dropped
@@ -242,7 +242,7 @@ export class SchemaBuilder {
 
             // drop all indices that point to this column
             const dropRelatedIndicesPromises = updatedColumnSchemas
-                .filter(changedColumnSchema => !!metadata.columns.find(columnMetadata => columnMetadata.name === changedColumnSchema.name))
+                .filter(changedColumnSchema => !!metadata.columns.find(columnMetadata => columnMetadata.fullName === changedColumnSchema.name))
                 .map(changedColumnSchema => this.dropColumnReferencedIndices(metadata.table.name, changedColumnSchema.name));
 
             // wait until all related indices are dropped
@@ -250,7 +250,7 @@ export class SchemaBuilder {
 
             // generate a map of new/old columns
             const newAndOldColumnSchemas = updatedColumnSchemas.map(changedColumnSchema => {
-                const columnMetadata = metadata.columns.find(column => column.name === changedColumnSchema.name);
+                const columnMetadata = metadata.columns.find(column => column.fullName === changedColumnSchema.name);
                 const newColumnSchema = ColumnSchema.create(columnMetadata!, this.queryRunner.normalizeType(columnMetadata!));
                 tableSchema.replaceColumn(changedColumnSchema, newColumnSchema);
 
@@ -276,12 +276,12 @@ export class SchemaBuilder {
             const metadataPrimaryColumns = metadata.columns.filter(column => column.isPrimary && !column.isGenerated);
             const addedKeys = metadataPrimaryColumns
                 .filter(primaryKey => {
-                    return !tableSchema.primaryKeysWithoutGenerated.find(dbPrimaryKey => dbPrimaryKey.columnName === primaryKey.name);
+                    return !tableSchema.primaryKeysWithoutGenerated.find(dbPrimaryKey => dbPrimaryKey.columnName === primaryKey.fullName);
                 })
-                .map(primaryKey => new PrimaryKeySchema("", primaryKey.name));
+                .map(primaryKey => new PrimaryKeySchema("", primaryKey.fullName));
 
             const droppedKeys = tableSchema.primaryKeysWithoutGenerated.filter(primaryKeySchema => {
-                return !metadataPrimaryColumns.find(primaryKeyMetadata => primaryKeyMetadata.name === primaryKeySchema.columnName);
+                return !metadataPrimaryColumns.find(primaryKeyMetadata => primaryKeyMetadata.fullName === primaryKeySchema.columnName);
             });
 
             if (addedKeys.length === 0 && droppedKeys.length === 0)
@@ -407,11 +407,11 @@ export class SchemaBuilder {
         const dependForeignKeys = allForeignKeyMetadatas.filter(foreignKey => {
             if (foreignKey.tableName === tableName) {
                 return !!foreignKey.columns.find(fkColumn => {
-                    return fkColumn.name === columnName;
+                    return fkColumn.fullName === columnName;
                 });
             } else if (foreignKey.referencedTableName === tableName) {
                 return !!foreignKey.referencedColumns.find(fkColumn => {
-                    return fkColumn.name === columnName;
+                    return fkColumn.fullName === columnName;
                 });
             }
             return false;

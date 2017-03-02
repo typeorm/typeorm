@@ -7,6 +7,8 @@ import {ColumnType} from "../metadata/types/ColumnTypes";
 
 /**
  * Runs queries on a single database connection.
+ *
+ * todo: extract schema build operations out of query runner.
  */
 export interface QueryRunner {
 
@@ -231,6 +233,8 @@ export interface QueryRunner {
 
     /**
      * Truncates table.
+     *
+     * todo: probably this should be renamed to drop or clear?
      */
     truncate(tableName: string): Promise<void>;
 

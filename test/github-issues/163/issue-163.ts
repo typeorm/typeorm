@@ -37,7 +37,7 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
 
         const loadedPlatform = await connection
             .getRepository(Platform)
-            .findOne({ slug: "windows" });
+            .findOne({ where: { slug: "windows" } });
 
         let jediAcademy = new Game();
         jediAcademy.name = "SW Jedi Academy";

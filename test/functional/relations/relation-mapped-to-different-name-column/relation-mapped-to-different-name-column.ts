@@ -30,9 +30,11 @@ describe.skip("relations > relation mapped to relation with different name (#56)
 
         // now check
         const posts = await connection.entityManager.find(Post, {
-            alias: "post",
-            innerJoinAndSelect: {
-                details: "post.details"
+            join: {
+                alias: "post",
+                innerJoinAndSelect: {
+                    details: "post.details"
+                }
             }
         });
 

@@ -65,7 +65,7 @@ describe("one-to-one", function() {
             newPost.text = "Hello post";
             newPost.title = "this is post title";
             newPost.details = details;
-            return postRepository.persist(newPost).then(post => savedPost = post);
+            return postRepository.persist(newPost).then(post => savedPost = post as Post);
         });
 
         it("should return the same post instance after its created", function () {
@@ -185,7 +185,7 @@ describe("one-to-one", function() {
             newPost.title = "this is post title";
             newPost.category = category;
 
-            return postRepository.persist(newPost).then(post => savedPost = post);
+            return postRepository.persist(newPost).then(post => savedPost = post as Post);
         });
 
         it("should return the same post instance after its created", function () {
@@ -264,13 +264,13 @@ describe("one-to-one", function() {
 
             return postRepository
                 .persist(newPost)
-                .then(post => savedPost = post);
+                .then(post => savedPost = post as Post);
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
             newPost.details.comment = "i am updated comment";
             return postRepository.persist(newPost).then(updatedPost => {
-                updatedPost.details.comment.should.be.equal("i am updated comment");
+                updatedPost.details!.comment!.should.be.equal("i am updated comment");
                 return postRepository
                     .createQueryBuilder("post")
                     .leftJoinAndSelect("post.details", "details")
@@ -278,7 +278,7 @@ describe("one-to-one", function() {
                     .setParameter("id", updatedPost.id)
                     .getOne();
             }).then(updatedPostReloaded => {
-                updatedPostReloaded.details.comment.should.be.equal("this is post");
+                updatedPostReloaded!.details.comment.should.be.equal("this is post");
             });
         }); // todo: also check that updates throw exception in strict cascades mode
     });
@@ -302,7 +302,7 @@ describe("one-to-one", function() {
 
             return postRepository
                 .persist(newPost)
-                .then(post => savedPost = post);
+                .then(post => savedPost = post as Post);
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
@@ -315,7 +315,7 @@ describe("one-to-one", function() {
                     .setParameter("id", updatedPost.id)
                     .getOne();
             }).then(updatedPostReloaded => {
-                updatedPostReloaded.details.comment.should.be.equal("this is post");
+                updatedPostReloaded!.details.comment.should.be.equal("this is post");
             });
         });
     });
@@ -337,12 +337,12 @@ describe("one-to-one", function() {
             return postImageRepository
                 .persist(newImage)
                 .then(image => {
-                    savedImage = image;
-                    newPost.image = image;
+                    savedImage = image as PostImage;
+                    newPost.image = image as PostImage;
                     return postRepository.persist(newPost);
 
                 }).then(post => {
-                    newPost = post;
+                    newPost = post as Post;
                     return postRepository
                         .createQueryBuilder("post")
                         .leftJoinAndSelect("post.image", "image")
@@ -351,8 +351,8 @@ describe("one-to-one", function() {
                         .getOne();
 
                 }).then(loadedPost => {
-                    loadedPost.image.url = "new-logo.png";
-                    return postRepository.persist(loadedPost);
+                    loadedPost!.image.url = "new-logo.png";
+                    return postRepository.persist(loadedPost!);
 
                 }).then(() => {
                     return postRepository
@@ -363,7 +363,7 @@ describe("one-to-one", function() {
                         .getOne();
                     
                 }).then(reloadedPost => {
-                    reloadedPost.image.url.should.be.equal("new-logo.png");
+                    reloadedPost!.image.url.should.be.equal("new-logo.png");
                 });
         });
 
@@ -386,12 +386,12 @@ describe("one-to-one", function() {
             return postMetadataRepository
                 .persist(newMetadata)
                 .then(metadata => {
-                    savedMetadata = metadata;
-                    newPost.metadata = metadata;
+                    savedMetadata = metadata as PostMetadata;
+                    newPost.metadata = metadata as PostMetadata;
                     return postRepository.persist(newPost);
 
                 }).then(post => {
-                    newPost = post;
+                    newPost = post as Post;
                     return postRepository
                         .createQueryBuilder("post")
                         .leftJoinAndSelect("post.metadata", "metadata")
@@ -400,8 +400,8 @@ describe("one-to-one", function() {
                         .getOne();
 
                 }).then(loadedPost => {
-                    loadedPost.metadata = null;
-                    return postRepository.persist(loadedPost);
+                    loadedPost!.metadata = null;
+                    return postRepository.persist(loadedPost!);
 
                 }).then(() => {
                     return postRepository
@@ -412,7 +412,7 @@ describe("one-to-one", function() {
                         .getOne();
 
                 }).then(reloadedPost => {
-                    expect(reloadedPost.metadata).to.not.exist;
+                    expect(reloadedPost!.metadata).to.not.exist;
                 });
         });
 

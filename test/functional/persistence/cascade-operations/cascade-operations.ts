@@ -130,12 +130,14 @@ describe("persistence > cascade operations", () => {
 
             // now check
             const posts = await connection.entityManager.find(Post, {
-                alias: "post",
-                innerJoinAndSelect: {
-                    category: "post.category"
+                join: {
+                    alias: "post",
+                    innerJoinAndSelect: {
+                        category: "post.category"
+                    }
                 },
-                orderBy: {
-                    "post.id": "ASC"
+                order: {
+                    id: "ASC"
                 }
             });
 
@@ -180,12 +182,14 @@ describe("persistence > cascade operations", () => {
 
             // now check
             const posts = await connection.entityManager.find(Post, {
-                alias: "post",
-                innerJoinAndSelect: {
-                    category: "post.category"
+                join: {
+                    alias: "post",
+                    innerJoinAndSelect: {
+                        category: "post.category"
+                    }
                 },
-                orderBy: {
-                    "post.id": "ASC"
+                order: {
+                    id: "ASC"
                 }
             });
 

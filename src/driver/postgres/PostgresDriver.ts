@@ -64,7 +64,7 @@ export class PostgresDriver implements Driver {
     protected databaseConnectionPool: DatabaseConnection[] = [];
 
     /**
-     * Logger used go log queries and errors.
+     * Logger used to log queries and errors.
      */
     protected logger: Logger;
 
@@ -136,7 +136,7 @@ export class PostgresDriver implements Driver {
                     if (err) {
                         fail(err);
                     } else {
-                        this.databaseConnection && this.databaseConnection.connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any, result: any) => {
+                        this.databaseConnection!.connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any, result: any) => {
                             if (err) {
                                 this.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
                                 this.logger.logQueryError(err);

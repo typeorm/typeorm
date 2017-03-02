@@ -148,6 +148,12 @@ export class Subject {
     newlyGeneratedId?: any;
 
     /**
+     * When subject is newly persisted it may have a generated object id.
+     * This value will be stored here. This is actual only for mongodb database.
+     */
+    generatedObjectId?: any;
+
+    /**
      * Generated id of the parent entity. Used in the class-table-inheritance.
      */
     parentGeneratedId?: any;
@@ -342,6 +348,7 @@ export class Subject {
                     databaseValue = DataTransformationUtils.simpleArrayToString(databaseValue);
                 }
             }
+            // todo: this mechanism does not get in count embeddeds in embeddeds
 
             // if value is not defined then no need to update it
             if (!column.isInEmbedded && this.entity[column.propertyName] === undefined)

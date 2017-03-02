@@ -12,8 +12,9 @@ export interface EntityOptions {
 
     /**
      * Table's database engine type (like "InnoDB", "MyISAM", etc).
-     * Note that it used only during table creation.
+     * It is used only during table creation.
      * If you update this value and table is already created, it will not change table's engine type.
+     * Note that not all databases support this option.
      */
     readonly engine?: string;
 
