@@ -57,10 +57,13 @@ export class AliasMap {
         });
     }
 
+    /**
+     * @deprecated
+     */
     getEntityMetadataByAlias(alias: Alias): EntityMetadata|undefined {
-        if (alias.target) {
+        if (alias.metadata) {
             // todo: use connection.getMetadata instead?
-            return this.connection.getMetadata(alias.target);
+            return alias.metadata;
 
         } else if (alias.parentAliasName && alias.parentPropertyName) {
 
