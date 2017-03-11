@@ -1,10 +1,27 @@
-# TypeORM
-
-[![Build Status](https://travis-ci.org/typeorm/typeorm.svg?branch=master)](https://travis-ci.org/typeorm/typeorm)
-[![npm version](https://badge.fury.io/js/typeorm.svg)](https://badge.fury.io/js/typeorm)
-[![Dependency Status](https://david-dm.org/typeorm/typeorm.svg)](https://david-dm.org/typeorm/typeorm)
-[![devDependency Status](https://david-dm.org/typeorm/typeorm/dev-status.svg)](https://david-dm.org/typeorm/typeorm#info=devDependencies)
-[![Join the chat at https://gitter.im/typeorm/typeorm](https://badges.gitter.im/typeorm/typeorm.svg)](https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+<div align="center">
+  <a href="https://typeorm.github.io/">
+    <img src="./resources/logo_big.png" width="492" height="228">
+  </a>
+  <br>
+  <br>
+	<a href="https://travis-ci.org/typeorm/typeorm">
+		<img src="https://travis-ci.org/typeorm/typeorm.svg?branch=master">
+	</a>
+	<a href="https://badge.fury.io/js/typeorm">
+		<img src="https://badge.fury.io/js/typeorm.svg">
+	</a>
+	<a href="https://david-dm.org/typeorm/typeorm">
+		<img src="https://david-dm.org/typeorm/typeorm.svg">
+	</a>
+	<a href="https://david-dm.org/typeorm/typeorm#info=devDependencies">
+		<img src="https://david-dm.org/typeorm/typeorm/dev-status.svg">
+	</a>
+	<a href="https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
+		<img src="https://badges.gitter.im/typeorm/typeorm.svg">
+	</a>
+  <br>
+  <br>
+</div>
 
 > Please support a project by simply putting a github star. 
 Share this library with friends on twitter and everywhere else you can.

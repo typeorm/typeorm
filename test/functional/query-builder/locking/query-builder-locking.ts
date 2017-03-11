@@ -17,7 +17,7 @@ import {SqliteDriver} from "../../../../src/driver/sqlite/SqliteDriver";
 import {OracleDriver} from "../../../../src/driver/oracle/OracleDriver";
 import {LockNotSupportedOnGivenDriverError} from "../../../../src/query-builder/error/LockNotSupportedOnGivenDriverError";
 
-describe.only("query builder > locking", () => {
+describe("query builder > locking", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
