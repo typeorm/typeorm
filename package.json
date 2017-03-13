@@ -36,7 +36,8 @@
     "websql-orm"
   ],
   "devDependencies": {
-    "@types/chai": "^3.4.35",
+    "@types/chai": "^3.4.35",    
+    "@types/mongodb": "^2.1.41",
     "@types/chai-as-promised": "0.0.29",
     "@types/mocha": "^2.2.39",
     "@types/node": "^7.0.5",
@@ -73,7 +74,6 @@
     "typescript": "^2.2.1"
   },
   "dependencies": {
-    "@types/mongodb": "^2.1.41",
     "app-root-path": "^2.0.1",
     "glob": "^7.1.1",
     "reflect-metadata": "^0.1.9",
