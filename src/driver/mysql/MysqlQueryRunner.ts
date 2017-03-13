@@ -717,28 +717,22 @@ export class MysqlQueryRunner implements QueryRunner {
                     return "decimal";
                 }
             case "date":
-                if (!typeOptions.length) {
-                    return "date";
-                } else if (typeOptions.length <= 6) {
+                if (typeOptions.length) {
                     return "date(" + typeOptions.length + ")";
                 } else {
-                    return "date(6)"; // max position
+                    return "date";
                 }
             case "time":
-                if (!typeOptions.length) {
-                    return "time";
-                } else if (typeOptions.length <= 6) {
+                if (typeOptions.length) {
                     return "time(" + typeOptions.length + ")";
                 } else {
-                    return "time(6)"; // max position
+                    return "time";
                 }
             case "datetime":
-                if (!typeOptions.length) {
-                    return "datetime";
-                } else if (typeOptions.length <= 6) {
+                if (typeOptions.length) {
                     return "datetime(" + typeOptions.length + ")";
                 } else {
-                    return "datetime(6)"; // max position
+                    return "datetime";
                 }
             case "json":
                 return "text";

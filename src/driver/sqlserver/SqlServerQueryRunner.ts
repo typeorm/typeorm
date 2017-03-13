@@ -827,22 +827,18 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
             case "date":
                 return "date";
             case "time":
-                if (!typeOptions.length) {
-                    return "time";
-                } else if (typeOptions.length <= 7) {
+                if (typeOptions.length) {
                     return "time(" + typeOptions.length + ")";
                 } else {
-                    return "time(7)"; // max position
+                    return "time";
                 }
             case "datetime":
                 if (!typeOptions.length) {
                     return "datetime";
                 } else if (typeOptions.length <= 3) {
                     return "datetime(" + typeOptions.length + ")";
-                } else if (typeOptions.length <= 7) {
+                } else if (typeOptions.length > 3) {
                     return "datetime2(" + typeOptions.length + ")";
-                } else {
-                    return "datetime2(7)"; // max position
                 }
             case "json":
                 return "text";

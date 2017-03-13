@@ -778,12 +778,10 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
                 return "date";
             case "time":
                 let t;
-                if (!typeOptions.length) {
-                    t = "time";
-                } else if (typeOptions.length <= 6) {
+                if (typeOptions.length) {
                     t = "time(" + typeOptions.length + ")";
                 } else {
-                    t = "time(6)";
+                    t = "time";
                 }
 
                 if (typeOptions.timezone) {
@@ -793,12 +791,10 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
                 }
             case "datetime":
                 let dt;
-                if (!typeOptions.length) {
-                    dt = "timestamp";
-                } else if (typeOptions.length <= 6) {
+                if (typeOptions.length) {
                     dt = "timestamp(" + typeOptions.length + ")";
                 } else {
-                    dt = "timestamp(6)";
+                    dt = "timestamp";
                 }
 
                 if (typeOptions.timezone) {
