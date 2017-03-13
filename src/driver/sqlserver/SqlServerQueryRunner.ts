@@ -833,12 +833,12 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
                     return "time";
                 }
             case "datetime":
-                if (!typeOptions.length) {
-                    return "datetime";
-                } else if (typeOptions.length <= 3) {
+                if (typeOptions.length && typeOptions.length <= 3) {
                     return "datetime(" + typeOptions.length + ")";
-                } else if (typeOptions.length > 3) {
+                } else if (typeOptions.length && typeOptions.length > 3) {
                     return "datetime2(" + typeOptions.length + ")";
+                } else {
+                    return "datetime";
                 }
             case "json":
                 return "text";
