@@ -76,7 +76,7 @@ export class DataTransformationUtils {
                 this.formatZerolessValue(value.getHours()) + ":" +
                 this.formatZerolessValue(value.getMinutes()) + ":" +
                 this.formatZerolessValue(value.getSeconds()) + "." +
-                this.formatZerolessValue(value.getMilliseconds());
+                value.getMilliseconds();
         }
 
         return value;
@@ -96,7 +96,7 @@ export class DataTransformationUtils {
                 this.formatZerolessValue(value.getUTCHours()) + ":" +
                 this.formatZerolessValue(value.getUTCMinutes()) + ":" +
                 this.formatZerolessValue(value.getUTCSeconds()) + "." +
-                this.formatZerolessValue(value.getUTCMilliseconds());
+                value.getUTCMilliseconds();
         }
 
         return value;
