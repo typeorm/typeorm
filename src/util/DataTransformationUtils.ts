@@ -145,7 +145,7 @@ export class DataTransformationUtils {
             return "00" + value;
         else if (value < 100)
             return "0" + value;
-        
+
         return String(value);
     }
 
