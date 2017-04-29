@@ -1,8 +1,8 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Post} from "./Post";
-import {OneToMany} from "../../../../src/decorator/relations/OneToMany";
+import { Entity } from "../../../../src/decorator/entity/Entity";
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import { Column } from "../../../../src/decorator/columns/Column";
+import { Post } from "./Post";
+import { OneToMany } from "../../../../src/decorator/relations/OneToMany";
 
 @Entity()
 export class Category {
@@ -13,7 +13,7 @@ export class Category {
     @Column()
     name: string;
 
-    @OneToMany(() => Post, post => post.category)
+    @OneToMany(() => Post, post => post.category, { lazy: true })
     posts: Promise<Post[]>;
 
 }
