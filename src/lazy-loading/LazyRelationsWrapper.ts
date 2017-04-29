@@ -56,6 +56,12 @@ export class LazyRelationsWrapper {
                     }
 
                     this[promiseIndex] = qb.getMany().then(results => {
+                        // remove information about current entity because we joined it
+                        if (relation.hasInverseSide) {
+                            results.map(result => {
+                                delete (result as any)["__has__" + relation.inverseRelation.propertyName + "__"];
+                            });
+                        }
                         this[index] = results;
                         this[resolveIndex] = true;
                         delete this[promiseIndex];
@@ -73,6 +79,10 @@ export class LazyRelationsWrapper {
                         .where(relation.entityMetadata.targetName + "." + relation.inverseEntityMetadata.firstPrimaryColumn.propertyName + "=:id", { id: relation.entityMetadata.getEntityIdMixedMap(this) });
 
                     this[promiseIndex] = qb.getMany().then(results => {
+                        // remove information about current entity because we joined it
+                        results.map(result => {
+                            delete (result as any)["__has__" + relation.inverseRelation.propertyName + "__"];
+                        });
                         this[index] = results;
                         this[resolveIndex] = true;
                         delete this[promiseIndex];
@@ -104,6 +114,10 @@ export class LazyRelationsWrapper {
                     }
 
                     this[promiseIndex] = qb.getOne().then(result => {
+                        // remove information about current entity because we joined it
+                        if (relation.hasInverseSide && result) {
+                            delete (result as any)["__has__" + relation.inverseRelation.propertyName + "__"];
+                        };
                         this[index] = result;
                         this[resolveIndex] = true;
                         delete this[promiseIndex];
