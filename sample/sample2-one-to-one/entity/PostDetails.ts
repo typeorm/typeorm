@@ -7,10 +7,10 @@ export class PostDetails {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
+    @Column({name: "auth_nam"})
     authorName: string;
 
-    @Column()
+    @Column({name: "cmnt"})
     comment: string;
 
     @Column()

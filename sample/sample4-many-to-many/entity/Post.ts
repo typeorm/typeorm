@@ -24,7 +24,7 @@ export class Post {
         cascadeInsert: true,
         cascadeUpdate: true
     })
-    @JoinTable()
+    @JoinTable({ name: "ps_cats" })
     categories: PostCategory[];
 
     // post has relation with details. cascade inserts here means if new PostDetails instance will be set to this 
@@ -32,7 +32,7 @@ export class Post {
     @ManyToMany(type => PostDetails, details => details.posts, {
         cascadeInsert: true
     })
-    @JoinTable()
+    @JoinTable({ name: "ps_detail" })
     details: PostDetails[];
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
@@ -40,13 +40,13 @@ export class Post {
     @ManyToMany(type => PostImage, image => image.posts, {
         cascadeUpdate: true
     })
-    @JoinTable()
+    @JoinTable({ name: "ps_imgs" })
     images: PostImage[];
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
     // it will be inserted automatically to the db when you save this Post entity
     @ManyToMany(type => PostMetadata, metadata => metadata.posts)
-    @JoinTable()
+    @JoinTable({ name: "ps_mtd" })
     metadatas: PostMetadata[];
 
     // post has relation with details. full cascades here
@@ -54,12 +54,12 @@ export class Post {
         cascadeInsert: true,
         cascadeUpdate: true
     })
-    @JoinTable()
+    @JoinTable({ name: "ps_info" })
     informations: PostInformation[];
 
     // post has relation with details. not cascades here. means cannot be persisted, updated or removed
     @ManyToMany(type => PostAuthor, author => author.posts)
-    @JoinTable()
+    @JoinTable({ name: "ps_auth" })
     authors: PostAuthor[];
 
 }

@@ -68,14 +68,10 @@ export class OracleQueryRunner implements QueryRunner {
 
         await this.beginTransaction();
         try {
-            const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
-            const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
+            const dropTablesQuery = `select 'DROP TABLE "' || TABLE_NAME || '" CASCADE CONSTRAINTS ' AS query from user_tables`;
 
-            await this.query(disableForeignKeysCheckQuery);
             const dropQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
-            await Promise.all(dropQueries.map(query => this.query(query["query"])));
-            await this.query(enableForeignKeysCheckQuery);
+            await Promise.all(dropQueries.map(query => this.query(query["QUERY"])));
 
             await this.commitTransaction();
 
