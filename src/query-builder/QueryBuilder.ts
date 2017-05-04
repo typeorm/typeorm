@@ -970,9 +970,13 @@ export class QueryBuilder<Entity> {
                         } else {
                             const ids = results.map(result => result["ids_" + metadata.firstPrimaryColumn.propertyName]);
                             const areAllNumbers = ids.map((id: any) => typeof id === "number");
+                            const areAllStrings = ids.map((id: any) => typeof id === "string");
                             if (areAllNumbers) {
                                 // fixes #190. if all numbers then its safe to perform query without parameter
                                 condition = `${mainAliasName}.${metadata.firstPrimaryColumn.propertyName} IN (${ids.join(", ")})`;
+                            } else if (areAllStrings) {
+                              // fixes #388. if all strings then its safe to perform query without parameter.
+                              condition = `${mainAliasName}.${metadata.firstPrimaryColumn.propertyName} IN ('${ids.join("', '")}')`;
                             } else {
                                 parameters["ids"] = ids;
                                 condition = mainAliasName + "." + metadata.firstPrimaryColumn.propertyName + " IN (:ids)";
