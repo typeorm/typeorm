@@ -58,9 +58,16 @@ export class DriverUtils {
         const base = (secondSlash !== -1) ? preBase.substr(0, secondSlash) : preBase;
         const afterBase = (secondSlash !== -1) ? preBase.substr(secondSlash + 1) : undefined;
         const [usernameAndPassword, hostAndPort] = base.split("@");
-        const [usernameAndDomain, password] = usernameAndPassword.split(":"); // could be domain/username:password for MSSQL users with AD
-        const [domain, username] = usernameAndDomain.split("/"); // splits domain/username
+        const [usernameAndDomain, password] = usernameAndPassword.split(":");
         const [host, port] = hostAndPort.split(":");
+
+        let domain: any = undefined;
+        let username: any = undefined;
+        if (usernameAndDomain.indexOf("~") !== -1) {
+            [domain, username] = usernameAndDomain.split("~");
+        } else {
+            username = usernameAndDomain;
+        }
 
         return {
             host: host,

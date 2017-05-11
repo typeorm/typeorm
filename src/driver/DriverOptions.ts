@@ -80,7 +80,10 @@ export interface DriverOptions {
     readonly tablesPrefix?: string;
 
     /**
-     * Specify the domain for active directory connections
+     * Specify the domain for active directory connections.
+     *
+     * NOTE: This options is MSSQL specific.
+     *
      */
     readonly domain?: string;
 }
