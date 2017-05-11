@@ -103,12 +103,13 @@ export class SqlServerDriver implements Driver {
             user: this.options.username,
             password: this.options.password,
             database: this.options.database,
-            port: this.options.port
+            port: this.options.port,
+            domain: this.options.domain
         }, this.options.extra || {});
 
         // set default useUTC option if it hasn't been set
         if (!options.options) options.options = { useUTC: false };
-        else if (!options.options.useUTC) options.options.useUTC = false; 
+        else if (!options.options.useUTC) options.options.useUTC = false;
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)

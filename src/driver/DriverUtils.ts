@@ -23,7 +23,8 @@ export class DriverUtils {
                     username: parsedUrl.username,
                     password: parsedUrl.password,
                     port: parsedUrl.port,
-                    sid: parsedUrl.database
+                    sid: parsedUrl.database,
+                    domain: parsedUrl.domain
                 };
                 return Object.assign(urlDriverOptions, options);
 
@@ -34,7 +35,8 @@ export class DriverUtils {
                     username: parsedUrl.username,
                     password: parsedUrl.password,
                     port: parsedUrl.port,
-                    database: parsedUrl.database
+                    database: parsedUrl.database,
+                    domain: parsedUrl.domain
                 };
                 return Object.assign(urlDriverOptions, options);
             }
@@ -56,7 +58,8 @@ export class DriverUtils {
         const base = (secondSlash !== -1) ? preBase.substr(0, secondSlash) : preBase;
         const afterBase = (secondSlash !== -1) ? preBase.substr(secondSlash + 1) : undefined;
         const [usernameAndPassword, hostAndPort] = base.split("@");
-        const [username, password] = usernameAndPassword.split(":");
+        const [usernameAndDomain, password] = usernameAndPassword.split(":"); // could be domain/username:password for MSSQL users with AD
+        const [domain, username] = usernameAndDomain.split("/"); // splits domain/username
         const [host, port] = hostAndPort.split(":");
 
         return {
@@ -64,7 +67,8 @@ export class DriverUtils {
             username: username,
             password: password,
             port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined
+            database: afterBase || undefined,
+            domain: domain || undefined
         };
     }
 
