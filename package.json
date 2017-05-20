@@ -36,7 +36,8 @@
     "websql-orm"
   ],
   "devDependencies": {
-    "@types/chai": "^3.4.35",
+    "@types/chai": "^3.4.35",    
+    "@types/mongodb": "^2.1.41",
     "@types/chai-as-promised": "0.0.29",
     "@types/mocha": "^2.2.39",
     "@types/mongodb": "^2.1.41",
