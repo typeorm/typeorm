@@ -17,6 +17,7 @@ import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {LockNotSupportedOnGivenDriverError} from "./error/LockNotSupportedOnGivenDriverError";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import { OracleDriver } from "../driver/oracle/OracleDriver";
 
 /**
  */
@@ -982,6 +983,9 @@ export class QueryBuilder<Entity> {
                 const distinctAlias = this.escapeTable("distinctAlias");
                 const metadata = this.connection.getMetadata(this.fromEntity.alias.target);
                 let idsQuery = `SELECT `;
+                if (this.connection.driver instanceof OracleDriver) { // todo: :D
+                    idsQuery += `rownum rn,`;
+                }
                 idsQuery += metadata.primaryColumns.map((primaryColumn, index) => {
                     const propertyName = this.escapeAlias(mainAliasName + "_" + primaryColumn.fullName);
                     if (index === 0) {
@@ -1007,6 +1011,12 @@ export class QueryBuilder<Entity> {
                         idsQuery += ` OFFSET ${this.skipNumber || 0} ROWS`;
                         if (this.takeNumber)
                             idsQuery += " FETCH NEXT " + this.takeNumber + " ROWS ONLY";
+                    }
+                } else if (this.connection.driver instanceof OracleDriver) { // todo: :D
+                    if (this.skipNumber || this.takeNumber) {
+                        idsQuery = `SELECT * FROM (${idsQuery}) WHERE rn >= ${this.skipNumber || 0}`;
+                        if (this.takeNumber)
+                            idsQuery += ` AND rn <= ${this.skipNumber + this.takeNumber}`;
                     }
                 } else {
 
