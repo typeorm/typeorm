@@ -1,3 +1,5 @@
+import {JoinOptions} from "./JoinOptions";
+
 /**
  * Defines a special criteria to find specific entity.
  */
