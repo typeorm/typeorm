@@ -175,6 +175,7 @@ export class RawSqlResultsToEntityTransformer {
 
                     if (relation.isLazy) {
                         entity["__" + propertyName + "__"] = result;
+                        entity["__has__" + propertyName + "__"] = true;
                     } else {
                         entity[propertyName] = result;
                     }
