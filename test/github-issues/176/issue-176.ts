@@ -19,8 +19,12 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
 
         const post1 = new Post();
         post1.title = "Hello Post #1";
-        post1.date = new Date(1484069886663); // stores "2017-01-10 17:38:06.000" into the database
-        post1.localDate = new Date(1484069886663); // stores "2017-01-10 22:38:06.000" into the database
+        const testDateString = "2017-01-10T17:38:06.000Z";
+        // switch to testDateString because the true equivalent is 1484087886000, not 1484069886663.
+        // This fixes fractional seconds rounding error because of the extra 663 milliseconds causing
+        // to round up 1 second
+        post1.date = new Date(testDateString); // stores "2017-01-10 17:38:06.000" into the database
+        post1.localDate = new Date(testDateString); // stores "2017-01-10 22:38:06.000" into the database
 
         // persist
         await connection.manager.save(post1);
@@ -28,8 +32,8 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
         const loadedPosts1 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
         expect(loadedPosts1!).not.to.be.empty;
 
-        loadedPosts1!.date.toISOString().should.be.equal("2017-01-10T17:38:06.000Z");
-        loadedPosts1!.localDate.toISOString().should.be.equal("2017-01-10T17:38:06.000Z");
+        loadedPosts1!.date.toISOString().should.be.equal(testDateString);
+        loadedPosts1!.localDate.toISOString().should.be.equal(testDateString);
 
         // also make sure that local date really was saved as a local date (including timezone)
 
@@ -42,7 +46,7 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
         // date.toISOString().should.be.equal("2017-01-10T12:38:06.000Z");
 
         const localDate = !(rawPost["post_localDate"] instanceof Date) ? new Date(rawPost["post_localDate"]) : rawPost["post_localDate"];
-        localDate.toISOString().should.be.equal("2017-01-10T17:38:06.000Z");
+        localDate.toISOString().should.be.equal(testDateString);
     })));
 
 });
