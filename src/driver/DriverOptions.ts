@@ -79,4 +79,14 @@ export interface DriverOptions {
      */
     readonly tablesPrefix?: string;
 
+    /**
+     * Specify the domain for active directory connections.
+     *
+     * NOTE: This options is MSSQL specific.
+     *
+     * Usage: Set the domain directly, can be set using the url by specifying domain~username:password
+     *        in the url, example: mssql://domain~username:password@host:port/database.
+     *
+     */
+    readonly domain?: string;
 }

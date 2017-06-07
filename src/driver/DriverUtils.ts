@@ -23,7 +23,8 @@ export class DriverUtils {
                     username: parsedUrl.username,
                     password: parsedUrl.password,
                     port: parsedUrl.port,
-                    sid: parsedUrl.database
+                    sid: parsedUrl.database,
+                    domain: parsedUrl.domain
                 };
                 return Object.assign(urlDriverOptions, options);
 
@@ -34,7 +35,8 @@ export class DriverUtils {
                     username: parsedUrl.username,
                     password: parsedUrl.password,
                     port: parsedUrl.port,
-                    database: parsedUrl.database
+                    database: parsedUrl.database,
+                    domain: parsedUrl.domain
                 };
                 return Object.assign(urlDriverOptions, options);
             }
@@ -56,15 +58,24 @@ export class DriverUtils {
         const base = (secondSlash !== -1) ? preBase.substr(0, secondSlash) : preBase;
         const afterBase = (secondSlash !== -1) ? preBase.substr(secondSlash + 1) : undefined;
         const [usernameAndPassword, hostAndPort] = base.split("@");
-        const [username, password] = usernameAndPassword.split(":");
+        const [usernameAndDomain, password] = usernameAndPassword.split(":");
         const [host, port] = hostAndPort.split(":");
+
+        let domain: any = undefined;
+        let username: any = undefined;
+        if (usernameAndDomain.indexOf("~") !== -1) {
+            [domain, username] = usernameAndDomain.split("~");
+        } else {
+            username = usernameAndDomain;
+        }
 
         return {
             host: host,
             username: username,
             password: password,
             port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined
+            database: afterBase || undefined,
+            domain: domain || undefined
         };
     }
 
