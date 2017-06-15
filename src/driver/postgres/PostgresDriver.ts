@@ -204,7 +204,7 @@ export class PostgresDriver implements Driver {
                 return JSON.stringify(value);
 
             case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.simpleArrayToString(value);
+                return value;
         }
 
         return value;
