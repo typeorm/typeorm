@@ -1,9 +1,7 @@
 import "reflect-metadata";
 import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
 
-import {MigrationExecutor} from "../../../src/migration/MigrationExecutor";
 import {Post} from "./entity/Post";
 import {Author} from "./entity/Author";
 
@@ -39,14 +37,20 @@ describe("github issues > #528 Migrations failing on timestamp validation", () =
         await connection.runMigrations();
 
         // mock new Date()
-        global.Date = new Proxy(Date, {
+        const dateMock = Proxy.revocable(Date, {
             construct(target) {
                 return new target(1943, 4, 19, 15, 0, 0);
             }
         });
+        const srcDate = global.Date;
+
+        global.Date = dateMock.proxy;
 
         await postRepository.save(postOld);
         await connection.runMigrations();
+
+        dateMock.revoke();
+        global.Date = srcDate;
 
     })));
 
