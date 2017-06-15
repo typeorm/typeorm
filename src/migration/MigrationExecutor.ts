@@ -55,16 +55,26 @@ export class MigrationExecutor {
         const pendingMigrations = allMigrations.filter(migration => {
             // check if we already have executed migration
             const executedMigration = executedMigrations.find(executedMigration => executedMigration.name === migration.name);
-            if (executedMigration)
-                return false;
 
-            // migration is new and not executed. now check if its timestamp is correct
-            if (lastTimeExecutedMigration && migration.timestamp < lastTimeExecutedMigration.timestamp)
-                throw new Error(`New migration found: ${migration.name}, however this migration's timestamp is not valid. Migration's timestamp should not be older then migrations already executed in the database.`);
+            if (executedMigration) return false;
 
             // every check is passed means that migration was not run yet and we need to run it
             return true;
         });
+
+        // find migration with newer timestamp
+        const oldestPendingMigrationTimestamp = Math.min(...pendingMigrations.map(migration => migration.timestamp));
+
+        // migration is new and not executed. now check if its timestamp is correct
+        if (lastTimeExecutedMigration && oldestPendingMigrationTimestamp < lastTimeExecutedMigration.timestamp) {
+            // find every executed migrations with a timestamp older than oldest pending migrations timestamp
+            await executedMigrations.forEach(async migration => {
+                if (migration.timestamp > oldestPendingMigrationTimestamp) {
+                    await this.undoMigration(migration);
+                    pendingMigrations.push(migration);
+                }
+            });
+        }
 
         // if no migrations are pending then nothing to do here
         if (!pendingMigrations.length) {
@@ -115,6 +125,25 @@ export class MigrationExecutor {
      * Reverts last migration that were run.
      */
     async undoLastMigration(): Promise<void> {
+        // get all migrations that are executed and saved in the database
+        const executedMigrations = await this.loadExecutedMigrations();
+
+        // get the time when last migration was executed
+        const lastTimeExecutedMigration = this.getLatestMigration(executedMigrations);
+
+        // if no migrations found in the database then nothing to revert
+        if (!lastTimeExecutedMigration) {
+            this.connection.logger.log("info", `No migrations was found in the database. Nothing to revert!`);
+            return;
+        } else {
+            return await this.undoMigration(lastTimeExecutedMigration);
+        }
+    }
+
+    /**
+     * Reverts migration.
+     */
+    async undoMigration(migration: Migration): Promise<void> {
         const queryRunner = await this.queryRunnerProvider.provide();
         const entityManager = this.connection.createIsolatedManager(this.queryRunnerProvider);
 
@@ -136,13 +165,6 @@ export class MigrationExecutor {
         // get all user's migrations in the source code
         const allMigrations = this.getMigrations();
 
-        // find the instance of the migration we need to remove
-        const migrationToRevert = allMigrations.find(migration => migration.name === lastTimeExecutedMigration!.name);
-
-        // if no migrations found in the database then nothing to revert
-        if (!migrationToRevert)
-            throw new Error(`No migration ${lastTimeExecutedMigration.name} was found in the source code. Make sure you have this migration in your codebase and its included in the connection options.`);
-
         // log information about migration execution
         this.connection.logger.log("info", `${executedMigrations.length} migrations are already loaded in the database.`);
         this.connection.logger.log("info", `${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp * 1000).toString()}.`);
@@ -156,9 +178,9 @@ export class MigrationExecutor {
         }
 
         try {
-            await migrationToRevert.instance!.down(queryRunner, this.connection, entityManager);
-            await this.deleteExecutedMigration(migrationToRevert);
-            this.connection.logger.log("info", `Migration ${migrationToRevert.name} has been reverted successfully.`);
+            await migration.instance!.down(queryRunner, this.connection, entityManager);
+            await this.deleteExecutedMigration(migration);
+            this.connection.logger.log("info", `Migration ${migration.name} has been reverted successfully.`);
 
             // commit transaction if we started it
             if (transactionStartedByUs)
