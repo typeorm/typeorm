@@ -129,7 +129,7 @@ export class MigrationExecutor {
         const executedMigrations = await this.loadExecutedMigrations();
 
         // get the time when last migration was executed
-        let lastTimeExecutedMigration = this.getLatestMigration(executedMigrations);
+        const lastTimeExecutedMigration = this.getLatestMigration(executedMigrations);
 
         // if no migrations found in the database then nothing to revert
         if (!lastTimeExecutedMigration) {

@@ -36,10 +36,9 @@ describe("github issues > #528 Migrations failing on timestamp validation", () =
         const postRepository = connection.getRepository(Post);
 
         await postRepository.save(postNew);
-
-        // run all migrations
         await connection.runMigrations();
 
+        // mock new Date()
         global.Date = new Proxy(Date, {
             construct(target) {
                 return new target(1943, 4, 19, 15, 0, 0);
@@ -47,11 +46,8 @@ describe("github issues > #528 Migrations failing on timestamp validation", () =
         });
 
         await postRepository.save(postOld);
-
         await connection.runMigrations();
 
     })));
-
-    // you can add additional tests if needed
 
 });
