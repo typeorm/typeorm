@@ -68,12 +68,12 @@ export class MigrationExecutor {
         // migration is new and not executed. now check if its timestamp is correct
         if (lastTimeExecutedMigration && oldestPendingMigrationTimestamp < lastTimeExecutedMigration.timestamp) {
             // find every executed migrations with a timestamp older than oldest pending migrations timestamp
-            await executedMigrations.forEach(async migration => {
-                if (migration.timestamp > oldestPendingMigrationTimestamp) {
+			await Promise.all(executedMigrations.map(async migration => {
+				if (migration.timestamp > oldestPendingMigrationTimestamp) {
                     await this.undoMigration(migration);
                     pendingMigrations.push(migration);
                 }
-            });
+			}));
         }
 
         // if no migrations are pending then nothing to do here
