@@ -8,7 +8,8 @@ export class PostDetails {
     id: number;
 
     @Column({
-        nullable: true
+        nullable: true,
+        name: "auth_nam"
     })
     authorName: string;
 
