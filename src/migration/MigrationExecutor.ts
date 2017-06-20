@@ -56,10 +56,7 @@ export class MigrationExecutor {
             // check if we already have executed migration
             const executedMigration = executedMigrations.find(executedMigration => executedMigration.name === migration.name);
 
-            if (executedMigration) return false;
-
-            // every check is passed means that migration was not run yet and we need to run it
-            return true;
+            return !executedMigration;
         });
 
         // find migration with oldest timestamp
