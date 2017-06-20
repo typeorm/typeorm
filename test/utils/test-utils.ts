@@ -43,6 +43,11 @@ export interface TestingOptions {
     entities?: string[]|Function[];
 
     /**
+     * Migrations needs to be included in the connection for the given test suite.
+     */
+    migrations?: string[]|Function[];
+
+    /**
      * Subscribers needs to be included in the connection for the given test suite.
      */
     subscribers?: string[]|Function[];
@@ -139,6 +144,7 @@ export function setupTestingConnections(options?: TestingOptions) {
             const newConnectionOptions = Object.assign({}, connectionOptions as ConnectionOptions, {
                 name: options && options.name ? options.name : connectionOptions.name,
                 entities: options && options.entities ? options.entities : [],
+                migrations: options && options.migrations ? options.migrations : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
                 entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
                 autoSchemaSync: options && options.entities ? options.schemaCreate : false,
