@@ -59,21 +59,6 @@ export class MigrationExecutor {
             return !executedMigration;
         });
 
-        // find migration with oldest timestamp
-        const oldestPendingMigrationTimestamp = Math.min(...pendingMigrations.map(migration => migration.timestamp));
-
-        // migration is new and not executed. now check if its timestamp is correct
-        if (lastTimeExecutedMigration && oldestPendingMigrationTimestamp < lastTimeExecutedMigration.timestamp) {
-            // find every executed migrations with a timestamp older than oldest pending migrations timestamp
-            for (let migration of executedMigrations) {
-                if (migration.timestamp > oldestPendingMigrationTimestamp) {
-                    await this.undoMigration(migration);
-                    pendingMigrations.unshift(migration);
-                }
-            }
-            pendingMigrations.concat(allMigrations).sort((a, b) => a.timestamp - b.timestamp);
-        }
-
         // if no migrations are pending then nothing to do here
         if (!pendingMigrations.length) {
             this.connection.logger.log("info", `No migrations are pending`);
@@ -116,6 +101,8 @@ export class MigrationExecutor {
 
             throw err;
         }
+
+        this.connection.logger.log("info", await this.loadExecutedMigrations());
 
     }
 
