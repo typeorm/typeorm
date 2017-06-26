@@ -102,8 +102,6 @@ export class MigrationExecutor {
             throw err;
         }
 
-        this.connection.logger.log("info", await this.loadExecutedMigrations());
-
     }
 
     /**

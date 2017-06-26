@@ -44,6 +44,15 @@ describe("github issues > #528 Migrations failing on timestamp validation", () =
 
     it("should be right migrations order", () => Promise.all(connections.map(async connection => {
         await connection.runMigrations();
+
+        class MockMigrationExecutor extends MigrationExecutor {
+            async getExecutedMigrations() {
+                return await this.loadExecutedMigrations();
+            }
+        }
+        const migrations = await new MockMigrationExecutor(connection).getExecutedMigrations();
+
+        migrations[1].timestamp.should.be.greaterThan(migrations[0].timestamp);
     })));
 
     after(function () {
