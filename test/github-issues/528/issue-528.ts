@@ -2,9 +2,6 @@ import "reflect-metadata";
 import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {MigrationExecutor} from "../../../src/migration/MigrationExecutor";
-import {QueryRunnerProvider} from "../../../src/query-runner/QueryRunnerProvider";
-import {ObjectLiteral} from "../../../src/common/ObjectLiteral";
-import {QueryBuilder} from "../../../src/query-builder/QueryBuilder";
 
 import {Post} from "./entity/Post";
 import {Author} from "./entity/Author";
