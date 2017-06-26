@@ -8,10 +8,16 @@ import {Author} from "./entity/Author";
 
 describe("github issues > #528 Migrations failing on timestamp validation", () => {
 
+    class MockMigrationExecutor extends MigrationExecutor {
+        async getExecutedMigrations() {
+            return await this.loadExecutedMigrations();
+        }
+    }
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        migrations: [__dirname + "/migrations/FirstReleaseChanges{.js,.ts}"],
+        migrations: [__dirname + "/migrations/NewerMigration{.js,.ts}"],
         schemaCreate: true,
         dropSchemaOnConnection: true,
     }));
@@ -33,7 +39,7 @@ describe("github issues > #528 Migrations failing on timestamp validation", () =
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             // SecondReleaseChanges has older timestamp than FirstReleaseChanges
-            migrations: [__dirname + "/migrations/SecondReleaseChanges{.js,.ts}"],
+            migrations: [__dirname + "/migrations/OldestMigration{.js,.ts}"],
             schemaCreate: true
         });
 
@@ -42,14 +48,13 @@ describe("github issues > #528 Migrations failing on timestamp validation", () =
     it("should be right migrations order", () => Promise.all(connections.map(async connection => {
         await connection.runMigrations();
 
-        class MockMigrationExecutor extends MigrationExecutor {
-            async getExecutedMigrations() {
-                return await this.loadExecutedMigrations();
-            }
-        }
         const migrations = await new MockMigrationExecutor(connection).getExecutedMigrations();
+        const [OldestMigration, NewerMigration] = migrations;
 
-        migrations[1].timestamp.should.be.greaterThan(migrations[0].timestamp);
+        OldestMigration.name.should.be.eq("OldestMigration1481283582120");
+        NewerMigration.name.should.be.eq("NewerMigration1481283582123");
+
+        NewerMigration.timestamp.should.be.greaterThan(OldestMigration.timestamp);
     })));
 
     after(function () {
