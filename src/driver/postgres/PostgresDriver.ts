@@ -236,7 +236,7 @@ export class PostgresDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.type === Boolean) {
-            return value ? true : false;
+            return value;
 
         } else if (columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
