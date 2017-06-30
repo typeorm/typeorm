@@ -192,7 +192,7 @@ export class SqliteDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
-            return value ? true : false;
+            return value;
 
         } else if (columnMetadata.type === "datetime") {
             return DateUtils.normalizeHydratedDate(value);

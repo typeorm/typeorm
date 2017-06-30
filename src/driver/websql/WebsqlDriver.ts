@@ -1,15 +1,15 @@
-import {Driver} from "../Driver";
-import {DriverUtils} from "../DriverUtils";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
-import {DateUtils} from "../../util/DateUtils";
-import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
-import {Connection} from "../../connection/Connection";
-import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
-import {WebSqlConnectionOptions} from "./WebSqlConnectionOptions";
-import {MappedColumnTypes} from "../types/MappedColumnTypes";
-import {ColumnType} from "../types/ColumnTypes";
+import { Driver } from "../Driver";
+import { DriverUtils } from "../DriverUtils";
+import { ObjectLiteral } from "../../common/ObjectLiteral";
+import { ColumnMetadata } from "../../metadata/ColumnMetadata";
+import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
+import { DateUtils } from "../../util/DateUtils";
+import { WebsqlQueryRunner } from "./WebsqlQueryRunner";
+import { Connection } from "../../connection/Connection";
+import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder";
+import { WebSqlConnectionOptions } from "./WebSqlConnectionOptions";
+import { MappedColumnTypes } from "../types/MappedColumnTypes";
+import { ColumnType } from "../types/ColumnTypes";
 
 /**
  * Organizes communication with WebSQL in the browser.
@@ -128,9 +128,9 @@ export class WebsqlDriver implements Driver {
         //     throw new ConnectionIsNotSetError("websql");
 
         // return new Promise<void>((ok, fail) => {
-            // const handler = (err: any) => err ? fail(err) : ok();
-            // todo: find out how to close connection
-            // ok();
+        // const handler = (err: any) => err ? fail(err) : ok();
+        // todo: find out how to close connection
+        // ok();
         // });
     }
 
@@ -211,7 +211,7 @@ export class WebsqlDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.type === Boolean) {
-            return value ? true : false;
+            return value;
 
         } else if (columnMetadata.type === "datetime") {
             return DateUtils.normalizeHydratedDate(value);
@@ -235,7 +235,7 @@ export class WebsqlDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: string | number, precision?: number, scale?: number, array?: string | boolean }): string {
         let type = "";
         if (column.type === Number) {
             type += "integer";

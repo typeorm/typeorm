@@ -252,7 +252,7 @@ export class SqlServerDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.type === Boolean) {
-            return value ? true : false;
+            return value;
 
         } else if (columnMetadata.type === "datetime") {
             return DateUtils.normalizeHydratedDate(value);
