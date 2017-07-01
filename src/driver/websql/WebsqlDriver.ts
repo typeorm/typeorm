@@ -210,8 +210,11 @@ export class WebsqlDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.type === Boolean) {
+        if (value === null || value === undefined)
             return value;
+
+        if (columnMetadata.type === Boolean) {
+            return value ? true : false;
 
         } else if (columnMetadata.type === "datetime") {
             return DateUtils.normalizeHydratedDate(value);
