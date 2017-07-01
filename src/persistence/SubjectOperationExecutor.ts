@@ -46,31 +46,23 @@ export class SubjectOperationExecutor {
      */
     protected relationUpdateSubjects: Subject[];
 
+    protected broadcaster: Broadcaster;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
                 protected transactionEntityManager: EntityManager,
-                protected queryRunner: QueryRunner) {
-    }
-
-    // -------------------------------------------------------------------------
-    // Public Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Executes all operations over given array of subjects.
-     * Executes queries using given query runner.
-     */
-    async execute(subjects: Subject[]): Promise<void> {
+                protected queryRunner: QueryRunner,
+                subjects: Subject[]) {
 
         /*subjects.forEach(subject => {
-            console.log(subject.entity);
-            console.log("mustBeInserted: ", subject.mustBeInserted);
-            console.log("mustBeUpdated: ", subject.mustBeUpdated);
-            console.log("mustBeRemoved: ", subject.mustBeRemoved);
-        });*/
+         console.log(subject.entity);
+         console.log("mustBeInserted: ", subject.mustBeInserted);
+         console.log("mustBeUpdated: ", subject.mustBeUpdated);
+         console.log("mustBeRemoved: ", subject.mustBeRemoved);
+         });*/
 
         // validate all subjects first
         subjects.forEach(subject => subject.validate());
@@ -82,65 +74,48 @@ export class SubjectOperationExecutor {
         this.removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
         this.relationUpdateSubjects = subjects.filter(subject => subject.hasRelationUpdates);
 
-        // if there are no operations to execute then don't need to do something including opening a transaction
-        if (!this.insertSubjects.length &&
-            !this.updateSubjects.length &&
-            !this.removeSubjects.length &&
-            !this.relationUpdateSubjects.length &&
-            subjects.every(subject => !subject.junctionInserts.length) &&
-            subjects.every(subject => !subject.junctionRemoves.length))
-            return;
+        this.broadcaster = new Broadcaster(this.connection);
+    }
 
-        // start execute queries in a transaction
-        // if transaction is already opened in this query runner then we don't touch it
-        // if its not opened yet then we open it here, and once we finish - we close it
-        let isTransactionStartedByItself = false;
-        try {
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
 
-            // open transaction if its not opened yet
-            if (!this.queryRunner.isTransactionActive) {
-                isTransactionStartedByItself = true;
-                await this.queryRunner.startTransaction();
-            }
+    areExecutableOperations(): boolean {
+        return this.insertSubjects.length > 0 ||
+            this.updateSubjects.length > 0 ||
+            this.removeSubjects.length > 0 ||
+            this.relationUpdateSubjects.length > 0 ||
+            this.allSubjects.some(subject => subject.junctionInserts.length > 0) ||
+            this.allSubjects.some(subject => subject.junctionRemoves.length > 0);
+    }
 
-            // broadcast "before" events before we start updating
-            const broadcaster = new Broadcaster(this.connection);
-            await broadcaster.broadcastBeforeEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
+    /**
+     * Executes all operations over given array of subjects.
+     * Executes queries using given query runner.
+     */
+    async execute(): Promise<void> {
 
-            // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
-            this.updateSubjects.forEach(subject => subject.recompute());
+        // broadcast "before" events before we start updating
+        await this.broadcaster.broadcastBeforeEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
-            await this.executeInsertOperations();
-            await this.executeInsertClosureTableOperations();
-            await this.executeInsertJunctionsOperations();
-            await this.executeRemoveJunctionsOperations();
-            await this.executeUpdateOperations();
-            await this.executeUpdateRelations();
-            await this.executeRemoveOperations();
+        // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
+        this.updateSubjects.forEach(subject => subject.recompute());
 
-            // commit transaction if it was started by us
-            if (isTransactionStartedByItself === true)
-                await this.queryRunner.commitTransaction();
+        await this.executeInsertOperations();
+        await this.executeInsertClosureTableOperations();
+        await this.executeInsertJunctionsOperations();
+        await this.executeRemoveJunctionsOperations();
+        await this.executeUpdateOperations();
+        await this.executeUpdateRelations();
+        await this.executeRemoveOperations();
 
-            // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
-            await this.updateSpecialColumnsInPersistedEntities();
+        // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
+        await this.updateSpecialColumnsInPersistedEntities();
 
-            // finally broadcast "after" events
-            // note that we are broadcasting events after commit because we want to have ids of the entities inside them to be available in subscribers
-            await broadcaster.broadcastAfterEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
-
-        } catch (error) {
-
-            // rollback transaction if it was started by us
-            if (isTransactionStartedByItself) {
-                try {
-                    await this.queryRunner.rollbackTransaction();
-                } catch (rollbackError) { }
-            }
-
-            throw error;
-        }
-
+        // finally broadcast "after" events
+        // todo: THIS SHOULD NOT BE TRUTH: note that we are broadcasting events after commit because we want to have ids of the entities inside them to be available in subscribers
+        await this.broadcaster.broadcastAfterEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
     }
 
     // -------------------------------------------------------------------------
@@ -673,7 +648,7 @@ export class SubjectOperationExecutor {
             });
 
             if (parentSubject) {
-                parentEntityId = referencedColumn.getEntityValue(parentSubject);
+                parentEntityId = referencedColumn.getEntityValue(parentSubject.entity);
                 if (!parentEntityId && parentSubject.newlyGeneratedId) { // if still not found then it means parent just inserted with generated column
                     parentEntityId = parentSubject.newlyGeneratedId;
                 }

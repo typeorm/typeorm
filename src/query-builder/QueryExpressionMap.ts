@@ -7,6 +7,7 @@ import {RelationCountAttribute} from "./relation-count/RelationCountAttribute";
 import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SelectQuery} from "./SelectQuery";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -220,6 +221,12 @@ export class QueryExpressionMap {
             throw new Error(`"${aliasName}" alias was not found. Maybe you forgot to join it?`);
 
         return alias;
+    }
+
+    findColumnByAliasExpression(aliasExpression: string): ColumnMetadata|undefined {
+        const [aliasName, propertyPath] = aliasExpression.split(".");
+        const alias = this.findAliasByName(aliasName);
+        return alias.metadata.findColumnWithPropertyName(propertyPath);
     }
 
     /**

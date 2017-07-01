@@ -677,6 +677,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     /**
      * Adds new AND WHERE with conditions for the given ids.
+     *
+     * Ids are mixed.
+     * It means if you have single primary key you can pass a simple id values, for example [1, 2, 3].
+     * If you have multiple primary keys you need to pass object with property names and values specified,
+     * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     whereInIds(ids: any[]): this {
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
@@ -686,6 +691,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     /**
      * Adds new AND WHERE with conditions for the given ids.
+     *
+     * Ids are mixed.
+     * It means if you have single primary key you can pass a simple id values, for example [1, 2, 3].
+     * If you have multiple primary keys you need to pass object with property names and values specified,
+     * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     andWhereInIds(ids: any[]): this {
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
@@ -695,6 +705,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     /**
      * Adds new OR WHERE with conditions for the given ids.
+     *
+     * Ids are mixed.
+     * It means if you have single primary key you can pass a simple id values, for example [1, 2, 3].
+     * If you have multiple primary keys you need to pass object with property names and values specified,
+     * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     orWhereInIds(ids: any[]): this {
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
@@ -739,8 +754,26 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * If you had previously GROUP BY expression defined,
      * calling this function will override previously set GROUP BY conditions.
      */
-    groupBy(groupBy: string): this {
-        this.expressionMap.groupBys = [groupBy];
+    groupBy(): this;
+
+    /**
+     * Sets GROUP BY condition in the query builder.
+     * If you had previously GROUP BY expression defined,
+     * calling this function will override previously set GROUP BY conditions.
+     */
+    groupBy(groupBy: string): this;
+
+    /**
+     * Sets GROUP BY condition in the query builder.
+     * If you had previously GROUP BY expression defined,
+     * calling this function will override previously set GROUP BY conditions.
+     */
+    groupBy(groupBy?: string): this {
+        if (groupBy) {
+            this.expressionMap.groupBys = [groupBy];
+        } else {
+            this.expressionMap.groupBys = [];
+        }
         return this;
     }
 
@@ -1422,6 +1455,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const [countQuerySql, countQueryParameters] = this.clone()
             .mergeExpressionMap({ ignoreParentTablesJoins: true })
             .orderBy()
+            .groupBy()
             .offset(undefined)
             .limit(undefined)
             .select(countSql)
@@ -1475,7 +1509,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             const querySelects = metadata.primaryColumns.map(primaryColumn => {
                 const distinctAlias = this.escape("distinctAlias");
-                const columnAlias = this.escape(mainAliasName + "_" + primaryColumn.propertyName);
+                const columnAlias = this.escape(mainAliasName + "_" + primaryColumn.databaseName);
                 if (!orderBys[columnAlias]) // make sure we aren't overriding user-defined order in inverse direction
                     orderBys[columnAlias] = "ASC";
                 return `${distinctAlias}.${columnAlias} as "ids_${mainAliasName + "_" + primaryColumn.databaseName}"`;
@@ -1484,7 +1518,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
                 .select(`DISTINCT ${querySelects.join(", ")} `)
                 .addSelect(selects)
-                .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")
+                .from(`(${this.clone().orderBy().groupBy().getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)
@@ -1552,15 +1586,19 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         const selectString = Object.keys(orderBys)
             .map(columnName => {
-                const [alias, column, ...embeddedProperties] = columnName.split(".");
-                return this.escape(parentAlias) + "." + this.escape(alias + "_" + column + embeddedProperties.join("_"));
+                const [aliasName, propertyPath] = columnName.split(".");
+                const alias = this.expressionMap.findAliasByName(aliasName);
+                const column = alias.metadata.findColumnWithPropertyName(propertyPath);
+                return this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName);
             })
             .join(", ");
 
         const orderByObject: OrderByCondition = {};
         Object.keys(orderBys).forEach(columnName => {
-            const [alias, column, ...embeddedProperties] = columnName.split(".");
-            orderByObject[this.escape(parentAlias) + "." + this.escape(alias + "_" + column + embeddedProperties.join("_"))] = this.expressionMap.orderBys[columnName];
+            const [aliasName, propertyPath] = columnName.split(".");
+            const alias = this.expressionMap.findAliasByName(aliasName);
+            const column = alias.metadata.findColumnWithPropertyName(propertyPath);
+            orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = this.expressionMap.orderBys[columnName];
         });
 
         return [selectString, orderByObject];

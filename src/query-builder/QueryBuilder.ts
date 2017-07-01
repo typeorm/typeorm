@@ -471,6 +471,7 @@ export abstract class QueryBuilder<Entity> {
         const alias = this.expressionMap.mainAlias!.name;
         const parameters: ObjectLiteral = {};
         const whereStrings = ids.map((id, index) => {
+            id = metadata.createEntityIdMap(id);
             const whereSubStrings: string[] = [];
             metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
                 whereSubStrings.push(this.escape(alias) + "." + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);

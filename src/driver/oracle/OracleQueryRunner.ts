@@ -628,7 +628,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         await this.startTransaction();
         try {
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_name, ';') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
+            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS "', table_name, '";') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
             await this.query(disableForeignKeysCheckQuery);

@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../../utils/test-utils";
 
 // fix closure tables later
-describe.skip("closure-table", () => {
+describe("closure-table", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
