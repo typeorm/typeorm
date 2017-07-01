@@ -1,18 +1,18 @@
-import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
-import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {DriverUtils} from "../DriverUtils";
-import {SqlServerQueryRunner} from "./SqlServerQueryRunner";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
-import {DateUtils} from "../../util/DateUtils";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
-import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
-import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
-import {MappedColumnTypes} from "../types/MappedColumnTypes";
-import {ColumnType} from "../types/ColumnTypes";
+import { Driver } from "../Driver";
+import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError";
+import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
+import { DriverUtils } from "../DriverUtils";
+import { SqlServerQueryRunner } from "./SqlServerQueryRunner";
+import { ObjectLiteral } from "../../common/ObjectLiteral";
+import { ColumnMetadata } from "../../metadata/ColumnMetadata";
+import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
+import { DateUtils } from "../../util/DateUtils";
+import { PlatformTools } from "../../platform/PlatformTools";
+import { Connection } from "../../connection/Connection";
+import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder";
+import { SqlServerConnectionOptions } from "./SqlServerConnectionOptions";
+import { MappedColumnTypes } from "../types/MappedColumnTypes";
+import { ColumnType } from "../types/ColumnTypes";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -102,7 +102,7 @@ export class SqlServerDriver implements Driver {
         migrationName: "varchar",
         migrationTimestamp: "bigint",
     };
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -146,7 +146,7 @@ export class SqlServerDriver implements Driver {
 
         // set default useUTC option if it hasn't been set
         if (!options.options) options.options = { useUTC: false };
-        else if (!options.options.useUTC) options.options.useUTC = false; 
+        else if (!options.options.useUTC) options.options.useUTC = false;
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
@@ -251,6 +251,9 @@ export class SqlServerDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (value === null || value === undefined)
+            return value;
+
         if (columnMetadata.type === Boolean) {
             return value ? true : false;
 
@@ -276,7 +279,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: string | number, precision?: number, scale?: number, array?: string | boolean }): string {
         let type = "";
         if (column.type === Number) {
             type += "int";

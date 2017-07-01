@@ -1,18 +1,18 @@
-import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
-import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {DriverUtils} from "../DriverUtils";
-import {MysqlQueryRunner} from "./MysqlQueryRunner";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
-import {DateUtils} from "../../util/DateUtils";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
-import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
-import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
-import {MappedColumnTypes} from "../types/MappedColumnTypes";
-import {ColumnType} from "../types/ColumnTypes";
+import { Driver } from "../Driver";
+import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError";
+import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
+import { DriverUtils } from "../DriverUtils";
+import { MysqlQueryRunner } from "./MysqlQueryRunner";
+import { ObjectLiteral } from "../../common/ObjectLiteral";
+import { ColumnMetadata } from "../../metadata/ColumnMetadata";
+import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
+import { DateUtils } from "../../util/DateUtils";
+import { PlatformTools } from "../../platform/PlatformTools";
+import { Connection } from "../../connection/Connection";
+import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder";
+import { MysqlConnectionOptions } from "./MysqlConnectionOptions";
+import { MappedColumnTypes } from "../types/MappedColumnTypes";
+import { ColumnType } from "../types/ColumnTypes";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -99,7 +99,7 @@ export class MysqlDriver implements Driver {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    
+
     constructor(connection: Connection) {
         this.connection = connection;
         this.options = connection.options as MysqlConnectionOptions;
@@ -230,6 +230,9 @@ export class MysqlDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (value === null || value === undefined)
+            return value;
+
         if (columnMetadata.type === Boolean) {
             return value ? true : false;
 
@@ -255,7 +258,7 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: string | number, precision?: number, scale?: number }): string {
         let type = "";
         if (column.type === Number) {
             type += "int";
