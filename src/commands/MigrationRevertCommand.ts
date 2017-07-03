@@ -45,6 +45,8 @@ export class MigrationRevertCommand {
         } catch (err) {
             console.error(err);
             // throw err;
+        } finally {
+            process.exit(0);
         }
     }
 
