@@ -154,6 +154,19 @@ export class MysqlDriver implements Driver {
         }, this.options.extra || {});
 
         this.pool = this.mysql.createPool(options);
+        
+        return new Promise<void>((resolve, reject) => {
+            this.pool.getConnection(function(err, connection) {
+                if(err){
+                    reject("Mysql connection error : " + err);
+                }
+                else{
+                    resolve();
+                }
+            });
+        });
+        
+        
     }
 
     /**
