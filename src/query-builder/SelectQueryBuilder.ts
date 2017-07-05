@@ -1599,7 +1599,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             const [aliasName, propertyPath] = columnName.split(".");
             const alias = this.expressionMap.findAliasByName(aliasName);
             const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-            orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = this.expressionMap.orderBys[columnName];
+            orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = orderBys[columnName];
         });
 
         return [selectString, orderByObject];
