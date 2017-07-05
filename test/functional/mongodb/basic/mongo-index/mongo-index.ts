@@ -21,7 +21,7 @@ describe("mongodb > indices", () => {
         const post = new Post();
         post.title = "Post";
         post.name = "About Post";
-        await postRepository.persist(post);
+        await postRepository.save(post);
 
         // check saved post
         const loadedPost = await postRepository.findOne({ title: "Post" });

@@ -1,19 +1,18 @@
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
-import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
-import {Logger} from "../../logger/Logger";
-import {SqlServerDriver} from "./SqlServerDriver";
-import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
+import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
+import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableSchema} from "../../schema-builder/schema/TableSchema";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
-import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
-import {ColumnType} from "../../metadata/types/ColumnTypes";
+import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
+import {SqlServerDriver} from "./SqlServerDriver";
+import {Connection} from "../../connection/Connection";
+import {ReadStream} from "fs";
+import {MssqlParameter} from "./MssqlParameter";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -21,22 +20,65 @@ import {ColumnType} from "../../metadata/types/ColumnTypes";
 export class SqlServerQueryRunner implements QueryRunner {
 
     // -------------------------------------------------------------------------
-    // Protected Properties
+    // Public Implemented Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Database driver used by connection.
+     */
+    driver: SqlServerDriver;
+
+    /**
+     * Connection used by this query runner.
+     */
+    connection: Connection;
 
     /**
      * Indicates if connection for this query runner is released.
      * Once its released, query runner cannot run queries anymore.
      */
-    protected isReleased = false;
+    isReleased = false;
+
+    /**
+     * Indicates if transaction is in progress.
+     */
+    isTransactionActive = false;
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Real database connection from a connection pool used to perform queries.
+     */
+    protected databaseConnection: any;
+
+    /**
+     * Last executed query in a transaction.
+     * This is needed because in transaction mode mssql cannot execute parallel queries,
+     * that's why we store last executed query promise to wait it when we execute next query.
+     *
+     * @see https://github.com/patriksimek/node-mssql/issues/491
+     */
+    protected queryResponsibilityChain: Promise<any>[] = [];
+
+    /**
+     * Indicates if special query runner mode in which sql queries won't be executed is enabled.
+     */
+    protected sqlMemoryMode: boolean = false;
+
+    /**
+     * Sql-s stored if "sql in memory" mode is enabled.
+     */
+    protected sqlsInMemory: string[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected databaseConnection: DatabaseConnection,
-                protected driver: SqlServerDriver,
-                protected logger: Logger) {
+    constructor(driver: SqlServerDriver) {
+        this.driver = driver;
+        this.connection = driver.connection;
     }
 
     // -------------------------------------------------------------------------
@@ -44,96 +86,38 @@ export class SqlServerQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Releases database connection. This is needed when using connection pooling.
-     * If connection is not from a pool, it should not be released.
-     * You cannot use this class's methods after its released.
+     * Creates/uses database connection from the connection pool to perform further operations.
+     * Returns obtained database connection.
      */
-    release(): Promise<void> {
-        if (this.databaseConnection.releaseCallback) {
-            this.isReleased = true;
-            return this.databaseConnection.releaseCallback();
-        }
-
+    connect(): Promise<any> {
         return Promise.resolve();
     }
 
     /**
-     * Removes all tables from the currently connected database.
+     * Releases used database connection.
+     * You cannot use query runner methods once its released.
      */
-    async clearDatabase(): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
-        await this.beginTransaction();
-        try {
-            const allTablesSql = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`;
-            const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
-            const tableNames = allTablesResults.map(result => result["TABLE_NAME"]);
-            await Promise.all(tableNames.map(async tableName => {
-                const dropForeignKeySql = `SELECT 'ALTER TABLE ' +  OBJECT_SCHEMA_NAME(parent_object_id) + '.[' + OBJECT_NAME(parent_object_id) + '] DROP CONSTRAINT ' + name as query FROM sys.foreign_keys WHERE referenced_object_id = object_id('${tableName}')`;
-                const dropFkQueries: ObjectLiteral[] = await this.query(dropForeignKeySql);
-                return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => {
-                    return this.query(dropQuery);
-                }));
-            }));
-            await Promise.all(tableNames.map(tableName => {
-                const dropTableSql = `DROP TABLE "${tableName}"`;
-                return this.query(dropTableSql);
-            }));
-
-            await this.commitTransaction();
-
-        } catch (error) {
-            await this.rollbackTransaction();
-            throw error;
-
-        } finally {
-            await this.release();
-        }
-
-        // const selectDropsQuery = `SELECT 'DROP TABLE "' + TABLE_NAME + '"' as query FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';`;
-        // const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-        // const allQueries = [`EXEC sp_msforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"`]
-        //     .concat(dropQueries.map(q => this.query(q["query"])).join("; "));
-        //
-        // return new Promise<void>((ok, fail) => {
-        //
-        //     const request = new this.driver.mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
-        //     request.multiple = true;
-        //     request.query(allQueries, (err: any, result: any) => {
-        //         if (err) {
-        //             this.logger.logFailedQuery(allQueries);
-        //             this.logger.logQueryError(err);
-        //             return fail(err);
-        //         }
-        //
-        //         ok();
-        //     });
-        // });
-
-        // const selectDropsQuery = `SELECT 'DROP TABLE "' + TABLE_NAME + '";' as query FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';`;
-        // const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-        // await this.query(`EXEC sp_msforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"`);
-        // await Promise.all(dropQueries.map(q => this.query(q["query"])));
-        // await this.query(`EXEC sp_msforeachtable 'drop table [?]'`);
+    release(): Promise<void> {
+        this.isReleased = true;
+        return Promise.resolve();
     }
 
     /**
      * Starts transaction.
      */
-    async beginTransaction(): Promise<void> {
+    async startTransaction(): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (this.databaseConnection.isTransactionActive)
+        if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        return new Promise<void>((ok, fail) => {
-            this.databaseConnection.isTransactionActive = true;
-            this.databaseConnection.transaction = this.databaseConnection.connection.transaction();
-            this.databaseConnection.transaction.begin((err: any) => {
+        return new Promise<void>(async (ok, fail) => {
+            this.isTransactionActive = true;
+            this.databaseConnection = this.driver.connectionPool.transaction();
+            this.databaseConnection.begin((err: any) => {
                 if (err) {
-                    this.databaseConnection.isTransactionActive = false;
+                    this.isTransactionActive = false;
                     return fail(err);
                 }
                 ok();
@@ -143,18 +127,20 @@ export class SqlServerQueryRunner implements QueryRunner {
 
     /**
      * Commits transaction.
+     * Error will be thrown if transaction was not started.
      */
     async commitTransaction(): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (!this.databaseConnection.isTransactionActive)
+        if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
         return new Promise<void>((ok, fail) => {
-            this.databaseConnection.transaction.commit((err: any) => {
+            this.databaseConnection.commit((err: any) => {
                 if (err) return fail(err);
-                this.databaseConnection.isTransactionActive = false;
+                this.isTransactionActive = false;
+                this.databaseConnection = null;
                 ok();
             });
         });
@@ -162,84 +148,241 @@ export class SqlServerQueryRunner implements QueryRunner {
 
     /**
      * Rollbacks transaction.
+     * Error will be thrown if transaction was not started.
      */
     async rollbackTransaction(): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (!this.databaseConnection.isTransactionActive)
+        if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
         return new Promise<void>((ok, fail) => {
-            this.databaseConnection.transaction.rollback((err: any) => {
+            this.databaseConnection.rollback((err: any) => {
                 if (err) return fail(err);
-                this.databaseConnection.isTransactionActive = false;
+                this.isTransactionActive = false;
+                this.databaseConnection = null;
                 ok();
             });
         });
     }
 
-    /**
-     * Checks if transaction is in progress.
-     */
-    isTransactionActive(): boolean {
-        return this.databaseConnection.isTransactionActive;
+    protected mssqlParameterToNativeParameter(parameter: MssqlParameter): any {
+        switch (this.driver.normalizeType({ type: parameter.type as any })) {
+            case "bit":
+                return this.driver.mssql.Bit;
+            case "bigint":
+                return this.driver.mssql.BigInt;
+            case "decimal":
+                return this.driver.mssql.Decimal(...parameter.params);
+            case "float":
+                return this.driver.mssql.Float;
+            case "int":
+                return this.driver.mssql.Int;
+            case "money":
+                return this.driver.mssql.Money;
+            case "numeric":
+                return this.driver.mssql.Numeric(...parameter.params);
+            case "smallint":
+                return this.driver.mssql.SmallInt;
+            case "smallmoney":
+                return this.driver.mssql.SmallMoney;
+            case "real":
+                return this.driver.mssql.Real;
+            case "tinyint":
+                return this.driver.mssql.TinyInt;
+            case "char":
+                return this.driver.mssql.Char(...parameter.params);
+            case "nchar":
+                return this.driver.mssql.NChar(...parameter.params);
+            case "text":
+                return this.driver.mssql.Text;
+            case "ntext":
+                return this.driver.mssql.Ntext;
+            case "varchar":
+                return this.driver.mssql.VarChar(...parameter.params);
+            case "nvarchar":
+                return this.driver.mssql.NVarChar(...parameter.params);
+            case "xml":
+                return this.driver.mssql.Xml;
+            case "time":
+                return this.driver.mssql.Time(...parameter.params);
+            case "date":
+                return this.driver.mssql.Date;
+            case "datetime":
+                return this.driver.mssql.DateTime;
+            case "datetime2":
+                return this.driver.mssql.DateTime2(...parameter.params);
+            case "datetimeoffset":
+                return this.driver.mssql.DateTimeOffset(...parameter.params);
+            case "smalldatetime":
+                return this.driver.mssql.SmallDateTime;
+            case "uniqueidentifier":
+                return this.driver.mssql.UniqueIdentifier;
+            case "variant":
+                return this.driver.mssql.Variant;
+            case "binary":
+                return this.driver.mssql.Binary;
+            case "varbinary":
+                return this.driver.mssql.VarBinary(...parameter.params);
+            case "image":
+                return this.driver.mssql.Image;
+            case "udt":
+                return this.driver.mssql.UDT;
+            case "geography":
+                return this.driver.mssql.Geography;
+            case "geometry":
+                return this.driver.mssql.Geometry;
+        }
     }
 
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[]): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise((ok, fail) => {
+        let waitingOkay: Function;
+        const waitingPromise = new Promise((ok) => waitingOkay = ok);
+        if (this.queryResponsibilityChain.length) {
+            const otherWaitingPromises = [...this.queryResponsibilityChain];
+            this.queryResponsibilityChain.push(waitingPromise);
+            await Promise.all(otherWaitingPromises);
+        }
 
-            this.logger.logQuery(query, parameters);
-            const request = new this.driver.mssql.Request(this.isTransactionActive() ? this.databaseConnection.transaction : this.databaseConnection.connection);
+        const promise = new Promise(async (ok, fail) => {
+
+            this.driver.connection.logger.logQuery(query, parameters, this);
+            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : this.driver.connectionPool);
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {
-                    request.input(index, parameters![index]);
+                    if (parameter instanceof MssqlParameter) {
+                        const mssqlParameter = this.mssqlParameterToNativeParameter(parameter);
+                        if (mssqlParameter) {
+                            request.input(index, this.mssqlParameterToNativeParameter(parameter), parameter.value);
+                        } else {
+                            request.input(index, parameter.value);
+                        }
+                    } else {
+                        request.input(index, parameter);
+                    }
                 });
             }
             request.query(query, (err: any, result: any) => {
+
+                const resolveChain = () => {
+                    if (promiseIndex !== -1)
+                        this.queryResponsibilityChain.splice(promiseIndex, 1);
+                    if (waitingPromiseIndex !== -1)
+                        this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
+                    waitingOkay();
+                };
+
+                let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
+                let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                 if (err) {
-                    this.logger.logFailedQuery(query, parameters);
-                    this.logger.logQueryError(err);
+                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
+                    this.driver.connection.logger.logQueryError((err.originalError && err.originalError.info) ? err.originalError.info.message : err, this);
+                    resolveChain();
                     return fail(err);
                 }
 
-                ok(result);
+                ok(result.recordset);
+                resolveChain();
             });
         });
+        if (this.isTransactionActive)
+            this.queryResponsibilityChain.push(promise);
+
+        return promise;
     }
 
     /**
-     * Insert a new row with given values into given table.
+     * Returns raw data stream.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
+    async stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
+        let waitingOkay: Function;
+        const waitingPromise = new Promise((ok) => waitingOkay = ok);
+        if (this.queryResponsibilityChain.length) {
+            const otherWaitingPromises = [...this.queryResponsibilityChain];
+            this.queryResponsibilityChain.push(waitingPromise);
+            await Promise.all(otherWaitingPromises);
+        }
+
+        const promise = new Promise<ReadStream>(async (ok, fail) => {
+
+            this.driver.connection.logger.logQuery(query, parameters, this);
+            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : this.driver.connectionPool);
+            request.stream = true;
+            if (parameters && parameters.length) {
+                parameters.forEach((parameter, index) => {
+                    if (parameter instanceof MssqlParameter) {
+                        request.input(index, this.mssqlParameterToNativeParameter(parameter), parameter.value);
+                    } else {
+                        request.input(index, parameter);
+                    }
+                });
+            }
+            request.query(query, (err: any, result: any) => {
+
+                const resolveChain = () => {
+                    if (promiseIndex !== -1)
+                        this.queryResponsibilityChain.splice(promiseIndex, 1);
+                    if (waitingPromiseIndex !== -1)
+                        this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
+                    waitingOkay();
+                };
+
+                let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
+                let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
+                if (err) {
+                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
+                    this.driver.connection.logger.logQueryError((err.originalError && err.originalError.info) ? err.originalError.info.message : err, this);
+                    resolveChain();
+                    return fail(err);
+                }
+
+                ok(result.recordset);
+                resolveChain();
+            });
+            if (onEnd) request.on("done", onEnd);
+            if (onError) request.on("error", onError);
+            ok(request as ReadStream);
+        });
+        if (this.isTransactionActive)
+            this.queryResponsibilityChain.push(promise);
+
+        return promise;
+    }
+
+    /**
+     * Insert a new row with given values into the given table.
+     * Returns value of the generated column if given and generate column exist in the table.
+     */
+    async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
         const keys = Object.keys(keyValues);
-        const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
+        const columns = keys.map(key => `"${key}"`).join(", ");
         const values = keys.map((key, index) => "@" + index).join(",");
-        const parameters = keys.map(key => keyValues[key]);
-
         const sql = columns.length > 0
-            ? `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.fullName + " " : "" }VALUES (${values})`
-            : `INSERT INTO ${this.driver.escapeTableName(tableName)} ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.fullName + " " : "" }DEFAULT VALUES `;
+            ? `INSERT INTO "${tableName}"(${columns}) ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.databaseName + " " : "" }VALUES (${values})`
+            : `INSERT INTO "${tableName}" ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.databaseName + " " : "" }DEFAULT VALUES `;
 
-        const result = await this.query(sql, parameters);
-        return generatedColumn ? result instanceof Array ? result[0][generatedColumn.fullName] : result[generatedColumn.fullName] : undefined;
+        const parameters = this.driver.parametrizeMap(tableName, keyValues);
+        const parametersArray = Object.keys(parameters).map(key => parameters[key]);
+        const result = await this.query(sql, parametersArray);
+        return generatedColumn ? result instanceof Array ? result[0][generatedColumn.databaseName] : result[generatedColumn.databaseName] : undefined;
     }
 
     /**
      * Updates rows that match given conditions in the given table.
      */
     async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
+        valuesMap = this.driver.parametrizeMap(tableName, valuesMap);
+        conditions = this.driver.parametrizeMap(tableName, conditions);
 
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
@@ -247,7 +390,7 @@ export class SqlServerQueryRunner implements QueryRunner {
 
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions, updateParams.length).join(" AND ");
-        const sql = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const sql = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
 
         await this.query(sql, allParameters);
     }
@@ -255,24 +398,12 @@ export class SqlServerQueryRunner implements QueryRunner {
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(tableName: string, condition: string, parameters?: any[]): Promise<void>;
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
-    async delete(tableName: string, conditions: ObjectLiteral): Promise<void>;
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
     async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
+        conditions = typeof conditions === "object" ? this.driver.parametrizeMap(tableName, conditions) : conditions;
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
-        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
+        const sql = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
         await this.query(sql, parameters);
     }
 
@@ -280,21 +411,18 @@ export class SqlServerQueryRunner implements QueryRunner {
      * Inserts rows into the closure table.
      */
     async insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         let sql = "";
-        if (hasLevel) {
-            sql =   `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                    `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
-                    `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
+        if (hasLevel) { // todo: escape all parameters there
+            sql = `INSERT INTO "${tableName}"("ancestor", "descendant", "level") ` +
+                `SELECT "ancestor", ${newEntityId}, "level" + 1 FROM "${tableName}" WHERE "descendant" = ${parentId} ` +
+                `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
         } else {
-            sql =   `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
-                    `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
-                    `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
+            sql = `INSERT INTO "${tableName}"("ancestor", "descendant") ` +
+                `SELECT "ancestor", ${newEntityId} FROM "${tableName}" WHERE "descendant" = ${parentId} ` +
+                `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
         }
         await this.query(sql);
-        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId}`);
+        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM "${tableName}" WHERE descendant = ${parentId}`);
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
@@ -310,11 +438,8 @@ export class SqlServerQueryRunner implements QueryRunner {
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
     async loadTableSchemas(tableNames: string[]): Promise<TableSchema[]> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
 
         // if no tables given then no need to proceed
-
         if (!tableNames || !tableNames.length)
             return [];
 
@@ -349,7 +474,6 @@ export class SqlServerQueryRunner implements QueryRunner {
             tableSchema.columns = dbColumns
                 .filter(dbColumn => dbColumn["TABLE_NAME"] === tableSchema.name)
                 .map(dbColumn => {
-
                     const isPrimary = !!dbConstraints.find(dbConstraint => {
                         return  dbConstraint["TABLE_NAME"] === tableSchema.name &&
                                 dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] &&
@@ -365,9 +489,13 @@ export class SqlServerQueryRunner implements QueryRunner {
                                 dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE";
                     });
 
+
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["COLUMN_NAME"];
-                    columnSchema.type = dbColumn["DATA_TYPE"].toLowerCase() + (dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? "(" + dbColumn["CHARACTER_MAXIMUM_LENGTH"] + ")" : ""); // todo: use normalize type?
+                    columnSchema.type = dbColumn["DATA_TYPE"].toLowerCase();
+                    columnSchema.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"];
+                    columnSchema.precision = dbColumn["NUMERIC_PRECISION"];
+                    columnSchema.scale = dbColumn["NUMERIC_SCALE"];
                     columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
                     columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     columnSchema.isPrimary = isPrimary;
@@ -429,10 +557,7 @@ export class SqlServerQueryRunner implements QueryRunner {
      * Creates a new table from the given table metadata and column metadatas.
      */
     async createTable(table: TableSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(table.name, column, false, true)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
         sql += table.columns
             .filter(column => column.isUnique)
@@ -442,6 +567,14 @@ export class SqlServerQueryRunner implements QueryRunner {
         if (primaryKeyColumns.length > 0)
             sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `"${column.name}"`).join(", ")})`;
         sql += `)`;
+        await this.query(sql);
+    }
+
+    /**
+     * Drops the table.
+     */
+    async dropTable(tableName: string): Promise<void> {
+        let sql = `DROP TABLE "${tableName}"`;
         await this.query(sql);
     }
 
@@ -457,55 +590,19 @@ export class SqlServerQueryRunner implements QueryRunner {
     /**
      * Creates a new column from the column schema in the table.
      */
-    async addColumn(tableName: string, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Creates a new column from the column schema in the table.
-     */
-    async addColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Creates a new column from the column schema in the table.
-     */
     async addColumn(tableSchemaOrName: TableSchema|string, column: ColumnSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
-        const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(column)}`;
+        const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(tableName, column, false, true)}`;
         return this.query(sql);
     }
 
     /**
      * Creates a new columns from the column schema in the table.
      */
-    async addColumns(tableName: string, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Creates a new columns from the column schema in the table.
-     */
-    async addColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Creates a new columns from the column schema in the table.
-     */
     async addColumns(tableSchemaOrName: TableSchema|string, columns: ColumnSchema[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const queries = columns.map(column => this.addColumn(tableSchemaOrName as any, column));
         await Promise.all(queries);
     }
-
-    /**
-     * Renames column in the given table.
-     */
-    renameColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Renames column in the given table.
-     */
-    renameColumn(tableName: string, oldColumnName: string, newColumnName: string): Promise<void>;
 
     /**
      * Renames column in the given table.
@@ -546,19 +643,7 @@ export class SqlServerQueryRunner implements QueryRunner {
     /**
      * Changes a column in the table.
      */
-    changeColumn(tableSchema: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Changes a column in the table.
-     */
-    changeColumn(tableSchema: string, oldColumn: string, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Changes a column in the table.
-     */
     async changeColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumn: ColumnSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
 
         let tableSchema: TableSchema|undefined = undefined;
         if (tableSchemaOrName instanceof TableSchema) {
@@ -583,18 +668,28 @@ export class SqlServerQueryRunner implements QueryRunner {
         // to update an identy column we have to drop column and recreate it again
         if (newColumn.isGenerated !== oldColumn.isGenerated) {
             await this.query(`ALTER TABLE "${tableSchema.name}" DROP COLUMN "${newColumn.name}"`);
-            await this.query(`ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(newColumn)}`);
+            await this.query(`ALTER TABLE "${tableSchema.name}" ADD ${this.buildCreateColumnSql(tableSchema.name, newColumn, false, false)}`);
         }
 
-        const sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN ${this.buildCreateColumnSql(newColumn, true)}`; // todo: CHANGE OR MODIFY COLUMN ????
+        const sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN ${this.buildCreateColumnSql(tableSchema.name, newColumn, true, false)}`; // todo: CHANGE OR MODIFY COLUMN ????
         await this.query(sql);
 
         if (newColumn.isUnique !== oldColumn.isUnique) {
             if (newColumn.isUnique === true) {
-                await this.query(`ALTER TABLE "${tableSchema.name}" ADD CONSTRAINT "uk_${newColumn.name}" UNIQUE ("${newColumn.name}")`);
+                await this.query(`ALTER TABLE "${tableSchema.name}" ADD CONSTRAINT "uk_${tableSchema.name}_${newColumn.name}" UNIQUE ("${newColumn.name}")`);
 
             } else if (newColumn.isUnique === false) {
-                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "uk_${newColumn.name}"`);
+                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "uk_${tableSchema.name}_${newColumn.name}"`);
+
+            }
+        }
+        if (newColumn.default !== oldColumn.default) {
+            if (newColumn.default !== null && newColumn.default !== undefined) {
+                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "df_${tableSchema.name}_${newColumn.name}"`);
+                await this.query(`ALTER TABLE "${tableSchema.name}" ADD CONSTRAINT "df_${tableSchema.name}_${newColumn.name}" DEFAULT ${newColumn.default} FOR "${newColumn.name}"`);
+
+            } else if (oldColumn.default !== null && oldColumn.default !== undefined) {
+                await this.query(`ALTER TABLE "${tableSchema.name}" DROP CONSTRAINT "df_${tableSchema.name}_${newColumn.name}"`);
 
             }
         }
@@ -604,9 +699,6 @@ export class SqlServerQueryRunner implements QueryRunner {
      * Changes a column in the table.
      */
     async changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const updatePromises = changedColumns.map(async changedColumn => {
             return this.changeColumn(tableSchema, changedColumn.oldColumn, changedColumn.newColumn);
         });
@@ -617,40 +709,21 @@ export class SqlServerQueryRunner implements QueryRunner {
     /**
      * Drops column in the table.
      */
-    async dropColumn(tableName: string, columnName: string): Promise<void>;
+    async dropColumn(table: TableSchema, column: ColumnSchema): Promise<void> {
 
-    /**
-     * Drops column in the table.
-     */
-    async dropColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
+        // drop depend constraints
+        if (column.default)
+            await this.query(`ALTER TABLE "${table.name}" DROP CONSTRAINT "df_${table.name}_${column.name}"`);
 
-    /**
-     * Drops column in the table.
-     */
-    async dropColumn(tableSchemaOrName: TableSchema|string, columnSchemaOrName: ColumnSchema|string): Promise<void> {
-        const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
-        const columnName = columnSchemaOrName instanceof ColumnSchema ? columnSchemaOrName.name : columnSchemaOrName;
-        return this.query(`ALTER TABLE "${tableName}" DROP COLUMN "${columnName}"`);
+        // drop column itself
+        await this.query(`ALTER TABLE "${table.name}" DROP COLUMN "${column.name}"`);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(tableName: string, columnNames: string[]): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(tableSchemaOrName: TableSchema|string, columnSchemasOrNames: ColumnSchema[]|string[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
-        const dropPromises = (columnSchemasOrNames as any[]).map(column => this.dropColumn(tableSchemaOrName as any, column as any));
+    async dropColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void> {
+        const dropPromises = columns.map(column => this.dropColumn(table, column));
         await Promise.all(dropPromises);
     }
 
@@ -658,9 +731,6 @@ export class SqlServerQueryRunner implements QueryRunner {
      * Updates table's primary keys.
      */
     async updatePrimaryKeys(dbTable: TableSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const oldPrimaryKeySql = `SELECT columnUsages.*, tableConstraints.CONSTRAINT_TYPE FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE columnUsages
 LEFT JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tableConstraints ON tableConstraints.CONSTRAINT_NAME = columnUsages.CONSTRAINT_NAME AND tableConstraints.CONSTRAINT_TYPE = 'PRIMARY KEY'
 WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_CATALOG = '${this.dbName}'`;
@@ -677,20 +747,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
     /**
      * Creates a new foreign key.
      */
-    async createForeignKey(tableName: string, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Creates a new foreign key.
-     */
-    async createForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Creates a new foreign key.
-     */
     async createForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
         const columnNames = foreignKey.columnNames.map(column => `"` + column + `"`).join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
@@ -704,20 +761,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
     /**
      * Creates a new foreign keys.
      */
-    async createForeignKeys(tableName: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Creates a new foreign keys.
-     */
-    async createForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Creates a new foreign keys.
-     */
     async createForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const promises = foreignKeys.map(foreignKey => this.createForeignKey(tableSchemaOrName as any, foreignKey));
         await Promise.all(promises);
     }
@@ -725,20 +769,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
     /**
      * Drops a foreign key from the table.
      */
-    async dropForeignKey(tableName: string, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Drops a foreign key from the table.
-     */
-    async dropForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Drops a foreign key from the table.
-     */
     async dropForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
         const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${foreignKey.name}"`;
         return this.query(sql);
@@ -747,20 +778,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
     /**
      * Drops a foreign keys from the table.
      */
-    async dropForeignKeys(tableName: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Drops a foreign keys from the table.
-     */
-    async dropForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Drops a foreign keys from the table.
-     */
     async dropForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const promises = foreignKeys.map(foreignKey => this.dropForeignKey(tableSchemaOrName as any, foreignKey));
         await Promise.all(promises);
     }
@@ -769,9 +787,6 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
      * Creates a new index.
      */
     async createIndex(tableName: string, index: IndexSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
         const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${tableName}"(${columns})`;
         await this.query(sql);
@@ -781,94 +796,73 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
      * Drops an index from the table.
      */
     async dropIndex(tableName: string, indexName: string): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const sql = `DROP INDEX "${tableName}"."${indexName}"`;
         await this.query(sql);
-    }
-
-    /**
-     * Creates a database type from a given column metadata.
-     */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }) {
-        switch (typeOptions.type) {
-            case "string":
-                return "nvarchar(" + (typeOptions.length ? typeOptions.length : 255) + ")";
-            case "text":
-                return "ntext";
-            case "boolean":
-                return "bit";
-            case "integer":
-            case "int":
-                return "int";
-            case "smallint":
-                return "smallint";
-            case "bigint":
-                return "bigint";
-            case "float":
-                return "float";
-            case "double":
-            case "number":
-                return "real";
-            case "decimal":
-                // if (column.precision && column.scale) {
-                //     return `decimal(${column.precision},${column.scale})`;
-                //
-                // } else if (column.scale) {
-                //     return `decimal(${column.scale})`;
-                //
-                // } else if (column.precision) {
-                //     return `decimal(${column.precision})`;
-                //
-                // } else {
-                    return "decimal";
-                // }
-            case "date":
-                return "date";
-            case "time":
-                if (typeOptions.length) {
-                    return "time(" + typeOptions.length + ")";
-                } else {
-                    return "time";
-                }
-            case "datetime":
-                if (typeOptions.length && typeOptions.length <= 3) {
-                    return "datetime(" + typeOptions.length + ")";
-                } else if (typeOptions.length && typeOptions.length > 3) {
-                    return "datetime2(" + typeOptions.length + ")";
-                } else {
-                    return "datetime";
-                }
-            case "json":
-                return "text";
-            case "simple_array":
-                return typeOptions.length ? "nvarchar(" + typeOptions.length + ")" : "text";
-        }
-
-        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "SQLServer");
-    }
-
-    /**
-     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
-     */
-    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean {
-
-        if (typeof columnMetadataValue === "number")
-            return columnMetadataValue === parseInt(databaseValue);
-        if (typeof columnMetadataValue === "boolean")
-            return columnMetadataValue === (!!databaseValue || databaseValue === "false");
-        if (typeof columnMetadataValue === "function")
-            return columnMetadataValue() === databaseValue;
-
-        return columnMetadataValue === databaseValue;
     }
 
     /**
      * Truncates table.
      */
     async truncate(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.driver.escapeTableName(tableName)}`);
+        await this.query(`TRUNCATE TABLE "${tableName}"`);
+    }
+
+    /**
+     * Removes all tables from the currently connected database.
+     */
+    async clearDatabase(): Promise<void> {
+        await this.startTransaction();
+        try {
+            const allTablesSql = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`;
+            const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
+            const tableNames = allTablesResults.map(result => result["TABLE_NAME"]);
+            await Promise.all(tableNames.map(async tableName => {
+                const dropForeignKeySql = `SELECT 'ALTER TABLE ' +  OBJECT_SCHEMA_NAME(parent_object_id) + '.[' + OBJECT_NAME(parent_object_id) + '] DROP CONSTRAINT ' + name as query FROM sys.foreign_keys WHERE referenced_object_id = object_id('${tableName}')`;
+                const dropFkQueries: ObjectLiteral[] = await this.query(dropForeignKeySql);
+                return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => {
+                    return this.query(dropQuery);
+                }));
+            }));
+            await Promise.all(tableNames.map(tableName => {
+                const dropTableSql = `DROP TABLE "${tableName}"`;
+                return this.query(dropTableSql);
+            }));
+
+            await this.commitTransaction();
+
+        } catch (error) {
+            try { // we throw original error even if rollback thrown an error
+                await this.rollbackTransaction();
+            } catch (rollbackError) { }
+            throw error;
+        }
+    }
+
+    /**
+     * Enables special query runner mode in which sql queries won't be executed,
+     * instead they will be memorized into a special variable inside query runner.
+     * You can get memorized sql using getMemorySql() method.
+     */
+    enableSqlMemory(): void {
+        this.sqlMemoryMode = true;
+    }
+
+    /**
+     * Disables special query runner mode in which sql queries won't be executed
+     * started by calling enableSqlMemory() method.
+     *
+     * Previously memorized sql will be flushed.
+     */
+    disableSqlMemory(): void {
+        this.sqlsInMemory = [];
+        this.sqlMemoryMode = false;
+    }
+
+    /**
+     * Gets sql stored in the memory. Parameters in the sql are already replaced.
+     */
+    getMemorySql(): (string|{ up: string, down: string })[] {
+        return this.sqlsInMemory;
     }
 
     // -------------------------------------------------------------------------
@@ -887,15 +881,15 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
      */
     protected parametrize(objectLiteral: ObjectLiteral, startFrom: number = 0): string[] {
         return Object.keys(objectLiteral).map((key, index) => {
-            return this.driver.escapeColumnName(key) + "=@" + (startFrom + index);
+            return `"${key}"` + "=@" + (startFrom + index);
         });
     }
 
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: ColumnSchema, skipIdentity: boolean = false) {
-        let c = `"${column.name}" ${column.type}`;
+    protected buildCreateColumnSql(tableName: string, column: ColumnSchema, skipIdentity: boolean, createDefault: boolean) {
+        let c = `"${column.name}" ${column.getFullType(this.connection.driver)}`;
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isGenerated === true && !skipIdentity) // don't use skipPrimary here since updates can update already exist primary without auto inc.
@@ -904,17 +898,9 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
         //     c += " PRIMARY KEY";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";
-        if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
-            if (typeof column.default === "number") {
-                c += " DEFAULT " + column.default + "";
-            } else if (typeof column.default === "boolean") {
-                c += " DEFAULT " + (column.default === true ? "1" : "0") + "";
-            } else if (typeof column.default === "function") {
-                c += " DEFAULT " + column.default() + "";
-            } else if (typeof column.default === "string") {
-                c += " DEFAULT '" + column.default + "'";
-            } else {
-                c += " DEFAULT " + column.default + "";
+        if (createDefault) {
+            if (column.default !== undefined && column.default !== null) {
+                c += ` CONSTRAINT "df_${tableName}_${column.name}" DEFAULT ${column.default}`;
             }
         }
         return c;

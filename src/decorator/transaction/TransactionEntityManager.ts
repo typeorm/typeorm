@@ -11,6 +11,6 @@ export function TransactionEntityManager(): Function {
             methodName: methodName,
             index: index,
         };
-        getMetadataArgsStorage().transactionEntityManagers.add(args);
+        getMetadataArgsStorage().transactionEntityManagers.push(args);
     };
 }

@@ -3,7 +3,8 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {TableSchema} from "../schema-builder/schema/TableSchema";
 import {ForeignKeySchema} from "../schema-builder/schema/ForeignKeySchema";
 import {IndexSchema} from "../schema-builder/schema/IndexSchema";
-import {ColumnType} from "../metadata/types/ColumnTypes";
+import {Connection} from "../connection/Connection";
+import {ReadStream} from "fs";
 
 /**
  * Runs queries on a single database connection.
@@ -13,9 +14,30 @@ import {ColumnType} from "../metadata/types/ColumnTypes";
 export interface QueryRunner {
 
     /**
-     * Releases database connection. This is needed when using connection pooling.
-     * If connection is not from a pool, it should not be released.
-     * You cannot use this class's methods after its released.
+     * Connection used by this query runner.
+     */
+    readonly connection: Connection;
+
+    /**
+     * Indicates if connection for this query runner is released.
+     * Once its released, query runner cannot run queries anymore.
+     */
+    readonly isReleased: boolean;
+
+    /**
+     * Indicates if transaction is in progress.
+     */
+    readonly isTransactionActive: boolean;
+
+    /**
+     * Creates/uses database connection from the connection pool to perform further operations.
+     * Returns obtained database connection.
+     */
+    connect(): Promise<void>;
+
+    /**
+     * Releases used database connection.
+     * You cannot use this query runner methods after connection is released.
      */
     release(): Promise<void>;
 
@@ -29,22 +51,19 @@ export interface QueryRunner {
     /**
      * Starts transaction.
      */
-    beginTransaction(): Promise<void>;
+    startTransaction(): Promise<void>;
 
     /**
      * Commits transaction.
+     * Error will be thrown if transaction was not started.
      */
     commitTransaction(): Promise<void>;
 
     /**
      * Ends transaction.
+     * Error will be thrown if transaction was not started.
      */
     rollbackTransaction(): Promise<void>;
-
-    /**
-     * Checks if transaction is in progress.
-     */
-    isTransactionActive(): boolean;
 
     /**
      * Executes a given SQL query and returns raw database results.
@@ -52,14 +71,20 @@ export interface QueryRunner {
     query(query: string, parameters?: any[]): Promise<any>;
 
     /**
+     * Returns raw data stream.
+     */
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream>; // todo: ReadStream gonna bring problems in websql driver
+
+    /**
+     * Insert a new row with given values into the given table.
+     * Returns value of the generated column if given and generate column exist in the table.
+     */
+    insert(tableName: string, valuesMap: Object, generatedColumn?: ColumnMetadata): Promise<any>;
+
+    /**
      * Updates rows that match given simple conditions in the given table.
      */
     update(tableName: string, valuesMap: Object, conditions: Object): Promise<void>;
-
-    /**
-     * Inserts a new row into given table.
-     */
-    insert(tableName: string, valuesMap: Object, generatedColumn?: ColumnMetadata): Promise<any>;
 
     /**
      * Performs a simple DELETE query by a given conditions in a given table.
@@ -75,16 +100,6 @@ export interface QueryRunner {
      * Inserts new values into closure table.
      */
     insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
-
-    /**
-     * Converts a column type of the metadata to the database column's type.
-     */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean }): any;
-
-    /**
-     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
-     */
-    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean;
 
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
@@ -105,6 +120,11 @@ export interface QueryRunner {
      * Creates a new table from the given table metadata and column metadatas.
      */
     createTable(table: TableSchema): Promise<void>;
+
+    /**
+     * Drops the table.
+     */
+    dropTable(tableName: string): Promise<void>;
 
     /**
      * Checks if column with the given name exist in the given table.
@@ -159,22 +179,7 @@ export interface QueryRunner {
     /**
      * Drops the column in the table.
      */
-    dropColumn(tableName: string, columnName: string): Promise<void>;
-
-    /**
-     * Drops the column in the table.
-     */
-    dropColumn(tableName: string, columnName: string): Promise<void>;
-
-    /**
-     * Drops the column in the table.
-     */
     dropColumn(table: TableSchema, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    dropColumns(tableName: string, columnNames: string[]): Promise<void>;
 
     /**
      * Drops the columns in the table.
@@ -229,7 +234,7 @@ export interface QueryRunner {
     /**
      * Drops an index from the table.
      */
-    dropIndex(tableName: string, indexName: string): Promise<void>;
+    dropIndex(table: TableSchema|string, index: IndexSchema|string): Promise<void>;
 
     /**
      * Truncates table.
@@ -237,5 +242,25 @@ export interface QueryRunner {
      * todo: probably this should be renamed to drop or clear?
      */
     truncate(tableName: string): Promise<void>;
+
+    /**
+     * Enables special query runner mode in which sql queries won't be executed,
+     * instead they will be memorized into a special variable inside query runner.
+     * You can get memorized sql using getMemorySql() method.
+     */
+    enableSqlMemory(): void;
+
+    /**
+     * Disables special query runner mode in which sql queries won't be executed
+     * started by calling enableSqlMemory() method.
+     *
+     * Previously memorized sql will be flushed.
+     */
+    disableSqlMemory(): void;
+
+    /**
+     * Gets sql stored in the memory. Parameters in the sql are already replaced.
+     */
+    getMemorySql(): (string|{ up: string, down: string })[];
 
 }

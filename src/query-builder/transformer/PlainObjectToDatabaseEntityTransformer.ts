@@ -108,7 +108,6 @@ export class PlainObjectToDatabaseEntityTransformer {
                 .forEach(([relation, value, inverseEntityMetadata]) => fillLoadMap(value, inverseEntityMetadata, item, relation));
         };
         fillLoadMap(plainObject, metadata);
-
         // load all entities and store them in the load map
         await Promise.all(loadMap.groupByTargetIds().map(targetWithIds => { // todo: fix type hinting
             return this.entityManager

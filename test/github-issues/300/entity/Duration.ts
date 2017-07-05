@@ -1,16 +1,14 @@
 import {Column} from "../../../../src/decorator/columns/Column";
-import {EmbeddableEntity} from "../../../../src/decorator/entity/EmbeddableEntity";
 
-@EmbeddableEntity()
 export class Duration {
 
-    @Column({ nullable: true })
-    minutes: number;
+    @Column({ type: Number, nullable: true })
+    minutes: number|null;
 
-    @Column({ nullable: true })
-    hours: number;
+    @Column({ type: Number, nullable: true })
+    hours: number|null;
 
-    @Column({ nullable: true })
-    days: number;
+    @Column({ type: Number, nullable: true })
+    days: number|null;
 
 }

@@ -30,7 +30,7 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
                 category.name = "fake category!";
                 post.category = Promise.resolve(category);
             }
-            promises.push(connection.entityManager.persist(post));
+            promises.push(connection.manager.save(post));
         }
         await Promise.all(promises);
 
@@ -50,11 +50,11 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
         post2.category = Promise.resolve(category2);
 
         // persist
-        await connection.entityManager.persist(post1);
-        await connection.entityManager.persist(post2);
+        await connection.manager.save(post1);
+        await connection.manager.save(post2);
 
         // check that all persisted objects exist
-        const loadedPosts = await connection.entityManager
+        const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .where("post.title = :firstTitle OR post.title = :secondTitle", { firstTitle: "Hello Post #1", secondTitle: "Hello Post #2" })
             .getMany();
@@ -89,7 +89,7 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
                 tag.name = "fake tag!";
                 post.tags = Promise.resolve((await post.tags).concat([tag]));
             }
-            promises.push(connection.entityManager.persist(post));
+            promises.push(connection.manager.save(post));
         }
         await Promise.all(promises);
 
@@ -118,11 +118,11 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
         post2.tags = Promise.resolve([tag2_1, tag2_2, tag2_3]);
 
         // persist
-        await connection.entityManager.persist(post1);
-        await connection.entityManager.persist(post2);
+        await connection.manager.save(post1);
+        await connection.manager.save(post2);
 
         // check that all persisted objects exist
-        const loadedPosts = await connection.entityManager
+        const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .where("post.title = :firstTitle OR post.title = :secondTitle", { firstTitle: "Hello Post #1", secondTitle: "Hello Post #2" })
             .getMany();

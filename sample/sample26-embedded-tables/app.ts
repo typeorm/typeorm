@@ -5,14 +5,12 @@ import {Question} from "./entity/Question";
 import {Counters} from "./entity/Counters";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     logging: {
         logOnlyFailedQueries: true,
         logFailedQueryError: true
@@ -34,7 +32,7 @@ createConnection(options).then(connection => {
     question.counters.metadata = "#question #question-counter";
 
     questionRepository
-        .persist(question)
+        .save(question)
         .then(savedQuestion => {
             console.log("question has been saved: ", savedQuestion);
             
@@ -47,7 +45,7 @@ createConnection(options).then(connection => {
             loadedQuestion!.counters.commentCount = 7;
             loadedQuestion!.counters.metadata = "#updated question";
             
-            return questionRepository.persist(loadedQuestion!);
+            return questionRepository.save(loadedQuestion!);
         })
         .then(updatedQuestion => {
             console.log("question has been updated: ", updatedQuestion);

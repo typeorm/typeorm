@@ -12,6 +12,6 @@ export function AfterLoad() {
             propertyName: propertyName,
             type: EventListenerTypes.AFTER_LOAD
         };
-        getMetadataArgsStorage().entityListeners.add(args);
+        getMetadataArgsStorage().entityListeners.push(args);
     };
 }

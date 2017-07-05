@@ -1,18 +1,18 @@
 import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverOptions} from "../DriverOptions";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {DatabaseConnection} from "../DatabaseConnection";
-import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
+import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {Logger} from "../../logger/Logger";
 import {SqliteQueryRunner} from "./SqliteQueryRunner";
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
+import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {Connection} from "../../connection/Connection";
+import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
+import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
+import {MappedColumnTypes} from "../types/MappedColumnTypes";
+import {ColumnType} from "../types/ColumnTypes";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -24,51 +24,109 @@ export class SqliteDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Naming strategy used in the connection where this driver is used.
+     * Connection used by driver.
      */
-    namingStrategy: NamingStrategyInterface;
+    connection: Connection;
 
     /**
-     * Driver connection options.
+     * Connection options.
      */
-    readonly options: DriverOptions;
+    options: SqliteConnectionOptions;
+
+    /**
+     * SQLite underlying library.
+     */
+    sqlite: any;
+
+    /**
+     * Sqlite has a single QueryRunner because it works on a single database connection.
+     */
+    queryRunner?: QueryRunner;
+
+    /**
+     * Real database connection with sqlite database.
+     */
+    databaseConnection: any;
+
+    /**
+     * Default values of length, precision and scale depends on column data type.
+     * Used in the cases when length/precision/scale is not specified by user.
+     */
+    dataTypeDefaults: DataTypeDefaults;
 
     // -------------------------------------------------------------------------
-    // Protected Properties
+    // Public Implemented Properties
     // -------------------------------------------------------------------------
 
     /**
-     * SQLite library.
+     * Gets list of supported column data types by a driver.
+     *
+     * @see https://www.tutorialspoint.com/sqlite/sqlite_data_types.htm
+     * @see https://sqlite.org/datatype3.html
      */
-    protected sqlite: any;
+    supportedDataTypes: ColumnType[] = [
+        "int",
+        "integer",
+        "tinyint",
+        "smallint",
+        "mediumint",
+        "bigint",
+        "unsigned big int",
+        "int2",
+        "int8",
+        "integer",
+        "character",
+        "varchar",
+        "varying character",
+        "nchar",
+        "native character",
+        "nvarchar",
+        "text",
+        "clob",
+        "text",
+        "blob",
+        "real",
+        "double",
+        "double precision",
+        "float",
+        "real",
+        "numeric",
+        "decimal",
+        "boolean",
+        "date",
+        "time",
+        "datetime",
+    ];
 
     /**
-     * Connection to SQLite database.
+     * Orm has special columns and we need to know what database column types should be for those types.
+     * Column types are driver dependant.
      */
-    protected databaseConnection: DatabaseConnection|undefined;
-
-    /**
-     * Logger used to log queries and errors.
-     */
-    protected logger: Logger;
+    mappedDataTypes: MappedColumnTypes = {
+        createDate: "datetime",
+        createDateDefault: "datetime('now')",
+        updateDate: "datetime",
+        updateDateDefault: "datetime('now')",
+        version: "integer",
+        treeLevel: "integer",
+        migrationName: "varchar",
+        migrationTimestamp: "bigint",
+    };
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOptions: DriverOptions, logger: Logger, sqlite?: any) {
-
-        this.options = connectionOptions;
-        this.logger = logger;
-        this.sqlite = sqlite;
+    constructor(connection: Connection) {
+        this.connection = connection;
+        this.options = connection.options as SqliteConnectionOptions;
 
         // validate options to make sure everything is set
-        if (!this.options.storage)
-            throw new DriverOptionNotSetError("storage");
+        if (!this.options.database)
+            throw new DriverOptionNotSetError("database");
 
-        // if sqlite package instance was not set explicitly then try to load it
-        if (!sqlite)
-            this.loadDependencies();
+        // load sqlite package
+        this.loadDependencies();
     }
 
     // -------------------------------------------------------------------------
@@ -78,59 +136,35 @@ export class SqliteDriver implements Driver {
     /**
      * Performs connection to the database.
      */
-    connect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            const connection = new this.sqlite.Database(this.options.storage, (err: any) => {
-                if (err)
-                    return fail(err);
-
-                this.databaseConnection = {
-                    id: 1,
-                    connection: connection,
-                    isTransactionActive: false
-                };
-
-                // we need to enable foreign keys in sqlite to make sure all foreign key related features
-                // working properly. this also makes onDelete to work with sqlite.
-                connection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
-                    ok();
-                });
-            });
-        });
+    async connect(): Promise<void> {
+        this.databaseConnection = await this.createDatabaseConnection();
     }
 
     /**
      * Closes connection with database.
      */
-    disconnect(): Promise<void> {
+    async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            const handler = (err: any) => err ? fail(err) : ok();
-
-            if (!this.databaseConnection)
-                return fail(new ConnectionIsNotSetError("sqlite"));
-            this.databaseConnection.connection.close(handler);
+            this.queryRunner = undefined;
+            this.databaseConnection.close((err: any) => err ? fail(err) : ok());
         });
     }
 
     /**
-     * Creates a query runner used for common queries.
+     * Creates a schema builder used to build and sync a schema.
      */
-    async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.databaseConnection)
-            return Promise.reject(new ConnectionIsNotSetError("sqlite"));
-
-        const databaseConnection = await this.retrieveDatabaseConnection();
-        return new SqliteQueryRunner(databaseConnection, this, this.logger);
+    createSchemaBuilder() {
+        return new RdbmsSchemaBuilder(this.connection);
     }
 
     /**
-     * Access to the native implementation of the database.
+     * Creates a query runner used to execute database queries.
      */
-    nativeInterface() {
-        return {
-            driver: this.sqlite,
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined
-        };
+    createQueryRunner() {
+        if (!this.queryRunner)
+            this.queryRunner = new SqliteQueryRunner(this);
+
+        return this.queryRunner;
     }
 
     /**
@@ -138,30 +172,22 @@ export class SqliteDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return null;
+            return value;
 
-        switch (columnMetadata.type) {
-            case ColumnTypes.BOOLEAN:
-                return value === true ? 1 : 0;
+        if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
+            return value === true ? 1 : 0;
 
-            case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+        } else if (columnMetadata.type === "date") {
+            return DateUtils.mixedDateToDateString(value);
 
-            case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
+        } else if (columnMetadata.type === "time") {
+            return DateUtils.mixedDateToTimeString(value);
 
-            case ColumnTypes.DATETIME:
-                if (columnMetadata.localTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
-                } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
-                }
+        } else if (columnMetadata.type === "datetime") {
+            return DateUtils.mixedDateToUtcDatetimeString(value); // to string conversation needs because SQLite stores fate as integer number, when date came as Object
 
-            case ColumnTypes.JSON:
-                return JSON.stringify(value);
-
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.simpleArrayToString(value);
+        } else if (columnMetadata.type === "simple-array") {
+            return DateUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -171,21 +197,23 @@ export class SqliteDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        switch (columnMetadata.type) {
-            case ColumnTypes.BOOLEAN:
-                return value ? true : false;
+        if (value === null || value === undefined)
+            return value;
 
-            case ColumnTypes.DATETIME:
-                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+        if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
+            return value ? true : false;
 
-            case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
+        } else if (columnMetadata.type === "datetime") {
+            return DateUtils.normalizeHydratedDate(value);
 
-            case ColumnTypes.JSON:
-                return JSON.parse(value);
+        } else if (columnMetadata.type === "date") {
+            return DateUtils.mixedDateToDateString(value);
 
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.stringToSimpleArray(value);
+        } else if (columnMetadata.type === "time") {
+            return DateUtils.mixedTimeToString(value);
+
+        } else if (columnMetadata.type === "simple-array") {
+            return DateUtils.stringToSimpleArray(value);
         }
 
         return value;
@@ -208,10 +236,14 @@ export class SqliteDriver implements Driver {
                     builtParameters.push(v);
                     return "$" + builtParameters.length;
                 }).join(", ");
+
+            } else if (value instanceof Function) {
+                return value();
+
             } else {
                 builtParameters.push(value);
+                return "$" + builtParameters.length;
             }
-            return "$" + builtParameters.length;
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, builtParameters];
     }
@@ -219,22 +251,59 @@ export class SqliteDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumnName(columnName: string): string {
+    escape(columnName: string): string {
         return "\"" + columnName + "\"";
     }
 
     /**
-     * Escapes an alias.
+     * Creates a database type from a given column metadata.
      */
-    escapeAliasName(aliasName: string): string {
-        return "\"" + aliasName + "\"";
+    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
+        let type = "";
+        if (column.type === Number || column.type === "int") {
+            type += "integer";
+
+        } else if (column.type === String) {
+            type += "varchar";
+
+        } else if (column.type === Date) {
+            type += "datetime";
+
+        } else if ((column.type as any) === Buffer) {
+            type += "blob";
+
+        } else if (column.type === Boolean) {
+            type += "boolean";
+
+        } else if (column.type === "simple-array") {
+            type += "text";
+
+        } else {
+            type += column.type;
+        }
+
+        return type;
     }
 
     /**
-     * Escapes a table name.
+     * Normalizes "default" value of the column.
      */
-    escapeTableName(tableName: string): string {
-        return "\"" + tableName + "\"";
+    normalizeDefault(column: ColumnMetadata): string {
+        if (typeof column.default === "number") {
+            return "" + column.default;
+
+        } else if (typeof column.default === "boolean") {
+            return column.default === true ? "1" : "0";
+
+        } else if (typeof column.default === "function") {
+            return column.default();
+
+        } else if (typeof column.default === "string") {
+            return `'${column.default}'`;
+
+        } else {
+            return column.default;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -242,15 +311,21 @@ export class SqliteDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
+     * Creates connection with the database.
      */
-    protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
+    protected createDatabaseConnection() {
+        return new Promise<void>((ok, fail) => {
+            const databaseConnection = new this.sqlite.Database(this.options.database, (err: any) => {
+                if (err) return fail(err);
 
-        throw new ConnectionIsNotSetError("sqlite");
+                // we need to enable foreign keys in sqlite to make sure all foreign key related features
+                // working properly. this also makes onDelete to work with sqlite.
+                databaseConnection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
+                    if (err) return fail(err);
+                    ok(databaseConnection);
+                });
+            });
+        });
     }
 
     /**
@@ -260,7 +335,7 @@ export class SqliteDriver implements Driver {
         try {
             this.sqlite = PlatformTools.load("sqlite3").verbose();
 
-        } catch (e) { // todo: better error for browser env
+        } catch (e) {
             throw new DriverPackageNotInstalledError("SQLite", "sqlite3");
         }
     }

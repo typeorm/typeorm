@@ -12,6 +12,6 @@ export function SingleEntityChild() {
             type: "single-table-child",
             orderBy: undefined
         };
-        getMetadataArgsStorage().tables.add(args);
+        getMetadataArgsStorage().tables.push(args);
     };
 }

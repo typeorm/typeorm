@@ -31,14 +31,14 @@ describe("other issues > using limit in conjunction with order by", () => {
                 category.name = "category #" + i;
                 post.categories.push(category);
             }
-            promises.push(connection.entityManager.persist(post));
+            promises.push(connection.manager.save(post));
         }
 
         await Promise.all(promises);
 
         // check if ordering by main object works correctly
 
-        const loadedPosts1 = await connection.entityManager
+        const loadedPosts1 = await connection.manager
             .createQueryBuilder(Post, "post")
             .innerJoinAndSelect("post.categories", "categories")
             .take(10)

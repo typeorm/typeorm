@@ -1,3 +1,4 @@
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 /**
  * Arguments for RelationIdMetadataArgs class.
  */
@@ -17,5 +18,15 @@ export interface RelationIdMetadataArgs {
      * Target's relation which it should count.
      */
     readonly relation: string|((object: any) => any);
+
+    /**
+     * Alias of the joined (destination) table.
+     */
+    readonly alias?: string;
+
+    /**
+     * Extra condition applied to "ON" section of join.
+     */
+    readonly queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>;
 
 }

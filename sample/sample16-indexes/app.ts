@@ -4,14 +4,12 @@ import {Post} from "./entity/Post";
 import {BasePost} from "./entity/BasePost";
 
 const options: ConnectionOptions = {
-    driver: {
-        "type": "mysql",
-        "host": "localhost",
-        "port": 3306,
-        "username": "test",
-        "password": "test",
-        "database": "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "test",
+    password: "test",
+    database: "test",
     logging: {
         logQueries: true,
         logFailedQueryError: true,
@@ -32,7 +30,7 @@ createConnection(options).then(connection => {
     let postRepository = connection.getRepository(Post);
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => console.log("Post has been saved"));
 
 }, error => console.log("Cannot connect: ", error));

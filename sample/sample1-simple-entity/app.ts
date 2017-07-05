@@ -3,30 +3,36 @@ import {createConnection, ConnectionOptions} from "../../src/index";
 import {Post} from "./entity/Post";
 
 const options: ConnectionOptions = {
-    driver: {
-        // type: "postgres",
-        // host: "localhost",
-        // port: 5432,
-        // username: "root",
-        // password: "admin",
-        // database: "test"
-        type: "oracle",
-        host: "localhost",
-        username: "system",
-        password: "oracle",
-        port: 1521,
-        sid: "xe.oracle.docker",
-        // type: "mssql",
-        // host: "192.168.1.10",
-        // username: "sa",
-        // password: "admin12345",
-        // database: "test",
-        // port: 1521
-        // type: "sqlite",
-        // storage: "temp/sqlitedb.db"
-    },
+    // type: "oracle",
+    // host: "localhost",
+    // username: "system",
+    // password: "oracle",
+    // port: 1521,
+    // sid: "xe.oracle.docker",
+    // "name": "mysql",
+    // "type": "mysql",
+    // "host": "localhost",
+    // "port": 3306,
+    // "username": "test",
+    // "password": "test",
+    // "database": "test",
+    // type: "postgres",
+    // host: "localhost",
+    // port: 5432,
+    // username: "test",
+    // password: "test",
+    // database: "test",
+    "type": "mssql",
+    "host": "192.168.1.6",
+    "username": "sa",
+    "password": "admin12345",
+    "database": "test",
+    // port: 1521,
+    // type: "sqlite",
+    // database: "temp/sqlitedb.db",
     logging: {
         logQueries: true,
+        logFailedQueryError: false,
         logSchemaCreation: true
     },
     autoSchemaSync: true,
@@ -43,7 +49,7 @@ createConnection(options).then(connection => {
     let postRepository = connection.getRepository(Post);
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => console.log("Post has been saved: ", post))
         .catch(error => console.log("Cannot save. Error: ", error));
 

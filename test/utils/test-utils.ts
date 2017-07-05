@@ -1,13 +1,13 @@
 import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
 import {createConnection, createConnections} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
-import {DriverType} from "../../src/driver/DriverOptions";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
+import {DatabaseType} from "../../src/driver/types/DatabaseType";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
  */
-export interface TestingConnectionOptions extends ConnectionOptions {
+export type TestingConnectionOptions = ConnectionOptions & {
 
     /**
      * Indicates if this connection should be skipped.
@@ -19,7 +19,7 @@ export interface TestingConnectionOptions extends ConnectionOptions {
      */
     disabledIfNotEnabledImplicitly?: boolean;
 
-}
+};
 
 /**
  * Options used to create a connection for testing purposes.
@@ -35,7 +35,7 @@ export interface TestingOptions {
     /**
      * List of enabled drivers for the given test suite.
      */
-    enabledDrivers?: DriverType[];
+    enabledDrivers?: DatabaseType[];
 
     /**
      * Entities needs to be included in the connection for the given test suite.
@@ -73,7 +73,7 @@ export interface TestingOptions {
  * Creates a testing connection options for the given driver type based on the configuration in the ormconfig.json
  * and given options that can override some of its configuration for the test-specific use case.
  */
-export function setupSingleTestingConnection(driverType: DriverType, options: TestingOptions) {
+export function setupSingleTestingConnection(driverType: DatabaseType, options: TestingOptions): ConnectionOptions {
 
     const testingConnections = setupTestingConnections({
         name: options.name ? options.name : undefined,
@@ -116,7 +116,7 @@ export function getTypeOrmConfig(): TestingConnectionOptions[] {
  * Creates a testing connections options based on the configuration in the ormconfig.json
  * and given options that can override some of its configuration for the test-specific use case.
  */
-export function setupTestingConnections(options?: TestingOptions) {
+export function setupTestingConnections(options?: TestingOptions): ConnectionOptions[] {
     const ormConfigConnectionOptionsArray = getTypeOrmConfig();
 
     if (!ormConfigConnectionOptionsArray.length)
@@ -128,7 +128,7 @@ export function setupTestingConnections(options?: TestingOptions) {
                 return false;
 
             if (options && options.enabledDrivers && options.enabledDrivers.length)
-                return options.enabledDrivers.indexOf(connectionOptions.driver.type) !== -1;
+                return options.enabledDrivers.indexOf(connectionOptions.type!) !== -1; // ! is temporary
 
             if (connectionOptions.disabledIfNotEnabledImplicitly === true)
                 return false;
@@ -136,22 +136,15 @@ export function setupTestingConnections(options?: TestingOptions) {
             return true;
         })
         .map(connectionOptions => {
-            const newConnectionOptions = Object.assign({}, connectionOptions as ConnectionOptions, {
+            return Object.assign({}, connectionOptions as ConnectionOptions, {
                 name: options && options.name ? options.name : connectionOptions.name,
                 entities: options && options.entities ? options.entities : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
                 entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
                 autoSchemaSync: options && options.entities ? options.schemaCreate : false,
                 dropSchemaOnConnection: options && options.entities ? options.dropSchemaOnConnection : false,
+                schemaName: options && options.schemaName ? options.schemaName : undefined,
             });
-
-
-            if (options && options.schemaName && newConnectionOptions.driver) {
-                // todo: we use any because driver.schemaName is readonly. Need to find better solution here
-                (newConnectionOptions.driver as any).schemaName = options.schemaName;
-            }
-
-            return newConnectionOptions;
         });
 }
 
@@ -191,4 +184,23 @@ export function setupConnection(callback: (connection: Connection) => any, entit
                 return connection;
             });
     };
+}
+
+/**
+ * Generates random text array with custom length.
+ */
+export function generateRandomText(length: number): string {
+    let text = "";
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    for (let i = 0; i <= length; i++ )
+        text += characters.charAt(Math.floor(Math.random() * characters.length));
+
+    return text;
+}
+
+export function sleep(ms: number): Promise<void> {
+    return new Promise<void>(ok => {
+        setTimeout(ok, ms);
+    });
 }

@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../../../src/connection/Connection";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Post} from "./entity/Post";
 import {MongoRepository} from "../../../../../src/repository/MongoRepository";
 
@@ -20,7 +20,7 @@ describe("mongodb > MongoRepository", () => {
     })));
 
     it("entity manager should return mongo repository when requested", () => Promise.all(connections.map(async connection => {
-        const postRepository = connection.entityManager.getMongoRepository(Post);
+        const postRepository = connection.manager.getMongoRepository(Post);
         postRepository.should.be.instanceOf(MongoRepository);
     })));
 
@@ -31,12 +31,12 @@ describe("mongodb > MongoRepository", () => {
         const firstPost = new Post();
         firstPost.title = "Post #1";
         firstPost.text = "Everything about post #1";
-        await postRepository.persist(firstPost);
+        await postRepository.save(firstPost);
 
         const secondPost = new Post();
         secondPost.title = "Post #2";
         secondPost.text = "Everything about post #2";
-        await postRepository.persist(secondPost);
+        await postRepository.save(secondPost);
 
         const cursor = postRepository.createEntityCursor({
             title: "Post #1"

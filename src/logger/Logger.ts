@@ -1,8 +1,13 @@
 import {LoggerOptions} from "./LoggerOptions";
 import {PlatformTools} from "../platform/PlatformTools";
+import {QueryRunner} from "../query-runner/QueryRunner";
+import {highlight} from "cli-highlight";
+const chalk = require("chalk");
 
 /**
  * Performs logging of the events in TypeORM.
+ *
+ * todo: implement logging of too long running queries (there should be option to control max query execution time)
  */
 export class Logger {
 
@@ -20,51 +25,59 @@ export class Logger {
     /**
      * Logs query and parameters used in it.
      */
-    logQuery(query: string, parameters?: any[]) {
+    logQuery(query: string, parameters: any[]|undefined, queryRunner?: QueryRunner) {
         if (this.options.logQueries ||
-            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
-            this.log("log", `executing query: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""}`);
+            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC")) {
+            this.log("query", query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""), queryRunner);
+        }
     }
 
     /**
      * Logs query that failed.
      */
-    logFailedQuery(query: string, parameters?: any[]) {
+    logFailedQuery(query: string, parameters: any[]|undefined, queryRunner?: QueryRunner) {
         if (this.options.logQueries ||
             this.options.logOnlyFailedQueries ||
             PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
-            this.log("error", `query failed: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""}`);
+            this.log("error", `query failed: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""}`, queryRunner);
     }
 
     /**
      * Logs failed query's error.
      */
-    logQueryError(error: any) {
+    logQueryError(error: any, queryRunner?: QueryRunner) {
         if (this.options.logFailedQueryError ||
             PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
-            this.log("error", "error during executing query:" + error);
+            this.log("error", "error during executing query:" + error, queryRunner);
     }
 
     /**
      * Logs events from the schema build process.
      */
-    logSchemaBuild(message: string) {
+    logSchemaBuild(message: string, queryRunner?: QueryRunner) {
         if (this.options.logSchemaCreation ||
             PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
-            this.log("info", message);
+            this.log("schema-build", message, queryRunner);
     }
 
     /**
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
      */
-    log(level: "log"|"info"|"warn"|"error", message: any) {
+    log(level: "query"|"schema-build"|"log"|"info"|"warn"|"error", message: any, queryRunner?: QueryRunner) {
         if (!this.options) return;
 
         if (this.options.logger) {
-            this.options.logger(level, message);
+            this.options.logger(level, message, queryRunner);
+
         } else {
             switch (level) {
+                case "schema-build":
+                    console.log(chalk.underline(message));
+                    break;
+                case "query":
+                    console.log(highlight(message));
+                    break;
                 case "log":
                     console.log(message);
                     break;

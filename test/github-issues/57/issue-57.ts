@@ -26,7 +26,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
         token.user = user; // this is not necessary at all
 
         // save
-        await connection.getRepository(User).persist(user);
+        await connection.getRepository(User).save(user);
 
         // get to check
         const tokens = await connection.getRepository(AccessToken)
@@ -70,7 +70,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
         token.user = user; // this is necessary to cascades to work because we are saving token, not user
 
         // save
-        await connection.getRepository(AccessToken).persist(token);
+        await connection.getRepository(AccessToken).save(token);
 
         // get to check
         const tokens = await connection.getRepository(AccessToken)

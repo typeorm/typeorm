@@ -36,10 +36,10 @@ describe("persistence > order of persistence execution operations", () => {
             post1.title = "Hello Post #1";
             post1.category = category1;
 
-            await connection.entityManager.persist(post1);
+            await connection.manager.save(post1);
 
             // now check
-            /*const posts = await connection.entityManager.find(Post, {
+            /*const posts = await connection.manager.find(Post, {
              alias: "post",
              innerJoinAndSelect: {
              category: "post.category"

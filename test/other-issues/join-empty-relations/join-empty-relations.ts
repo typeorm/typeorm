@@ -19,11 +19,11 @@ describe("other issues > joining empty relations", () => {
 
         const post = new Post();
         post.title = "Hello Post";
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
         // check if ordering by main object works correctly
 
-        const loadedPosts1 = await connection.entityManager
+        const loadedPosts1 = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .getMany();
@@ -41,11 +41,11 @@ describe("other issues > joining empty relations", () => {
 
         const post = new Post();
         post.title = "Hello Post";
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
         // check if ordering by main object works correctly
 
-        const loadedPosts1 = await connection.entityManager
+        const loadedPosts1 = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .leftJoinAndSelect("categories.authors", "authors")

@@ -3,14 +3,12 @@ import {createConnection, ConnectionOptions} from "../../src/index";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     logging: {
         logOnlyFailedQueries: true,
         logFailedQueryError: true
@@ -42,7 +40,7 @@ createConnection(options).then(connection => {
     category1.childCategories = [childCategory1, childCategory2];
 
     return categoryRepository
-        .persist(category1)
+        .save(category1)
         .then(category => {
             console.log("Categories has been saved. Lets now load it and all its descendants:");
             return categoryRepository.findDescendants(category1);

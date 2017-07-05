@@ -12,6 +12,6 @@ export function AfterUpdate() {
             propertyName: propertyName,
             type: EventListenerTypes.AFTER_UPDATE
         };
-        getMetadataArgsStorage().entityListeners.add(args);
+        getMetadataArgsStorage().entityListeners.push(args);
     };
 }

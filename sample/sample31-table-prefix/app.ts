@@ -5,11 +5,9 @@ import {Author} from "./entity/Author";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "sqlite",
-        storage: "temp/sqlitedb.db",
-        tablesPrefix: "samples_" // pay attention on this prefix
-    },
+    type: "sqlite",
+    database: "temp/sqlitedb.db",
+    tablesPrefix: "samples_", // pay attention on this prefix
     autoSchemaSync: true,
     logging: {
         logQueries: true,
@@ -39,7 +37,7 @@ createConnection(options).then(async connection => {
 
     let postRepository = connection.getRepository(Post);
 
-    await postRepository.persist(post);
+    await postRepository.save(post);
     console.log("Post has been saved");
 
 }).catch(error => console.log("Error: ", error));

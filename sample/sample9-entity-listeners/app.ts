@@ -5,14 +5,12 @@ import {PostCategory} from "./entity/PostCategory";
 import {PostAuthor} from "./entity/PostAuthor";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     autoSchemaSync: true,
     entities: [__dirname + "/entity/*"],
     subscribers: [__dirname + "/subscriber/*"]
@@ -37,7 +35,7 @@ createConnection(options).then(connection => {
     let postRepository = connection.getRepository(Post);
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             console.log("Post has been saved");
             console.log("---------------------------");
@@ -59,7 +57,7 @@ createConnection(options).then(connection => {
             console.log("---------------------------");
             loadedPost!.text = "post updated";
             loadedPost!.author.name = "Bakha";
-            return postRepository.persist(loadedPost!);
+            return postRepository.save(loadedPost!);
         })
         .then(loadedPost => {
             console.log("update finished. Now lets remove entity");

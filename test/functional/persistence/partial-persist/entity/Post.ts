@@ -19,7 +19,7 @@ export class Post {
     @Column()
     description: string;
 
-    @Embedded(type => Counters)
+    @Column(type => Counters)
     counters: Counters;
 
     @ManyToMany(type => Category, category => category.posts, {

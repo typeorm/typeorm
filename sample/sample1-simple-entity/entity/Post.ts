@@ -5,7 +5,7 @@ import {Index} from "../../../src/decorator/Index";
 @Entity("sample01_post")
 export class Post {
 
-    @PrimaryColumn("int", { generated: true })
+    @PrimaryColumn("integer", { generated: true })
     id: number;
 
     @Column()

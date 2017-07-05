@@ -23,6 +23,6 @@ export function ObjectIdColumn<T>(options?: ColumnOptions): Function {
             mode: "objectId",
             options: options
         };
-        getMetadataArgsStorage().columns.add(args);
+        getMetadataArgsStorage().columns.push(args);
     };
 }

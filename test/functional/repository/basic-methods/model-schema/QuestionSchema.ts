@@ -10,7 +10,7 @@ export default {
             generated: true
         },
         title: {
-            type: "string",
+            type: "varchar",
             nullable: false
         }
     },

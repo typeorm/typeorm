@@ -20,7 +20,7 @@ describe("indices > basic unique index test", () => {
             const customer = new Customer();
             customer.nameEnglish = "Umed";
             customer.nameHebrew = "Uma";
-            await connection.entityManager.persist(customer);
+            await connection.manager.save(customer);
         })));
 
     });

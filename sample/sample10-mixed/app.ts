@@ -7,14 +7,12 @@ import {Cover} from "./entity/Cover";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     autoSchemaSync: true,
     entities: [__dirname + "/entity/*"]
 };
@@ -46,7 +44,7 @@ createConnection(options).then(connection => {
     post.images.push(image);
     post.categories = [category1, category2];
     
-    postRepository.persist(post).then(result => {
+    postRepository.save(post).then(result => {
 
         /*const qb = postRepository.createQueryBuilder("post")
             .leftJoinAndSelect("post.details", "details")
