@@ -7,7 +7,7 @@ import { Category } from "../../sample/sample30-default-order-by/entity/Category
 import { Post } from "../../sample/sample30-default-order-by/entity/Post";
 import { setupSingleTestingConnection } from "../utils/test-utils";
 
-describe.only("default-order-by", () => {
+describe("default-order-by", () => {
 
     // -------------------------------------------------------------------------
     // Configuration
