@@ -12,6 +12,6 @@ export function BeforeInsert() {
             propertyName: propertyName,
             type: EventListenerTypes.BEFORE_INSERT
         };
-        getMetadataArgsStorage().entityListeners.add(args);
+        getMetadataArgsStorage().entityListeners.push(args);
     };
 }

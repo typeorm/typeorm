@@ -13,7 +13,7 @@ export class Organisation {
     @Column()
     name: string;
 
-    @Embedded(type => Contact)
+    @Column(type => Contact)
     contact: Contact;
 
 }

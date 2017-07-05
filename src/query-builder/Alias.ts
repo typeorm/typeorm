@@ -1,0 +1,44 @@
+import {EntityMetadata} from "../metadata/EntityMetadata";
+/**
+ */
+export class Alias {
+
+    name: string;
+
+    /**
+     * Table on which this alias is applied.
+     * Used only for aliases which select custom tables.
+     */
+    tableName?: string;
+
+    /**
+     * If this alias is for sub query.
+     */
+    subQuery?: string;
+
+    constructor(alias?: Alias) {
+        Object.assign(this, alias || {});
+    }
+
+    private _metadata?: EntityMetadata;
+
+    get target(): Function|string {
+        return this.metadata.target;
+    }
+
+    get hasMetadata(): boolean {
+        return !!this._metadata;
+    }
+
+    set metadata(metadata: EntityMetadata) {
+        this._metadata = metadata;
+    }
+
+    get metadata(): EntityMetadata {
+        if (!this._metadata)
+            throw new Error(`Cannot get entity metadata for the given alias "${this.name}"`);
+
+        return this._metadata;
+    }
+
+}

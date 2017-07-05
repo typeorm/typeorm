@@ -3,11 +3,9 @@ import {createConnection, ConnectionOptions} from "../../src/index";
 import {Post} from "./entity/Post";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mongodb",
-        host: "localhost",
-        database: "test",
-    },
+    type: "mongodb",
+    host: "localhost",
+    database: "test",
     logging: {
         logQueries: true,
         logSchemaCreation: true
@@ -23,7 +21,7 @@ createConnection(options).then(async connection => {
     post.title = "hello";
     post.likesCount = 100;
 
-    await connection.getRepository(Post).persist(post);
+    await connection.getRepository(Post).save(post);
     console.log("Post has been saved: ", post);
 
     const loadedPost = await connection.getRepository(Post).findOne({
@@ -41,7 +39,7 @@ createConnection(options).then(async connection => {
     console.log("Post retrieved via cursor #2: ", await cursor1.next());
 
     // we can also perform mongodb-specific queries using mongodb-specific entity manager
-    const cursor2 = connection.mongoEntityManager.createEntityCursor(Post, { title: "hello" });
+    const cursor2 = connection.mongoManager.createEntityCursor(Post, { title: "hello" });
     console.log("Only two posts retrieved via cursor: ", await cursor2.limit(2).toArray());
 
 }, error => console.log("Error: ", error));

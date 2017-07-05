@@ -10,11 +10,11 @@
       "generated": true
     },
     "description": {
-      "type": "string",
+      "type": "varchar",
       "nullable": false
     },
     "url": {
-      "type": "string",
+      "type": "varchar",
       "nullable": false
     }
   }

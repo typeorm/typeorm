@@ -1,19 +1,20 @@
 import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverOptions} from "../DriverOptions";
-import {DatabaseConnection} from "../DatabaseConnection";
-import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
+import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
+import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
-import {Logger} from "../../logger/Logger";
-import {QueryRunner} from "../../query-runner/QueryRunner";
 import {SqlServerQueryRunner} from "./SqlServerQueryRunner";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
+import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {Connection} from "../../connection/Connection";
+import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
+import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
+import {MappedColumnTypes} from "../types/MappedColumnTypes";
+import {ColumnType} from "../types/ColumnTypes";
+import {DataTypeDefaults} from "../types/DataTypeDefaults";
+import {MssqlParameter} from "./MssqlParameter";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -25,53 +26,102 @@ export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Naming strategy used in the connection where this driver is used.
+     * Connection used by driver.
      */
-    namingStrategy: NamingStrategyInterface;
+    connection: Connection;
 
     /**
-     * Driver connection options.
+     * Connection options.
      */
-    readonly options: DriverOptions;
+    options: SqlServerConnectionOptions;
 
     /**
      * SQL Server library.
      */
-    public mssql: any;
-
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Connection to mssql database.
-     */
-    protected databaseConnection: DatabaseConnection|undefined;
+    mssql: any;
 
     /**
      * SQL Server pool.
      */
-    protected connection: any;
+    connectionPool: any;
+
+    // -------------------------------------------------------------------------
+    // Public Implemented Properties
+    // -------------------------------------------------------------------------
 
     /**
-     * Pool of database connections.
+     * Gets list of supported column data types by a driver.
+     *
+     * @see https://docs.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql
      */
-    protected databaseConnectionPool: DatabaseConnection[] = [];
+    supportedDataTypes: ColumnType[] = [
+        "bigint",
+        "bit",
+        "decimal",
+        "int",
+        "money",
+        "numeric",
+        "smallint",
+        "smallmoney",
+        "tinyint",
+        "float",
+        "real",
+        "date",
+        "datetime2",
+        "datetime",
+        "datetimeoffset",
+        "smalldatetime",
+        "time",
+        "char",
+        "text",
+        "varchar",
+        "nchar",
+        "ntext",
+        "nvarchar",
+        "binary",
+        "image",
+        "varbinary",
+        "cursor",
+        "hierarchyid",
+        "sql_variant",
+        "table",
+        "timestamp",
+        "uniqueidentifier",
+        "xml"
+    ];
 
     /**
-     * Logger used to log queries and errors.
+     * Orm has special columns and we need to know what database column types should be for those types.
+     * Column types are driver dependant.
      */
-    protected logger: Logger;
+    mappedDataTypes: MappedColumnTypes = {
+        createDate: "datetime2",
+        createDateDefault: "getdate()",
+        updateDate: "datetime2",
+        updateDateDefault: "getdate()",
+        version: "int",
+        treeLevel: "int",
+        migrationName: "varchar",
+        migrationTimestamp: "bigint",
+    };
+
+    /**
+     * Default values of length, precision and scale depends on column data type.
+     * Used in the cases when length/precision/scale is not specified by user.
+     */
+    dataTypeDefaults: DataTypeDefaults = {
+        varchar: { length: 255 },
+        nvarchar: { length: 255 }
+    };
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger, mssql?: any) {
-
-        this.options = DriverUtils.buildDriverOptions(options);
-        this.logger = logger;
-        this.mssql = mssql;
+    constructor(connection: Connection) {
+        this.connection = connection;
+        this.options = connection.options as SqlServerConnectionOptions;
+        Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
 
         // validate options to make sure everything is set
         if (!this.options.host)
@@ -81,13 +131,12 @@ export class SqlServerDriver implements Driver {
         if (!this.options.database)
             throw new DriverOptionNotSetError("database");
 
-        // if mssql package instance was not set explicitly then try to load it
-        if (!mssql)
-            this.loadDependencies();
+        // load mssql package
+        this.loadDependencies();
     }
 
     // -------------------------------------------------------------------------
-    // Public Methods
+    // Public Implemented Methods
     // -------------------------------------------------------------------------
 
     /**
@@ -108,21 +157,14 @@ export class SqlServerDriver implements Driver {
 
         // set default useUTC option if it hasn't been set
         if (!options.options) options.options = { useUTC: false };
-        else if (!options.options.useUTC) options.options.useUTC = false; 
+        else if (!options.options.useUTC) options.options.useUTC = false;
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
         return new Promise<void>((ok, fail) => {
-            const connection = new this.mssql.Connection(options).connect((err: any) => {
+            const connection = new this.mssql.ConnectionPool(options).connect((err: any) => {
                 if (err) return fail(err);
-                this.connection = connection;
-                if (this.options.usePool === false) {
-                    this.databaseConnection = {
-                        id: 1,
-                        connection: new this.mssql.Request(connection),
-                        isTransactionActive: false
-                    };
-                }
+                this.connectionPool = connection;
                 ok();
             });
         });
@@ -132,35 +174,25 @@ export class SqlServerDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.connection)
-            throw new ConnectionIsNotSetError("mssql");
-
-        this.connection.close();
-        this.connection = undefined;
-        this.databaseConnection = undefined;
-        this.databaseConnectionPool = [];
-    }
-
-    /**
-     * Creates a query runner used for common queries.
-     */
-    async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.connection)
+        if (!this.connectionPool)
             return Promise.reject(new ConnectionIsNotSetError("mssql"));
 
-        const databaseConnection = await this.retrieveDatabaseConnection();
-        return new SqlServerQueryRunner(databaseConnection, this, this.logger);
+        this.connectionPool.close();
+        this.connectionPool = undefined;
     }
 
     /**
-     * Access to the native implementation of the database.
+     * Creates a schema builder used to build and sync a schema.
      */
-    nativeInterface() {
-        return {
-            driver: this.mssql,
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
-            pool: this.connection
-        };
+    createSchemaBuilder() {
+        return new RdbmsSchemaBuilder(this.connection);
+    }
+
+    /**
+     * Creates a query runner used to execute database queries.
+     */
+    createQueryRunner() {
+        return new SqlServerQueryRunner(this);
     }
 
     /**
@@ -179,10 +211,13 @@ export class SqlServerDriver implements Driver {
                     escapedParameters.push(v);
                     return "@" + (escapedParameters.length - 1);
                 }).join(", ");
+            } else if (value instanceof Function) {
+                return value();
+
             } else {
                 escapedParameters.push(value);
+                return "@" + (escapedParameters.length - 1);
             }
-            return "@" + (escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
@@ -190,22 +225,8 @@ export class SqlServerDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumnName(columnName: string): string {
+    escape(columnName: string): string {
         return `"${columnName}"`;
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAliasName(aliasName: string): string {
-        return `"${aliasName}"`;
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTableName(tableName: string): string {
-        return `"${tableName}"`;
     }
 
     /**
@@ -213,30 +234,26 @@ export class SqlServerDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return null;
+            return value;
 
-        switch (columnMetadata.type) {
-            case ColumnTypes.BOOLEAN:
-                return value === true ? 1 : 0;
+        if (columnMetadata.type === Boolean) {
+            return value === true ? 1 : 0;
 
-            case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+        } else if (columnMetadata.type === "date") {
+            return DateUtils.mixedDateToDate(value);
 
-            case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
+        } else if (columnMetadata.type === "time") {
+            return DateUtils.mixedTimeToDate(value);
 
-            case ColumnTypes.DATETIME:
-                if (columnMetadata.localTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
-                } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
-                }
+        } else if (columnMetadata.type === "datetime"
+            || columnMetadata.type === "datetime2"
+            || columnMetadata.type === "smalldatetime"
+            || columnMetadata.type === "datetimeoffset") {
+            return DateUtils.mixedDateToDate(value, true);
 
-            case ColumnTypes.JSON:
-                return JSON.stringify(value);
+        } else if (columnMetadata.type === "simple-array") {
+            return DateUtils.simpleArrayToString(value);
 
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -246,75 +263,152 @@ export class SqlServerDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        switch (columnMetadata.type) {
-            case ColumnTypes.BOOLEAN:
-                return value ? true : false;
+        if (value === null || value === undefined)
+            return value;
 
-            case ColumnTypes.DATETIME:
-                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+        if (columnMetadata.type === Boolean) {
+            return value ? true : false;
 
-            case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
+        } else if (columnMetadata.type === "datetime"
+            || columnMetadata.type === "datetime2"
+            || columnMetadata.type === "smalldatetime"
+            || columnMetadata.type === "datetimeoffset") {
+            return DateUtils.normalizeHydratedDate(value);
 
-            case ColumnTypes.JSON:
-                return JSON.parse(value);
+        } else if (columnMetadata.type === "date") {
+            return DateUtils.mixedDateToDateString(value);
 
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.stringToSimpleArray(value);
+        } else if (columnMetadata.type === "time") {
+            return DateUtils.mixedTimeToString(value);
+
+        } else if (columnMetadata.type === "simple-array") {
+            return DateUtils.stringToSimpleArray(value);
         }
 
         return value;
     }
 
+    /**
+     * Creates a database type from a given column metadata.
+     */
+    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
+        let type = "";
+        if (column.type === Number) {
+            type += "int";
+
+        } else if (column.type === String) {
+            type += "nvarchar";
+
+        } else if (column.type === Date) {
+            type += "datetime";
+
+        } else if (column.type === Boolean) {
+            type += "bit";
+
+        } else if ((column.type as any) === Buffer) {
+            type += "binary";
+
+        } else if (column.type === "simple-array") {
+            type += "ntext";
+
+        } else {
+            type += column.type;
+        }
+
+        // make sure aliases to have original type names
+        if (type === "integer") {
+            type = "int";
+        } else if (type === "dec") {
+            type = "decimal";
+        } else if (type === "float" && (column.precision && (column.precision! >= 1 && column.precision! < 25))) {
+            type = "real";
+        }
+
+        if (type === "double precision")
+            type = "float";
+
+        return type;
+    }
+
+    /**
+     * Normalizes "default" value of the column.
+     */
+    normalizeDefault(column: ColumnMetadata): string {
+        if (typeof column.default === "number") {
+            return "" + column.default;
+
+        } else if (typeof column.default === "boolean") {
+            return column.default === true ? "1" : "0";
+
+        } else if (typeof column.default === "function") {
+            return "(" + column.default() + ")";
+
+        } else if (typeof column.default === "string") {
+            return `'${column.default}'`;
+
+        } else {
+            return column.default;
+        }
+    }
+
     // -------------------------------------------------------------------------
-    // Protected Methods
+    // Public Methods
     // -------------------------------------------------------------------------
 
     /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
+     * Sql server's parameters needs to be wrapped into special object with type information about this value.
+     * This method wraps given value into MssqlParameter based on its column definition.
      */
-    protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
+    parametrizeValue(column: ColumnMetadata, value: any) {
 
-        if (!this.connection)
-            throw new ConnectionIsNotSetError("mssql");
+        // if its already MssqlParameter then simply return it
+        if (value instanceof MssqlParameter)
+            return value;
 
-        return new Promise((ok, fail) => {
-            if (this.databaseConnection)
-                return ok(this.databaseConnection);
-            // let dbConnection: DatabaseConnection|undefined;
-            // const connection = this.pool.connect((err: any) => {
-            //     if (err)
-            //         return fail(err);
-            //     ok(dbConnection);
-            // });
-            //
-            // console.log(connection);
-            // console.log(this.pool);
-            // console.log(this.pool === connection);
+        const normalizedType = this.normalizeType({ type: column.type });
+        if (column.length) {
+            return new MssqlParameter(value, normalizedType as any, column.length as any);
 
-            // const request = new this.mssql.Request(this.connection);
-            // console.log("request:", request);
-            // let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
-            // if (!dbConnection) {
-            let dbConnection: DatabaseConnection = {
-                id: this.databaseConnectionPool.length,
-                connection: this.connection,
-                isTransactionActive: false
-            };
-            dbConnection.releaseCallback = () => {
-                // }
-                // if (this.connection && dbConnection) {
-                // request.release();
-                this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
-                return Promise.resolve();
-            };
-            this.databaseConnectionPool.push(dbConnection);
-            ok(dbConnection);
-            // }
-        });
+        } else if (column.precision && column.scale) {
+            return new MssqlParameter(value, normalizedType as any, column.precision, column.scale);
+
+        } else if (column.precision) {
+            return new MssqlParameter(value, normalizedType as any, column.precision);
+
+        } else if (column.scale) {
+            return new MssqlParameter(value, normalizedType as any, column.scale);
+        }
+
+        return new MssqlParameter(value, column.type as any);
     }
+
+    /**
+     * Sql server's parameters needs to be wrapped into special object with type information about this value.
+     * This method wraps all values of the given object into MssqlParameter based on their column definitions in the given table.
+     */
+    parametrizeMap(tableName: string, map: ObjectLiteral): ObjectLiteral {
+
+        // find metadata for the given table
+        const metadata = this.connection.getMetadata(tableName);
+        if (!metadata) // if no metadata found then we can't proceed because we don't have columns and their types
+            return map;
+
+        return Object.keys(map).reduce((newMap, key) => {
+            const value = map[key];
+
+            // find column metadata
+            const column = metadata.findColumnWithDatabaseName(key);
+            if (!column) // if we didn't find a column then we can't proceed because we don't have a column type
+                return value;
+
+            newMap[key] = this.parametrizeValue(column, value);
+            return newMap;
+        }, {} as ObjectLiteral);
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
 
     /**
      * If driver dependency is not given explicitly, then try to load it via "require".

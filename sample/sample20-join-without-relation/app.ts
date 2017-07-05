@@ -5,14 +5,12 @@ import {Author} from "./entity/Author";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     logging: {
         logOnlyFailedQueries: true,
         logFailedQueryError: true
@@ -23,7 +21,7 @@ const options: ConnectionOptions = {
 
 createConnection(options).then(connection => {
 
-    let entityManager = connection.entityManager;
+    let entityManager = connection.manager;
 
     let postRepository = connection.getRepository(Post);
     let authorRepository = connection.getRepository(Author);
@@ -46,12 +44,12 @@ createConnection(options).then(connection => {
     post.categories = [category1, category2];
 
     Promise.all<any>([
-        authorRepository.persist(author),
-        categoryRepository.persist(category1),
-        categoryRepository.persist(category2),
+        authorRepository.save(author),
+        categoryRepository.save(category1),
+        categoryRepository.save(category2),
     ])
         .then(() => {
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(() => {
             console.log("Everything has been saved.");

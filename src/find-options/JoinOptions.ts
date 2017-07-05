@@ -30,7 +30,7 @@
  *     }
  * };
  */
-interface JoinOptions {
+export interface JoinOptions {
 
     /**
      * Alias of the main entity.

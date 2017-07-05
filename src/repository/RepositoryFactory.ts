@@ -2,10 +2,10 @@ import {TreeRepository} from "./TreeRepository";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Connection} from "../connection/Connection";
 import {Repository} from "./Repository";
-import {SpecificRepository} from "./SpecificRepository";
-import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoRepository} from "./MongoRepository";
+import {QueryRunner} from "../query-runner/QueryRunner";
+import {EntityManager} from "../entity-manager/EntityManager";
 
 /**
  * Factory used to create different types of repositories.
@@ -17,43 +17,38 @@ export class RepositoryFactory {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a regular repository.
+     * Creates a repository.
      */
-    createRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): Repository<any> {
+    create(manager: EntityManager, metadata: EntityMetadata, queryRunner?: QueryRunner): Repository<any> {
 
-        // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-        // however we need these properties for internal work of the class
-        let repository: Repository<any>;
-        if (connection.driver instanceof MongoDriver) {
-            repository = new MongoRepository();
+        if (metadata.isClosure) {
+            // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
+            // however we need these properties for internal work of the class
+            const repository = new TreeRepository<any>();
+            Object.assign(repository, {
+                manager: manager,
+                metadata: metadata,
+                queryRunner: queryRunner,
+            });
+            return repository;
+
         } else {
-            repository = new Repository<any>();
+            // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
+            // however we need these properties for internal work of the class
+            let repository: Repository<any>;
+            if (manager.connection.driver instanceof MongoDriver) {
+                repository = new MongoRepository();
+            } else {
+                repository = new Repository<any>();
+            }
+            Object.assign(repository, {
+                manager: manager,
+                metadata: metadata,
+                queryRunner: queryRunner,
+            });
+
+            return repository;
         }
-        (repository as any)["connection"] = connection;
-        (repository as any)["metadata"] = metadata;
-        (repository as any)["queryRunnerProvider"] = queryRunnerProvider;
-        return repository;
-    }
-
-    /**
-     * Creates a tree repository.
-     */
-    createTreeRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): TreeRepository<any> {
-
-        // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-        // however we need these properties for internal work of the class
-        const repository = new TreeRepository<any>();
-        (repository as any)["connection"] = connection;
-        (repository as any)["metadata"] = metadata;
-        (repository as any)["queryRunnerProvider"] = queryRunnerProvider;
-        return repository;
-    }
-
-    /**
-     * Creates a specific repository.
-     */
-    createSpecificRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): SpecificRepository<any> {
-        return new SpecificRepository(connection, metadata, queryRunnerProvider);
     }
 
 }

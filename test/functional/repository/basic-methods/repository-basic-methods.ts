@@ -213,14 +213,14 @@ describe("repository > basic methods", () => {
             // save the category
             const category = new Category();
             category.name = "people";
-            await categoryRepository.persist(category);
+            await categoryRepository.save(category);
 
             // save the blog
             const blog = new Blog();
             blog.title = "About people";
             blog.text = "Blog about good people";
             blog.categories = [category];
-            await blogRepository.persist(blog);
+            await blogRepository.save(blog);
             
             // and preload it
             const plainBlogWithId = { id: 1 };
@@ -238,14 +238,14 @@ describe("repository > basic methods", () => {
             // save the category
             const category = new Category();
             category.name = "people";
-            await categoryRepository.persist(category);
+            await categoryRepository.save(category);
 
             // save the blog
             const blog = new Blog();
             blog.title = "About people";
             blog.text = "Blog about good people";
             blog.categories = [category];
-            await blogRepository.persist(blog);
+            await blogRepository.save(blog);
             
             // and preload it
             const plainBlogWithId = { id: 1, categories: [{ id: 1 }] };
@@ -331,19 +331,19 @@ describe("repository > basic methods", () => {
             // save first category
             const firstCategory = new Category();
             firstCategory.name = "people";
-            await categoryRepository.persist(firstCategory);
+            await categoryRepository.save(firstCategory);
 
             // save second category
             const secondCategory = new Category();
             secondCategory.name = "animals";
-            await categoryRepository.persist(secondCategory);
+            await categoryRepository.save(secondCategory);
 
             // save the blog
             const blog = new Blog();
             blog.title = "About people";
             blog.text = "Blog about good people";
             blog.categories = [firstCategory, secondCategory];
-            await blogRepository.persist(blog);
+            await blogRepository.save(blog);
 
             // and preload it
             const plainBlogWithId: DeepPartial<Blog> = {
@@ -374,7 +374,7 @@ describe("repository > basic methods", () => {
                 blog.title = "hello blog";
                 blog.text = "hello blog #" + i;
                 blog.counter = i * 100;
-                promises.push(repository.persist(blog));
+                promises.push(repository.save(blog));
             }
             await Promise.all(promises);
             // such simple query should work on all platforms, isn't it? If no - make requests specifically to platforms
@@ -385,7 +385,7 @@ describe("repository > basic methods", () => {
 
     });
 
-    describe.skip("transaction", function() {
+    /*describe.skip("transaction", function() {
 
         it("executed queries must success", () => Promise.all(connections.map(async connection => {
             const repository = connection.getRepository(Blog);
@@ -395,7 +395,7 @@ describe("repository > basic methods", () => {
             const blog = new Blog();
             blog.title = "hello blog title";
             blog.text = "hello blog text";
-            await repository.persist(blog);
+            await repository.save(blog);
             blogs.should.be.eql([]);
 
             blogs = await repository.find();
@@ -408,7 +408,7 @@ describe("repository > basic methods", () => {
                     blog.title = "hello blog";
                     blog.text = "hello blog #" + i;
                     blog.counter = i * 100;
-                    promises.push(repository.persist(blog));
+                    promises.push(repository.save(blog));
                 }
                 await Promise.all(promises);
 
@@ -428,7 +428,7 @@ describe("repository > basic methods", () => {
             const blog = new Blog();
             blog.title = "hello blog title";
             blog.text = "hello blog text";
-            await repository.persist(blog);
+            await repository.save(blog);
             blogs.should.be.eql([]);
 
             blogs = await repository.find();
@@ -441,7 +441,7 @@ describe("repository > basic methods", () => {
                     blog.title = "hello blog";
                     blog.text = "hello blog #" + i;
                     blog.counter = i * 100;
-                    promises.push(repository.persist(blog));
+                    promises.push(repository.save(blog));
                 }
                 await Promise.all(promises);
 
@@ -456,6 +456,6 @@ describe("repository > basic methods", () => {
             blogs.length.should.be.equal(1);
         })));
 
-    });
+    });*/
 
 });

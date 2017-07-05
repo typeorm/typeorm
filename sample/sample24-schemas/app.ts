@@ -5,14 +5,12 @@ import {Post} from "./entity/Post";
 // NOTE: this example is not working yet, only concepts of how this feature must work described here
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     autoSchemaSync: true,
     // entitySchemaDirectories: [__dirname + "/schemas"],
     entitySchemas: [
@@ -39,7 +37,7 @@ createConnection(options).then(connection => {
     };
     
     postRepository
-        .persist(post)
+        .save(post)
         .then(result => {
             console.log(result);
         })

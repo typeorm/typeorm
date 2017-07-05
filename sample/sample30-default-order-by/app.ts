@@ -4,10 +4,8 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "sqlite",
-        storage: "temp/sqlitedb.db"
-    },
+    type: "sqlite",
+    database: "temp/sqlitedb.db",
     logging: {
         logQueries: true,
         logSchemaCreation: true
@@ -42,7 +40,7 @@ createConnection(options).then(async connection => {
     ]);
 
     console.log("saving posts");
-    await postRepository.persist([post1, post2, post3, post4]);
+    await postRepository.save([post1, post2, post3, post4]);
 
     console.log("loading the post. pay attention on order: ");
     const allPosts = await postRepository.find();

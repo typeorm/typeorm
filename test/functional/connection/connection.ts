@@ -1,22 +1,22 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
+import {Guest as GuestV1} from "./entity/v1/Guest";
+import {Comment as CommentV1} from "./entity/v1/Comment";
+import {Guest as GuestV2} from "./entity/v2/Guest";
+import {Comment as CommentV2} from "./entity/v2/Comment";
 import {View} from "./entity/View";
 import {Category} from "./entity/Category";
-import {createTestingConnections, closeTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Repository} from "../../../src/repository/Repository";
 import {TreeRepository} from "../../../src/repository/TreeRepository";
 import {getConnectionManager} from "../../../src/index";
-import {NoConnectionForRepositoryError} from "../../../src/connection/error/NoConnectionForRepositoryError";
-import {FirstCustomNamingStrategy} from "./naming-strategy/FirstCustomNamingStrategy";
-import {SecondCustomNamingStrategy} from "./naming-strategy/SecondCustomNamingStrategy";
+import {NoConnectionForRepositoryError} from "../../../src/error/NoConnectionForRepositoryError";
 import {EntityManager} from "../../../src/entity-manager/EntityManager";
-import {CannotGetEntityManagerNotConnectedError} from "../../../src/connection/error/CannotGetEntityManagerNotConnectedError";
-import {Blog} from "./modules/blog/entity/Blog";
-import {Question} from "./modules/question/entity/Question";
-import {Video} from "./modules/video/entity/Video";
+import {CannotGetEntityManagerNotConnectedError} from "../../../src/error/CannotGetEntityManagerNotConnectedError";
 import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
+import {PostgresConnectionOptions} from "../../../src/driver/postgres/PostgresConnectionOptions";
 
 describe("Connection", () => {
     const resourceDir = __dirname + "/../../../../../test/functional/connection/";
@@ -33,7 +33,7 @@ describe("Connection", () => {
         after(() => {
             if (connection.isConnected)
                 return connection.close();
-            
+
             return Promise.resolve();
         });
 
@@ -42,23 +42,23 @@ describe("Connection", () => {
         });
 
         it.skip("entity manager and reactive entity manager should not be accessible", () => {
-            expect(() => connection.entityManager).to.throw(CannotGetEntityManagerNotConnectedError);
+            expect(() => connection.manager).to.throw(CannotGetEntityManagerNotConnectedError);
             // expect(() => connection.reactiveEntityManager).to.throw(CannotGetEntityManagerNotConnectedError);
         });
 
         // todo: they aren't promises anymore
         /*it("import entities, entity schemas, subscribers and naming strategies should work", () => {
-            return Promise.all([
-                connection.importEntities([Post]).should.be.fulfilled,
-                connection.importEntitySchemas([]).should.be.fulfilled,
-                connection.importSubscribers([]).should.be.fulfilled,
-                connection.importNamingStrategies([]).should.be.fulfilled,
-                connection.importEntitiesFromDirectories([]).should.be.fulfilled,
-                connection.importEntitySchemaFromDirectories([]).should.be.fulfilled,
-                connection.importSubscribersFromDirectories([]).should.be.fulfilled,
-                connection.importNamingStrategiesFromDirectories([]).should.be.fulfilled
-            ]);
-        });*/
+         return Promise.all([
+         connection.importEntities([Post]).should.be.fulfilled,
+         connection.importEntitySchemas([]).should.be.fulfilled,
+         connection.importSubscribers([]).should.be.fulfilled,
+         connection.importNamingStrategies([]).should.be.fulfilled,
+         connection.importEntitiesFromDirectories([]).should.be.fulfilled,
+         connection.importEntitySchemaFromDirectories([]).should.be.fulfilled,
+         connection.importSubscribersFromDirectories([]).should.be.fulfilled,
+         connection.importNamingStrategiesFromDirectories([]).should.be.fulfilled
+         ]);
+         });*/
 
         it("should not be able to close", () => {
             return connection.close().should.be.rejected; // CannotCloseNotConnectedError
@@ -86,12 +86,10 @@ describe("Connection", () => {
         it("should throw DriverOptionNotSetError when extra.socketPath and host is missing", function() {
             expect(() => {
                 connection = getConnectionManager().create(<ConnectionOptions>{
-                    driver: {
-                        "type": "mysql",
-                        "username": "test",
-                        "password": "test",
-                        "database": "test",
-                    },
+                    type: "mysql",
+                    username: "test",
+                    password: "test",
+                    database: "test",
                     entities: [],
                     entitySchemas: [],
                     dropSchemaOnConnection: false,
@@ -113,28 +111,12 @@ describe("Connection", () => {
         }));
 
         it("entity manager and reactive entity manager should be accessible", () => connections.forEach(connection => {
-            expect(connection.entityManager).to.be.instanceOf(EntityManager);
+            expect(connection.manager).to.be.instanceOf(EntityManager);
             // expect(connection.reactiveEntityManager).to.be.instanceOf(ReactiveEntityManager);
-        }));
-
-        // todo: they aren't promises anymore
-        it("import entities, entity schemas, subscribers and naming strategies should not be possible once connection is done", () => connections.forEach(connection => {
-            expect(() => connection.importEntities([Post])).to.throw(Error); // CannotImportAlreadyConnectedError
-            expect(() => connection.importEntitySchemas([])).to.throw(Error); // CannotImportAlreadyConnectedError
-            expect(() => connection.importSubscribers([])).to.throw(Error); // CannotImportAlreadyConnectedError
-            expect(() => connection.importNamingStrategies([])).to.throw(Error); // CannotImportAlreadyConnectedError
-            expect(() => connection.importEntitiesFromDirectories([])).to.throw(Error); // CannotImportAlreadyConnectedError
-            expect(() => connection.importEntitySchemaFromDirectories([])).to.throw(Error); // CannotImportAlreadyConnectedError
-            expect(() => connection.importSubscribersFromDirectories([])).to.throw(Error); // CannotImportAlreadyConnectedError
-            expect(() => connection.importNamingStrategiesFromDirectories([])).to.throw(Error); // CannotImportAlreadyConnectedError
         }));
 
         it("should not be able to connect again", () => connections.forEach(connection => {
             return connection.connect().should.be.rejected; // CannotConnectAlreadyConnectedError
-        }));
-
-        it("should not be able to change used naming strategy", () => connections.forEach(connection => {
-            expect(() => connection.useNamingStrategy("something")).to.throw(Error); // CannotUseNamingStrategyNotConnectedError
         }));
 
         it("should be able to close a connection", async () => Promise.all(connections.map(connection => {
@@ -195,12 +177,27 @@ describe("Connection", () => {
             const postRepository = connection.getRepository(Post);
             const post = new Post();
             post.title = "new post";
-            await postRepository.persist(post);
+            await postRepository.save(post);
             const loadedPost = await postRepository.findOneById(post.id);
             expect(loadedPost).to.be.eql(post);
             await connection.syncSchema(true);
             const againLoadedPost = await postRepository.findOneById(post.id);
             expect(againLoadedPost).to.be.empty;
+        })));
+
+    });
+
+    describe("log a schema when connection.logSyncSchema is called", function() {
+
+        let connections: Connection[];
+        before(async () => connections = await createTestingConnections({
+            entities: [Post]
+        }));
+        after(() => closeTestingConnections(connections));
+
+        it("should return sql log properly", () => Promise.all(connections.map(async connection => {
+            const sql = await connection.logSyncSchema();
+            // console.log(sql);
         })));
 
     });
@@ -213,7 +210,7 @@ describe("Connection", () => {
             connections = all;
             return Promise.all(connections.map(connection => connection.close()));
         }));
-        
+
         it("should not be able to close already closed connection", () => connections.forEach(connection => {
             return connection.close().should.be.rejected; // CannotCloseNotConnectedError
         }));
@@ -224,190 +221,105 @@ describe("Connection", () => {
 
     });
 
-    describe("import entities and entity schemas", function() {
-
-        let firstConnection: Connection, secondConnection: Connection;
-        beforeEach(async () => {
-            firstConnection = getConnectionManager().create(setupSingleTestingConnection("mysql", {
-                name: "firstConnection",
-                entities: []
-            }));
-            secondConnection = getConnectionManager().create(setupSingleTestingConnection("mysql", {
-                name: "secondConnection",
-                entities: []
-            }));
-        });
-
-        it("should import first connection's entities only", async () => {
-            firstConnection.importEntities([Post]);
-            await firstConnection.connect();
-            firstConnection.getRepository(Post).should.be.instanceOf(Repository);
-            firstConnection.getRepository(Post).target.should.be.equal(Post);
-            expect(() => firstConnection.getRepository(Category)).to.throw(Error); // RepositoryNotFoundError
-            await firstConnection.close();
-        });
-
-        it("should import second connection's entities only", async () => {
-            secondConnection.importEntities([Category]);
-            await secondConnection.connect();
-            secondConnection.getRepository(Category).should.be.instanceOf(Repository);
-            secondConnection.getRepository(Category).target.should.be.equal(Category);
-            expect(() => secondConnection.getRepository(Post)).to.throw(Error); // RepositoryNotFoundError
-            await secondConnection.close();
-        });
-
-        it("should import first connection's entity schemas only", async () => {
-            firstConnection.importEntitySchemas([ require(resourceDir + "schema/user.json") ]);
-            await firstConnection.connect();
-            firstConnection.getRepository("User").should.be.instanceOf(Repository);
-            firstConnection.getRepository("User").target.should.be.equal("User");
-            expect(() => firstConnection.getRepository("Photo")).to.throw(Error); // RepositoryNotFoundError
-            await firstConnection.close();
-        });
-
-        it("should import second connection's entity schemas only", async () => {
-            secondConnection.importEntitySchemas([ require(resourceDir + "schema/photo.json") ]);
-            await secondConnection.connect();
-            secondConnection.getRepository("Photo").should.be.instanceOf(Repository);
-            secondConnection.getRepository("Photo").target.should.be.equal("Photo");
-            expect(() => secondConnection.getRepository("User")).to.throw(Error); // RepositoryNotFoundError
-            await secondConnection.close();
-        });
-
-    });
-
-    describe("import entities / entity schemas / subscribers / naming strategies from directories", function() {
-
-        let connection: Connection;
-        beforeEach(async () => {
-            connection = getConnectionManager().create(setupSingleTestingConnection("mysql", {
-                name: "default",
-                entities: []
-            }));
-        });
-        afterEach(() => connection.isConnected ? connection.close() : {});
-
-        it("should successfully load entities / entity schemas / subscribers / naming strategies from directories", async () => {
-            connection.importEntitiesFromDirectories([__dirname + "/entity/*"]);
-            connection.importEntitySchemaFromDirectories([resourceDir + "/schema/*"]);
-            connection.importNamingStrategiesFromDirectories([__dirname + "/naming-strategy/*"]);
-            connection.importSubscribersFromDirectories([__dirname + "/subscriber/*"]);
-            await connection.connect();
-            connection.getRepository(Post).should.be.instanceOf(Repository);
-            connection.getRepository(Post).target.should.be.equal(Post);
-            connection.getRepository(Category).should.be.instanceOf(Repository);
-            connection.getRepository(Category).target.should.be.equal(Category);
-            connection.getRepository("User").should.be.instanceOf(Repository);
-            connection.getRepository("User").target.should.be.equal("User");
-            connection.getRepository("Photo").should.be.instanceOf(Repository);
-            connection.getRepository("Photo").target.should.be.equal("Photo");
-        });
-
-        it("should successfully load entities / entity schemas / subscribers / naming strategies from glob-patterned directories", async () => {
-            connection.importEntitiesFromDirectories([__dirname + "/modules/**/entity/*"]);
-            connection.importEntitySchemaFromDirectories([resourceDir + "/modules/**/schema/*"]);
-            connection.importNamingStrategiesFromDirectories([__dirname + "/modules/**/naming-strategy/*"]);
-            connection.importSubscribersFromDirectories([__dirname + "/modules/**/subscriber/*"]);
-            await connection.connect();
-            connection.getRepository(Blog).should.be.instanceOf(Repository);
-            connection.getRepository(Blog).target.should.be.equal(Blog);
-            connection.getRepository(Question).should.be.instanceOf(Repository);
-            connection.getRepository(Question).target.should.be.equal(Question);
-            connection.getRepository(Video).should.be.instanceOf(Repository);
-            connection.getRepository(Video).target.should.be.equal(Video);
-            connection.getRepository("BlogCategory").should.be.instanceOf(Repository);
-            connection.getRepository("BlogCategory").target.should.be.equal("BlogCategory");
-            connection.getRepository("QuestionCategory").should.be.instanceOf(Repository);
-            connection.getRepository("QuestionCategory").target.should.be.equal("QuestionCategory");
-            connection.getRepository("VideoCategory").should.be.instanceOf(Repository);
-            connection.getRepository("VideoCategory").target.should.be.equal("VideoCategory");
-        });
-    });
-
-    describe("using naming strategy", function() {
-
-        let connection: Connection;
-        beforeEach(async () => {
-            connection = getConnectionManager().create(setupSingleTestingConnection("mysql", {
-                name: "default",
-                entities: []
-            }));
-        });
-        afterEach(() => connection.isConnected ? connection.close() : {});
-
-        it("should use naming strategy when its class passed to useNamingStrategy method", async () => {
-            connection.importEntities([Post]);
-            connection.importNamingStrategies([FirstCustomNamingStrategy]);
-            connection.useNamingStrategy(FirstCustomNamingStrategy);
-            await connection.connect();
-            connection.getMetadata(Post).table.name.should.be.equal("POST");
-        });
-
-        it("should use naming strategy when its name passed to useNamingStrategy method", async () => {
-            connection.importEntities([Category]);
-            connection.importNamingStrategies([SecondCustomNamingStrategy]);
-            connection.useNamingStrategy("secondCustomNamingStrategy");
-            await connection.connect();
-            connection.getMetadata(Category).table.name.should.be.equal("category");
-        });
-
-        it("should throw an error if not registered naming strategy was used (assert by name)", () => {
-            connection.importEntities([Category]);
-            connection.importNamingStrategies([FirstCustomNamingStrategy]);
-            connection.useNamingStrategy("secondCustomNamingStrategy");
-            return connection.connect().should.be.rejected; // NamingStrategyNotFoundError
-        });
-
-        it("should throw an error if not registered naming strategy was used (assert by Function)", () => {
-            connection.importEntities([Category]);
-            connection.importNamingStrategies([SecondCustomNamingStrategy]);
-            connection.useNamingStrategy(FirstCustomNamingStrategy);
-            return connection.connect().should.be.rejected; // NamingStrategyNotFoundError
-        });
-
-    });
-
-    describe("skip schema generation when skipSchemaSync option is used", function() {
+    describe("skip schema generation when skipSync option is used", function() {
 
         let connections: Connection[];
         beforeEach(() => createTestingConnections({ entities: [View], dropSchemaOnConnection: true }).then(all => connections = all));
         afterEach(() => closeTestingConnections(connections));
         it("database should be empty after schema sync", () => Promise.all(connections.map(async connection => {
             await connection.syncSchema(true);
-            const queryRunner = await connection.driver.createQueryRunner();
+            const queryRunner = connection.createQueryRunner();
             let schema = await queryRunner.loadTableSchemas(["view"]);
+            await queryRunner.release();
             expect(schema.some(table => table.name === "view")).to.be.false;
         })));
 
     });
 
-    describe("Can change postgres default schema name", () => {
+    describe("different names of the same content of the schema", () => {
+
         let connections: Connection[];
         beforeEach(async () => {
-            connections = await createTestingConnections({ 
+            const connections1 = await createTestingConnections({
+                name: "test",
                 enabledDrivers: ["postgres"],
-                entities: [Post],
+                entities: [CommentV1, GuestV1],
                 schemaName: "test-schema",
+                dropSchemaOnConnection: true,
+            });
+            const connections2 = await createTestingConnections({
+                name: "another",
+                enabledDrivers: ["postgres"],
+                entities: [CommentV1, GuestV1],
+                schemaName: "another-schema",
                 dropSchemaOnConnection: true
             });
+            connections = [...connections1, ...connections2];
         });
-        afterEach(() => closeTestingConnections(connections));        
+        after(() => closeTestingConnections(connections));
+        it("should not interfere with each other", async () => {
+            await Promise.all(connections.map(c => c.syncSchema()));
+            await closeTestingConnections(connections);
+            const connections1 = await createTestingConnections({
+                name: "test",
+                enabledDrivers: ["postgres"],
+                entities: [CommentV2, GuestV2],
+                schemaName: "test-schema",
+                dropSchemaOnConnection: false,
+                schemaCreate: true
+            });
+            const connections2 = await createTestingConnections({
+                name: "another",
+                enabledDrivers: ["postgres"],
+                entities: [CommentV2, GuestV2],
+                schemaName: "another-schema",
+                dropSchemaOnConnection: false,
+                schemaCreate: true
+            });
+            connections = [...connections1, ...connections2];
+        });
+    });
+
+    describe("can change postgres default schema name", () => {
+        let connections: Connection[];
+        beforeEach(async () => {
+            const connections1 = await createTestingConnections({
+                name: "test",
+                enabledDrivers: ["postgres"],
+                entities: [CommentV1, GuestV1],
+                schemaName: "test-schema",
+                dropSchemaOnConnection: true,
+            });
+            const connections2 = await createTestingConnections({
+                name: "another",
+                enabledDrivers: ["postgres"],
+                entities: [CommentV1, GuestV1],
+                schemaName: "another-schema",
+                dropSchemaOnConnection: true
+            });
+            connections = [...connections1, ...connections2];
+        });
+        afterEach(() => closeTestingConnections(connections));
+
         it("schema name can be set", () => {
             return Promise.all(connections.map(async connection => {
                 await connection.syncSchema(true);
+                const schemaName = (connection.options as PostgresConnectionOptions).schemaName;
+                const comment = new CommentV1();
+                comment.title = "Change SchemaName";
+                comment.context = `To ${schemaName}`;
 
-                const post = new Post();
-                post.title = "ChangeSchemaName";
+                const commentRepo = connection.getRepository(CommentV1);
+                await commentRepo.save(comment);
 
-                const PostRepo = connection.getRepository(Post);
-                await PostRepo.persist(post);
-
-                const query = await connection.driver.createQueryRunner();
-                const rows = await query.query(`select * from "test-schema"."post" where id = $1`, [post.id]);
-                expect(rows[0]["title"]).to.be.eq(post.title);
+                const queryRunner = connection.createQueryRunner();
+                const rows = await queryRunner.query(`select * from "${schemaName}"."comment" where id = $1`, [comment.id]);
+                await queryRunner.release();
+                expect(rows[0]["context"]).to.be.eq(comment.context);
             }));
-            
+
         });
+
     });
-    
+
 });

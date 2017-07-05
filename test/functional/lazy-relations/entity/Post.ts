@@ -5,6 +5,8 @@ import {Category} from "./Category";
 import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
 import {JoinTable} from "../../../../src/decorator/relations/JoinTable";
 import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
+import {OneToOne} from "../../../../src/decorator/relations/OneToOne";
+import {JoinColumn} from "../../../../src/decorator/relations/JoinColumn";
 
 @Entity()
 export class Post {
@@ -31,6 +33,10 @@ export class Post {
 
     @ManyToOne(type => Category)
     category: Promise<Category>;
+
+    @OneToOne(type => Category, category => category.onePost)
+    @JoinColumn()
+    oneCategory: Promise<Category>;
 
     @ManyToOne(type => Category, category => category.twoSidePosts2)
     twoSideCategory: Promise<Category>;

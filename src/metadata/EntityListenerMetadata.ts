@@ -1,5 +1,6 @@
 import {EventListenerType} from "./types/EventListenerTypes";
 import {EntityListenerMetadataArgs} from "../metadata-args/EntityListenerMetadataArgs";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * This metadata contains all information about entity's listeners.
@@ -7,23 +8,23 @@ import {EntityListenerMetadataArgs} from "../metadata-args/EntityListenerMetadat
 export class EntityListenerMetadata {
 
     // ---------------------------------------------------------------------
-    // Readonly Properties
+    // Properties
     // ---------------------------------------------------------------------
 
     /**
      * Target class to which metadata is applied.
      */
-    readonly target: Function|string;
+    target: Function|string;
 
     /**
      * Target's property name to which this metadata is applied.
      */
-    readonly propertyName: string;
+    propertyName: string;
 
     /**
      * The type of the listener.
      */
-    readonly type: EventListenerType;
+    type: EventListenerType;
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -35,5 +36,16 @@ export class EntityListenerMetadata {
         this.type = args.type;
     }
 
+    // ---------------------------------------------------------------------
+    // Public Methods
+    // ---------------------------------------------------------------------
+
+    /**
+     * Checks if entity listener is allowed to be executed on the given entity.
+     */
+    isAllowed(entity: ObjectLiteral) { // todo: create in entity metadata method like isInherited?
+        return this.target === entity.constructor || // todo: .constructor won't work for entity schemas
+            (this.target instanceof Function && entity.constructor.prototype instanceof this.target); // todo: also need to implement entity schema inheritance
+    }
 
 }

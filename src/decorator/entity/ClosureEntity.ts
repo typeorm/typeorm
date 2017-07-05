@@ -12,8 +12,8 @@ export function ClosureEntity(name?: string, options?: EntityOptions) {
             name: name,
             type: "closure",
             orderBy: options && options.orderBy ? options.orderBy : undefined,
-            skipSchemaSync: !!(options && options.skipSchemaSync === true)
+            skipSync: !!(options && options.skipSync === true)
         };
-        getMetadataArgsStorage().tables.add(args);
+        getMetadataArgsStorage().tables.push(args);
     };
 }

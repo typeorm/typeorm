@@ -1,16 +1,16 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 
-describe.skip("relations > relation with primary key", () => {
+describe("relations > relation with primary key", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        // dropSchemaOnConnection: true
+        dropSchemaOnConnection: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -27,7 +27,7 @@ describe.skip("relations > relation with primary key", () => {
             post1.title = "Hello Post #1";
             post1.category = category1;
 
-            await connection.entityManager.persist(post1);
+            await connection.manager.save(post1);
 
             // create second category and post and save them
             const category2 = new Category();
@@ -37,10 +37,10 @@ describe.skip("relations > relation with primary key", () => {
             post2.title = "Hello Post #2";
             post2.category = category2;
 
-            await connection.entityManager.persist(post2);
+            await connection.manager.save(post2);
 
             // now check
-            const posts = await connection.entityManager.find(Post, {
+            const posts = await connection.manager.find(Post, {
                 join: {
                     alias: "post",
                     innerJoinAndSelect: {

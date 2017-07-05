@@ -34,22 +34,22 @@ describe("persistence > many-to-many", function() {
         // save a new category
         const newCategory = categoryRepository.create();
         newCategory.name = "Animals";
-        await categoryRepository.persist(newCategory);
+        await categoryRepository.save(newCategory);
 
         // save a new post
         const newPost = postRepository.create();
         newPost.title = "All about animals";
-        await postRepository.persist(newPost);
+        await postRepository.save(newPost);
 
         // save a new user
         const newUser = userRepository.create();
         newUser.name = "Dima";
-        await userRepository.persist(newUser);
+        await userRepository.save(newUser);
 
         // now add a category to the post and attach post to a user and save a user
         newPost.categories = [newCategory];
         newUser.post = newPost;
-        await userRepository.persist(newUser);
+        await userRepository.save(newUser);
 
         // load a post
         const loadedUser = await userRepository.findOneById(1, {

@@ -1,7 +1,6 @@
 import {ColumnOptions} from "../options/ColumnOptions";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {getMetadataArgsStorage} from "../../index";
-import {PrimaryColumnCannotBeNullableError} from "../error/PrimaryColumnCannotBeNullableError";
+import {PrimaryColumnCannotBeNullableError} from "../../error/PrimaryColumnCannotBeNullableError";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 // todo: add overloads for PrimaryGeneratedColumn(generationType: "sequence"|"uuid" = "sequence", options?: ColumnOptions)
@@ -20,7 +19,6 @@ export function PrimaryGeneratedColumn(options?: ColumnOptions): Function {
         if (!options) options = {} as ColumnOptions;
 
         // check if there is no type in column options then set the int type - by default for auto generated column
-        if (!options.type)
             options = Object.assign({type: "int"} as ColumnOptions, options);
 
         // check if column is not nullable, because we cannot allow a primary key to be nullable
@@ -38,7 +36,7 @@ export function PrimaryGeneratedColumn(options?: ColumnOptions): Function {
             mode: "regular",
             options: options
         };
-        getMetadataArgsStorage().columns.add(args);
+        getMetadataArgsStorage().columns.push(args);
     };
 }
 

@@ -37,16 +37,14 @@ services:
       POSTGRES_DB: "test"
 
   # mssql
-  # mssql:
-  #   image: "microsoft/mssql-server-linux"
-  #   container_name: "typeorm-mssql"
-  #   ports:
-  #     - "1433:1433"
-  #   environment:
-  #     ACCEPT_EULA: "Y"
-  #     SA_PASSWORD: "thisIs@V3ryh&rdP@55w0rd"
-  #   volumes:
-  #     - "./temp/mssql:/var/opt/mssql"
+#  mssql:
+#    image: "microsoft/mssql-server-linux"
+#    container_name: "typeorm-mssql"
+#    ports:
+#      - "1433:1433"
+#    environment:
+#      ACCEPT_EULA: "Y"
+#      SA_PASSWORD: "admin12345"
 
   # mongodb
   mongodb:

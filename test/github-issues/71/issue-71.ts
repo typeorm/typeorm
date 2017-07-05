@@ -28,9 +28,9 @@ describe("github issues > #71 ManyToOne relation with custom column name persist
         artikel.saison = "------";
         artikel.kollektion = kollektion;
 
-        await connection.entityManager.persist(artikel);
+        await connection.manager.save(artikel);
 
-        const loadedArtikel = await connection.entityManager
+        const loadedArtikel = await connection.manager
             .createQueryBuilder(Artikel, "artikel")
             .innerJoinAndSelect("artikel.kollektion", "kollektion")
             .where("artikel.id=:id", { id: 1 })

@@ -4,6 +4,8 @@ import {Driver} from "../driver/Driver";
 /**
  * Represents functionality to provide a new query runners, and release old ones.
  * Also can provide always same query runner.
+ *
+ * todo: rename to QueryExecutor ?
  */
 export class QueryRunnerProvider {
 
@@ -46,38 +48,25 @@ export class QueryRunnerProvider {
      * Provides a new query runner used to run repository queries.
      * If use useSingleQueryRunner mode is enabled then reusable query runner will be provided instead.
      */
-    provide(): Promise<QueryRunner> {
-        if (this.useSingleQueryRunner) {
-            if (!this.reusableQueryRunner) {
-                if (!this.reusableQueryRunnerPromise) {
-                    // we do this because this method can be created multiple times
-                    // this will lead to multiple query runner creations
-                    this.reusableQueryRunnerPromise = this.driver
-                        .createQueryRunner()
-                        .then(reusableQueryRunner => {
-                            this.reusableQueryRunner = reusableQueryRunner;
-                            return reusableQueryRunner;
-                        });
-                }
-                return this.reusableQueryRunnerPromise;
-            }
-            return Promise.resolve(this.reusableQueryRunner);
-        }
-        return this.driver.createQueryRunner();
-    }
-
-    /**
-     * Query runner release logic extracted into separated methods intently,
-     * to make possible to create a subclass with its own release query runner logic.
-     * Note: release only query runners that provided by a provide() method.
-     * This is important and by design.
-     */
-    async release(queryRunner: QueryRunner): Promise<void> {
-        if (queryRunner === this.reusableQueryRunner)
-            return;
-
-        return queryRunner.release();
-    }
+    // provide(): Promise<QueryRunner> {
+        // if (this.useSingleQueryRunner) {
+        //     if (!this.reusableQueryRunner) {
+        //         if (!this.reusableQueryRunnerPromise) {
+        //             // we do this because this method can be created multiple times
+        //             // this will lead to multiple query runner creations
+        //             this.reusableQueryRunnerPromise = this.driver
+        //                 .createQueryRunner()
+        //                 .then(reusableQueryRunner => {
+        //                     this.reusableQueryRunner = reusableQueryRunner;
+        //                     return reusableQueryRunner;
+        //                 });
+        //         }
+        //         return this.reusableQueryRunnerPromise;
+        //     }
+        //     return Promise.resolve(this.reusableQueryRunner);
+        // }
+        // return this.driver.createQueryRunner();
+    // }
 
     /**
      * Releases reused query runner.

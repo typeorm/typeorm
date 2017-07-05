@@ -21,29 +21,29 @@ describe("transaction > transaction with entity manager", () => {
 
         let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
 
-        await connection.entityManager.transaction(async entityManager => {
+        await connection.manager.transaction(async entityManager => {
 
             const post = new Post();
             post.title = "Post #1";
-            await entityManager.persist(post);
+            await entityManager.save(post);
 
             const category = new Category();
             category.name = "Category #1";
-            await entityManager.persist(category);
+            await entityManager.save(category);
 
             postId = post.id;
             categoryId = category.id;
 
         });
 
-        const post = await connection.entityManager.findOne(Post, { where: { title: "Post #1" }});
+        const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
         expect(post).not.to.be.empty;
         post!.should.be.eql({
             id: postId,
             title: "Post #1"
         });
 
-        const category = await connection.entityManager.findOne(Category, { where: { name: "Category #1" }});
+        const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
         expect(category).not.to.be.empty;
         category!.should.be.eql({
             id: categoryId,
@@ -57,15 +57,15 @@ describe("transaction > transaction with entity manager", () => {
         let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
 
         try {
-            await connection.entityManager.transaction(async entityManager => {
+            await connection.manager.transaction(async entityManager => {
 
                 const post = new Post();
                 post.title = "Post #1";
-                await entityManager.persist(post);
+                await entityManager.save(post);
 
                 const category = new Category();
                 category.name = "Category #1";
-                await entityManager.persist(category);
+                await entityManager.save(category);
 
                 postId = post.id;
                 categoryId = category.id;
@@ -86,17 +86,17 @@ describe("transaction > transaction with entity manager", () => {
 
                 // now try to save post without title - it will fail and transaction will be reverted
                 const wrongPost = new Post();
-                await entityManager.persist(wrongPost);
+                await entityManager.save(wrongPost);
 
             });
         } catch (err) {
             /* skip error */
         }
 
-        const post = await connection.entityManager.findOne(Post, { where: { title: "Post #1" }});
+        const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
         expect(post).to.be.empty;
 
-        const category = await connection.entityManager.findOne(Category, { where: { name: "Category #1" }});
+        const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
         expect(category).to.be.empty;
 
     })));

@@ -61,17 +61,20 @@ During installation you may have some problems with some dependencies.
 For example to proper install oracle driver you need to follow all instructions from
  [node-oracle documentation](https://github.com/oracle/node-oracledb).
 
-Also install these packages globally:
+## ORM config
 
-* `npm install -g gulp` (you might need to prefix this command with `sudo`)
-* `npm install -g typescript` (you might need to prefix this command with `sudo`)
+To create an initial `ormconfig.json` file, run the following command:
+
+```shell
+npm run setup:config
+```
 
 ## Building
 
 To build a distribution package of TypeORM run:
 
 ```shell
-gulp package
+npm run package
 ```
 
 This command will generate you a distribution package in the `build/package` directory.
@@ -80,7 +83,46 @@ You can link (or simply copy/paste) this directory into your project and test Ty
 
 ## Running Tests Locally
 
-Setup your environment configuration by copying `ormconfig.json.dist` into `ormconfig.json` and 
+It would be greatly appreciated if PRs that change code come with appropriate tests.
+
+To create a test for a specific issue opened on github, create a file: `test/github-issues/<num>/issue-<num>.ts` where
+`<num>` is the corresponding github issue. For example, if you were creating a PR to fix github issue #363, you'd 
+create `test/github-issues/363/issue-363.ts`.
+
+Most tests will benefit from using this template as a starting point:
+
+```ts
+import "reflect-metadata";
+import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {Connection} from "../../../src/connection/Connection";
+import {expect} from "chai";
+
+describe("github issues > #<issue number> <issue title>", () => {
+
+    let connections: Connection[];
+    before(async () => connections = await createTestingConnections({
+        entities: [__dirname + "/entity/*{.js,.ts}"],
+        schemaCreate: true,
+        dropSchemaOnConnection: true,
+    }));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
+
+    it("should <put a detailed description of what it should do here>", () => Promise.all(connections.map(async connection => {
+
+       // tests go here
+
+    })));
+    
+    // you can add additional tests if needed
+
+});
+```
+
+If you place entities in `./entity/<entity-name>.ts` relative to your `issue-<num>.ts` file, 
+they will automatically be loaded.
+
+To run the tests, setup your environment configuration by copying `ormconfig.json.dist` into `ormconfig.json` and 
 replacing parameters with your own.
 
 Then run tests:
@@ -91,6 +133,15 @@ npm test
 
 You should execute test suites before submitting a PR to github.
 All the tests are executed on our Continuous Integration infrastructure and a PR could only be merged once the tests pass.
+
+>**Hint:** you can use the `--grep` flag to pass a Regex to `gulp-mocha`. Only the tests have have `describe`/`it` 
+>statements that match the Regex will be run. For example:
+>
+>```shell
+>npm test -- --grep="github issues > #363"
+>```
+>
+>This is useful when trying to get a specific test or subset of tests to pass.
 
 ## Using Docker 
 

@@ -8,19 +8,22 @@ export class PostDetails {
     id: number;
 
     @Column({
-        nullable: true
+        type: String,
+        nullable: true,
     })
-    authorName: string;
+    authorName: string|null;
 
     @Column({
+        type: String,
         nullable: true
     })
-    comment: string;
+    comment: string|null;
 
     @Column({
+        type: String,
         nullable: true
     })
-    metadata: string;
+    metadata: string|null;
     
     @OneToMany(type => Post, post => post.details, {
         cascadeInsert: true,

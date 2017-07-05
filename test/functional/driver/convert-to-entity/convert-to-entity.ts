@@ -1,0 +1,58 @@
+import "reflect-metadata";
+import { expect } from "chai";
+import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "../../../../src/connection/Connection";
+import { Post } from "./entity/Post";
+
+describe("driver > convert raw results to entity", () => {
+
+    let connections: Connection[];
+    before(async () => connections = await createTestingConnections({
+        entities: [Post],
+        schemaCreate: true,
+        dropSchemaOnConnection: true
+    }));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
+
+    it("should return null value in entity property when record column is null", () => Promise.all(connections.map(async connection => {
+        const postRepository = connection.getRepository(Post);
+        const post = new Post();
+        post.id = 1;
+
+        await postRepository.save(post);
+
+        const loadedPost = await postRepository.findOneById(1);
+        if (loadedPost) {
+            expect(loadedPost.isNew).to.be.equal(null);
+        }
+    })));
+
+    it("should return true in entity property when record column is true", () => Promise.all(connections.map(async connection => {
+        const postRepository = connection.getRepository(Post);
+        const post = new Post();
+        post.id = 1;
+        post.isNew = true;
+
+        await postRepository.save(post);
+
+        const loadedPost = await postRepository.findOneById(1);
+        if (loadedPost) {
+            expect(loadedPost.isNew).to.be.equal(true);
+        }
+    })));
+
+    it("should return false in entity property when record column is false", () => Promise.all(connections.map(async connection => {
+        const postRepository = connection.getRepository(Post);
+        const post = new Post();
+        post.id = 1;
+        post.isNew = false;
+
+        await postRepository.save(post);
+
+        const loadedPost = await postRepository.findOneById(1);
+        if (loadedPost) {
+            expect(loadedPost.isNew).to.be.equal(false);
+        }
+    })));
+});

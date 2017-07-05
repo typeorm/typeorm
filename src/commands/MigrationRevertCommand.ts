@@ -1,4 +1,7 @@
 import {createConnection} from "../index";
+import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
+import {Connection} from "../connection/Connection";
+const chalk = require("chalk");
 
 /**
  * Reverts last migration command.
@@ -17,31 +20,37 @@ export class MigrationRevertCommand {
             })
             .option("cf", {
                 alias: "config",
-                default: "ormconfig.json",
+                default: "ormconfig",
                 describe: "Name of the file with connection configuration."
             });
     }
 
     async handler(argv: any) {
 
+        let connection: Connection|undefined = undefined;
         try {
-            process.env.SKIP_SCHEMA_CREATION = true;
-            process.env.SKIP_SUBSCRIBERS_LOADING = true;
-            const connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
+            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
+            const connectionOptions = await connectionOptionsReader.get(argv.connection);
+            Object.assign(connectionOptions, {
+                subscribers: [],
+                dropSchemaOnConnection: false,
+                autoSchemaSync: false,
+                autoMigrationsRun: false,
+                logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: true }
+            });
+            connection = await createConnection(connectionOptions);
 
-            try {
-                await connection.undoLastMigration();
-
-            } catch (err) {
-                connection.logger.log("error", err);
-
-            } finally {
-                await connection.close();
-            }
+            await connection.undoLastMigration();
+            // console.log(chalk.green("Migrations were successfully reverted.")); // todo: make log inside "runMigrations" method
 
         } catch (err) {
+            console.log(chalk.black.bgRed("Error during migration revert:"));
             console.error(err);
-            throw err;
+            // throw err;
+
+        } finally {
+            if (connection)
+                await connection.close();
         }
     }
 

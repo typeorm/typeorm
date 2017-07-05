@@ -12,6 +12,6 @@ export function AfterRemove() {
             propertyName: propertyName,
             type: EventListenerTypes.AFTER_REMOVE
         };
-        getMetadataArgsStorage().entityListeners.add(args);
+        getMetadataArgsStorage().entityListeners.push(args);
     };
 }

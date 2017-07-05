@@ -10,7 +10,7 @@
       "primary": true
     },
     "country": {
-      "type": "string",
+      "type": "varchar",
       "nullable": false
     }
   },

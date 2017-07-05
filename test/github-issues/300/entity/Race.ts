@@ -13,7 +13,7 @@ export class Race {
     @Column()
     name: string;
 
-    @Embedded(type => Duration)
+    @Column(type => Duration)
     duration: Duration;
 
 }
