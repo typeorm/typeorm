@@ -104,7 +104,7 @@ export class DateUtils {
     }
 
     /**
-     * Converts given value into datetime string in a "YYYY-MM-DD HH-mm-ss" format.
+     * Converts given value into datetime string in a "YYYY-MM-DD HH-mm-ss.ffffff" format.
      */
     static mixedDateToDatetimeString(value: Date|any): string|any {
         if (typeof value === "string") {
@@ -117,14 +117,14 @@ export class DateUtils {
                 this.formatZerolessValue(value.getHours()) + ":" +
                 this.formatZerolessValue(value.getMinutes()) + ":" +
                 this.formatZerolessValue(value.getSeconds()) + "." +
-                this.formatMilliseconds(value.getUTCMilliseconds());
+                this.formatMilliseconds(value.getMilliseconds());
         }
 
         return value;
     }
 
     /**
-     * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss" format.
+     * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss.ffffff" format.
      */
     static mixedDateToUtcDatetimeString(value: Date|any): string|any {
         if (typeof value === "string") {
@@ -185,10 +185,12 @@ export class DateUtils {
      * Formats given number to "0x" format, e.g. if it is 1 then it will return "01".
      */
     private static formatMilliseconds(value: number): string {
-        if (value < 100)
+        if (value < 10)
+            return "00" + value;
+        else if (value < 100)
             return "0" + value;
-
-        return String(value);
+        else
+            return String(value);
     }
 
 }

@@ -615,6 +615,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const indexName = index instanceof IndexSchema ? index.name : index;
         const sql = `ALTER TABLE \`${tableName}\` DROP INDEX \`${indexName}\``;
 
+
         if (index instanceof IndexSchema) {
             const columns = index.columnNames.map(columnName => "`" + columnName + "`").join(", ");
             const revertSql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` ON \`${tableName}\`(${columns})`;
