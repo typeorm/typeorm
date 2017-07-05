@@ -2,7 +2,7 @@ import {Entity} from "../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
 import {Index} from "../../../../src/decorator/Index";
-import {ManyToOne} from "../../../../src/Index";
+import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
 import {Tag} from "./Tag";
 
 @Index(["tag", "c", "b", "a"])
@@ -24,6 +24,6 @@ export class Post {
     @Column()
     c: string;
 
-    @ManyToOne(type => Tag)
+    @ManyToOne(() => Tag)
     tag: Tag;
 }
