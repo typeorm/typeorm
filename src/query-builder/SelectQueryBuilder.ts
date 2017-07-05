@@ -1,32 +1,33 @@
-import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
-import {ObjectLiteral} from "../common/ObjectLiteral";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {JoinOptions} from "./JoinOptions";
-import {PessimisticLockTransactionRequiredError} from "../error/PessimisticLockTransactionRequiredError";
-import {NoVersionOrUpdateDateColumnError} from "../error/NoVersionOrUpdateDateColumnError";
-import {OptimisticLockVersionMismatchError} from "../error/OptimisticLockVersionMismatchError";
-import {OptimisticLockCanNotBeUsedError} from "../error/OptimisticLockCanNotBeUsedError";
-import {JoinAttribute} from "./JoinAttribute";
-import {RelationIdAttribute} from "./relation-id/RelationIdAttribute";
-import {RelationCountAttribute} from "./relation-count/RelationCountAttribute";
-import {RelationIdLoader} from "./relation-id/RelationIdLoader";
-import {RelationIdMetadataToAttributeTransformer} from "./relation-id/RelationIdMetadataToAttributeTransformer";
-import {RelationCountLoader} from "./relation-count/RelationCountLoader";
-import {RelationCountMetadataToAttributeTransformer} from "./relation-count/RelationCountMetadataToAttributeTransformer";
-import {Broadcaster} from "../subscriber/Broadcaster";
-import {QueryBuilder} from "./QueryBuilder";
-import {ReadStream} from "fs";
-import {LockNotSupportedOnGivenDriverError} from "../error/LockNotSupportedOnGivenDriverError";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {SelectQuery} from "./SelectQuery";
-import {EntityMetadata} from "../metadata/EntityMetadata";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {OrderByCondition} from "../find-options/OrderByCondition";
-import {QueryExpressionMap} from "./QueryExpressionMap";
-import {ObjectType} from "../common/ObjectType";
-import {QueryRunner} from "../query-runner/QueryRunner";
+import { RawSqlResultsToEntityTransformer } from "./transformer/RawSqlResultsToEntityTransformer";
+import { ObjectLiteral } from "../common/ObjectLiteral";
+import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver";
+import { JoinOptions } from "./JoinOptions";
+import { PessimisticLockTransactionRequiredError } from "../error/PessimisticLockTransactionRequiredError";
+import { NoVersionOrUpdateDateColumnError } from "../error/NoVersionOrUpdateDateColumnError";
+import { OptimisticLockVersionMismatchError } from "../error/OptimisticLockVersionMismatchError";
+import { OptimisticLockCanNotBeUsedError } from "../error/OptimisticLockCanNotBeUsedError";
+import { JoinAttribute } from "./JoinAttribute";
+import { RelationIdAttribute } from "./relation-id/RelationIdAttribute";
+import { RelationCountAttribute } from "./relation-count/RelationCountAttribute";
+import { RelationIdLoader } from "./relation-id/RelationIdLoader";
+import { RelationIdMetadataToAttributeTransformer } from "./relation-id/RelationIdMetadataToAttributeTransformer";
+import { RelationCountLoader } from "./relation-count/RelationCountLoader";
+import { RelationCountMetadataToAttributeTransformer } from "./relation-count/RelationCountMetadataToAttributeTransformer";
+import { Broadcaster } from "../subscriber/Broadcaster";
+import { QueryBuilder } from "./QueryBuilder";
+import { ReadStream } from "fs";
+import { LockNotSupportedOnGivenDriverError } from "../error/LockNotSupportedOnGivenDriverError";
+import { MysqlDriver } from "../driver/mysql/MysqlDriver";
+import { PostgresDriver } from "../driver/postgres/PostgresDriver";
+import { OracleDriver } from "../driver/oracle/OracleDriver";
+import { SelectQuery } from "./SelectQuery";
+import { EntityMetadata } from "../metadata/EntityMetadata";
+import { ColumnMetadata } from "../metadata/ColumnMetadata";
+import { OrderByCondition } from "../find-options/OrderByCondition";
+import { QueryExpressionMap } from "./QueryExpressionMap";
+import { ObjectType } from "../common/ObjectType";
+import { QueryRunner } from "../query-runner/QueryRunner";
+import { Alias } from "./Alias";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -97,7 +98,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Creates SELECT query and selects given data.
      * Replaces all previous selections if they exist.
      */
-    select(selection?: string|string[]|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), selectionAliasName?: string): SelectQueryBuilder<Entity> {
+    select(selection?: string | string[] | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), selectionAliasName?: string): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select";
         if (selection instanceof Array) {
             this.expressionMap.selects = selection.map(selection => ({ selection: selection }));
@@ -132,7 +133,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Adds new selection to the SELECT query.
      */
-    addSelect(selection: string|string[]|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), selectionAliasName?: string): this {
+    addSelect(selection: string | string[] | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), selectionAliasName?: string): this {
         if (!selection)
             return this;
 
@@ -163,14 +164,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T>;
+    from<T>(entityTarget: ObjectType<T> | string, aliasName: string): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
+    from<T>(entityTarget: ObjectType<T> | string | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
         const mainAlias = this.createFromAlias(entityTarget, aliasName);
         this.expressionMap.setMainAlias(mainAlias);
         return (this as any) as SelectQueryBuilder<T>;
@@ -186,13 +187,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T>;
+    addFrom<T>(entityTarget: ObjectType<T> | string, aliasName: string): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
+    addFrom<T>(entityTarget: ObjectType<T> | string | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
         const alias = this.createFromAlias(entityTarget, aliasName);
         if (!this.expressionMap.mainAlias)
             this.expressionMap.setMainAlias(alias);
@@ -213,7 +214,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoin(entity: Function|string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoin(entity: Function | string, aliasName: string, condition?: string, options?: JoinOptions): this;
 
     /**
      * INNER JOINs (without selection) given table.
@@ -227,7 +228,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoin(entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    innerJoin(entityOrProperty: Function | string, aliasName: string, condition: string = "", options?: JoinOptions): this {
         this.join("INNER", entityOrProperty, aliasName, condition, options);
         return this;
     }
@@ -245,7 +246,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoin(entity: Function|string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    leftJoin(entity: Function | string, aliasName: string, condition?: string, options?: JoinOptions): this;
 
     /**
      * LEFT JOINs (without selection) given table.
@@ -259,7 +260,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoin(entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    leftJoin(entityOrProperty: Function | string, aliasName: string, condition: string = "", options?: JoinOptions): this {
         this.join("LEFT", entityOrProperty, aliasName, condition, options);
         return this;
     }
@@ -277,7 +278,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndSelect(entity: Function|string, aliasName: string, condition?: string, options?: JoinOptions): this;
+    innerJoinAndSelect(entity: Function | string, aliasName: string, condition?: string, options?: JoinOptions): this;
 
     /**
      * INNER JOINs table and adds all selection properties to SELECT.
@@ -291,7 +292,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndSelect(entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    innerJoinAndSelect(entityOrProperty: Function | string, aliasName: string, condition: string = "", options?: JoinOptions): this {
         this.addSelect(aliasName);
         this.innerJoin(entityOrProperty, aliasName, condition, options);
         return this;
@@ -310,7 +311,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
+    leftJoinAndSelect(entity: Function | string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * LEFT JOINs table and adds all selection properties to SELECT.
@@ -324,7 +325,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    leftJoinAndSelect(entityOrProperty: Function | string, aliasName: string, condition: string = "", options?: JoinOptions): this {
         this.addSelect(aliasName);
         this.leftJoin(entityOrProperty, aliasName, condition, options);
         return this;
@@ -347,7 +348,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
+    innerJoinAndMapMany(mapToProperty: string, entity: Function | string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * INNER JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -365,7 +366,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function | string, aliasName: string, condition: string = "", options?: JoinOptions): this {
         this.addSelect(aliasName);
         this.join("INNER", entityOrProperty, aliasName, condition, options, mapToProperty, true);
         return this;
@@ -388,7 +389,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
+    innerJoinAndMapOne(mapToProperty: string, entity: Function | string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * INNER JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -406,7 +407,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function | string, aliasName: string, condition: string = "", options?: JoinOptions): this {
         this.addSelect(aliasName);
         this.join("INNER", entityOrProperty, aliasName, condition, options, mapToProperty, false);
         return this;
@@ -429,7 +430,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
+    leftJoinAndMapMany(mapToProperty: string, entity: Function | string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * LEFT JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -447,7 +448,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function | string, aliasName: string, condition: string = "", options?: JoinOptions): this {
         this.addSelect(aliasName);
         this.join("LEFT", entityOrProperty, aliasName, condition, options, mapToProperty, true);
         return this;
@@ -470,7 +471,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, entity: Function|string, aliasName: string, condition: string, options?: JoinOptions): this;
+    leftJoinAndMapOne(mapToProperty: string, entity: Function | string, aliasName: string, condition: string, options?: JoinOptions): this;
 
     /**
      * LEFT JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -488,7 +489,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", options?: JoinOptions): this {
+    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function | string, aliasName: string, condition: string = "", options?: JoinOptions): this {
         this.addSelect(aliasName);
         this.join("LEFT", entityOrProperty, aliasName, condition, options, mapToProperty, false);
         return this;
@@ -540,9 +541,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Optionally, you can add condition and parameters used in condition.
      */
     loadRelationIdAndMap(mapToProperty: string,
-                         relationName: string,
-                         aliasNameOrOptions?: string|{ disableMixedMap?: boolean },
-                         queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>): this {
+        relationName: string,
+        aliasNameOrOptions?: string | { disableMixedMap?: boolean },
+        queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>): this {
 
         const relationIdAttribute = new RelationIdAttribute(this.expressionMap);
         relationIdAttribute.mapToProperty = mapToProperty;
@@ -625,7 +626,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
-    where(where: string|((qb: this) => string), parameters?: ObjectLiteral): this {
+    where(where: string | ((qb: this) => string), parameters?: ObjectLiteral): this {
         this.expressionMap.wheres = [{ type: "simple", condition: typeof where === "string" ? where : where(this) }];
         if (parameters) this.setParameters(parameters);
         return this;
@@ -647,7 +648,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(where: string|((qb: this) => string), parameters?: ObjectLiteral): this {
+    andWhere(where: string | ((qb: this) => string), parameters?: ObjectLiteral): this {
         this.expressionMap.wheres.push({ type: "and", condition: typeof where === "string" ? where : where(this) });
         if (parameters) this.setParameters(parameters);
         return this;
@@ -669,7 +670,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    orWhere(where: string|((qb: this) => string), parameters?: ObjectLiteral): this {
+    orWhere(where: string | ((qb: this) => string), parameters?: ObjectLiteral): this {
         this.expressionMap.wheres.push({ type: "or", condition: typeof where === "string" ? where : where(this) });
         if (parameters) this.setParameters(parameters);
         return this;
@@ -799,7 +800,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    orderBy(sort: string, order?: "ASC"|"DESC"): this;
+    orderBy(sort: string, order?: "ASC" | "DESC"): this;
 
     /**
      * Sets ORDER BY condition in the query builder.
@@ -813,7 +814,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    orderBy(sort?: string|OrderByCondition, order: "ASC"|"DESC" = "ASC"): this {
+    orderBy(sort?: string | OrderByCondition, order: "ASC" | "DESC" = "ASC"): this {
         if (sort) {
             if (sort instanceof Object) {
                 this.expressionMap.orderBys = sort as OrderByCondition;
@@ -829,7 +830,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Adds ORDER BY condition in the query builder.
      */
-    addOrderBy(sort: string, order: "ASC"|"DESC" = "ASC"): this {
+    addOrderBy(sort: string, order: "ASC" | "DESC" = "ASC"): this {
         this.expressionMap.orderBys[sort] = order;
         return this;
     }
@@ -905,12 +906,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "pessimistic_read"|"pessimistic_write"): this;
+    setLock(lockMode: "pessimistic_read" | "pessimistic_write"): this;
 
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "optimistic"|"pessimistic_read"|"pessimistic_write", lockVersion?: number|Date): this {
+    setLock(lockMode: "optimistic" | "pessimistic_read" | "pessimistic_write", lockVersion?: number | Date): this {
         this.expressionMap.lockMode = lockMode;
         this.expressionMap.lockVersion = lockVersion;
         return this;
@@ -956,7 +957,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Gets single entity returned by execution of generated query builder sql.
      */
-    async getOne(): Promise<Entity|undefined> {
+    async getOne(): Promise<Entity | undefined> {
         const results = await this.getRawAndEntities();
         const result = results.entities[0] as any;
 
@@ -1055,7 +1056,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected join(direction: "INNER"|"LEFT", entityOrProperty: Function|string, aliasName: string, condition?: string, options?: JoinOptions, mapToProperty?: string, isMappingMany?: boolean): void {
+    protected join(direction: "INNER" | "LEFT", entityOrProperty: Function | string, aliasName: string, condition?: string, options?: JoinOptions, mapToProperty?: string, isMappingMany?: boolean): void {
 
         const joinAttribute = new JoinAttribute(this.connection, this.expressionMap);
         joinAttribute.direction = direction;
@@ -1296,20 +1297,35 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     protected createOrderByExpression() {
 
-        let orderBys = this.expressionMap.orderBys;
+        const orderBys = this.expressionMap.orderBys;
 
         // if table has a default order then apply it
         if (!Object.keys(orderBys).length && this.expressionMap.mainAlias!.hasMetadata) {
-            orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
-        }
+            const orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
+            const aliasName = ((alias: Alias) => {
+                if (alias && alias.name) {
+                    return `"${alias.name}".`;
+                } else {
+                    return "";
+                }
+            })(this.expressionMap.mainAlias!);
 
-        // if user specified a custom order then apply it
-        if (Object.keys(orderBys).length > 0)
-            return " ORDER BY " + Object.keys(orderBys)
+            // apply the default order
+            if (Object.keys(orderBys).length > 0)
+                return " ORDER BY " + Object.keys(orderBys)
                     .map(columnName => {
-                        return this.replacePropertyNames(columnName) + " " + this.expressionMap.orderBys[columnName];
+                        return `${aliasName}"${this.replacePropertyNames(columnName)}" ${orderBys[columnName]}`;
                     })
                     .join(", ");
+        } else {
+            // if user specified a custom order then apply it
+            if (Object.keys(orderBys).length > 0)
+                return " ORDER BY " + Object.keys(orderBys)
+                    .map(columnName => {
+                        return `${this.replacePropertyNames(columnName)} ${orderBys[columnName]}`;
+                    })
+                    .join(", ");
+        }
 
         return "";
     }
@@ -1445,13 +1461,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         const distinctAlias = this.escape(mainAlias);
         let countSql = `COUNT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                const propertyName = this.escape(primaryColumn.databaseName);
-                if (index === 0) {
-                    return `DISTINCT(${distinctAlias}.${propertyName})`;
-                } else {
-                    return `${distinctAlias}.${propertyName})`;
-                }
-            }).join(", ") + ") as \"cnt\"";
+            const propertyName = this.escape(primaryColumn.databaseName);
+            if (index === 0) {
+                return `DISTINCT(${distinctAlias}.${propertyName})`;
+            } else {
+                return `${distinctAlias}.${propertyName})`;
+            }
+        }).join(", ") + ") as \"cnt\"";
 
         const [countQuerySql, countQueryParameters] = this.clone()
             .mergeExpressionMap({ ignoreParentTablesJoins: true })
@@ -1577,7 +1593,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         };
     }
 
-    protected createOrderByCombinedWithSelectExpression(parentAlias: string): [ string, OrderByCondition] {
+    protected createOrderByCombinedWithSelectExpression(parentAlias: string): [string, OrderByCondition] {
 
         // if table has a default order then apply it
         let orderBys = this.expressionMap.orderBys;
@@ -1599,7 +1615,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             const [aliasName, propertyPath] = columnName.split(".");
             const alias = this.expressionMap.findAliasByName(aliasName);
             const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-            orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = this.expressionMap.orderBys[columnName];
+            orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = orderBys[columnName];
         });
 
         return [selectString, orderByObject];
