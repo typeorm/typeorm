@@ -7,7 +7,7 @@ import {Post} from "./entity/Post";
 
 const should = chai.should();
 
-describe.skip("query builder > order-by", () => {
+describe("query builder > order-by", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -25,7 +25,7 @@ describe.skip("query builder > order-by", () => {
 
         const post2 = new Post();
         post2.myOrder = 2;
-        await connection.manager.save(post2);
+        await connection.manager.save([post1, post2]);
 
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -42,11 +42,11 @@ describe.skip("query builder > order-by", () => {
 
         const post2 = new Post();
         post2.myOrder = 2;
-        await connection.manager.save(post2);
+        await connection.manager.save([post1, post2]);
 
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .addOrderBy("myOrderby", "ASC")
+            .addOrderBy("myOrder", "ASC")
             .getOne();
 
         expect(loadedPost!.myOrder).to.be.equal(1);
