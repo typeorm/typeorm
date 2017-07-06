@@ -27,6 +27,7 @@ import {OrderByCondition} from "../find-options/OrderByCondition";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {ObjectType} from "../common/ObjectType";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import { Alias } from "./Alias";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1293,21 +1294,25 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Creates "ORDER BY" part of SQL query.
      */
     protected createOrderByExpression() {
-
         let orderBys = this.expressionMap.orderBys;
-
         // if table has a default order then apply it
         if (!Object.keys(orderBys).length && this.expressionMap.mainAlias!.hasMetadata) {
             orderBys = this.expressionMap.mainAlias!.metadata.orderBy || {};
         }
-
-        // if user specified a custom order then apply it
+        const aliasName = ((alias: Alias) => {
+            if (alias && alias.name) {
+                return `${this.escape(alias.name)}.`;
+            } else {
+                return "";
+            }
+        })(this.expressionMap.mainAlias!);
+        // apply the default order
         if (Object.keys(orderBys).length > 0)
             return " ORDER BY " + Object.keys(orderBys)
-                    .map(columnName => {
-                        return this.replacePropertyNames(columnName) + " " + this.expressionMap.orderBys[columnName];
-                    })
-                    .join(", ");
+                .map(columnName => {
+                    return `${aliasName}${this.escape(this.replacePropertyNames(columnName))} ${orderBys[columnName]}`;
+                })
+                .join(", ");
 
         return "";
     }
@@ -1597,7 +1602,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             const [aliasName, propertyPath] = columnName.split(".");
             const alias = this.expressionMap.findAliasByName(aliasName);
             const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-            orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = this.expressionMap.orderBys[columnName];
+            orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = orderBys[columnName];
         });
 
         return [selectString, orderByObject];
