@@ -86,7 +86,7 @@
   "scripts": {
     "test": "gulp tests",
     "compile": "tsc",
-	"dev": "gulp coveragePost",
+    "quicktests": "gulp quickTests",
     "watch": "tsc -w",
     "setup:config": "gulp createTravisOrmConfig",
     "package": "gulp package"

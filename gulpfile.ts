@@ -299,7 +299,7 @@ export class Gulpfile {
             .pipe(mocha({
                 bail: true,
                 grep: !!args.grep ? new RegExp(args.grep) : undefined,
-                timeout: 15000
+                timeout: 30000
             }))
             .pipe(istanbul.writeReports());
     }
@@ -316,7 +316,7 @@ export class Gulpfile {
         return gulp.src(["./build/compiled/test/**/*.js"])
             .pipe(mocha({
                 bail: true,
-                timeout: 15000
+                timeout: 30000
             }));
     }
 
