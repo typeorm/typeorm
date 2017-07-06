@@ -1,12 +1,12 @@
-import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
-import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
-import {Category} from "./Category";
-import {JoinTable} from "../../../src/decorator/relations/JoinTable";
+import { PrimaryGeneratedColumn, Column, Entity, CreateDateColumn, UpdateDateColumn } from "../../../src/index";
+import { ManyToMany } from "../../../src/decorator/relations/ManyToMany";
+import { Category } from "./Category";
+import { JoinTable } from "../../../src/decorator/relations/JoinTable";
 
 @Entity("sample30_post", {
     orderBy: {
-        title: "ASC",
-        id: "DESC"
+        id: "DESC",
+        createdDate: "DESC"
     }
 })
 export class Post {
@@ -23,6 +23,12 @@ export class Post {
     @ManyToMany(type => Category)
     @JoinTable()
     categories: Category[];
+
+    @CreateDateColumn()
+    createdDate: Date;
+
+    @UpdateDateColumn()
+    updatedDate: Date;
 
     constructor(title: string, text: string, categories: Category[]) {
         this.title = title;
