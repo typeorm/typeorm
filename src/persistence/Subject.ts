@@ -335,7 +335,7 @@ export class Subject {
                     entityValue = DateUtils.mixedDateToUtcDatetimeString(entityValue);
                     databaseValue = DateUtils.mixedDateToUtcDatetimeString(databaseValue);
 
-                } else if (column.type === "json" || column.type === "jsonb") {
+                } else if (column.type === "json" || column.type === "jsonb" || column.type === Object) {
                     entityValue = JSON.stringify(entityValue);
                     if (databaseValue !== null && databaseValue !== undefined)
                         databaseValue = JSON.stringify(databaseValue);

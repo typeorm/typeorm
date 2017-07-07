@@ -2,13 +2,13 @@ import {Column} from "../../../../src/decorator/columns/Column";
 
 export class Duration {
 
-    @Column({ type: Number, nullable: true })
+    @Column({ nullable: true })
     minutes: number|null;
 
-    @Column({ type: Number, nullable: true })
+    @Column({ nullable: true })
     hours: number|null;
 
-    @Column({ type: Number, nullable: true })
+    @Column({ nullable: true })
     days: number|null;
 
 }

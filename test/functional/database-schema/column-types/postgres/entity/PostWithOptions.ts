@@ -6,7 +6,7 @@ import {Column} from "../../../../../../src/decorator/columns/Column";
 export class PostWithOptions {
 
     @PrimaryColumn()
-    id: number;
+    id: string;
 
     // -------------------------------------------------------------------------
     // Numeric Types
@@ -33,5 +33,34 @@ export class PostWithOptions {
 
     @Column("character varying", { length: 30 })
     characterVarying: string;
+
+    // -------------------------------------------------------------------------
+    // Date/Time Types
+    // -------------------------------------------------------------------------
+
+    @Column("interval")
+    interval: any;
+
+    @Column("time")
+    time: string;
+
+    @Column("time with time zone")
+    timeWithTimeZone: string;
+
+    @Column("timetz")
+    timetz: string;
+
+    @Column("timestamp")
+    timestamp: Date;
+
+    @Column("timestamptz")
+    timestamptz: Date;
+
+    // -------------------------------------------------------------------------
+    // UUID Type
+    // -------------------------------------------------------------------------
+
+    @Column("uuid")
+    uuid: string;
 
 }

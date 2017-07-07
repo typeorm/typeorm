@@ -13,7 +13,6 @@ import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {SqlServerConnectionOptions} from "./SqlServerConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -103,16 +102,7 @@ export class SqlServerDriver implements Driver {
         migrationName: "varchar",
         migrationTimestamp: "bigint",
     };
-
-    /**
-     * Default values of length, precision and scale depends on column data type.
-     * Used in the cases when length/precision/scale is not specified by user.
-     */
-    dataTypeDefaults: DataTypeDefaults = {
-        varchar: { length: 255 },
-        nvarchar: { length: 255 }
-    };
-
+    
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -239,20 +229,19 @@ export class SqlServerDriver implements Driver {
             return value === true ? 1 : 0;
 
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDate(value);
+            return DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedTimeToDate(value);
+            return DateUtils.mixedDateToTimeString(value);
 
-        } else if (columnMetadata.type === "datetime"
-            || columnMetadata.type === "datetime2"
-            || columnMetadata.type === "smalldatetime"
-            || columnMetadata.type === "datetimeoffset") {
-            return DateUtils.mixedDateToDate(value, true);
+        } else if (columnMetadata.type === "datetime") {
+            return DateUtils.mixedDateToUtcDatetimeString(value);
+
+        } else if (columnMetadata.type === "json") {
+            return JSON.stringify(value);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
-
         }
 
         return value;
@@ -262,16 +251,10 @@ export class SqlServerDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (value === null || value === undefined)
-            return value;
-
         if (columnMetadata.type === Boolean) {
             return value ? true : false;
 
-        } else if (columnMetadata.type === "datetime"
-            || columnMetadata.type === "datetime2"
-            || columnMetadata.type === "smalldatetime"
-            || columnMetadata.type === "datetimeoffset") {
+        } else if (columnMetadata.type === "datetime") {
             return DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
@@ -279,6 +262,9 @@ export class SqlServerDriver implements Driver {
 
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToString(value);
+
+        } else if (columnMetadata.type === "json") {
+            return JSON.parse(value);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.stringToSimpleArray(value);
@@ -290,7 +276,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string {
         let type = "";
         if (column.type === Number) {
             type += "int";
@@ -304,8 +290,8 @@ export class SqlServerDriver implements Driver {
         } else if (column.type === Boolean) {
             type += "bit";
 
-        } else if ((column.type as any) === Buffer) {
-            type += "binary";
+        } else if (column.type === Object) {
+            type += "ntext";
 
         } else if (column.type === "simple-array") {
             type += "ntext";
@@ -315,16 +301,25 @@ export class SqlServerDriver implements Driver {
         }
 
         // make sure aliases to have original type names
-        if (type === "integer") {
+        if (type === "integer")
             type = "int";
-        } else if (type === "dec") {
-            type = "decimal";
-        } else if (type === "float" && (column.precision && (column.precision! >= 1 && column.precision! < 25))) {
-            type = "real";
+
+        if (column.length) {
+            type += "(" + column.length + ")";
+
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+
+        } else if (column.precision) {
+            type += "(" + column.precision + ")";
+
+        } else if (column.scale) {
+            type += "(" + column.scale + ")";
         }
 
-        if (type === "double precision")
-            type = "float";
+        // set default required length if those were not specified
+        if (type === "varchar" || type === "nvarchar")
+            type += "(255)";
 
         return type;
     }

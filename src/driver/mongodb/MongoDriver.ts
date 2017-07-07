@@ -12,7 +12,6 @@ import {MongoConnectionOptions} from "./MongoConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {MongoSchemaBuilder} from "../../schema-builder/MongoSchemaBuilder";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
  * Organizes communication with MongoDB.
@@ -24,21 +23,10 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
-     */
-    options: MongoConnectionOptions;
-
-    /**
      * Mongodb does not require to dynamically create query runner each time,
      * because it does not have a regular connection pool as RDBMS systems have.
      */
     queryRunner?: MongoQueryRunner;
-
-    /**
-     * Default values of length, precision and scale depends on column data type.
-     * Used in the cases when length/precision/scale is not specified by user.
-     */
-    dataTypeDefaults: DataTypeDefaults;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -66,6 +54,11 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection options.
+     */
+    protected options: MongoConnectionOptions;
 
     /**
      * Underlying mongodb library.
@@ -164,7 +157,7 @@ export class MongoDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 

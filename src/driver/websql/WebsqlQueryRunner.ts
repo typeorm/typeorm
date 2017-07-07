@@ -28,14 +28,14 @@ export class WebsqlQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Database driver used by connection.
-     */
-    driver: WebsqlDriver;
-
-    /**
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Entity manager isolated for this query runner.
+     */
+    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.
@@ -76,9 +76,9 @@ export class WebsqlQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: WebsqlDriver) {
-        this.driver = driver;
+    constructor(protected driver: WebsqlDriver) {
         this.connection = driver.connection;
+        this.manager = driver.connection.manager;
     }
 
     // -------------------------------------------------------------------------
@@ -625,7 +625,7 @@ export class WebsqlQueryRunner implements QueryRunner {
         // await this.query(`PRAGMA foreign_keys = OFF;`);
         await this.startTransaction();
         try {
-            const selectDropsQuery = `select 'drop table "' || name || '";' as query from sqlite_master where type = 'table' and name != 'sqlite_sequence'`;
+            const selectDropsQuery = `select 'drop table ' || name || ';' as query from sqlite_master where type = 'table' and name != 'sqlite_sequence'`;
             const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
             await Promise.all(dropQueries.map(q => this.query(q["query"])));
             await this.commitTransaction();
@@ -686,7 +686,7 @@ export class WebsqlQueryRunner implements QueryRunner {
         if (column instanceof ColumnMetadata) {
             c += " " + this.driver.normalizeType(column);
         } else {
-            c += " " + column.getFullType(this.connection.driver);
+            c += " " + column.type;
         }
         if (column.isNullable !== true)
             c += " NOT NULL";

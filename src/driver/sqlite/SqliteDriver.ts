@@ -12,7 +12,6 @@ import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -48,12 +47,6 @@ export class SqliteDriver implements Driver {
      */
     databaseConnection: any;
 
-    /**
-     * Default values of length, precision and scale depends on column data type.
-     * Used in the cases when length/precision/scale is not specified by user.
-     */
-    dataTypeDefaults: DataTypeDefaults;
-
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
@@ -71,7 +64,6 @@ export class SqliteDriver implements Driver {
         "smallint",
         "mediumint",
         "bigint",
-        "unsigned big int",
         "int2",
         "int8",
         "integer",
@@ -94,7 +86,6 @@ export class SqliteDriver implements Driver {
         "decimal",
         "boolean",
         "date",
-        "time",
         "datetime",
     ];
 
@@ -186,6 +177,9 @@ export class SqliteDriver implements Driver {
         } else if (columnMetadata.type === "datetime") {
             return DateUtils.mixedDateToUtcDatetimeString(value);
 
+        } else if (columnMetadata.type === "json") {
+            return JSON.stringify(value);
+
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
         }
@@ -197,9 +191,6 @@ export class SqliteDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (value === null || value === undefined)
-            return value;
-
         if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
             return value ? true : false;
 
@@ -211,6 +202,9 @@ export class SqliteDriver implements Driver {
 
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToString(value);
+
+        } else if (columnMetadata.type === "json") {
+            return JSON.parse(value);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.stringToSimpleArray(value);
@@ -258,7 +252,7 @@ export class SqliteDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string {
         let type = "";
         if (column.type === Number || column.type === "int") {
             type += "integer";
@@ -269,11 +263,11 @@ export class SqliteDriver implements Driver {
         } else if (column.type === Date) {
             type += "datetime";
 
-        } else if ((column.type as any) === Buffer) {
-            type += "blob";
-
         } else if (column.type === Boolean) {
             type += "boolean";
+
+        } else if (column.type === Object) {
+            type += "text";
 
         } else if (column.type === "simple-array") {
             type += "text";
@@ -281,6 +275,25 @@ export class SqliteDriver implements Driver {
         } else {
             type += column.type;
         }
+        if (column.length) {
+            type += "(" + column.length + ")";
+
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+
+        } else if (column.precision) {
+            type += "(" + column.precision + ")";
+
+        } else if (column.scale) {
+            type += "(" + column.scale + ")";
+        }
+
+        // set default required length if those were not specified
+        if (type === "varchar")
+            type += "(255)";
+
+        if (type === "int")
+            type += "(11)";
 
         return type;
     }

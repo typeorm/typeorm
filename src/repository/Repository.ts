@@ -15,23 +15,25 @@ import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 export class Repository<Entity extends ObjectLiteral> {
 
     // -------------------------------------------------------------------------
-    // Public Properties
+    // Protected Methods Set Dynamically
     // -------------------------------------------------------------------------
+
+    // todo: wny not to make them public?
 
     /**
      * Entity Manager used by this repository.
      */
-    readonly manager: EntityManager;
+    protected manager: EntityManager;
 
     /**
      * Entity metadata of the entity current repository manages.
      */
-    readonly metadata: EntityMetadata;
+    protected metadata: EntityMetadata;
 
     /**
      * Query runner provider used for this repository.
      */
-    readonly queryRunner?: QueryRunner;
+    protected queryRunner?: QueryRunner;
 
     // -------------------------------------------------------------------------
     // Public Methods

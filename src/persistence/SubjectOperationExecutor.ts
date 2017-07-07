@@ -408,7 +408,6 @@ export class SubjectOperationExecutor {
         } else { // in the case when class table inheritance is not used
 
             const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects);
-            // console.log("valuesMap", valuesMap);
             newlyGeneratedId = await this.queryRunner.insert(metadata.tableName, valuesMap, metadata.generatedColumn);
         }
 

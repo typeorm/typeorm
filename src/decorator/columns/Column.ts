@@ -79,7 +79,7 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
         if (typeOrOptions instanceof Function) {
 
             const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
-            const isArray = reflectMetadataType === Array || (options && options.isArray === true) ? true : false;
+            const isArray = reflectMetadataType === Array || (options && options.array === true) ? true : false;
 
             const args: EmbeddedMetadataArgs = {
                 target: object.constructor,

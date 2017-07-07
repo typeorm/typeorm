@@ -12,8 +12,6 @@ import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {OracleConnectionOptions} from "./OracleConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
-import {EntityManager} from "../../entity-manager/EntityManager";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -45,12 +43,6 @@ export class OracleDriver implements Driver {
      * Database connection pool created by underlying driver.
      */
     pool: any;
-
-    /**
-     * Default values of length, precision and scale depends on column data type.
-     * Used in the cases when length/precision/scale is not specified by user.
-     */
-    dataTypeDefaults: DataTypeDefaults;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -257,9 +249,6 @@ export class OracleDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (value === null || value === undefined)
-            return value;
-            
         if (columnMetadata.type === Boolean) {
             return value ? true : false;
 
@@ -285,7 +274,7 @@ export class OracleDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, isArray?: boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string {
         let type = "";
         if (column.type === Number) {
             type += "integer";
@@ -299,13 +288,27 @@ export class OracleDriver implements Driver {
         } else if (column.type === Boolean) {
             type += "number(1)";
 
+        } else if (column.type === Object) {
+            type += "text";
+
         } else if (column.type === "simple-array") {
             type += "text";
 
         } else {
             type += column.type;
         }
+        if (column.length) {
+            type += "(" + column.length + ")";
 
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+
+        } else if (column.precision) {
+            type += "(" + column.precision + ")";
+
+        } else if (column.scale) {
+            type += "(" + column.scale + ")";
+        }
         return type;
     }
 

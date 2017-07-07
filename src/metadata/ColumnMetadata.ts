@@ -48,7 +48,7 @@ export class ColumnMetadata {
     /**
      * Type's length in the database.
      */
-    length?: number;
+    length: string = "";
 
     /**
      * Indicates if this column is a primary key.
@@ -103,7 +103,7 @@ export class ColumnMetadata {
      * Can be simply set to true or array length can be specified.
      * Supported only by postgres.
      */
-    isArray?: boolean;
+    array?: boolean|string;
 
     /**
      * Gets full path to this column property (including column property name).
@@ -195,7 +195,7 @@ export class ColumnMetadata {
         if (options.args.options.type)
             this.type = options.args.options.type;
         if (options.args.options.length)
-            this.length = typeof options.args.options.length === "string" ? parseInt(options.args.options.length) : options.args.options.length;
+            this.length = String(options.args.options.length);
         if (options.args.options.primary)
             this.isPrimary = options.args.options.primary;
         if (options.args.options.generated)
@@ -214,18 +214,10 @@ export class ColumnMetadata {
             this.scale = options.args.options.scale;
         if (options.args.options.precision)
             this.precision = options.args.options.precision;
-        if (options.args.options.enum) {
-            if (options.args.options.enum instanceof Object) {
-                this.enum = Object.keys(options.args.options.enum).map(key => {
-                    return (options.args.options.enum as ObjectLiteral)[key];
-                });
-
-            } else {
-                this.enum = options.args.options.enum;
-            }
-        }
-        if (options.args.options.isArray)
-            this.isArray = options.args.options.isArray;
+        if (options.args.options.enum)
+            this.enum = options.args.options.enum;
+        if (options.args.options.array)
+            this.array = options.args.options.array;
         if (options.args.mode) {
             this.isVirtual = options.args.mode === "virtual";
             this.isParentId = options.args.mode === "parentId";

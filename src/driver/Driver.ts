@@ -4,8 +4,6 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnType} from "./types/ColumnTypes";
 import {MappedColumnTypes} from "./types/MappedColumnTypes";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
-import {DataTypeDefaults} from "./types/DataTypeDefaults";
-import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -13,20 +11,9 @@ import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
 export interface Driver {
 
     /**
-     * Connection options.
-     */
-    options: BaseConnectionOptions;
-
-    /**
      * Gets list of supported column data types by a driver.
      */
     supportedDataTypes: ColumnType[];
-
-    /**
-     * Default values of length, precision and scale depends on column data type.
-     * Used in the cases when length/precision/scale is not specified by user.
-     */
-    dataTypeDefaults: DataTypeDefaults;
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
@@ -79,7 +66,7 @@ export interface Driver {
     /**
      * Transforms type of the given column to a database column type.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, isArray?: boolean }): string;
+    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string;
 
     /**
      * Normalizes "default" value of the column.

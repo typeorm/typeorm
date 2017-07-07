@@ -28,14 +28,14 @@ export class SqliteQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Database driver used by connection.
-     */
-    driver: SqliteDriver;
-
-    /**
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Entity manager isolated for this query runner.
+     */
+    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.
@@ -66,9 +66,9 @@ export class SqliteQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: SqliteDriver) {
-        this.driver = driver;
+    constructor(protected driver: SqliteDriver) {
         this.connection = driver.connection;
+        this.manager = driver.connection.manager;
     }
 
     // -------------------------------------------------------------------------
@@ -639,7 +639,7 @@ export class SqliteQueryRunner implements QueryRunner {
         if (column instanceof ColumnMetadata) {
             c += " " + this.driver.normalizeType(column);
         } else {
-            c += " " + column.getFullType(this.connection.driver);
+            c += " " + column.type;
         }
         if (column.isNullable !== true)
             c += " NOT NULL";

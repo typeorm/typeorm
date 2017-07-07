@@ -24,14 +24,14 @@ export class PostgresQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Database driver used by connection.
-     */
-    driver: PostgresDriver;
-
-    /**
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Entity manager isolated for this query runner.
+     */
+    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.
@@ -77,9 +77,9 @@ export class PostgresQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: PostgresDriver) {
-        this.driver = driver;
+    constructor(protected driver: PostgresDriver) {
         this.connection = driver.connection;
+        this.manager = driver.connection.manager;
     }
 
     // -------------------------------------------------------------------------
@@ -325,27 +325,20 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
             tableSchema.columns = dbColumns
                 .filter(dbColumn => dbColumn["table_name"] === tableSchema.name)
                 .map(dbColumn => {
-                    const isGenerated = dbColumn["column_default"] === `nextval('${dbColumn["table_name"]}_id_seq'::regclass)`
+                    const columnType = dbColumn["data_type"].toLowerCase() + (dbColumn["character_maximum_length"] !== undefined && dbColumn["character_maximum_length"] !== null ? ("(" + dbColumn["character_maximum_length"] + ")") : "");
+                    const isGenerated = dbColumn["column_default"] === `nextval('${dbColumn["table_name"]}_id_seq'::regclass)` 
                         || dbColumn["column_default"] === `nextval('"${dbColumn["table_name"]}_id_seq"'::regclass)` 
                         || /^uuid\_generate\_v\d\(\)/.test(dbColumn["column_default"]);
 
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["column_name"];
-                    columnSchema.type = dbColumn["data_type"].toLowerCase();
-                    columnSchema.length = dbColumn["character_maximum_length"];
-                    columnSchema.precision = dbColumn["numeric_precision"];
-                    columnSchema.scale = dbColumn["numeric_scale"];
+                    columnSchema.type = columnType;
                     columnSchema.default = dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined ? dbColumn["column_default"].replace(/::character varying/, "") : undefined;
                     columnSchema.isNullable = dbColumn["is_nullable"] === "YES";
                     // columnSchema.isPrimary = dbColumn["column_key"].indexOf("PRI") !== -1;
                     columnSchema.isGenerated = isGenerated;
                     columnSchema.comment = ""; // dbColumn["COLUMN_COMMENT"];
                     columnSchema.isUnique = !!dbUniqueKeys.find(key => key["constraint_name"] ===  `uk_${dbColumn["table_name"]}_${dbColumn["column_name"]}`);
-                    if (columnSchema.type === "array") {
-                        columnSchema.isArray = true;
-                        const type = dbColumn["udt_name"].substring(1);
-                        columnSchema.type = this.connection.driver.normalizeType({type: type});
-                    }
                     return columnSchema;
                 });
 
@@ -510,12 +503,12 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
         if (!oldColumn)
             throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableSchemaOrName}" table.`);
 
-        if (oldColumn.getFullType(this.connection.driver) !== newColumn.getFullType(this.connection.driver) ||
+        if (oldColumn.type !== newColumn.type ||
             oldColumn.name !== newColumn.name) {
 
             let sql = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN "${oldColumn.name}"`;
-            if (oldColumn.getFullType(this.connection.driver) !== newColumn.getFullType(this.connection.driver)) {
-                sql += ` TYPE ${newColumn.getFullType(this.connection.driver)}`;
+            if (oldColumn.type !== newColumn.type) {
+                sql += ` TYPE ${newColumn.type}`;
             }
             if (oldColumn.name !== newColumn.name) { // todo: make rename in a separate query too
                 sql += ` RENAME TO ` + newColumn.name;
@@ -751,7 +744,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
         if (column.isGenerated === true && column.type !== "uuid") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " SERIAL";
         if (!column.isGenerated || column.type === "uuid")
-            c += " " + column.getFullType(this.connection.driver);
+            c += " " + column.type;
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isGenerated)

@@ -39,52 +39,11 @@ export class DateUtils {
     }
 
     /**
-     * Converts given value into date object.
-     */
-    static mixedDateToDate(mixedDate: Date|string, toUtc?: boolean): Date {
-        const date = typeof mixedDate === "string" ? new Date(mixedDate) : mixedDate;
-
-        if (toUtc)
-            return new Date(
-                date.getUTCFullYear(),
-                date.getUTCMonth(),
-                date.getUTCDate(),
-                date.getUTCHours(),
-                date.getUTCMinutes(),
-                date.getUTCSeconds(),
-                date.getUTCMilliseconds()
-            );
-
-        return date;
-    }
-
-    /**
      * Converts given value into time string in a "HH:mm:ss" format.
      */
-    static mixedDateToTimeString(value: Date|any, skipSeconds: boolean = false): string|any {
+    static mixedDateToTimeString(value: Date|any): string|any {
         if (value instanceof Date)
-            return this.formatZerolessValue(value.getHours()) +
-                ":" + this.formatZerolessValue(value.getMinutes()) +
-                (!skipSeconds ? ":" + this.formatZerolessValue(value.getSeconds()) : "");
-
-        return value;
-    }
-
-    /**
-     * Converts given value into time string in a "HH:mm:ss" format.
-     */
-    static mixedTimeToDate(value: Date|any): string|any {
-        if (typeof value === "string") {
-            const [hours, minutes, seconds] = value.split(":");
-            const date = new Date();
-            if (hours)
-                date.setHours(parseInt(hours));
-            if (minutes)
-                date.setMinutes(parseInt(minutes));
-            if (seconds)
-                date.setSeconds(parseInt(seconds));
-            return date;
-        }
+            return this.formatZerolessValue(value.getHours()) + ":" + this.formatZerolessValue(value.getMinutes()) + ":" + this.formatZerolessValue(value.getSeconds());
 
         return value;
     }
@@ -92,8 +51,8 @@ export class DateUtils {
     /**
      * Converts given string value with "-" separator into a "HH:mm:ss" format.
      */
-    static mixedTimeToString(value: string|any, skipSeconds: boolean = false): string|any {
-        value = value instanceof Date ? (value.getHours() + ":" + value.getMinutes() + (!skipSeconds ? ":" + value.getSeconds() : "")) : value;
+    static mixedTimeToString(value: string|any): string|any {
+        value = value instanceof Date ? (value.getHours() + ":" + value.getMinutes() + ":" + value.getSeconds()) : value;
         if (typeof value === "string") {
             return value.split(":")
                 .map(v => v.length === 1 ? "0" + v : v) // append zero at beginning if we have a first-zero-less number

@@ -55,6 +55,11 @@ export class MongoQueryRunner implements QueryRunner {
     connection: Connection;
 
     /**
+     * Entity manager isolated for this query runner.
+     */
+    manager: EntityManager;
+
+    /**
      * Indicates if connection for this query runner is released.
      * Once its released, query runner cannot run queries anymore.
      * Always false for mongodb since mongodb has a single query executor instance.
@@ -78,6 +83,7 @@ export class MongoQueryRunner implements QueryRunner {
 
     constructor(connection: Connection, databaseConnection: Db) {
         this.connection = connection;
+        this.manager = connection.manager;
         this.databaseConnection = databaseConnection;
     }
 

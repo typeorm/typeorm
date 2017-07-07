@@ -26,6 +26,11 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
 
     /**
+     * Repository used for this entity metadata.
+     */
+    repository: Repository<any>;
+
+    /**
      * Used to wrap lazy relations.
      */
     lazyRelationsWrapper: LazyRelationsWrapper;
@@ -435,15 +440,8 @@ export class EntityMetadata {
     /**
      * Finds column with a given property name.
      */
-    findColumnWithPropertyName(propertyName: string): ColumnMetadata|undefined {
+    findColumnWithPropertyName(propertyName: string) {
         return this.columns.find(column => column.propertyName === propertyName);
-    }
-
-    /**
-     * Finds column with a given database name.
-     */
-    findColumnWithDatabaseName(databaseName: string): ColumnMetadata|undefined {
-        return this.columns.find(column => column.databaseName === databaseName);
     }
 
     /**

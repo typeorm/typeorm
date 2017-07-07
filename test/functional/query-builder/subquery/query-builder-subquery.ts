@@ -253,7 +253,6 @@ describe("query builder > sub-query", () => {
             .select("usr.name", "name")
             .from(User, "usr")
             .limit(1)
-            .orderBy("usr.name")
             .getQuery();
 
         const posts = await connection
@@ -280,7 +279,6 @@ describe("query builder > sub-query", () => {
                 return subQuery
                     .select("usr.name", "name")
                     .from(User, "usr")
-                    .orderBy("usr.name")
                     .limit(1);
             }, "name")
             .from(Post, "post")

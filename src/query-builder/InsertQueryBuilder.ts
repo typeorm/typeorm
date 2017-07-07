@@ -3,8 +3,6 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ObjectType} from "../common/ObjectType";
 import {QueryPartialEntity} from "./QueryPartialEntity";
-import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -61,7 +59,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Creates INSERT express used to perform insert query.
      */
-    protected createInsertExpression() { // todo: insertion into custom tables wont work because of binding to columns. fix it
+    protected createInsertExpression() {
         const valueSets = this.getValueSets();
 
         // get columns that participate in insertion query
@@ -75,13 +73,12 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const values = valueSets.map((valueSet, key) => {
             const columnNames = insertColumns.map(column => {
                 const paramName = "_inserted_" + key + "_" + column.databaseName;
-                const value = valueSet[column.propertyName];
 
-                if (value instanceof Function) { // support for SQL expressions in update query
-                    return value();
+                if (valueSet[column.propertyName] instanceof Function) { // support for SQL expressions in update query
+                    return valueSet[column.propertyName]();
 
                 } else {
-                    this.setParameter(paramName, value);
+                    this.setParameter(paramName, valueSet[column.propertyName]);
                     return ":" + paramName;
                 }
             });

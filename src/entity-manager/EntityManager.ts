@@ -22,12 +22,6 @@ import {AbstractRepository} from "../repository/AbstractRepository";
 import {CustomRepositoryCannotInheritRepositoryError} from "../error/CustomRepositoryCannotInheritRepositoryError";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
-import {EntityMetadata} from "../metadata/EntityMetadata";
-import {MongoDriver} from "../driver/mongodb/MongoDriver";
-import {RepositoryNotFoundError} from "../error/RepositoryNotFoundError";
-import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
-import {RepositoryFactory} from "../repository/RepositoryFactory";
-import {EntityManagerFactory} from "./EntityManagerFactory";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -42,28 +36,22 @@ export class EntityManager {
     /**
      * Connection used by this entity manager.
      */
-    readonly connection: Connection;
-
-    /**
-     * Custom query runner to be used for operations in this entity manager.
-     * Used only in non-global entity manager.
-     */
-    readonly queryRunner?: QueryRunner;
+    connection: Connection;
 
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
 
     /**
+     * Custom query runner to be used for operations in this entity manager.
+     */
+    protected queryRunner?: QueryRunner;
+
+    /**
      * Stores temporarily user data.
      * Useful for sharing data with subscribers.
      */
     protected data: ObjectLiteral = {};
-
-    /**
-     * Once created and then reused by en repositories.
-     */
-    protected repositories: { metadata: EntityMetadata, repository: Repository<any> }[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -84,35 +72,7 @@ export class EntityManager {
      * All database operations must be executed using provided entity manager.
      */
     async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>): Promise<any> {
-
-        if (this.connection.driver instanceof MongoDriver)
-            throw new Error(`Transactions aren't supported by MongoDB.`);
-
-        if (this.queryRunner && this.queryRunner.isReleased)
-            throw new QueryRunnerProviderAlreadyReleasedError();
-
-        if (this.queryRunner && this.queryRunner.isTransactionActive)
-            throw new Error(`Cannot start transaction because its already started`);
-
-        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner();
-        const transactionEntityManager = new EntityManagerFactory().create(this.connection, usedQueryRunner);
-
-        try {
-            await usedQueryRunner.startTransaction();
-            const result = await runInTransaction(transactionEntityManager);
-            await usedQueryRunner.commitTransaction();
-            return result;
-
-        } catch (err) {
-            try { // we throw original error even if rollback thrown an error
-                await usedQueryRunner.rollbackTransaction();
-            } catch (rollbackError) { }
-            throw err;
-
-        } finally {
-            if (!this.queryRunner) // if we used a new query runner provider then release it
-                await usedQueryRunner.release();
-        }
+        return this.connection.transaction(runInTransaction, this.queryRunner);
     }
 
     /**
@@ -295,15 +255,8 @@ export class EntityManager {
 
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
 
-            // todo: use transaction instead if possible
-            // await this.transaction(async transactionEntityManager => {
-            //     if (options && options.data)
-            //         transactionEntityManager.data = options.data;
-            //
-            // });
-
             const queryRunner = this.queryRunner || this.connection.createQueryRunner();
-            const transactionEntityManager = new EntityManagerFactory().create(this.connection, queryRunner);
+            const transactionEntityManager = this.connection.createIsolatedManager(queryRunner);
             if (options && options.data)
                 transactionEntityManager.data = options.data;
 
@@ -500,7 +453,7 @@ export class EntityManager {
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
 
             const queryRunner = this.queryRunner || this.connection.createQueryRunner();
-            const transactionEntityManager = new EntityManagerFactory().create(this.connection, queryRunner);
+            const transactionEntityManager = this.connection.createIsolatedManager(queryRunner);
             if (options && options.data)
                 transactionEntityManager.data = options.data;
 
@@ -767,27 +720,17 @@ export class EntityManager {
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
      */
-    getRepository<Entity>(target: ObjectType<Entity>|string): Repository<Entity> {
-
-        if (!this.connection.hasMetadata(target))
-            throw new RepositoryNotFoundError(this.connection.name, target);
-
-        const metadata = this.connection.getMetadata(target);
-        let repository = this.repositories.find(repo => repo.metadata === metadata);
-        if (!repository) {
-            repository = { metadata: metadata, repository: new RepositoryFactory().create(this, metadata, this.queryRunner) };
-            this.repositories.push(repository);
-        }
+    getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
 
         // if single db connection is used then create its own repository with reused query runner
-        // if (this.queryRunner) {
-        //     if (this.queryRunner.isReleased)
-        //         throw new QueryRunnerProviderAlreadyReleasedError();
-        //
-        //     return this.connection.createIsolatedRepository(target, this.queryRunner);
-        // }
+        if (this.queryRunner) {
+            if (this.queryRunner.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
 
-        return repository.repository;
+            return this.connection.createIsolatedRepository(entityClassOrName, this.queryRunner);
+        }
+
+        return this.connection.getRepository<Entity>(entityClassOrName as any);
     }
 
     /**
@@ -796,15 +739,17 @@ export class EntityManager {
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
      */
-    getTreeRepository<Entity>(target: ObjectType<Entity>|string): TreeRepository<Entity> {
-        if (this.connection.driver instanceof MongoDriver)
-            throw new Error(`You cannot use getTreeRepository for MongoDB connections.`);
+    getTreeRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): TreeRepository<Entity> {
 
-        const repository = this.getRepository(target);
-        if (!(repository instanceof TreeRepository))
-            throw new RepositoryNotTreeError(target);
+        // if single db connection is used then create its own repository with reused query runner
+        if (this.queryRunner) {
+            if (this.queryRunner.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
 
-        return repository;
+            return this.connection.createIsolatedRepository(entityClassOrName, this.queryRunner) as TreeRepository<Entity>;
+        }
+
+        return this.connection.getTreeRepository<Entity>(entityClassOrName as any);
     }
 
     /**
@@ -821,6 +766,15 @@ export class EntityManager {
      * Gets mongodb repository for the given entity class or name.
      */
     getMongoRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): MongoRepository<Entity> {
+
+        // if single db connection is used then create its own repository with reused query runner
+        if (this.queryRunner) {
+            if (this.queryRunner.isReleased)
+                throw new QueryRunnerProviderAlreadyReleasedError();
+
+            return this.connection.createIsolatedRepository(entityClassOrName, this.queryRunner) as MongoRepository<Entity>;
+        }
+
         return this.connection.getMongoRepository<Entity>(entityClassOrName as any);
     }
 

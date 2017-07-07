@@ -14,7 +14,6 @@ import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -50,12 +49,6 @@ export class PostgresDriver implements Driver {
      */
     connectedQueryRunners: QueryRunner[] = [];
 
-    /**
-     * Default values of length, precision and scale depends on column data type.
-     * Used in the cases when length/precision/scale is not specified by user.
-     */
-    dataTypeDefaults: DataTypeDefaults;
-
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
@@ -84,8 +77,6 @@ export class PostgresDriver implements Driver {
         "char",
         "text",
         "bytea",
-        "bit",
-        "bit varying",
         "timestamp",
         "timestamp without time zone",
         "timestamp with time zone",
@@ -188,7 +179,7 @@ export class PostgresDriver implements Driver {
             const handler = (err: any) => err ? fail(err) : ok();
 
             // this is checked fact that postgres.pool.end do not release all non released connections
-            await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
+            // await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
             this.pool.end(handler);
             this.pool = undefined;
             ok();
@@ -244,9 +235,6 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (value === null || value === undefined)
-            return value;
-            
         if (columnMetadata.type === Boolean) {
             return value ? true : false;
 
@@ -306,7 +294,7 @@ export class PostgresDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, isArray?: boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: string|number, precision?: number, scale?: number, array?: string|boolean }): string {
         let type = "";
         if (column.type === Number) {
             type += "integer";
@@ -320,6 +308,9 @@ export class PostgresDriver implements Driver {
         } else if (column.type === Boolean) {
             type += "boolean";
 
+        } else if (column.type === Object) {
+            type += "text";
+
         } else if (column.type === "simple-array") {
             type += "text";
 
@@ -328,47 +319,28 @@ export class PostgresDriver implements Driver {
         }
 
         // normalize shortcuts
-        if (type === "int" || type === "int4") {
+        if (type === "int") {
             type = "integer";
-
-        } else if (type === "int2") {
-            type = "smallint";
-
-        } else if (type === "int8") {
-            type = "bigint";
-
-        } else if (type === "decimal") {
-            type = "numeric";
-
-        } else if (type === "float8") {
-            type = "double precision";
-
-        } else if (type === "float4") {
-            type = "real";
-
-        } else if (type === "char") {
-            type = "character";
-
-        } else if (type === "varchar") {
-            type = "character varying";
-
-        } else if (type === "time") {
-            type = "time without time zone";
-
-        } else if (type === "timetz") {
-            type = "time with time zone";
-
-        } else if (type === "timestamptz") {
-            type = "timestamp with time zone";
-
-        } else if (type === "bool") {
-            type = "boolean";
-
-        } else if (type === "varbit") {
-            type = "bit varying";
 
         } else if (type === "timestamp") {
             type = "timestamp without time zone";
+        }
+
+        if (column.length) {
+            type += "(" + column.length + ")";
+
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+
+        } else if (column.precision) {
+            type += "(" + column.precision + ")";
+
+        } else if (column.scale) {
+            type += "(" + column.scale + ")";
+        }
+
+        if (column.array) {
+            type += " ARRAY" + (typeof column.array === "string" ? column.array : "");
         }
 
         return type;

@@ -20,6 +20,11 @@ export interface QueryRunner {
     readonly connection: Connection;
 
     /**
+     * Entity manager isolated for this query runner.
+     */
+    readonly manager: EntityManager;
+
+    /**
      * Indicates if connection for this query runner is released.
      * Once its released, query runner cannot run queries anymore.
      */

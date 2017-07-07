@@ -1,7 +1,9 @@
 import "reflect-metadata";
 import * as chai from "chai";
 import {expect} from "chai";
+import {setupTestingConnections} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
+import {getConnectionManager} from "../../../src/index";
 import {ConnectionMetadataBuilder} from "../../../src/connection/ConnectionMetadataBuilder";
 import {EntityMetadataValidator} from "../../../src/metadata-builder/EntityMetadataValidator";
 
@@ -21,7 +23,7 @@ describe("entity-metadata-validator", () => {
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
         const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"], []);
         const entityMetadataValidator = new EntityMetadataValidator();
-        expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).to.throw(Error);
+        expect(() => entityMetadataValidator.validateMany(entityMetadatas)).to.throw(Error);
     });
 
 });

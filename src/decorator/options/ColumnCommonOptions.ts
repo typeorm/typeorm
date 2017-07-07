@@ -39,6 +39,6 @@ export interface ColumnCommonOptions {
      * Can be simply set to true or array length can be specified.
      * Supported only by postgres.
      */
-    isArray?: boolean;
+    array?: boolean|string;
 
 }

@@ -965,7 +965,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             if (this.expressionMap.lockVersion instanceof Date) {
                 const actualVersion = result[metadata.updateDateColumn!.propertyName]; // what if columns arent set?
-                actualVersion.setMilliseconds(0);
                 this.expressionMap.lockVersion.setMilliseconds(0);
                 if (actualVersion.getTime() !== this.expressionMap.lockVersion.getTime())
                     throw new OptimisticLockVersionMismatchError(metadata.name, this.expressionMap.lockVersion, actualVersion);
@@ -1568,7 +1567,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             // broadcast all "after load" events
             if (this.expressionMap.mainAlias.hasMetadata)
-                await broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, entities);
+                await broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, rawResults);
         }
 
         return {

@@ -10,9 +10,9 @@ import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {SqlServerDriver} from "./SqlServerDriver";
+import {EntityManager} from "../../entity-manager/EntityManager";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "fs";
-import {MssqlParameter} from "./MssqlParameter";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -24,14 +24,14 @@ export class SqlServerQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Database driver used by connection.
-     */
-    driver: SqlServerDriver;
-
-    /**
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Entity manager isolated for this query runner.
+     */
+    manager: EntityManager;
 
     /**
      * Indicates if connection for this query runner is released.
@@ -76,9 +76,9 @@ export class SqlServerQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: SqlServerDriver) {
-        this.driver = driver;
+    constructor(protected driver: SqlServerDriver) {
         this.connection = driver.connection;
+        this.manager = driver.connection.manager;
     }
 
     // -------------------------------------------------------------------------
@@ -167,75 +167,6 @@ export class SqlServerQueryRunner implements QueryRunner {
         });
     }
 
-    protected mssqlParameterToNativeParameter(parameter: MssqlParameter): any {
-        switch (this.driver.normalizeType({ type: parameter.type as any })) {
-            case "bit":
-                return this.driver.mssql.Bit;
-            case "bigint":
-                return this.driver.mssql.BigInt;
-            case "decimal":
-                return this.driver.mssql.Decimal(...parameter.params);
-            case "float":
-                return this.driver.mssql.Float;
-            case "int":
-                return this.driver.mssql.Int;
-            case "money":
-                return this.driver.mssql.Money;
-            case "numeric":
-                return this.driver.mssql.Numeric(...parameter.params);
-            case "smallint":
-                return this.driver.mssql.SmallInt;
-            case "smallmoney":
-                return this.driver.mssql.SmallMoney;
-            case "real":
-                return this.driver.mssql.Real;
-            case "tinyint":
-                return this.driver.mssql.TinyInt;
-            case "char":
-                return this.driver.mssql.Char(...parameter.params);
-            case "nchar":
-                return this.driver.mssql.NChar(...parameter.params);
-            case "text":
-                return this.driver.mssql.Text;
-            case "ntext":
-                return this.driver.mssql.Ntext;
-            case "varchar":
-                return this.driver.mssql.VarChar(...parameter.params);
-            case "nvarchar":
-                return this.driver.mssql.NVarChar(...parameter.params);
-            case "xml":
-                return this.driver.mssql.Xml;
-            case "time":
-                return this.driver.mssql.Time(...parameter.params);
-            case "date":
-                return this.driver.mssql.Date;
-            case "datetime":
-                return this.driver.mssql.DateTime;
-            case "datetime2":
-                return this.driver.mssql.DateTime2(...parameter.params);
-            case "datetimeoffset":
-                return this.driver.mssql.DateTimeOffset(...parameter.params);
-            case "smalldatetime":
-                return this.driver.mssql.SmallDateTime;
-            case "uniqueidentifier":
-                return this.driver.mssql.UniqueIdentifier;
-            case "variant":
-                return this.driver.mssql.Variant;
-            case "binary":
-                return this.driver.mssql.Binary;
-            case "varbinary":
-                return this.driver.mssql.VarBinary(...parameter.params);
-            case "image":
-                return this.driver.mssql.Image;
-            case "udt":
-                return this.driver.mssql.UDT;
-            case "geography":
-                return this.driver.mssql.Geography;
-            case "geometry":
-                return this.driver.mssql.Geometry;
-        }
-    }
-
     /**
      * Executes a given SQL query.
      */
@@ -257,16 +188,7 @@ export class SqlServerQueryRunner implements QueryRunner {
             const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : this.driver.connectionPool);
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {
-                    if (parameter instanceof MssqlParameter) {
-                        const mssqlParameter = this.mssqlParameterToNativeParameter(parameter);
-                        if (mssqlParameter) {
-                            request.input(index, this.mssqlParameterToNativeParameter(parameter), parameter.value);
-                        } else {
-                            request.input(index, parameter.value);
-                        }
-                    } else {
-                        request.input(index, parameter);
-                    }
+                    request.input(index, parameters![index]);
                 });
             }
             request.query(query, (err: any, result: any) => {
@@ -320,11 +242,7 @@ export class SqlServerQueryRunner implements QueryRunner {
             request.stream = true;
             if (parameters && parameters.length) {
                 parameters.forEach((parameter, index) => {
-                    if (parameter instanceof MssqlParameter) {
-                        request.input(index, this.mssqlParameterToNativeParameter(parameter), parameter.value);
-                    } else {
-                        request.input(index, parameter);
-                    }
+                    request.input(index, parameters![index]);
                 });
             }
             request.query(query, (err: any, result: any) => {
@@ -367,36 +285,7 @@ export class SqlServerQueryRunner implements QueryRunner {
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => `"${key}"`).join(", ");
         const values = keys.map((key, index) => "@" + index).join(",");
-        const parameters = keys.map(key => {
-            const value = keyValues[key];
-
-            if (value instanceof MssqlParameter)
-                return value;
-
-            const metadata = this.connection.getMetadata(tableName);
-            if (!metadata)
-                return value;
-
-            const column = metadata.findColumnWithDatabaseName(key);
-            if (!column)
-                return value;
-
-            const normalizedType = this.driver.normalizeType({ type: column.type });
-            if (column.length) {
-                return new MssqlParameter(value, normalizedType as any, column.length as any);
-
-            } else if (column.precision && column.scale) {
-                return new MssqlParameter(value, normalizedType as any, column.precision, column.scale);
-
-            } else if (column.precision) {
-                return new MssqlParameter(value, normalizedType as any, column.precision);
-
-            } else if (column.scale) {
-                return new MssqlParameter(value, normalizedType as any, column.scale);
-            }
-
-            return new MssqlParameter(value, column.type as any);
-        });
+        const parameters = keys.map(key => keyValues[key]);
 
         const sql = columns.length > 0
             ? `INSERT INTO "${tableName}"(${columns}) ${ generatedColumn ? "OUTPUT INSERTED." + generatedColumn.databaseName + " " : "" }VALUES (${values})`
@@ -514,13 +403,9 @@ export class SqlServerQueryRunner implements QueryRunner {
                                 dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE";
                     });
 
-
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["COLUMN_NAME"];
-                    columnSchema.type = dbColumn["DATA_TYPE"].toLowerCase();
-                    columnSchema.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"];
-                    columnSchema.precision = dbColumn["NUMERIC_PRECISION"];
-                    columnSchema.scale = dbColumn["NUMERIC_SCALE"];
+                    columnSchema.type = dbColumn["DATA_TYPE"].toLowerCase() + (dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? "(" + dbColumn["CHARACTER_MAXIMUM_LENGTH"] + ")" : ""); // todo: use normalize type?
                     columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
                     columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     columnSchema.isPrimary = isPrimary;
@@ -914,7 +799,7 @@ WHERE columnUsages.TABLE_CATALOG = '${this.dbName}' AND tableConstraints.TABLE_C
      * Builds a query for create column.
      */
     protected buildCreateColumnSql(tableName: string, column: ColumnSchema, skipIdentity: boolean, createDefault: boolean) {
-        let c = `"${column.name}" ${column.getFullType(this.connection.driver)}`;
+        let c = `"${column.name}" ${column.type}`;
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isGenerated === true && !skipIdentity) // don't use skipPrimary here since updates can update already exist primary without auto inc.

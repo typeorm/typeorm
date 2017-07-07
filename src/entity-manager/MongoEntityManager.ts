@@ -59,17 +59,6 @@ export class MongoEntityManager extends EntityManager {
     }
 
     // -------------------------------------------------------------------------
-    // Overridden Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Gets query runner used to execute queries.
-     */
-    get queryRunner(): MongoQueryRunner {
-        return (this.connection.driver as MongoDriver).queryRunner!;
-    }
-
-    // -------------------------------------------------------------------------
     // Overridden Methods
     // -------------------------------------------------------------------------
 
@@ -505,6 +494,13 @@ export class MongoEntityManager extends EntityManager {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Gets query runner used to execute queries.
+     */
+    protected get queryRunner(): MongoQueryRunner {
+        return (this.connection.driver as MongoDriver).queryRunner!;
+    }
 
     /**
      * Converts FindManyOptions to mongodb query.
