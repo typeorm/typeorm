@@ -1,16 +1,9 @@
 import {Entity} from "../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
-import {Index} from "../../../../src/decorator/Index";
-import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
-import {Tag} from "./Tag";
 
-@Index(["tag", "c", "b", "a"])
-@Index(["a", "b", "c", "tag"])
-@Index(["b", "tag", "c"])
-@Index(["c", "a"])
-@Entity("Posts")
-export class Post {
+@Entity("Tags")
+export class Tag {
 
     @PrimaryGeneratedColumn()
     id: number;
@@ -23,7 +16,4 @@ export class Post {
 
     @Column()
     c: string;
-
-    @ManyToOne(() => Tag)
-    tag: Tag;
 }

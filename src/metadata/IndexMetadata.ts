@@ -112,26 +112,18 @@ export class IndexMetadata {
                 }
             }
 
-            // console.log("columnPropertyNames:", columnPropertyNames);
-            // console.log("this.entityMetadata.columns:", this.entityMetadata.columns.map(column => column.propertyPath));
-            const columns = this.entityMetadata.columns
-                .filter(column => columnPropertyNames.indexOf(column.propertyPath) !== -1)
-                .sort((a, b) => columnPropertyNames.indexOf(a.propertyPath) - columnPropertyNames.indexOf(b.propertyPath));
-            // console.log("columns:", columns.map(column => column.propertyPath));
-            this.entityMetadata.relations
-                .filter(relation => relation.isWithJoinColumn && columnPropertyNames.indexOf(relation.propertyName) !== -1)
-                .forEach(relation => columns.push(...relation.joinColumns));
-
-            // todo: better to extract all validation into single place if possible
-            const missingColumnNames = columnPropertyNames.filter(columnPropertyName => {
-                return !this.entityMetadata.columns.find(column => column.propertyPath === columnPropertyName) &&
-                    !this.entityMetadata.relations.find(relation => relation.isWithJoinColumn && relation.propertyPath === columnPropertyName);
-            });
-            if (missingColumnNames.length > 0) {
-                throw new Error(`Index ${this.givenName ? "\"" + this.givenName + "\" " : ""}contains columns that are missing in the entity: ` + missingColumnNames.join(", "));
-            }
-
-            this.columns = columns;
+            this.columns = columnPropertyNames.map(propertyName => {
+                const columnWithSameName = this.entityMetadata.columns.find(column => column.propertyPath === propertyName);
+                if (columnWithSameName) {
+                    return [columnWithSameName];
+                }
+                const relationWithSameName = this.entityMetadata.relations.find(relation => relation.isWithJoinColumn && relation.propertyName === propertyName);
+                if (relationWithSameName) {
+                    return relationWithSameName.joinColumns;
+                }
+                throw new Error(`Index ${this.givenName ? "\"" + this.givenName + "\" " : ""}contains column that is missing in the entity: ` + propertyName);
+            })
+            .reduce((a, b) => a.concat(b));
         }
 
         this.columnNamesWithOrderingMap = Object.keys(map).reduce((updatedMap, key) => {
