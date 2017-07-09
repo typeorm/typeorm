@@ -33,38 +33,28 @@ export class Logger {
      * Logs query and parameters used in it.
      */
     logQuery(query: string, parameters: any[]|undefined, queryRunner?: QueryRunner) {
-        if (this.options.logQueries ||
-            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC")) {
-            this.log("query", query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""), queryRunner);
-        }
+        this.log("query", query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""), queryRunner);
     }
 
     /**
      * Logs query that failed.
      */
     logFailedQuery(query: string, parameters: any[]|undefined, queryRunner?: QueryRunner) {
-        if (this.options.logQueries ||
-            this.options.logOnlyFailedQueries ||
-            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
-            this.log("error", `query failed: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""}`, queryRunner);
+        this.log("error", `query failed: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""}`, queryRunner);
     }
 
     /**
      * Logs failed query's error.
      */
     logQueryError(error: any, queryRunner?: QueryRunner) {
-        if (this.options.logFailedQueryError ||
-            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
-            this.log("error", "error during executing query:" + error, queryRunner);
+        this.log("error", "error during executing query:" + error, queryRunner);
     }
 
     /**
      * Logs events from the schema build process.
      */
     logSchemaBuild(message: string, queryRunner?: QueryRunner) {
-        if (this.options.logSchemaCreation ||
-            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
-            this.log("schema-build", message, queryRunner);
+        this.log("schema-build", message, queryRunner);
     }
 
     /**
