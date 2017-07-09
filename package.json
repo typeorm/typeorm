@@ -72,9 +72,11 @@
     "typescript": "^2.3.4"
   },
   "dependencies": {
+    "@types/debug": "0.0.29",
     "app-root-path": "^2.0.1",
     "chalk": "^2.0.1",
     "cli-highlight": "^1.1.4",
+    "debug": "2.6.8",
     "dotenv": "^4.0.0",
     "glob": "^7.1.2",
     "js-yaml": "^3.8.4",

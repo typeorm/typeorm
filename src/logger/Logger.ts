@@ -1,6 +1,7 @@
 import {LoggerOptions} from "./LoggerOptions";
 import {PlatformTools} from "../platform/PlatformTools";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import * as debug from "debug";
 const chalk = require("chalk");
 
 /**
@@ -9,6 +10,13 @@ const chalk = require("chalk");
  * todo: implement logging of too long running queries (there should be option to control max query execution time)
  */
 export class Logger {
+
+    private schemaLogger = debug("typeorm:schema");
+    private queryLogger = debug("typeorm:query");
+    private defaultLogger = debug("typeorm:log");
+    private infoLogger = debug("typeorm:info");
+    private warnLogger = debug("typeorm:warn");
+    private errorLogger = debug("typeorm:error");
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -72,22 +80,22 @@ export class Logger {
         } else {
             switch (level) {
                 case "schema-build":
-                    console.log(chalk.underline(message));
+                    this.schemaLogger(chalk.underline(message));
                     break;
                 case "query":
-                    console.log(chalk.gray.underline("executing query") + ": " + PlatformTools.highlightSql(message));
+                    this.queryLogger(`${chalk.gray.underline("executing query")} : ${PlatformTools.highlightSql(message)}`);
                     break;
                 case "log":
-                    console.log(message);
+                    this.defaultLogger(message);
                     break;
                 case "info":
-                    console.info(message);
+                    this.infoLogger(message);
                     break;
                 case "warn":
-                    console.warn(message);
+                    this.warnLogger(message);
                     break;
                 case "error":
-                    console.error(message);
+                    this.errorLogger(message);
                     break;
             }
         }
