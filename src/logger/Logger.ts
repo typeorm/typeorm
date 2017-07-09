@@ -72,9 +72,7 @@ export class Logger {
      * Log has its own level and message.
      */
     log(level: "query"|"schema-build"|"log"|"info"|"warn"|"error", message: any, queryRunner?: QueryRunner) {
-        if (!this.options) return;
-
-        if (this.options.logger) {
+        if (this.options && this.options.logger) {
             this.options.logger(level, message, queryRunner);
 
         } else {
