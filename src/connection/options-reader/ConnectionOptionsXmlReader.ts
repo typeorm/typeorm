@@ -32,11 +32,6 @@ export class ConnectionOptionsXmlReader {
                 entities: connection.entities ? connection.entities[0].entity : [],
                 subscribers: connection.subscribers ? connection.subscribers[0].entity : [],
                 entitySchemas: connection.entitySchemas ? connection.entitySchemas[0].entity : [],
-                logging: {
-                    logQueries: connection.logging && connection.logging[0].logQueries ? connection.logging[0].logQueries[0] : undefined,
-                    logFailedQueryError: connection.logging && connection.logging[0].logFailedQueryError ? connection.logging[0].logFailedQueryError[0] : undefined,
-                    logOnlyFailedQueries: connection.logging && connection.logging[0].logOnlyFailedQueries ? connection.logging[0].logOnlyFailedQueries[0] : undefined,
-                }
             };
         });
     }
