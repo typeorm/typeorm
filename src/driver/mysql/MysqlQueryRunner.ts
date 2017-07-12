@@ -421,9 +421,9 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new column from the column schema in the table.
      */
-    async addColumn(tableSchemaOrName: TableSchema|string, column: ColumnSchema): Promise<void> {
+    async addColumn(tableSchemaOrName: TableSchema|string, column: ColumnSchema, afterColumn?: string): Promise<void> {
         const tableName = tableSchemaOrName instanceof TableSchema ? tableSchemaOrName.name : tableSchemaOrName;
-        const sql = `ALTER TABLE \`${tableName}\` ADD ${this.buildCreateColumnSql(column, false)}`;
+        const sql = `ALTER TABLE \`${tableName}\` ADD ${this.buildCreateColumnSql(column, false, afterColumn)}`;
         const revertSql = `ALTER TABLE \`${tableName}\` DROP \`${column.name}\``;
         return this.schemaQuery(sql, revertSql);
     }
@@ -722,7 +722,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Builds a part of query to create/change a column.
      */
-    protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
+    protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean, afterColumn?: string) {
         let c = "`" + column.name + "` " + this.connection.driver.createFullType(column);
         if (column.enum)
             c += "(" + column.enum.map(value => "'" + value + "'").join(", ") +  ")";
@@ -738,6 +738,8 @@ export class MysqlQueryRunner implements QueryRunner {
             c += " COMMENT '" + column.comment + "'";
         if (column.default !== undefined && column.default !== null)
             c += " DEFAULT " + column.default;
+        if (afterColumn !== undefined && afterColumn !== null)
+            c += ` AFTER \`${afterColumn}\``;
 
         return c;
     }
