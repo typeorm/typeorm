@@ -8,21 +8,19 @@ import {MigrationCreateCommand} from "./commands/MigrationCreateCommand";
 import {MigrationRunCommand} from "./commands/MigrationRunCommand";
 import {MigrationRevertCommand} from "./commands/MigrationRevertCommand";
 import {SubscriberCreateCommand} from "./commands/SubscriberCreateCommand";
-
-require("yargonaut")
-    .style("blue")
-    .style("yellow", "required")
-    .helpStyle("green")
-    .errorsStyle("red");
+import {SchemaLogCommand} from "./commands/SchemaLogCommand";
+import {MigrationGenerateCommand} from "./commands/MigrationGenerateCommand";
 
 require("yargs")
     .usage("Usage: $0 <command> [options]")
     .command(new SchemaSyncCommand())
+    .command(new SchemaLogCommand())
     .command(new SchemaDropCommand())
     .command(new QueryCommand())
     .command(new EntityCreateCommand())
     .command(new SubscriberCreateCommand())
     .command(new MigrationCreateCommand())
+    .command(new MigrationGenerateCommand())
     .command(new MigrationRunCommand())
     .command(new MigrationRevertCommand())
     .demand(1)
@@ -31,3 +29,9 @@ require("yargs")
     .help("h")
     .alias("h", "help")
     .argv;
+
+require("yargonaut")
+    .style("blue")
+    .style("yellow", "required")
+    .helpStyle("green")
+    .errorsStyle("red");

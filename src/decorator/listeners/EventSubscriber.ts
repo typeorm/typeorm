@@ -10,6 +10,6 @@ export function EventSubscriber() {
         const args: EntitySubscriberMetadataArgs = {
             target: target
         };
-        getMetadataArgsStorage().entitySubscribers.add(args);
+        getMetadataArgsStorage().entitySubscribers.push(args);
     };
 }

@@ -25,7 +25,6 @@ describe("repository > removeById and removeByIds methods", function() {
 
     it("remove using removeById method should delete successfully", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
-        const specificPostRepository = connection.getSpecificRepository(Post);
 
         // save a new posts
         const newPost1 = postRepository.create();
@@ -38,14 +37,14 @@ describe("repository > removeById and removeByIds methods", function() {
         newPost4.title = "Super post #4";
 
         await Promise.all([
-            postRepository.persist(newPost1),
-            postRepository.persist(newPost2),
-            postRepository.persist(newPost3),
-            postRepository.persist(newPost4)
+            postRepository.save(newPost1),
+            postRepository.save(newPost2),
+            postRepository.save(newPost3),
+            postRepository.save(newPost4)
         ]);
 
         // remove one
-        await specificPostRepository.removeById(1);
+        await postRepository.removeById(1);
 
         // load to check
         const loadedPosts = await postRepository.find();
@@ -60,7 +59,6 @@ describe("repository > removeById and removeByIds methods", function() {
 
     it("remove using removeByIds method should delete successfully",  () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
-        const specificPostRepository = connection.getSpecificRepository(Post);
 
         // save a new posts
         const newPost1 = postRepository.create();
@@ -73,14 +71,14 @@ describe("repository > removeById and removeByIds methods", function() {
         newPost4.title = "Super post #4";
 
         await Promise.all([
-            postRepository.persist(newPost1),
-            postRepository.persist(newPost2),
-            postRepository.persist(newPost3),
-            postRepository.persist(newPost4)
+            postRepository.save(newPost1),
+            postRepository.save(newPost2),
+            postRepository.save(newPost3),
+            postRepository.save(newPost4)
         ]);
 
         // remove multiple
-        await specificPostRepository.removeByIds([2, 3]);
+        await postRepository.removeByIds([2, 3]);
 
         // load to check
         const loadedPosts = await postRepository.find();

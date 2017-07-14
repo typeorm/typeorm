@@ -1,6 +1,5 @@
 import {getMetadataArgsStorage} from "../../index";
 import {RelationOptions} from "../options/RelationOptions";
-import {RelationTypes} from "../../metadata/types/RelationTypes";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
 
 /**
@@ -25,11 +24,11 @@ export function TreeChildren(options?: { cascadeInsert?: boolean, cascadeUpdate?
             propertyName: propertyName,
             // propertyType: reflectedType,
             isLazy: isLazy,
-            relationType: RelationTypes.ONE_TO_MANY,
+            relationType: "one-to-many",
             type: () => object.constructor,
             options: options
         };
-        getMetadataArgsStorage().relations.add(args);
+        getMetadataArgsStorage().relations.push(args);
     };
 }
 

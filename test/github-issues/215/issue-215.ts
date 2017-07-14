@@ -20,21 +20,21 @@ describe("github issues > #215 invalid replacements of join conditions", () => {
 
         const author = new Author();
         author.name = "John Doe";
-        await connection.entityManager.persist(author);
+        await connection.manager.save(author);
 
         const abbrev = new Abbreviation();
         abbrev.name = "test";
-        await connection.entityManager.persist(abbrev);
+        await connection.manager.save(abbrev);
 
         const post = new Post();
         post.author = author;
         post.abbreviation = abbrev;
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
         // generated query should end with "ON p.abbreviation_id = ab.id"
         // not with ON p.abbreviation.id = ab.id (notice the dot) which would
         // produce an error.
-        const loadedPosts = await connection.entityManager
+        const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "p")
             .leftJoinAndMapOne("p.author", Author, "n", "p.author_id = n.id")
             .leftJoinAndMapOne("p.abbreviation", Abbreviation, "ab", "p.abbreviation_id = ab.id")

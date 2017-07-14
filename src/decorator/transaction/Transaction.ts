@@ -1,4 +1,4 @@
-import {getMetadataArgsStorage, getConnection} from "../../index";
+import {getConnection, getMetadataArgsStorage} from "../../index";
 
 /**
  * Wraps some method into the transaction.
@@ -17,14 +17,12 @@ export function Transaction(connectionName: string = "default"): Function {
         // override method descriptor with proxy method
         descriptor.value = function(...args: any[]) {
             return getConnection(connectionName)
-                .entityManager
+                .manager
                 .transaction(entityManager => {
 
                     // gets all @TransactionEntityManager() decorator usages for this method
                     const indices = getMetadataArgsStorage()
-                        .transactionEntityManagers
-                        .filterByTarget(target.constructor)
-                        .toArray()
+                        .filterTransactionEntityManagers(target.constructor)
                         .filter(transactionEntityManager => transactionEntityManager.methodName === methodName)
                         .map(transactionEntityManager => transactionEntityManager.index);
 

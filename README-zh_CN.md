@@ -89,7 +89,7 @@ export class Photo {
     id: number;
     name: string;
     description: string;
-    fileName: string;
+    filename: string;
     views: number;
 }
 ```
@@ -106,7 +106,7 @@ export class Photo {
     id: number;
     name: string;
     description: string;
-    fileName: string;
+    filename: string;
     views: number;
     isPublished: boolean;
 }
@@ -134,7 +134,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column()
     views: number;
@@ -165,7 +165,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column()
     views: number;
@@ -195,7 +195,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column()
     views: number;
@@ -225,7 +225,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column()
     views: number;
@@ -258,7 +258,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column("int")
     views: number;
@@ -362,7 +362,7 @@ createConnection(/*...*/).then(connection => {
     photo.views = 1;
     photo.isPublished = true;
 
-    connection.entityManager
+    connection.manager
             .persist(photo)
             .then(photo => {
                 console.log("Photo has been saved");
@@ -388,7 +388,7 @@ createConnection(/*...*/).then(async connection => {
     photo.views = 1;
     photo.isPublished = true;
 
-    await connection.entityManager.persist(photo);
+    await connection.manager.persist(photo);
     console.log("Photo has been saved");
 
 }).catch(error => console.log(error));
@@ -405,7 +405,7 @@ import {Photo} from "./entity/Photo";
 createConnection(/*...*/).then(async connection => {
 
     /*...*/
-    let savedPhotos = await connection.entityManager.find(Photo);
+    let savedPhotos = await connection.manager.find(Photo);
     console.log("All photos from the db: ", savedPhotos);
 
 }).catch(error => console.log(error));
@@ -863,7 +863,7 @@ export class Album {
         cascadeRemove: true  // 在移除Album时，会自动移除相册里的Photo
     })
     @JoinTable()
-    photos: Photo[] = []; // 初始化个Photo数组
+    photos: Photo[];
 }
 ```
   
@@ -880,7 +880,7 @@ export class Photo {
         cascadeUpdate: true, // 在更新Album时，会自动更新相册里的Photo 
         cascadeRemove: true  // 在移除Album时，会自动移除相册里的Photo
     })
-    albums: Album[] = []; // 初始化个Album数组
+    albums: Album[];
 }
 ```
 
@@ -921,13 +921,13 @@ let photo1 = new Photo();
 photo1.name = "Me and Bears";
 photo1.description = "I am near polar bears";
 photo1.filename = "photo-with-bears.jpg";
-photo1.albums.push(album1);
+photo1.albums = [album1];
 
 let photo2 = new Photo();
 photo2.name = "Me and Bears";
 photo2.description = "I am near polar bears";
 photo2.filename = "photo-with-bears.jpg";
-photo2.albums.push(album2);
+photo2.albums = [album2];
 
 // 获取Photo的repository
 let photoRepository = connection.getRepository(Photo);
@@ -952,8 +952,8 @@ let photos = await photoRepository
     .where("photo.isPublished=true")
     .andWhere("(photo.name=:photoName OR photo.name=:bearName)")
     .orderBy("photo.id", "DESC")
-    .setFirstResult(5)
-    .setMaxResults(10)
+    .skip(5)
+    .take(10)
     .setParameters({ photoName: "My", bearName: "Mishka" })
     .getMany();
 ```

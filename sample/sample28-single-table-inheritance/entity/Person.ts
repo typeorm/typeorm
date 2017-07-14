@@ -9,7 +9,7 @@ import {PrimaryColumn} from "../../../src/decorator/columns/PrimaryColumn";
 
 @Entity("sample28_person")
 @TableInheritance("single-table")
-@DiscriminatorColumn({ name: "type", type: "string"})
+@DiscriminatorColumn({ name: "type", type: "varchar" })
 export abstract class Person {
 
     @PrimaryColumn("int")

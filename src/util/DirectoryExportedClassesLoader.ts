@@ -6,16 +6,16 @@ import {PlatformTools} from "../platform/PlatformTools";
 export function importClassesFromDirectories(directories: string[], formats = [".js", ".ts"]): Function[] {
 
     function loadFileClasses(exported: any, allLoaded: Function[]) {
-        if (exported instanceof Function) {
+        if (typeof exported === "function") {
             allLoaded.push(exported);
 
-        } else if (exported instanceof Object) {
+        } else if (Array.isArray(exported)) {
+            exported.forEach((i: any) => loadFileClasses(i, allLoaded));
+
+        } else if (typeof exported === "object") {
             Object.keys(exported).forEach(key => loadFileClasses(exported[key], allLoaded));
 
-        } else if (exported instanceof Array) {
-            exported.forEach((i: any) => loadFileClasses(i, allLoaded));
         }
-
         return allLoaded;
     }
 

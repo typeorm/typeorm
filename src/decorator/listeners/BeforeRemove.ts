@@ -12,6 +12,6 @@ export function BeforeRemove() {
             propertyName: propertyName,
             type: EventListenerTypes.BEFORE_REMOVE
         };
-        getMetadataArgsStorage().entityListeners.add(args);
+        getMetadataArgsStorage().entityListeners.push(args);
     };
 }

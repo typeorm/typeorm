@@ -25,8 +25,8 @@ describe.skip("github issues > #56 relationships only work when both primary key
         user.email = "mwelnick@test.com";
         user.access_token = token;
 
-        return connection.getRepository(AccessToken).persist(token).then(token => {
-            return connection.getRepository(User).persist(user);
+        return connection.getRepository(AccessToken).save(token).then(token => {
+            return connection.getRepository(User).save(user);
         }).then (user => {
             expect(user).not.to.be.empty;
             user.should.be.eql({

@@ -5,14 +5,12 @@ import {PostCategory} from "./entity/PostCategory";
 import {PostAuthor} from "./entity/PostAuthor";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     autoSchemaSync: true,
     entities: [__dirname + "/entity/*"]
 };
@@ -49,7 +47,7 @@ createConnection(options).then(connection => {
         .skip(5)
         .take(10);
 
-    Promise.all(posts.map(post => postRepository.persist(post)))
+    Promise.all(posts.map(post => postRepository.save(post)))
         .then(savedPosts => {
             console.log("Posts has been saved. Lets try to load some posts");
             return qb.getMany();

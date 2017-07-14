@@ -8,14 +8,14 @@ export class PostController {
 
     @Transaction("mysql") // "mysql" is a connection name. you can not pass it if you are using default connection.
     async save(post: Post, category: Category, @TransactionEntityManager() entityManager: EntityManager) {
-        await entityManager.persist(post);
-        await entityManager.persist(category);
+        await entityManager.save(post);
+        await entityManager.save(category);
     }
 
     // this save is not wrapped into the transaction
     async nonSafeSave(entityManager: EntityManager, post: Post, category: Category) {
-        await entityManager.persist(post);
-        await entityManager.persist(category);
+        await entityManager.save(post);
+        await entityManager.save(category);
     }
 
 }

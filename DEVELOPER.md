@@ -61,17 +61,20 @@ During installation you may have some problems with some dependencies.
 For example to proper install oracle driver you need to follow all instructions from
  [node-oracle documentation](https://github.com/oracle/node-oracledb).
 
-Also install these packages globally:
+## ORM config
 
-* `npm install -g gulp` (you might need to prefix this command with `sudo`)
-* `npm install -g typescript` (you might need to prefix this command with `sudo`)
+To create an initial `ormconfig.json` file, run the following command:
+
+```shell
+npm run setup:config
+```
 
 ## Building
 
 To build a distribution package of TypeORM run:
 
 ```shell
-gulp package
+npm run package
 ```
 
 This command will generate you a distribution package in the `build/package` directory.

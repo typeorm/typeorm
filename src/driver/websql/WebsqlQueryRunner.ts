@@ -1,18 +1,21 @@
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {TransactionAlreadyStartedError} from "../error/TransactionAlreadyStartedError";
-import {TransactionNotStartedError} from "../error/TransactionNotStartedError";
-import {Logger} from "../../logger/Logger";
-import {DataTypeNotSupportedByDriverError} from "../error/DataTypeNotSupportedByDriverError";
+import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
+import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {TableSchema} from "../../schema-builder/schema/TableSchema";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
-import {QueryRunnerAlreadyReleasedError} from "../../query-runner/error/QueryRunnerAlreadyReleasedError";
+import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {WebsqlDriver} from "./WebsqlDriver";
-import {ColumnType} from "../../metadata/types/ColumnTypes";
+import {Connection} from "../../connection/Connection";
+import {ReadStream} from "fs";
+
+/**
+ * Declare a global function that is only available in browsers that support WebSQL.
+ */
+declare function openDatabase(...params: any[]): any;
 
 /**
  * Runs queries on a single websql database connection.
@@ -20,22 +23,61 @@ import {ColumnType} from "../../metadata/types/ColumnTypes";
 export class WebsqlQueryRunner implements QueryRunner {
 
     // -------------------------------------------------------------------------
-    // Protected Properties
+    // Public Implemented Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Database driver used by connection.
+     */
+    driver: WebsqlDriver;
+
+    /**
+     * Connection used by this query runner.
+     */
+    connection: Connection;
 
     /**
      * Indicates if connection for this query runner is released.
      * Once its released, query runner cannot run queries anymore.
      */
-    protected isReleased = false;
+    isReleased = false;
+
+    /**
+     * Indicates if transaction is in progress.
+     */
+    isTransactionActive = false;
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Real database connection from a connection pool used to perform queries.
+     */
+    protected databaseConnection: any;
+
+    /**
+     * Promise used to obtain a database connection for a first time.
+     */
+    protected databaseConnectionPromise: Promise<any>;
+
+    /**
+     * Indicates if special query runner mode in which sql queries won't be executed is enabled.
+     */
+    protected sqlMemoryMode: boolean = false;
+
+    /**
+     * Sql-s stored if "sql in memory" mode is enabled.
+     */
+    protected sqlsInMemory: string[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected databaseConnection: DatabaseConnection,
-                protected driver: WebsqlDriver,
-                protected logger: Logger) {
+    constructor(driver: WebsqlDriver) {
+        this.driver = driver;
+        this.connection = driver.connection;
     }
 
     // -------------------------------------------------------------------------
@@ -43,91 +85,85 @@ export class WebsqlQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Releases database connection. This is needed when using connection pooling.
-     * If connection is not from a pool, it should not be released.
-     * You cannot use this class's methods after its released.
+     * Creates/uses database connection from the connection pool to perform further operations.
+     * Returns obtained database connection.
      */
-    release(): Promise<void> {
-        if (this.databaseConnection.releaseCallback) {
-            this.isReleased = true;
-            return this.databaseConnection.releaseCallback();
-        }
+    connect(): Promise<any> {
+        if (this.databaseConnection)
+            return Promise.resolve(this.databaseConnection);
 
-        return Promise.resolve();
+        if (this.databaseConnectionPromise)
+            return this.databaseConnectionPromise;
+
+        const options = Object.assign({}, {
+            database: this.driver.options.database,
+        }, this.driver.options.extra || {});
+
+        this.databaseConnectionPromise = new Promise<void>((ok, fail) => {
+            this.databaseConnection = openDatabase(
+                options.database,
+                options.version,
+                options.description,
+                options.size,
+            );
+            ok(this.databaseConnection);
+        });
+
+        return this.databaseConnectionPromise;
     }
 
     /**
-     * Removes all tables from the currently connected database.
+     * Releases used database connection.
+     * You cannot use query runner methods once its released.
      */
-    async clearDatabase(): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
-        // await this.query(`PRAGMA foreign_keys = OFF;`);
-        await this.beginTransaction();
-        try {
-            const selectDropsQuery = `select 'drop table ' || name || ';' as query from sqlite_master where type = 'table' and name != 'sqlite_sequence'`;
-            const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-            await Promise.all(dropQueries.map(q => this.query(q["query"])));
-            await this.commitTransaction();
-
-        } catch (error) {
-            await this.rollbackTransaction();
-            throw error;
-
-        } finally {
-            await this.release();
-            // await this.query(`PRAGMA foreign_keys = ON;`);
-        }
+    release(): Promise<void> {
+        this.isReleased = true;
+        // todo: implement closing
+        return Promise.resolve();
     }
 
     /**
      * Starts transaction.
      */
-    async beginTransaction(): Promise<void> {
+    async startTransaction(): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (this.databaseConnection.isTransactionActive)
+        if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        this.databaseConnection.isTransactionActive = true;
+        this.isTransactionActive = true;
         // await this.query("BEGIN TRANSACTION");
     }
 
     /**
      * Commits transaction.
+     * Error will be thrown if transaction was not started.
      */
     async commitTransaction(): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (!this.databaseConnection.isTransactionActive)
+        if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
         // await this.query("COMMIT");
-        this.databaseConnection.isTransactionActive = false;
+        this.isTransactionActive = false;
     }
 
     /**
      * Rollbacks transaction.
+     * Error will be thrown if transaction was not started.
      */
     async rollbackTransaction(): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (!this.databaseConnection.isTransactionActive)
+        if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
         // await this.query("ROLLBACK");
-        this.databaseConnection.isTransactionActive = false;
-    }
-
-    /**
-     * Checks if transaction is in progress.
-     */
-    isTransactionActive(): boolean {
-        return this.databaseConnection.isTransactionActive;
+        this.isTransactionActive = false;
     }
 
     /**
@@ -137,11 +173,11 @@ export class WebsqlQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise((ok, fail) => {
+        return new Promise(async (ok, fail) => {
 
-            this.logger.logQuery(query, parameters);
-            const db = this.databaseConnection.connection;
-            // todo: check if transaction is not active
+            this.driver.connection.logger.logQuery(query, parameters, this);
+            const db = await this.connect();
+            // todo(dima): check if transaction is not active
             db.transaction((tx: any) => {
                 tx.executeSql(query, parameters, (tx: any, result: any) => {
                     const rows = Object
@@ -151,8 +187,8 @@ export class WebsqlQueryRunner implements QueryRunner {
                     ok(rows);
 
                 }, (tx: any, err: any) => {
-                    this.logger.logFailedQuery(query, parameters);
-                    this.logger.logQueryError(err);
+                    this.driver.connection.logger.logFailedQuery(query, parameters, this);
+                    this.driver.connection.logger.logQueryError(err, this);
                     return fail(err);
                 });
             });
@@ -160,22 +196,27 @@ export class WebsqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Insert a new row into given table.
+     * Returns raw data stream.
+     */
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+        throw new Error(`Stream is not supported by websqlite driver.`);
+    }
+
+    /**
+     * Insert a new row with given values into the given table.
+     * Returns value of the generated column if given and generate column exist in the table.
      */
     async insert(tableName: string, keyValues: ObjectLiteral, generatedColumn?: ColumnMetadata): Promise<any> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const keys = Object.keys(keyValues);
-        const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
+        const columns = keys.map(key => `"${key}"`).join(", ");
         const values = keys.map((key, index) => "$" + (index + 1)).join(",");
-        const sql = columns.length > 0 ? (`INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values})`) : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT VALUES`;
+        const sql = columns.length > 0 ? (`INSERT INTO "${tableName}"(${columns}) VALUES (${values})`) : `INSERT INTO "${tableName}" DEFAULT VALUES`;
         const parameters = keys.map(key => keyValues[key]);
 
-        return new Promise<any[]>((ok, fail) => {
-            this.logger.logQuery(sql, parameters);
+        return new Promise<any[]>(async (ok, fail) => {
+            this.driver.connection.logger.logQuery(sql, parameters, this);
 
-            const db = this.databaseConnection.connection;
+            const db = await this.connect();
             // todo: check if transaction is not active
             db.transaction((tx: any) => {
                 tx.executeSql(sql, parameters, (tx: any, result: any) => {
@@ -184,8 +225,8 @@ export class WebsqlQueryRunner implements QueryRunner {
                     ok();
 
                 }, (tx: any, err: any) => {
-                    this.logger.logFailedQuery(sql, parameters);
-                    this.logger.logQueryError(err);
+                    this.driver.connection.logger.logFailedQuery(sql, parameters, this);
+                    this.driver.connection.logger.logQueryError(err, this);
                     return fail(err);
                 });
             });
@@ -196,12 +237,9 @@ export class WebsqlQueryRunner implements QueryRunner {
      * Updates rows that match given conditions in the given table.
      */
     async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
-        const query = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const query = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const allParameters = updateParams.concat(conditionParams);
@@ -211,24 +249,11 @@ export class WebsqlQueryRunner implements QueryRunner {
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(tableName: string, condition: string, parameters?: any[]): Promise<void>;
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
-    async delete(tableName: string, conditions: ObjectLiteral): Promise<void>;
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
     async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
-        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
+        const sql = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
         await this.query(sql, parameters);
     }
 
@@ -236,21 +261,18 @@ export class WebsqlQueryRunner implements QueryRunner {
      * Inserts rows into closure table.
      */
     async insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         let sql = "";
         if (hasLevel) {
-            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
-                `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql = `INSERT INTO "${tableName}"("ancestor", "descendant", "level") ` +
+                `SELECT "ancestor", ${newEntityId}, "level" + 1 FROM "${tableName}" WHERE "descendant" = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
         } else {
-            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
-                `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
+            sql = `INSERT INTO "${tableName}"("ancestor", "descendant") ` +
+                `SELECT "ancestor", ${newEntityId} FROM "${tableName}" WHERE "descendant" = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
         }
         await this.query(sql);
-        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${tableName} WHERE descendant = ${parentId}`);
+        const results: ObjectLiteral[] = await this.query(`SELECT MAX("level") as "level" FROM ${tableName} WHERE "descendant" = ${parentId}`);
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
@@ -266,11 +288,8 @@ export class WebsqlQueryRunner implements QueryRunner {
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
     async loadTableSchemas(tableNames: string[]): Promise<TableSchema[]> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
 
         // if no tables given then no need to proceed
-
         if (!tableNames || !tableNames.length)
             return [];
 
@@ -396,9 +415,6 @@ export class WebsqlQueryRunner implements QueryRunner {
      * Creates a new table from the given table metadata and column metadatas.
      */
     async createTable(table: TableSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         // skip columns with foreign keys, we will add them later
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
@@ -429,20 +445,7 @@ export class WebsqlQueryRunner implements QueryRunner {
     /**
      * Creates a new column from the column schema in the table.
      */
-    async addColumn(tableName: string, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Creates a new column from the column schema in the table.
-     */
-    async addColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Creates a new column from the column schema in the table.
-     */
     async addColumn(tableSchemaOrName: TableSchema|string, column: ColumnSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const tableSchema = await this.getTableSchema(tableSchemaOrName);
         const newTableSchema = tableSchema.clone();
         newTableSchema.addColumns([column]);
@@ -452,35 +455,12 @@ export class WebsqlQueryRunner implements QueryRunner {
     /**
      * Creates a new columns from the column schema in the table.
      */
-    async addColumns(tableName: string, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Creates a new columns from the column schema in the table.
-     */
-    async addColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Creates a new columns from the column schema in the table.
-     */
     async addColumns(tableSchemaOrName: TableSchema|string, columns: ColumnSchema[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const tableSchema = await this.getTableSchema(tableSchemaOrName);
         const newTableSchema = tableSchema.clone();
         newTableSchema.addColumns(columns);
         await this.recreateTable(newTableSchema, tableSchema);
     }
-
-    /**
-     * Renames column in the given table.
-     */
-    renameColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Renames column in the given table.
-     */
-    renameColumn(tableName: string, oldColumnName: string, newColumnName: string): Promise<void>;
 
     /**
      * Renames column in the given table.
@@ -521,19 +501,7 @@ export class WebsqlQueryRunner implements QueryRunner {
     /**
      * Changes a column in the table.
      */
-    changeColumn(tableSchema: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Changes a column in the table.
-     */
-    changeColumn(tableSchema: string, oldColumn: string, newColumn: ColumnSchema): Promise<void>;
-
-    /**
-     * Changes a column in the table.
-     */
     async changeColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumn: ColumnSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
 
         let tableSchema: TableSchema|undefined = undefined;
         if (tableSchemaOrName instanceof TableSchema) {
@@ -564,9 +532,6 @@ export class WebsqlQueryRunner implements QueryRunner {
      * Changed column looses all its keys in the db.
      */
     async changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         // todo: fix it. it should not depend on tableSchema
         return this.recreateTable(tableSchema);
     }
@@ -574,51 +539,15 @@ export class WebsqlQueryRunner implements QueryRunner {
     /**
      * Drops column in the table.
      */
-    async dropColumn(tableName: string, columnName: string): Promise<void>;
-
-    /**
-     * Drops column in the table.
-     */
-    async dropColumn(tableSchema: TableSchema, column: ColumnSchema): Promise<void>;
-
-    /**
-     * Drops column in the table.
-     */
-    async dropColumn(tableSchemaOrName: TableSchema|string, columnSchemaOrName: ColumnSchema|string): Promise<void> {
-        return this.dropColumns(tableSchemaOrName as any, [columnSchemaOrName as any]);
+    async dropColumn(table: TableSchema, column: ColumnSchema): Promise<void> {
+        return this.dropColumns(table, [column]);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(tableName: string, columnNames: string[]): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(tableSchema: TableSchema, columns: ColumnSchema[]): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(tableSchemaOrName: TableSchema|string, columnSchemasOrNames: ColumnSchema[]|string[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
-        const tableSchema = await this.getTableSchema(tableSchemaOrName);
-        const updatingTableSchema = tableSchema.clone();
-        const columns = (columnSchemasOrNames as any[]).map(columnSchemasOrName => {
-            if (typeof columnSchemasOrName === "string") {
-                const column = tableSchema.columns.find(column => column.name === columnSchemasOrName);
-                if (!column)
-                    throw new Error(`Cannot drop a column - column "${columnSchemasOrName}" was not found in the "${tableSchema.name}" table.`);
-
-                return column;
-
-            } else {
-                return columnSchemasOrName as ColumnSchema;
-            }
-        });
+    async dropColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void> {
+        const updatingTableSchema = table.clone();
         updatingTableSchema.removeColumns(columns);
         return this.recreateTable(updatingTableSchema);
     }
@@ -627,49 +556,20 @@ export class WebsqlQueryRunner implements QueryRunner {
      * Updates table's primary keys.
      */
     async updatePrimaryKeys(dbTable: TableSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         return this.recreateTable(dbTable);
     }
 
     /**
      * Creates a new foreign key.
      */
-    async createForeignKey(tableName: string, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Creates a new foreign key.
-     */
-    async createForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Creates a new foreign key.
-     */
     async createForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         return this.createForeignKeys(tableSchemaOrName as any, [foreignKey]);
     }
 
     /**
      * Creates a new foreign keys.
      */
-    async createForeignKeys(tableName: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Creates a new foreign keys.
-     */
-    async createForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Creates a new foreign keys.
-     */
     async createForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const tableSchema = await this.getTableSchema(tableSchemaOrName);
         const changedTableSchema = tableSchema.clone();
         changedTableSchema.addForeignKeys(foreignKeys);
@@ -679,40 +579,14 @@ export class WebsqlQueryRunner implements QueryRunner {
     /**
      * Drops a foreign key from the table.
      */
-    async dropForeignKey(tableName: string, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Drops a foreign key from the table.
-     */
-    async dropForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
-
-    /**
-     * Drops a foreign key from the table.
-     */
     async dropForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         return this.dropForeignKeys(tableSchemaOrName as any, [foreignKey]);
     }
 
     /**
      * Drops a foreign keys from the table.
      */
-    async dropForeignKeys(tableName: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Drops a foreign keys from the table.
-     */
-    async dropForeignKeys(tableSchema: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
-
-    /**
-     * Drops a foreign keys from the table.
-     */
     async dropForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const tableSchema = await this.getTableSchema(tableSchemaOrName);
         const changedTableSchema = tableSchema.clone();
         changedTableSchema.removeForeignKeys(foreignKeys);
@@ -723,9 +597,6 @@ export class WebsqlQueryRunner implements QueryRunner {
      * Creates a new index.
      */
     async createIndex(tableName: string, index: IndexSchema): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
         const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${tableName}"(${columnNames})`;
         await this.query(sql);
@@ -735,93 +606,64 @@ export class WebsqlQueryRunner implements QueryRunner {
      * Drops an index from the table.
      */
     async dropIndex(tableName: string, indexName: string): Promise<void> {
-        if (this.isReleased)
-            throw new QueryRunnerAlreadyReleasedError();
-
         const sql = `DROP INDEX "${indexName}"`;
         await this.query(sql);
-    }
-
-    /**
-     * Creates a database type from a given column metadata.
-     */
-    normalizeType(typeOptions: { type: ColumnType, length?: string|number, precision?: number, scale?: number, timezone?: boolean, fixedLength?: boolean }): string {
-        switch (typeOptions.type) {
-            case "string":
-                return "character varying(" + (typeOptions.length ? typeOptions.length : 255) + ")";
-            case "text":
-                return "text";
-            case "boolean":
-                return "boolean";
-            case "integer":
-            case "int":
-                return "integer";
-            case "smallint":
-                return "smallint";
-            case "bigint":
-                return "bigint";
-            case "float":
-                return "real";
-            case "double":
-            case "number":
-                return "double precision";
-            case "decimal":
-                if (typeOptions.precision && typeOptions.scale) {
-                    return `decimal(${typeOptions.precision},${typeOptions.scale})`;
-
-                } else if (typeOptions.scale) {
-                    return `decimal(${typeOptions.scale})`;
-
-                } else if (typeOptions.precision) {
-                    return `decimal(${typeOptions.precision})`;
-
-                } else {
-                    return "decimal";
-
-                }
-            case "date":
-                return "date";
-            case "time":
-                if (typeOptions.timezone) {
-                    return "time with time zone";
-                } else {
-                    return "time without time zone";
-                }
-            case "datetime":
-                if (typeOptions.timezone) {
-                    return "timestamp with time zone";
-                } else {
-                    return "timestamp without time zone";
-                }
-            case "json":
-                return "json";
-            case "simple_array":
-                return typeOptions.length ? "character varying(" + typeOptions.length + ")" : "text";
-        }
-
-        throw new DataTypeNotSupportedByDriverError(typeOptions.type, "WebSQL");
-    }
-
-    /**
-     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
-     */
-    compareDefaultValues(columnMetadataValue: any, databaseValue: any): boolean {
-
-        if (typeof columnMetadataValue === "number")
-            return columnMetadataValue === parseInt(databaseValue);
-        if (typeof columnMetadataValue === "boolean")
-            return columnMetadataValue === (!!databaseValue || databaseValue === "false");
-        if (typeof columnMetadataValue === "function")
-            return columnMetadataValue() === databaseValue;
-
-        return columnMetadataValue === databaseValue;
     }
 
     /**
      * Truncates table.
      */
     async truncate(tableName: string): Promise<void> {
-        await this.query(`DELETE FROM ${this.driver.escapeTableName(tableName)}`);
+        await this.query(`DELETE FROM "${tableName}"`);
+    }
+
+    /**
+     * Removes all tables from the currently connected database.
+     */
+    async clearDatabase(): Promise<void> {
+        // await this.query(`PRAGMA foreign_keys = OFF;`);
+        await this.startTransaction();
+        try {
+            const selectDropsQuery = `select 'drop table "' || name || '";' as query from sqlite_master where type = 'table' and name != 'sqlite_sequence'`;
+            const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
+            await Promise.all(dropQueries.map(q => this.query(q["query"])));
+            await this.commitTransaction();
+
+        } catch (error) {
+            try { // we throw original error even if rollback thrown an error
+                await this.rollbackTransaction();
+            } catch (rollbackError) { }
+            throw error;
+
+            // await this.query(`PRAGMA foreign_keys = ON;`);
+        }
+    }
+
+    /**
+     * Enables special query runner mode in which sql queries won't be executed,
+     * instead they will be memorized into a special variable inside query runner.
+     * You can get memorized sql using getMemorySql() method.
+     */
+    enableSqlMemory(): void {
+        this.sqlMemoryMode = true;
+    }
+
+    /**
+     * Disables special query runner mode in which sql queries won't be executed
+     * started by calling enableSqlMemory() method.
+     *
+     * Previously memorized sql will be flushed.
+     */
+    disableSqlMemory(): void {
+        this.sqlsInMemory = [];
+        this.sqlMemoryMode = false;
+    }
+
+    /**
+     * Gets sql stored in the memory. Parameters in the sql are already replaced.
+     */
+    getMemorySql(): (string|{ up: string, down: string })[] {
+        return this.sqlsInMemory;
     }
 
     // -------------------------------------------------------------------------
@@ -832,7 +674,7 @@ export class WebsqlQueryRunner implements QueryRunner {
      * Parametrizes given object of values. Used to create column=value queries.
      */
     protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
-        return Object.keys(objectLiteral).map((key, index) => this.driver.escapeColumnName(key) + "=$" + (startIndex + index + 1));
+        return Object.keys(objectLiteral).map((key, index) => `"${key}"` + "=$" + (startIndex + index + 1));
     }
 
     /**
@@ -841,9 +683,9 @@ export class WebsqlQueryRunner implements QueryRunner {
     protected buildCreateColumnSql(column: ColumnSchema): string {
         let c = "\"" + column.name + "\"";
         if (column instanceof ColumnMetadata) {
-            c += " " + this.normalizeType(column);
+            c += " " + this.driver.normalizeType(column);
         } else {
-            c += " " + column.type;
+            c += " " + this.connection.driver.createFullType(column);
         }
         if (column.isNullable !== true)
             c += " NOT NULL";
@@ -851,19 +693,8 @@ export class WebsqlQueryRunner implements QueryRunner {
             c += " UNIQUE";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " PRIMARY KEY AUTOINCREMENT";
-        if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
-            if (typeof column.default === "number") {
-                c += " DEFAULT " + column.default + "";
-            } else if (typeof column.default === "boolean") {
-                c += " DEFAULT " + (column.default === true ? "TRUE" : "FALSE") + "";
-            } else if (typeof column.default === "function") {
-                c += " DEFAULT " + column.default() + "";
-            } else if (typeof column.default === "string") {
-                c += " DEFAULT '" + column.default + "'";
-            } else {
-                c += " DEFAULT " + column.default + "";
-            }
-        }
+        if (column.default !== undefined && column.default !== null) // todo: same code in all drivers. make it DRY
+            c += ` DEFAULT ${column.default}`;
 
         return c;
     }

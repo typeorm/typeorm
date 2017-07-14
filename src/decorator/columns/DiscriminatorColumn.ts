@@ -1,5 +1,5 @@
 import {ColumnOptions} from "../options/ColumnOptions";
-import {ColumnType} from "../../metadata/types/ColumnTypes";
+import {ColumnType} from "../../driver/types/ColumnTypes";
 import {getMetadataArgsStorage} from "../../index";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
@@ -24,7 +24,7 @@ export function DiscriminatorColumn(discriminatorOptions: { name: string, type: 
             propertyName: discriminatorOptions.name,
             options: options
         };
-        getMetadataArgsStorage().columns.add(args);
+        getMetadataArgsStorage().columns.push(args);
     };
 }
 

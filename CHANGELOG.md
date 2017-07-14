@@ -18,17 +18,83 @@ each for its own `findOne*` or `find*` methods
 * table decorators were not removed in the release, however they will be removed in next. Be sure to replace them before that.
 * `QueryBuilder#setFirstResult` has been renamed to `QueryBuilder#skip`
 * `QueryBuilder#setMaxResults` has been renamed to `QueryBuilder#take`
+* renamed `entityManager` to `manager` in `Connection`, `AbstractRepository` and event objects
+* renamed `persist` to `save` in `EntityManager` and `Repository` objects
+* `@AbstractEntity` is deprecated. Now there is no need to mark class with a decorator, it can extend any class with columns
+* `SpecificRepository` is deprecated for now
+* `transaction` method has been removed from `Repository`. Use `EntityManager#transaction` method instead
+* custom repositories do not support container anymore
+* added ActiveRecord support (by extending BaseEntity) class
+* controller / subscriber / migrations from options tsconfig now appended with a project root directory
+* removed naming strategy decorator, naming strategy by name functionality. 
+Now naming strategy should be registered by passing naming strategy instance directly
+* `driver` section in connection options now deprecated. All settings should go directly to connection options root.
+* removed `fromTable` from the `QueryBuilder`. Now use regular `from` to select from tables
+* removed `usePool` option from the connection options
+* connection options interface has changed and now each platform has its own set of connection options
+* `storage` in sqlite options has been renamed to `database`
+* env variable names for connection were changed (`TYPEORM_DRIVER_TYPE` has been renamed to `TYPEORM_CONNECTION`, some other renaming).
+More env variable names you can find in `ConnectionOptionsEnvReader` class.
+* some api changes in `ConnectionManager` and `createConnection` / `createConnections` methods of typeorm main entrypoint
+* `usePool` option has been removed from connection options. Now connections are working only with connection pooling
+* `simple_array` column type now is called `simple-array`
+* some column types were removed. Now orm uses directly column types of underlying database
+* now `number` type in column definitions (like `@Column() likes: number`) maps to `integer` instead of `double` as before.
+ This is more programmatic design. If you need to store float-pointing values there define a type explicitly
+* `fixedLength` in column options has been removed. Now actual column types can be used, e.g. `@Column("char")` or `@Column("varchar")`
+* `timezone` option has been removed from column options. Now corresponding database types can be used instead
+* `localTimezone` has been removed from the column options
+* `skipSchemaSync` in entity options has been renamed to `skipSync`
+* `setLimit` and `setOffset` in `QueryBuilder` were renamed into `limit` and `offset`
+* `nativeInterface` has been removed from a driver interface and implementations. 
+* now typeorm works with the latest version of mssql (version 4)
+* fixed how orm creates default values for SqlServer - now it creates constraints for it as well
+* migrations interface has changed - now `up` and `down` accept only `QueryRunner`. To use `Connection` and `EntityManager` use properties
+of `QueryRunner`, e.g. `queryRunner.connection` and `queryRunner.manager`
+* now `update` method in `QueryBuilder` accepts `Partial<Entity>` and property names used in update map are 
+column property names and they are automatically mapped to column names 
+* `SpecificRepository` has been removed. Instead new `RelationQueryBuilder` was introduced.
+* `getEntitiesAndRawResults` of `QueryBuilder` has been renamed to `getRawAndEntities`
+* in mssql all constraints are now generated using table name in their names - this is fixes issues with duplicate constraint names 
+* now when object is loaded from the database all its columns with null values will be set into entity properties as null. 
+Also after saving entity with unset properties that will be stored as nulls - their (properties) values will be set to null.
+Also now all 
+* create and update dates in entities now use date with fractional seconds.
+
+### DEPRECATIONS
+
+* `Embedded` decorator is deprecated now. use `@Column(type => SomeEmbedded)` instead
 
 ### NEW FEATURES
 
 * added `mongodb` support
 * entity now can be saved partially within `update` method
 * added prefix support to embeddeds
+* now embeddeds inside other embeddeds are supported
+* now relations are supported inside embeds
+* now relations for multiple primary keys are generated properly
+* now ormconfig is read from `.env`, `.js`, `.json`, `.yml`, `.xml` formats
+* all database-specific types are supported now
+* now migrations generation is supported. Use `typeorm migrations:generate` command
+* `getGeneratedQuery` was renamed to `getQuery` in `QueryBuilder`
+* `getSqlWithParameters` was renamed to `getSqlAndParameters` in `QueryBuilder`
+* sql queries are highlighted in console
+
+### OTHER API CHANGES
+
+* moved `query`, `transaction` and `createQueryBuilder` to the `Connection`. 
+`EntityManager` now simply use them from the connection.
+* refactored how query runner works, removed query runner provider
+* fixed some issues with sqlite, sqlite now strongly works on a single connection 
+* `Connection` how has `createQueryRunner` that can be used to control database connection and its transaction state
+* `QueryBuilder` is abstract now and all different kinds of query builders were created for different query types - 
+`SelectQueryBuilder`, `UpdateQueryBuilder`, `InsertQueryBuilder` and `DeleteQueryBuilder` with individual method available.
 
 ### BUG FIXES
 
 * fixes [#285](https://github.com/typeorm/typeorm/issues/285) - issue when cli commands rise `CannotCloseNotConnectedError`
 * fixes [#309](https://github.com/typeorm/typeorm/issues/309) - issue when `andHaving` didn't work without calling `having` on `QueryBuilder`
+* fixes issues with default value being updated by schema sync
 
 # 0.0.10
 

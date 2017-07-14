@@ -15,7 +15,7 @@ before_script:
   - sudo service mysql stop
   - sudo service postgresql stop
   - docker-compose up -d
-  - gulp createTravisOrmConfig
+  - npm run setup:config
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

@@ -11,6 +11,11 @@ export interface FindOneOptions<Entity> {
     where?: Partial<Entity>;
 
     /**
+     * Indicates what relations of entity should be loaded (simplified left join form).
+     */
+    relations?: (keyof Entity)[];
+
+    /**
      * Specifies what relations should be loaded.
      */
     join?: JoinOptions;

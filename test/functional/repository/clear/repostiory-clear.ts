@@ -23,19 +23,19 @@ describe("repository > clear method", () => {
             const post = new Post();
             post.id = i;
             post.title = "post #" + i;
-            promises.push(connection.entityManager.persist(post));
+            promises.push(connection.manager.save(post));
         }
         await Promise.all(promises);
 
         // check if they all are saved
-        const loadedPosts = await connection.entityManager.find(Post);
+        const loadedPosts = await connection.manager.find(Post);
         loadedPosts.should.be.instanceOf(Array);
         loadedPosts.length.should.be.equal(100);
 
         await connection.getRepository(Post).clear();
 
         // check find method
-        const loadedPostsAfterClear = await connection.entityManager.find(Post);
+        const loadedPostsAfterClear = await connection.manager.find(Post);
         loadedPostsAfterClear.should.be.instanceOf(Array);
         loadedPostsAfterClear.length.should.be.equal(0);
     })));
@@ -48,19 +48,19 @@ describe("repository > clear method", () => {
             const post = new Post();
             post.id = i;
             post.title = "post #" + i;
-            promises.push(connection.entityManager.persist(post));
+            promises.push(connection.manager.save(post));
         }
         await Promise.all(promises);
 
         // check if they all are saved
-        const loadedPosts = await connection.entityManager.find(Post);
+        const loadedPosts = await connection.manager.find(Post);
         loadedPosts.should.be.instanceOf(Array);
         loadedPosts.length.should.be.equal(100);
 
-        await connection.entityManager.clear(Post);
+        await connection.manager.clear(Post);
 
         // check find method
-        const loadedPostsAfterClear = await connection.entityManager.find(Post);
+        const loadedPostsAfterClear = await connection.manager.find(Post);
         loadedPostsAfterClear.should.be.instanceOf(Array);
         loadedPostsAfterClear.length.should.be.equal(0);
     })));

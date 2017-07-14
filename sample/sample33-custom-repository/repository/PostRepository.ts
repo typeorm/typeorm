@@ -3,7 +3,7 @@ import {Post} from "../entity/Post";
 import {EntityRepository} from "../../../src/decorator/EntityRepository";
 
 /**
- * First type of custom repository - extends standard repository.
+ * Second type of custom repository - extends standard repository.
  */
 @EntityRepository(Post)
 export class PostRepository extends Repository<Post> {

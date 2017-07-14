@@ -35,14 +35,14 @@ describe("persistence > one-to-many", function() {
 
             let newCategory = categoryRepository.create();
             newCategory.name = "Animals";
-            await categoryRepository.persist(newCategory);
+            await categoryRepository.save(newCategory);
 
             let newPost = postRepository.create();
             newPost.title = "All about animals";
-            await postRepository.persist(newPost);
+            await postRepository.save(newPost);
 
             newPost.categories = [newCategory];
-            await postRepository.persist(newPost);
+            await postRepository.save(newPost);
 
             const loadedPost = (await postRepository.findOneById(1, {
                 join: {
@@ -67,12 +67,12 @@ describe("persistence > one-to-many", function() {
 
             let newCategory = categoryRepository.create();
             newCategory.name = "Animals";
-            await categoryRepository.persist(newCategory);
+            await categoryRepository.save(newCategory);
 
             let newPost = postRepository.create();
             newPost.title = "All about animals";
             newPost.categories = [newCategory];
-            await postRepository.persist(newPost);
+            await postRepository.save(newPost);
 
             const loadedPost = await postRepository.findOneById(1, {
                 join: {
@@ -97,21 +97,21 @@ describe("persistence > one-to-many", function() {
 
             let firstNewCategory = categoryRepository.create();
             firstNewCategory.name = "Animals";
-            await categoryRepository.persist(firstNewCategory);
+            await categoryRepository.save(firstNewCategory);
 
             let secondNewCategory = categoryRepository.create();
             secondNewCategory.name = "Insects";
-            await categoryRepository.persist(secondNewCategory);
+            await categoryRepository.save(secondNewCategory);
 
             let newPost = postRepository.create();
             newPost.title = "All about animals";
-            await postRepository.persist(newPost);
+            await postRepository.save(newPost);
 
             newPost.categories = [firstNewCategory, secondNewCategory];
-            await postRepository.persist(newPost);
+            await postRepository.save(newPost);
 
             newPost.categories = [firstNewCategory];
-            await postRepository.persist(newPost);
+            await postRepository.save(newPost);
 
             const loadedPost = await postRepository.findOneById(1, {
                 join: {
@@ -137,21 +137,21 @@ describe("persistence > one-to-many", function() {
 
             let firstNewCategory = categoryRepository.create();
             firstNewCategory.name = "Animals";
-            await categoryRepository.persist(firstNewCategory);
+            await categoryRepository.save(firstNewCategory);
 
             let secondNewCategory = categoryRepository.create();
             secondNewCategory.name = "Insects";
-            await categoryRepository.persist(secondNewCategory);
+            await categoryRepository.save(secondNewCategory);
 
             let newPost = postRepository.create();
             newPost.title = "All about animals";
-            await postRepository.persist(newPost);
+            await postRepository.save(newPost);
 
             newPost.categories = [firstNewCategory, secondNewCategory];
-            await postRepository.persist(newPost);
+            await postRepository.save(newPost);
 
             newPost.categories = [];
-            await postRepository.persist(newPost);
+            await postRepository.save(newPost);
 
             const loadedPost = await postRepository.findOneById(1, {
                 join: {
@@ -175,21 +175,21 @@ describe("persistence > one-to-many", function() {
 
             let firstNewCategory = categoryRepository.create();
             firstNewCategory.name = "Animals";
-            await categoryRepository.persist(firstNewCategory);
+            await categoryRepository.save(firstNewCategory);
 
             let secondNewCategory = categoryRepository.create();
             secondNewCategory.name = "Insects";
-            await categoryRepository.persist(secondNewCategory);
+            await categoryRepository.save(secondNewCategory);
 
             let newPost = postRepository.create();
             newPost.title = "All about animals";
-            await postRepository.persist(newPost);
+            await postRepository.save(newPost);
 
             newPost.categories = [firstNewCategory, secondNewCategory];
-            await postRepository.persist(newPost);
+            await postRepository.save(newPost);
 
             newPost.categories = null; // todo: what to do with undefined?
-            await postRepository.persist(newPost);
+            await postRepository.save(newPost);
 
             const loadedPost = (await postRepository.findOneById(1, {
                 join: {

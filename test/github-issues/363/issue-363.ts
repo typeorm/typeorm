@@ -24,7 +24,7 @@ describe("github issues > #363 Can't save 2 unrelated entity types in a single p
         const fruit = new Fruit();
         fruit.name = "Banana";
 
-        const [savedCar, savedFruit] = await connection.entityManager.persist([car, fruit]);
+        const [savedCar, savedFruit] = await connection.manager.save([car, fruit]);
 
         expect(savedFruit).to.have.property("name", "Banana");
         expect(savedFruit).to.be.instanceof(Fruit);
@@ -32,13 +32,13 @@ describe("github issues > #363 Can't save 2 unrelated entity types in a single p
         expect(savedCar).to.have.property("name", "Ferrari");
         expect(savedCar).to.be.instanceof(Car);
 
-        const cars = await connection.entityManager.find(Car);
+        const cars = await connection.manager.find(Car);
 
         // before the changes in this PR, all the tests before this one actually passed
         expect(cars).to.length(1);
         expect(cars[0]).to.have.property("name", "Ferrari");
 
-        const fruits = await connection.entityManager.find(Fruit);
+        const fruits = await connection.manager.find(Fruit);
 
         expect(fruits).to.length(1);
         expect(fruits[0]).to.have.property("name", "Banana");
@@ -53,20 +53,20 @@ describe("github issues > #363 Can't save 2 unrelated entity types in a single p
         const fruit2 = new Fruit();
         fruit2.name = "Apple";
 
-        const [savedFruit] = await connection.entityManager.persist([fruit, fruit2]);
+        const [savedFruit] = await connection.manager.save([fruit, fruit2]);
 
         const car = new Car();
         car.name = "Ferrari";
 
-        const savedCar = await connection.entityManager.persist(car);
+        const savedCar = await connection.manager.save(car);
 
-        await connection.entityManager.remove([savedCar, savedFruit]);
+        await connection.manager.remove([savedCar, savedFruit]);
 
-        const cars = await connection.entityManager.find(Car);
+        const cars = await connection.manager.find(Car);
 
         expect(cars).to.length(0);
 
-        const fruits = await connection.entityManager.find(Fruit);
+        const fruits = await connection.manager.find(Fruit);
 
         expect(fruits).to.length(1);
         expect(fruits[0]).to.have.property("name", "Apple");

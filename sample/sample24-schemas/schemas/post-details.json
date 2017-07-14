@@ -10,11 +10,11 @@
       "generated": true
     },
     "comment": {
-      "type": "string",
+      "type": "varchar",
       "nullable": false
     },
     "metadata": {
-      "type": "string",
+      "type": "varchar",
       "nullable": false
     }
   },

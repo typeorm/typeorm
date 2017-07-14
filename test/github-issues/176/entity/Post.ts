@@ -16,7 +16,7 @@ export class Post {
     @Column()
     date: Date;
 
-    @Column({ localTimezone: true })
-    localDate: Date;
+    // @Column({ localTimezone: true })
+    // localDate: Date;
 
 }

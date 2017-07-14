@@ -11,6 +11,6 @@ export function DiscriminatorValue(value: any): Function {
             target: target,
             value: value
         };
-        getMetadataArgsStorage().discriminatorValues.add(args);
+        getMetadataArgsStorage().discriminatorValues.push(args);
     };
 }

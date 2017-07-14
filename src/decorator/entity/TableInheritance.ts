@@ -10,6 +10,6 @@ export function TableInheritance(type: "single-table"|"class-table") {
             target: target,
             type: type
         };
-        getMetadataArgsStorage().inheritances.add(args);
+        getMetadataArgsStorage().inheritances.push(args);
     };
 }

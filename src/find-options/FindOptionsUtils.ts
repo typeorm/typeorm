@@ -1,7 +1,7 @@
 import {FindManyOptions} from "./FindManyOptions";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {FindOneOptions} from "./FindOneOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
 /**
  * Utilities to work with FindOptions.
@@ -11,11 +11,12 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindOneOptions interface.
      */
-    static isFindOneOptions(object: any): object is FindOneOptions<any> {
-        const possibleOptions: FindOneOptions<any> = object;
+    static isFindOneOptions(obj: any): obj is FindOneOptions<any> {
+        const possibleOptions: FindOneOptions<any> = obj;
         return possibleOptions &&
                 (
                     possibleOptions.where instanceof Object ||
+                    possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object
                 );
@@ -24,11 +25,12 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindManyOptions interface.
      */
-    static isFindManyOptions(object: any): object is FindManyOptions<any> {
-        const possibleOptions: FindManyOptions<any> = object;
+    static isFindManyOptions(obj: any): obj is FindManyOptions<any> {
+        const possibleOptions: FindManyOptions<any> = obj;
         return possibleOptions &&
                 (
                     possibleOptions.where instanceof Object ||
+                    possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
                     typeof possibleOptions.skip === "number" ||
@@ -59,7 +61,7 @@ export class FindOptionsUtils {
     /**
      * Applies give find one options to the given query builder.
      */
-    static applyFindOneOptionsOrConditionsToQueryBuilder<T>(qb: QueryBuilder<T>, options: FindOneOptions<T>|Partial<T>|undefined): QueryBuilder<T> {
+    static applyFindOneOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
         if (this.isFindOneOptions(options))
             return this.applyOptionsToQueryBuilder(qb, options);
 
@@ -72,7 +74,7 @@ export class FindOptionsUtils {
     /**
      * Applies give find many options to the given query builder.
      */
-    static applyFindManyOptionsOrConditionsToQueryBuilder<T>(qb: QueryBuilder<T>, options: FindManyOptions<T>|Partial<T>|undefined): QueryBuilder<T> {
+    static applyFindManyOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindManyOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
         if (this.isFindManyOptions(options))
             return this.applyOptionsToQueryBuilder(qb, options);
 
@@ -85,7 +87,7 @@ export class FindOptionsUtils {
     /**
      * Applies give find options to the given query builder.
      */
-    static applyOptionsToQueryBuilder<T>(qb: QueryBuilder<T>, options: FindOneOptions<T>|FindManyOptions<T>|undefined): QueryBuilder<T> {
+    static applyOptionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T>|FindManyOptions<T>|undefined): SelectQueryBuilder<T> {
 
         // if options are not set then simply return query builder. This is made for simplicity of usage.
         if (!options || !this.isFindOneOptions(options))
@@ -104,6 +106,11 @@ export class FindOptionsUtils {
         if (options.order)
             Object.keys(options.order).forEach(key => {
                 qb.addOrderBy(qb.alias + "." + key, (options as FindOneOptions<T>).order![key as any]);
+            });
+
+        if (options.relations)
+            options.relations.forEach(relation => {
+                qb.leftJoinAndSelect(qb.alias + "." + relation, relation);
             });
 
         if (options.join) {
@@ -134,7 +141,7 @@ export class FindOptionsUtils {
     /**
      * Applies given simple conditions set to a given query builder.
      */
-    static applyConditions<T>(qb: QueryBuilder<T>, conditions: ObjectLiteral): QueryBuilder<T> {
+    static applyConditions<T>(qb: SelectQueryBuilder<T>, conditions: ObjectLiteral): SelectQueryBuilder<T> {
         Object.keys(conditions).forEach((key, index) => {
             if (conditions![key] === null) {
                 qb.andWhere(`${qb.alias}.${key} IS NULL`);

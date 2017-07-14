@@ -11,7 +11,7 @@ export class Question {
     @Column()
     title: string;
 
-    @Embedded(type => Counters)
+    @Column(type => Counters)
     counters: Counters;
     
 }

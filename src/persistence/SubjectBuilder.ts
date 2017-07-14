@@ -2,9 +2,9 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {Subject} from "./Subject";
-import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
-import {SpecificRepository} from "../repository/SpecificRepository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
+import {OrmUtils} from "../util/OrmUtils";
+import {QueryRunner} from "../query-runner/QueryRunner";
 
 /**
  * To be able to execute persistence operations we need to load all entities from the database we need.
@@ -76,8 +76,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection,
-                protected queryRunnerProvider: QueryRunnerProvider) {
+    constructor(protected connection: Connection, protected queryRunner: QueryRunner) {
     }
 
     // -------------------------------------------------------------------------
@@ -90,14 +89,14 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     async persist(entity: Entity, metadata: EntityMetadata): Promise<void> {
 
         // create subject for currently persisted entity and mark that it can be inserted and updated
-        const mainPersistedSubject = new Subject(metadata, entity);
-        mainPersistedSubject.canBeInserted = true;
-        mainPersistedSubject.canBeUpdated = true;
-        this.operateSubjects.push(mainPersistedSubject);
+        const mainSubject = new Subject(metadata, entity);
+        mainSubject.canBeInserted = true;
+        mainSubject.canBeUpdated = true;
+        this.operateSubjects.push(mainSubject);
 
         // next step we build list of subjects we will operate with
         // these subjects are subjects that we need to insert or update alongside with main persisted entity
-        this.buildCascadeUpdateAndInsertOperateSubjects(mainPersistedSubject);
+        this.buildCascadeUpdateAndInsertOperateSubjects(mainSubject);
 
         // next step is to load database entities of all operate subjects
         await this.loadOperateSubjectsDatabaseEntities();
@@ -121,13 +120,13 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     async remove(entity: Entity, metadata: EntityMetadata): Promise<void> {
 
         // create subject for currently removed entity and mark that it must be removed
-        const mainRemovedSubject = new Subject(metadata, entity);
-        mainRemovedSubject.mustBeRemoved = true;
-        this.operateSubjects.push(mainRemovedSubject);
+        const mainSubject = new Subject(metadata, entity);
+        mainSubject.mustBeRemoved = true;
+        this.operateSubjects.push(mainSubject);
 
         // next step we build list of subjects we will operate with
         // these subjects are subjects that we need to remove alongside with main removed entity
-        this.buildCascadeRemoveOperateSubjects(mainRemovedSubject);
+        this.buildCascadeRemoveOperateSubjects(mainSubject);
 
         // next step is to load database entities for all operate subjects
         await this.loadOperateSubjectsDatabaseEntities();
@@ -162,32 +161,34 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     protected buildCascadeUpdateAndInsertOperateSubjects(subject: Subject): void {
         subject.metadata
             .extractRelationValuesFromEntity(subject.entity, subject.metadata.relations)
-            .filter(([relation, value, valueMetadata]) => {
+            .filter(([relation, relationEntity, relationEntityMetadata]) => {
 
                 // we need only defined values and insert or update cascades of the relation should be set
-                return value !== undefined && value !== null && (relation.isCascadeInsert || relation.isCascadeUpdate);
+                return  relationEntity !== undefined &&
+                        relationEntity !== null &&
+                        (relation.isCascadeInsert || relation.isCascadeUpdate);
             })
-            .forEach(([relation, value, valueMetadata]) => {
+            .forEach(([relation, relationEntity, relationEntityMetadata]) => {
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
-                const alreadyExistValueSubject = this.findByEntityLike(valueMetadata.target, value);
-                if (alreadyExistValueSubject) {
-                    if (alreadyExistValueSubject.canBeInserted === false)
-                        alreadyExistValueSubject.canBeInserted = relation.isCascadeInsert === true;
-                    if (alreadyExistValueSubject.canBeUpdated === false)
-                        alreadyExistValueSubject.canBeUpdated = relation.isCascadeUpdate === true;
+                const alreadyExistRelationEntitySubject = this.findByEntityLike(relationEntityMetadata.target, relationEntity);
+                if (alreadyExistRelationEntitySubject) {
+                    if (alreadyExistRelationEntitySubject.canBeInserted === false) // if its not marked for insertion yet
+                        alreadyExistRelationEntitySubject.canBeInserted = relation.isCascadeInsert === true;
+                    if (alreadyExistRelationEntitySubject.canBeUpdated === false) // if its not marked for update yet
+                        alreadyExistRelationEntitySubject.canBeUpdated = relation.isCascadeUpdate === true;
                     return;
                 }
 
                 // mark subject with what we can do with it
                 // and add to the array of subjects to load only if there is no same entity there already
-                const valueSubject = new Subject(valueMetadata, value);
-                valueSubject.canBeInserted = relation.isCascadeInsert === true;
-                valueSubject.canBeUpdated = relation.isCascadeUpdate === true;
-                this.operateSubjects.push(valueSubject);
+                const relationEntitySubject = new Subject(relationEntityMetadata, relationEntity);
+                relationEntitySubject.canBeInserted = relation.isCascadeInsert === true;
+                relationEntitySubject.canBeUpdated = relation.isCascadeUpdate === true;
+                this.operateSubjects.push(relationEntitySubject);
 
-                // go recursively and find other entities we need to operate with
-                this.buildCascadeUpdateAndInsertOperateSubjects(valueSubject);
+                // go recursively and find other entities we need to insert/update
+                this.buildCascadeUpdateAndInsertOperateSubjects(relationEntitySubject);
             });
     }
 
@@ -197,26 +198,26 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     protected buildCascadeRemoveOperateSubjects(subject: Subject): void {
         subject.metadata
             .extractRelationValuesFromEntity(subject.entity, subject.metadata.relations)
-            .filter(([relation, value, valueMetadata]) => {
+            .filter(([relation, relationEntity, relationEntityMetadata]) => {
 
                 // we need only defined values and insert cascades of the relation should be set
-                return value !== undefined && value !== null && relation.isCascadeRemove;
+                return relationEntity !== undefined && relationEntity !== null && relation.isCascadeRemove;
             })
-            .forEach(([relation, value, valueMetadata]) => {
+            .forEach(([relation, relationEntity, relationEntityMetadata]) => {
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
-                const alreadyExistValueSubject = this.findByEntityLike(valueMetadata.target, value);
+                const alreadyExistValueSubject = this.findByEntityLike(relationEntityMetadata.target, relationEntity);
                 if (alreadyExistValueSubject) {
                     alreadyExistValueSubject.mustBeRemoved = true;
                     return;
                 }
 
                 // add to the array of subjects to load only if there is no same entity there already
-                const valueSubject = new Subject(valueMetadata, value);
+                const valueSubject = new Subject(relationEntityMetadata, relationEntity);
                 valueSubject.mustBeRemoved = true;
                 this.operateSubjects.push(valueSubject);
 
-                // go recursively and find other entities to load by cascades in currently inserted entities
+                // go recursively and find other entities we need to remove
                 this.buildCascadeRemoveOperateSubjects(valueSubject);
             });
     }
@@ -236,17 +237,25 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             // prepare entity ids of the subjects we need to load
             const allIds = subjectGroup.subjects
                 .filter(subject => !subject.hasDatabaseEntity) // we don't load if subject already has a database entity loaded
-                .map(subject => subject.metadata.getEntityIdMixedMap(subject.entity)) // we only need entity id
-                .filter(mixedId => { // we don't need empty ids
-                    if (mixedId instanceof Object)
-                        return Object.keys(mixedId).every(key => mixedId[key] !== undefined && mixedId[key] !== null && mixedId[key] !== "");
-
-                    return mixedId !== undefined && mixedId !== null && mixedId !== "";
+                .filter(subject => {
+                    return !subject.metadata.isEntityMapEmpty(subject.entity);
+                }) // we only need entity id
+                .map(subject => { // we don't need empty ids
+                    // console.log(subject.entity);
+                    return subject.metadata.getEntityIdMap(subject.entity);
+                    // if (mixedId instanceof Object)
+                    //     return Object.keys(mixedId).every(key => mixedId[key] !== undefined && mixedId[key] !== null && mixedId[key] !== "");
+                    //
+                    // return mixedId !== undefined && mixedId !== null && mixedId !== "";
                 });
 
             // if there no ids found (which means all entities are new and have generated ids) - then nothing to load there
+            // console.log("allIds: ", allIds);
+            // console.log("subject.entity: ", subjectGroup.subjects);
+            // console.log("allIds: ", allIds);
             if (!allIds.length)
                 return;
+            // console.log("Y");
 
             // load database entities for all given ids
             // todo: such implementation is temporary, need to create a good abstraction there
@@ -254,6 +263,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             // todo: also custom queryRunnerProvider is an issue
             let entities: any[];
             if (this.connection.driver instanceof MongoDriver) {
+
                 entities = await this.connection
                     .getMongoRepository<ObjectLiteral>(subjectGroup.target)
                     .findByIds(allIds);
@@ -261,15 +271,16 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             } else {
                 entities = await this.connection
                     .getRepository<ObjectLiteral>(subjectGroup.target)
-                    .createQueryBuilder("operateSubject", this.queryRunnerProvider)
-                    .andWhereInIds(allIds)
-                    .enableOption("RELATION_ID_VALUES")
+                    .createQueryBuilder("subject", this.queryRunner)
+                    .whereInIds(allIds)
+                    .loadAllRelationIds()
                     .getMany();
             }
 
             // now when we have entities we need to find subject of each entity
             // and insert that entity into database entity of the found subject
             entities.forEach(entity => {
+                // console.log(1);
                 const subject = this.findByEntityLike(subjectGroup.target, entity);
                 if (subject)
                     subject.databaseEntity = entity;
@@ -300,7 +311,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
         // note: we can't use extractRelationValuesFromEntity here because it does not handle empty arrays
         const promises = subject.metadata.relations.map(async relation => {
             const valueMetadata = relation.inverseEntityMetadata;
-            const qbAlias = valueMetadata.table.name;
+            const qbAlias = valueMetadata.tableName;
 
             // added for type-safety, but subject without databaseEntity cant come here anyway because of checks on upper levels
             if (!subject.hasDatabaseEntity) return;
@@ -337,23 +348,29 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                 // note that if databaseEntity has relation, it can only be a relation id,
                 // because of query builder option "RELATION_ID_VALUES" we used
-                const relationIdInDatabaseEntity = subject.databaseEntity[relation.joinColumn.propertyName]; // (example) returns post.detailsId
+                const relationIdInDatabaseEntity = relation.getEntityValue(subject.databaseEntity); // (example) returns post.detailsId
 
                 // if database relation id does not exist in the database object then nothing to remove
                 if (relationIdInDatabaseEntity === null || relationIdInDatabaseEntity === undefined)
                     return;
 
                 // if this subject is persisted subject then we get its value to check if its not empty or its values changed
-                let persistValueRelationId: any = undefined;
+                let persistValueRelationId: any = undefined, persistValue: any = undefined;
                 if (subject.hasEntity) {
-                    const persistValue = relation.getEntityValue(subject.entity);
+                    persistValue = relation.getEntityValue(subject.entity);
                     if (persistValue === null) persistValueRelationId = null;
-                    if (persistValue) persistValueRelationId = persistValue[relation.joinColumn.referencedColumn.propertyName];
+                    if (persistValue) persistValueRelationId = relation.joinColumns.reduce((map, column) => column.referencedColumn!.getEntityValueMap(persistValue), {} as ObjectLiteral);
                     if (persistValueRelationId === undefined) return; // skip undefined properties
                 }
 
                 // object is removed only if relation id in the persisted entity is empty or is changed
-                if (persistValueRelationId !== null && persistValueRelationId === relationIdInDatabaseEntity)
+                // if (persistValueRelationId !== null && persistValueRelationId === relationIdInDatabaseEntity)
+                //     return;
+                // console.log("relationIdInDatabaseEntity:", relationIdInDatabaseEntity);
+                // console.log("persistValue:", persistValue);
+                // console.log("compareEntities:", relation.entityMetadata.compareEntities(relationIdInDatabaseEntity, persistValue));
+                // console.log("compareIds:", relation.entityMetadata.compareIds(relationIdInDatabaseEntity, persistValue));
+                if (persistValueRelationId !== null && relation.entityMetadata.compareIds(relationIdInDatabaseEntity, persistValue))
                     return;
 
                 // first check if we already loaded this object before load from the database
@@ -366,20 +383,31 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) here we seek a Details loaded from the database in the subjects
                     // (example) here relatedSubject.databaseEntity is a Details
                     // (example) and we need to compare details.id === post.detailsId
-                    return relatedSubject.databaseEntity[relation.joinColumn.referencedColumn.propertyName] === relationIdInDatabaseEntity;
+                    return relation.entityMetadata.compareIds(relationIdInDatabaseEntity, relation.getEntityValue(relatedSubject.databaseEntity));
                 });
 
                 // if not loaded yet then load it from the database
                 if (!alreadyLoadedRelatedDatabaseSubject) {
 
                     // (example) we need to load a details where details.id = post.details
-                    const databaseEntity = await this.connection
+                    const qb = this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .where(qbAlias + "." + relation.joinColumn.referencedColumn.propertyName + "=:id")
-                        .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a post here
-                        .enableOption("RELATION_ID_VALUES")
-                        .getOne();
+                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .loadAllRelationIds();
+
+                    const condition = relation.joinColumns.map(joinColumn => {
+                        return `${qbAlias}.${joinColumn.referencedColumn!.propertyPath} = :${joinColumn.databaseName}`;
+                    }).join(" AND ");
+
+                    const parameters = relation.joinColumns.reduce((parameters, joinColumn) => {
+                        parameters[joinColumn.databaseName] = joinColumn.referencedColumn!.getEntityValue(relationIdInDatabaseEntity);
+                        return parameters;
+                    }, {} as ObjectLiteral);
+
+                    qb.where(condition)
+                        .setParameters(parameters);
+
+                    const databaseEntity = await qb.getOne();
 
                     if (databaseEntity) {
                         alreadyLoadedRelatedDatabaseSubject = new Subject(valueMetadata, undefined, databaseEntity);
@@ -422,12 +450,12 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 let persistValueRelationId: any = undefined;
                 if (subject.hasEntity && !subject.mustBeRemoved) {
                     const persistValue = relation.getEntityValue(subject.entity);
-                    if (persistValue) persistValueRelationId = persistValue[relation.inverseRelation.joinColumn.propertyName];
+                    if (persistValue) persistValueRelationId = relation.inverseRelation!.getEntityValue(persistValue);
                     if (persistValueRelationId === undefined) return; // skip undefined properties
                 }
 
                 // (example) returns us referenced column (detail's id)
-                const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                const relationIdInDatabaseEntity = relation.inverseRelation!.joinColumns[0].referencedColumn!.getEntityValue(subject.databaseEntity);
 
                 // if database relation id does not exist then nothing to remove (but can this be possible?)
                 if (relationIdInDatabaseEntity === null || relationIdInDatabaseEntity === undefined)
@@ -443,7 +471,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) here we seek a Post loaded from the database in the subjects
                     // (example) here relatedSubject.databaseEntity is a Post
                     // (example) and we need to compare post.detailsId === details.id
-                    return relatedSubject.databaseEntity[relation.inverseRelation.joinColumn.propertyName] === relationIdInDatabaseEntity;
+                    return relation.inverseRelation!.getEntityValue(relatedSubject.databaseEntity) === relationIdInDatabaseEntity;
                 });
 
                 // if not loaded yet then load it from the database
@@ -452,10 +480,10 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) we need to load a post where post.detailsId = details.id
                     const databaseEntity = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .where(qbAlias + "." + relation.inverseSideProperty + "=:id")
+                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .where(qbAlias + "." + relation.inverseSidePropertyPath + "=:id") // TODO relation.inverseRelation.joinColumns
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a details here, and the value is details.id
-                        .enableOption("RELATION_ID_VALUES")
+                        .loadAllRelationIds()
                         .getOne();
 
                     // add only if database entity exist - because in the case of inverse side of the one-to-one relation
@@ -472,7 +500,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) persistValue is a postFromPersistedDetails here
                     // (example) alreadyLoadedRelatedDatabaseSubject.databaseEntity is a postFromDatabaseDetails here
                     // (example) postFromPersistedDetails.id === postFromDatabaseDetails - means nothing changed
-                    const inverseEntityRelationId = alreadyLoadedRelatedDatabaseSubject.databaseEntity[relation.inverseRelation.joinColumn.propertyName];
+                    const inverseEntityRelationId = relation.inverseRelation!.getEntityValue(alreadyLoadedRelatedDatabaseSubject.databaseEntity);
                     if (persistValueRelationId && persistValueRelationId === inverseEntityRelationId)
                         return;
 
@@ -525,51 +553,74 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 let databaseEntities: ObjectLiteral[] = [];
 
                 // create shortcuts for better readability
-                const escapeAlias = (alias: string) => this.connection.driver.escapeAliasName(alias);
-                const escapeColumn = (column: string) => this.connection.driver.escapeColumnName(column);
+                const escape = (name: string) => this.connection.driver.escape(name);
 
                 if (relation.isManyToManyOwner) {
-
-                    // (example) returns us referenced column (detail's id)
-                    const relationIdInDatabaseEntity = subject.databaseEntity[relation.joinTable.referencedColumn.propertyName];
 
                     // we only need to load inverse entities if cascade removes are set
                     // because remove by cascades is the only reason we need relational entities here
                     if (!relation.isCascadeRemove) return;
 
+                    const joinAlias = escape("persistenceJoinedRelation");
+
+                    const joinColumnConditions = relation.joinColumns.map(joinColumn => {
+                        return `${joinAlias}.${joinColumn.propertyName} = :${joinColumn.propertyName}`;
+                    });
+                    const inverseJoinColumnConditions = relation.inverseJoinColumns.map(inverseJoinColumn => {
+                        return `${joinAlias}.${inverseJoinColumn.propertyName} = ${escape(qbAlias)}.${escape(inverseJoinColumn.referencedColumn!.propertyName)}`;
+                    });
+
+                    const conditions = joinColumnConditions.concat(inverseJoinColumnConditions).join(" AND ");
+
+                    // (example) returns us referenced column (detail's id)
+                    const parameters = relation.joinColumns.reduce((parameters, joinColumn) => {
+                        parameters[joinColumn.propertyName] = joinColumn.referencedColumn!.getEntityValue(subject.databaseEntity);
+                        return parameters;
+                    }, {} as ObjectLiteral);
+
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
-                            escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.inverseJoinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.inverseReferencedColumn.fullName) +
-                            " AND " + escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName) + "=:id")
-                        .setParameter("id", relationIdInDatabaseEntity)
-                        .enableOption("RELATION_ID_VALUES")
+                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .innerJoin(relation.junctionEntityMetadata!.tableName, joinAlias, conditions)
+                        .setParameters(parameters)
+                        .loadAllRelationIds()
                         .getMany();
 
                 } else if (relation.isManyToManyNotOwner) {
 
-                    // (example) returns us referenced column (detail's id)
-                    const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinTable.inverseReferencedColumn.propertyName];
-
                     // we only need to load inverse entities if cascade removes are set
                     // because remove by cascades is the only reason we need relational entities here
                     if (!relation.isCascadeRemove) return;
 
+                    const joinAlias = escape("persistenceJoinedRelation");
+
+                    const joinColumnConditions = relation.joinColumns.map(joinColumn => {
+                        return `${joinAlias}.${joinColumn.propertyName} = ${escape(qbAlias)}.${escape(joinColumn.referencedColumn!.propertyName)}`;
+                    });
+                    const inverseJoinColumnConditions = relation.inverseJoinColumns.map(inverseJoinColumn => {
+                        return `${joinAlias}.${inverseJoinColumn.propertyName} = :${inverseJoinColumn.propertyName}`;
+                    });
+
+                    const conditions = joinColumnConditions.concat(inverseJoinColumnConditions).join(" AND ");
+
+                    // (example) returns us referenced column (detail's id)
+                    const parameters = relation.inverseRelation!.inverseJoinColumns.reduce((parameters, joinColumn) => {
+                        parameters[joinColumn.propertyName] = joinColumn.referencedColumn!.getEntityValue(subject.databaseEntity);
+                        return parameters;
+                    }, {} as ObjectLiteral);
+
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .innerJoin(relation.junctionEntityMetadata.table.name, "persistenceJoinedRelation",
-                            escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.joinTable.joinColumnName) + "=" + escapeAlias(qbAlias) + "." + escapeColumn(relation.joinTable.referencedColumn.fullName) +
-                            " AND " + escapeAlias("persistenceJoinedRelation") + "." + escapeColumn(relation.inverseRelation.joinTable.inverseJoinColumnName) + "=:id")
-                        .setParameter("id", relationIdInDatabaseEntity)
-                        .enableOption("RELATION_ID_VALUES")
+                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .innerJoin(relation.junctionEntityMetadata!.tableName, joinAlias, conditions)
+                        .setParameters(parameters)
+                        .loadAllRelationIds()
                         .getMany();
 
                 } else { // this case can only be a oneToMany relation
-
+                    // todo: fix issues with joinColumn[0]
                     // (example) returns us referenced column (detail's id)
-                    const relationIdInDatabaseEntity = subject.databaseEntity[relation.inverseRelation.joinColumn.referencedColumn.propertyName];
+                    const relationIdInDatabaseEntity = relation.inverseRelation!.joinColumns[0].referencedColumn!.getEntityValue(subject.databaseEntity);
 
                     // in this case we need inverse entities not only because of cascade removes
                     // because we also need inverse entities to be able to perform update of entities
@@ -577,10 +628,10 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                     databaseEntities = await this.connection
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                        .where(qbAlias + "." + relation.inverseSideProperty + "=:id")
+                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .where(qbAlias + "." + relation.inverseSidePropertyPath + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity)
-                        .enableOption("RELATION_ID_VALUES")
+                        .loadAllRelationIds()
                         .getMany();
                 }
 
@@ -614,13 +665,13 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                             // now find subject with
                             let loadedSubject = this.findByDatabaseEntityLike(valueMetadata.target, persistValue);
                             if (!loadedSubject) {
-                                const id = valueMetadata.getEntityIdMixedMap(persistValue);
+                                const id = valueMetadata.getEntityIdMap(persistValue);
                                 if (id) { // if there is no id (for newly inserted) then we cant load
                                     const databaseEntity = await this.connection
                                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                                        .createQueryBuilder(qbAlias, this.queryRunnerProvider) // todo: this wont work for mongodb. implement this in some method and call it here instead?
-                                        .andWhereInIds([id])
-                                        .enableOption("RELATION_ID_VALUES")
+                                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                                        .whereInIds([id])
+                                        .loadAllRelationIds()
                                         .getOne();
 
                                     if (databaseEntity) {
@@ -630,11 +681,12 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                                 }
                             }
 
-                            if (loadedSubject)
+                            if (loadedSubject) {
                                 loadedSubject.relationUpdates.push({
-                                    relation: relation.inverseRelation,
+                                    relation: relation.inverseRelation!,
                                     value: subject.entity
                                 });
+                            }
                         }
                     });
 
@@ -698,18 +750,14 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
      * Options specifies which junction operations should be built - insert, remove or both.
      */
     private async buildJunctionOperations(options: { insert: boolean, remove: boolean }): Promise<void> {
-
         const promises = this.operateSubjects.filter(subject => subject.hasEntity).map(subject => {
-            const promises = subject.metadata.manyToManyRelations.map(async relation => {
-
+            const metadata = subject.metadata.parentEntityMetadata ? subject.metadata.parentEntityMetadata : subject.metadata;
+            const promises = metadata.manyToManyRelations.map(async relation => {
                 // if subject marked to be removed then all its junctions must be removed
                 if (subject.mustBeRemoved && options.remove) {
-
                     // load from db all relation ids of inverse entities that are "bind" to the currently persisted entity
                     // this way we gonna check which relation ids are missing and which are new (e.g. inserted or removed)
-                    const specificRepository = new SpecificRepository(this.connection, subject.metadata, this.queryRunnerProvider);
-                    const existInverseEntityRelationIds = await specificRepository
-                        .findRelationIds(relation, subject.databaseEntity);
+                    const existInverseEntityRelationIds = relation.getEntityValue(subject.databaseEntity);
 
                     // finally create a new junction remove operation and push it to the array of such operations
                     if (existInverseEntityRelationIds.length > 0) {
@@ -741,34 +789,44 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                 // if subject don't have database entity it means its new and we don't need to remove something that is not exist
                 if (subject.hasDatabaseEntity) {
-                    const specificRepository = new SpecificRepository(this.connection, subject.metadata, this.queryRunnerProvider);
-                    existInverseEntityRelationIds = await specificRepository
-                        .findRelationIds(relation, subject.databaseEntity);
+                    existInverseEntityRelationIds = relation.getEntityValue(subject.databaseEntity);
+                    // console.log("existInverseEntityRelationIds:", existInverseEntityRelationIds[0]);
                 }
 
                 // get all inverse entities relation ids that are "bind" to the currently persisted entity
                 const changedInverseEntityRelationIds = relatedValue
                     .map(subRelationValue => {
-                        return relation.isManyToManyOwner
-                            ? subRelationValue[relation.joinTable.inverseReferencedColumn.propertyName]
-                            : subRelationValue[relation.inverseRelation.joinTable.referencedColumn.propertyName];
+                        const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation!.joinColumns;
+                        return joinColumns.reduce((ids, joinColumn) => {
+                            return OrmUtils.mergeDeep(ids, joinColumn.referencedColumn!.createValueMap(joinColumn.referencedColumn!.getEntityValue(subRelationValue))); // todo: duplicate. relation.createJoinColumnsIdMap(entity) ?
+                        }, {} as ObjectLiteral);
                     })
                     .filter(subRelationValue => subRelationValue !== undefined && subRelationValue !== null);
+                // console.log("changedInverseEntityRelationIds:", changedInverseEntityRelationIds);
 
                 // now from all entities in the persisted entity find only those which aren't found in the db
                 const removedJunctionEntityIds = existInverseEntityRelationIds.filter(existRelationId => {
                     return !changedInverseEntityRelationIds.find(changedRelationId => {
-                        return changedRelationId === existRelationId;
+                        return relation.inverseEntityMetadata.compareIds(changedRelationId, existRelationId);
                     });
                 });
+                // console.log("removedJunctionEntityIds:", removedJunctionEntityIds);
 
                 // now from all entities in the persisted entity find only those which aren't found in the db
                 const newJunctionEntities = relatedValue.filter(subRelatedValue => {
-                    const relationValue = relation.isManyToManyOwner
-                        ? subRelatedValue[relation.joinTable.inverseReferencedColumn.propertyName]
-                        : subRelatedValue[relation.inverseRelation.joinTable.referencedColumn.propertyName];
-                    return !existInverseEntityRelationIds.find(relationId => relationValue === relationId);
+                    // console.log(subRelatedValue);
+
+                    const joinColumns = relation.isOwning ? relation.inverseJoinColumns : relation.inverseRelation!.joinColumns;
+                    const ids = joinColumns.reduce((ids, joinColumn) => {
+                        return OrmUtils.mergeDeep(ids, joinColumn.referencedColumn!.createValueMap(joinColumn.referencedColumn!.getEntityValue(subRelatedValue))); // todo: duplicate. relation.createJoinColumnsIdMap(entity) ?
+                    }, {} as ObjectLiteral);
+                    // console.log("ids:", ids);
+                    return !existInverseEntityRelationIds.find(relationId => {
+                        return relation.inverseEntityMetadata.compareIds(relationId, ids);
+                    });
                 });
+
+                // console.log("newJunctionEntities: ", newJunctionEntities);
 
                 // finally create a new junction insert operation and push it to the array of such operations
                 if (newJunctionEntities.length > 0 && options.insert) {

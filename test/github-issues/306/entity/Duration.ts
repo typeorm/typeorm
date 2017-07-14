@@ -1,7 +1,5 @@
 import {Column} from "../../../../src/decorator/columns/Column";
-import {EmbeddableEntity} from "../../../../src/decorator/entity/EmbeddableEntity";
 
-@EmbeddableEntity()
 export class Duration {
 
     @Column({ name: "duration_minutes" })

@@ -30,7 +30,8 @@ Share this library with friends on Twitter and everywhere else you can.
 If you notice bug or have something not working please report an issue, we'll try to fix it as soon as possible.
 More documentation and features expected to be soon. Feel free to contribute.
 
-> For the latest release changes see [changelog](./CHANGELOG.md).
+> Important note: if you want latest stable version install `npm i typeorm@0.0.11`. You can find 0.0.11 version [README here](https://github.com/typeorm/typeorm/tree/0.0.x-version).
+> If you want the latest development version simply install `npm i typeorm`. For the latest development release changes see [changelog](./CHANGELOG.md).
 
 TypeORM is an [Object Relational Mapper](1) (ORM) for Node.js written in
 TypeScript that can be used with TypeScript or JavaScript (ES5, ES6, ES7).
@@ -62,6 +63,10 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 1. Install module:
 
     `npm install typeorm --save`
+    
+
+    Important note: if you want latest stable version install `npm i typeorm@0.0.11`
+    If you want the latest development version simply install `npm i typeorm`. For the latest development release changes see [changelog](./CHANGELOG.md).
 
 2. You need to install `reflect-metadata` shim:
 
@@ -137,7 +142,7 @@ export class Photo {
     id: number;
     name: string;
     description: string;
-    fileName: string;
+    filename: string;
     views: number;
 }
 ````
@@ -154,7 +159,7 @@ export class Photo {
     id: number;
     name: string;
     description: string;
-    fileName: string;
+    filename: string;
     views: number;
     isPublished: boolean;
 }
@@ -182,7 +187,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column()
     views: number;
@@ -217,7 +222,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column()
     views: number;
@@ -248,7 +253,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column()
     views: number;
@@ -281,7 +286,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column()
     views: number;
@@ -316,7 +321,7 @@ export class Photo {
     description: string;
 
     @Column()
-    fileName: string;
+    filename: string;
 
     @Column("int")
     views: number;
@@ -336,14 +341,12 @@ import {createConnection} from "typeorm";
 import {Photo} from "./entity/Photo";
 
 createConnection({
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test"
     entities: [
         Photo
     ],
@@ -372,14 +375,12 @@ This is not very convenient, so instead we can set up the whole directory, from 
 import {createConnection} from "typeorm";
 
 createConnection({
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test"
     entities: [
         __dirname + "/entity/*.js"
     ],
@@ -424,7 +425,7 @@ createConnection(/*...*/).then(connection => {
     photo.views = 1;
     photo.isPublished = true;
 
-    connection.entityManager
+    connection.manager
             .persist(photo)
             .then(photo => {
                 console.log("Photo has been saved");
@@ -450,7 +451,7 @@ createConnection(/*...*/).then(async connection => {
     photo.views = 1;
     photo.isPublished = true;
 
-    await connection.entityManager.persist(photo);
+    await connection.manager.persist(photo);
     console.log("Photo has been saved");
 
 }).catch(error => console.log(error));
@@ -470,7 +471,7 @@ import {Photo} from "./entity/Photo";
 createConnection(/*...*/).then(async connection => {
 
     /*...*/
-    let savedPhotos = await connection.entityManager.find(Photo);
+    let savedPhotos = await connection.manager.find(Photo);
     console.log("All photos from the db: ", savedPhotos);
 
 }).catch(error => console.log(error));
@@ -941,11 +942,10 @@ export class Album {
 
     @ManyToMany(type => Photo, photo => photo.albums, {  // Note: we will create "albums" property in the Photo class below
         cascadeInsert: true, // Allow to insert a new photo on album save
-        cascadeUpdate: true, // Allow to update a photo on album save
-        cascadeRemove: true  // Allow to remove a photo on album remove
+        cascadeUpdate: true // Allow to update a photo on album save
     })
     @JoinTable()
-    photos: Photo[] = []; // We initialize array for convinience here
+    photos: Photo[];
 }
 ```
   
@@ -959,14 +959,13 @@ export class Photo {
 
     @ManyToMany(type => Album, album => album.photos, {
         cascadeInsert: true, // Allow to insert a new album on photo save
-        cascadeUpdate: true, // Allow to update an album on photo save
-        cascadeRemove: true  // Allow to remove an album on photo remove
+        cascadeUpdate: true // Allow to update an album on photo save
     })
-    albums: Album[] = []; // We initialize array for convinience here
+    albums: Album[];
 }
 ```
 
-After you run thr application, the ORM will create a **album_photos_photo_albums** *junction table*:
+After you run the application, the ORM will create a **album_photos_photo_albums** *junction table*:
 
 ```shell
 +-------------+--------------+----------------------------+
@@ -1003,13 +1002,13 @@ let photo1 = new Photo();
 photo1.name = "Me and Bears";
 photo1.description = "I am near polar bears";
 photo1.filename = "photo-with-bears.jpg";
-photo1.albums.push(album1);
+photo1.albums = [album1];
 
 let photo2 = new Photo();
 photo2.name = "Me and Bears";
 photo2.description = "I am near polar bears";
 photo2.filename = "photo-with-bears.jpg";
-photo2.albums.push(album2);
+photo2.albums = [album1];
 
 // Get entity repository
 let photoRepository = connection.getRepository(Photo);
@@ -1038,8 +1037,8 @@ let photos = await photoRepository
     .where("photo.isPublished=true")
     .andWhere("(photo.name=:photoName OR photo.name=:bearName)")
     .orderBy("photo.id", "DESC")
-    .setFirstResult(5)
-    .setMaxResults(10)
+    .skip(5)
+    .take(10)
     .setParameters({ photoName: "My", bearName: "Mishka" })
     .getMany();
 ```

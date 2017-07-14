@@ -10,11 +10,11 @@
       "generated": true
     },
     "firstName": {
-      "type": "string",
+      "type": "varchar",
       "nullable": false
     },
     "secondName": {
-      "type": "string",
+      "type": "varchar",
       "nullable": false
     }
   }

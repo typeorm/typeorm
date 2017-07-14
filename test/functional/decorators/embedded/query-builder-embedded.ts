@@ -26,7 +26,7 @@ describe("decorators > embedded", () => {
             post.counters.favorites = 2;
             post.counters.likes = 1;
 
-            await postRepository.persist(post);
+            await postRepository.save(post);
 
             // now load it
             const loadedPost = (await postRepository.findOneById(1))!;
@@ -52,7 +52,7 @@ describe("decorators > embedded", () => {
             post1.counters.favorites = 2;
             post1.counters.likes = 1;
 
-            await postRepository.persist(post1);
+            await postRepository.save(post1);
 
             const post2 = new Post();
             post2.title = "Hello post #2";
@@ -62,7 +62,7 @@ describe("decorators > embedded", () => {
             post2.counters.favorites = 1;
             post2.counters.likes = 2;
 
-            await postRepository.persist(post2);
+            await postRepository.save(post2);
 
             // now load it
             const sortedPosts1 = await postRepository

@@ -24,9 +24,9 @@ describe("github issues > #182 enums are not saved properly", () => {
         post1.title = "Hello Post #1";
 
         // persist
-        await connection.entityManager.persist(post1);
+        await connection.manager.save(post1);
 
-        const loadedPosts1 = await connection.entityManager.findOne(Post, { where: { title: "Hello Post #1" } });
+        const loadedPosts1 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
         expect(loadedPosts1!).not.to.be.empty;
         loadedPosts1!.should.be.eql({
             id: 1,
@@ -35,16 +35,16 @@ describe("github issues > #182 enums are not saved properly", () => {
         });
 
         // remove persisted
-        await connection.entityManager.remove(post1);
+        await connection.manager.remove(post1);
 
         const post2 = new Post();
         post2.status = PostStatus.ACTIVE;
         post2.title = "Hello Post #1";
 
         // persist
-        await connection.entityManager.persist(post2);
+        await connection.manager.save(post2);
 
-        const loadedPosts2 = await connection.entityManager.findOne(Post, { where: { title: "Hello Post #1" } });
+        const loadedPosts2 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
         expect(loadedPosts2!).not.to.be.empty;
         loadedPosts2!.should.be.eql({
             id: 2,
@@ -53,16 +53,16 @@ describe("github issues > #182 enums are not saved properly", () => {
         });
 
         // remove persisted
-        await connection.entityManager.remove(post2);
+        await connection.manager.remove(post2);
 
         const post3 = new Post();
         post3.status = PostStatus.ACHIEVED;
         post3.title = "Hello Post #1";
 
         // persist
-        await connection.entityManager.persist(post3);
+        await connection.manager.save(post3);
 
-        const loadedPosts3 = await connection.entityManager.findOne(Post, { where: { title: "Hello Post #1" } });
+        const loadedPosts3 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
         expect(loadedPosts3!).not.to.be.empty;
         loadedPosts3!.should.be.eql({
             id: 3,
@@ -71,7 +71,7 @@ describe("github issues > #182 enums are not saved properly", () => {
         });
 
         // remove persisted
-        await connection.entityManager.remove(post3);
+        await connection.manager.remove(post3);
 
     })));
 

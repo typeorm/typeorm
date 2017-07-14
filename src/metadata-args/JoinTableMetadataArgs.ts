@@ -1,4 +1,4 @@
-import {JoinColumnOptions} from "../decorator/options/JoinColumnOptions";
+import {JoinColumnMetadataArgs} from "./JoinColumnMetadataArgs";
 
 /**
  * Arguments for JoinTableMetadata class.
@@ -24,11 +24,11 @@ export interface JoinTableMetadataArgs {
     /**
      * First column of the join table.
      */
-    readonly joinColumn?: JoinColumnOptions;
+    readonly joinColumns?: JoinColumnMetadataArgs[];
 
     /**
      * Second (inverse) column of the join table.
      */
-    readonly inverseJoinColumn?: JoinColumnOptions;
+    readonly inverseJoinColumns?: JoinColumnMetadataArgs[];
 
 }

@@ -4,14 +4,12 @@ import {Post} from "./entity/Post";
 import {PostAuthor} from "./entity/PostAuthor";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     autoSchemaSync: true,
     entities: [Post, PostAuthor]
 };
@@ -29,7 +27,7 @@ createConnection(options).then(connection => {
     let postRepository = connection.getRepository(Post);
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => console.log("Post has been saved"))
         .catch(error => console.log("Cannot save. Error: ", error));
 

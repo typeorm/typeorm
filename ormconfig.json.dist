@@ -2,14 +2,12 @@
   {
     "skip": false,
     "name": "mysql",
-    "driver": {
-      "type": "mysql",
-      "host": "localhost",
-      "port": 3306,
-      "username": "test",
-      "password": "test",
-      "database": "test"
-    },
+    "type": "mysql",
+    "host": "localhost",
+    "port": 3306,
+    "username": "test",
+    "password": "test",
+    "database": "test",
     "logging": {
       "logQueries": false
     }
@@ -17,14 +15,12 @@
   {
     "skip": false,
     "name": "mariadb",
-    "driver": {
-      "type": "mariadb",
-      "host": "localhost",
-      "port": 3307,
-      "username": "test",
-      "password": "test",
-      "database": "test"
-    },
+    "type": "mariadb",
+    "host": "localhost",
+    "port": 3307,
+    "username": "test",
+    "password": "test",
+    "database": "test",
     "logging": {
       "logQueries": false
     }
@@ -32,10 +28,8 @@
   {
     "skip": false,
     "name": "sqlite",
-    "driver": {
-      "type": "sqlite",
-      "storage": "temp/sqlitedb.db"
-    },
+    "type": "sqlite",
+    "database": "temp/sqlitedb.db",
     "logging": {
       "logQueries": false
     }
@@ -43,14 +37,12 @@
   {
     "skip": false,
     "name": "postgres",
-    "driver": {
-      "type": "postgres",
-      "host": "localhost",
-      "port": 5432,
-      "username": "root",
-      "password": "test",
-      "database": "test"
-    },
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5432,
+    "username": "test",
+    "password": "test",
+    "database": "test",
     "logging": {
       "logQueries": false
     }
@@ -58,13 +50,11 @@
   {
     "skip": true,
     "name": "mssql",
-    "driver": {
-      "type": "mssql",
-      "host": "localhost",
-      "username": "sa",
-      "password": "admin",
-      "database": "test"
-    },
+    "type": "mssql",
+    "host": "localhost",
+    "username": "sa",
+    "password": "admin",
+    "database": "test",
     "logging": {
       "logQueries": false
     }
@@ -72,14 +62,12 @@
   {
     "skip": true,
     "name": "oracle",
-    "driver": {
-      "type": "oracle",
-      "host": "localhost",
-      "username": "system",
-      "password": "oracle",
-      "port": 1521,
-      "sid": "xe.oracle.docker"
-    },
+    "type": "oracle",
+    "host": "localhost",
+    "username": "system",
+    "password": "oracle",
+    "port": 1521,
+    "sid": "xe.oracle.docker",
     "logging": {
       "logQueries": false
     }
@@ -88,10 +76,8 @@
     "skip": false,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
-    "driver": {
-      "type": "mongodb",
-      "database": "test"
-    },
+    "type": "mongodb",
+    "database": "test",
     "logging": {
       "logQueries": false
     }

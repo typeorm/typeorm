@@ -20,10 +20,10 @@ describe("other issues > column with getter / setter should work", () => {
         const post = new Post();
         post.title = "Super title";
         post.text = "About this post";
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
         const loadedPost = await connection
-            .entityManager
+            .manager
             .createQueryBuilder(Post, "post")
             .where("post.id = :id", { id: 1 })
             .getOne();

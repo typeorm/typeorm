@@ -20,18 +20,18 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
 
         const category1 = new Category();
         category1.name = "category #1";
-        await connection.entityManager.persist(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "category #2";
-        await connection.entityManager.persist(category2);
+        await connection.manager.save(category2);
 
         const postWithCategories = new Post();
         postWithCategories.title = "post with categories";
         postWithCategories.categories = [category1, category2];
-        await connection.entityManager.persist(postWithCategories);
+        await connection.manager.save(postWithCategories);
 
-        const loadedPost = await connection.entityManager
+        const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .where("post.title = :title", { title: "post with categories" })
@@ -55,21 +55,21 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
 
         const category1 = new Category();
         category1.name = "category #1";
-        await connection.entityManager.persist(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "category #2";
-        await connection.entityManager.persist(category2);
+        await connection.manager.save(category2);
 
         const postWithoutCategories = new Post();
         postWithoutCategories.title = "post without categories";
         postWithoutCategories.categories = [];
-        await connection.entityManager.persist(postWithoutCategories);
+        await connection.manager.save(postWithoutCategories);
 
         const justPost = new Post();
         justPost.title = "just post";
 
-        const loadedPost = await connection.entityManager
+        const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .where("post.title = :title", { title: "post without categories" })
@@ -87,17 +87,17 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
 
         const category1 = new Category();
         category1.name = "category #1";
-        await connection.entityManager.persist(category1);
+        await connection.manager.save(category1);
 
         const category2 = new Category();
         category2.name = "category #2";
-        await connection.entityManager.persist(category2);
+        await connection.manager.save(category2);
 
         const justPost = new Post();
         justPost.title = "just post";
-        await connection.entityManager.persist(justPost);
+        await connection.manager.save(justPost);
 
-        const loadedPost = await connection.entityManager
+        const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.secondaryCategories", "secondaryCategories")
             .where("post.title = :title", { title: "just post" })

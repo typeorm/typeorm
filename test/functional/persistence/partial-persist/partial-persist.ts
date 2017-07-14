@@ -34,7 +34,7 @@ describe("persistence > partial persist", () => {
         const newCategory = new Category();
         newCategory.name = "Animals";
         newCategory.position = 999;
-        await categoryRepository.persist(newCategory);
+        await categoryRepository.save(newCategory);
 
         // save a new post
         const newPost = new Post();
@@ -45,7 +45,7 @@ describe("persistence > partial persist", () => {
         newPost.counters.stars = 5;
         newPost.counters.commentCount = 2;
         newPost.counters.metadata = "Animals Metadata";
-        await postRepository.persist(newPost);
+        await postRepository.save(newPost);
 
         // load a post
         const loadedPost = await postRepository.findOneById(1, {

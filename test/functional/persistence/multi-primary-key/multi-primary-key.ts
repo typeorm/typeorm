@@ -23,7 +23,7 @@ describe("persistence > multi primary keys", () => {
             post1.firstId = 1;
             post1.secondId = 2;
 
-            await connection.entityManager.persist(post1);
+            await connection.manager.save(post1);
 
             post1.should.be.eql({
                 firstId: 1,
@@ -37,10 +37,10 @@ describe("persistence > multi primary keys", () => {
             category1.name = "Category saved by cascades #1";
             category1.posts = [post1];
 
-            await connection.entityManager.persist(category1);
+            await connection.manager.save(category1);
 
             // now check
-            const posts = await connection.entityManager.find(Post, {
+            const posts = await connection.manager.find(Post, {
                 join: {
                     alias: "post",
                     innerJoinAndSelect: {

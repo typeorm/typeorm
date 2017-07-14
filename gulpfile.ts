@@ -42,7 +42,7 @@ export class Gulpfile {
     @Task()
     compile() {
         return gulp.src("package.json", { read: false })
-            .pipe(shell(["tsc"]));
+            .pipe(shell(["npm run compile"]));
     }
 
     // -------------------------------------------------------------------------

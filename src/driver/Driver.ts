@@ -1,8 +1,12 @@
-import {DriverOptions} from "./DriverOptions";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
+import {ColumnType} from "./types/ColumnTypes";
+import {MappedColumnTypes} from "./types/MappedColumnTypes";
+import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
+import {DataTypeDefaults} from "./types/DataTypeDefaults";
+import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
+import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -10,51 +14,52 @@ import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterfac
 export interface Driver {
 
     /**
-     * Naming strategy used in the connection where this driver is used.
+     * Connection options.
      */
-    namingStrategy: NamingStrategyInterface;
+    options: BaseConnectionOptions;
 
     /**
-     * Driver options contains connectivity options used to connection to the database.
+     * Indicates if tree tables are supported by this driver.
      */
-    readonly options: DriverOptions;
+    treeSupport: boolean;
 
     /**
-     * Creates repository instance of this driver.
+     * Gets list of supported column data types by a driver.
      */
-    // createRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): Repository<any>;
+    supportedDataTypes: ColumnType[];
 
     /**
-     * Creates tree repository instance of this driver.
+     * Default values of length, precision and scale depends on column data type.
+     * Used in the cases when length/precision/scale is not specified by user.
      */
-    // createTreeRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): TreeRepository<any>;
+    dataTypeDefaults: DataTypeDefaults;
 
     /**
-     * Creates specific repository instance of this driver.
+     * Orm has special columns and we need to know what database column types should be for those types.
+     * Column types are driver dependant.
      */
-    // createSpecificRepository(connection: Connection, metadata: EntityMetadata, queryRunnerProvider?: QueryRunnerProvider): SpecificRepository<any>;
+    mappedDataTypes: MappedColumnTypes;
 
     /**
      * Performs connection to the database.
-     * Based on pooling options, it can either create connection immediately,
-     * either create a pool and create connection when needed.
+     * Depend on driver type it may create a connection pool.
      */
     connect(): Promise<void>;
 
     /**
-     * Closes connection with database.
+     * Closes connection with database and releases all resourc.
      */
     disconnect(): Promise<void>;
 
     /**
-     * Access to the native implementation of the database.
+     * Synchronizes database schema (creates tables, indices, etc).
      */
-    nativeInterface(): any;
+    createSchemaBuilder(): SchemaBuilder;
 
     /**
      * Creates a query runner used for common queries.
      */
-    createQueryRunner(): Promise<QueryRunner>;
+    createQueryRunner(): QueryRunner;
 
     /**
      * Replaces parameters in the given sql with special escaping character
@@ -63,19 +68,9 @@ export interface Driver {
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]];
 
     /**
-     * Escapes a column name.
+     * Escapes a table name, column name or an alias.
      */
-    escapeColumnName(columnName: string): string;
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAliasName(aliasName: string): string;
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTableName(tableName: string): string;
+    escape(tableName: string): string;
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
@@ -83,14 +78,23 @@ export interface Driver {
     preparePersistentValue(value: any, column: ColumnMetadata): any;
 
     /**
-     * Prepares given value to a value to be persisted, based on its column metadata.
-     */
-    prepareHydratedValue(value: any, type: ColumnMetadata): any;
-
-    /**
      * Prepares given value to a value to be persisted, based on its column type.
      */
     prepareHydratedValue(value: any, column: ColumnMetadata): any;
 
+    /**
+     * Transforms type of the given column to a database column type.
+     */
+    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, isArray?: boolean }): string;
+
+    /**
+     * Normalizes "default" value of the column.
+     */
+    normalizeDefault(column: ColumnMetadata): string;
+
+    /**
+     * Normalizes "default" value of the column.
+     */
+    createFullType(column: ColumnSchema): string;
 
 }

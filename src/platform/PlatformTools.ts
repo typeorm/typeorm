@@ -1,5 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
+import {highlight, Theme} from "cli-highlight";
+const chalk = require("chalk");
 
 /**
  * Platform-specific tools.
@@ -73,6 +75,28 @@ export class PlatformTools {
      */
     static getEnvVariable(name: string): any {
         return process.env[name];
+    }
+
+    /**
+     * Highlights sql string to be print in the console.
+     */
+    static highlightSql(sql: string) {
+        const theme: Theme = {
+            "keyword": chalk.blueBright,
+            "literal": chalk.blueBright,
+            "string": chalk.white,
+            "type": chalk.magentaBright,
+            "built_in": chalk.magentaBright,
+            "comment": chalk.gray,
+        };
+        return highlight(sql, { theme: theme, language: "sql" });
+    }
+
+    /**
+     * Highlights json string to be print in the console.
+     */
+    static highlightJson(json: string) {
+        return highlight(json, { language: "json" });
     }
 
 }

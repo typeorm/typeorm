@@ -21,17 +21,17 @@ describe("github issues > Join query on ManyToMany relations not working", () =>
         for (let i = 0; i < 20; i++) {
             const category = new Category();
             category.name = "Category #" + i;
-            await connection.entityManager.persist(category);
+            await connection.manager.save(category);
         }
 
         const post = new Post();
         post.title = "SuperRace";
         post.categories = [new Category()];
         post.categories[0].name = "SuperCategory";
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
         const loadedPost = await connection
-            .entityManager
+            .manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "category")
             .where("category.category_id IN (:ids)", { ids: [21] })

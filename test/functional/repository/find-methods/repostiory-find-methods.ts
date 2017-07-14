@@ -3,7 +3,6 @@ import {expect} from "chai";
 import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
-import {FindManyOptions} from "../../../../src/find-options/FindManyOptions";
 import {User} from "./model/User";
 
 describe("repository > find methods", () => {
@@ -36,7 +35,7 @@ describe("repository > find methods", () => {
                 post.id           = i;
                 post.title        = "post #" + i;
                 post.categoryName = "other";
-                promises.push(postRepository.persist(post));
+                promises.push(postRepository.save(post));
             }
 
             const savedPosts = await Promise.all(promises);
@@ -48,14 +47,14 @@ describe("repository > find methods", () => {
         })));
 
         it("should return a count of posts that match given criteria", () => Promise.all(connections.map(async connection => {
-            const postRepository            = connection.getRepository(Post);
+            const postRepository = connection.getRepository(Post);
             const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
                 const post        = new Post();
                 post.id           = i;
                 post.title        = "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                promises.push(postRepository.persist(post));
+                promises.push(postRepository.save(post));
             }
 
             const savedPosts = await Promise.all(promises);
@@ -78,7 +77,7 @@ describe("repository > find methods", () => {
                 post.title        = "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
                 post.isNew        = i > 90;
-                promises.push(postRepository.persist(post));
+                promises.push(postRepository.save(post));
             }
 
             const savedPosts = await Promise.all(promises);
@@ -101,7 +100,7 @@ describe("repository > find methods", () => {
                 post.isNew        = i > 90;
                 post.title        = post.isNew ? "new post #" + i : "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                promises.push(postRepository.persist(post));
+                promises.push(postRepository.save(post));
             }
 
             const savedPosts = await Promise.all(promises);
@@ -121,7 +120,7 @@ describe("repository > find methods", () => {
                 post.isNew        = i > 90;
                 post.title        = post.isNew ? "new post #" + i : "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                promises.push(postRepository.persist(post));
+                promises.push(postRepository.save(post));
             }
 
             const savedPosts = await Promise.all(promises);
@@ -149,7 +148,7 @@ describe("repository > find methods", () => {
                 post.id = i;
                 post.title = "post #" + i;
                 post.categoryName = "other";
-                promises.push(postRepository.persist(post));
+                promises.push(postRepository.save(post));
             }
 
             const savedPosts = await Promise.all(promises);
@@ -183,7 +182,7 @@ describe("repository > find methods", () => {
                 post.id = i;
                 post.title = "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                promises.push(postRepository.persist(post));
+                promises.push(postRepository.save(post));
             }
 
             const savedPosts = await Promise.all(promises);
@@ -224,7 +223,7 @@ describe("repository > find methods", () => {
                 post.title = "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
                 post.isNew = i > 90;
-                promises.push(postRepository.persist(post));
+                promises.push(postRepository.save(post));
             }
 
             const savedPosts = await Promise.all(promises);
@@ -265,7 +264,7 @@ describe("repository > find methods", () => {
                 post.isNew = i > 90;
                 post.title = post.isNew ? "new post #" + i : "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                promises.push(postRepository.persist(post));
+                promises.push(postRepository.save(post));
             }
 
             const savedPosts = await Promise.all(promises);
@@ -314,7 +313,7 @@ describe("repository > find methods", () => {
                 post.isNew = i > 90;
                 post.title = post.isNew ? "new post #" + i : "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                promises.push(postRepository.persist(post));
+                promises.push(postRepository.save(post));
             }
 
             const savedPosts = await Promise.all(promises);
@@ -373,7 +372,7 @@ describe("repository > find methods", () => {
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.persist(user));
+                promises.push(userRepository.save(user));
             }
 
             const savedUsers = await Promise.all(promises);
@@ -394,7 +393,7 @@ describe("repository > find methods", () => {
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.persist(user));
+                promises.push(userRepository.save(user));
             }
 
             const savedUsers = await Promise.all(promises);
@@ -415,7 +414,7 @@ describe("repository > find methods", () => {
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.persist(user));
+                promises.push(userRepository.save(user));
             }
 
             const savedUsers = await Promise.all(promises);
@@ -448,7 +447,7 @@ describe("repository > find methods", () => {
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.persist(user));
+                promises.push(userRepository.save(user));
             }
 
             const savedUsers = await Promise.all(promises);
@@ -479,7 +478,7 @@ describe("repository > find methods", () => {
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.persist(user));
+                promises.push(userRepository.save(user));
             }
 
             const savedUsers = await Promise.all(promises);

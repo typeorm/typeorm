@@ -2,8 +2,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {ColumnTypes} from "../metadata/types/ColumnTypes";
-import {DataTransformationUtils} from "../util/DataTransformationUtils";
+import {DateUtils} from "../util/DateUtils";
 
 /**
  * Holds information about insert operation into junction table.
@@ -197,6 +196,7 @@ export class Subject {
 
     /**
      * Gets entity from the database (e.g. original entity).
+     * THIS IS NOT RAW ENTITY DATA.
      * Throws error if database entity was not set.
      */
     get databaseEntity(): ObjectLiteral {
@@ -315,48 +315,45 @@ export class Subject {
      * Differentiate columns from the updated entity and entity stored in the database.
      */
     protected computeDiffColumns(): void {
-        this.diffColumns = this.metadata.allColumns.filter(column => {
+        this.diffColumns = this.metadata.columns.filter(column => {
 
             // prepare both entity and database values to make comparision
             let entityValue = column.getEntityValue(this.entity);
             let databaseValue = column.getEntityValue(this.databaseEntity);
+            if (entityValue === undefined)
+                return false;
 
-            // normalize special values to make proper comparision
+            // normalize special values to make proper comparision (todo: arent they already normalized at this point?!)
             if (entityValue !== null && entityValue !== undefined) {
-                if (column.type === ColumnTypes.DATE) {
-                    entityValue = DataTransformationUtils.mixedDateToDateString(entityValue);
+                if (column.type === "date") {
+                    entityValue = DateUtils.mixedDateToDateString(entityValue);
 
-                } else if (column.type === ColumnTypes.TIME) {
-                    entityValue = DataTransformationUtils.mixedDateToTimeString(entityValue);
+                } else if (column.type === "time") {
+                    entityValue = DateUtils.mixedDateToTimeString(entityValue);
 
-                } else if (column.type === ColumnTypes.DATETIME) {
-                    // if (column.loadInLocalTimezone) {
-                    //     entityValue = DataTransformationUtils.mixedDateToDatetimeString(entityValue);
-                    //     databaseValue = DataTransformationUtils.mixedDateToDatetimeString(databaseValue);
-                    // } else {
-                        entityValue = DataTransformationUtils.mixedDateToUtcDatetimeString(entityValue);
-                        databaseValue = DataTransformationUtils.mixedDateToUtcDatetimeString(databaseValue);
-                    // }
+                } else if (column.type === "datetime" || column.type === Date) {
+                    entityValue = DateUtils.mixedDateToUtcDatetimeString(entityValue);
+                    databaseValue = DateUtils.mixedDateToUtcDatetimeString(databaseValue);
 
-                } else if (column.type === ColumnTypes.JSON) {
+                } else if (column.type === "json" || column.type === "jsonb") {
                     entityValue = JSON.stringify(entityValue);
                     if (databaseValue !== null && databaseValue !== undefined)
                         databaseValue = JSON.stringify(databaseValue);
 
-                } else if (column.type === ColumnTypes.SIMPLE_ARRAY) {
-                    entityValue = DataTransformationUtils.simpleArrayToString(entityValue);
-                    databaseValue = DataTransformationUtils.simpleArrayToString(databaseValue);
+                } else if (column.type === "sample-array") {
+                    entityValue = DateUtils.simpleArrayToString(entityValue);
+                    databaseValue = DateUtils.simpleArrayToString(databaseValue);
                 }
             }
             // todo: this mechanism does not get in count embeddeds in embeddeds
 
             // if value is not defined then no need to update it
-            if (!column.isInEmbedded && this.entity[column.propertyName] === undefined)
-                return false;
-
+            // if (!column.isInEmbedded && this.entity[column.propertyName] === undefined)
+            //     return false;
+            //
             // if value is in embedded and is not defined then no need to update it
-            if (column.isInEmbedded && (this.entity[column.embeddedProperty] === undefined || this.entity[column.embeddedProperty][column.propertyName] === undefined))
-                return false;
+            // if (column.isInEmbedded && (this.entity[column.embeddedProperty] === undefined || this.entity[column.embeddedProperty][column.propertyName] === undefined))
+            //     return false;
 
             // if its a special column or value is not changed - then do nothing
             if (column.isVirtual ||
@@ -369,9 +366,10 @@ export class Subject {
                 return false;
 
             // filter out "relational columns" only in the case if there is a relation object in entity
-            if (!column.isInEmbedded && this.metadata.hasRelationWithDbName(column.propertyName)) {
-                const relation = this.metadata.findRelationWithDbName(column.propertyName); // todo: why with dbName ?
-                if (this.entity[relation.propertyName] !== null && this.entity[relation.propertyName] !== undefined)
+            const relation = this.metadata.findRelationWithDbName(column.databaseName);
+            if (relation) {
+                const value = relation.getEntityValue(this.entity);
+                if (value !== null && value !== undefined)
                     return false;
             }
 
@@ -383,7 +381,7 @@ export class Subject {
      * Difference columns of the owning one-to-one and many-to-one columns.
      */
     protected computeDiffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */): void {
-        this.diffRelations = this.metadata.allRelations.filter(relation => {
+        this.diffRelations = this.metadata.relations.filter(relation => {
             if (!relation.isManyToOne && !(relation.isOneToOne && relation.isOwning))
                 return false;
 
@@ -391,18 +389,12 @@ export class Subject {
             // 1. related entity can be another entity which is natural way
             // 2. related entity can be entity id which is hacked way of updating entity
             // todo: what to do if there is a column with relationId? (cover this too?)
-            const updatedEntityRelationId: any =
-                this.entity[relation.propertyName] instanceof Object ?
-                    relation.inverseEntityMetadata.getEntityIdMixedMap(this.entity[relation.propertyName])
-                    : this.entity[relation.propertyName];
+            const entityValue = relation.getEntityValue(this.entity);
+            const updatedEntityRelationId: any = entityValue instanceof Object
+                    ? relation.inverseEntityMetadata.getEntityIdMixedMap(entityValue)
+                    : entityValue;
 
-
-            // here because we have enabled RELATION_ID_VALUES option in the QueryBuilder when we loaded db entities
-            // we have in the dbSubject only relationIds.
-            // this allows us to compare relation id in the updated subject with id in the database.
-            // note that we used relation.name instead of relation.propertyName because query builder with RELATION_ID_VALUES
-            // returns values in the relation.name column, not relation.propertyName column
-            const dbEntityRelationId = this.databaseEntity[relation.name];
+            const dbEntityRelationId = relation.getEntityValue(this.databaseEntity);
 
             // todo: try to find if there is update by relation operation - we dont need to generate update relation operation for this
             // todo: if (updatesByRelations.find(operation => operation.targetEntity === this && operation.updatedRelation === relation))

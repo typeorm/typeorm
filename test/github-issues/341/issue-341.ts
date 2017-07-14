@@ -20,15 +20,15 @@ describe("github issues > OneToOne relation with referencedColumnName does not w
 
         const category = new Category();
         category.name = "category #1";
-        await connection.entityManager.persist(category);
+        await connection.manager.save(category);
 
         const post = new Post();
         post.title = "post #1";
         post.category = category;
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
         const loadedPost = await connection
-            .entityManager
+            .manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.category", "category")
             .getOne();

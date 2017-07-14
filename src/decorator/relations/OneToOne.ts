@@ -1,5 +1,4 @@
 import {RelationOptions} from "../options/RelationOptions";
-import {RelationTypes} from "../../metadata/types/RelationTypes";
 import {getMetadataArgsStorage} from "../../index";
 import {ObjectType} from "../../common/ObjectType";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
@@ -48,11 +47,11 @@ export function OneToOne<T>(typeFunction: (type?: any) => ObjectType<T>,
             propertyName: propertyName,
             // propertyType: reflectedType,
             isLazy: isLazy,
-            relationType: RelationTypes.ONE_TO_ONE,
+            relationType: "one-to-one",
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
             options: options
         };
-        getMetadataArgsStorage().relations.add(args);
+        getMetadataArgsStorage().relations.push(args);
     };
 }

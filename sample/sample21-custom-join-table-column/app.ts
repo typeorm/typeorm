@@ -5,14 +5,12 @@ import {Author} from "./entity/Author";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     logging: {
         logOnlyFailedQueries: true,
         logFailedQueryError: true
@@ -41,7 +39,7 @@ createConnection(options).then(connection => {
     post.categories = [category1, category2];
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             console.log("Post has been saved. Lets load it now.");
             return postRepository.find({

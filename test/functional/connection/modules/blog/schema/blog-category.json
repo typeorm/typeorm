@@ -10,7 +10,7 @@
       "generated": true
     },
     "name": {
-      "type": "string",
+      "type": "varchar",
       "nullable": false
     }
   }

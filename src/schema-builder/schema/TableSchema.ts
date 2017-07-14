@@ -3,9 +3,9 @@ import {IndexSchema} from "./IndexSchema";
 import {ForeignKeySchema} from "./ForeignKeySchema";
 import {PrimaryKeySchema} from "./PrimaryKeySchema";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {Driver} from "../../driver/Driver";
 
 /**
  * Table schema in the database represented in this class.
@@ -47,6 +47,11 @@ export class TableSchema {
      * for new table schemas.
      */
     justCreated: boolean = false;
+
+    /**
+     * Table engine.
+     */
+    engine?: string;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -102,6 +107,7 @@ export class TableSchema {
         cloned.indices = this.indices.map(index => index.clone());
         cloned.foreignKeys = this.foreignKeys.map(key => key.clone());
         cloned.primaryKeys = this.primaryKeys.map(key => key.clone());
+        cloned.engine = this.engine;
         return cloned;
     }
 
@@ -196,21 +202,73 @@ export class TableSchema {
      * Differentiate columns of this table schema and columns from the given column metadatas columns
      * and returns only changed.
      */
-    findChangedColumns(queryRunner: QueryRunner, columnMetadatas: ColumnMetadata[]): ColumnSchema[] {
+    findChangedColumns(driver: Driver, columnMetadatas: ColumnMetadata[]): ColumnSchema[] {
         return this.columns.filter(columnSchema => {
-            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.fullName === columnSchema.name);
+            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.databaseName === columnSchema.name);
             if (!columnMetadata)
                 return false; // we don't need new columns, we only need exist and changed
 
-            return  columnSchema.name !== columnMetadata.fullName ||
-                    columnSchema.type !== queryRunner.normalizeType(columnMetadata) ||
+            // console.log(columnSchema.name, "!==", columnMetadata.databaseName); //  ||
+            // console.log(columnSchema.type, "!==", driver.normalizeType(columnMetadata)); // ||
+            // console.log(columnSchema.comment, "!==", columnMetadata.comment); //  ||
+            // console.log(this.compareDefaultValues(driver.normalizeDefault(columnMetadata), columnSchema.default)); // || // we included check for generated here, because generated columns already can have default values
+            // console.log(columnSchema.isNullable, "!==", columnMetadata.isNullable); //  ||
+            // console.log(columnSchema.isUnique, "!==", columnMetadata.isUnique); //  ||
+            // console.log(columnSchema.isGenerated, "!==", columnMetadata.isGenerated); // d;
+
+            return  columnSchema.name !== columnMetadata.databaseName ||
+                    columnSchema.type !== driver.normalizeType(columnMetadata) ||
                     columnSchema.comment !== columnMetadata.comment ||
-                    (!columnSchema.isGenerated && !queryRunner.compareDefaultValues(columnMetadata.default, columnSchema.default)) || // we included check for generated here, because generated columns already can have default values
+                    (!columnSchema.isGenerated && !this.compareDefaultValues(driver.normalizeDefault(columnMetadata), columnSchema.default)) || // we included check for generated here, because generated columns already can have default values
                     columnSchema.isNullable !== columnMetadata.isNullable ||
                     columnSchema.isUnique !== columnMetadata.isUnique ||
                     // columnSchema.isPrimary !== columnMetadata.isPrimary ||
                     columnSchema.isGenerated !== columnMetadata.isGenerated;
         });
+    }
+
+    findColumnByName(name: string): ColumnSchema|undefined {
+        return this.columns.find(column => column.name === name);
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
+     */
+    protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
+
+        // if (typeof columnMetadataValue === "number")
+        //     return columnMetadataValue === parseInt(databaseValue);
+        // if (typeof columnMetadataValue === "boolean")
+        //     return columnMetadataValue === (!!databaseValue || databaseValue === "false");
+        // if (typeof columnMetadataValue === "function")
+        // if (typeof columnMetadataValue === "string" && typeof databaseValue === "string")
+        //     return columnMetadataValue.toLowerCase() === databaseValue.toLowerCase();
+
+
+        if (typeof columnMetadataValue === "string" && typeof databaseValue === "string") {
+
+            // we need to cut out "((x))" where x number generated by mssql
+            columnMetadataValue = columnMetadataValue.replace(/\(\([0-9.]*\)\)$/g, "$1");
+            databaseValue = databaseValue.replace(/\(\(([0-9.]*?)\)\)$/g, "$1");
+
+            // we need to cut out "(" because in mssql we can understand returned value is a string or a function
+            // as result compare cannot understand if default is really changed or not
+            columnMetadataValue = columnMetadataValue.replace(/^\(|\)$/g, "");
+            databaseValue = databaseValue.replace(/^\(|\)$/g, "");
+
+            // we need to cut out "'" because in mysql we can understand returned value is a string or a function
+            // as result compare cannot understand if default is really changed or not
+            columnMetadataValue = columnMetadataValue.replace(/^'+|'+$/g, "");
+            databaseValue = databaseValue.replace(/^'+|'+$/g, "");
+        }
+
+        // console.log("columnMetadataValue", columnMetadataValue);
+        // console.log("databaseValue", databaseValue);
+        return columnMetadataValue === databaseValue;
     }
 
     // -------------------------------------------------------------------------
@@ -222,10 +280,11 @@ export class TableSchema {
      *
      * todo: need deeper implementation
      */
-    static create(entityMetadata: EntityMetadata, queryRunner: QueryRunner) {
-        const tableSchema = new TableSchema(entityMetadata.table.name);
+    static create(entityMetadata: EntityMetadata, driver: Driver) {
+        const tableSchema = new TableSchema(entityMetadata.tableName);
+        tableSchema.engine = entityMetadata.engine;
         entityMetadata.columns.forEach(column => {
-            tableSchema.columns.push(ColumnSchema.create(column, queryRunner.normalizeType(column)));
+            tableSchema.columns.push(ColumnSchema.create(column, driver.normalizeType(column), driver.normalizeDefault(column)));
         });
 
         return tableSchema;

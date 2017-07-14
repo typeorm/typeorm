@@ -12,6 +12,6 @@ export function BeforeUpdate() {
             propertyName: propertyName,
             type: EventListenerTypes.BEFORE_UPDATE
         };
-        getMetadataArgsStorage().entityListeners.add(args);
+        getMetadataArgsStorage().entityListeners.push(args);
     };
 }

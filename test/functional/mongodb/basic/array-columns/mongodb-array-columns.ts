@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../../../src/connection/Connection";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Post} from "./entity/Post";
 import {Counters} from "./entity/Counters";
 import {expect} from "chai";
@@ -30,7 +30,7 @@ describe("mongodb > array columns", () => {
             new Counters(3, "number #3"),
         ];
         post.other1 = [];
-        await postRepository.persist(post);
+        await postRepository.save(post);
 
         // check saved post
         const loadedPost = await postRepository.findOne({ title: "Post" });
@@ -78,7 +78,7 @@ describe("mongodb > array columns", () => {
         post.other1 = [
             new Counters(0, "other"),
         ];
-        await postRepository.persist(post);
+        await postRepository.save(post);
 
         // now load updated post
         const loadedUpdatedPost = await postRepository.findOne({ title: "Post" });

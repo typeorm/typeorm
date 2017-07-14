@@ -1,12 +1,12 @@
-import {Connection} from "../connection/Connection";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {Repository} from "./Repository";
 import {TreeRepository} from "./TreeRepository";
-import {SpecificRepository} from "./SpecificRepository";
 import {ObjectType} from "../common/ObjectType";
-import {CustomRepositoryDoesNotHaveEntityError} from "./error/CustomRepositoryDoesNotHaveEntityError";
+import {CustomRepositoryDoesNotHaveEntityError} from "../error/CustomRepositoryDoesNotHaveEntityError";
+import {getMetadataArgsStorage} from "../index";
+import {CustomRepositoryNotFoundError} from "../error/CustomRepositoryNotFoundError";
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
 /**
  * Provides abstract class for custom repositories that do not inherit from original orm Repository.
@@ -22,31 +22,24 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by this repository.
+     * Gets entity manager that allows to perform repository operations with any entity.
      */
-    protected connection: Connection;
+    protected manager: EntityManager;
 
     // -------------------------------------------------------------------------
     // Protected Accessors
     // -------------------------------------------------------------------------
 
     /**
-     * Gets entity manager that allows to perform repository operations with any entity.
-     */
-    protected get entityManager(): EntityManager {
-        return this.connection.entityManager;
-    }
-
-    /**
      * Gets the original ORM repository for the entity that is managed by this repository.
      * If current repository does not manage any entity, then exception will be thrown.
      */
     protected get repository(): Repository<Entity> {
-        const target = this.connection.getCustomRepositoryTarget(this as any);
+        const target = this.getCustomRepositoryTarget(this as any);
         if (!target)
             throw new CustomRepositoryDoesNotHaveEntityError(this.constructor);
 
-        return this.connection.getRepository<Entity>(target);
+        return this.manager.getRepository<Entity>(target);
     }
 
     /**
@@ -54,23 +47,11 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
      * If current repository does not manage any entity, then exception will be thrown.
      */
     protected get treeRepository(): TreeRepository<Entity> {
-        const target = this.connection.getCustomRepositoryTarget(this as any);
+        const target = this.getCustomRepositoryTarget(this as any);
         if (!target)
             throw new CustomRepositoryDoesNotHaveEntityError(this.constructor);
 
-        return this.connection.getTreeRepository<Entity>(target);
-    }
-
-    /**
-     * Gets the original ORM specific repository for the entity that is managed by this repository.
-     * If current repository does not manage any entity, then exception will be thrown.
-     */
-    protected get specificRepository(): SpecificRepository<Entity> {
-        const target = this.connection.getCustomRepositoryTarget(this as any);
-        if (!target)
-            throw new CustomRepositoryDoesNotHaveEntityError(this.constructor);
-
-        return this.connection.getSpecificRepository<Entity>(target);
+        return this.manager.getTreeRepository<Entity>(target);
     }
 
     // -------------------------------------------------------------------------
@@ -81,18 +62,18 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
      * Creates a new query builder for the repository's entity that can be used to build a sql query.
      * If current repository does not manage any entity, then exception will be thrown.
      */
-    protected createQueryBuilder(alias: string): QueryBuilder<Entity> {
-        const target = this.connection.getCustomRepositoryTarget(this.constructor);
+    protected createQueryBuilder(alias: string): SelectQueryBuilder<Entity> {
+        const target = this.getCustomRepositoryTarget(this.constructor);
         if (!target)
             throw new CustomRepositoryDoesNotHaveEntityError(this.constructor);
 
-        return this.connection.getRepository(target).createQueryBuilder(alias);
+        return this.manager.getRepository<Entity>(target).createQueryBuilder(alias);
     }
 
     /**
      * Creates a new query builder for the given entity that can be used to build a sql query.
      */
-    protected createQueryBuilderFor<T>(entity: ObjectType<T>, alias: string): QueryBuilder<T> {
+    protected createQueryBuilderFor<T>(entity: ObjectType<T>, alias: string): SelectQueryBuilder<T> {
         return this.getRepositoryFor(entity).createQueryBuilder(alias);
     }
 
@@ -100,21 +81,32 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
      * Gets the original ORM repository for the given entity class.
      */
     protected getRepositoryFor<T>(entity: ObjectType<T>): Repository<T> {
-        return this.entityManager.getRepository(entity);
+        return this.manager.getRepository(entity);
     }
 
     /**
      * Gets the original ORM tree repository for the given entity class.
      */
     protected getTreeRepositoryFor<T>(entity: ObjectType<T>): TreeRepository<T> {
-        return this.entityManager.getTreeRepository(entity);
+        return this.manager.getTreeRepository(entity);
     }
 
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+
     /**
-     * Gets the original ORM specific repository for the given entity class.
+     * Gets custom repository's managed entity.
+     * If given custom repository does not manage any entity then undefined will be returned.
      */
-    protected getSpecificRepositoryFor<T>(entity: ObjectType<T>): SpecificRepository<T> {
-        return this.entityManager.getSpecificRepository(entity);
+    private getCustomRepositoryTarget<T>(customRepository: any): Function|string|undefined {
+        const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.find(repository => {
+            return repository.target === (customRepository instanceof Function ? customRepository : (customRepository as any).constructor);
+        });
+        if (!entityRepositoryMetadataArgs)
+            throw new CustomRepositoryNotFoundError(customRepository);
+
+        return entityRepositoryMetadataArgs.entity;
     }
 
 }
