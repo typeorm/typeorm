@@ -1,6 +1,7 @@
 import {LoggerOptions} from "./LoggerOptions";
 import {PlatformTools} from "../platform/PlatformTools";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import * as debug from "debug";
 const chalk = require("chalk");
 
 /**
@@ -9,6 +10,13 @@ const chalk = require("chalk");
  * todo: implement logging of too long running queries (there should be option to control max query execution time)
  */
 export class Logger {
+
+    private schemaLogger = debug("typeorm:schema");
+    private queryLogger = debug("typeorm:query");
+    private defaultLogger = debug("typeorm:log");
+    private infoLogger = debug("typeorm:info");
+    private warnLogger = debug("typeorm:warn");
+    private errorLogger = debug("typeorm:error");
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -25,38 +33,28 @@ export class Logger {
      * Logs query and parameters used in it.
      */
     logQuery(query: string, parameters: any[]|undefined, queryRunner?: QueryRunner) {
-        if (this.options.logQueries ||
-            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC")) {
-            this.log("query", query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""), queryRunner);
-        }
+        this.log("query", query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""), queryRunner);
     }
 
     /**
      * Logs query that failed.
      */
     logFailedQuery(query: string, parameters: any[]|undefined, queryRunner?: QueryRunner) {
-        if (this.options.logQueries ||
-            this.options.logOnlyFailedQueries ||
-            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
-            this.log("error", `query failed: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""}`, queryRunner);
+        this.log("error", `query failed: ${query}${parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : ""}`, queryRunner);
     }
 
     /**
      * Logs failed query's error.
      */
     logQueryError(error: any, queryRunner?: QueryRunner) {
-        if (this.options.logFailedQueryError ||
-            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
-            this.log("error", "error during executing query:" + error, queryRunner);
+        this.log("error", "error during executing query:" + error, queryRunner);
     }
 
     /**
      * Logs events from the schema build process.
      */
     logSchemaBuild(message: string, queryRunner?: QueryRunner) {
-        if (this.options.logSchemaCreation ||
-            PlatformTools.getEnvVariable("LOGGER_CLI_SCHEMA_SYNC"))
-            this.log("schema-build", message, queryRunner);
+        this.log("schema-build", message, queryRunner);
     }
 
     /**
@@ -64,30 +62,28 @@ export class Logger {
      * Log has its own level and message.
      */
     log(level: "query"|"schema-build"|"log"|"info"|"warn"|"error", message: any, queryRunner?: QueryRunner) {
-        if (!this.options) return;
-
-        if (this.options.logger) {
+        if (this.options && this.options.logger) {
             this.options.logger(level, message, queryRunner);
 
         } else {
             switch (level) {
                 case "schema-build":
-                    console.log(chalk.underline(message));
+                    this.schemaLogger(chalk.underline(message));
                     break;
                 case "query":
-                    console.log(chalk.gray.underline("executing query") + ": " + PlatformTools.highlightSql(message));
+                    this.queryLogger(`${chalk.gray.underline("executing query")} : ${PlatformTools.highlightSql(message)}`);
                     break;
                 case "log":
-                    console.log(message);
+                    this.defaultLogger(message);
                     break;
                 case "info":
-                    console.info(message);
+                    this.infoLogger(message);
                     break;
                 case "warn":
-                    console.warn(message);
+                    this.warnLogger(message);
                     break;
                 case "error":
-                    console.error(message);
+                    this.errorLogger(message);
                     break;
             }
         }
