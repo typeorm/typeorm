@@ -1,3 +1,4 @@
+import {Alias} from "./Alias";
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -1088,7 +1089,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         // todo throw exception if selects or from is missing
 
-        const allSelects: SelectQuery[] = [];
+        let allSelects: SelectQuery[] = [];
         const excludedSelects: SelectQuery[] = [];
 
         if (this.expressionMap.mainAlias.hasMetadata) {
@@ -1110,18 +1111,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         excludedSelects.push({ selection: this.escape(join.alias.name!) });
                     }
                 }
+
+                allSelects = allSelects.concat(this.selectParentMetadata(join.alias));
             });
 
-        if (!this.expressionMap.ignoreParentTablesJoins && this.expressionMap.mainAlias.hasMetadata) {
-            const metadata = this.expressionMap.mainAlias.metadata;
-            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
-                const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
-                metadata.parentEntityMetadata.columns.forEach(column => {
-                    // TODO implement partial select
-                    allSelects.push({ selection: this.escape(alias) + "." + this.escape(column.databaseName), aliasName: alias + "_" + column.databaseName });
-                });
-            }
-        }
+        allSelects = allSelects.concat(this.selectParentMetadata(this.expressionMap.mainAlias));
 
         // add selects from relation id joins
         // this.relationIdAttributes.forEach(relationIdAttr => {
@@ -1266,17 +1260,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             }
         });
 
-        if (!this.expressionMap.ignoreParentTablesJoins && this.expressionMap.mainAlias!.hasMetadata) {
-            const metadata = this.expressionMap.mainAlias!.metadata;
-            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
-                const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
-                const condition = metadata.parentIdColumns.map(parentIdColumn => {
-                    return this.expressionMap.mainAlias!.name + "." + parentIdColumn.propertyPath + " = " + this.escape(alias) + "." + this.escape(parentIdColumn.referencedColumn!.propertyPath);
-                }).join(" AND ");
-                const join = " JOIN " + this.escape(metadata.parentEntityMetadata.tableName) + " " + this.escape(alias) + " ON " + this.replacePropertyNames(condition);
-                joins.push(join);
-            }
-        }
+        this.expressionMap.joinAttributes.forEach(({alias}) => joins.push(this.joinParentMetadata(alias)));
+
+        joins.push(this.joinParentMetadata(this.expressionMap.mainAlias!));
 
         return joins.join(" ");
     }
@@ -1600,4 +1586,35 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this;
     }
 
+    private selectParentMetadata(alias: Alias) {
+        const parentSelects: any[] = [];
+        if (!this.expressionMap.ignoreParentTablesJoins && alias.hasMetadata) {
+            const metadata = alias.metadata;
+            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
+                const aliasName = `${alias.name}_${metadata.parentEntityMetadata.tableName}`;
+                metadata.parentEntityMetadata.columns.forEach(column => {
+                    // TODO implement partial select
+                    parentSelects.push({ selection: this.escape(aliasName) + "." + this.escape(column.databaseName), aliasName: aliasName + "_" + column.databaseName });
+                });
+            }
+        }
+
+        return parentSelects;
+    }
+
+    private joinParentMetadata(alias: Alias) {
+        if (!this.expressionMap.ignoreParentTablesJoins && alias.hasMetadata) {
+            const metadata = alias.metadata;
+            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
+                const aliasName = `${alias.name}_${metadata.parentEntityMetadata.tableName}`;
+                const condition = metadata.parentIdColumns.map(parentIdColumn => {
+                    return alias.name + "." + parentIdColumn.propertyPath + " = " + this.escape(aliasName) + "." + this.escape(parentIdColumn.referencedColumn!.propertyPath);
+                }).join(" AND ");
+                const join = " LEFT JOIN " + this.escape(metadata.parentEntityMetadata.tableName) + " " + this.escape(aliasName) + " ON " + this.replacePropertyNames(condition);
+                return join;
+            }
+        }
+
+        return "";
+    }
 }
