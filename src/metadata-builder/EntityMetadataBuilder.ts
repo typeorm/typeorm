@@ -78,6 +78,65 @@ export class EntityMetadataBuilder {
         // calculate entity metadata's inverse properties
         entityMetadatas.forEach(entityMetadata => this.computeInverseProperties(entityMetadata, entityMetadatas));
 
+        // after all metadatas created we set parent entity metadata for class-table inheritance
+        entityMetadatas
+            .filter(metadata => metadata.tableType === "single-table-child" || metadata.tableType === "class-table-child")
+            .forEach(entityMetadata => {
+                const inheritanceTree: any[] = entityMetadata.target instanceof Function
+                    ? MetadataUtils.getInheritanceTree(entityMetadata.target)
+                    : [entityMetadata.target];
+
+                const parentMetadata = entityMetadatas.find(metadata => {
+                    return inheritanceTree.find(inheritance => inheritance === metadata.target) && (metadata.inheritanceType === "single-table" || metadata.inheritanceType === "class-table");
+                });
+
+                if (parentMetadata) {
+                    entityMetadata.parentEntityMetadata = parentMetadata;
+                    if (parentMetadata.inheritanceType === "single-table")
+                        entityMetadata.tableName = parentMetadata.tableName;
+                }
+            });
+
+        entityMetadatas
+            .filter(metadata => !!metadata.parentEntityMetadata && metadata.tableType === "class-table-child")
+            .forEach(metadata => {
+                const parentPrimaryColumns = metadata.parentEntityMetadata.primaryColumns;
+                const parentRelationColumns = parentPrimaryColumns.map(parentPrimaryColumn => {
+                    const columnName = this.connection.namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.tableName, parentPrimaryColumn.propertyPath);
+                    const column = new ColumnMetadata({
+                        connection: this.connection,
+                        entityMetadata: metadata,
+                        referencedColumn: parentPrimaryColumn,
+                        args: {
+                            target: metadata.target,
+                            propertyName: columnName,
+                            mode: "parentId",
+                            options: <ColumnOptions> {
+                                name: columnName,
+                                type: parentPrimaryColumn.type,
+                                unique: false,
+                                nullable: false,
+                                primary: true
+                            }
+                        }
+                    });
+                    metadata.registerColumn(column);
+                    column.build(this.connection);
+                    return column;
+                });
+
+                metadata.foreignKeys = [
+                    new ForeignKeyMetadata({
+                        entityMetadata: metadata,
+                        referencedEntityMetadata: metadata.parentEntityMetadata,
+                        namingStrategy: this.connection.namingStrategy,
+                        columns: parentRelationColumns,
+                        referencedColumns: parentPrimaryColumns,
+                        onDelete: "CASCADE"
+                    })
+                ];
+            });
+
         // go through all entity metadatas and create foreign keys / junction entity metadatas for their relations
         entityMetadatas
             .filter(entityMetadata => entityMetadata.tableType !== "single-table-child")
@@ -125,25 +184,6 @@ export class EntityMetadataBuilder {
                 entityMetadatas.push(closureJunctionEntityMetadata);
             });
 
-        // after all metadatas created we set parent entity metadata for class-table inheritance
-        entityMetadatas
-            .filter(metadata => metadata.tableType === "single-table-child" || metadata.tableType === "class-table-child")
-            .forEach(entityMetadata => {
-                const inheritanceTree: any[] = entityMetadata.target instanceof Function
-                    ? MetadataUtils.getInheritanceTree(entityMetadata.target)
-                    : [entityMetadata.target];
-
-                const parentMetadata = entityMetadatas.find(metadata => {
-                    return inheritanceTree.find(inheritance => inheritance === metadata.target) && (metadata.inheritanceType === "single-table" || metadata.inheritanceType === "class-table");
-                });
-
-                if (parentMetadata) {
-                    entityMetadata.parentEntityMetadata = parentMetadata;
-                    if (parentMetadata.inheritanceType === "single-table")
-                        entityMetadata.tableName = parentMetadata.tableName;
-                }
-            });
-
         // after all metadatas created we set child entity metadatas for class-table inheritance
         entityMetadatas.forEach(metadata => {
             metadata.childEntityMetadatas = entityMetadatas.filter(childMetadata => {
@@ -163,45 +203,6 @@ export class EntityMetadataBuilder {
             entityMetadata.indices.forEach(index => index.build(this.connection.namingStrategy));
         });
 
-        entityMetadatas
-            .filter(metadata => !!metadata.parentEntityMetadata && metadata.tableType === "class-table-child")
-            .forEach(metadata => {
-                const parentPrimaryColumns = metadata.parentEntityMetadata.primaryColumns;
-                const parentRelationColumns = parentPrimaryColumns.map(parentPrimaryColumn => {
-                    const columnName = this.connection.namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.tableName, parentPrimaryColumn.propertyPath);
-                    const column = new ColumnMetadata({
-                        connection: this.connection,
-                        entityMetadata: metadata,
-                        referencedColumn: parentPrimaryColumn,
-                        args: {
-                            target: metadata.target,
-                            propertyName: columnName,
-                            mode: "parentId",
-                            options: <ColumnOptions> {
-                                name: columnName,
-                                type: parentPrimaryColumn.type,
-                                unique: false,
-                                nullable: false,
-                                primary: true
-                            }
-                        }
-                    });
-                    metadata.registerColumn(column);
-                    column.build(this.connection);
-                    return column;
-                });
-
-                metadata.foreignKeys = [
-                    new ForeignKeyMetadata({
-                        entityMetadata: metadata,
-                        referencedEntityMetadata: metadata.parentEntityMetadata,
-                        namingStrategy: this.connection.namingStrategy,
-                        columns: parentRelationColumns,
-                        referencedColumns: parentPrimaryColumns,
-                        onDelete: "CASCADE"
-                    })
-                ];
-            });
 
         // add lazy initializer for entity relations
         entityMetadatas
