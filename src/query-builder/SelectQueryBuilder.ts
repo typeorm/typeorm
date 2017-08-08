@@ -174,6 +174,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     from<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
         const mainAlias = this.createFromAlias(entityTarget, aliasName);
         this.expressionMap.setMainAlias(mainAlias);
+        this.joinParent(mainAlias);
         return (this as any) as SelectQueryBuilder<T>;
     }
 
@@ -1077,6 +1078,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 metadata: joinAttribute.relation.junctionEntityMetadata
             });
         }
+
+        this.joinParent(joinAttribute.alias);
     }
 
     /**
@@ -1195,7 +1198,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             const destinationTableName = joinAttr.tableName;
             const destinationTableAlias = joinAttr.alias.name;
             const appendedCondition = joinAttr.condition ? " AND (" + joinAttr.condition + ")" : "";
-            const parentAlias = joinAttr.parentAlias;
+            const aliasByMetadata = this.expressionMap.aliases.find(({metadata}) => !!joinAttr.relation && metadata === joinAttr.relation!.entityMetadata);
+            const parentAlias = aliasByMetadata ? aliasByMetadata.name : joinAttr.parentAlias;
 
             // if join was build without relation (e.g. without "post.category") then it means that we have direct
             // table to join, without junction table involved. This means we simply join direct table.
@@ -1259,10 +1263,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             }
         });
-
-        this.expressionMap.joinAttributes.forEach(({alias}) => joins.push(this.joinParentMetadata(alias)));
-
-        joins.push(this.joinParentMetadata(this.expressionMap.mainAlias!));
 
         return joins.join(" ");
     }
@@ -1586,6 +1586,20 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this;
     }
 
+    private joinParent(alias: Alias) {
+        if (!this.expressionMap.ignoreParentTablesJoins && alias.hasMetadata) {
+            const metadata = alias.metadata;            
+            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
+                const aliasName = `${alias.name}_${metadata.parentEntityMetadata.tableName}`;
+                const condition = metadata.parentIdColumns.map(parentIdColumn => {
+                    return alias.name + "." + parentIdColumn.propertyPath + " = " + this.escape(aliasName) + "." + this.escape(parentIdColumn.referencedColumn!.propertyPath);
+                }).join(" AND ");
+
+                this.leftJoin(metadata.parentEntityMetadata.tableName, aliasName, condition);
+            }
+        }
+    }
+
     private selectParentMetadata(alias: Alias) {
         const parentSelects: any[] = [];
         if (!this.expressionMap.ignoreParentTablesJoins && alias.hasMetadata) {
@@ -1600,21 +1614,5 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         return parentSelects;
-    }
-
-    private joinParentMetadata(alias: Alias) {
-        if (!this.expressionMap.ignoreParentTablesJoins && alias.hasMetadata) {
-            const metadata = alias.metadata;
-            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
-                const aliasName = `${alias.name}_${metadata.parentEntityMetadata.tableName}`;
-                const condition = metadata.parentIdColumns.map(parentIdColumn => {
-                    return alias.name + "." + parentIdColumn.propertyPath + " = " + this.escape(aliasName) + "." + this.escape(parentIdColumn.referencedColumn!.propertyPath);
-                }).join(" AND ");
-                const join = " LEFT JOIN " + this.escape(metadata.parentEntityMetadata.tableName) + " " + this.escape(aliasName) + " ON " + this.replacePropertyNames(condition);
-                return join;
-            }
-        }
-
-        return "";
     }
 }
