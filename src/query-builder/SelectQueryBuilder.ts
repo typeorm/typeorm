@@ -1201,7 +1201,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             const destinationTableName = joinAttr.tableName;
             const destinationTableAlias = joinAttr.alias.name;
             const appendedCondition = joinAttr.condition ? " AND (" + joinAttr.condition + ")" : "";
-            const parentAlias = joinAttr.parentAlias;
+            const aliasByMetadata = this.expressionMap.aliases.find(({metadata}) => !!joinAttr.relation && metadata === joinAttr.relation!.entityMetadata);
+            const parentAlias = aliasByMetadata ? aliasByMetadata.name : joinAttr.parentAlias;
 
             // if join was build without relation (e.g. without "post.category") then it means that we have direct
             // table to join, without junction table involved. This means we simply join direct table.
