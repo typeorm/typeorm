@@ -143,7 +143,7 @@ export class FindOptionsUtils {
      */
     static applyConditions<T>(qb: SelectQueryBuilder<T>, conditions: ObjectLiteral): SelectQueryBuilder<T> {
         Object.keys(conditions).forEach((key, index) => {
-            if (conditions![key] === null) {
+            if (conditions![key] === null || conditions![key] === undefined) {
                 qb.andWhere(`${qb.alias}.${key} IS NULL`);
 
             } else {
