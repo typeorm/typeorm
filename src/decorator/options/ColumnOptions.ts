@@ -81,5 +81,9 @@ export interface ColumnOptions {
      * Supported only by postgres.
      */
     isArray?: boolean; // todo: rename to array?: boolean
-
+    
+    /**
+     * If column is auto-increment
+     */
+    generated?: boolean;
 }
