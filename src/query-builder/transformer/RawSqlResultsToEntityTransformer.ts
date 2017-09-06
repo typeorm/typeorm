@@ -111,7 +111,7 @@ export class RawSqlResultsToEntityTransformer {
 
         if (alias.metadata.parentEntityMetadata) {
             alias.metadata.parentEntityMetadata.columns.forEach(column => {
-                const value = rawResults[0]["parentIdColumn_" + alias.metadata.parentEntityMetadata.tableName + "_" + column.databaseName];
+                const value = rawResults[0][`${alias.name}_${alias.metadata.parentEntityMetadata.tableName}_${column.databaseName}`];
                 if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
                     return;
 
