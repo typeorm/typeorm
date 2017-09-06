@@ -275,7 +275,7 @@ export class Connection {
         if (!(this.driver instanceof MongoDriver))
             throw new Error(`You can use getMongoRepository only for MongoDB connections.`);
 
-        return this.manager.getRepository(target) as MongoRepository<Entity>;
+        return this.manager.getRepository(target) as any;
     }
 
     /**

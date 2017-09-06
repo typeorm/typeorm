@@ -923,6 +923,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         if (this.expressionMap.lockMode === "optimistic")
             throw new OptimisticLockCanNotBeUsedError();
 
+        this.expressionMap.queryEntity = false;
         const results = await this.execute();
         return results[0];
 
@@ -935,6 +936,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
         if (this.expressionMap.lockMode === "optimistic")
             throw new OptimisticLockCanNotBeUsedError();
 
+        this.expressionMap.queryEntity = false;
         return this.execute();
     }
 
@@ -944,6 +946,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     async getRawAndEntities(): Promise<{ entities: Entity[], raw: any[] }> {
         const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         try {
+            this.expressionMap.queryEntity = true;
             return await this.executeEntitiesAndRawResults(queryRunner);
 
         } finally {
@@ -1016,11 +1019,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         try {
-            const result = await Promise.all([
-                this.executeEntitiesAndRawResults(queryRunner),
-                this.executeCountQuery(queryRunner)
-            ]);
-            return [result[0].entities, result[1]];
+            const entitiesAndRaw = await this.executeEntitiesAndRawResults(queryRunner);
+            const count = await this.executeCountQuery(queryRunner);
+            return [entitiesAndRaw.entities, count];
 
         } finally {
             if (queryRunner !== this.queryRunner) // means we created our own query runner
@@ -1032,6 +1033,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Executes built SQL query and returns raw data stream.
      */
     async stream(): Promise<ReadStream> {
+        this.expressionMap.queryEntity = false;
         const [sql, parameters] = this.getSqlAndParameters();
         const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         try {
@@ -1408,12 +1410,19 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
             return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
         });
 
-        return columns.map(column => {
+        // if user used partial selection and did not select some primary columns which are required to be selected
+        // we select those primary columns and mark them as "virtual". Later virtual column values will be removed from final entity
+        // to make entity contain exactly what user selected
+        const nonSelectedPrimaryColumns = this.expressionMap.queryEntity ? metadata.primaryColumns.filter(primaryColumn => columns.indexOf(primaryColumn) === -1) : [];
+        const allColumns = [...columns, ...nonSelectedPrimaryColumns];
+
+        return allColumns.map(column => {
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyName);
             return {
                 selection: this.escape(aliasName) + "." + this.escape(column.databaseName),
                 aliasName: selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.databaseName,
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
+                virtual: selection ? selection.virtual === true : (hasMainAlias ? false : true),
             };
         });
     }
@@ -1429,6 +1438,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> {
     }
 
     protected async executeCountQuery(queryRunner: QueryRunner): Promise<number> {
+        this.expressionMap.queryEntity = false;
 
         const mainAlias = this.expressionMap.mainAlias!.name; // todo: will this work with "fromTableName"?
         const metadata = this.expressionMap.mainAlias!.metadata;

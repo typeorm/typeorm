@@ -19,6 +19,11 @@ export class QueryExpressionMap {
     // -------------------------------------------------------------------------
 
     /**
+     * Indicates if QueryBuilder used to select entities and not a raw results.
+     */
+    queryEntity: boolean = false;
+
+    /**
      * Main alias is a main selection object selected by QueryBuilder.
      */
     mainAlias?: Alias;

@@ -3,7 +3,8 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {OrmUtils} from "../../util/OrmUtils";
 import {InsertResult} from "../InsertResult";
 import {QueryFailedError} from "../../error/QueryFailedError";
-import {SqliteQueryRunner} from "../sqlite/SqliteQueryRunner";
+import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
+import {CordovaDriver} from "./CordovaDriver";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -11,10 +12,22 @@ import {SqliteQueryRunner} from "../sqlite/SqliteQueryRunner";
  * Does not support compose primary keys with autoincrement field.
  * todo: need to throw exception for this case.
  */
-export class CordovaQueryRunner extends SqliteQueryRunner {
+export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
+    
+    /**
+     * Database driver used by connection.
+     */
+    driver: CordovaDriver;
+    
     // -------------------------------------------------------------------------
-    // Public Methods
+    // Constructor
     // -------------------------------------------------------------------------
+
+    constructor(driver: CordovaDriver) {
+        super(driver);
+        this.driver = driver;
+        this.connection = driver.connection;
+    }
 
     /**
      * Executes a given SQL query.

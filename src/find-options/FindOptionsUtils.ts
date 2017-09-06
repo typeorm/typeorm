@@ -15,6 +15,7 @@ export class FindOptionsUtils {
         const possibleOptions: FindOneOptions<any> = obj;
         return possibleOptions &&
                 (
+                    possibleOptions.select instanceof Array ||
                     possibleOptions.where instanceof Object ||
                     possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
@@ -29,6 +30,7 @@ export class FindOptionsUtils {
         const possibleOptions: FindManyOptions<any> = obj;
         return possibleOptions &&
                 (
+                    possibleOptions.select instanceof Array ||
                     possibleOptions.where instanceof Object ||
                     possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
@@ -94,6 +96,10 @@ export class FindOptionsUtils {
             return qb;
 
         // apply all options from FindOptions
+        if (options.select) {
+            qb.select(options.select.map(selection => qb.alias + "." + selection));
+        }
+
         if (options.where)
             this.applyConditions(qb, options.where);
 

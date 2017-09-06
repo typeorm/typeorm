@@ -141,12 +141,12 @@ function build() {
         return str;
     };
     
-    builder.__proto__ = proto;
+    (builder as any).__proto__ = proto;
     return builder;
 }
 
 Object.defineProperties(Chalk.prototype, styles);
-export const chalk = new Chalk();
+export const chalk = new (Chalk as any)();
 
 /**
  * These classes are needed for stream operations or

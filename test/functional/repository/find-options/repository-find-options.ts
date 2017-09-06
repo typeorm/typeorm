@@ -5,9 +5,10 @@ import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
+import {Photo} from "./entity/Photo";
 
 describe("repository > find options", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -49,6 +50,77 @@ describe("repository > find options", () => {
             }]
         });
 
+    })));
+
+    it("should select specific columns", () => Promise.all(connections.map(async connection => {
+
+        const category = new Category();
+        category.name = "Bears";
+        await connection.manager.save(category);
+
+        const categories = [category];
+        const promises = [];
+        const photos = [];
+        for (let i = 1; i < 10; i++) {
+            const photo = new Photo();
+            photo.id = i;
+            photo.name = `Me and Bears ${i}`;
+            photo.description = `I am near bears ${i}`;
+            photo.filename = `photo-with-bears-${i}.jpg`;
+            photo.views = 10;
+            photo.isPublished = false;
+            photo.categories = categories;
+            photos.push(photo);
+            promises.push(connection.manager.save(photo));
+        }
+
+        await Promise.all(promises);
+
+        const loadedPhoto = await connection.getRepository(Photo).findOne({
+            select: ["name"],
+            where: {
+                id: 5
+            },
+        });
+
+        const loadedPhotos1 = await connection.getRepository(Photo).find({
+            select: ["filename", "views"],
+        });
+
+        const loadedPhotos2 = await connection.getRepository(Photo).find({
+            select: ["id", "name", "description"],
+            relations: ["categories"],
+        });
+
+        // const loadedPhotos3 = await connection.getRepository(Photo).createQueryBuilder("photo")
+        //     .select(["photo.name", "photo.description"])
+        //     .addSelect(["category.name"])
+        //     .leftJoin("photo.categories", "category")
+        //     .getMany();
+
+        expect(loadedPhoto).to.be.eql({
+            name: "Me and Bears 5"
+        });
+
+        expect(loadedPhotos1).to.have.deep.members(photos.map(photo => ({
+            filename: photo.filename,
+            views: photo.views,
+        })));
+
+        expect(loadedPhotos2).to.have.deep.members(photos.map(photo => ({
+            id: photo.id,
+            name: photo.name,
+            description: photo.description,
+            categories,
+        })));
+
+        // expect(loadedPhotos3).to.have.deep.members(photos.map(photo => ({
+        //     name: photo.name,
+        //     description: photo.description,
+        //     categories: categories.map(category => ({
+        //         name: category.name,
+        //     })),
+        // })));
     })));
 
 });

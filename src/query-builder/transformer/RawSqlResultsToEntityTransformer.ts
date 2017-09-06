@@ -86,6 +86,8 @@ export class RawSqlResultsToEntityTransformer {
         hasRelationIds = this.transformRelationIds(rawResults, alias, entity);
         hasRelationCounts = this.transformRelationCounts(rawResults, alias, entity);
 
+        // this.removeVirtualColumns(entity, alias);
+
         return (hasColumns || hasEmbeddedColumns || hasParentColumns || hasParentEmbeddedColumns || hasRelations || hasRelationIds || hasRelationCounts) ? entity : undefined;
     }
 
@@ -95,6 +97,11 @@ export class RawSqlResultsToEntityTransformer {
         metadata.columns.forEach(column => {
             const value = rawResults[0][alias.name + "_" + column.databaseName];
             if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
+                return;
+
+            // if user does not selected the whole entity or he used partial selection and does not select this particular column
+            // then we don't add this column and its value into the entity
+            if (!this.expressionMap.selects.find(select => select.selection === alias.name || select.selection === alias.name + "." + column.propertyName))
                 return;
 
             column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
@@ -321,5 +328,13 @@ export class RawSqlResultsToEntityTransformer {
             return data;
         }, {} as ObjectLiteral);
     }
+
+    /*private removeVirtualColumns(entity: ObjectLiteral, alias: Alias) {
+        const virtualColumns = this.expressionMap.selects
+            .filter(select => select.virtual)
+            .map(select => select.selection.replace(alias.name + ".", ""));
+
+        virtualColumns.forEach(virtualColumn => delete entity[virtualColumn]);
+    }*/
 
 }
