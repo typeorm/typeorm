@@ -357,7 +357,20 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // drop all indices that exist in the table, but does not exist in the given composite indices
             const dropQueries = tableSchema.indices
-                .filter(indexSchema => !metadata.indices.find(indexMetadata => indexMetadata.name === indexSchema.name))
+                .filter(indexSchema => {
+                    var metadataIndex = metadata.indices.find(indexMetadata => indexMetadata.name === indexSchema.name);
+                    if (!metadataIndex)
+                        return true;
+                    if (metadataIndex.isUnique !== indexSchema.isUnique)
+                        return true;
+                    if (metadataIndex.columns.length !== indexSchema.columnNames.length)
+                        return true;
+                    for (let i = 0; i < metadataIndex.columns.length; ++i)
+                        if (metadataIndex.columns[i].databaseName !== indexSchema.columnNames[i])
+                            return true;
+                    
+                    return false;
+                })
                 .map(async indexSchema => {
                     this.connection.logger.logSchemaBuild(`dropping an index: ${indexSchema.name}`);
                     tableSchema.removeIndex(indexSchema);
