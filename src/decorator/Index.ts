@@ -49,7 +49,8 @@ export function Index(nameOrFieldsOrOptions?: string|string[]|((object: any) => 
             target: propertyName ? clsOrObject.constructor : clsOrObject as Function,
             name: name,
             columns: propertyName ? [propertyName] : fields,
-            unique: options && options.unique ? true : false
+            unique: options && options.unique ? true : false,
+            sparse: options && options.sparse ? true : false
         };
         getMetadataArgsStorage().indices.push(args);
     };

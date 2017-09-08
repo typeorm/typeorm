@@ -2,6 +2,7 @@ import {EntitySchema} from "./EntitySchema";
 import {MetadataArgsStorage} from "../metadata-args/MetadataArgsStorage";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
+import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
@@ -147,6 +148,22 @@ export class EntitySchemaTransformer {
                     }
                 });
             }
+
+            // add relation metadata args from the schema
+            if (schema.indices) {
+                Object.keys(schema.indices).forEach(indexName => {
+                    const indexSchema = schema.indices[indexName];
+                    const indexAgrs: IndexMetadataArgs = {
+                        target: schema.target || schema.name,
+                        name: indexName,
+                        unique: indexSchema.unique,
+                        sparse: indexSchema.sparse,           
+                        columns: indexSchema.columns
+                    };
+                    metadataArgsStorage.indices.push(indexAgrs);                        
+                });
+            }    
+
         });
 
         return metadataArgsStorage;

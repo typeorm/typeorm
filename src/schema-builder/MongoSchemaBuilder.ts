@@ -37,7 +37,7 @@ export class MongoSchemaBuilder implements SchemaBuilder {
         const promises: Promise<any>[] = [];
         this.connection.entityMetadatas.forEach(metadata => {
             metadata.indices.forEach(index => {
-                const options = { name: index.name, unique: index.isUnique };
+                const options = { name: index.name, unique: index.isUnique, sparse: index.isSparse };
                 promises.push(queryRunner.createCollectionIndex(metadata.tableName, index.columnNamesWithOrderingMap, options));
             });
         });
