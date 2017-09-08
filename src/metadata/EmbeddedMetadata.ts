@@ -82,6 +82,11 @@ export class EmbeddedMetadata {
     parentPropertyNames: string[] = [];
 
     /**
+     * Returns array of prefixes of current embed and all its parent embeds.
+     */
+    parentPrefixes: string[] = [];
+
+    /**
      * Returns embed metadatas from all levels of the parent tree.
      *
      * example: post[data][information][counters].id where "data", "information" and "counters" are embeds
@@ -146,6 +151,7 @@ export class EmbeddedMetadata {
         this.embeddeds.forEach(embedded => embedded.build(connection));
         this.prefix = this.buildPrefix(connection);
         this.parentPropertyNames = this.buildParentPropertyNames();
+        this.parentPrefixes = this.buildParentPrefixes();
         this.embeddedMetadataTree = this.buildEmbeddedMetadataTree();
         this.columnsFromTree = this.buildColumnsFromTree();
         this.relationsFromTree = this.buildRelationsFromTree();
@@ -176,6 +182,10 @@ export class EmbeddedMetadata {
 
     protected buildParentPropertyNames(): string[] {
         return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildParentPropertyNames().concat(this.propertyName) : [this.propertyName];
+    }
+
+    protected buildParentPrefixes(): string[] {
+        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildParentPrefixes().concat(this.prefix || this.propertyName) : [this.prefix || this.propertyName];
     }
 
     protected buildEmbeddedMetadataTree(): EmbeddedMetadata[] {

@@ -157,10 +157,10 @@ export class EntitySchemaTransformer {
                         target: schema.target || schema.name,
                         name: indexName,
                         unique: indexSchema.unique,
+                        sparse: indexSchema.sparse,           
                         columns: indexSchema.columns
                     };
-                    metadataArgsStorage.indices.push(indexAgrs);
-                        
+                    metadataArgsStorage.indices.push(indexAgrs);                        
                 });
             }    
 

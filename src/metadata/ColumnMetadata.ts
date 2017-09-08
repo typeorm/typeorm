@@ -478,7 +478,7 @@ export class ColumnMetadata {
     }
 
     protected buildDatabaseName(connection: Connection): string {
-        const propertyNames = this.embeddedMetadata ? this.embeddedMetadata.parentPropertyNames : [];
+        const propertyNames = this.embeddedMetadata ? this.embeddedMetadata.parentPrefixes : [];
         return connection.namingStrategy.columnName(this.propertyName, this.givenDatabaseName, propertyNames);
     }
 
