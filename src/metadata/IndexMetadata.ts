@@ -23,6 +23,13 @@ export class IndexMetadata {
     isUnique: boolean = false;
 
     /**
+     * If true, the index only references documents with the specified field.
+     * These indexes use less space but behave differently in some situations (particularly sorts).
+     * This option is only supported for mongodb database.
+     */
+    isSparse?: boolean;
+
+    /**
      * Target class to which metadata is applied.
      */
     target?: Function|string;
@@ -76,6 +83,7 @@ export class IndexMetadata {
         if (options.args) {
             this.target = options.args.target;
             this.isUnique = options.args.unique;
+            this.isSparse = options.args.sparse;
             this.givenName = options.args.name;
             this.givenColumnNames = options.args.columns;
         }
