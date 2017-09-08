@@ -247,4 +247,22 @@ export interface EntitySchema { // todo: make it-to-date
         };
     };
 
+     /**
+     * Entity indices options.
+     */
+    indices: {
+        [indexName: string]: {
+
+            /**
+             * Index column names.
+             */
+            columns: string[];
+
+            /**
+             * Index uniqueness.
+             */
+            unique: boolean;
+        };    
+    };
+
 }
