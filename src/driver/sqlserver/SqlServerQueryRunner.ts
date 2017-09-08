@@ -590,7 +590,7 @@ export class SqlServerQueryRunner implements QueryRunner {
                         .filter(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name && dbIndex["INDEX_NAME"] === dbIndexName)
                         .map(dbIndex => dbIndex["COLUMN_NAME"]);
 
-                    const isUnique = !!dbIndices.find(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name && dbIndex["INDEX_NAME"] === dbIndexName && dbIndex["IS_UNIQUE"] === true)
+                    const isUnique = !!dbIndices.find(dbIndex => dbIndex["TABLE_NAME"] === tableSchema.name && dbIndex["INDEX_NAME"] === dbIndexName && dbIndex["IS_UNIQUE"] === true);
                     
                     return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames,  isUnique);
                 });
