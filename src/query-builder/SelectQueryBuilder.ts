@@ -762,7 +762,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    orderBy(sort: string, order?: "ASC"|"DESC"): this;
+    orderBy(sort: string, order?: "ASC"|"DESC", nulls?: "NULLS FIRST"|"NULLS LAST"): this;
 
     /**
      * Sets ORDER BY condition in the query builder.
@@ -776,12 +776,16 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    orderBy(sort?: string|OrderByCondition, order: "ASC"|"DESC" = "ASC"): this {
+    orderBy(sort?: string|OrderByCondition, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
         if (sort) {
             if (sort instanceof Object) {
                 this.expressionMap.orderBys = sort as OrderByCondition;
             } else {
-                this.expressionMap.orderBys = { [sort as string]: order };
+                if (nulls) {
+                    this.expressionMap.orderBys = { [sort as string]: { order, nulls } };
+                } else {
+                    this.expressionMap.orderBys = { [sort as string]: order };
+                }
             }
         } else {
             this.expressionMap.orderBys = {};
@@ -792,8 +796,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Adds ORDER BY condition in the query builder.
      */
-    addOrderBy(sort: string, order: "ASC"|"DESC" = "ASC"): this {
-        this.expressionMap.orderBys[sort] = order;
+    addOrderBy(sort: string, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
+        if (nulls) {
+            this.expressionMap.orderBys[sort] = { order, nulls };
+        } else {
+            this.expressionMap.orderBys[sort] = order;
+        }
         return this;
     }
 
@@ -1263,7 +1271,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (Object.keys(orderBys).length > 0)
             return " ORDER BY " + Object.keys(orderBys)
                     .map(columnName => {
-                        return this.replacePropertyNames(columnName) + " " + orderBys[columnName];
+                        if (typeof orderBys[columnName] === "string") {
+                            return this.replacePropertyNames(columnName) + " " + orderBys[columnName];
+                        } else {
+                            return this.replacePropertyNames(columnName) + " " + (orderBys[columnName] as any).order + " " + (orderBys[columnName] as any).nulls;
+                        }
                     })
                     .join(", ");
 
@@ -1427,7 +1439,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
                 const propertyName = this.escape(primaryColumn.databaseName);
                 return `${distinctAlias}.${propertyName}`;
-            }).join(", ") + ") as \"cnt\"";
+            }).join(", ") + ")) as \"cnt\"";
         }
 
         const [countQuerySql, countQueryParameters] = this.clone()
