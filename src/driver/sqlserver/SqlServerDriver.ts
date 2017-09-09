@@ -297,6 +297,7 @@ export class SqlServerDriver implements Driver {
             return value ? true : false;
 
         } else if (columnMetadata.type === "datetime"
+            || columnMetadata.type === Date
             || columnMetadata.type === "datetime2"
             || columnMetadata.type === "smalldatetime"
             || columnMetadata.type === "datetimeoffset") {
