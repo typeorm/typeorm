@@ -223,7 +223,7 @@ export class MigrationExecutor {
             const migrationClassName = (migration.constructor as any).name;
             const migrationTimestamp = parseInt(migrationClassName.substr(-13));
             if (!migrationTimestamp)
-                throw new Error(`Migration class name should contain a class name at the end of the file. ${migrationClassName} migration name is wrong.`);
+                throw new Error(`${migrationClassName} migration name is wrong. Migration class name should have a UNIX timestamp appended. `);
 
             return new Migration(migrationTimestamp, migrationClassName, migration);
         });

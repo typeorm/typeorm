@@ -264,10 +264,9 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value);
 
-        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToDate(value, true);
-
-        } else if (columnMetadata.type === "timestamp"
+        } else if (columnMetadata.type === "datetime"
+            || columnMetadata.type === Date
+            || columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
             return DateUtils.mixedDateToDate(value, true);
@@ -292,7 +291,9 @@ export class PostgresDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value ? true : false;
 
-        } else if (columnMetadata.type === "timestamp"
+        } else if (columnMetadata.type === "datetime"
+            || columnMetadata.type === Date
+            || columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
             return DateUtils.normalizeHydratedDate(value);
@@ -309,6 +310,7 @@ export class PostgresDriver implements Driver {
 
         return value;
     }
+
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.

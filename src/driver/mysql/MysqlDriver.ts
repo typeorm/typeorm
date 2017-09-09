@@ -300,7 +300,7 @@ export class MysqlDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value ? true : false;
 
-        } else if (columnMetadata.type === "datetime") {
+        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             return DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
