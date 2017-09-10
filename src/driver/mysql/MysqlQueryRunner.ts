@@ -327,7 +327,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const tableNamesString = tableNames.map(tableName => `'${tableName}'`).join(", ");
         const tablesSql      = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${this.dbName}' AND TABLE_NAME IN (${tableNamesString})`;
         const columnsSql     = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${this.dbName}'`;
-        const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = '${this.dbName}' AND INDEX_NAME != 'PRIMARY'`;
+        const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = '${this.dbName}' AND INDEX_NAME != 'PRIMARY' ORDER BY SEQ_IN_INDEX`;
         const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${this.dbName}' AND REFERENCED_COLUMN_NAME IS NOT NULL`;
         const [dbTables, dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
@@ -425,7 +425,7 @@ export class MysqlQueryRunner implements QueryRunner {
                         }
                     }
 
-                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, false /* todo: uniqueness */);
+                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, currentDbIndices[0]["NON_UNIQUE"] === 0);
                 })
                 .filter(index => !!index) as IndexSchema[]; // remove empty returns
 
