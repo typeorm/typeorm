@@ -376,6 +376,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     await this.queryRunner.dropIndex(metadata.tableName, indexSchema.name);
                 });
 
+            await Promise.all(dropQueries);
+
             // then create table indices for all composite indices we have
             const addQueries = metadata.indices
                 .filter(indexMetadata => !tableSchema.indices.find(indexSchema => indexSchema.name === indexMetadata.name))
@@ -386,7 +388,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     await this.queryRunner.createIndex(indexSchema.tableName, indexSchema);
                 });
 
-            await Promise.all(dropQueries.concat(addQueries));
+            await Promise.all(addQueries);
         });
     }
 
