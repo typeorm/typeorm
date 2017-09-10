@@ -50,7 +50,7 @@ export interface TestingOptions {
     /**
      * Entity schemas needs to be included in the connection for the given test suite.
      */
-    entitySchemas?: EntitySchema[];
+    entitySchemas?: string[]|EntitySchema[];
 
     /**
      * Indicates if schema sync should be performed or not.
@@ -141,8 +141,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 entities: options && options.entities ? options.entities : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
                 entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-                autoSchemaSync: options && options.entities ? options.schemaCreate : false,
-                dropSchema: options && options.entities ? options.dropSchema : false,
+                autoSchemaSync: options && (options.entities || options.entitySchemas) ? options.schemaCreate : false,
+                dropSchema: options && (options.entities || options.entitySchemas) ? options.dropSchema : false,
                 schema: options && options.schema ? options.schema : undefined,
             });
         });
