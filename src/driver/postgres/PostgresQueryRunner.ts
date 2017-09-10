@@ -336,7 +336,7 @@ export class PostgresQueryRunner implements QueryRunner {
         const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
         const tablesSql      = `SELECT * FROM information_schema.tables WHERE table_catalog = '${this.dbName}' AND table_schema = '${this.schemaName}' AND table_name IN (${tableNamesString})`;
         const columnsSql     = `SELECT * FROM information_schema.columns WHERE table_catalog = '${this.dbName}' AND table_schema = '${this.schemaName}'`;
-        const indicesSql     = `SELECT t.relname AS table_name, i.relname AS index_name, a.attname AS column_name  FROM pg_class t, pg_class i, pg_index ix, pg_attribute a, pg_namespace ns
+        const indicesSql     = `SELECT t.relname AS table_name, i.relname AS index_name, a.attname AS column_name, ix.indisunique AS is_unique, a.attnum, ix.indkey FROM pg_class t, pg_class i, pg_index ix, pg_attribute a, pg_namespace ns
 WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND a.attrelid = t.oid
 AND a.attnum = ANY(ix.indkey) AND t.relkind = 'r' AND t.relname IN (${tableNamesString}) AND t.relnamespace = ns.OID AND ns.nspname ='${this.schemaName}' ORDER BY t.relname, i.relname`;
         const foreignKeysSql = `SELECT table_name, constraint_name FROM information_schema.table_constraints WHERE table_catalog = '${this.dbName}' AND table_schema = '${this.schemaName}' AND constraint_type = 'FOREIGN KEY'`;
@@ -427,11 +427,14 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
                 .map(dbIndex => dbIndex["index_name"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
                 .map(dbIndexName => {
-                    const columnNames = dbIndices
-                        .filter(dbIndex => dbIndex["table_name"] === tableSchema.name && dbIndex["index_name"] === dbIndexName)
-                        .map(dbIndex => dbIndex["column_name"]);
+                    const dbIndicesInfos = dbIndices
+                        .filter(dbIndex => dbIndex["table_name"] === tableSchema.name && dbIndex["index_name"] === dbIndexName);
+                    const columnPositions = dbIndicesInfos[0]["indkey"].split(" ")
+                        .map((x: string) => parseInt(x));
+                    const columnNames = columnPositions
+                        .map((pos: number) => dbIndicesInfos.find(idx => idx.attnum === pos)!["column_name"]);
 
-                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, false /* todo: uniqueness */);
+                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, dbIndicesInfos[0]["is_unique"]);
                 });
 
             return tableSchema;

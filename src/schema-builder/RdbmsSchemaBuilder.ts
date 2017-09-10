@@ -357,12 +357,26 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // drop all indices that exist in the table, but does not exist in the given composite indices
             const dropQueries = tableSchema.indices
-                .filter(indexSchema => !metadata.indices.find(indexMetadata => indexMetadata.name === indexSchema.name))
+                .filter(indexSchema => {
+                    const metadataIndex = metadata.indices.find(indexMetadata => indexMetadata.name === indexSchema.name);
+                    if (!metadataIndex)
+                        return true;
+                    if (metadataIndex.isUnique !== indexSchema.isUnique)
+                        return true;
+                    if (metadataIndex.columns.length !== indexSchema.columnNames.length)
+                        return true;
+                    if (metadataIndex.columns.findIndex((col, i) => col.databaseName !== indexSchema.columnNames[i]) !== -1)
+                        return true;
+                    
+                    return false;
+                })
                 .map(async indexSchema => {
                     this.connection.logger.logSchemaBuild(`dropping an index: ${indexSchema.name}`);
                     tableSchema.removeIndex(indexSchema);
                     await this.queryRunner.dropIndex(metadata.tableName, indexSchema.name);
                 });
+
+            await Promise.all(dropQueries);
 
             // then create table indices for all composite indices we have
             const addQueries = metadata.indices
@@ -374,7 +388,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     await this.queryRunner.createIndex(indexSchema.tableName, indexSchema);
                 });
 
-            await Promise.all(dropQueries.concat(addQueries));
+            await Promise.all(addQueries);
         });
     }
 
