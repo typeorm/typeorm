@@ -25,8 +25,11 @@ describe("indices > reading index from entity schema and updating database", () 
             await queryRunner.release();
 
             expect(tableSchema!.indices.length).to.be.equal(1);
-            expect(tableSchema!.indices[0].name).to.be.equal("IDX_UNQ_Person"); 
-                
+            expect(tableSchema!.indices[0].name).to.be.equal("IDX_UNQ_Person");
+            expect(tableSchema!.indices[0].columnNames.length).to.be.equal(2);
+            expect(tableSchema!.indices[0].columnNames[0]).to.be.equal("FirstName");
+            expect(tableSchema!.indices[0].columnNames[1]).to.be.equal("LastName");
+
         })));
 
     });
