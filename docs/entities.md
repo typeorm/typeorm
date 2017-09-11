@@ -615,6 +615,7 @@ To reduce duplication and produce a better abstraction we can create a base clas
 
 
 ```typescript
+@AbstractEntity
 export abstract class Content {
     
     @PrimaryGeneratedColumn()
