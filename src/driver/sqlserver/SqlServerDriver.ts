@@ -326,16 +326,16 @@ export class SqlServerDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
-        if (column.type === Number) {
+        if (column.type === Number || column.type === "integer") {
             return "int";
 
-        } else if (column.type === String) {
+        } else if (column.type === String || column.type === "string") {
             return "nvarchar";
 
-        } else if (column.type === Date) {
+        } else if (column.type === Date || column.type === "date") {
             return "datetime";
 
-        } else if (column.type === Boolean) {
+        } else if (column.type === Boolean || column.type === "boolean") {
             return "bit";
 
         } else if ((column.type as any) === Buffer) {
@@ -346,9 +346,6 @@ export class SqlServerDriver implements Driver {
 
         } else if (column.type === "simple-array") {
             return "ntext";
-
-        } else if (column.type === "integer") {
-            return "int";
 
         } else if (column.type === "dec") {
             return "decimal";
