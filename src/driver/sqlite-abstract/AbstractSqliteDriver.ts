@@ -288,16 +288,16 @@ export class AbstractSqliteDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
-        if (column.type === Number || column.type === "int") {
+        if (column.type === Number || column.type === "int" || column.type === "integer") {
             return "integer";
 
-        } else if (column.type === String) {
+        } else if (column.type === String || column.type === "string") {
             return "varchar";
 
-        } else if (column.type === Date) {
+        } else if (column.type === Date || column.type === "date") {
             return "datetime";
 
-        } else if (column.type === Boolean) {
+        } else if (column.type === Boolean || column.type === "boolean") {
             return "boolean";
 
         } else if (column.type === "uuid") {

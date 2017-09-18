@@ -338,16 +338,16 @@ export class MysqlDriver implements Driver {
         if (column.type === Number || column.type === "integer") {
             return "int";
 
-        } else if (column.type === String) {
+        } else if (column.type === String || column.type === "string") {
             return "varchar";
 
-        } else if (column.type === Date) {
+        } else if (column.type === Date || column.type === "date") {
             return "datetime";
 
         } else if ((column.type as any) === Buffer) {
             return "blob";
 
-        } else if (column.type === Boolean) {
+        } else if (column.type === Boolean || column.type === "boolean") {
             return "tinyint";
 
         } else if (column.type === "uuid") {

@@ -317,16 +317,16 @@ export class OracleDriver implements Driver {
      */
     normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, isArray?: boolean }): string {
         let type = "";
-        if (column.type === Number) {
+        if (column.type === Number || column.type === "integer") {
             type += "integer";
 
-        } else if (column.type === String) {
+        } else if (column.type === String || column.type === "string") {
             type += "nvarchar2";
 
-        } else if (column.type === Date) {
+        } else if (column.type === Date || column.type === "date") {
             type += "timestamp(0)";
 
-        } else if (column.type === Boolean) {
+        } else if (column.type === Boolean || column.type === "boolean") {
             type += "number(1)";
 
         } else if (column.type === "simple-array") {
