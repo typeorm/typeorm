@@ -398,7 +398,14 @@ export class ColumnMetadata {
                 }, {});
                 return { [this.propertyName]: map };
             } else {
-                return { [this.propertyName]: entity[this.propertyName] };
+                let value = entity[this.propertyName];
+
+                if (this.transformer) {
+                    value = this.transformer.to(value);
+                    console.log("getEntityValueMap", value);
+                }
+
+                return { [this.propertyName]: value };
             }
         }
     }
@@ -444,7 +451,15 @@ export class ColumnMetadata {
                 if (relatedEntity && relatedEntity instanceof Object)
                     return this.referencedColumn.getEntityValue(relatedEntity);
             }
-            return entity[this.propertyName];
+
+            let value = entity[this.propertyName];
+
+            if (this.transformer) {
+                value = this.transformer.to(value);
+                console.log("getEntityValue", value);
+            }
+
+            return value;
         }
     }
 
