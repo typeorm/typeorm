@@ -402,7 +402,6 @@ export class ColumnMetadata {
 
                 if (this.transformer) {
                     value = this.transformer.to(value);
-                    console.log("getEntityValueMap", value);
                 }
 
                 return { [this.propertyName]: value };
@@ -456,7 +455,6 @@ export class ColumnMetadata {
 
             if (this.transformer) {
                 value = this.transformer.to(value);
-                console.log("getEntityValue", value);
             }
 
             return value;
