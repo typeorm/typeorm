@@ -85,7 +85,7 @@ describe("columns > value-transformer functionality", () => {
         expect(loadedPost!.title).to.be.equal("About columns1");
     })));
 
-    it.skip("should use marshalled primary keys when using embeddeds", () => Promise.all(connections.map(async connection => {
+    it("should use marshalled primary keys when using embeddeds", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(PostWithEmbeddedPrimaryKey);
 
         // create and save a post first

@@ -386,6 +386,11 @@ export class ColumnMetadata {
                     extractEmbeddedColumnValue(propertyNames, value ? value[propertyName] : undefined, map[propertyName]);
                     return map;
                 }
+
+                if (value && this.transformer) {
+                    value[this.propertyName] = this.transformer.to(value[this.propertyName]);
+                }
+
                 map[this.propertyName] = value ? value[this.propertyName] : undefined;
                 return map;
             };
@@ -440,6 +445,11 @@ export class ColumnMetadata {
                     if (relatedEntity && relatedEntity instanceof Object)
                         return this.referencedColumn.getEntityValue(relatedEntity);
                 }
+
+                if (this.transformer) {
+                    embeddedObject[this.propertyName] = this.transformer.to(embeddedObject[this.propertyName]);
+                }
+
                 return embeddedObject[this.propertyName];
             }
             return undefined;
@@ -481,6 +491,11 @@ export class ColumnMetadata {
                     extractEmbeddedColumnValue(embeddedMetadatas, map[embeddedMetadata.propertyName]);
                     return map;
                 }
+
+                if (this.transformer) {
+                    value = this.transformer.from(value);
+                }
+
                 map[this.propertyName] = value;
                 return map;
             };
