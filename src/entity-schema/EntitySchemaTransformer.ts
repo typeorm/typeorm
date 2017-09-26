@@ -68,7 +68,8 @@ export class EntitySchemaTransformer {
                         comment: columnSchema.comment,
                         default: columnSchema.default,
                         precision: columnSchema.precision,
-                        scale: columnSchema.scale
+                        scale: columnSchema.scale,
+                        transformer: columnSchema.transformer
                     }
                 };
                 metadataArgsStorage.columns.push(columnAgrs);
@@ -157,12 +158,12 @@ export class EntitySchemaTransformer {
                         target: schema.target || schema.name,
                         name: indexName,
                         unique: indexSchema.unique,
-                        sparse: indexSchema.sparse,           
+                        sparse: indexSchema.sparse,
                         columns: indexSchema.columns
                     };
-                    metadataArgsStorage.indices.push(indexAgrs);                        
+                    metadataArgsStorage.indices.push(indexAgrs);
                 });
-            }    
+            }
 
         });
 
