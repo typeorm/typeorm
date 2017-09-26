@@ -3,6 +3,7 @@ import {Column} from "../../../../../src/decorator/columns/Column";
 import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
 import {ValueTransformer} from "../../../../../src/decorator/options/ValueTransformer";
 import {PostId} from "./PostId";
+import {Category} from "./Category";
 
 class PostIdTransformer implements ValueTransformer {
 
@@ -13,18 +14,21 @@ class PostIdTransformer implements ValueTransformer {
     from (postId: string): PostId {
         return PostId.fromString(postId);
     }
-
 }
 
 @Entity()
-export class PostWithValueObjectId {
+export class PostWithEmbeddedPrimaryKey {
     @PrimaryColumn({type: String, transformer: new PostIdTransformer()})
     id: PostId;
+
+    @Column(() => Category)
+    category: Category;
 
     @Column()
     title: string;
 
-    constructor(id: PostId) {
+    constructor(id: PostId, category: Category) {
       this.id = id;
+      this.category = category;
     }
 }

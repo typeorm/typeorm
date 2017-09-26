@@ -160,7 +160,7 @@ export class MysqlDriver implements Driver {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    
+
     constructor(connection: Connection) {
         this.connection = connection;
         this.options = connection.options as MysqlConnectionOptions;
@@ -283,9 +283,6 @@ export class MysqlDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.to(value);
-
         if (value === null || value === undefined)
             return value;
 
@@ -318,12 +315,9 @@ export class MysqlDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
-
         if (value === null || value === undefined)
             return value;
-            
+
         if (columnMetadata.type === Boolean) {
             return value ? true : false;
 
@@ -401,7 +395,7 @@ export class MysqlDriver implements Driver {
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
-        return column.isUnique || 
+        return column.isUnique ||
             !!column.entityMetadata.indices.find(index => index.isUnique && index.columns.length === 1 && index.columns[0] === column);
     }
 
@@ -409,17 +403,17 @@ export class MysqlDriver implements Driver {
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-        
+
         if (column.length)
             return column.length;
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+            return this.dataTypeDefaults[normalizedType].length!.toString();
 
         return "";
-    }    
-    
+    }
+
     createFullType(column: ColumnSchema): string {
         let type = column.type;
 

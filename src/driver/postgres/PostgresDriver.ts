@@ -270,9 +270,6 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.to(value);
-
         if (value === null || value === undefined)
             return value;
 
@@ -306,9 +303,6 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
-
         if (value === null || value === undefined)
             return value;
 
@@ -477,13 +471,13 @@ export class PostgresDriver implements Driver {
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-        
+
         if (column.length)
             return column.length;
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+            return this.dataTypeDefaults[normalizedType].length!.toString();
 
         return "";
     }

@@ -452,7 +452,7 @@ export class ColumnMetadata {
             }
 
             let value = entity[this.propertyName];
-
+            // @FIXME: Look for typeof value and if it is applicable to transformer.to
             if (this.transformer) {
                 value = this.transformer.to(value);
             }
@@ -487,6 +487,10 @@ export class ColumnMetadata {
             return extractEmbeddedColumnValue([...this.embeddedMetadata.embeddedMetadataTree], entity);
 
         } else {
+            if (this.transformer) {
+                value = this.transformer.from(value);
+            }
+
             entity[this.propertyName] = value;
         }
     }

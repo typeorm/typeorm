@@ -110,7 +110,7 @@ export class SqlServerDriver implements Driver {
         "table",
         "timestamp",
         "uniqueidentifier",
-        "xml"        
+        "xml"
     ];
 
     /**
@@ -124,7 +124,7 @@ export class SqlServerDriver implements Driver {
         "binary",
         "varbinary"
     ];
-    
+
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
@@ -273,9 +273,6 @@ export class SqlServerDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.to(value);
-
         if (value === null || value === undefined)
             return value;
 
@@ -311,9 +308,6 @@ export class SqlServerDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
-
         if (value === null || value === undefined)
             return value;
 
@@ -415,13 +409,13 @@ export class SqlServerDriver implements Driver {
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-        
+
         if (column.length)
             return column.length;
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+            return this.dataTypeDefaults[normalizedType].length!.toString();
 
         return "";
     }

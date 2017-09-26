@@ -1,12 +1,12 @@
-class PostId {
+class PostIdPrefix {
   private value: string;
 
   private constructor(value: string) {
-    // add uuid guard for example
+    // add lowercase guard for example
     this.value = value;
   }
 
-  static fromString(id: string): PostId {
+  static fromString(id: string): PostIdPrefix {
     return new this(id);
   }
 
@@ -15,5 +15,5 @@ class PostId {
   }
 }
 
-export { PostId };
+export { PostIdPrefix };
 

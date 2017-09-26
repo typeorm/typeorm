@@ -1,4 +1,4 @@
-class PostId {
+class CategoryId {
   private value: string;
 
   private constructor(value: string) {
@@ -6,7 +6,7 @@ class PostId {
     this.value = value;
   }
 
-  static fromString(id: string): PostId {
+  static fromString(id: string): CategoryId {
     return new this(id);
   }
 
@@ -15,5 +15,5 @@ class PostId {
   }
 }
 
-export { PostId };
+export { CategoryId };
 

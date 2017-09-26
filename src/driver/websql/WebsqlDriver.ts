@@ -27,7 +27,7 @@ export class WebsqlDriver extends AbstractSqliteDriver {
 
     constructor(connection: Connection) {
         super(connection);
-        
+
         this.options = connection.options as WebSqlConnectionOptions;
         Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         this.database = this.options.database;

@@ -538,6 +538,7 @@ export abstract class QueryBuilder<Entity> {
             const whereSubStrings: string[] = [];
             metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
                 whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
+
                 parameters["id_" + index + "_" + secondIndex] = primaryColumn.getEntityValue(id);
             });
             metadata.parentIdColumns.forEach((parentIdColumn, secondIndex) => {
@@ -548,6 +549,7 @@ export abstract class QueryBuilder<Entity> {
         });
 
         const whereString = whereStrings.length > 1 ? "(" + whereStrings.join(" OR ") + ")" : whereStrings[0];
+
         return [whereString, parameters];
     }
 
