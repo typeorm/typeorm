@@ -462,7 +462,7 @@ export class ColumnMetadata {
             }
 
             let value = entity[this.propertyName];
-            // @FIXME: Look for typeof value and if it is applicable to transformer.to
+
             if (this.transformer) {
                 value = this.transformer.to(value);
             }
