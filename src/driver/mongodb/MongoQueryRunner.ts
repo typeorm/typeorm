@@ -455,16 +455,30 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Checks if database with the given name exist.
+     */
+    async hasDatabase(database: string): Promise<boolean> {
+        throw new Error(`Check database queries are not supported by MongoDB driver.`);
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(collectionName: string): Promise<boolean> {
-        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+        throw new Error(`Check schema queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Creates a database if it's not created.
+     */
+    createDatabase(database: string): Promise<void[]> {
+        throw new Error(`Database create queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a schema if it's not created.
      */
-    createSchema(): Promise<void> {
+    createSchema(schemas: string[]): Promise<void[]> {
         throw new Error(`Schema create queries are not supported by MongoDB driver.`);
     }
 

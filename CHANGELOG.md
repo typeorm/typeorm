@@ -96,6 +96,14 @@ Also now all
   Default is `increment`. It always generates value for column, except when column defined as `nullable` and user sets `null` value in to column.
 * added logging of log-running requests
 * added replication support
+* added custom table schema and database support in `Postgres`, `Mysql` and `Sql Server` drivers. 
+  * `Postgres` supports only custom table schema
+  * `Mysql` supports only custom database
+  * `Sql Server` supports both custom table schema and custom database
+  
+  This options can be specified in `ormconfig` file or directry in `@Entity()` decorator, 
+  e.g `@Entity({ database: "myDb", schema: "mySchema" })`
+
 
 ### OTHER API CHANGES
 

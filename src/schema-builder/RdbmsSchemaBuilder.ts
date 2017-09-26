@@ -57,10 +57,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     async build(): Promise<void> {
         this.queryRunner = await this.connection.createQueryRunner("master");
-        this.tableSchemas = await this.loadTableSchemas();
-
+        await this.createNewDatabases();
         await this.queryRunner.startTransaction();
         try {
+            this.tableSchemas = await this.loadTableSchemas();
             await this.executeSchemaSyncOperationsInProperOrder();
 
             // if cache is enabled then perform cache-synchronization as well
@@ -87,6 +87,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     async log(): Promise<(string|{ up: string, down: string })[]> {
         this.queryRunner = await this.connection.createQueryRunner("master");
         try {
+            await this.createNewDatabases();
             this.tableSchemas = await this.loadTableSchemas();
             this.queryRunner.enableSqlMemory();
             await this.executeSchemaSyncOperationsInProperOrder();
@@ -114,8 +115,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Loads all table schemas from the database.
      */
     protected loadTableSchemas(): Promise<TableSchema[]> {
-        const tableNames = this.entityToSyncMetadatas.map(metadata => metadata.tableName);
-        return this.queryRunner.getTables(tableNames);
+        const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
+        return this.queryRunner.getTables(tablePaths);
     }
 
     /**
@@ -126,11 +127,30 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
+     * Creates new databases if they are not exists.
+     */
+    protected async createNewDatabases(): Promise<void> {
+        const databases = this.connection.entityMetadatas
+            .filter(metadata => !!metadata.database)
+            .map(metadata => metadata.database);
+        await Promise.all(databases.map(database => this.queryRunner.createDatabase(database!)));
+    }
+
+    /**
      * Executes schema sync operations in a proper order.
      * Order of operations matter here.
      */
     protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
-        await this.queryRunner.createSchema();
+        const schemaPaths: string[] = [];
+        this.connection.entityMetadatas
+            .filter(entityMetadata => !!entityMetadata.schemaPath)
+            .forEach(entityMetadata => {
+                const existSchemaPath = schemaPaths.find(path => path === entityMetadata.schemaPath);
+                if (!existSchemaPath)
+                    schemaPaths.push(entityMetadata.schemaPath!);
+            });
+        await this.queryRunner.createSchema(schemaPaths);
+
         await this.dropOldForeignKeys();
         // await this.dropOldPrimaryKeys(); // todo: need to drop primary column because column updates are not possible
         await this.createNewTables();
@@ -177,14 +197,25 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     protected async createNewTables(): Promise<void> {
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             // check if table does not exist yet
-            const existTableSchema = this.tableSchemas.find(table => table.name === metadata.tableName);
+            const existTableSchema = this.tableSchemas.find(table => {
+                if (table.name !== metadata.tableName)
+                    return false;
+
+                if (metadata.schema && table.schema !== metadata.schema)
+                    return false;
+
+                if (metadata.database && table.database !== metadata.database)
+                    return false;
+
+                return true;
+            });
             if (existTableSchema)
                 return;
 
             this.connection.logger.logSchemaBuild(`creating a new table: ${metadata.tableName}`);
 
             // create a new table schema and sync it in the database
-            const tableSchema = new TableSchema(metadata.tableName, this.metadataColumnsToColumnSchemas(metadata.columns), true, metadata.engine);
+            const tableSchema = new TableSchema(metadata.tableName, this.metadataColumnsToColumnSchemas(metadata.columns), true, metadata.engine, metadata.database, metadata.schema);
             this.tableSchemas.push(tableSchema);
             await this.queryRunner.createTable(tableSchema);
         });
@@ -385,7 +416,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 .map(async indexSchema => {
                     this.connection.logger.logSchemaBuild(`dropping an index: ${indexSchema.name}`);
                     tableSchema.removeIndex(indexSchema);
-                    await this.queryRunner.dropIndex(metadata.tableName, indexSchema.name);
+                    await this.queryRunner.dropIndex(metadata.tablePath, indexSchema.name);
                 });
 
             await Promise.all(dropQueries);
@@ -424,7 +455,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
         const dropPromises = dependIndicesInTable.map(index => {
             tableSchema.removeIndex(index);
-            return this.queryRunner.dropIndex(tableSchema.name, index.name);
+            return this.queryRunner.dropIndex(tableSchema, index.name);
         });
 
         await Promise.all(dropPromises);

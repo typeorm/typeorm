@@ -170,16 +170,19 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
             return true;
         })
         .map(connectionOptions => {
-            return Object.assign({}, connectionOptions as ConnectionOptions, {
+            const newOptions: any = Object.assign({}, connectionOptions as ConnectionOptions, {
                 name: options && options.name ? options.name : connectionOptions.name,
                 entities: options && options.entities ? options.entities : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
                 entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-                autoSchemaSync: options && (options.entities || options.entitySchemas) ? options.schemaCreate : false,
                 dropSchema: options && (options.entities || options.entitySchemas) ? options.dropSchema : false,
-                schema: options && options.schema ? options.schema : undefined,
                 cache: options ? options.cache : undefined,
             });
+            if (options && options.schemaCreate)
+                newOptions.synchronize = options.schemaCreate;
+            if (options && options.schema)
+                newOptions.schema = options.schema;
+            return newOptions;
         });
 }
 

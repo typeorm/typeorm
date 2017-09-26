@@ -25,6 +25,11 @@ export class ForeignKeySchema {
     referencedTableName: string;
 
     /**
+     * Table path referenced in the foreign key.
+     */
+    referencedTablePath: string;
+
+    /**
      * Column names which included by this foreign key.
      */
     referencedColumnNames: string[];
@@ -43,12 +48,14 @@ export class ForeignKeySchema {
                 columnNames: string[],
                 referencedColumnNames: string[],
                 referencedTable: string,
+                referencedTablePath: string,
                 onDelete?: string) {
 
         this.name = name;
         this.columnNames = columnNames;
         this.referencedColumnNames = referencedColumnNames;
         this.referencedTableName = referencedTable;
+        this.referencedTablePath = referencedTablePath;
         this.onDelete = onDelete;
     }
 
@@ -64,7 +71,8 @@ export class ForeignKeySchema {
             this.name,
             this.columnNames,
             this.referencedColumnNames,
-            this.referencedTableName
+            this.referencedTableName,
+            this.referencedTablePath
         );
     }
 
@@ -81,6 +89,7 @@ export class ForeignKeySchema {
             metadata.columnNames,
             metadata.referencedColumnNames,
             metadata.referencedTableName,
+            metadata.referencedEntityMetadata.tablePath,
             metadata.onDelete
         );
     }

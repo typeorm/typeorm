@@ -62,7 +62,7 @@ export interface QueryRunner {
      * Be careful with using this method and avoid using it in production or migrations
      * (because it can clear all your database).
      */
-    clearDatabase(): Promise<void>;
+    clearDatabase(tableSchemas?: string[], database?: string): Promise<void>;
 
     /**
      * Starts transaction.
@@ -95,49 +95,59 @@ export interface QueryRunner {
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
      */
-    insert(tableName: string, valuesMap: Object): Promise<InsertResult>;
+    insert(tablePath: string, valuesMap: Object): Promise<InsertResult>;
 
     /**
      * Updates rows that match given simple conditions in the given table.
      */
-    update(tableName: string, valuesMap: Object, conditions: Object): Promise<void>;
+    update(tablePath: string, valuesMap: Object, conditions: Object): Promise<void>;
 
     /**
      * Performs a simple DELETE query by a given conditions in a given table.
      */
-    delete(tableName: string, condition: string, parameters?: any[]): Promise<void>;
+    delete(tablePath: string, condition: string, parameters?: any[]): Promise<void>;
 
     /**
      * Performs a simple DELETE query by a given conditions in a given table.
      */
-    delete(tableName: string, conditions: Object): Promise<void>;
+    delete(tablePath: string, conditions: Object): Promise<void>;
 
     /**
      * Inserts new values into closure table.
      */
-    insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
+    insertIntoClosureTable(tablePath: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
 
     /**
      * Loads a table by a given given name from the database and creates a TableSchema from them.
      */
-    getTable(tableName: string): Promise<TableSchema|undefined>;
+    getTable(tablePath: string): Promise<TableSchema|undefined>;
 
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      *
      * todo: make tableNames optional
      */
-    getTables(tableNames: string[]): Promise<TableSchema[]>;
+    getTables(tablePaths: string[]): Promise<TableSchema[]>;
+
+    /**
+     * Checks if database with the given name exist.
+     */
+    hasDatabase(database: string): Promise<boolean>;
 
     /**
      * Checks if table with the given name exist in the database.
      */
-    hasTable(tableName: string): Promise<boolean>;
+    hasTable(tablePath: string): Promise<boolean>;
+
+    /**
+     * Creates a database if it's not created.
+     */
+    createDatabase(database: string): Promise<void[]>;
 
     /**
      * Creates a schema if it's not created.
      */
-    createSchema(): Promise<void>;
+    createSchema(schemas: string[]): Promise<void[]>;
 
     /**
      * Creates a new table from the given table metadata and column metadatas.
@@ -149,7 +159,7 @@ export interface QueryRunner {
     /**
      * Drops the table.
      */
-    dropTable(tableName: string): Promise<void>;
+    dropTable(tablePath: string): Promise<void>;
 
     /**
      * Checks if column with the given name exist in the given table.
@@ -259,7 +269,7 @@ export interface QueryRunner {
     /**
      * Drops an index from the table.
      */
-    dropIndex(table: TableSchema|string, index: IndexSchema|string): Promise<void>;
+    dropIndex(tableSchemeOrPath: TableSchema|string, index: IndexSchema|string): Promise<void>;
 
     /**
      * Truncates table.

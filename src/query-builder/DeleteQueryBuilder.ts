@@ -132,14 +132,13 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Creates DELETE express used to perform query.
      */
     protected createDeleteExpression() {
-        const tableName = this.escape(this.getMainTableName());
         const whereExpression = this.createWhereExpression();
         if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
-            return `DELETE FROM ${tableName}${whereExpression} RETURNING ${this.expressionMap.returning}`;
+            return `DELETE FROM ${this.getTableName(this.getMainTableName())}${whereExpression} RETURNING ${this.expressionMap.returning}`;
         } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
-            return `DELETE FROM ${tableName} OUTPUT ${this.expressionMap.returning}${whereExpression}`;
+            return `DELETE FROM ${this.getTableName(this.getMainTableName())} OUTPUT ${this.expressionMap.returning}${whereExpression}`;
         } else {
-            return `DELETE FROM ${tableName}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
+            return `DELETE FROM ${this.getTableName(this.getMainTableName())}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
         }
     }
 

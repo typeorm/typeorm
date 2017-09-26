@@ -12,7 +12,7 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
     readonly type: "postgres";
 
     /**
-     * Schema name. By default is "public".
+     * Schema name.
      */
     readonly schema?: string;
 

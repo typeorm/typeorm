@@ -3,7 +3,6 @@ import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/Prima
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
 import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
-// import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
 import {Index} from "../../../../../src/decorator/Index";
 import {Guest} from "./Guest";
 

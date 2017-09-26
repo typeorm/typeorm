@@ -498,12 +498,12 @@ export class SqlServerDriver implements Driver {
      * Sql server's parameters needs to be wrapped into special object with type information about this value.
      * This method wraps all values of the given object into MssqlParameter based on their column definitions in the given table.
      */
-    parametrizeMap(tableName: string, map: ObjectLiteral): ObjectLiteral {
+    parametrizeMap(tablePath: string, map: ObjectLiteral): ObjectLiteral {
 
         // find metadata for the given table
-        if (!this.connection.hasMetadata(tableName)) // if no metadata found then we can't proceed because we don't have columns and their types
+        if (!this.connection.hasMetadata(tablePath)) // if no metadata found then we can't proceed because we don't have columns and their types
             return map;
-        const metadata = this.connection.getMetadata(tableName);
+        const metadata = this.connection.getMetadata(tablePath);
 
         return Object.keys(map).reduce((newMap, key) => {
             const value = map[key];

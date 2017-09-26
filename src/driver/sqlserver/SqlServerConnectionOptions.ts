@@ -29,6 +29,11 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
     readonly stream?: boolean;
 
     /**
+     * Database schema.
+     */
+    readonly schema?: string;
+
+    /**
      * An optional object/dictionary with the any of the properties
      */
     readonly pool?: {

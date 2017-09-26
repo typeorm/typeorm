@@ -746,7 +746,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
         try {
-            return await queryRunner.truncate(metadata.tableName); // await is needed here because we are using finally
+            return await queryRunner.truncate(metadata.tablePath); // await is needed here because we are using finally
 
         } finally {
             if (!this.queryRunner)

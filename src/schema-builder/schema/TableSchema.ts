@@ -54,11 +54,21 @@ export class TableSchema {
      */
     engine?: string;
 
+    /**
+     * Database name.
+     */
+    database?: string;
+
+    /**
+     * Schema name. Used in Postgres and Sql Server.
+     */
+    schema?: string;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string, columns?: ColumnSchema[]|ObjectLiteral[], justCreated?: boolean, engine?: string) {
+    constructor(name: string, columns?: ColumnSchema[]|ObjectLiteral[], justCreated?: boolean, engine?: string, database?: string, schema?: string) {
         this.name = name;
         if (columns) {
             this.columns = (columns as any[]).map(column => { // as any[] is a temporary fix (some weird compiler error)
@@ -74,6 +84,8 @@ export class TableSchema {
             this.justCreated = justCreated;
 
         this.engine = engine;
+        this.database = database;
+        this.schema = schema;
     }
 
     // -------------------------------------------------------------------------
@@ -111,6 +123,8 @@ export class TableSchema {
         cloned.foreignKeys = this.foreignKeys.map(key => key.clone());
         cloned.primaryKeys = this.primaryKeys.map(key => key.clone());
         cloned.engine = this.engine;
+        cloned.database = this.database;
+        cloned.schema = this.schema;
         return cloned;
     }
 
@@ -307,6 +321,8 @@ export class TableSchema {
     static create(entityMetadata: EntityMetadata, driver: Driver) {
         const tableSchema = new TableSchema(entityMetadata.tableName);
         tableSchema.engine = entityMetadata.engine;
+        tableSchema.database = entityMetadata.database;
+        tableSchema.schema = entityMetadata.schema;
         entityMetadata.columns.forEach(column => {
             const columnSchema = ColumnSchema.create(column, 
                 driver.normalizeType(column), 

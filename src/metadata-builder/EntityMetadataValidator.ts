@@ -7,6 +7,7 @@ import {DataTypeNotSupportedError} from "../error/DataTypeNotSupportedError";
 import {ColumnType} from "../driver/types/ColumnTypes";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -86,9 +87,15 @@ export class EntityMetadataValidator {
                 throw new Error(`Error in ${entityMetadata.name} entity. There can be only one auto-increment column in MySql table.`);
         }*/
 
+        if (driver instanceof MysqlDriver) {
+            const metadatasWithDatabase = allEntityMetadatas.filter(metadata => metadata.database);
+            if (metadatasWithDatabase.length === 0 && !driver.database)
+                throw new Error(`Database not specified`);
+        }
+
         if (driver instanceof SqlServerDriver) {
-            const carsetColumns = entityMetadata.columns.filter(column => column.charset);
-            if (carsetColumns.length > 1)
+            const charsetColumns = entityMetadata.columns.filter(column => column.charset);
+            if (charsetColumns.length > 1)
                 throw new Error(`Character set specifying is not supported in Sql Server`);
         }
 

@@ -22,6 +22,29 @@ export class OrmUtils {
         }, [] as Array<{ id: R, items: T[] }>);
     }
 
+    static uniq<T>(array: T[], criteria?: (item: T) => any): T[];
+    static uniq<T, K extends keyof T>(array: T[], property: K): T[];
+    static uniq<T, K extends keyof T>(array: T[], criteriaOrProperty?: ((item: T) => any)|K): T[] {
+        return array.reduce((uniqueArray, item) => {
+            let found: boolean = false;
+            if (criteriaOrProperty instanceof Function) {
+                const itemValue = criteriaOrProperty(item);
+                found = !!uniqueArray.find(uniqueItem => criteriaOrProperty(uniqueItem) === itemValue);
+
+            } else if (typeof criteriaOrProperty === "string") {
+                found = !!uniqueArray.find(uniqueItem => uniqueItem[criteriaOrProperty] === item[criteriaOrProperty]);
+
+            } else {
+                found = uniqueArray.indexOf(item) !== -1;
+            }
+
+            if (!found)
+                uniqueArray.push(item);
+
+            return uniqueArray;
+        }, [] as T[]);
+    }
+
     static isObject(item: any) {
         return (item && typeof item === "object" && !Array.isArray(item));
     }

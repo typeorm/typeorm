@@ -110,16 +110,15 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }).join(", ");
 
         // get a table name and all column database names
-        const tableName = this.escape(this.getMainTableName());
         const columnNames = insertColumns.map(column => this.escape(column.databaseName)).join(", ");
 
         // generate sql query
         if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
-            return `INSERT INTO ${tableName}(${columnNames}) VALUES ${values} RETURNING ${this.expressionMap.returning}`;
+            return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) VALUES ${values} RETURNING ${this.expressionMap.returning}`;
         } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
-            return `INSERT INTO ${tableName}(${columnNames}) OUTPUT ${this.expressionMap.returning} VALUES ${values}`;
+            return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) OUTPUT ${this.expressionMap.returning} VALUES ${values}`;
         } else {
-            return `INSERT INTO ${tableName}(${columnNames}) VALUES ${values}`;
+            return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) VALUES ${values}`;
         }
     }
 

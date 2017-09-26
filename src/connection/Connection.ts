@@ -27,6 +27,9 @@ import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {LoggerFactory} from "../logger/LoggerFactory";
 import {QueryResultCacheFactory} from "../cache/QueryResultCacheFactory";
 import {QueryResultCache} from "../cache/QueryResultCache";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {PromiseUtils} from "../util/PromiseUtils";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -221,7 +224,20 @@ export class Connection {
      */
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.createQueryRunner("master");
-        await queryRunner.clearDatabase();
+        const tableSchemas = this.entityMetadatas
+            .filter(metadata => metadata.schema)
+            .map(metadata => metadata.schema!);
+
+        if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
+            const databases = this.entityMetadatas
+                .filter(metadata => metadata.database)
+                .map(metadata => metadata.database!);
+            if (this.driver.database && !databases.find(database => database === this.driver.database))
+                databases.push(this.driver.database);
+            await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(tableSchemas, database));
+        } else {
+            await queryRunner.clearDatabase(tableSchemas);
+        }
         await queryRunner.release();
     }
 
@@ -414,8 +430,13 @@ export class Connection {
         return this.entityMetadatas.find(metadata => {
             if (metadata.target === target)
                 return true;
-            if (typeof target === "string")
-                return metadata.name === target || metadata.tableName === target;
+            if (typeof target === "string") {
+                if (target.indexOf(".") !== -1) {
+                    return metadata.tablePath === target;
+                } else {
+                    return metadata.name === target || metadata.tableName === target;
+                }
+            }
 
             return false;
         });

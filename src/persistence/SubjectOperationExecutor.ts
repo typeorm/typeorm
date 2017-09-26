@@ -269,7 +269,7 @@ export class SubjectOperationExecutor {
 
 
 
-                const updatePromise = this.queryRunner.update(subject.metadata.tableName, updateOptions, conditions);
+                const updatePromise = this.queryRunner.update(subject.metadata.tablePath, updateOptions, conditions);
                 updatePromises.push(updatePromise);
             }
 
@@ -339,7 +339,7 @@ export class SubjectOperationExecutor {
                             updateOptions[joinColumn.databaseName] = columnValue || generatedColumnValue;
                         }
 
-                        const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.tableName, updateOptions, conditions);
+                        const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.tablePath, updateOptions, conditions);
                         updatePromises.push(updatePromise);
 
                     });
@@ -369,18 +369,18 @@ export class SubjectOperationExecutor {
 
             // first insert entity values into parent class table
             const parentValuesMap = this.collectColumnsAndValues(parentEntityMetadata, entity, subject.date, undefined, metadata.discriminatorValue, alreadyInsertedSubjects, "insert");
-            insertResult = parentGeneratedId = await this.queryRunner.insert(parentEntityMetadata.tableName, parentValuesMap);
+            insertResult = parentGeneratedId = await this.queryRunner.insert(parentEntityMetadata.tablePath, parentValuesMap);
 
             // second insert entity values into child class table
             const childValuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, insertResult.generatedMap[parentEntityMetadata.primaryColumns[0].propertyName], undefined, alreadyInsertedSubjects, "insert");
-            const secondGeneratedId = await this.queryRunner.insert(metadata.tableName, childValuesMap);
+            const secondGeneratedId = await this.queryRunner.insert(metadata.tablePath, childValuesMap);
             if (!insertResult && secondGeneratedId) insertResult = secondGeneratedId;
 
         } else { // in the case when class table inheritance is not used
 
             const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects, "insert");
             // console.log("valuesMap", valuesMap);
-            insertResult = await this.queryRunner.insert(metadata.tableName, valuesMap);
+            insertResult = await this.queryRunner.insert(metadata.tablePath, valuesMap);
         }
 
         if (parentGeneratedId)
@@ -591,7 +591,7 @@ export class SubjectOperationExecutor {
     private async insertClosureTableValues(subject: Subject): Promise<void> {
         // todo: since closure tables do not support compose primary keys - throw an exception?
         // todo: what if parent entity or parentEntityId is empty?!
-        const tableName = subject.metadata.closureJunctionTable.tableName;
+        const tablePath = subject.metadata.closureJunctionTable.tablePath;
         const referencedColumn = subject.metadata.treeParentRelation!.joinColumns[0].referencedColumn!; // todo: check if joinColumn works
         // todo: fix joinColumns[0] usage
 
@@ -632,11 +632,11 @@ export class SubjectOperationExecutor {
         }
 
         // if parent entity exist then insert a new row into closure table
-        subject.treeLevel = await this.queryRunner.insertIntoClosureTable(tableName, newEntityId, parentEntityId, !!subject.metadata.treeLevelColumn);
+        subject.treeLevel = await this.queryRunner.insertIntoClosureTable(tablePath, newEntityId, parentEntityId, !!subject.metadata.treeLevelColumn);
 
         if (subject.metadata.treeLevelColumn) {
             const values = { [subject.metadata.treeLevelColumn.databaseName]: subject.treeLevel };
-            await this.queryRunner.update(subject.metadata.tableName, values, { [referencedColumn.databaseName]: newEntityId });
+            await this.queryRunner.update(subject.metadata.tablePath, values, { [referencedColumn.databaseName]: newEntityId });
         }
     }
 
@@ -684,19 +684,19 @@ export class SubjectOperationExecutor {
             if (subject.metadata.versionColumn)
                 value[subject.metadata.versionColumn.databaseName] = this.connection.driver.preparePersistentValue(subject.metadata.versionColumn.getEntityValue(entity) + 1, subject.metadata.versionColumn);
 
-            return this.queryRunner.update(subject.metadata.tableName, value, idMap);
+            return this.queryRunner.update(subject.metadata.tablePath, value, idMap);
         }
 
         // we group by table name, because metadata can have different table names
-        const valueMaps: { tableName: string, metadata: EntityMetadata, values: ObjectLiteral }[] = [];
+        const valueMaps: { tablePath: string, metadata: EntityMetadata, values: ObjectLiteral }[] = [];
 
         // console.log(subject.diffColumns);
         subject.diffColumns.forEach(column => {
             // if (!column.entityTarget) return; // todo: how this can be possible?
             const metadata = this.connection.getMetadata(column.entityMetadata.target);
-            let valueMap = valueMaps.find(valueMap => valueMap.tableName === metadata.tableName);
+            let valueMap = valueMaps.find(valueMap => valueMap.tablePath === metadata.tablePath);
             if (!valueMap) {
-                valueMap = { tableName: metadata.tableName, metadata: metadata, values: {} };
+                valueMap = { tablePath: metadata.tablePath, metadata: metadata, values: {} };
                 valueMaps.push(valueMap);
             }
 
@@ -704,9 +704,9 @@ export class SubjectOperationExecutor {
         });
 
         subject.diffRelations.forEach(relation => {
-            let valueMap = valueMaps.find(valueMap => valueMap.tableName === relation.entityMetadata.tableName);
+            let valueMap = valueMaps.find(valueMap => valueMap.tablePath === relation.entityMetadata.tablePath);
             if (!valueMap) {
-                valueMap = { tableName: relation.entityMetadata.tableName, metadata: relation.entityMetadata, values: {} };
+                valueMap = { tablePath: relation.entityMetadata.tablePath, metadata: relation.entityMetadata, values: {} };
                 valueMaps.push(valueMap);
             }
 
@@ -721,9 +721,9 @@ export class SubjectOperationExecutor {
             return;
 
         if (subject.metadata.updateDateColumn) {
-            let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.tableName);
+            let valueMap = valueMaps.find(valueMap => valueMap.tablePath === subject.metadata.tablePath);
             if (!valueMap) {
-                valueMap = { tableName: subject.metadata.tableName, metadata: subject.metadata, values: {} };
+                valueMap = { tablePath: subject.metadata.tablePath, metadata: subject.metadata, values: {} };
                 valueMaps.push(valueMap);
             }
 
@@ -731,9 +731,9 @@ export class SubjectOperationExecutor {
         }
 
         if (subject.metadata.versionColumn) {
-            let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.tableName);
+            let valueMap = valueMaps.find(valueMap => valueMap.tablePath === subject.metadata.tablePath);
             if (!valueMap) {
-                valueMap = { tableName: subject.metadata.tableName, metadata: subject.metadata, values: {} };
+                valueMap = { tablePath: subject.metadata.tablePath, metadata: subject.metadata, values: {} };
                 valueMaps.push(valueMap);
             }
 
@@ -742,10 +742,10 @@ export class SubjectOperationExecutor {
 
         if (subject.metadata.parentEntityMetadata) {
             if (subject.metadata.parentEntityMetadata.updateDateColumn) {
-                let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.parentEntityMetadata.tableName);
+                let valueMap = valueMaps.find(valueMap => valueMap.tablePath === subject.metadata.parentEntityMetadata.tablePath);
                 if (!valueMap) {
                     valueMap = {
-                        tableName: subject.metadata.parentEntityMetadata.tableName,
+                        tablePath: subject.metadata.parentEntityMetadata.tablePath,
                         metadata: subject.metadata.parentEntityMetadata,
                         values: {}
                     };
@@ -756,10 +756,10 @@ export class SubjectOperationExecutor {
             }
 
             if (subject.metadata.parentEntityMetadata.versionColumn) {
-                let valueMap = valueMaps.find(valueMap => valueMap.tableName === subject.metadata.parentEntityMetadata.tableName);
+                let valueMap = valueMaps.find(valueMap => valueMap.tablePath === subject.metadata.parentEntityMetadata.tablePath);
                 if (!valueMap) {
                     valueMap = {
-                        tableName: subject.metadata.parentEntityMetadata.tableName,
+                        tablePath: subject.metadata.parentEntityMetadata.tablePath,
                         metadata: subject.metadata.parentEntityMetadata,
                         values: {}
                     };
@@ -775,7 +775,7 @@ export class SubjectOperationExecutor {
             if (!idMap)
                 throw new Error(`Internal error. Cannot get id of the updating entity.`);
 
-            return this.queryRunner.update(valueMap.tableName, valueMap.values, idMap);
+            return this.queryRunner.update(valueMap.tablePath, valueMap.values, idMap);
         }));
     }
 
@@ -806,7 +806,7 @@ export class SubjectOperationExecutor {
         if (!idMap)
             throw new Error(`Internal error. Cannot get id of the updating entity.`);
 
-        return this.queryRunner.update(subject.metadata.tableName, values, idMap);
+        return this.queryRunner.update(subject.metadata.tablePath, values, idMap);
     }
 
     // -------------------------------------------------------------------------
@@ -899,7 +899,7 @@ export class SubjectOperationExecutor {
             const columns = relation.junctionEntityMetadata!.columns.map(column => column.databaseName);
             const values = relation.isOwning ? [...ownId, ...relationId] : [...relationId, ...ownId];
 
-            return this.queryRunner.insert(relation.junctionEntityMetadata!.tableName, OrmUtils.zipObject(columns, values));
+            return this.queryRunner.insert(relation.junctionEntityMetadata!.tablePath, OrmUtils.zipObject(columns, values));
         });
 
         await Promise.all(promises);

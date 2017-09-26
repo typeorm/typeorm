@@ -605,12 +605,7 @@ export class PostgresDriver implements Driver {
             pool.connect((err: any, connection: any, release: Function) => {
                 if (err) return fail(err);
                 release();
-
-                const schemaName = this.options.schema || this.options.schemaName || "public";
-                connection.query(`SET search_path TO '${schemaName}', 'public';`, (err: any) => {
-                    if (err) return fail(err);
-                    ok(pool);
-                });
+                ok(pool);
             });
         });
     }

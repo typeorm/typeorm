@@ -351,6 +351,13 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     }
 
     /**
+     * Checks if database with the given name exist.
+     */
+    async hasDatabase(database: string): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableName: string): Promise<boolean> {
@@ -360,10 +367,17 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     }
 
     /**
+     * Creates a database if it's not created.
+     */
+    createDatabase(database: string): Promise<void[]> {
+        return Promise.resolve([]);
+    }
+
+    /**
      * Creates a schema if it's not created.
      */
-    createSchema(): Promise<void> {
-        return Promise.resolve();
+    createSchema(schemas: string[]): Promise<void[]> {
+        return Promise.resolve([]);
     }
 
     /**
@@ -559,7 +573,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Drops an index from the table.
      */
-    async dropIndex(tableName: string, indexName: string): Promise<void> {
+    async dropIndex(tableSchemeOrName: TableSchema|string, indexName: string): Promise<void> {
         const sql = `DROP INDEX "${indexName}"`;
         await this.query(sql);
     }

@@ -13,7 +13,6 @@ describe("uuid-postgres", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
-            schemaCreate: true,
             dropSchema: true,
         });
     });
