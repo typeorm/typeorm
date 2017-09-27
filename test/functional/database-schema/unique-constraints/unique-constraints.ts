@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {expect} from "chai";
- 
+
 import {Person} from "./entity/Person";
 
 describe("indices > reading index from entity schema and updating database", () => {
@@ -21,10 +21,10 @@ describe("indices > reading index from entity schema and updating database", () 
         it("should create a table containing a unique constraint in one column", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("person");
+            const table = await queryRunner.getTable("person");
             await queryRunner.release();
 
-            expect(tableSchema!.findColumnByName("lastname")!.isUnique).to.be.true;
+            expect(table!.findColumnByName("lastname")!.isUnique).to.be.true;
 
         })));
             
@@ -33,10 +33,10 @@ describe("indices > reading index from entity schema and updating database", () 
             await connection.synchronize(false);
             
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("person");
+            const table = await queryRunner.getTable("person");
             await queryRunner.release();
 
-            expect(tableSchema!.findColumnByName("lastname")!.isUnique).to.be.true;
+            expect(table!.findColumnByName("lastname")!.isUnique).to.be.true;
             
         })));
 
@@ -48,10 +48,10 @@ describe("indices > reading index from entity schema and updating database", () 
             await connection.synchronize(false);
             
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("person");
+            const table = await queryRunner.getTable("person");
             await queryRunner.release();
 
-            tableSchema!.findColumnByName("lastname")!.isUnique = false;
+            table!.findColumnByName("lastname")!.isUnique = false;
 
         })));
 
@@ -63,10 +63,10 @@ describe("indices > reading index from entity schema and updating database", () 
             await connection.synchronize(false);
             
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("person");
+            const table = await queryRunner.getTable("person");
             await queryRunner.release();
 
-            tableSchema!.findColumnByName("lastname")!.isUnique = false;
+            table!.findColumnByName("lastname")!.isUnique = false;
 
         })));
 

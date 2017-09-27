@@ -24,7 +24,7 @@ describe("uuid-postgres", () => {
         const schema = await queryRunner.getTable("record");
         await queryRunner.release();
         expect(schema).not.to.be.empty;
-        expect(schema!.columns.find(columnSchema => columnSchema.name === "id" && columnSchema.type === "uuid" && columnSchema.isGenerated)).to.be.not.empty;
+        expect(schema!.columns.find(tableColumn => tableColumn.name === "id" && tableColumn.type === "uuid" && tableColumn.isGenerated)).to.be.not.empty;
     })));
 
     it("should persist uuid correctly", () => Promise.all(connections.map(async connection => {

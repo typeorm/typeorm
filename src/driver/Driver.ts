@@ -6,7 +6,7 @@ import {MappedColumnTypes} from "./types/MappedColumnTypes";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {DataTypeDefaults} from "./types/DataTypeDefaults";
 import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
-import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../schema-builder/schema/TableColumn";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -127,7 +127,7 @@ export interface Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    createFullType(column: ColumnSchema): string;
+    createFullType(column: TableColumn): string;
 
     /**
      * Obtains a new database connection to a master server.

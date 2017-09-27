@@ -1,9 +1,9 @@
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {TableSchema} from "../../schema-builder/schema/TableSchema";
+import {Table} from "../../schema-builder/schema/Table";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {OrmUtils} from "../../util/OrmUtils";
 import {InsertResult} from "../InsertResult";
@@ -63,6 +63,9 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
 
         const options = Object.assign({}, {
             database: this.driver.options.database,
+            version: this.driver.options.version,
+            description: this.driver.options.description,
+            size: this.driver.options.size,
         }, this.driver.options.extra || {});
 
         this.databaseConnectionPromise = new Promise<void>((ok, fail) => {
@@ -205,9 +208,9 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
 
     // TODO: finish the table schema loading
     /**
-     * Loads all tables (with given names) from the database and creates a TableSchema from them.
+     * Loads all tables (with given names) from the database and creates a Table from them.
      */
-    async getTables(tableNames: string[]): Promise<TableSchema[]> {
+    async getTables(tableNames: string[]): Promise<Table[]> {
 
         // if no tables given then no need to proceed
         if (!tableNames || !tableNames.length)
@@ -224,7 +227,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
 
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
-            const tableSchema = new TableSchema(dbTable["name"]);
+            const table = new Table(dbTable["name"]);
 
             // load columns and indices
             /*const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
@@ -252,24 +255,24 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
                 }
             }
 
-            // create column schemas from the loaded columns
-            tableSchema.columns = dbColumns.map(dbColumn => {
-                const columnSchema = new ColumnSchema();
-                columnSchema.name = dbColumn["name"];
-                columnSchema.type = dbColumn["type"].toLowerCase();
-                columnSchema.default = dbColumn["dflt_value"] !== null && dbColumn["dflt_value"] !== undefined ? dbColumn["dflt_value"] : undefined;
-                columnSchema.isNullable = dbColumn["notnull"] === 0;
-                columnSchema.isPrimary = dbColumn["pk"] === 1;
-                columnSchema.comment = ""; // todo later
-                columnSchema.isGenerated = autoIncrementColumnName === dbColumn["name"];
+            // create columns from the loaded columns
+            table.columns = dbColumns.map(dbColumn => {
+                const tableColumn = new TableColumn();
+                tableColumn.name = dbColumn["name"];
+                tableColumn.type = dbColumn["type"].toLowerCase();
+                tableColumn.default = dbColumn["dflt_value"] !== null && dbColumn["dflt_value"] !== undefined ? dbColumn["dflt_value"] : undefined;
+                tableColumn.isNullable = dbColumn["notnull"] === 0;
+                tableColumn.isPrimary = dbColumn["pk"] === 1;
+                tableColumn.comment = ""; // todo later
+                tableColumn.isGenerated = autoIncrementColumnName === dbColumn["name"];
                 const columnForeignKeys = dbForeignKeys
                     .filter(foreignKey => foreignKey["from"] === dbColumn["name"])
                     .map(foreignKey => {
                         const keyName = namingStrategy.foreignKeyName(dbTable["name"], [foreignKey["from"]], foreignKey["table"], [foreignKey["to"]]);
-                        return new ForeignKeySchema(keyName, [foreignKey["from"]], [foreignKey["to"]], foreignKey["table"], foreignKey["on_delete"]); // todo: how sqlite return from and to when they are arrays? (multiple column foreign keys)
+                        return new TableForeignKey(keyName, [foreignKey["from"]], [foreignKey["to"]], foreignKey["table"], foreignKey["on_delete"]); // todo: how sqlite return from and to when they are arrays? (multiple column foreign keys)
                     });
-                tableSchema.addForeignKeys(columnForeignKeys);
-                return columnSchema;
+                table.addForeignKeys(columnForeignKeys);
+                return tableColumn;
             });
 
             // create primary key schema
@@ -279,7 +282,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
                     const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${index["name"]}")`);
                     const indexColumns = indexInfos.map(indexInfo => indexInfo["name"]);
                     indexColumns.forEach(indexColumn => {
-                        tableSchema.primaryKeys.push(new PrimaryKeySchema(index["name"], indexColumn));
+                        table.primaryKeys.push(new TablePrimaryKey(index["name"], indexColumn));
                     });
                 }));
 
@@ -287,8 +290,8 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
             const indicesPromises = dbIndices
                 .filter(dbIndex => {
                     return  dbIndex["origin"] !== "pk" &&
-                        (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"])) &&
-                        (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["name"]));
+                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"])) &&
+                        (!table.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["name"]));
                 })
                 .map(dbIndex => dbIndex["name"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
@@ -302,7 +305,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
                         if (dbIndex!["unique"] === 1) { // this means we have a special index generated for a column
                             // so we find and update the column
                             indexColumns.forEach(columnName => {
-                                const column = tableSchema.columns.find(column => column.name === columnName);
+                                const column = table.columns.find(column => column.name === columnName);
                                 if (column)
                                     column.isUnique = true;
                             });
@@ -311,14 +314,14 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
                         return Promise.resolve(undefined);
 
                     } else {
-                        return new IndexSchema(dbTable["name"], dbIndex!["name"], indexColumns, dbIndex!["unique"] === "1");
+                        return new TableIndex(dbTable["name"], dbIndex!["name"], indexColumns, dbIndex!["unique"] === "1");
                     }
                 });
 
             const indices = await Promise.all(indicesPromises);
-            tableSchema.indices = indices.filter(index => !!index) as IndexSchema[];*/
+            table.indices = indices.filter(index => !!index) as TableIndex[];*/
 
-            return tableSchema;
+            return table;
         }));
     }
 
@@ -351,7 +354,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: ColumnSchema): string {
+    protected buildCreateColumnSql(column: TableColumn): string {
         let c = "\"" + column.name + "\"";
         if (column instanceof ColumnMetadata) {
             c += " " + this.driver.normalizeType(column);

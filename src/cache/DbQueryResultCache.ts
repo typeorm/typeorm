@@ -1,7 +1,7 @@
 import {QueryResultCache} from "./QueryResultCache";
 import {QueryResultCacheOptions} from "./QueryResultCacheOptions";
-import {TableSchema} from "../schema-builder/schema/TableSchema";
-import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
+import {Table} from "../schema-builder/schema/Table";
+import {TableColumn} from "../schema-builder/schema/TableColumn";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Connection} from "../connection/Connection";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -46,8 +46,8 @@ export class DbQueryResultCache implements QueryResultCache {
         if (tableExist)
             return;
 
-        await queryRunner.createTable(new TableSchema("query-result-cache", [ // createTableIfNotExist
-            new ColumnSchema({
+        await queryRunner.createTable(new Table("query-result-cache", [ // createTableIfNotExist
+            new TableColumn({
                 name: "id",
                 isNullable: true,
                 isPrimary: true,
@@ -55,30 +55,30 @@ export class DbQueryResultCache implements QueryResultCache {
                 generationStrategy: "increment",
                 isGenerated: true
             }),
-            new ColumnSchema({
+            new TableColumn({
                 name: "identifier",
                 type: driver.normalizeType({ type: driver.mappedDataTypes.cacheIdentifier }),
                 isNullable: true
             }),
-            new ColumnSchema({
+            new TableColumn({
                 name: "time",
                 type: driver.normalizeType({ type: driver.mappedDataTypes.cacheTime }),
                 isPrimary: false,
                 isNullable: false
             }),
-            new ColumnSchema({
+            new TableColumn({
                 name: "duration",
                 type: driver.normalizeType({ type: driver.mappedDataTypes.cacheDuration }),
                 isPrimary: false,
                 isNullable: false
             }),
-            new ColumnSchema({
+            new TableColumn({
                 name: "query",
                 type: driver.normalizeType({ type: driver.mappedDataTypes.cacheQuery }),
                 isPrimary: false,
                 isNullable: false
             }),
-            new ColumnSchema({
+            new TableColumn({
                 name: "result",
                 type: driver.normalizeType({ type: driver.mappedDataTypes.cacheResult }),
                 isNullable: false

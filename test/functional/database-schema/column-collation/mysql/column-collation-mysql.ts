@@ -21,7 +21,7 @@ describe("database schema > column collation > mysql", () => {
 
         const postRepository = connection.getRepository(Post);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("post");
+        const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
         const post = new Post();
@@ -31,12 +31,12 @@ describe("database schema > column collation > mysql", () => {
         post.description = "This is post";
         await postRepository.save(post);
 
-        tableSchema!.findColumnByName("name")!.charset!.should.be.equal("ascii");
-        tableSchema!.findColumnByName("name")!.collation!.should.be.equal("ascii_general_ci");
-        tableSchema!.findColumnByName("title")!.charset!.should.be.equal("utf8");
-        tableSchema!.findColumnByName("title")!.collation!.should.be.equal("utf8_general_ci");
-        tableSchema!.findColumnByName("description")!.charset!.should.be.equal("cp852");
-        tableSchema!.findColumnByName("description")!.collation!.should.be.equal("cp852_general_ci");
+        table!.findColumnByName("name")!.charset!.should.be.equal("ascii");
+        table!.findColumnByName("name")!.collation!.should.be.equal("ascii_general_ci");
+        table!.findColumnByName("title")!.charset!.should.be.equal("utf8");
+        table!.findColumnByName("title")!.collation!.should.be.equal("utf8_general_ci");
+        table!.findColumnByName("description")!.charset!.should.be.equal("cp852");
+        table!.findColumnByName("description")!.collation!.should.be.equal("cp852_general_ci");
 
     })));
 

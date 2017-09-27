@@ -24,7 +24,7 @@ describe("database schema > column types > mssql", () => {
 
         const postRepository = connection.getRepository(Post);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("post");
+        const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
         const post = new Post();
@@ -105,46 +105,46 @@ describe("database schema > column types > mssql", () => {
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
 
-        tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
-        tableSchema!.findColumnByName("name")!.type.should.be.equal("nvarchar");
-        tableSchema!.findColumnByName("name")!.length!.should.be.equal("255");
-        tableSchema!.findColumnByName("bit")!.type.should.be.equal("bit");
-        tableSchema!.findColumnByName("tinyint")!.type.should.be.equal("tinyint");
-        tableSchema!.findColumnByName("smallint")!.type.should.be.equal("smallint");
-        tableSchema!.findColumnByName("int")!.type.should.be.equal("int");
-        tableSchema!.findColumnByName("bigint")!.type.should.be.equal("bigint");
-        tableSchema!.findColumnByName("decimal")!.type.should.be.equal("decimal");
-        tableSchema!.findColumnByName("dec")!.type.should.be.equal("decimal");
-        tableSchema!.findColumnByName("numeric")!.type.should.be.equal("numeric");
-        tableSchema!.findColumnByName("float")!.type.should.be.equal("float");
-        tableSchema!.findColumnByName("real")!.type.should.be.equal("real");
-        tableSchema!.findColumnByName("smallmoney")!.type.should.be.equal("smallmoney");
-        tableSchema!.findColumnByName("money")!.type.should.be.equal("money");
-        tableSchema!.findColumnByName("uniqueidentifier")!.type.should.be.equal("uniqueidentifier");
-        tableSchema!.findColumnByName("char")!.type.should.be.equal("char");
-        tableSchema!.findColumnByName("char")!.length!.should.be.equal("1");
-        tableSchema!.findColumnByName("varchar")!.type.should.be.equal("varchar");
-        tableSchema!.findColumnByName("varchar")!.length!.should.be.equal("255");
-        tableSchema!.findColumnByName("text")!.type.should.be.equal("text");
-        tableSchema!.findColumnByName("nchar")!.type.should.be.equal("nchar");
-        tableSchema!.findColumnByName("nchar")!.length!.should.be.equal("1");
-        tableSchema!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
-        tableSchema!.findColumnByName("nvarchar")!.length!.should.be.equal("255");
-        tableSchema!.findColumnByName("ntext")!.type.should.be.equal("ntext");
-        tableSchema!.findColumnByName("binary")!.type.should.be.equal("binary");
-        tableSchema!.findColumnByName("binary")!.length!.should.be.equal("1");
-        tableSchema!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
-        tableSchema!.findColumnByName("varbinary")!.length!.should.be.equal("1");
-        tableSchema!.findColumnByName("image")!.type.should.be.equal("image");
-        tableSchema!.findColumnByName("date")!.type.should.be.equal("date");
-        tableSchema!.findColumnByName("dateObj")!.type.should.be.equal("date");
-        tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
-        tableSchema!.findColumnByName("datetime2")!.type.should.be.equal("datetime2");
-        tableSchema!.findColumnByName("smalldatetime")!.type.should.be.equal("smalldatetime");
-        tableSchema!.findColumnByName("time")!.type.should.be.equal("time");
-        tableSchema!.findColumnByName("timeObj")!.type.should.be.equal("time");
-        tableSchema!.findColumnByName("datetimeoffset")!.type.should.be.equal("datetimeoffset");
-        tableSchema!.findColumnByName("simpleArray")!.type.should.be.equal("ntext");
+        table!.findColumnByName("id")!.type.should.be.equal("int");
+        table!.findColumnByName("name")!.type.should.be.equal("nvarchar");
+        table!.findColumnByName("name")!.length!.should.be.equal("255");
+        table!.findColumnByName("bit")!.type.should.be.equal("bit");
+        table!.findColumnByName("tinyint")!.type.should.be.equal("tinyint");
+        table!.findColumnByName("smallint")!.type.should.be.equal("smallint");
+        table!.findColumnByName("int")!.type.should.be.equal("int");
+        table!.findColumnByName("bigint")!.type.should.be.equal("bigint");
+        table!.findColumnByName("decimal")!.type.should.be.equal("decimal");
+        table!.findColumnByName("dec")!.type.should.be.equal("decimal");
+        table!.findColumnByName("numeric")!.type.should.be.equal("numeric");
+        table!.findColumnByName("float")!.type.should.be.equal("float");
+        table!.findColumnByName("real")!.type.should.be.equal("real");
+        table!.findColumnByName("smallmoney")!.type.should.be.equal("smallmoney");
+        table!.findColumnByName("money")!.type.should.be.equal("money");
+        table!.findColumnByName("uniqueidentifier")!.type.should.be.equal("uniqueidentifier");
+        table!.findColumnByName("char")!.type.should.be.equal("char");
+        table!.findColumnByName("char")!.length!.should.be.equal("1");
+        table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
+        table!.findColumnByName("varchar")!.length!.should.be.equal("255");
+        table!.findColumnByName("text")!.type.should.be.equal("text");
+        table!.findColumnByName("nchar")!.type.should.be.equal("nchar");
+        table!.findColumnByName("nchar")!.length!.should.be.equal("1");
+        table!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
+        table!.findColumnByName("nvarchar")!.length!.should.be.equal("255");
+        table!.findColumnByName("ntext")!.type.should.be.equal("ntext");
+        table!.findColumnByName("binary")!.type.should.be.equal("binary");
+        table!.findColumnByName("binary")!.length!.should.be.equal("1");
+        table!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
+        table!.findColumnByName("varbinary")!.length!.should.be.equal("1");
+        table!.findColumnByName("image")!.type.should.be.equal("image");
+        table!.findColumnByName("date")!.type.should.be.equal("date");
+        table!.findColumnByName("dateObj")!.type.should.be.equal("date");
+        table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
+        table!.findColumnByName("datetime2")!.type.should.be.equal("datetime2");
+        table!.findColumnByName("smalldatetime")!.type.should.be.equal("smalldatetime");
+        table!.findColumnByName("time")!.type.should.be.equal("time");
+        table!.findColumnByName("timeObj")!.type.should.be.equal("time");
+        table!.findColumnByName("datetimeoffset")!.type.should.be.equal("datetimeoffset");
+        table!.findColumnByName("simpleArray")!.type.should.be.equal("ntext");
 
     })));
 
@@ -152,7 +152,7 @@ describe("database schema > column types > mssql", () => {
 
         const postRepository = connection.getRepository(PostWithOptions);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("post_with_options");
+        const table = await queryRunner.getTable("post_with_options");
         await queryRunner.release();
 
         const post = new PostWithOptions();
@@ -194,36 +194,36 @@ describe("database schema > column types > mssql", () => {
         // loadedPost.datetimeoffset.getTime().should.be.equal(post.datetimeoffset.getTime());
         loadedPost.time.should.be.equal(DateUtils.mixedTimeToString(post.time));
 
-        tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
-        tableSchema!.findColumnByName("decimal")!.type.should.be.equal("decimal");
-        tableSchema!.findColumnByName("decimal")!.precision!.should.be.equal(10);
-        tableSchema!.findColumnByName("decimal")!.scale!.should.be.equal(5);
-        tableSchema!.findColumnByName("dec")!.type.should.be.equal("decimal");
-        tableSchema!.findColumnByName("dec")!.precision!.should.be.equal(10);
-        tableSchema!.findColumnByName("dec")!.scale!.should.be.equal(5);
-        tableSchema!.findColumnByName("numeric")!.type.should.be.equal("numeric");
-        tableSchema!.findColumnByName("numeric")!.precision!.should.be.equal(10);
-        tableSchema!.findColumnByName("numeric")!.scale!.should.be.equal(5);
-        tableSchema!.findColumnByName("float")!.type.should.be.equal("real");
-        tableSchema!.findColumnByName("float")!.precision!.should.be.equal(24);
-        tableSchema!.findColumnByName("char")!.type.should.be.equal("char");
-        tableSchema!.findColumnByName("char")!.length!.should.be.equal("3");
-        tableSchema!.findColumnByName("varchar")!.type.should.be.equal("varchar");
-        tableSchema!.findColumnByName("varchar")!.length!.should.be.equal("50");
-        tableSchema!.findColumnByName("nchar")!.type.should.be.equal("nchar");
-        tableSchema!.findColumnByName("nchar")!.length!.should.be.equal("3");
-        tableSchema!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
-        tableSchema!.findColumnByName("nvarchar")!.length!.should.be.equal("40");
-        tableSchema!.findColumnByName("binary")!.type.should.be.equal("binary");
-        tableSchema!.findColumnByName("binary")!.length!.should.be.equal("5");
-        tableSchema!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
-        tableSchema!.findColumnByName("varbinary")!.length!.should.be.equal("5");
-        tableSchema!.findColumnByName("datetime2")!.type.should.be.equal("datetime2");
-        tableSchema!.findColumnByName("datetime2")!.precision!.should.be.equal(5);
-        tableSchema!.findColumnByName("time")!.type.should.be.equal("time");
-        tableSchema!.findColumnByName("time")!.precision!.should.be.equal(6);
-        tableSchema!.findColumnByName("datetimeoffset")!.type.should.be.equal("datetimeoffset");
-        tableSchema!.findColumnByName("datetimeoffset")!.precision!.should.be.equal(7);
+        table!.findColumnByName("id")!.type.should.be.equal("int");
+        table!.findColumnByName("decimal")!.type.should.be.equal("decimal");
+        table!.findColumnByName("decimal")!.precision!.should.be.equal(10);
+        table!.findColumnByName("decimal")!.scale!.should.be.equal(5);
+        table!.findColumnByName("dec")!.type.should.be.equal("decimal");
+        table!.findColumnByName("dec")!.precision!.should.be.equal(10);
+        table!.findColumnByName("dec")!.scale!.should.be.equal(5);
+        table!.findColumnByName("numeric")!.type.should.be.equal("numeric");
+        table!.findColumnByName("numeric")!.precision!.should.be.equal(10);
+        table!.findColumnByName("numeric")!.scale!.should.be.equal(5);
+        table!.findColumnByName("float")!.type.should.be.equal("real");
+        table!.findColumnByName("float")!.precision!.should.be.equal(24);
+        table!.findColumnByName("char")!.type.should.be.equal("char");
+        table!.findColumnByName("char")!.length!.should.be.equal("3");
+        table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
+        table!.findColumnByName("varchar")!.length!.should.be.equal("50");
+        table!.findColumnByName("nchar")!.type.should.be.equal("nchar");
+        table!.findColumnByName("nchar")!.length!.should.be.equal("3");
+        table!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
+        table!.findColumnByName("nvarchar")!.length!.should.be.equal("40");
+        table!.findColumnByName("binary")!.type.should.be.equal("binary");
+        table!.findColumnByName("binary")!.length!.should.be.equal("5");
+        table!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
+        table!.findColumnByName("varbinary")!.length!.should.be.equal("5");
+        table!.findColumnByName("datetime2")!.type.should.be.equal("datetime2");
+        table!.findColumnByName("datetime2")!.precision!.should.be.equal(5);
+        table!.findColumnByName("time")!.type.should.be.equal("time");
+        table!.findColumnByName("time")!.precision!.should.be.equal(6);
+        table!.findColumnByName("datetimeoffset")!.type.should.be.equal("datetimeoffset");
+        table!.findColumnByName("datetimeoffset")!.precision!.should.be.equal(7);
 
     })));
 
@@ -231,7 +231,7 @@ describe("database schema > column types > mssql", () => {
 
         const postRepository = connection.getRepository(PostWithoutTypes);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("post_without_types");
+        const table = await queryRunner.getTable("post_without_types");
         await queryRunner.release();
 
         const post = new PostWithoutTypes();
@@ -250,13 +250,13 @@ describe("database schema > column types > mssql", () => {
         loadedPost.binary.toString().should.be.equal(post.binary.toString());
         loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
 
-        tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
-        tableSchema!.findColumnByName("name")!.type.should.be.equal("nvarchar");
-        tableSchema!.findColumnByName("name")!.length!.should.be.equal("255");
-        tableSchema!.findColumnByName("bit")!.type.should.be.equal("bit");
-        tableSchema!.findColumnByName("binary")!.type.should.be.equal("binary");
-        tableSchema!.findColumnByName("binary")!.length!.should.be.equal("1");
-        tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
+        table!.findColumnByName("id")!.type.should.be.equal("int");
+        table!.findColumnByName("name")!.type.should.be.equal("nvarchar");
+        table!.findColumnByName("name")!.length!.should.be.equal("255");
+        table!.findColumnByName("bit")!.type.should.be.equal("bit");
+        table!.findColumnByName("binary")!.type.should.be.equal("binary");
+        table!.findColumnByName("binary")!.length!.should.be.equal("1");
+        table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
 
     })));
 

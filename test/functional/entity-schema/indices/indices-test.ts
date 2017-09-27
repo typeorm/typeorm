@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {EntityMetadata} from "../../../../src/metadata/EntityMetadata";
 import {IndexMetadata} from "../../../../src/metadata/IndexMetadata";
 import {expect} from "chai";
- 
+
 import {PersonSchema} from "./entity/Person";
 
 describe("indices > reading index from entity schema and updating database", () => {
@@ -23,15 +23,15 @@ describe("indices > reading index from entity schema and updating database", () 
         it("should create a non unique index with 2 columns", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("person");
+            const table = await queryRunner.getTable("person");
             await queryRunner.release();
 
-            expect(tableSchema!.indices.length).to.be.equal(1);
-            expect(tableSchema!.indices[0].name).to.be.equal("IDX_TEST");
-            expect(tableSchema!.indices[0].isUnique).to.be.false; 
-            expect(tableSchema!.indices[0].columnNames.length).to.be.equal(2);
-            expect(tableSchema!.indices[0].columnNames[0]).to.be.equal("FirstName");
-            expect(tableSchema!.indices[0].columnNames[1]).to.be.equal("LastName");
+            expect(table!.indices.length).to.be.equal(1);
+            expect(table!.indices[0].name).to.be.equal("IDX_TEST");
+            expect(table!.indices[0].isUnique).to.be.false; 
+            expect(table!.indices[0].columnNames.length).to.be.equal(2);
+            expect(table!.indices[0].columnNames[0]).to.be.equal("FirstName");
+            expect(table!.indices[0].columnNames[1]).to.be.equal("LastName");
 
         })));
 
@@ -44,15 +44,15 @@ describe("indices > reading index from entity schema and updating database", () 
             await connection.synchronize(false);
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("person");
+            const table = await queryRunner.getTable("person");
             await queryRunner.release();
 
-            expect(tableSchema!.indices.length).to.be.equal(1);
-            expect(tableSchema!.indices[0].name).to.be.equal("IDX_TEST"); 
-            expect(tableSchema!.indices[0].isUnique).to.be.true; 
-            expect(tableSchema!.indices[0].columnNames.length).to.be.equal(2); 
-            expect(tableSchema!.indices[0].columnNames[0]).to.be.equal("FirstName"); 
-            expect(tableSchema!.indices[0].columnNames[1]).to.be.equal("LastName");
+            expect(table!.indices.length).to.be.equal(1);
+            expect(table!.indices[0].name).to.be.equal("IDX_TEST"); 
+            expect(table!.indices[0].isUnique).to.be.true; 
+            expect(table!.indices[0].columnNames.length).to.be.equal(2); 
+            expect(table!.indices[0].columnNames[0]).to.be.equal("FirstName"); 
+            expect(table!.indices[0].columnNames[1]).to.be.equal("LastName");
 
         })));
 
@@ -73,15 +73,15 @@ describe("indices > reading index from entity schema and updating database", () 
             await connection.synchronize(false);
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("person");
+            const table = await queryRunner.getTable("person");
             await queryRunner.release();
 
-            expect(tableSchema!.indices.length).to.be.equal(1);
-            expect(tableSchema!.indices[0].name).to.be.equal("IDX_TEST"); 
-            expect(tableSchema!.indices[0].isUnique).to.be.false; 
-            expect(tableSchema!.indices[0].columnNames.length).to.be.equal(2); 
-            expect(tableSchema!.indices[0].columnNames[0]).to.be.equal("LastName");
-            expect(tableSchema!.indices[0].columnNames[1]).to.be.equal("FirstName"); 
+            expect(table!.indices.length).to.be.equal(1);
+            expect(table!.indices[0].name).to.be.equal("IDX_TEST"); 
+            expect(table!.indices[0].isUnique).to.be.false; 
+            expect(table!.indices[0].columnNames.length).to.be.equal(2); 
+            expect(table!.indices[0].columnNames[0]).to.be.equal("LastName");
+            expect(table!.indices[0].columnNames[1]).to.be.equal("FirstName"); 
 
         })));
 

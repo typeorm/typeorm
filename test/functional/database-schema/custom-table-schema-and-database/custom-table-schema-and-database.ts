@@ -30,7 +30,7 @@ describe("database schema > custom-table-schema-and-database", () => {
         it("should correctly create tables when custom table schema used", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("post");
+            const table = await queryRunner.getTable("post");
             await queryRunner.release();
 
             const post = new Post();
@@ -47,13 +47,13 @@ describe("database schema > custom-table-schema-and-database", () => {
             if (connection.driver instanceof SqlServerDriver)
                 sql.should.be.equal(`SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "custom"."post" "post" WHERE "post"."id" = @0`);
 
-            tableSchema!.schema!.should.be.equal("custom");
+            table!.schema!.should.be.equal("custom");
         })));
 
         it("should correctly create tables when custom table schema used in Entity decorator", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("userSchema.user");
+            const table = await queryRunner.getTable("userSchema.user");
             await queryRunner.release();
 
             const user = new User();
@@ -70,13 +70,13 @@ describe("database schema > custom-table-schema-and-database", () => {
             if (connection.driver instanceof SqlServerDriver)
                 sql.should.be.equal(`SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = @0`);
 
-            tableSchema!.schema!.should.be.equal("userSchema");
+            table!.schema!.should.be.equal("userSchema");
         })));
 
         it("should correctly work with cross-schema queries", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("guest.category");
+            const table = await queryRunner.getTable("guest.category");
             await queryRunner.release();
 
             const post = new Post();
@@ -112,7 +112,7 @@ describe("database schema > custom-table-schema-and-database", () => {
                     ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
                     ` FROM "guest"."category" "category" INNER JOIN "custom"."post" "post" ON "post"."id"="category"."postId" WHERE "category"."id" = @0`);
 
-            tableSchema!.schema!.should.be.equal("guest");
+            table!.schema!.should.be.equal("guest");
         })));
 
         it("should correctly work with QueryBuilder", () => Promise.all(connections.map(async connection => {
@@ -166,7 +166,7 @@ describe("database schema > custom-table-schema-and-database", () => {
         it("should correctly create tables when custom database and custom schema used in Entity decorator", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("testDB.questions.question");
+            const table = await queryRunner.getTable("testDB.questions.question");
             await queryRunner.release();
 
             const question = new Question();
@@ -178,8 +178,8 @@ describe("database schema > custom-table-schema-and-database", () => {
                 .getSql();
 
             sql.should.be.equal(`SELECT "question"."id" AS "question_id", "question"."name" AS "question_name" FROM "testDB"."questions"."question" "question" WHERE "question"."id" = @0`);
-            tableSchema!.database!.should.be.equal("testDB");
-            tableSchema!.schema!.should.be.equal("questions");
+            table!.database!.should.be.equal("testDB");
+            table!.schema!.should.be.equal("questions");
         })));
 
         it("should correctly work with cross-schema and cross-database queries in QueryBuilder", () => Promise.all(connections.map(async connection => {
@@ -239,7 +239,7 @@ describe("database schema > custom-table-schema-and-database", () => {
 
             const queryRunner = connection.createQueryRunner();
             const tablePath = connection.driver instanceof SqlServerDriver ? "secondDB..person" : "secondDB.person";
-            const tableSchema = await queryRunner.getTable(tablePath);
+            const table = await queryRunner.getTable(tablePath);
             await queryRunner.release();
 
             const person = new Person();
@@ -256,7 +256,7 @@ describe("database schema > custom-table-schema-and-database", () => {
             if (connection.driver instanceof MysqlDriver)
                 sql.should.be.equal("SELECT `person`.`id` AS `person_id`, `person`.`name` AS `person_name` FROM `secondDB`.`person` `person` WHERE `person`.`id` = ?");
 
-            tableSchema!.database!.should.be.equal("secondDB");
+            table!.database!.should.be.equal("secondDB");
         })));
 
     });

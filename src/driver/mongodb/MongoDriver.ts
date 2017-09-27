@@ -11,7 +11,7 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {MongoSchemaBuilder} from "../../schema-builder/MongoSchemaBuilder";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {ConnectionOptions} from "../../connection/ConnectionOptions";
 
 /**
@@ -263,7 +263,7 @@ export class MongoDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    createFullType(column: ColumnSchema): string {
+    createFullType(column: TableColumn): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 

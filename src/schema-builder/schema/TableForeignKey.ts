@@ -3,7 +3,7 @@ import {ForeignKeyMetadata} from "../../metadata/ForeignKeyMetadata";
 /**
  * Foreign key from the database stored in this class.
  */
-export class ForeignKeySchema {
+export class TableForeignKey {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -67,7 +67,7 @@ export class ForeignKeySchema {
      * Creates a new copy of this foreign key with exactly same properties.
      */
     clone() {
-        return new ForeignKeySchema(
+        return new TableForeignKey(
             this.name,
             this.columnNames,
             this.referencedColumnNames,
@@ -84,7 +84,7 @@ export class ForeignKeySchema {
      * Creates a new foreign schema from the given foreign key metadata.
      */
     static create(metadata: ForeignKeyMetadata) {
-        return new ForeignKeySchema(
+        return new TableForeignKey(
             metadata.name,
             metadata.columnNames,
             metadata.referencedColumnNames,

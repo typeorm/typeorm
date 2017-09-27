@@ -36,11 +36,9 @@ For an example see [typeorm/browser-example](https://github.com/typeorm/browser-
 createConnection({
     type: "websql",
     database: "test",
-    extra: {
-        version: 1,
-        description: "test database",
-        size: 2 * 1024 * 1024
-    },
+    version: 1,
+    description: "test database",
+    size: 2 * 1024 * 1024,
     entities: [
         Photo
     ],

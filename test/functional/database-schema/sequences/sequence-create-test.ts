@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {expect} from "chai";
- 
+
 import {Person} from "./entity/Person";
 
 describe("sequences > creating a sequence and marking the column as generated", () => {
@@ -22,10 +22,10 @@ describe("sequences > creating a sequence and marking the column as generated", 
         it("should check that the primary key column is generated automatically", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("person");
+            const table = await queryRunner.getTable("person");
             await queryRunner.release();
 
-            expect(tableSchema!.findColumnByName("Id")!.isGenerated).to.be.true;
+            expect(table!.findColumnByName("Id")!.isGenerated).to.be.true;
 
         })));
             

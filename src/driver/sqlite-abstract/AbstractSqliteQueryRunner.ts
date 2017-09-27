@@ -2,12 +2,12 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {TableSchema} from "../../schema-builder/schema/TableSchema";
-import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
-import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
-import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
+import {Table} from "../../schema-builder/schema/Table";
+import {TableIndex} from "../../schema-builder/schema/TableIndex";
+import {TableForeignKey} from "../../schema-builder/schema/TableForeignKey";
+import {TablePrimaryKey} from "../../schema-builder/schema/TablePrimaryKey";
 import {RandomGenerator} from "../../util/RandomGenerator";
 import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
 import {Connection} from "../../connection/Connection";
@@ -206,15 +206,15 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Loads given table's data from the database.
      */
-    async getTable(tableName: string): Promise<TableSchema|undefined> {
-        const tableSchemas = await this.getTables([tableName]);
-        return tableSchemas.length > 0 ? tableSchemas[0] : undefined;
+    async getTable(tableName: string): Promise<Table|undefined> {
+        const tables = await this.getTables([tableName]);
+        return tables.length > 0 ? tables[0] : undefined;
     }
 
     /**
-     * Loads all tables (with given names) from the database and creates a TableSchema from them.
+     * Loads all tables (with given names) from the database and creates a Table from them.
      */
-    async getTables(tableNames: string[]): Promise<TableSchema[]> {
+    async getTables(tableNames: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
         if (!tableNames || !tableNames.length)
             return [];
@@ -230,7 +230,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
 
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
-            const tableSchema = new TableSchema(dbTable["name"]);
+            const table = new Table(dbTable["name"]);
 
             // load columns and indices
             const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
@@ -258,29 +258,29 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                 }
             }
 
-            // create column schemas from the loaded columns
-            tableSchema.columns = dbColumns.map(dbColumn => {
-                const columnSchema = new ColumnSchema();
-                columnSchema.name = dbColumn["name"];
-                columnSchema.type = dbColumn["type"].toLowerCase();
-                columnSchema.default = dbColumn["dflt_value"] !== null && dbColumn["dflt_value"] !== undefined ? dbColumn["dflt_value"] : undefined;
-                columnSchema.isNullable = dbColumn["notnull"] === 0;
-                columnSchema.isPrimary = dbColumn["pk"] === 1;
-                columnSchema.comment = ""; // todo later
-                columnSchema.isGenerated = autoIncrementColumnName === dbColumn["name"];
-                if (columnSchema.isGenerated) {
-                    columnSchema.generationStrategy = "increment";
+            // create columns from the loaded columns
+            table.columns = dbColumns.map(dbColumn => {
+                const tableColumn = new TableColumn();
+                tableColumn.name = dbColumn["name"];
+                tableColumn.type = dbColumn["type"].toLowerCase();
+                tableColumn.default = dbColumn["dflt_value"] !== null && dbColumn["dflt_value"] !== undefined ? dbColumn["dflt_value"] : undefined;
+                tableColumn.isNullable = dbColumn["notnull"] === 0;
+                tableColumn.isPrimary = dbColumn["pk"] === 1;
+                tableColumn.comment = ""; // todo later
+                tableColumn.isGenerated = autoIncrementColumnName === dbColumn["name"];
+                if (tableColumn.isGenerated) {
+                    tableColumn.generationStrategy = "increment";
                 }
 
                 // parse datatype and attempt to retrieve length
-                let pos = columnSchema.type.indexOf("(");
+                let pos = tableColumn.type.indexOf("(");
                 if (pos !== -1) {
-                    let dataType = columnSchema.type.substr(0, pos);
+                    let dataType = tableColumn.type.substr(0, pos);
                     if (!!this.driver.withLengthColumnTypes.find(col => col === dataType)) {
-                        let len = parseInt(columnSchema.type.substring(pos + 1, columnSchema.type.length - 1));
+                        let len = parseInt(tableColumn.type.substring(pos + 1, tableColumn.type.length - 1));
                         if (len) {
-                            columnSchema.length = len.toString();
-                            columnSchema.type = dataType; // remove the length part from the datatype
+                            tableColumn.length = len.toString();
+                            tableColumn.type = dataType; // remove the length part from the datatype
                         }
                     }
                 }
@@ -291,10 +291,10 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                         // todo: figure out solution here, name should be same as naming strategy generates!
                         const key = `${dbTable["name"]}_${[foreignKey["from"]].join("_")}_${foreignKey["table"]}_${[foreignKey["to"]].join("_")}`;
                         const keyName = "fk_" + RandomGenerator.sha1(key).substr(0, 27);
-                        return new ForeignKeySchema(keyName, [foreignKey["from"]], [foreignKey["to"]], foreignKey["table"], foreignKey["on_delete"]); // todo: how sqlite return from and to when they are arrays? (multiple column foreign keys)
+                        return new TableForeignKey(keyName, [foreignKey["from"]], [foreignKey["to"]], foreignKey["table"], foreignKey["on_delete"]); // todo: how sqlite return from and to when they are arrays? (multiple column foreign keys)
                     });
-                tableSchema.addForeignKeys(columnForeignKeys);
-                return columnSchema;
+                table.addForeignKeys(columnForeignKeys);
+                return tableColumn;
             });
 
             // create primary key schema
@@ -304,7 +304,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                     const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${index["name"]}")`);
                     const indexColumns = indexInfos.map(indexInfo => indexInfo["name"]);
                     indexColumns.forEach(indexColumn => {
-                        tableSchema.primaryKeys.push(new PrimaryKeySchema(index["name"], indexColumn));
+                        table.primaryKeys.push(new TablePrimaryKey(index["name"], indexColumn));
                     });
                 }));
 
@@ -312,8 +312,8 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
             const indicesPromises = dbIndices
                 .filter(dbIndex => {
                     return dbIndex["origin"] !== "pk" &&
-                        (!tableSchema.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"])) &&
-                        (!tableSchema.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["name"]));
+                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"])) &&
+                        (!table.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["name"]));
                 })
                 .map(dbIndex => dbIndex["name"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
@@ -329,7 +329,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                         if (dbIndex!["unique"] === 1) { // this means we have a special index generated for a column
                             // so we find and update the column
                             indexColumns.forEach(columnName => {
-                                const column = tableSchema.columns.find(column => column.name === columnName);
+                                const column = table.columns.find(column => column.name === columnName);
                                 if (column)
                                     column.isUnique = true;
                             });
@@ -339,14 +339,14 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
 
                     } else {
                         const isUnique = dbIndex!["unique"] === "1" || dbIndex!["unique"] === 1;
-                        return new IndexSchema(dbTable["name"], dbIndex!["name"], indexColumns, isUnique);
+                        return new TableIndex(dbTable["name"], dbIndex!["name"], indexColumns, isUnique);
                     }
                 });
 
             const indices = await Promise.all(indicesPromises);
-            tableSchema.indices = indices.filter(index => !!index) as IndexSchema[];
+            table.indices = indices.filter(index => !!index) as TableIndex[];
 
-            return tableSchema;
+            return table;
         }));
     }
 
@@ -383,7 +383,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Creates a new table from the given table metadata and column metadatas.
      */
-    async createTable(table: TableSchema): Promise<void> {
+    async createTable(table: Table): Promise<void> {
         // skip columns with foreign keys, we will add them later
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
@@ -412,109 +412,109 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a new column from the column schema in the table.
+     * Creates a new column from the column in the table.
      */
-    async addColumn(tableSchemaOrName: TableSchema|string, column: ColumnSchema): Promise<void> {
-        const tableSchema = await this.getTableSchema(tableSchemaOrName);
-        const newTableSchema = tableSchema.clone();
+    async addColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
+        const table = await this.getTableSchema(tableOrName);
+        const newTableSchema = table.clone();
         newTableSchema.addColumns([column]);
-        await this.recreateTable(newTableSchema, tableSchema);
+        await this.recreateTable(newTableSchema, table);
     }
 
     /**
-     * Creates a new columns from the column schema in the table.
+     * Creates a new columns from the column in the table.
      */
-    async addColumns(tableSchemaOrName: TableSchema|string, columns: ColumnSchema[]): Promise<void> {
-        const tableSchema = await this.getTableSchema(tableSchemaOrName);
-        const newTableSchema = tableSchema.clone();
+    async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+        const table = await this.getTableSchema(tableOrName);
+        const newTableSchema = table.clone();
         newTableSchema.addColumns(columns);
-        await this.recreateTable(newTableSchema, tableSchema);
+        await this.recreateTable(newTableSchema, table);
     }
 
     /**
      * Renames column in the given table.
      */
-    async renameColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumnSchemaOrName: ColumnSchema|string): Promise<void> {
+    async renameColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newTableColumnOrName: TableColumn|string): Promise<void> {
 
-        let tableSchema: TableSchema|undefined = undefined;
-        if (tableSchemaOrName instanceof TableSchema) {
-            tableSchema = tableSchemaOrName;
+        let table: Table|undefined = undefined;
+        if (tableOrName instanceof Table) {
+            table = tableOrName;
         } else {
-            tableSchema = await this.getTable(tableSchemaOrName);
+            table = await this.getTable(tableOrName);
         }
 
-        if (!tableSchema)
-            throw new Error(`Table ${tableSchemaOrName} was not found.`);
+        if (!table)
+            throw new Error(`Table ${tableOrName} was not found.`);
 
-        let oldColumn: ColumnSchema|undefined = undefined;
-        if (oldColumnSchemaOrName instanceof ColumnSchema) {
-            oldColumn = oldColumnSchemaOrName;
+        let oldColumn: TableColumn|undefined = undefined;
+        if (oldTableColumnOrName instanceof TableColumn) {
+            oldColumn = oldTableColumnOrName;
         } else {
-            oldColumn = tableSchema.columns.find(column => column.name === oldColumnSchemaOrName);
+            oldColumn = table.columns.find(column => column.name === oldTableColumnOrName);
         }
 
         if (!oldColumn)
-            throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableSchemaOrName}" table.`);
+            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${tableOrName}" table.`);
 
-        let newColumn: ColumnSchema|undefined = undefined;
-        if (newColumnSchemaOrName instanceof ColumnSchema) {
-            newColumn = newColumnSchemaOrName;
+        let newColumn: TableColumn|undefined = undefined;
+        if (newTableColumnOrName instanceof TableColumn) {
+            newColumn = newTableColumnOrName;
         } else {
             newColumn = oldColumn.clone();
-            newColumn.name = newColumnSchemaOrName;
+            newColumn.name = newTableColumnOrName;
         }
 
-        return this.changeColumn(tableSchema, oldColumn, newColumn);
+        return this.changeColumn(table, oldColumn, newColumn);
     }
 
     /**
      * Changes a column in the table.
      */
-    async changeColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumn: ColumnSchema): Promise<void> {
-        let tableSchema: TableSchema|undefined = undefined;
-        if (tableSchemaOrName instanceof TableSchema) {
-            tableSchema = tableSchemaOrName;
+    async changeColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newColumn: TableColumn): Promise<void> {
+        let table: Table|undefined = undefined;
+        if (tableOrName instanceof Table) {
+            table = tableOrName;
         } else {
-            tableSchema = await this.getTable(tableSchemaOrName);
+            table = await this.getTable(tableOrName);
         }
 
-        if (!tableSchema)
-            throw new Error(`Table ${tableSchemaOrName} was not found.`);
+        if (!table)
+            throw new Error(`Table ${tableOrName} was not found.`);
 
-        let oldColumn: ColumnSchema|undefined = undefined;
-        if (oldColumnSchemaOrName instanceof ColumnSchema) {
-            oldColumn = oldColumnSchemaOrName;
+        let oldColumn: TableColumn|undefined = undefined;
+        if (oldTableColumnOrName instanceof TableColumn) {
+            oldColumn = oldTableColumnOrName;
         } else {
-            oldColumn = tableSchema.columns.find(column => column.name === oldColumnSchemaOrName);
+            oldColumn = table.columns.find(column => column.name === oldTableColumnOrName);
         }
 
         if (!oldColumn)
-            throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableSchemaOrName}" table.`);
+            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${tableOrName}" table.`);
 
-        // todo: fix it. it should not depend on tableSchema
-        return this.recreateTable(tableSchema);
+        // todo: fix it. it should not depend on table
+        return this.recreateTable(table);
     }
 
     /**
      * Changes a column in the table.
      * Changed column looses all its keys in the db.
      */
-    async changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void> {
-        // todo: fix it. it should not depend on tableSchema
-        return this.recreateTable(tableSchema);
+    async changeColumns(table: Table, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
+        // todo: fix it. it should not depend on table
+        return this.recreateTable(table);
     }
 
     /**
      * Drops column in the table.
      */
-    async dropColumn(table: TableSchema, column: ColumnSchema): Promise<void> {
+    async dropColumn(table: Table, column: TableColumn): Promise<void> {
         return this.dropColumns(table, [column]);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void> {
+    async dropColumns(table: Table, columns: TableColumn[]): Promise<void> {
         const updatingTableSchema = table.clone();
         updatingTableSchema.removeColumns(columns);
         return this.recreateTable(updatingTableSchema);
@@ -523,23 +523,23 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Updates table's primary keys.
      */
-    async updatePrimaryKeys(dbTable: TableSchema): Promise<void> {
+    async updatePrimaryKeys(dbTable: Table): Promise<void> {
         return this.recreateTable(dbTable);
     }
 
     /**
      * Creates a new foreign key.
      */
-    async createForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
-        return this.createForeignKeys(tableSchemaOrName as any, [foreignKey]);
+    async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
+        return this.createForeignKeys(tableOrName as any, [foreignKey]);
     }
 
     /**
      * Creates a new foreign keys.
      */
-    async createForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
-        const tableSchema = await this.getTableSchema(tableSchemaOrName);
-        const changedTableSchema = tableSchema.clone();
+    async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
+        const table = await this.getTableSchema(tableOrName);
+        const changedTableSchema = table.clone();
         changedTableSchema.addForeignKeys(foreignKeys);
         return this.recreateTable(changedTableSchema);
     }
@@ -547,16 +547,16 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Drops a foreign key from the table.
      */
-    async dropForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
-        return this.dropForeignKeys(tableSchemaOrName as any, [foreignKey]);
+    async dropForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
+        return this.dropForeignKeys(tableOrName as any, [foreignKey]);
     }
 
     /**
      * Drops a foreign keys from the table.
      */
-    async dropForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
-        const tableSchema = await this.getTableSchema(tableSchemaOrName);
-        const changedTableSchema = tableSchema.clone();
+    async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
+        const table = await this.getTableSchema(tableOrName);
+        const changedTableSchema = table.clone();
         changedTableSchema.removeForeignKeys(foreignKeys);
         return this.recreateTable(changedTableSchema);
     }
@@ -564,7 +564,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Creates a new index.
      */
-    async createIndex(tableName: string, index: IndexSchema): Promise<void> {
+    async createIndex(tableName: string, index: TableIndex): Promise<void> {
         const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
         const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${tableName}"(${columnNames})`;
         await this.query(sql);
@@ -573,7 +573,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Drops an index from the table.
      */
-    async dropIndex(tableSchemeOrName: TableSchema|string, indexName: string): Promise<void> {
+    async dropIndex(tableSchemeOrName: Table|string, indexName: string): Promise<void> {
         const sql = `DROP INDEX "${indexName}"`;
         await this.query(sql);
     }
@@ -649,7 +649,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: ColumnSchema): string {
+    protected buildCreateColumnSql(column: TableColumn): string {
         let c = "\"" + column.name + "\"";
         if (column instanceof ColumnMetadata) {
             c += " " + this.driver.normalizeType(column);
@@ -672,22 +672,22 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
         return c;
     }
 
-    protected async recreateTable(tableSchema: TableSchema, oldTableSchema?: TableSchema, migrateData = true): Promise<void> {
+    protected async recreateTable(table: Table, oldTableSchema?: Table, migrateData = true): Promise<void> {
         // const withoutForeignKeyColumns = columns.filter(column => column.foreignKeys.length === 0);
         // const createForeignKeys = options && options.createForeignKeys;
-        const columnDefinitions = tableSchema.columns.map(dbColumn => this.buildCreateColumnSql(dbColumn)).join(", ");
-        const columnNames = tableSchema.columns.map(column => `"${column.name}"`).join(", ");
+        const columnDefinitions = table.columns.map(dbColumn => this.buildCreateColumnSql(dbColumn)).join(", ");
+        const columnNames = table.columns.map(column => `"${column.name}"`).join(", ");
 
-        let sql1 = `CREATE TABLE "temporary_${tableSchema.name}" (${columnDefinitions}`;
+        let sql1 = `CREATE TABLE "temporary_${table.name}" (${columnDefinitions}`;
         // if (options && options.createForeignKeys) {
-        tableSchema.foreignKeys.forEach(foreignKey => {
+        table.foreignKeys.forEach(foreignKey => {
             const columnNames = foreignKey.columnNames.map(name => `"${name}"`).join(", ");
             const referencedColumnNames = foreignKey.referencedColumnNames.map(name => `"${name}"`).join(", ");
             sql1 += `, FOREIGN KEY(${columnNames}) REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
             if (foreignKey.onDelete) sql1 += " ON DELETE " + foreignKey.onDelete;
         });
 
-        const primaryKeyColumns = tableSchema.columns.filter(column => column.isPrimary && !column.isGenerated);
+        const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
         if (primaryKeyColumns.length > 0)
             sql1 += `, PRIMARY KEY(${primaryKeyColumns.map(column => `${column.name}`).join(", ")})`; // for some reason column escaping here generate a wrong schema
 
@@ -703,36 +703,36 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
 
         // migrate all data from the table into temporary table
         if (migrateData) {
-            const sql2 = `INSERT INTO "temporary_${tableSchema.name}"(${oldColumnNames}) SELECT ${oldColumnNames} FROM "${tableSchema.name}"`;
+            const sql2 = `INSERT INTO "temporary_${table.name}"(${oldColumnNames}) SELECT ${oldColumnNames} FROM "${table.name}"`;
             await this.query(sql2);
         }
 
         // drop old table
-        const sql3 = `DROP TABLE "${tableSchema.name}"`;
+        const sql3 = `DROP TABLE "${table.name}"`;
         await this.query(sql3);
 
         // rename temporary table
-        const sql4 = `ALTER TABLE "temporary_${tableSchema.name}" RENAME TO "${tableSchema.name}"`;
+        const sql4 = `ALTER TABLE "temporary_${table.name}" RENAME TO "${table.name}"`;
         await this.query(sql4);
 
         // also re-create indices
-        const indexPromises = tableSchema.indices.map(index => this.createIndex(tableSchema.name, index));
-        // const uniquePromises = tableSchema.uniqueKeys.map(key => this.createIndex(key));
+        const indexPromises = table.indices.map(index => this.createIndex(table.name, index));
+        // const uniquePromises = table.uniqueKeys.map(key => this.createIndex(key));
         await Promise.all(indexPromises/*.concat(uniquePromises)*/);
     }
 
     /**
      * If given value is a table name then it loads its table schema representation from the database.
      */
-    protected async getTableSchema(tableSchemaOrName: TableSchema|string): Promise<TableSchema> {
-        if (tableSchemaOrName instanceof TableSchema) {
-            return tableSchemaOrName;
+    protected async getTableSchema(tableOrName: Table|string): Promise<Table> {
+        if (tableOrName instanceof Table) {
+            return tableOrName;
         } else {
-            const tableSchema = await this.getTable(tableSchemaOrName);
-            if (!tableSchema)
-                throw new Error(`Table named ${tableSchemaOrName} was not found in the database.`);
+            const table = await this.getTable(tableOrName);
+            if (!table)
+                throw new Error(`Table named ${tableOrName} was not found in the database.`);
 
-            return tableSchema;
+            return table;
         }
     }
 

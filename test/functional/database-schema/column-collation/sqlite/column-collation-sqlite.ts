@@ -22,7 +22,7 @@ describe.skip("database schema > column collation > sqlite", () => {
 
         const postRepository = connection.getRepository(Post);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("post");
+        const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
         const post = new Post();
@@ -30,7 +30,7 @@ describe.skip("database schema > column collation > sqlite", () => {
         post.name = "Post";
         await postRepository.save(post);
 
-        tableSchema!.findColumnByName("name")!.collation!.should.be.equal("RTRIM");
+        table!.findColumnByName("name")!.collation!.should.be.equal("RTRIM");
 
     })));
 

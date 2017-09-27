@@ -21,7 +21,7 @@ describe("database schema > column collation > postgres", () => {
 
         const postRepository = connection.getRepository(Post);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("post");
+        const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
         const post = new Post();
@@ -29,7 +29,7 @@ describe("database schema > column collation > postgres", () => {
         post.name = "Post";
         await postRepository.save(post);
 
-        tableSchema!.findColumnByName("name")!.collation!.should.be.equal("en_US");
+        table!.findColumnByName("name")!.collation!.should.be.equal("en_US");
 
     })));
 

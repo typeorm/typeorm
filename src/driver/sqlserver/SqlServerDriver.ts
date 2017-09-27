@@ -14,7 +14,7 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {MssqlParameter} from "./MssqlParameter";
-import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {SqlServerConnectionCredentialsOptions} from "./SqlServerConnectionCredentialsOptions";
 
 /**
@@ -415,7 +415,7 @@ export class SqlServerDriver implements Driver {
         return "";
     }
 
-    createFullType(column: ColumnSchema): string {
+    createFullType(column: TableColumn): string {
         let type = column.type;
 
         if (column.length) {

@@ -20,8 +20,8 @@ describe("jsonb type", () => {
         let schema = await queryRunner.getTable("record");
         await queryRunner.release();
         expect(schema).not.to.be.empty;
-        expect(schema!.columns.find(columnSchema => columnSchema.name === "config" && columnSchema.type === "json")).to.be.not.empty;
-        expect(schema!.columns.find(columnSchema => columnSchema.name === "data" && columnSchema.type === "jsonb")).to.be.not.empty;
+        expect(schema!.columns.find(tableColumn => tableColumn.name === "config" && tableColumn.type === "json")).to.be.not.empty;
+        expect(schema!.columns.find(tableColumn => tableColumn.name === "data" && tableColumn.type === "jsonb")).to.be.not.empty;
     })));
 
     it("should persist jsonb correctly", () => Promise.all(connections.map(async connection => {

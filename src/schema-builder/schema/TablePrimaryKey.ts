@@ -1,7 +1,7 @@
 /**
  * Primary key from the database stored in this class.
  */
-export class PrimaryKeySchema {
+export class TablePrimaryKey {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -34,7 +34,7 @@ export class PrimaryKeySchema {
      * Creates a new copy of this primary key with exactly same properties.
      */
     clone() {
-        return new PrimaryKeySchema(this.name, this.columnName);
+        return new TablePrimaryKey(this.name, this.columnName);
     }
 
 }

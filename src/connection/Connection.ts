@@ -224,7 +224,7 @@ export class Connection {
      */
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.createQueryRunner("master");
-        const tableSchemas = this.entityMetadatas
+        const schemas = this.entityMetadatas
             .filter(metadata => metadata.schema)
             .map(metadata => metadata.schema!);
 
@@ -234,9 +234,9 @@ export class Connection {
                 .map(metadata => metadata.database!);
             if (this.driver.database && !databases.find(database => database === this.driver.database))
                 databases.push(this.driver.database);
-            await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(tableSchemas, database));
+            await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(schemas, database));
         } else {
-            await queryRunner.clearDatabase(tableSchemas);
+            await queryRunner.clearDatabase(schemas);
         }
         await queryRunner.release();
     }

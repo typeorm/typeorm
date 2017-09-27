@@ -1,7 +1,7 @@
-import {ColumnSchema} from "./ColumnSchema";
-import {IndexSchema} from "./IndexSchema";
-import {ForeignKeySchema} from "./ForeignKeySchema";
-import {PrimaryKeySchema} from "./PrimaryKeySchema";
+import {TableColumn} from "./TableColumn";
+import {TableIndex} from "./TableIndex";
+import {TableForeignKey} from "./TableForeignKey";
+import {TablePrimaryKey} from "./TablePrimaryKey";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
@@ -9,9 +9,9 @@ import {Driver} from "../../driver/Driver";
 import {ColumnType} from "../../driver/types/ColumnTypes";
 
 /**
- * Table schema in the database represented in this class.
+ * Table in the database represented in this class.
  */
-export class TableSchema {
+export class Table {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -25,27 +25,27 @@ export class TableSchema {
     /**
      * Table columns.
      */
-    columns: ColumnSchema[] = [];
+    columns: TableColumn[] = [];
 
     /**
      * Table indices.
      */
-    indices: IndexSchema[] = [];
+    indices: TableIndex[] = [];
 
     /**
      * Table foreign keys.
      */
-    foreignKeys: ForeignKeySchema[] = [];
+    foreignKeys: TableForeignKey[] = [];
 
     /**
      * Table primary keys.
      */
-    primaryKeys: PrimaryKeySchema[] = [];
+    primaryKeys: TablePrimaryKey[] = [];
 
     /**
-     * Indicates if table schema was just created.
+     * Indicates if table was just created.
      * This is needed, for example to check if we need to skip primary keys creation
-     * for new table schemas.
+     * for new tables.
      */
     justCreated: boolean = false;
 
@@ -68,14 +68,14 @@ export class TableSchema {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string, columns?: ColumnSchema[]|ObjectLiteral[], justCreated?: boolean, engine?: string, database?: string, schema?: string) {
+    constructor(name: string, columns?: TableColumn[]|ObjectLiteral[], justCreated?: boolean, engine?: string, database?: string, schema?: string) {
         this.name = name;
         if (columns) {
             this.columns = (columns as any[]).map(column => { // as any[] is a temporary fix (some weird compiler error)
-                if (column instanceof ColumnSchema) {
+                if (column instanceof TableColumn) {
                     return column;
                 } else {
-                    return new ColumnSchema(column);
+                    return new TableColumn(column);
                 }
             });
         }
@@ -95,7 +95,7 @@ export class TableSchema {
     /**
      * Gets only those primary keys that does not
      */
-    get primaryKeysWithoutGenerated(): PrimaryKeySchema[] {
+    get primaryKeysWithoutGenerated(): TablePrimaryKey[] {
         const generatedColumn = this.columns.find(column => column.isGenerated);
         if (!generatedColumn)
             return this.primaryKeys;
@@ -114,10 +114,10 @@ export class TableSchema {
     // -------------------------------------------------------------------------
 
     /**
-     * Clones this table schema to a new table schema with all properties cloned.
+     * Clones this table to a new table with all properties cloned.
      */
-    clone(): TableSchema {
-        const cloned = new TableSchema(this.name);
+    clone(): Table {
+        const cloned = new Table(this.name);
         cloned.columns = this.columns.map(column => column.clone());
         cloned.indices = this.indices.map(index => index.clone());
         cloned.foreignKeys = this.foreignKeys.map(key => key.clone());
@@ -129,46 +129,46 @@ export class TableSchema {
     }
 
     /**
-     * Adds column schemas.
+     * Adds columns.
      */
-    addColumns(columns: ColumnSchema[]) {
+    addColumns(columns: TableColumn[]) {
         this.columns = this.columns.concat(columns);
     }
 
     /**
      * Replaces given column.
      */
-    replaceColumn(oldColumn: ColumnSchema, newColumn: ColumnSchema) {
+    replaceColumn(oldColumn: TableColumn, newColumn: TableColumn) {
         this.columns[this.columns.indexOf(oldColumn)] = newColumn;
     }
 
     /**
-     * Removes a column schema from this table schema.
+     * Removes a columns from this table.
      */
-    removeColumn(columnToRemove: ColumnSchema) {
+    removeColumn(columnToRemove: TableColumn) {
         const foundColumn = this.columns.find(column => column.name === columnToRemove.name);
         if (foundColumn)
             this.columns.splice(this.columns.indexOf(foundColumn), 1);
     }
 
     /**
-     * Remove all column schemas from this table schema.
+     * Remove all columns from this table.
      */
-    removeColumns(columns: ColumnSchema[]) {
+    removeColumns(columns: TableColumn[]) {
         columns.forEach(column => this.removeColumn(column));
     }
 
     /**
      * Adds all given primary keys.
      */
-    addPrimaryKeys(addedKeys: PrimaryKeySchema[]) {
+    addPrimaryKeys(addedKeys: TablePrimaryKey[]) {
         addedKeys.forEach(key => this.primaryKeys.push(key));
     }
 
     /**
      * Removes all given primary keys.
      */
-    removePrimaryKeys(droppedKeys: PrimaryKeySchema[]) {
+    removePrimaryKeys(droppedKeys: TablePrimaryKey[]) {
         droppedKeys.forEach(key => {
             this.primaryKeys.splice(this.primaryKeys.indexOf(key), 1);
         });
@@ -177,75 +177,75 @@ export class TableSchema {
     /**
      * Removes primary keys of the given columns.
      */
-    removePrimaryKeysOfColumns(columns: ColumnSchema[]) {
+    removePrimaryKeysOfColumns(columns: TableColumn[]) {
         this.primaryKeys = this.primaryKeys.filter(primaryKey => {
             return !columns.find(column => column.name === primaryKey.columnName);
         });
     }
 
     /**
-     * Adds foreign key schemas.
+     * Adds foreign keys.
      */
-    addForeignKeys(foreignKeys: ForeignKeySchema[]) {
+    addForeignKeys(foreignKeys: TableForeignKey[]) {
         this.foreignKeys = this.foreignKeys.concat(foreignKeys);
     }
 
     /**
-     * Removes foreign key from this table schema.
+     * Removes foreign key from this table.
      */
-    removeForeignKey(removedForeignKey: ForeignKeySchema) {
+    removeForeignKey(removedForeignKey: TableForeignKey) {
         const fk = this.foreignKeys.find(foreignKey => foreignKey.name === removedForeignKey.name); // this must be by name
         if (fk)
             this.foreignKeys.splice(this.foreignKeys.indexOf(fk), 1);
     }
 
     /**
-     * Removes all foreign keys from this table schema.
+     * Removes all foreign keys from this table.
      */
-    removeForeignKeys(dbForeignKeys: ForeignKeySchema[]) {
+    removeForeignKeys(dbForeignKeys: TableForeignKey[]) {
         dbForeignKeys.forEach(foreignKey => this.removeForeignKey(foreignKey));
     }
 
     /**
-     * Removes index schema from this table schema.
+     * Removes indices from this table.
      */
-    removeIndex(indexSchema: IndexSchema) {
-        const index = this.indices.find(index => index.name === indexSchema.name);
+    removeIndex(tableIndex: TableIndex) {
+        const index = this.indices.find(index => index.name === tableIndex.name);
         if (index)
             this.indices.splice(this.indices.indexOf(index), 1);
     }
 
     /**
-     * Differentiate columns of this table schema and columns from the given column metadatas columns
+     * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
-    findChangedColumns(driver: Driver, columnMetadatas: ColumnMetadata[]): ColumnSchema[] {
-        return this.columns.filter(columnSchema => {
-            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.databaseName === columnSchema.name);
+    findChangedColumns(driver: Driver, columnMetadatas: ColumnMetadata[]): TableColumn[] {
+        return this.columns.filter(tableColumn => {
+            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.databaseName === tableColumn.name);
             if (!columnMetadata)
                 return false; // we don't need new columns, we only need exist and changed
 
-            // console.log(columnSchema.name, "!==", columnMetadata.databaseName); //  ||
-            // console.log(columnSchema.type, "!==", driver.normalizeType(columnMetadata)); // ||
-            // console.log(columnSchema.comment, "!==", columnMetadata.comment); //  ||
-            // console.log(this.compareDefaultValues(driver.normalizeDefault(columnMetadata), columnSchema.default)); // || // we included check for generated here, because generated columns already can have default values
-            // console.log(columnSchema.isNullable, "!==", columnMetadata.isNullable); //  ||
-            // console.log(columnSchema.isUnique, "!==", columnMetadata.isUnique); //  ||
-            // console.log(columnSchema.isGenerated, "!==", columnMetadata.isGenerated);
+            // console.log(tableColumn.name, "!==", columnMetadata.databaseName); //  ||
+            // console.log(tableColumn.type, "!==", driver.normalizeType(columnMetadata)); // ||
+            // console.log(tableColumn.comment, "!==", columnMetadata.comment); //  ||
+            // console.log(this.compareDefaultValues(driver.normalizeDefault(columnMetadata), tableColumn.default)); // || // we included check for generated here, because generated columns already can have default values
+            // console.log(tableColumn.isNullable, "!==", columnMetadata.isNullable); //  ||
+            // console.log(tableColumn.isUnique, "!==", columnMetadata.isUnique); //  ||
+            // console.log(tableColumn.isGenerated, "!==", columnMetadata.isGenerated);
 
-            return  columnSchema.name !== columnMetadata.databaseName ||
-                    columnSchema.type !== driver.normalizeType(columnMetadata) ||
-                    columnSchema.comment !== columnMetadata.comment ||
-                    (!columnSchema.isGenerated && !this.compareDefaultValues(driver.normalizeDefault(columnMetadata), columnSchema.default)) || // we included check for generated here, because generated columns already can have default values
-                    columnSchema.isNullable !== columnMetadata.isNullable ||
-                    columnSchema.isUnique !== driver.normalizeIsUnique(columnMetadata) ||
-                    // columnSchema.isPrimary !== columnMetadata.isPrimary ||
-                    columnSchema.isGenerated !== columnMetadata.isGenerated ||
-                    !this.compareColumnLengths(driver, columnSchema, columnMetadata);
+            return  tableColumn.name !== columnMetadata.databaseName ||
+                    tableColumn.type !== driver.normalizeType(columnMetadata) ||
+                    tableColumn.comment !== columnMetadata.comment ||
+                    (!tableColumn.isGenerated && !this.compareDefaultValues(driver.normalizeDefault(columnMetadata), tableColumn.default)) || // we included check for generated here, because generated columns already can have default values
+                    tableColumn.isNullable !== columnMetadata.isNullable ||
+                    tableColumn.isUnique !== driver.normalizeIsUnique(columnMetadata) ||
+                    // tableColumn.isPrimary !== columnMetadata.isPrimary ||
+                    tableColumn.isGenerated !== columnMetadata.isGenerated ||
+                    !this.compareColumnLengths(driver, tableColumn, columnMetadata);
         });
     }
 
-    findColumnByName(name: string): ColumnSchema|undefined {
+    findColumnByName(name: string): TableColumn|undefined {
         return this.columns.find(column => column.name === name);
     }
 
@@ -257,7 +257,7 @@ export class TableSchema {
      * Compare column lengths only if the datatype supports it.
      */
 
-    private compareColumnLengths(driver: Driver, columnSchema: ColumnSchema, columnMetadata: ColumnMetadata): boolean {
+    private compareColumnLengths(driver: Driver, tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
 
         const normalizedColumn = driver.normalizeType(columnMetadata) as ColumnType;
         if (driver.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
@@ -266,7 +266,7 @@ export class TableSchema {
             // if we found something to compare with then do it, else skip it
             // use use case insensitive comparison to catch "MAX" vs "Max" case
             if (metadataLength)
-                return columnSchema.length.toLowerCase() === metadataLength.toLowerCase();
+                return tableColumn.length.toLowerCase() === metadataLength.toLowerCase();
         }
 
         return true;
@@ -274,7 +274,7 @@ export class TableSchema {
     }    
 
     /**
-     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
+     * Checks if "DEFAULT" values in the column metadata and in the database are equal.
      */
     protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
 
@@ -314,24 +314,24 @@ export class TableSchema {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates table schema from a given entity metadata.
+     * Creates table from a given entity metadata.
      *
      * todo: need deeper implementation
      */
     static create(entityMetadata: EntityMetadata, driver: Driver) {
-        const tableSchema = new TableSchema(entityMetadata.tableName);
-        tableSchema.engine = entityMetadata.engine;
-        tableSchema.database = entityMetadata.database;
-        tableSchema.schema = entityMetadata.schema;
+        const table = new Table(entityMetadata.tableName);
+        table.engine = entityMetadata.engine;
+        table.database = entityMetadata.database;
+        table.schema = entityMetadata.schema;
         entityMetadata.columns.forEach(column => {
-            const columnSchema = ColumnSchema.create(column, 
+            const tableColumn = TableColumn.create(column, 
                 driver.normalizeType(column), 
                 driver.normalizeDefault(column),
                 driver.getColumnLength(column)); 
-            tableSchema.columns.push(columnSchema);
+            table.columns.push(tableColumn);
         });
 
-        return tableSchema;
+        return table;
     }
 
 }

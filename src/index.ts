@@ -83,11 +83,11 @@ export * from "./repository/TreeRepository";
 export * from "./repository/MongoRepository";
 export * from "./repository/RemoveOptions";
 export * from "./repository/SaveOptions";
-export * from "./schema-builder/schema/ColumnSchema";
-export * from "./schema-builder/schema/ForeignKeySchema";
-export * from "./schema-builder/schema/IndexSchema";
-export * from "./schema-builder/schema/PrimaryKeySchema";
-export * from "./schema-builder/schema/TableSchema";
+export * from "./schema-builder/schema/TableColumn";
+export * from "./schema-builder/schema/TableForeignKey";
+export * from "./schema-builder/schema/TableIndex";
+export * from "./schema-builder/schema/TablePrimaryKey";
+export * from "./schema-builder/schema/Table";
 export * from "./driver/mongodb/typings";
 export * from "./driver/sqlserver/MssqlParameter";
 

@@ -22,7 +22,7 @@ describe("database schema > column types > sqlite", () => {
 
         const postRepository = connection.getRepository(Post);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("post");
+        const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
         const post = new Post();
@@ -93,35 +93,35 @@ describe("database schema > column types > sqlite", () => {
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
 
-        tableSchema!.findColumnByName("id")!.type.should.be.equal("integer");
-        tableSchema!.findColumnByName("name")!.type.should.be.equal("varchar");
-        tableSchema!.findColumnByName("int")!.type.should.be.equal("integer");
-        tableSchema!.findColumnByName("int2")!.type.should.be.equal("int2");
-        tableSchema!.findColumnByName("int8")!.type.should.be.equal("int8");
-        tableSchema!.findColumnByName("tinyint")!.type.should.be.equal("tinyint");
-        tableSchema!.findColumnByName("smallint")!.type.should.be.equal("smallint");
-        tableSchema!.findColumnByName("mediumint")!.type.should.be.equal("mediumint");
-        tableSchema!.findColumnByName("bigint")!.type.should.be.equal("bigint");
-        tableSchema!.findColumnByName("unsignedBigInt")!.type.should.be.equal("unsigned big int");
-        tableSchema!.findColumnByName("character")!.type.should.be.equal("character");
-        tableSchema!.findColumnByName("varchar")!.type.should.be.equal("varchar");
-        tableSchema!.findColumnByName("varyingCharacter")!.type.should.be.equal("varying character");
-        tableSchema!.findColumnByName("nchar")!.type.should.be.equal("nchar");
-        tableSchema!.findColumnByName("nativeCharacter")!.type.should.be.equal("native character");
-        tableSchema!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
-        tableSchema!.findColumnByName("text")!.type.should.be.equal("text");
-        tableSchema!.findColumnByName("blob")!.type.should.be.equal("blob");
-        tableSchema!.findColumnByName("clob")!.type.should.be.equal("clob");
-        tableSchema!.findColumnByName("real")!.type.should.be.equal("real");
-        tableSchema!.findColumnByName("double")!.type.should.be.equal("double");
-        tableSchema!.findColumnByName("doublePrecision")!.type.should.be.equal("double precision");
-        tableSchema!.findColumnByName("float")!.type.should.be.equal("float");
-        tableSchema!.findColumnByName("numeric")!.type.should.be.equal("numeric");
-        tableSchema!.findColumnByName("decimal")!.type.should.be.equal("decimal");
-        tableSchema!.findColumnByName("boolean")!.type.should.be.equal("boolean");
-        tableSchema!.findColumnByName("date")!.type.should.be.equal("date");
-        tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
-        tableSchema!.findColumnByName("simpleArray")!.type.should.be.equal("text");
+        table!.findColumnByName("id")!.type.should.be.equal("integer");
+        table!.findColumnByName("name")!.type.should.be.equal("varchar");
+        table!.findColumnByName("int")!.type.should.be.equal("integer");
+        table!.findColumnByName("int2")!.type.should.be.equal("int2");
+        table!.findColumnByName("int8")!.type.should.be.equal("int8");
+        table!.findColumnByName("tinyint")!.type.should.be.equal("tinyint");
+        table!.findColumnByName("smallint")!.type.should.be.equal("smallint");
+        table!.findColumnByName("mediumint")!.type.should.be.equal("mediumint");
+        table!.findColumnByName("bigint")!.type.should.be.equal("bigint");
+        table!.findColumnByName("unsignedBigInt")!.type.should.be.equal("unsigned big int");
+        table!.findColumnByName("character")!.type.should.be.equal("character");
+        table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
+        table!.findColumnByName("varyingCharacter")!.type.should.be.equal("varying character");
+        table!.findColumnByName("nchar")!.type.should.be.equal("nchar");
+        table!.findColumnByName("nativeCharacter")!.type.should.be.equal("native character");
+        table!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
+        table!.findColumnByName("text")!.type.should.be.equal("text");
+        table!.findColumnByName("blob")!.type.should.be.equal("blob");
+        table!.findColumnByName("clob")!.type.should.be.equal("clob");
+        table!.findColumnByName("real")!.type.should.be.equal("real");
+        table!.findColumnByName("double")!.type.should.be.equal("double");
+        table!.findColumnByName("doublePrecision")!.type.should.be.equal("double precision");
+        table!.findColumnByName("float")!.type.should.be.equal("float");
+        table!.findColumnByName("numeric")!.type.should.be.equal("numeric");
+        table!.findColumnByName("decimal")!.type.should.be.equal("decimal");
+        table!.findColumnByName("boolean")!.type.should.be.equal("boolean");
+        table!.findColumnByName("date")!.type.should.be.equal("date");
+        table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
+        table!.findColumnByName("simpleArray")!.type.should.be.equal("text");
 
     })));
 
@@ -129,7 +129,7 @@ describe("database schema > column types > sqlite", () => {
 
         const postRepository = connection.getRepository(PostWithoutTypes);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("post_without_types");
+        const table = await queryRunner.getTable("post_without_types");
         await queryRunner.release();
 
         const post = new PostWithoutTypes();
@@ -148,11 +148,11 @@ describe("database schema > column types > sqlite", () => {
         loadedPost.blob.toString().should.be.equal(post.blob.toString());
         loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
 
-        tableSchema!.findColumnByName("id")!.type.should.be.equal("integer");
-        tableSchema!.findColumnByName("name")!.type.should.be.equal("varchar");
-        tableSchema!.findColumnByName("boolean")!.type.should.be.equal("boolean");
-        tableSchema!.findColumnByName("blob")!.type.should.be.equal("blob");
-        tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
+        table!.findColumnByName("id")!.type.should.be.equal("integer");
+        table!.findColumnByName("name")!.type.should.be.equal("varchar");
+        table!.findColumnByName("boolean")!.type.should.be.equal("boolean");
+        table!.findColumnByName("blob")!.type.should.be.equal("blob");
+        table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
 
     })));
 

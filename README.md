@@ -37,7 +37,7 @@ that help you to develop any kind of applications that use database - from
 small applications with a few tables to large scale enterprise applications.
 TypeORM helps you to:
 
-* automatically create in the database table schemas based on your models
+* automatically create in the database tables based on your models
 * ability to transparently insert / update / delete to the database
 your objects
 * map your selections from tables to javascript objects and map table columns

@@ -12,7 +12,7 @@ import {OracleConnectionOptions} from "./OracleConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {OracleConnectionCredentialsOptions} from "./OracleConnectionCredentialsOptions";
 import {DriverUtils} from "../DriverUtils";
 
@@ -386,7 +386,7 @@ export class OracleDriver implements Driver {
         return "";
     }
 
-    createFullType(column: ColumnSchema): string {
+    createFullType(column: TableColumn): string {
         let type = column.type;
 
         if (column.length) {

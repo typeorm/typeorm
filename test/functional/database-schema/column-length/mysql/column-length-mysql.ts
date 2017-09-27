@@ -21,16 +21,16 @@ describe("database schema > column length > mssql", () => {
     it("all types should create with correct size", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("post");
+        const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
-        expect(tableSchema!.findColumnByName("int")!.length).to.be.equal("5");
-        expect(tableSchema!.findColumnByName("tinyint")!.length).to.be.equal("5");
-        expect(tableSchema!.findColumnByName("smallint")!.length).to.be.equal("5");
-        expect(tableSchema!.findColumnByName("mediumint")!.length).to.be.equal("5");
-        expect(tableSchema!.findColumnByName("bigint")!.length).to.be.equal("5");
-        expect(tableSchema!.findColumnByName("char")!.length).to.be.equal("50");
-        expect(tableSchema!.findColumnByName("varchar")!.length).to.be.equal("50");
+        expect(table!.findColumnByName("int")!.length).to.be.equal("5");
+        expect(table!.findColumnByName("tinyint")!.length).to.be.equal("5");
+        expect(table!.findColumnByName("smallint")!.length).to.be.equal("5");
+        expect(table!.findColumnByName("mediumint")!.length).to.be.equal("5");
+        expect(table!.findColumnByName("bigint")!.length).to.be.equal("5");
+        expect(table!.findColumnByName("char")!.length).to.be.equal("50");
+        expect(table!.findColumnByName("varchar")!.length).to.be.equal("50");
         
     })));
 
@@ -48,16 +48,16 @@ describe("database schema > column length > mssql", () => {
         await connection.synchronize(false);        
 
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("post");
+        const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
-        expect(tableSchema!.findColumnByName("int")!.length).to.be.equal("10");
-        expect(tableSchema!.findColumnByName("tinyint")!.length).to.be.equal("10");
-        expect(tableSchema!.findColumnByName("smallint")!.length).to.be.equal("10");
-        expect(tableSchema!.findColumnByName("mediumint")!.length).to.be.equal("10");
-        expect(tableSchema!.findColumnByName("bigint")!.length).to.be.equal("10");
-        expect(tableSchema!.findColumnByName("char")!.length).to.be.equal("100");
-        expect(tableSchema!.findColumnByName("varchar")!.length).to.be.equal("100");
+        expect(table!.findColumnByName("int")!.length).to.be.equal("10");
+        expect(table!.findColumnByName("tinyint")!.length).to.be.equal("10");
+        expect(table!.findColumnByName("smallint")!.length).to.be.equal("10");
+        expect(table!.findColumnByName("mediumint")!.length).to.be.equal("10");
+        expect(table!.findColumnByName("bigint")!.length).to.be.equal("10");
+        expect(table!.findColumnByName("char")!.length).to.be.equal("100");
+        expect(table!.findColumnByName("varchar")!.length).to.be.equal("100");
         
     })));
 

@@ -1,9 +1,9 @@
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 
 /**
- * Table's column's schema in the database represented in this class.
+ * Table's columns in the database represented in this class.
  */
-export class ColumnSchema {
+export class TableColumn {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -137,27 +137,27 @@ export class ColumnSchema {
     // -------------------------------------------------------------------------
 
     /**
-     * Clones this column schema to a new column schema with exact same properties as this column schema has.
+     * Clones this column to a new column with exact same properties as this column has.
      */
-    clone(): ColumnSchema {
-        const newColumnSchema = new ColumnSchema();
-        newColumnSchema.name = this.name;
-        newColumnSchema.type = this.type;
-        newColumnSchema.length = this.length;
-        newColumnSchema.charset = this.charset;
-        newColumnSchema.collation = this.collation;
-        newColumnSchema.precision = this.precision;
-        newColumnSchema.scale = this.scale;
-        newColumnSchema.enum = this.enum;
-        newColumnSchema.default = this.default;
-        newColumnSchema.isNullable = this.isNullable;
-        newColumnSchema.isGenerated = this.isGenerated;
-        newColumnSchema.generationStrategy = this.generationStrategy;
-        newColumnSchema.isPrimary = this.isPrimary;
-        newColumnSchema.isUnique = this.isUnique;
-        newColumnSchema.isArray = this.isArray;
-        newColumnSchema.comment = this.comment;
-        return newColumnSchema;
+    clone(): TableColumn {
+        const newTableColumn = new TableColumn();
+        newTableColumn.name = this.name;
+        newTableColumn.type = this.type;
+        newTableColumn.length = this.length;
+        newTableColumn.charset = this.charset;
+        newTableColumn.collation = this.collation;
+        newTableColumn.precision = this.precision;
+        newTableColumn.scale = this.scale;
+        newTableColumn.enum = this.enum;
+        newTableColumn.default = this.default;
+        newTableColumn.isNullable = this.isNullable;
+        newTableColumn.isGenerated = this.isGenerated;
+        newTableColumn.generationStrategy = this.generationStrategy;
+        newTableColumn.isPrimary = this.isPrimary;
+        newTableColumn.isUnique = this.isUnique;
+        newTableColumn.isArray = this.isArray;
+        newTableColumn.comment = this.comment;
+        return newTableColumn;
     }
 
     // -------------------------------------------------------------------------
@@ -167,25 +167,25 @@ export class ColumnSchema {
     /**
      * Creates a new column based on the given column metadata.
      */
-    static create(columnMetadata: ColumnMetadata, normalizedType: string, normalizedDefault: string, normalizedLength: string): ColumnSchema {
-        const columnSchema = new ColumnSchema();
-        columnSchema.name = columnMetadata.databaseName;
-        columnSchema.length = normalizedLength;
-        columnSchema.charset = columnMetadata.charset;
-        columnSchema.collation = columnMetadata.collation;
-        columnSchema.precision = columnMetadata.precision;
-        columnSchema.scale = columnMetadata.scale;
-        columnSchema.default = normalizedDefault;
-        columnSchema.comment = columnMetadata.comment;
-        columnSchema.isGenerated = columnMetadata.isGenerated;
-        columnSchema.generationStrategy = columnMetadata.generationStrategy;
-        columnSchema.isNullable = columnMetadata.isNullable;
-        columnSchema.type = normalizedType;
-        columnSchema.isPrimary = columnMetadata.isPrimary;
-        columnSchema.isUnique = columnMetadata.isUnique;
-        columnSchema.isArray = columnMetadata.isArray || false;
-        columnSchema.enum = columnMetadata.enum;
-        return columnSchema;
+    static create(columnMetadata: ColumnMetadata, normalizedType: string, normalizedDefault: string, normalizedLength: string): TableColumn {
+        const tableColumn = new TableColumn();
+        tableColumn.name = columnMetadata.databaseName;
+        tableColumn.length = normalizedLength;
+        tableColumn.charset = columnMetadata.charset;
+        tableColumn.collation = columnMetadata.collation;
+        tableColumn.precision = columnMetadata.precision;
+        tableColumn.scale = columnMetadata.scale;
+        tableColumn.default = normalizedDefault;
+        tableColumn.comment = columnMetadata.comment;
+        tableColumn.isGenerated = columnMetadata.isGenerated;
+        tableColumn.generationStrategy = columnMetadata.generationStrategy;
+        tableColumn.isNullable = columnMetadata.isNullable;
+        tableColumn.type = normalizedType;
+        tableColumn.isPrimary = columnMetadata.isPrimary;
+        tableColumn.isUnique = columnMetadata.isUnique;
+        tableColumn.isArray = columnMetadata.isArray || false;
+        tableColumn.enum = columnMetadata.enum;
+        return tableColumn;
     }
 
 }

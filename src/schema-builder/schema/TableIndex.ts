@@ -3,7 +3,7 @@ import {IndexMetadata} from "../../metadata/IndexMetadata";
 /**
  * Database's table index stored in this class.
  */
-export class IndexSchema {
+export class TableIndex {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -48,7 +48,7 @@ export class IndexSchema {
      * Creates a new copy of this index with exactly same properties.
      */
     clone() {
-        return new IndexSchema(this.tableName, this.name, this.columnNames.map(name => name), this.isUnique);
+        return new TableIndex(this.tableName, this.name, this.columnNames.map(name => name), this.isUnique);
     }
 
     // -------------------------------------------------------------------------
@@ -58,8 +58,8 @@ export class IndexSchema {
     /**
      * Creates index from the index metadata object.
      */
-    static create(indexMetadata: IndexMetadata): IndexSchema {
-        return new IndexSchema(
+    static create(indexMetadata: IndexMetadata): TableIndex {
+        return new TableIndex(
             indexMetadata.entityMetadata.tableName,
             indexMetadata.name,
             indexMetadata.columns.map(column => column.databaseName),

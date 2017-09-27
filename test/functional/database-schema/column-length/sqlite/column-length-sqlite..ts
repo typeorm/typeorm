@@ -21,15 +21,15 @@ describe("database schema > column length > mssql", () => {
     it("all types should create with correct size", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("post");
+        const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
-        expect(tableSchema!.findColumnByName("character")!.length).to.be.equal("50");
-        expect(tableSchema!.findColumnByName("varchar")!.length).to.be.equal("50");
-        expect(tableSchema!.findColumnByName("nchar")!.length).to.be.equal("50");
-        expect(tableSchema!.findColumnByName("nvarchar")!.length).to.be.equal("50");
-        expect(tableSchema!.findColumnByName("varying_character")!.length).to.be.equal("50");
-        expect(tableSchema!.findColumnByName("native_character")!.length).to.be.equal("50");
+        expect(table!.findColumnByName("character")!.length).to.be.equal("50");
+        expect(table!.findColumnByName("varchar")!.length).to.be.equal("50");
+        expect(table!.findColumnByName("nchar")!.length).to.be.equal("50");
+        expect(table!.findColumnByName("nvarchar")!.length).to.be.equal("50");
+        expect(table!.findColumnByName("varying_character")!.length).to.be.equal("50");
+        expect(table!.findColumnByName("native_character")!.length).to.be.equal("50");
 
     })));
 
@@ -46,15 +46,15 @@ describe("database schema > column length > mssql", () => {
         await connection.synchronize(false);
 
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("post");
+        const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
-        expect(tableSchema!.findColumnByName("character")!.length).to.be.equal("100");
-        expect(tableSchema!.findColumnByName("varchar")!.length).to.be.equal("100");
-        expect(tableSchema!.findColumnByName("nchar")!.length).to.be.equal("100");
-        expect(tableSchema!.findColumnByName("nvarchar")!.length).to.be.equal("100");
-        expect(tableSchema!.findColumnByName("varying_character")!.length).to.be.equal("100");
-        expect(tableSchema!.findColumnByName("native_character")!.length).to.be.equal("100");
+        expect(table!.findColumnByName("character")!.length).to.be.equal("100");
+        expect(table!.findColumnByName("varchar")!.length).to.be.equal("100");
+        expect(table!.findColumnByName("nchar")!.length).to.be.equal("100");
+        expect(table!.findColumnByName("nvarchar")!.length).to.be.equal("100");
+        expect(table!.findColumnByName("varying_character")!.length).to.be.equal("100");
+        expect(table!.findColumnByName("native_character")!.length).to.be.equal("100");
 
         await connection.synchronize(false);
 
