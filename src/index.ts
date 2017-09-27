@@ -45,6 +45,7 @@ export * from "./decorator/options/JoinColumnOptions";
 export * from "./decorator/options/JoinTableOptions";
 export * from "./decorator/options/RelationOptions";
 export * from "./decorator/options/EntityOptions";
+export * from "./decorator/options/ValueTransformer";
 export * from "./decorator/relations/RelationCount";
 export * from "./decorator/relations/JoinColumn";
 export * from "./decorator/relations/JoinTable";
