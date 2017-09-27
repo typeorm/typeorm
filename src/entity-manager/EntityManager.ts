@@ -358,63 +358,6 @@ export class EntityManager {
     }
 
     /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: Function, entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: string, entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: Function, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: string, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
-
-    /**
-     * Persists (saves) a given entity in the database.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[], options?: SaveOptions): Promise<Entity|Entity[]> {
-        return this.save(targetOrEntity as any, maybeEntity as any, options);
-    }
-
-    /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
     async update<Entity>(target: ObjectType<Entity>|string, conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;

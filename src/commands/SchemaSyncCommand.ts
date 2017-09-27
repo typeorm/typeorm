@@ -18,7 +18,7 @@ export class SchemaSyncCommand {
                 default: "default",
                 describe: "Name of the connection on which schema synchronization needs to to run."
             })
-            .option("cf", {
+            .option("f", {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
@@ -32,27 +32,23 @@ export class SchemaSyncCommand {
             const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
             Object.assign(connectionOptions, {
-                dropSchemaOnConnection: false,
-                autoSchemaSync: false,
-                autoMigrationsRun: false,
-                logging: {
-                    logQueries: true,
-                    logFailedQueryError: true,
-                    logSchemaCreation: true
-                }
+                synchronize: false,
+                migrationsRun: false,
+                dropSchema: false,
+                logging: ["query", "schema"]
             });
             connection = await createConnection(connectionOptions);
             await connection.synchronize(false);
+            await connection.close();
+
             console.log(chalk.green("Schema syncronization finished successfully."));
 
         } catch (err) {
+            if (connection) await (connection as Connection).close();
+
             console.log(chalk.black.bgRed("Error during schema synchronization:"));
             console.error(err);
-            // throw err;
-
-        } finally {
-            if (connection)
-                await connection.close();
+            process.exit(1);
         }
     }
 }

@@ -41,7 +41,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
       post.id = 1;
       post.dateTimeColumn = now;
       
-      await connection.manager.persist(post);
+      await connection.manager.save(post);
 
       const storedPost = await connection.manager.findOneById(Post, post.id);
       expect(storedPost).to.not.be.null;

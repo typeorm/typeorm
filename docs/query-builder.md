@@ -1,34 +1,34 @@
 # Query Builder
 
-* What is `QueryBuilder`
-* How to create and use a `QueryBuilder`
-* Building `SELECT` queries
-    * Getting values using `QueryBuilder`
-    * What are aliases stand for?
-    * Using parameters to escape data
-    * Adding `WHERE` expression
-    * Adding `HAVING` expression
-    * Adding `ORDER BY` expression
-    * Adding `GROUP BY` expression
-    * Adding `LIMIT` expression
-    * Adding `OFFSET` expression
-    * Joining relations
-    * Inner and left joins
-    * Join without selection
-    * Joining any entity or table
-    * Joining and mapping functionality
-    * Getting result query
-    * Getting raw results
-    * Streaming result data
-    * Using pagination
-    * Set locking
-    * Partial selection
-    * Using subqueries
-    * Caching queries
-* Building `INSERT` query
-* Building `UPDATE` query
-* Building `DELETE` query
-* Using `RelationQueryBuilder`
+* [What is `QueryBuilder`](#what-is-querybuilder)
+* [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
+* [Building `SELECT` queries](#building-select-queries)
+    * [Getting values using `QueryBuilder`](#getting-values-using-querybuilder)
+    * [What are aliases stand for?](#what-are-aliases-stand-for?)
+    * [Using parameters to escape data](#using-parameters-to-escape-data)
+    * [Adding `WHERE` expression](#adding-where-expression)
+    * [Adding `HAVING` expression](#adding-having-expression)
+    * [Adding `ORDER BY` expression](#adding-order-by-expression)
+    * [Adding `GROUP BY` expression](#adding-group-by-expression)
+    * [Adding `LIMIT` expression](#adding-limit-expression)
+    * [Adding `OFFSET` expression](#adding-offset-expression)
+    * [Joining relations](#joining-relations)
+    * [Inner and left joins](#inner-and-left-joins)
+    * [Join without selection](#join-without-selection)
+    * [Joining any entity or table](#joining-any-entity-or-table)
+    * [Joining and mapping functionality](#joining-and-mapping-functionality)
+    * [Getting result query](#getting-result-query)
+    * [Getting raw results](#getting-raw-results)
+    * [Streaming result data](#streaming-result-data)
+    * [Using pagination](#using-pagination)
+    * [Set locking](#set-locking)
+    * [Partial selection](#partial-selection)
+    * [Using subqueries](#using-subqueries)
+    * [Caching queries](#caching-queries)
+* [Building `INSERT` query](#building-insert-query)
+* [Building `UPDATE` query](#building-update-query)
+* [Building `DELETE` query](#building-delete-query)
+* [Using `RelationQueryBuilder`](#using-relationquerybuilder)
 
 ## What is `QueryBuilder`
 

@@ -12,6 +12,7 @@ import {SchemaLogCommand} from "./commands/SchemaLogCommand";
 import {MigrationGenerateCommand} from "./commands/MigrationGenerateCommand";
 import {VersionCommand} from "./commands/VersionCommand";
 import {InitCommand} from "./commands/InitCommand";
+import {CacheClearCommand} from "./commands/CacheClearCommand";
 
 require("yargs")
     .usage("Usage: $0 <command> [options]")
@@ -26,6 +27,7 @@ require("yargs")
     .command(new MigrationRunCommand())
     .command(new MigrationRevertCommand())
     .command(new VersionCommand())
+    .command(new CacheClearCommand())
     .command(new InitCommand())
     .demand(1)
     .alias("v", "version")

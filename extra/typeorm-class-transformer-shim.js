@@ -295,16 +295,6 @@ exports.TreeParent = TreeParent;
 }
 exports.DiscriminatorValue = DiscriminatorValue;
 
-/**
- * @deprecated
- */
-/* export */ function Embedded(typeFunction) {
-    return function (object, propertyName) {
-        class_transformer_1.Type(typeFunction)(object, propertyName);
-    };
-}
-exports.Embedded = Embedded;
-
 /* export */ function Index() {
     return function (object, propertyName) {
     };

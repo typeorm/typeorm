@@ -1,7 +1,9 @@
 import {createConnection} from "../index";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
+import * as process from "process";
 const chalk = require("chalk");
+
 
 /**
  * Runs migration command.
@@ -13,13 +15,13 @@ export class MigrationRunCommand {
 
     builder(yargs: any) {
         return yargs
-            .option("c", {
-                alias: "connection",
+            .option("connection", {
+                alias: "c",
                 default: "default",
                 describe: "Name of the connection on which run a query."
             })
-            .option("cf", {
-                alias: "config",
+            .option("config", {
+                alias: "f",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
             });
@@ -33,24 +35,22 @@ export class MigrationRunCommand {
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
             Object.assign(connectionOptions, {
                 subscribers: [],
-                dropSchemaOnConnection: false,
-                autoSchemaSync: false,
-                autoMigrationsRun: false,
-                logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: true }
+                synchronize: false,
+                migrationsRun: false,
+                dropSchema: false,
+                logging: ["schema"]
             });
             connection = await createConnection(connectionOptions);
 
             await connection.runMigrations();
-            // console.log(chalk.green("Migrations were successfully executed.")); // todo: make log inside "runMigrations" method
+            await connection.close();
 
         } catch (err) {
+            if (connection) await (connection as Connection).close();
+
             console.log(chalk.black.bgRed("Error during migration run:"));
             console.error(err);
-            // throw err;
-
-        } finally {
-            if (connection)
-                await connection.close();
+            process.exit(1);
         }
     }
 

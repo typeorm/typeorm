@@ -33,44 +33,44 @@ describe.skip("table-inheritance > single-table > relations > one-to-many", () =
 
         const faculty1 = new Faculty();
         faculty1.name = "Economics";
-        await connection.getRepository(Faculty).persist(faculty1);
+        await connection.getRepository(Faculty).save(faculty1);
 
         const faculty2 = new Faculty();
         faculty2.name = "Programming";
-        await connection.getRepository(Faculty).persist(faculty2);
+        await connection.getRepository(Faculty).save(faculty2);
 
         const student = new Student();
         student.name = "Alice";
         student.faculties = [faculty1, faculty2];
-        await connection.getRepository(Student).persist(student);
+        await connection.getRepository(Student).save(student);
 
         const specialization1 = new Specialization();
         specialization1.name = "Geography";
-        await connection.getRepository(Specialization).persist(specialization1);
+        await connection.getRepository(Specialization).save(specialization1);
 
         const specialization2 = new Specialization();
         specialization2.name = "Economist";
-        await connection.getRepository(Specialization).persist(specialization2);
+        await connection.getRepository(Specialization).save(specialization2);
 
         const teacher = new Teacher();
         teacher.name = "Mr. Garrison";
         teacher.specializations = [specialization1, specialization2];
         teacher.salary = 2000;
-        await connection.getRepository(Teacher).persist(teacher);
+        await connection.getRepository(Teacher).save(teacher);
 
         const department1 = new Department();
         department1.name = "Bookkeeping";
-        await connection.getRepository(Department).persist(department1);
+        await connection.getRepository(Department).save(department1);
 
         const department2 = new Department();
         department2.name = "HR";
-        await connection.getRepository(Department).persist(department2);
+        await connection.getRepository(Department).save(department2);
 
         const accountant = new Accountant();
         accountant.name = "Mr. Burns";
         accountant.departments = [department1, department2];
         accountant.salary = 3000;
-        await connection.getRepository(Accountant).persist(accountant);
+        await connection.getRepository(Accountant).save(accountant);
 
         // -------------------------------------------------------------------------
         // Select

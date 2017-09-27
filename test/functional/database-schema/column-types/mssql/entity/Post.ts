@@ -55,6 +55,9 @@ export class Post {
     // Character Types
     // -------------------------------------------------------------------------
 
+    @Column("uniqueidentifier")
+    uniqueidentifier: string;
+
     @Column("char")
     char: string;
 

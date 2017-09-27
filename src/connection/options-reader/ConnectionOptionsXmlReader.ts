@@ -27,7 +27,7 @@ export class ConnectionOptionsXmlReader {
                 database: connection.database ? connection.database[0] : undefined,
                 sid: connection.sid ? connection.sid[0] : undefined,
                 extra: connection.extra ? connection.extra[0] : undefined,
-                autoSchemaSync: connection.autoSchemaSync ? connection.autoSchemaSync[0] : undefined,
+                synchronize: connection.synchronize ? connection.synchronize[0] : undefined,
                 entities: connection.entities ? connection.entities[0].entity : [],
                 subscribers: connection.subscribers ? connection.subscribers[0].entity : [],
                 entitySchemas: connection.entitySchemas ? connection.entitySchemas[0].entity : [],

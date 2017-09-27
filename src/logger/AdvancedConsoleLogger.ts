@@ -60,6 +60,13 @@ export class AdvancedConsoleLogger implements Logger {
     }
 
     /**
+     * Logs events from the migration run process.
+     */
+    logMigration(message: string, queryRunner?: QueryRunner) {
+        PlatformTools.log(message);
+    }
+
+    /**
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
      */

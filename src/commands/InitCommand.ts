@@ -72,6 +72,7 @@ export class InitCommand {
         } catch (err) {
             console.log(chalk.black.bgRed("Error during project initialization:"));
             console.error(err);
+            process.exit(1);
         }
     }
 
@@ -157,7 +158,12 @@ export class InitCommand {
             ],
             subscribers: [
                 "src/subscriber/**/*.ts"
-            ]
+            ],
+            cli: {
+                entitiesDir: "src/entity",
+                migrationsDir: "src/migration",
+                subscribersDir: "src/subscriber"
+            }
         });
         return JSON.stringify(options, undefined, 3);
     }

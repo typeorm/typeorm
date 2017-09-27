@@ -250,7 +250,7 @@ export class QueryExpressionMap {
     /**
      * Creates a new alias and adds it to the current expression map.
      */
-    createAlias(options: { name?: string, target?: Function|string, tableName?: string, subQuery?: string, metadata?: EntityMetadata }): Alias {
+    createAlias(options: { type: "from"|"select"|"join"|"other", name?: string, target?: Function|string, tableName?: string, subQuery?: string, metadata?: EntityMetadata }): Alias {
 
         let aliasName = options.name;
         if (!aliasName && options.tableName)
@@ -261,6 +261,7 @@ export class QueryExpressionMap {
             aliasName = options.target;
 
         const alias = new Alias();
+        alias.type = options.type;
         if (aliasName)
             alias.name = aliasName;
         if (options.metadata)

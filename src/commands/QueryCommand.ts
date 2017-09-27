@@ -19,7 +19,7 @@ export class QueryCommand {
                 default: "default",
                 describe: "Name of the connection on which to run a query."
             })
-            .option("cf", {
+            .option("f", {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
@@ -36,10 +36,10 @@ export class QueryCommand {
             const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
             Object.assign(connectionOptions, {
-                dropSchemaOnConnection: false,
-                autoSchemaSync: false,
-                autoMigrationsRun: false,
-                logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: false }
+                synchronize: false,
+                migrationsRun: false,
+                dropSchema: false,
+                logging: false
             });
             connection = await createConnection(connectionOptions);
 
@@ -50,17 +50,16 @@ export class QueryCommand {
             console.log(chalk.green("Query has been executed. Result: "));
             console.log(PlatformTools.highlightJson(JSON.stringify(queryResult, undefined, 2)));
 
+            await queryRunner.release();
+            await connection.close();
+
         } catch (err) {
+            if (queryRunner) await (queryRunner as QueryRunner).release();
+            if (connection) await (connection as Connection).close();
+
             console.log(chalk.black.bgRed("Error during query execution:"));
             console.error(err);
-            // throw err;
-
-        } finally {
-            if (queryRunner)
-                await queryRunner.release();
-
-            if (connection)
-                await connection.close();
+            process.exit(1);
         }
     }
 }

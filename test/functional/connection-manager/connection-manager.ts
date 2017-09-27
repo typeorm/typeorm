@@ -159,7 +159,7 @@ describe("ConnectionManager", () => {
      /*   it("should drop the database if dropSchema was set to true (postgres)", async () => {
             const options: ConnectionOptions = {
                 dropSchema: true,
-                autoSchemaSync: true,
+                synchronize: true,
                 driver: createTestingConnectionOptions("postgres"),
                 entities: [Post]
             };
@@ -168,7 +168,7 @@ describe("ConnectionManager", () => {
             // create connection, save post and close connection
             let connection = await connectionManager.createAndConnect(options);
             const post = new Post(1, "Hello post");
-            await connection.manager.persist(post);
+            await connection.manager.save(post);
             await connection.close();
 
             // recreate connection and find previously saved post
@@ -182,7 +182,7 @@ describe("ConnectionManager", () => {
     /*    it("should drop the database if dropSchema was set to true (postgres)", async () => {
             const options: ConnectionOptions = {
                 dropSchema: true,
-                autoSchemaSync: true,
+                synchronize: true,
                 driver: createTestingConnectionOptions("postgres"),
                 entities: [Post]
             };
@@ -191,7 +191,7 @@ describe("ConnectionManager", () => {
             // create connection, save post and close connection
             let connection = await connectionManager.createAndConnect(options);
             const post = new Post(1, "Hello post");
-            await connection.manager.persist(post);
+            await connection.manager.save(post);
             await connection.close();
 
             // recreate connection and find previously saved post

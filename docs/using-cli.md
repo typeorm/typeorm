@@ -11,8 +11,8 @@
 * [Log sync database schema queries without actual running them](#log-sync-database-schema-queries-without-actual-running-them)
 * [Drop database schema](#drop-database-schema)
 * [Run any sql query](#run-any-sql-query)
+* [Clear cache](#clear-cache)
 * [Check version](#check-version)
-* Create database backup [TBD]
 
 ## Initialize a new TypeORM project
 
@@ -24,6 +24,7 @@ typeorm init
 
 It creates all files needed for a basic project with TypeORM:
 
+* .gitignore
 * package.json
 * README.md
 * tsconfig.json
@@ -42,7 +43,19 @@ If you want to generate in a specific directory you can use `--name` option:
 typeorm init --name my-project
 ```
 
-You can also generate a `docker-compose.yml` file if you want to use `docker` in your project by running following command:
+To specify a specific database you use you can use `--database` option:
+
+```
+typeorm init --database mssql
+```
+
+You can also generate a base project with Express:
+
+```
+typeorm init --name my-project --express
+```
+
+If you are using docker you can generate a `docker-compose.yml` file using following command:
 
 ```
 typeorm init --docker
@@ -213,6 +226,15 @@ You can execute any sql query you want directly in the database using following 
 
 ```
 typeorm query "SELECT * FROM USERS"
+```
+
+## Clear cache
+
+If you are using `QueryBuilder` cache, sometimes you may want to clear everything stored in the cache. 
+You can do it using following command:
+
+```
+typeorm cache:clear
 ```
 
 ## Check version

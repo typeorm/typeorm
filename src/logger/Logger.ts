@@ -26,6 +26,11 @@ export interface Logger {
     logSchemaBuild(message: string, queryRunner?: QueryRunner): any;
 
     /**
+     * Logs events from the migrations run process.
+     */
+    logMigration(message: string, queryRunner?: QueryRunner): any;
+
+    /**
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
      */

@@ -42,6 +42,7 @@ describe("database schema > column types > mssql", () => {
         post.real = 10.5;
         post.smallmoney = 100;
         post.money = 2500;
+        post.uniqueidentifier = "FD357B8F-8838-42F6-B7A2-AE027444E895";
         post.char = "A";
         post.varchar = "This is varchar";
         post.text = "This is text";
@@ -80,6 +81,7 @@ describe("database schema > column types > mssql", () => {
         loadedPost.real.should.be.equal(post.real);
         loadedPost.smallmoney.should.be.equal(post.smallmoney);
         loadedPost.money.should.be.equal(post.money);
+        loadedPost.uniqueidentifier.should.be.equal(post.uniqueidentifier);
         loadedPost.char.should.be.equal(post.char);
         loadedPost.varchar.should.be.equal(post.varchar);
         loadedPost.text.should.be.equal(post.text);
@@ -118,6 +120,7 @@ describe("database schema > column types > mssql", () => {
         tableSchema!.findColumnByName("real")!.type.should.be.equal("real");
         tableSchema!.findColumnByName("smallmoney")!.type.should.be.equal("smallmoney");
         tableSchema!.findColumnByName("money")!.type.should.be.equal("money");
+        tableSchema!.findColumnByName("uniqueidentifier")!.type.should.be.equal("uniqueidentifier");
         tableSchema!.findColumnByName("char")!.type.should.be.equal("char");
         tableSchema!.findColumnByName("char")!.length!.should.be.equal("1");
         tableSchema!.findColumnByName("varchar")!.type.should.be.equal("varchar");

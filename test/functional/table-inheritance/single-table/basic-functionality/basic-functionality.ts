@@ -27,36 +27,36 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
         const student1 = new Student();
         student1.name = "Alice";
         student1.faculty = "Economics";
-        await connection.getRepository(Student).persist(student1);
+        await connection.getRepository(Student).save(student1);
 
         const student2 = new Student();
         student2.name = "Bob";
         student2.faculty = "Programming";
-        await connection.getRepository(Student).persist(student2);
+        await connection.getRepository(Student).save(student2);
 
         const teacher1 = new Teacher();
         teacher1.name = "Mr. Garrison";
         teacher1.specialization = "Geography";
         teacher1.salary = 2000;
-        await connection.getRepository(Teacher).persist(teacher1);
+        await connection.getRepository(Teacher).save(teacher1);
 
         const teacher2 = new Teacher();
         teacher2.name = "Mr. Adler";
         teacher2.specialization = "Mathematics";
         teacher2.salary = 4000;
-        await connection.getRepository(Teacher).persist(teacher2);
+        await connection.getRepository(Teacher).save(teacher2);
 
         const accountant1 = new Accountant();
         accountant1.name = "Mr. Burns";
         accountant1.department = "Bookkeeping";
         accountant1.salary = 3000;
-        await connection.getRepository(Accountant).persist(accountant1);
+        await connection.getRepository(Accountant).save(accountant1);
 
         const accountant2 = new Accountant();
         accountant2.name = "Mr. Trump";
         accountant2.department = "Director";
         accountant2.salary = 5000;
-        await connection.getRepository(Accountant).persist(accountant2);
+        await connection.getRepository(Accountant).save(accountant2);
 
         // -------------------------------------------------------------------------
         // Select
@@ -115,7 +115,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
             .getOne();
 
         loadedStudent!.faculty = "Chemistry";
-        await connection.getRepository(Student).persist(loadedStudent!);
+        await connection.getRepository(Student).save(loadedStudent!);
 
         loadedStudent = await connection.manager
             .createQueryBuilder(Student, "student")
@@ -133,7 +133,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
             .getOne();
 
         loadedTeacher!.salary = 1000;
-        await connection.getRepository(Teacher).persist(loadedTeacher!);
+        await connection.getRepository(Teacher).save(loadedTeacher!);
 
         loadedTeacher = await connection.manager
             .createQueryBuilder(Teacher, "teacher")
@@ -152,7 +152,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
             .getOne();
 
         loadedAccountant!.salary = 1000;
-        await connection.getRepository(Accountant).persist(loadedAccountant!);
+        await connection.getRepository(Accountant).save(loadedAccountant!);
 
         loadedAccountant = await connection.manager
             .createQueryBuilder(Accountant, "accountant")

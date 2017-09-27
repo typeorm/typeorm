@@ -102,9 +102,9 @@ createConnection(options).then(connection => {
     childChildCategory2.parentCategory = childCategory2;
 
     return categoryRepository
-        .persist(childChildCategory1)
+        .save(childChildCategory1)
         .then(category => {
-            return categoryRepository.persist(childChildCategory2);
+            return categoryRepository.save(childChildCategory2);
         })
         .then(category => {
             console.log("Categories has been saved. Lets load them now.");

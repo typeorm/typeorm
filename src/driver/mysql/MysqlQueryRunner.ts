@@ -462,6 +462,7 @@ export class MysqlQueryRunner implements QueryRunner {
     async hasTable(tableSchemaOrPath: TableSchema|string): Promise<boolean> {
         const parsedTablePath = this.parseTablePath(tableSchemaOrPath);
         const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${parsedTablePath.database}' AND TABLE_NAME = '${parsedTablePath.tableName}'`;
+        console.log(sql);
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -795,22 +796,16 @@ export class MysqlQueryRunner implements QueryRunner {
         await this.query(upQuery);
     }
 
-    protected parseTablePath(tableSchemaOrPath: TableSchema|string): any {
+    protected parseTablePath(tableSchemaOrPath: TableSchema|string) {
         if (tableSchemaOrPath instanceof TableSchema) {
-            const database = tableSchemaOrPath.database || this.driver.database;
-            if (!database)
-                throw new Error(`No database specified`);
             return {
-                database: database,
+                database: tableSchemaOrPath.database || this.driver.database,
                 tableName: tableSchemaOrPath.name
             };
         } else {
-            const database = tableSchemaOrPath.split(".")[0] || this.driver.database;
-            if (!database)
-                throw new Error(`No database specified`);
             return {
-                database: database,
-                tableName: tableSchemaOrPath.indexOf(".") === -1 ? tableSchemaOrPath : tableSchemaOrPath.split(".")[1]
+                database: tableSchemaOrPath.indexOf(".") !== -1 ? tableSchemaOrPath.split(".")[0] : this.driver.database,
+                tableName: tableSchemaOrPath.indexOf(".") !== -1 ? tableSchemaOrPath.split(".")[1] : tableSchemaOrPath
             };
         }
     }

@@ -748,7 +748,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Database name shortcut.
      */
     protected get dbName(): string {
-        return (this.driver.options.schema || this.driver.options.schemaName) as string;
+        return this.driver.options.schema as string;
     }
 
     /**

@@ -158,24 +158,4 @@ export interface BaseConnectionOptions {
 
     };
 
-    /**
-     * @deprecated - Use entityPrefix instead
-     */
-    readonly tablesPrefix?: string;
-
-    /**
-     * @deprecated - Use synchronize instead
-     */
-    readonly autoSchemaSync?: boolean;
-
-    /**
-     * @deprecated - Use migrationsRun instead
-     */
-    readonly autoMigrationsRun?: boolean;
-
-    /**
-     * @deprecated - Use dropSchema instead
-     */
-    readonly dropSchemaOnConnection?: boolean;
-
 }

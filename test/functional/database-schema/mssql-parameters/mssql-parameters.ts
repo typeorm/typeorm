@@ -27,7 +27,7 @@ describe("database schema > mssql-parameters", () => {
         post1.name = "Post #1";
         post1.category = "posts";
         post1.text = "This is post";
-        await postRepository.persist(post1);
+        await postRepository.save(post1);
 
         let loadedPost1 = (await postRepository.findOneById(1))!;
 
@@ -38,7 +38,7 @@ describe("database schema > mssql-parameters", () => {
 
         loadedPost1.name = "Updated Post #1";
         loadedPost1.text = "This is updated post";
-        await postRepository.persist(loadedPost1);
+        await postRepository.save(loadedPost1);
 
         loadedPost1 = (await postRepository.findOneById(1))!;
         loadedPost1.name.should.be.equal("Updated Post #1");

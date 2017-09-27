@@ -58,25 +58,25 @@ describe.skip("persistence > insert operations", () => {
 
             // posts[0].category = null; // todo: uncomment to check remove
             console.log("removing post's category: ", posts[0]);
-            await connection.manager.persist(posts[0]);*/
+            await connection.manager.save(posts[0]);*/
 
-           /* await connection.manager.persist([photo1, photo2]);
+           /* await connection.manager.save([photo1, photo2]);
 
             post1.photos = [photo1];
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             console.log("********************************************************");
             console.log("********************************************************");
 
             post1.photos = [photo1, photo2];
 
-            await connection.manager.persist(post1);
+            await connection.manager.save(post1);
 
             console.log("********************************************************");
             console.log("********************************************************");
 
             post1.title = "Updated Post";
-            await connection.manager.persist(post1);*/
+            await connection.manager.save(post1);*/
 
         })));
 

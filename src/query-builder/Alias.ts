@@ -1,7 +1,10 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
+
 /**
  */
 export class Alias {
+
+    type: "from"|"select"|"join"|"other"; // todo: make something with "other"
 
     name: string;
 

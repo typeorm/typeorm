@@ -6,7 +6,6 @@
 * Specify custom many-to-many junction table name
 * Creating your own `NamingStrategy`
 
-
 ## Creating your own `NamingStrategy`
 
 If you defined your connection options in `ormconfig` file,

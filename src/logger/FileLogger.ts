@@ -61,6 +61,13 @@ export class FileLogger implements Logger {
     }
 
     /**
+     * Logs events from the migrations run process.
+     */
+    logMigration(message: string, queryRunner?: QueryRunner) {
+        this.write(message);
+    }
+
+    /**
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
      */

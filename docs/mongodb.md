@@ -1,9 +1,9 @@
 # MongoDB
 
-* MongoDB support
-* Defining entities and columns
-* Defining subdocuments (embed documents)
-* Using `MongoEntityManager` and `MongoRepository`
+* [MongoDB support](#mongodb-support)
+* [Defining entities and columns](#defining-entities-and-columns)
+* [Defining subdocuments (embed documents)](#defining-subdocuments-embed-documents)
+* [Using `MongoEntityManager` and `MongoRepository`](#using-mongoentitymanager-and-mongorepository)
 
 ## MongoDB support
 

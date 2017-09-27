@@ -65,7 +65,7 @@ createConnection(options).then(async connection => {
     homesitter.numberOfKids = 5;
 
     console.log("saving the homesitter: ");
-    await homesitterRepository.persist(homesitter);
+    await homesitterRepository.save(homesitter);
     console.log("homesitter has been saved: ", homesitter);
 
     console.log("now loading the homesitter: ");
@@ -82,7 +82,7 @@ createConnection(options).then(async connection => {
     student.faculty = "computer science";
 
     console.log("saving the student: ");
-    await studentRepository.persist(student);
+    await studentRepository.save(student);
     console.log("student has been saved: ", student);
 
     console.log("now loading the student: ");

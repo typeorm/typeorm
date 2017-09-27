@@ -1115,6 +1115,8 @@ WHERE tableConstraints.TABLE_CATALOG = '${database}' AND columnUsages.TABLE_SCHE
                 c += ` CONSTRAINT "df_${tableName}_${column.name}" DEFAULT ${column.default}`;
             }
         }
+        if (column.isGenerated && column.generationStrategy === "uuid" && !column.default)
+            c += " DEFAULT NEWSEQUENTIALID()";
         return c;
     }
 

@@ -75,7 +75,7 @@ createConnection(options).then(connection => {
                 post.text = "Hello world of post#4";
                 post.categories = [category2, category1];
                 post.images.push(image);
-                return postRepository.persist(post);
+                return postRepository.save(post);
 
             })
             .then(() => qb.getSingleResult())
@@ -173,7 +173,7 @@ createConnection(options).then(connection => {
     //post.details = details;
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => console.log("Post has been saved"))
         .catch(error => console.log("Cannot save. Error: ", error));*/
 

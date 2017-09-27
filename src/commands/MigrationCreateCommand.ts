@@ -26,7 +26,7 @@ export class MigrationCreateCommand {
                 alias: "dir",
                 describe: "Directory where migration should be created."
             })
-            .option("cf", {
+            .option("f", {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
@@ -56,6 +56,7 @@ export class MigrationCreateCommand {
         } catch (err) {
             console.log(chalk.black.bgRed("Error during migration creation:"));
             console.error(err);
+            process.exit(1);
         }
     }
 

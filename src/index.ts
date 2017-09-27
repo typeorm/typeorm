@@ -56,10 +56,8 @@ export * from "./decorator/relations/OneToOne";
 export * from "./decorator/relations/RelationCount";
 export * from "./decorator/relations/RelationId";
 export * from "./decorator/entity/Entity";
-export * from "./decorator/entity/AbstractEntity";
 export * from "./decorator/entity/ClassEntityChild";
 export * from "./decorator/entity/ClosureEntity";
-export * from "./decorator/entity/EmbeddableEntity";
 export * from "./decorator/entity/SingleEntityChild";
 export * from "./decorator/entity/TableInheritance";
 export * from "./decorator/transaction/Transaction";
@@ -69,7 +67,6 @@ export * from "./decorator/tree/TreeParent";
 export * from "./decorator/tree/TreeChildren";
 export * from "./decorator/Index";
 export * from "./decorator/Generated";
-export * from "./decorator/Embedded";
 export * from "./decorator/DiscriminatorValue";
 export * from "./decorator/EntityRepository";
 export * from "./find-options/FindOneOptions";
@@ -249,14 +246,4 @@ export function getCustomRepository<T>(customRepository: ObjectType<T>, connecti
  */
 export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): MongoRepository<Entity> {
     return getConnectionManager().get(connectionName).getMongoRepository<Entity>(entityClass);
-}
-
-/**
- * Gets entity manager from the connection.
- * If connection name wasn't specified, then "default" connection will be retrieved.
- *
- * @deprecated use getManager instead
- */
-export function getEntityManager(connectionName: string = "default"): EntityManager {
-    return getManager(connectionName);
 }

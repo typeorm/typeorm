@@ -281,18 +281,6 @@ exports.TreeParent = TreeParent;
 }
 exports.DiscriminatorValue = DiscriminatorValue;
 
-/**
- * @deprecated
- */
-/* export */ function Embedded(options) {
-    return function (object, propertyName) {
-    };
-}
-exports.Embedded = Embedded;
-
-/**
- * @deprecated
- */
 /* export */ function Index(options) {
     return function (object, propertyName) {
     };

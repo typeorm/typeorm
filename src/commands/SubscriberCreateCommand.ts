@@ -25,7 +25,7 @@ export class SubscriberCreateCommand {
                 alias: "dir",
                 describe: "Directory where subscriber should be created."
             })
-            .option("cf", {
+            .option("f", {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
@@ -55,6 +55,7 @@ export class SubscriberCreateCommand {
         } catch (err) {
             console.log(chalk.black.bgRed("Error during subscriber creation:"));
             console.error(err);
+            process.exit(1);
         }
     }
 

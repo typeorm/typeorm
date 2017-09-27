@@ -17,11 +17,6 @@ export interface OracleConnectionOptions extends BaseConnectionOptions, OracleCo
     readonly schema?: string;
 
     /**
-     * @deprecated use "schema" instead.
-     */
-    readonly schemaName?: string;
-
-    /**
      * Replication setup.
      */
     readonly replication?: {

@@ -64,7 +64,7 @@ createConnection(options).then(connection => {
             // let secondPost = postRepository.create();
             // secondPost.text = "Second post";
             // secondPost.title = "About second post";
-            // return authorRepository.persist(author);
+            // return authorRepository.save(author);
 
         }).then(post => {
             console.log("Loaded posts: ", post);
@@ -72,7 +72,7 @@ createConnection(options).then(connection => {
         /*    posts[0].title = "should be updated second post";
 
         return author.posts.then(posts => {
-                return authorRepository.persist(author);
+                return authorRepository.save(author);
             });
         })
         .then(updatedAuthor => {
@@ -85,7 +85,7 @@ createConnection(options).then(connection => {
             console.log("Now lets delete a post");
             posts[0].author = Promise.resolve(null);
             posts[1].author = Promise.resolve(null);
-            return postRepository.persist(posts[0]);
+            return postRepository.save(posts[0]);
         })
         .then(posts => {
             console.log("Two post's author has been removed.");  
@@ -105,7 +105,7 @@ createConnection(options).then(connection => {
                 category2
             ]);
             
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(posts => {
             console.log("Post has been saved with its categories. ");
@@ -118,7 +118,7 @@ createConnection(options).then(connection => {
             return posts[0].categories.then(categories => {
                 categories.splice(0, 1);
                 // console.log(posts[0]);
-                return postRepository.persist(posts[0]);
+                return postRepository.save(posts[0]);
             });
         })*/
         .then(posts => {

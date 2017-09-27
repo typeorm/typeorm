@@ -20,7 +20,7 @@ export class SchemaLogCommand {
                 default: "default",
                 describe: "Name of the connection of which schema sync log should be shown."
             })
-            .option("cf", {
+            .option("f", {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
@@ -35,10 +35,10 @@ export class SchemaLogCommand {
             const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
             Object.assign(connectionOptions, {
-                dropSchemaOnConnection: false,
-                autoSchemaSync: false,
-                autoMigrationsRun: false,
-                logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: false }
+                synchronize: false,
+                migrationsRun: false,
+                dropSchema: false,
+                logging: false
             });
             connection = await createConnection(connectionOptions);
             const sqls = await connection.driver.createSchemaBuilder().log();
@@ -58,15 +58,14 @@ export class SchemaLogCommand {
                     console.log(highlight(sqlString));
                 });
             }
+            await connection.close();
 
         } catch (err) {
+            if (connection)
+
             console.log(chalk.black.bgRed("Error during schema synchronization:"));
             console.error(err);
-            // throw err;
-
-        } finally {
-            if (connection)
-                await connection.close();
+            process.exit(1);
         }
     }
 }

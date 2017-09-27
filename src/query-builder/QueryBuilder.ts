@@ -477,6 +477,7 @@ export abstract class QueryBuilder<Entity> {
             const metadata = this.connection.getMetadata(entityTarget);
 
             return this.expressionMap.createAlias({
+                type: "from",
                 name: aliasName,
                 metadata: this.connection.getMetadata(entityTarget),
                 tableName: metadata.tableName
@@ -494,6 +495,7 @@ export abstract class QueryBuilder<Entity> {
             }
             const isSubQuery = entityTarget instanceof Function || entityTarget.substr(0, 1) === "(" && entityTarget.substr(-1) === ")";
             return this.expressionMap.createAlias({
+                type: "from",
                 name: aliasName,
                 tableName: isSubQuery === false ? entityTarget as string : undefined,
                 subQuery: isSubQuery === true ? subQuery : undefined,

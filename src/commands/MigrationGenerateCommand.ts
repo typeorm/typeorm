@@ -29,7 +29,7 @@ export class MigrationGenerateCommand {
                 alias: "dir",
                 describe: "Directory where migration should be created."
             })
-            .option("cf", {
+            .option("f", {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
@@ -55,10 +55,10 @@ export class MigrationGenerateCommand {
             const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
             Object.assign(connectionOptions, {
-                dropSchemaOnConnection: false,
-                autoSchemaSync: false,
-                autoMigrationsRun: false,
-                logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: false }
+                synchronize: false,
+                migrationsRun: false,
+                dropSchema: false,
+                logging: false
             });
             connection = await createConnection(connectionOptions);
             const sqlQueries = await connection.driver.createSchemaBuilder().log();
@@ -81,25 +81,25 @@ export class MigrationGenerateCommand {
                         downSqls.push("        await queryRunner.query(`" + query.down.replace(new RegExp("`", "g"), "\\`") + "`);");
                 });
             }
-            const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, upSqls, downSqls.reverse());
-            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
-            await CommandUtils.createFile(path, fileContent);
 
             if (upSqls.length) {
+                const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, upSqls, downSqls.reverse());
+                const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+                await CommandUtils.createFile(path, fileContent);
+
                 console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
 
             } else {
                 console.log(chalk.yellow(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migrations:create" command`));
             }
+            await connection.close();
 
         } catch (err) {
+            if (connection) await (connection as Connection).close();
+
             console.log(chalk.black.bgRed("Error during migration generation:"));
             console.error(err);
-            // throw err;
-
-        } finally {
-            if (connection)
-                await connection.close();
+            process.exit(1);
         }
     }
 

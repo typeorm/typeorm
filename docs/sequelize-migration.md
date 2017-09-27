@@ -301,3 +301,5 @@ export class User {
 ## Setup associations (relations)
 
 Associations in TypeORM are called "relations".
+
+[TBD]

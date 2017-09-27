@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {UserCredential} from "./entity/UserCredential";
 
-describe("github issues > #836 .persist won't update entity when it contains OneToOne relationship", () => {
+describe("github issues > #836 .save won't update entity when it contains OneToOne relationship", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

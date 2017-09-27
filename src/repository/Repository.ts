@@ -133,25 +133,6 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Saves all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     */
-    async persist(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
-
-    /**
-     * Saves a given entity in the database.
-     * If entity does not exist in the database then inserts, otherwise updates.
-     */
-    async persist(entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Saves one or many given entities.
-     */
-    async persist(entityOrEntities: Entity|Entity[], options?: SaveOptions): Promise<Entity|Entity[]> {
-        return this.save(entityOrEntities as any, options);
-    }
-
-    /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
     async update(conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;

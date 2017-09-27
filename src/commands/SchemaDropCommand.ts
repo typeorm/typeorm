@@ -18,7 +18,7 @@ export class SchemaDropCommand {
                 default: "default",
                 describe: "Name of the connection on which to drop all tables."
             })
-            .option("cf", {
+            .option("f", {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
@@ -33,27 +33,23 @@ export class SchemaDropCommand {
             const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
             Object.assign(connectionOptions, {
-                dropSchemaOnConnection: false,
-                autoSchemaSync: false,
-                autoMigrationsRun: false,
-                logging: {
-                    logQueries: true,
-                    logFailedQueryError: true,
-                    logSchemaCreation: true
-                }
+                synchronize: false,
+                migrationsRun: false,
+                dropSchema: false,
+                logging: ["query", "schema"]
             });
             connection = await createConnection(connectionOptions);
             await connection.dropDatabase();
+            await connection.close();
+
             console.log(chalk.green("Database schema has been successfully dropped."));
 
         } catch (err) {
+            if (connection) await (connection as Connection).close();
+
             console.log(chalk.black.bgRed("Error during schema drop:"));
             console.error(err);
-            // throw err;
-
-        } finally {
-            if (connection)
-                await connection.close();
+            process.exit(1);
         }
     }
 }

@@ -1,9 +1,8 @@
-# 0.1.0 (future)
+# 0.1.0
 
 ### BREAKING CHANGES
 
-* `Table`, `AbstractTable`, `ClassTableChild`, `ClosureTable`, `EmbeddableTable`, `SingleTableChild` deprecated decorators has been removed.
-Use `Entity`, `AbstractEntity`, `ClassEntityChild`, `ClosureEntity`, `EmbeddableEntity`, `SingleEntityChild` decorators instead.
+* `Table`, `AbstractTable`, `ClassTableChild`, `ClosureTable`, `EmbeddableTable`, `SingleTableChild` deprecated decorators has been removed. Use `Entity`, `ClassEntityChild`, `ClosureEntity`, `SingleEntityChild` decorators instead.
 * `EntityManager#create` and `Repository#create`, `EntityManager#preload` and `Repository#preload` methods now accept 
 `DeepPartial<Entity>` instead of `Object`
 * `EntityManager#merge` and `Repository#merge` methods now accepts `DeepPartial<Entity>` instead of `Object`,
@@ -20,8 +19,7 @@ each for its own `findOne*` or `find*` methods
 * `QueryBuilder#setMaxResults` has been renamed to `QueryBuilder#take`
 * renamed `entityManager` to `manager` in `Connection`, `AbstractRepository` and event objects
 * renamed `persist` to `save` in `EntityManager` and `Repository` objects
-* `@AbstractEntity` is deprecated. Now there is no need to mark class with a decorator, it can extend any class with columns
-* `SpecificRepository` is deprecated for now
+* `SpecificRepository` is removed. Use relational query builder instead.
 * `transaction` method has been removed from `Repository`. Use `EntityManager#transaction` method instead
 * custom repositories do not support container anymore
 * added ActiveRecord support (by extending BaseEntity) class
@@ -68,15 +66,19 @@ Also now all
 * Now `logging` options in connection options is simple "true", or "all", or list of logging modes can be supplied 
 * removed `driver` section in connection options. Define options right in the connection options section.
 * `Embedded` decorator is deprecated now. use `@Column(type => SomeEmbedded)` instead
-* `tablesPrefix` in connection options is deprecated. Use `entityPrefix` instead
-* `autoMigrationsRun` in connection options is deprecated. Use `migrationsRun` instead
-* `autoSchemaSync` in connection options is deprecated. Use `synchronize` instead
-* `dropSchemaOnConnection` in connection options is deprecated. Use `dropSchema` instead
-* `schemaName` in connection options is deprecated. Use `schema` instead
+* `schemaName` in connection options is removed. Use `schema` instead
 * `TYPEORM_AUTO_SCHEMA_SYNC` env variable is now called `TYPEORM_SYNCHRONIZE`
 * `schemaSync` method in `Connection` has been renamed to `synchronize`
 * `getEntityManager` has been deprecated. Use `getManager` instead.
 * `@TransactionEntityManager` is now called `@TransactionManager` now
+* `EmbeddableEntity`, `Embedded`, `AbstractEntity` decorators has been removed. 
+There is no need to use `EmbeddableEntity` and `AbstractEntity` decorators at all - entity will work as expected without them.
+Instead of `@Embedded(type => X)` decorator now `@Column(type => X)` must be used instead 
+* `tablesPrefix`, `autoSchemaSync`, `autoMigrationsRun`, `dropSchemaOnConnection` options were removed. Use `entityPrefix`, `synchronize`, `migrationsRun`, `dropSchema` options instead
+* removed `setMaxResults`, `setFirstResult` methods in `QueryBuilder`. Use `take` and `skip` methods instead.
+* removed `persist` method from the `Repository` and `EntityManager`. Use `save` method instead.
+* removed `entityManager` property from the `Connection`. Use `manager` property instead.
+* removed `getEntityManager` from `typeorm` namespace. Use `getManager` method instead.
 
 ### NEW FEATURES
 
@@ -135,7 +137,7 @@ Also now all
     Note its a breaking change if you have run migrations before and have records in the database table,
     make sure to apply corresponding changes. More info in [#360](https://github.com/typeorm/typeorm/issues/360) issue.
 
-# 0.0.9 (latest)
+# 0.0.9
 
 * fixed bug with indices from columns are not being inherited from parent entity [#242](https://github.com/typeorm/typeorm/issues/242)
 * added support of UUID primary columns (thanks [@seanski](https://github.com/seanski))

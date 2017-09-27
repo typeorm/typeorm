@@ -17,11 +17,6 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
     readonly schema?: string;
 
     /**
-     * @deprecated use "schema" instead
-     */
-    readonly schemaName?: string;
-
-    /**
      * Replication setup.
      */
     readonly replication?: {

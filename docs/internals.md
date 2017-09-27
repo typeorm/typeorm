@@ -1,6 +1,6 @@
-# TypeORM internals
+# Internals
 
-Explaining how things are working in TypeORM.
-This guide will be useful for contributors.
+This guide explains how things are working in TypeORM. 
+It will be useful for our contributors.
 
 TBD. 

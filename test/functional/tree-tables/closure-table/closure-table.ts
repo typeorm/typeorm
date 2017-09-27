@@ -110,8 +110,8 @@ describe("closure-table", () => {
 
         c1.childCategories.push(c12);
         await categoryRepository.save(c1);
-        // await categoryRepository.persist(c11);
-        // await categoryRepository.persist(c12);
+        // await categoryRepository.save(c11);
+        // await categoryRepository.save(c12);
 
         const roots = await categoryRepository.findRoots();
         roots.should.be.eql([
