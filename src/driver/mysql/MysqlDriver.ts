@@ -414,7 +414,7 @@ export class MysqlDriver implements Driver {
         return "";
     }
 
-    createFullType(column: ColumnSchema): string {
+    createFullType(column: TableColumn): string {
         let type = column.type;
 
         if (column.length) {
