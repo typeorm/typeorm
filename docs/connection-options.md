@@ -34,40 +34,40 @@ Use it if you want to pass extra settings to underlying database driver.
 Accepts both entity classes and directories paths to load from.
 Directories support glob patterns.
 Example: `entities: [Post, Category, "entity/*.js", "modules/**/entity/*.js"]`.
-Learn more about [Entities](./entities.md).
+Learn more about [Entities](#entities).
 
 * `subscribers` - Subscribers to be loaded and used for this connection.
 Accepts both entity classes and directories to load from.
 Directories support glob patterns.
 Example: `subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`.
-Learn more about [Subscribers](listeners-and-subscribers.md).
+Learn more about [Subscribers](#listeners-and-subscribers).
 
 * `entitySchemas` - Entity schemas to be loaded and used for this connection.
 Accepts both entity schema classes and directories to load from.
 Directories support glob patterns.
 Example: `entitySchemas: [PostSchema, CategorySchema, "entity-schema/*.json", "modules/**/entity-schema/*.json"]`.
-Learn more about [Entity Schemas](./schema-in-files.md).
+Learn more about [Entity Schemas](#schema-in-files).
 
 * `migrations` - Migrations to be loaded and used for this connection.
 Accepts both migration classes and directories to load from.
 Directories support glob patterns.
 Example: `migrations: [FirstMigration, SecondMigration, "migration/*.js", "modules/**/migration/*.js"]`.
-Learn more about [Migrations](./migrations.md).
+Learn more about [Migrations](#migrations).
 
 * `logging` - Indicates if logging is enabled or not. 
 If set to `true` then query and error logging will be enabled.
 You can also specify different types of logging to be enabled, for example `["query", "error", "schema"]`.
-Learn more about [Logging](./logging.md).
+Learn more about [Logging](#logging).
 
 * `logger` - Logger to be used for logging purposes. Possible values are "advanced-console", "simple-console" and "file". 
 Default is "advanced-console". You can also specify a logger class that implements `Logger` interface.
-Learn more about [Logging](./logging.md).
+Learn more about [Logging](#logging).
 
 * `maxQueryExecutionTime` - If query execution time exceed this given max execution time (in milliseconds)
 then logger will log this query.
 
 * `namingStrategy` - Naming strategy to be used to name tables and columns in the database.
-Learn more about [Naming strategies](./naming-strategy.md).
+Learn more about [Naming strategies](#naming-strategy).
 
 * `entityPrefix` - Prefixes with the given string all tables (or collections) on this database connection.
 
