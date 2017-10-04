@@ -99,7 +99,7 @@ export class User {
 
 `@Column` accept several options you can use:
 
-* `type: ColumnType` - Column type. One of the [supported column types](./entities.md#column-types).
+* `type: ColumnType` - Column type. One of the [supported column types](#entities/column-types).
 * `name: string` - Column name in the database table. 
 By default the column name is generated from the name of the property.
 You can change it by specifying your own name
@@ -122,7 +122,7 @@ Used in some column types.
 You can specify array of values or specify a enum class.
 * `array: boolean` - Used for postgres column types which can be array (for example int[])
 
-Learn more about [entity columns](./entities.md#entity-columns).
+Learn more about [entity columns](#entities/entity-columns).
 
 #### `@PrimaryColumn`
 
@@ -140,7 +140,7 @@ export class User {
 }
 ```
 
-Learn more about [entity columns](./entities.md#entity-columns).
+Learn more about [entity columns](#entities/entity-columns).
 
 #### `@PrimaryGeneratedColumn`
 
@@ -175,7 +175,7 @@ export class User {
 }
 ```
 
-Learn more about [entity columns](./entities.md#entity-columns).
+Learn more about [entity columns](#entities/entity-columns).
 
 #### `@ObjectIdColumn`
 
@@ -194,7 +194,7 @@ export class User {
 }
 ```
 
-Learn more about [MongoDB](./mongodb.md).
+Learn more about [MongoDB](#mongodb).
 
 #### `@CreateDateColumn`
 
@@ -284,7 +284,7 @@ export class User {
 }
 ```
 
-Learn more about [one-to-one relations](./relations.md#one-to-one-relations).
+Learn more about [one-to-one relations](#one-to-one-relations).
 
 #### `@ManyToOne`
 
@@ -312,7 +312,7 @@ export class Photo {
 }
 ```
 
-Learn more about [many-to-one / one-to-many relations](./relations.md#many-to-one-one-to-many-relations).
+Learn more about [many-to-one / one-to-many relations](#many-to-one-one-to-many-relations).
 
 #### `@OneToMany`
 
@@ -340,7 +340,7 @@ export class User {
 }
 ```
 
-Learn more about [many-to-one / one-to-many relations](./relations.md#many-to-one-one-to-many-relations).
+Learn more about [many-to-one / one-to-many relations](#many-to-one-one-to-many-relations).
 
 #### `@ManyToMany`
 
@@ -372,7 +372,7 @@ export class Question {
 }
 ```
 
-Learn more about [many-to-many relations](./relations.md#many-to-one-one-to-many-relations).
+Learn more about [many-to-many relations](#many-to-many-relations).
 
 #### `@JoinColumn`
 
@@ -484,7 +484,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](listeners-and-subscribers.md).
+Learn more about [listeners](#listeners-and-subscribers).
 
 #### `@BeforeInsert`
 
@@ -502,7 +502,7 @@ export class Post {
     }
 }
 ```
-Learn more about [listeners](listeners-and-subscribers.md).
+Learn more about [listeners](#listeners-and-subscribers).
 
 #### `@AfterInsert`
 
@@ -521,7 +521,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](listeners-and-subscribers.md).
+Learn more about [listeners](#listeners-and-subscribers).
 
 #### `@BeforeUpdate`
 
@@ -540,7 +540,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](listeners-and-subscribers.md).
+Learn more about [listeners](#listeners-and-subscribers).
 
 #### `@AfterUpdate`
 
@@ -559,7 +559,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](listeners-and-subscribers.md).
+Learn more about [listeners](#listeners-and-subscribers).
 
 #### `@BeforeRemove`
 
@@ -578,7 +578,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](listeners-and-subscribers.md).
+Learn more about [listeners](#listeners-and-subscribers).
 
 #### `@AfterRemove`
 
@@ -597,7 +597,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](listeners-and-subscribers.md).
+Learn more about [listeners](#listeners-and-subscribers).
 
 #### `@EventSubscriber`
 
@@ -644,7 +644,7 @@ export class PostSubscriber implements EntitySubscriberInterface {
 }
 ```
 
-Learn more about [subscribers](listeners-and-subscribers.md).
+Learn more about [subscribers](#listeners-and-subscribers).
 
 ## Other decorators
 
@@ -688,7 +688,7 @@ export class User {
 }
 ```
 
-Learn more about [indices](./indices.md).
+Learn more about [indices](#indices).
 
 #### `@Transaction`, `@TransactionManager` and `@TransactionRepository`
 
@@ -722,7 +722,7 @@ save(@QueryParam("name") name: string, @TransactionRepository() userRepository: 
 Note: all operations inside a transaction MUST ONLY use the provided instance of `EntityManager` or injected repositories.
 Using any other source of queries (global manager, global repositories, etc.) will lead to bugs and errors.
 
-Learn more about [transactions](./transactions.md).
+Learn more about [transactions](#transactions).
 
 #### `@EntityRepository`
 
@@ -741,7 +741,7 @@ export class UserRepository {
 You can obtain any custom created repository using `connection.getCustomRepository`
 or `entityManager.getCustomRepository` methods.
 
-Learn more about [custom entity repositories](working-with-entity-manager.md).
+Learn more about [custom entity repositories](#working-with-entity-manager).
 
 ----
 
