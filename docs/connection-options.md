@@ -82,7 +82,7 @@ This option is useful during debug and development.
  Note that for MongoDB database it does not create schema, because MongoDB is schemaless.
  Instead, it syncs just by creating indices.
 
-* `migrationsRun` - Indicates if migrations should be auto run on every application launch.
+* `autoMigrationsRun` - Indicates if migrations should be auto run on every application launch.
 As an alternative, you can use CLI and run migrations:run command.
 
 * `cli.entitiesDir` - Directory where entities should be created by default by CLI.
