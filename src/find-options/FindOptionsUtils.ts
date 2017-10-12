@@ -1,5 +1,5 @@
 import {FindManyOptions} from "./FindManyOptions";
-import {FindOneOptions} from "./FindOneOptions";
+import {ArrayOrderOption, FindOneOptions, ObjectOrderOption} from "./FindOneOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
@@ -109,10 +109,17 @@ export class FindOptionsUtils {
         if ((options as FindManyOptions<T>).take)
             qb.take((options as FindManyOptions<T>).take!);
 
-        if (options.order)
-            Object.keys(options.order).forEach(key => {
-                qb.addOrderBy(qb.alias + "." + key, (options as FindOneOptions<T>).order![key as any]);
-            });
+        if (options.order) {
+            if (options.order instanceof Array) {
+                for (let [key, dir] of options.order as ArrayOrderOption<T>) {
+                    qb.addOrderBy(qb.alias + "." + key, dir);
+                }
+            } else {
+                Object.keys(options.order).forEach(key => {
+                    qb.addOrderBy(qb.alias + "." + key, (options.order as ObjectOrderOption<T>)![key as any]);
+                });
+            }
+        }
 
         if (options.relations)
             options.relations.forEach(relation => {
