@@ -119,4 +119,30 @@ describe("repository > find options", () => {
         // })));
     })));
 
+    it("should order by columns", () => Promise.all(connections.map(async (connection) => {
+        const repository = connection.getRepository(Category);
+
+        const animals = ["Dogs", "Cats", "Dogs", "Eagles"];
+        for (let animal of animals) {
+            const category = repository.create({name: animal});
+            await repository.save(category);
+        }
+
+        const arrayOrderResult = await repository.find({order: [["name", "ASC"], ["id", "DESC"]]});
+        const objectOrderResult = await repository.find({order: {"name": "ASC", "id": "DESC"}});
+
+        const indexOfCats = arrayOrderResult.findIndex(o => o.name === "Cats");
+        const indexOfDogs = arrayOrderResult.findIndex(o => o.name === "Dogs");
+        const secondFieldOrder = arrayOrderResult.filter(o => o.name === "Dogs");
+
+        expect(arrayOrderResult).to.be.an("array");
+        expect(objectOrderResult).to.be.an("array");
+
+        expect(arrayOrderResult).eql(objectOrderResult, "result should be the same");
+
+        expect(indexOfCats).is.lessThan(indexOfDogs, "Cats should before Dogs");
+
+        expect(secondFieldOrder[0].id).is.greaterThan(secondFieldOrder[1].id, "id should have ordered");
+    })));
+
 });

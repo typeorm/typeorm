@@ -45,6 +45,12 @@ userRepository.find({
     }
 });
 ```
+```typescript
+// or use array
+userRepository.find({ 
+    order: [["name", "ASC"], ["id", "DESC"]]
+});
+```
 
 `find` methods which return multiple entities (`find`, `findAndCount`, `findByIds`) also accept following options:
 
