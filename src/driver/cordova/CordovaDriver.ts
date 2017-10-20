@@ -15,7 +15,7 @@ declare var window: Window;
 
 export class CordovaDriver extends AbstractSqliteDriver {
     options: CordovaConnectionOptions;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -37,7 +37,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
         // load sqlite package
         this.loadDependencies();
     }
-    
+
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -52,7 +52,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
             this.databaseConnection.close(ok, fail);
         });
     }
-    
+
     /**
      * Creates a query runner used to execute database queries.
      */
@@ -62,7 +62,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
 
         return this.queryRunner;
     }
-    
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -72,12 +72,18 @@ export class CordovaDriver extends AbstractSqliteDriver {
      */
     protected createDatabaseConnection() {
         return new Promise<void>((ok, fail) => {
-            this.sqlite.openDatabase({name: this.options.database, location: this.options.location}, (db: any) => {
-                const databaseConnection = db;
-                ok(databaseConnection);
-            }, (error: any) => {
-                fail(error);
-            });
+            this.sqlite.openDatabase(
+                this.options.password === undefined ?
+                    {name: this.options.database, location: this.options.location} :
+                    {name: this.options.database, location: this.options.location, key: this.options.password},
+                (db: any) => {
+                    const databaseConnection = db;
+                    ok(databaseConnection);
+                },
+                (error: any) => {
+                    fail(error);
+                }
+            );
         });
     }
 
