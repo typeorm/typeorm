@@ -6,5 +6,5 @@
 
 - `npm install --save-dev @types/node`
 - `npm install --save reflect-metadata`
-- `npm install --save git@github.com:Kular/typeorm.git`
+- `npm install --save sqlcipher-typeorm`
 - `ionic cordova plugin add cordova-sqlcipher-adapter --save`
