@@ -66,6 +66,8 @@ export type SimpleColumnType =
     "simple-array" // typeorm-specific, automatically mapped to string
     // |"string" // typeorm-specific, automatically mapped to varchar depend on platform
 
+    |"simple-object"
+
     // numeric types
     |"bit" // mssql
     |"int2" // postgres, sqlite
