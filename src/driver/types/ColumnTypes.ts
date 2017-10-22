@@ -67,6 +67,7 @@ export type SimpleColumnType =
     // |"string" // typeorm-specific, automatically mapped to varchar depend on platform
 
     |"simple-object"
+    |"simple-timestamp"
 
     // numeric types
     |"bit" // mssql

@@ -188,6 +188,14 @@ export class DateUtils {
         return JSON.parse(value);
     }
 
+    static simpleTimestampToDate(value: number): Date {
+        return new Date(value);
+    }
+
+    static dateToSimpleTimestamp(value: Date): number {
+        return value.getTime();
+    }
+
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------

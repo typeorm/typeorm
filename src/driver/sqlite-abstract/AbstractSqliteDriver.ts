@@ -126,10 +126,10 @@ export class AbstractSqliteDriver implements Driver {
      * Column types are driver dependant.
      */
     mappedDataTypes: MappedColumnTypes = {
-        createDate: "datetime",
-        createDateDefault: "datetime('now')",
-        updateDate: "datetime",
-        updateDateDefault: "datetime('now')",
+        createDate: "integer",
+        createDateDefault: "0",
+        updateDate: "integer",
+        updateDateDefault: "0",
         version: "integer",
         treeLevel: "integer",
         migrationName: "varchar",
@@ -232,6 +232,11 @@ export class AbstractSqliteDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-object") {
             return DateUtils.simpleObjectToString(value);
+
+        }
+        else if (columnMetadata.type === "simple-timestamp") {
+            return DateUtils.simpleTimestampToDate(value);
+
         }
 
         return value;
@@ -264,6 +269,10 @@ export class AbstractSqliteDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-object") {
             return DateUtils.stringToSimpleObject(value);
+
+        } else if (columnMetadata.type === "simple-timestamp") {
+            return DateUtils.dateToSimpleTimestamp(value);
+
         }
 
         return value;
@@ -329,6 +338,9 @@ export class AbstractSqliteDriver implements Driver {
 
         } else if (column.type === "simple-object") {
             return "text";
+
+        } else if (column.type === "simple-timestamp") {
+            return "integer";
 
         } else {
             return column.type as string || "";
