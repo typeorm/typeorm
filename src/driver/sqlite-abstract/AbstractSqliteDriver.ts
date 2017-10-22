@@ -234,10 +234,6 @@ export class AbstractSqliteDriver implements Driver {
             return DateUtils.simpleObjectToString(value);
 
         }
-        else if (columnMetadata.type === "simple-timestamp") {
-            return DateUtils.simpleTimestampToDate(value);
-
-        }
 
         return value;
     }
@@ -269,9 +265,6 @@ export class AbstractSqliteDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-object") {
             return DateUtils.stringToSimpleObject(value);
-
-        } else if (columnMetadata.type === "simple-timestamp") {
-            return DateUtils.dateToSimpleTimestamp(value);
 
         }
 

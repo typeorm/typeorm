@@ -519,13 +519,13 @@ export class SubjectOperationExecutor {
 
         // add special column and value - date of creation
         if (metadata.createDateColumn) {
-            const value = this.connection.driver.preparePersistentValue(date, metadata.createDateColumn);
+            const value = this.connection.driver.preparePersistentValue(date.getTime(), metadata.createDateColumn);
             values[metadata.createDateColumn.databaseName] = value;
         }
 
         // add special column and value - date of updating
         if (metadata.updateDateColumn) {
-            const value = this.connection.driver.preparePersistentValue(date, metadata.updateDateColumn);
+            const value = this.connection.driver.preparePersistentValue(date.getTime(), metadata.updateDateColumn);
             values[metadata.updateDateColumn.databaseName] = value;
         }
 
