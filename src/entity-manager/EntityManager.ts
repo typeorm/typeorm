@@ -712,13 +712,14 @@ export class EntityManager {
     findOneById<Entity>(entityClass: ObjectType<Entity>|string, id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || metadata.name);
+
         if (metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
             // const columnNames = this.metadata.getEntityIdMap({  });
             throw new Error(`You have multiple primary keys in your entity, to use findOneById with multiple primary keys please provide ` +
                 `complete object with all entity ids, like this: { firstKey: value, secondKey: value }`);
         }
 
-        if (!metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
+        if (!metadata.hasMultiplePrimaryKeys) {
             id = metadata.createEntityIdMap([id]);
         }
 

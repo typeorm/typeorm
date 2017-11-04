@@ -160,9 +160,9 @@ export class EntitySchemaTransformer {
                         sparse: tableIndex.sparse,
                         columns: tableIndex.columns
                     };
-                    metadataArgsStorage.indices.push(indexAgrs);                        
+                    metadataArgsStorage.indices.push(indexAgrs);
                 });
-            }    
+            }
 
         });
 
