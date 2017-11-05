@@ -9,23 +9,54 @@ export class EntityMetadataUtils {
     /**
      * Creates a property paths for a given entity.
      */
-    static createPropertyPath(metadata: EntityMetadata, entity: ObjectLiteral, prefix: string = "") {
-        const paths: string[] = [];
-        Object.keys(entity).forEach(key => {
+    static createPropertyPath(metadata: {embeddeds: any[]}, entity: ObjectLiteral) {
 
-            // check for function is needed in the cases when createPropertyPath used on values containg a function as a value
-            // example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
-            const parentPath = prefix ? prefix + "." + key : key;
-            if (metadata.hasEmbeddedWithPropertyPath(parentPath)) {
-                const subPaths = this.createPropertyPath(metadata, entity[key], key);
-                paths.push(...subPaths);
-            } else {
-                const path = prefix ? prefix + "." + key : key;
-                paths.push(path);
-            }
-        });
-        return paths;
-    }
+		// check for function is needed in the cases when createPropertyPath used on values containg a function as a value
+		// example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
+
+        const paths: string[] = [];
+        const givenKeys: string[] = this.getPropertiesPaths(entity);
+        
+        for (let key of givenKeys) {
+			if (key.indexOf('.') !== -1 || this.searchEmbeddeds(metadata.embeddeds, key)) {
+				paths.push(key);
+			}
+		}
+		
+		return paths;
+	}
+	
+    /**
+     * Searches for a key in embeddeds.
+     */
+	static searchEmbeddeds(embeddeds: EmbeddedMetadata[], key: string): boolean {
+		for (let embedded of embeddeds) {
+			if (embedded.parentPropertyNames.join('.') === key) {
+				return true;
+			}
+			else {
+				return this.searchEmbeddeds(embedded.embeddeds, key);
+			}
+		}
+		return false;
+	}
+    
+    /**
+     * Gets all object properties paths.
+     */
+    static getPropertiesPaths(entity: ObjectLiteral, parsed: Object[] = []): string[] {
+		if (parsed.some(obj => obj === entity)) {
+			return [];
+		}
+		let newParsed: Object[] = parsed.slice(0);
+		newParsed.push(entity);
+		let output: string[] = [];
+		for (let key of Object.keys(entity)) {
+			this.getPropertiesPaths(entity[key], newParsed).forEach(nested => output.push(key + "." + nested));
+			output.push(key);
+		}
+		return output;
+	}
 
     /**
      * Creates a property paths for a given entity.
