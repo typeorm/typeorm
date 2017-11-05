@@ -1,5 +1,5 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {EntityMetadata} from "./EntityMetadata";
+import {EmbeddedMetadata} from "./EmbeddedMetadata";
 
 /**
  * Utils used to work with EntityMetadata objects.
