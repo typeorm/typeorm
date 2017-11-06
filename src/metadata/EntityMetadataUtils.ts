@@ -9,8 +9,15 @@ export class EntityMetadataUtils {
 
     /**
      * Creates a property paths for a given entity.
-     */
+     */  
     static createPropertyPath(metadata: EntityMetadata|EmbeddedMetadata, entity: ObjectLiteral, prefix: string = ""): string[] {
+        return Array.from(new Set(this.createPropertyPathWorker(metadata, entity, prefix))); // removing duplicates
+    }
+
+    /**
+     * Internal create propertyPath worker.
+     */ 
+    private static createPropertyPathWorker(metadata: EntityMetadata|EmbeddedMetadata, entity: ObjectLiteral, prefix: string = ""): string[] {
     
         const paths: string[] = [];
     
@@ -63,3 +70,5 @@ export class EntityMetadataUtils {
     }
 
 }
+
+    
