@@ -289,29 +289,16 @@ export class EntityManager {
                 Object.assign(queryRunner.data, options.data);
 
             try {
-                const executors: SubjectOperationExecutor[] = [];
-                if (entity instanceof Array) {
-                    await Promise.all(entity.map(async entity => {
-                        const entityTarget = target ? target : entity.constructor;
-                        const metadata = this.connection.getMetadata(entityTarget);
-
-                        const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-                        await databaseEntityLoader.persist(entity, metadata);
-
-                        const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
-                        executors.push(executor);
-                    }));
-
-                } else {
-                    const finalTarget = target ? target : entity.constructor;
-                    const metadata = this.connection.getMetadata(finalTarget);
+                const entities = (entity instanceof Array) ? entity : [entity];
+                const executors = await Promise.all(entities.map(async entity => {
+                    const entityTarget = target ? target : entity.constructor;
+                    const metadata = this.connection.getMetadata(entityTarget);
 
                     const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
                     await databaseEntityLoader.persist(entity, metadata);
 
-                    const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
-                    executors.push(executor);
-                }
+                    return new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
+                }));
 
                 const executorsNeedsToBeExecuted = executors.filter(executor => executor.areExecutableOperations());
                 if (executorsNeedsToBeExecuted.length) {
@@ -450,29 +437,16 @@ export class EntityManager {
                 Object.assign(queryRunner.data, options.data);
 
             try {
-                const executors: SubjectOperationExecutor[] = [];
-                if (entity instanceof Array) {
-                    await Promise.all(entity.map(async entity => {
-                        const entityTarget = target ? target : entity.constructor;
-                        const metadata = this.connection.getMetadata(entityTarget);
-
-                        const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-                        await databaseEntityLoader.remove(entity, metadata);
-
-                        const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
-                        executors.push(executor);
-                    }));
-
-                } else {
-                    const finalTarget = target ? target : entity.constructor;
-                    const metadata = this.connection.getMetadata(finalTarget);
+                const entities = (entity instanceof Array) ? entity : [entity];
+                const executors = await Promise.all(entities.map(async entity => {
+                    const entityTarget = target ? target : entity.constructor;
+                    const metadata = this.connection.getMetadata(entityTarget);
 
                     const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
                     await databaseEntityLoader.remove(entity, metadata);
 
-                    const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
-                    executors.push(executor);
-                }
+                    return new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
+                }));
 
                 const executorsNeedsToBeExecuted = executors.filter(executor => executor.areExecutableOperations());
                 if (executorsNeedsToBeExecuted.length) {
