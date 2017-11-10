@@ -37,6 +37,16 @@ export interface MappedColumnTypes {
     updateDateDefault: string;
 
     /**
+     * Column type of soft delete date column
+     */
+    softDeleteDate: ColumnType;
+
+    /**
+     * Precision of datetime column. Use in MySQL to define milliseconds.
+     */
+    softDeleteDatePrecision?: number;
+
+    /**
      * Column type for the version column.
      */
     version: ColumnType;
