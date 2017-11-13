@@ -1,5 +1,4 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {EntityMetadata} from "./EntityMetadata";
 
 /**
@@ -9,48 +8,23 @@ export class EntityMetadataUtils {
 
     /**
      * Creates a property paths for a given entity.
-     */  
-    static createPropertyPath(metadata: EntityMetadata|EmbeddedMetadata, entity: ObjectLiteral, prefix: string = ""): string[] {
-        return Array.from(new Set(this.createPropertyPathWorker(metadata, entity, prefix))); // removing duplicates
-    }
-
-    /**
-     * Internal create propertyPath worker.
-     */ 
-    private static createPropertyPathWorker(metadata: EntityMetadata|EmbeddedMetadata, entity: ObjectLiteral, prefix: string = ""): string[] {
-    
+     */
+    static createPropertyPath(metadata: EntityMetadata, entity: ObjectLiteral, prefix: string = "") {
         const paths: string[] = [];
-    
         Object.keys(entity).forEach(key => {
-    
+
             // check for function is needed in the cases when createPropertyPath used on values containg a function as a value
             // example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
-    
-            const parentPath: string = prefix ? prefix + "." + key : key;
-    
-            if (this.searchEmbeddeds(metadata.embeddeds, parentPath)) {
-                const subPaths: string[] =
-                      metadata.embeddeds.map((embedded: EmbeddedMetadata) => {
-                          return this.createPropertyPath(embedded, entity[key], parentPath);
-                      }).reduce((a: string[], b: string[]) => [...a, ...b], []);
+            const parentPath = prefix ? prefix + "." + key : key;
+            if (metadata.hasEmbeddedWithPropertyPath(parentPath)) {
+                const subPaths = this.createPropertyPath(metadata, entity[key], key);
                 paths.push(...subPaths);
             } else {
-                paths.push(parentPath);
+                const path = prefix ? prefix + "." + key : key;
+                paths.push(path);
             }
         });
         return paths;
-    }
-    
-    /**
-     * Searches for a key in embeddeds.
-     */
-    static searchEmbeddeds(embeddeds: EmbeddedMetadata[], key: string): boolean {
-        for (let embedded of embeddeds) {
-            if (embedded.parentPropertyNames.join(".") === key || this.searchEmbeddeds(embedded.embeddeds, key)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -70,5 +44,3 @@ export class EntityMetadataUtils {
     }
 
 }
-
-    
