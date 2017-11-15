@@ -12,7 +12,7 @@ import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
  */
-export class Repository<Entity extends ObjectLiteral> {
+export class Repository<Entity extends ObjectLiteral> implements IRepository<Entity> {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -346,4 +346,53 @@ export class Repository<Entity extends ObjectLiteral> {
         return this.manager.clear(this.metadata.target);
     }
 
+}
+
+export interface IRepository<Entity extends ObjectLiteral> {
+    readonly manager: EntityManager;
+    readonly metadata: EntityMetadata;
+    readonly queryRunner?: QueryRunner;
+    createQueryBuilder(alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
+    target: Function|string;
+    hasId(entity: Entity): boolean;
+    getId(entity: Entity): any;
+    create(): Entity;
+    create(entityLikeArray: DeepPartial<Entity>[]): Entity[];
+    create(entityLike: DeepPartial<Entity>): Entity;
+    create(plainEntityLikeOrPlainEntityLikes?: DeepPartial<Entity>|DeepPartial<Entity>[]): Entity|Entity[];
+    merge(mergeIntoEntity: Entity, ...entityLikes: DeepPartial<Entity>[]): Entity;
+    preload(entityLike: DeepPartial<Entity>): Promise<Entity|undefined>;
+    save<T extends DeepPartial<Entity>>(entities: T[], options?: SaveOptions): Promise<T[]>;
+    save<T extends DeepPartial<Entity>>(entity: T, options?: SaveOptions): Promise<T>;
+    save<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]>;
+    insert(entity: Partial<Entity>|Partial<Entity>[], options?: SaveOptions): Promise<void>;
+    update(conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
+    updateById(id: any, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
+    remove(entities: Entity[], options?: RemoveOptions): Promise<Entity[]>;
+    remove(entity: Entity, options?: RemoveOptions): Promise<Entity>;
+    remove(entityOrEntities: Entity|Entity[], options?: RemoveOptions): Promise<Entity|Entity[]>;
+    delete(conditions: Partial<Entity>, options?: RemoveOptions): Promise<void>;
+    deleteById(id: any, options?: RemoveOptions): Promise<void>;
+    removeById(id: any, options?: RemoveOptions): Promise<void>;
+    removeByIds(ids: any[], options?: RemoveOptions): Promise<void>;
+    count(options?: FindManyOptions<Entity>): Promise<number>;
+    count(conditions?: DeepPartial<Entity>): Promise<number>;
+    count(optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<number>;
+    find(options?: FindManyOptions<Entity>): Promise<Entity[]>;
+    find(conditions?: DeepPartial<Entity>): Promise<Entity[]>;
+    find(optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]>;
+    findAndCount(options?: FindManyOptions<Entity>): Promise<[ Entity[], number ]>;
+    findAndCount(conditions?: DeepPartial<Entity>): Promise<[ Entity[], number ]>;
+    findAndCount(optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<[ Entity[], number ]>;
+    findByIds(ids: any[], options?: FindManyOptions<Entity>): Promise<Entity[]>;
+    findByIds(ids: any[], conditions?: DeepPartial<Entity>): Promise<Entity[]>;
+    findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]>;
+    findOne(options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+    findOne(conditions?: DeepPartial<Entity>): Promise<Entity|undefined>;
+    findOne(optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined>;
+    findOneById(id: any, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+    findOneById(id: any, conditions?: DeepPartial<Entity>): Promise<Entity|undefined>;
+    findOneById(id: any, optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined>;
+    query(query: string, parameters?: any[]): Promise<any>;
+    clear(): Promise<void>;
 }
