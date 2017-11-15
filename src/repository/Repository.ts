@@ -12,7 +12,7 @@ import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
  */
-export class Repository<Entity extends ObjectLiteral> {
+export class Repository<Entity extends ObjectLiteral> implements IRepository<Entity> {
 
     // -------------------------------------------------------------------------
     // Public Properties
