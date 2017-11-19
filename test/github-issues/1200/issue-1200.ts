@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {A} from "./entity/A";
 import {expect} from "chai";
 
-describe("github issues > #1141: Pull request: Multiple nested embedded entities update fix", () => {
+describe("github issues > #1200: Pull request: Tests for updating multiple nested embeddeds", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
