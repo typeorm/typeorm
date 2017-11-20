@@ -3,12 +3,12 @@ import {createTestingConnections, closeTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../src/connection/Connection";
 import {Category} from "./entity/Category";
 
-describe("github issues > #904 Using closure tables without @TreeLevelColumn will always fail on insert", () => {
+// todo: uncomment test once closure tables functionality is back
+describe.skip("github issues > #904 Using closure tables without @TreeLevelColumn will always fail on insert", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

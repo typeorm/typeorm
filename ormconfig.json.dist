@@ -67,5 +67,12 @@
     "type": "mongodb",
     "database": "test",
     "logging": false
-  }
+  },
+  {
+    "skip": false,
+    "name": "sqljs",
+    "type": "sqljs",
+    "logging": false,
+    "autoSave": false
+  },
 ]

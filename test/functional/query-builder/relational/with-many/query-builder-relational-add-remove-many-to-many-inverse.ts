@@ -10,7 +10,6 @@ describe("query builder > relational query builder > add and remove operations >
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -47,13 +46,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of(image1)
             .add(post1);
 
-        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.contain({ id: 1, url: "image #1" });
 
-        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.be.empty;
 
-        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.be.empty;
 
         await connection
@@ -62,13 +61,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of(image1)
             .remove(post1);
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.not.contain({ id: 1, url: "image #1" });
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.be.empty;
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.be.empty;
     })));
 
@@ -104,13 +103,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of(2) // image id
             .add(2); // post id
 
-        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.be.empty;
 
-        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.contain({ id: 2, url: "image #2" });
 
-        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.be.empty;
 
         await connection
@@ -119,13 +118,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of(2) // image id
             .remove(2); // post id
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.be.empty;
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.not.contain({ id: 2, url: "image #2" });
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.be.empty;
     })));
 
@@ -161,13 +160,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of({ id: 3 }) // image id
             .add({ id: 3 }); // post id
 
-        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.be.empty;
 
-        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.be.empty;
 
-        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.contain({ id: 3, url: "image #3" });
 
         await connection
@@ -176,13 +175,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of({ id: 3 }) // image id
             .remove({ id: 3 }); // post id
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.be.empty;
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.be.empty;
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.not.contain({ id: 3, url: "image #3" });
     })));
 
@@ -218,13 +217,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of([{ id: 1 }, { id: 3 }]) // images
             .add({ id: 3 }); // post
 
-        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.be.empty;
 
-        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.be.empty;
 
-        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.contain({ id: 1, url: "image #1" });
         expect(loadedPost3!.images).to.contain({ id: 3, url: "image #3" });
 
@@ -234,13 +233,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of([{ id: 1 }, { id: 3 }]) // images
             .remove({ id: 3 }); // post
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.be.empty;
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.be.empty;
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.not.contain({ id: 1, url: "image #1" });
         expect(loadedPost3!.images).to.not.contain({ id: 3, url: "image #3" });
     })));
@@ -277,13 +276,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of({ id: 3 }) // image
             .add([{ id: 1 }, { id: 3 }]); // posts
 
-        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.contain({ id: 3, url: "image #3" });
 
-        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.be.empty;
 
-        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.contain({ id: 3, url: "image #3" });
 
         await connection
@@ -292,13 +291,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of({ id: 3 }) // image
             .remove([{ id: 1 }, { id: 3 }]); // posts
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.not.contain({ id: 3, url: "image #3" });
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.be.empty;
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.not.contain({ id: 3, url: "image #3" });
 
     })));

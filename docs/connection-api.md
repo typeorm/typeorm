@@ -156,7 +156,7 @@ Learn more about [Entity Manager and Repository](working-with-entity-manager.md)
 ```typescript
 const manager: EntityManager = connection.manager;
 // you can call manager methods, for example find:
-const user = await manager.findOneById(1);
+const user = await manager.findOne(1);
 ```
 
 * `mongoManager` - `MongoEntityManager` used to work with connection entities in mongodb connections.
@@ -165,7 +165,7 @@ For more information about MongoEntityManager see [MongoDB](./mongodb.md) docume
 ```typescript
 const manager: MongoEntityManager = connection.mongoManager;
 // you can call manager or mongodb-manager specific methods, for example find:
-const user = await manager.findOneById(1);
+const user = await manager.findOne(1);
 ```
 
 * `connect` - Performs connection to the database. 
@@ -233,7 +233,7 @@ Learn more about [Repositories](working-with-entity-manager.md).
 ```typescript
 const repository = connection.getRepository(User);
 // now you can call repository methods, for example find:
-const users = await repository.findOneById(1);
+const users = await repository.findOne(1);
 ```
 
 * `getTreeRepository` - Gets `TreeRepository` of the given entity.

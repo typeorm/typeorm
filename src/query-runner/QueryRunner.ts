@@ -4,9 +4,9 @@ import {TableForeignKey} from "../schema-builder/schema/TableForeignKey";
 import {TableIndex} from "../schema-builder/schema/TableIndex";
 import {Connection} from "../connection/Connection";
 import {ReadStream} from "../platform/PlatformTools";
-import {InsertResult} from "../driver/InsertResult";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {Broadcaster} from "../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single database connection.
@@ -22,6 +22,11 @@ export interface QueryRunner {
      * Connection used by this query runner.
      */
     readonly connection: Connection;
+
+    /**
+     * Broadcaster used on this query runner to broadcast entity events.
+     */
+    readonly broadcaster: Broadcaster;
 
     /**
      * Isolated entity manager working only with current query runner.
@@ -90,27 +95,6 @@ export interface QueryRunner {
      * Returns raw data stream.
      */
     stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream>; // todo: ReadStream gonna bring problems in websql driver
-
-    /**
-     * Insert a new row with given values into the given table.
-     * Returns value of the generated column if given and generate column exist in the table.
-     */
-    insert(tablePath: string, valuesMap: Object): Promise<InsertResult>;
-
-    /**
-     * Updates rows that match given simple conditions in the given table.
-     */
-    update(tablePath: string, valuesMap: Object, conditions: Object): Promise<void>;
-
-    /**
-     * Performs a simple DELETE query by a given conditions in a given table.
-     */
-    delete(tablePath: string, condition: string, parameters?: any[]): Promise<void>;
-
-    /**
-     * Performs a simple DELETE query by a given conditions in a given table.
-     */
-    delete(tablePath: string, conditions: Object): Promise<void>;
 
     /**
      * Inserts new values into closure table.

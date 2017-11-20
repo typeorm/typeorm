@@ -72,7 +72,7 @@ export class RedisQueryResultCache implements QueryResultCache {
      * Returns undefined if result is not cached.
      */
     getFromCache(options: QueryResultCacheOptions, queryRunner?: QueryRunner): Promise<QueryResultCacheOptions|undefined> {
-        return new Promise((ok, fail) => {
+        return new Promise<QueryResultCacheOptions|undefined>((ok, fail) => {
 
             if (options.identifier) {
                 this.client.get(options.identifier, (err: any, result: any) => {

@@ -132,7 +132,7 @@ await connection.manager.save(question);
 Example how to load objects inside lazy relations:
 
 ```typescript
-const question = await connection.getRepository(Question).findOneById(1);
+const question = await connection.getRepository(Question).findOne(1);
 const answers = await question.answers;
 // you'll have all question's answers inside "answers" variable now
 ```

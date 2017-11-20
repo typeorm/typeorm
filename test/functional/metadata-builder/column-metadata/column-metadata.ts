@@ -11,8 +11,6 @@ describe("metadata-builder > ColumnMetadata", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -43,7 +41,7 @@ describe("metadata-builder > ColumnMetadata", () => {
 
     })));
 
-    it("getValueMap", () => Promise.all(connections.map(async connection => {
+    it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ("getValueMap", () => Promise.all(connections.map(async connection => {
         const post = new Post();
         post.title = "Post #1";
         post.counters = new Counters();
@@ -58,29 +56,29 @@ describe("metadata-builder > ColumnMetadata", () => {
         const titleColumnMetadata = connection.getMetadata(Post).columns.find(column => column.propertyName === "title");
         expect(titleColumnMetadata).not.to.be.empty;
         expect(titleColumnMetadata!.getEntityValueMap(post)).to.be.eql({ title: "Post #1" });
-        expect(titleColumnMetadata!.getEntityValueMap({ id: 1 })).to.be.eql({ title: undefined }); // still not sure if it should be undefined or { title: undefined }
+        expect(titleColumnMetadata!.getEntityValueMap({ id: 1 })).to.be.undefined;
 
         const codeColumnMetadata = connection.getMetadata(Post).columns.find(column => column.propertyName === "code");
         expect(codeColumnMetadata).not.to.be.empty;
         expect(codeColumnMetadata!.getEntityValueMap(post)).to.be.eql({ counters: { code: 123 } });
-        expect(codeColumnMetadata!.getEntityValueMap({ id: 1 })).to.be.eql({ counters: { code: undefined } }); // still not sure if it should be undefined or { title: undefined }
-        expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: undefined })).to.be.eql({ counters: { code: undefined } }); // still not sure if it should be undefined or { title: undefined }
-        expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: { } })).to.be.eql({ counters: { code: undefined } }); // still not sure if it should be undefined or { title: undefined }
-        expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: { code: undefined } })).to.be.eql({ counters: { code: undefined } }); // still not sure if it should be undefined or { title: undefined }
-        expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: { code: null } })).to.be.eql({ counters: { code: null } }); // still not sure if it should be undefined or { title: undefined }
-        expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: { code: 0 } })).to.be.eql({ counters: { code: 0 } }); // still not sure if it should be undefined or { title: undefined }
-        expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: { likes: 123 } })).to.be.eql({ counters: { code: undefined } }); // still not sure if it should be undefined or { title: undefined }
+        expect(codeColumnMetadata!.getEntityValueMap({ id: 1 })).to.be.undefined;
+        expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: undefined })).to.be.undefined;
+        expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: { } })).to.be.undefined;
+        expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: { code: undefined } })).to.be.undefined;
+        expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: { code: null } })).to.be.eql({ counters: { code: null } });
+        expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: { code: 0 } })).to.be.eql({ counters: { code: 0 } });
+        expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: { likes: 123 } })).to.be.undefined;
 
         const watchesColumnMetadata = connection.getMetadata(Post).columns.find(column => column.propertyName === "watches");
         expect(watchesColumnMetadata).not.to.be.empty;
         expect(watchesColumnMetadata!.getEntityValueMap(post)).to.be.eql({ counters: { subcounters: { watches: 10 } } });
-        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1 })).to.be.eql({ counters: { subcounters: { watches: undefined } } }); // still not sure if it should be undefined or { title: undefined }
-        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: undefined })).to.be.eql({ counters: { subcounters: { watches: undefined } } }); // still not sure if it should be undefined or { title: undefined }
-        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: { } })).to.be.eql({ counters: { subcounters: { watches: undefined } } }); // still not sure if it should be undefined or { title: undefined }
-        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: { subcounters: undefined } })).to.be.eql({ counters: { subcounters: { watches: undefined } } }); // still not sure if it should be undefined or { title: undefined }
-        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: { subcounters: { watches: null } } })).to.be.eql({ counters: { subcounters: { watches: null } } }); // still not sure if it should be undefined or { title: undefined }
-        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: { subcounters: { watches: 0 } } })).to.be.eql({ counters: { subcounters: { watches: 0 } } }); // still not sure if it should be undefined or { title: undefined }
-        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: { subcounters: { version: 123 } } })).to.be.eql({ counters: { subcounters: { watches: undefined } } }); // still
+        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1 })).to.be.eql(undefined);
+        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: undefined })).to.be.undefined;
+        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: { } })).to.be.undefined;
+        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: { subcounters: undefined } })).to.be.undefined;
+        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: { subcounters: { watches: null } } })).to.be.eql({ counters: { subcounters: { watches: null } } });
+        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: { subcounters: { watches: 0 } } })).to.be.eql({ counters: { subcounters: { watches: 0 } } });
+        expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: { subcounters: { version: 123 } } })).to.be.undefined;
 
     })));
 

@@ -20,8 +20,6 @@ describe("named-columns-lazy-relations", () => {
             Post,
             Category,
         ],
-        schemaCreate: true,
-        dropSchema: true,
         enabledDrivers: ["postgres"] // we can properly test lazy-relations only on one platform
     }));
     beforeEach(() => reloadTestingDatabases(connections));
@@ -53,7 +51,7 @@ describe("named-columns-lazy-relations", () => {
 
         savedPost.categories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
 
-        const post = (await postRepository.findOneById(1))!;
+        const post = (await postRepository.findOne(1))!;
         post.title.should.be.equal("Hello post");
         post.text.should.be.equal("This is post about post");
 
@@ -93,7 +91,7 @@ describe("named-columns-lazy-relations", () => {
 
         savedPost.twoSideCategories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
 
-        const post = (await postRepository.findOneById(1))!;
+        const post = (await postRepository.findOne(1))!;
         post.title.should.be.equal("Hello post");
         post.text.should.be.equal("This is post about post");
 
@@ -105,7 +103,7 @@ describe("named-columns-lazy-relations", () => {
         categories.should.contain(savedCategory2);
         categories.should.contain(savedCategory3);
 
-        const category = (await categoryRepository.findOneById(1))!;
+        const category = (await categoryRepository.findOne(1))!;
         category.name.should.be.equal("kids");
 
         const twoSidePosts = await category.twoSidePosts;

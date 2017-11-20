@@ -7,6 +7,7 @@ import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {DataTypeDefaults} from "./types/DataTypeDefaults";
 import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
 import {TableColumn} from "../schema-builder/schema/TableColumn";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -87,12 +88,12 @@ export interface Driver {
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]];
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]];
 
     /**
      * Escapes a table name, column name or an alias.
      */
-    escape(tableName: string): string;
+    escape(name: string): string;
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
@@ -142,5 +143,25 @@ export interface Driver {
      * If replication is not setup then returns master (default) connection's database connection.
      */
     obtainSlaveConnection(): Promise<any>;
+
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any): ObjectLiteral|undefined;
+
+    /**
+     * Returns true if driver supports RETURNING / OUTPUT statement.
+     */
+    isReturningSqlSupported(): boolean;
+
+    /**
+     * Returns true if driver supports uuid values generation on its own.
+     */
+    isUUIDGenerationSupported(): boolean;
+
+    /**
+     * Creates an escaped parameter.
+     */
+    createParameter(parameterName: string, index: number): string;
 
 }

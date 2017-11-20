@@ -13,6 +13,7 @@ import {MongoSchemaBuilder} from "../../schema-builder/MongoSchemaBuilder";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {ConnectionOptions} from "../../connection/ConnectionOptions";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Organizes communication with MongoDB.
@@ -207,7 +208,7 @@ export class MongoDriver implements Driver {
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
         throw new Error(`This operation is not supported by Mongodb driver.`);
     }
 
@@ -287,6 +288,34 @@ export class MongoDriver implements Driver {
      */
     obtainSlaveConnection(): Promise<any> {
         return Promise.resolve();
+    }
+
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertedId: any) {
+        return metadata.objectIdColumn!.createValueMap(insertedId);
+    }
+
+    /**
+     * Returns true if driver supports RETURNING / OUTPUT statement.
+     */
+    isReturningSqlSupported(): boolean {
+        return false;
+    }
+
+    /**
+     * Returns true if driver supports uuid values generation on its own.
+     */
+    isUUIDGenerationSupported(): boolean {
+        return false;
+    }
+
+    /**
+     * Creates an escaped parameter.
+     */
+    createParameter(parameterName: string, index: number): string {
+        return "";
     }
 
     // -------------------------------------------------------------------------

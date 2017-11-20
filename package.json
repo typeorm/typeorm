@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.2.0-alpha.6",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, WebSQL, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -70,6 +70,7 @@
     "rimraf": "^2.6.2",
     "sinon": "^2.4.1",
     "sinon-chai": "^2.13.0",
+    "sql.js": "^0.4.0",
     "sqlite3": "^3.1.13",
     "ts-node": "^3.3.0",
     "tslint": "^5.6.0",

@@ -3,7 +3,6 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Table} from "../../schema-builder/schema/Table";
 import {TableForeignKey} from "../../schema-builder/schema/TableForeignKey";
 import {TablePrimaryKey} from "../../schema-builder/schema/TablePrimaryKey";
@@ -14,6 +13,7 @@ import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {QueryFailedError} from "../../error/QueryFailedError";
+import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -35,6 +35,11 @@ export class OracleQueryRunner implements QueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Broadcaster used on this query runner to broadcast entity events.
+     */
+    broadcaster: Broadcaster;
 
     /**
      * Isolated entity manager working only with current query runner.
@@ -96,6 +101,7 @@ export class OracleQueryRunner implements QueryRunner {
     constructor(driver: OracleDriver, mode: "master"|"slave" = "master") {
         this.driver = driver;
         this.connection = driver.connection;
+        this.broadcaster = new Broadcaster(this);
         this.mode = mode;
     }
 
@@ -237,7 +243,9 @@ export class OracleQueryRunner implements QueryRunner {
     /**
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
-     */
+     *
+     * todo: reimplement, use QueryBuilder
+
     async insert(tableName: string, keyValues: ObjectLiteral): Promise<any> {
         // todo: fix generated columns
         let generatedColumn: ColumnMetadata|undefined;
@@ -262,12 +270,14 @@ export class OracleQueryRunner implements QueryRunner {
         } else {
             return this.query(insertSql, parameters);
         }
-    }
+    } */
 
     /**
      * Updates rows that match given conditions in the given table.
-     */
-    async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
+     *
+     * todo: reimplement, use QueryBuilder
+
+    async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<any> {
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions).join(" AND ");
         const sql = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
@@ -275,18 +285,20 @@ export class OracleQueryRunner implements QueryRunner {
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const allParameters = updateParams.concat(conditionParams);
         await this.query(sql, allParameters);
-    }
+    }*/
 
     /**
      * Deletes from the given table by a given conditions.
-     */
-    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
+     *
+     * todo: reimplement, use QueryBuilder
+
+    async delete(tableName: string, conditions: ObjectLiteral|ObjectLiteral[]|string, maybeParameters?: any[]): Promise<any> {
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
         const sql = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
         await this.query(sql, parameters);
-    }
+    }*/
 
     /**
      * Inserts rows into the closure table.

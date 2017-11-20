@@ -33,7 +33,7 @@ export class PlatformTools {
     /**
      * Normalizes given path. Does "path.normalize".
      */
-    static pathNormilize(pathStr: string): string {
+    static pathNormalize(pathStr: string): string {
         if (this.type === "browser")
             throw new Error(`This option/function is not supported in the browser environment. Failed operation: path.normalize("${pathStr}").`);
 
@@ -88,6 +88,12 @@ export class PlatformTools {
     static appendFileSync(filename: string, data: any) {
         if (this.type === "browser")
             throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.appendFileSync("${filename}").`);
+    }
+
+    static writeFile(path: string, data: any): Promise<void> {
+        if (this.type === "browser")
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.writeFile("${path}").`);
+        return Promise.reject(null);
     }
 
     /**

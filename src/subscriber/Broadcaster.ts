@@ -1,9 +1,8 @@
 import {EntitySubscriberInterface} from "./EntitySubscriberInterface";
 import {EventListenerTypes} from "../metadata/types/EventListenerTypes";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Subject} from "../persistence/Subject";
-import {Connection} from "../connection/Connection";
-import {EntityManager} from "../entity-manager/EntityManager";
+import {QueryRunner} from "../query-runner/QueryRunner";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
@@ -14,7 +13,7 @@ export class Broadcaster {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection) {
+    constructor(private queryRunner: QueryRunner) {
     }
 
     // -------------------------------------------------------------------------
@@ -22,44 +21,26 @@ export class Broadcaster {
     // -------------------------------------------------------------------------
 
     /**
-     * Broadcasts "BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_REMOVE" events for all given subjects.
-     */
-    async broadcastBeforeEventsForAll(entityManager: EntityManager, insertSubjects: Subject[], updateSubjects: Subject[], removeSubjects: Subject[]): Promise<void> {
-        const insertPromises = insertSubjects.map(subject => this.broadcastBeforeInsertEvent(entityManager, subject));
-        const updatePromises = updateSubjects.map(subject => this.broadcastBeforeUpdateEvent(entityManager, subject));
-        const removePromises = removeSubjects.map(subject => this.broadcastBeforeRemoveEvent(entityManager, subject));
-        const allPromises = insertPromises.concat(updatePromises).concat(removePromises);
-        await Promise.all(allPromises);
-    }
-
-    /**
-     * Broadcasts "AFTER_INSERT", "AFTER_UPDATE", "AFTER_REMOVE" events for all given subjects.
-     */
-    async broadcastAfterEventsForAll(entityManager: EntityManager, insertSubjects: Subject[], updateSubjects: Subject[], removeSubjects: Subject[]): Promise<void> {
-        const insertPromises = insertSubjects.map(subject => this.broadcastAfterInsertEvent(entityManager, subject));
-        const updatePromises = updateSubjects.map(subject => this.broadcastAfterUpdateEvent(entityManager, subject));
-        const removePromises = removeSubjects.map(subject => this.broadcastAfterRemoveEvent(entityManager, subject));
-        const allPromises = insertPromises.concat(updatePromises).concat(removePromises);
-        await Promise.all(allPromises);
-    }
-
-    /**
      * Broadcasts "BEFORE_INSERT" event.
      * Before insert event is executed before entity is being inserted to the database for the first time.
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastBeforeInsertEvent(manager: EntityManager, subject: Subject): Promise<void> {
+    async broadcastBeforeInsertEvent(metadata: EntityMetadata, entity?: ObjectLiteral): Promise<void> {
 
-        const listeners = subject.metadata.listeners
-            .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]()); // getValue() ?
+        const listeners = metadata.listeners.map(listener => {
+            if (entity && listener.type === EventListenerTypes.BEFORE_INSERT && listener.isAllowed(entity)) {
+                return entity[listener.propertyName]();  // getValue() ?!! But its a function! What about embeds? Tests!
+            }
+        });
 
-        const subscribers = this.connection.subscribers
-            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeInsert)
+        const subscribers = this.queryRunner.connection.subscribers
+            .filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeInsert)
             .map(subscriber => subscriber.beforeInsert!({
-                manager: manager,
-                entity: subject.entity
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
+                entity: entity
             }));
 
         await Promise.all(listeners.concat(subscribers));
@@ -71,20 +52,24 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastBeforeUpdateEvent(manager: EntityManager, subject: Subject): Promise<void> { // todo: send relations too?
+    async broadcastBeforeUpdateEvent(metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): Promise<void> { // todo: send relations too?
 
-        const listeners = subject.metadata.listeners
-            .filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+        const listeners = metadata.listeners.map(listener => {
+            if (entity && listener.type === EventListenerTypes.BEFORE_UPDATE && listener.isAllowed(entity)) {
+                return entity[listener.propertyName]();  // getValue() ?!! But its a function! What about embeds? Tests!
+            }
+        });
 
-        const subscribers = this.connection.subscribers
-            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeUpdate)
+        const subscribers = this.queryRunner.connection.subscribers
+            .filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeUpdate)
             .map(subscriber => subscriber.beforeUpdate!({
-                manager: manager,
-                entity: subject.entity,
-                databaseEntity: subject.databaseEntity,
-                updatedColumns: subject.diffColumns,
-                updatedRelations: subject.diffRelations,
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
+                entity: entity,
+                databaseEntity: databaseEntity,
+                updatedColumns: [], // todo: subject.diffColumns,
+                updatedRelations: [] // subject.diffRelations,
             }));
 
         await Promise.all(listeners.concat(subscribers));
@@ -96,19 +81,23 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastBeforeRemoveEvent(manager: EntityManager, subject: Subject): Promise<void> {
+    async broadcastBeforeRemoveEvent(metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): Promise<void> {
 
-        const listeners = subject.metadata.listeners
-            .filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.databaseEntity[entityListener.propertyName]());
+        const listeners = metadata.listeners.map(listener => {
+            if (entity && listener.type === EventListenerTypes.BEFORE_REMOVE && listener.isAllowed(entity)) {
+                return entity[listener.propertyName]();  // getValue() ?!! But its a function! What about embeds? Tests!
+            }
+        });
 
-        const subscribers = this.connection.subscribers
-            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeRemove)
+        const subscribers = this.queryRunner.connection.subscribers
+            .filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeRemove)
             .map(subscriber => subscriber.beforeRemove!({
-                manager: manager,
-                entity: subject.hasEntity ? subject.entity : undefined,
-                databaseEntity: subject.databaseEntity,
-                entityId: subject.metadata.getEntityIdMixedMap(subject.databaseEntity)
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
+                entity: entity,
+                databaseEntity: databaseEntity,
+                entityId: metadata.getEntityIdMixedMap(databaseEntity)
             }));
 
         await Promise.all(listeners.concat(subscribers));
@@ -120,17 +109,21 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastAfterInsertEvent(manager: EntityManager, subject: Subject): Promise<void> {
+    async broadcastAfterInsertEvent(metadata: EntityMetadata, entity?: ObjectLiteral): Promise<void> {
 
-        const listeners = subject.metadata.listeners
-            .filter(listener => listener.type === EventListenerTypes.AFTER_INSERT && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+        const listeners = metadata.listeners.map(listener => {
+            if (entity && listener.type === EventListenerTypes.AFTER_INSERT && listener.isAllowed(entity)) {
+                return entity[listener.propertyName]();  // getValue() ?!! But its a function! What about embeds? Tests!
+            }
+        });
 
-        const subscribers = this.connection.subscribers
-            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterInsert)
+        const subscribers = this.queryRunner.connection.subscribers
+            .filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterInsert)
             .map(subscriber => subscriber.afterInsert!({
-                manager: manager,
-                entity: subject.entity
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
+                entity: entity
             }));
 
         await Promise.all(listeners.concat(subscribers));
@@ -142,20 +135,24 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastAfterUpdateEvent(manager: EntityManager, subject: Subject): Promise<void> {
+    async broadcastAfterUpdateEvent(metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): Promise<void> {
 
-        const listeners = subject.metadata.listeners
-            .filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+        const listeners = metadata.listeners.map(listener => {
+            if (entity && listener.type === EventListenerTypes.AFTER_UPDATE && listener.isAllowed(entity)) {
+                return entity[listener.propertyName]();  // getValue() ?!! But its a function! What about embeds? Tests!
+            }
+        });
 
-        const subscribers = this.connection.subscribers
-            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterUpdate)
+        const subscribers = this.queryRunner.connection.subscribers
+            .filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterUpdate)
             .map(subscriber => subscriber.afterUpdate!({
-                manager: manager,
-                entity: subject.entity,
-                databaseEntity: subject.databaseEntity,
-                updatedColumns: subject.diffColumns,
-                updatedRelations: subject.diffRelations,
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
+                entity: entity,
+                databaseEntity: databaseEntity,
+                updatedColumns: [], // todo: subject.diffColumns,
+                updatedRelations: [] // todo: subject.diffRelations,
             }));
 
         await Promise.all(listeners.concat(subscribers));
@@ -167,19 +164,23 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastAfterRemoveEvent(manager: EntityManager, subject: Subject): Promise<void> {
+    async broadcastAfterRemoveEvent(metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): Promise<void> {
 
-        const listeners = subject.metadata.listeners
-            .filter(listener => listener.type === EventListenerTypes.AFTER_REMOVE && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+        const listeners = metadata.listeners.map(listener => {
+            if (entity && listener.type === EventListenerTypes.AFTER_REMOVE && listener.isAllowed(entity)) {
+                return entity[listener.propertyName]();  // getValue() ?!! But its a function! What about embeds? Tests!
+            }
+        });
 
-        const subscribers = this.connection.subscribers
-            .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterRemove)
+        const subscribers = this.queryRunner.connection.subscribers
+            .filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterRemove)
             .map(subscriber => subscriber.afterRemove!({
-                manager: manager,
-                entity: subject.hasEntity ? subject.entity : undefined,
-                databaseEntity: subject.databaseEntity,
-                entityId: subject.metadata.getEntityIdMixedMap(subject.databaseEntity)
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
+                entity: entity,
+                databaseEntity: databaseEntity,
+                entityId: metadata.getEntityIdMixedMap(databaseEntity)
             }));
 
         await Promise.all(listeners.concat(subscribers));
@@ -206,7 +207,7 @@ export class Broadcaster {
             return;
 
         // collect load events for all children entities that were loaded with the main entity
-        const children = this.connection.getMetadata(target).relations.reduce((promises, relation) => {
+        const children = this.queryRunner.connection.getMetadata(target).relations.reduce((promises, relation) => {
             if (!entity.hasOwnProperty(relation.propertyName))
                 return promises;
 
@@ -220,11 +221,11 @@ export class Broadcaster {
             return promises;
         }, [] as Promise<void>[]);
 
-        const listeners = this.connection.getMetadata(target).listeners
+        const listeners = this.queryRunner.connection.getMetadata(target).listeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_LOAD && listener.isAllowed(entity))
             .map(listener => entity[listener.propertyName]());
 
-        const subscribers = this.connection.subscribers
+        const subscribers = this.queryRunner.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, target) && subscriber.afterLoad)
             .map(subscriber => subscriber.afterLoad!(entity));
 

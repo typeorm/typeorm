@@ -8,6 +8,7 @@
 * [How to use TypeORM with dependency injection tool?](#how-to-use-typeorm-with-a-dependency-injection-tool)
 * [How to handle outDir TypeScript compiler option?](#how-to-handle-outdir-typescript-compiler-option)
 * [How to use TypeORM with ts-node?](#how-to-use-typeorm-with-ts-node)
+* [How to use Webpack for the backend](#how-to-use-webpack-for-the-backend)
 
 
 ## How do I update a database schema?
@@ -179,4 +180,22 @@ Also if you want to use the ts-node CLI you can execute TypeORM the following wa
 
 ```
 ts-node ./node_modules/bin/typeorm schema:sync
+```
+
+## How to use Webpack for the backend?
+
+Webpack produces warnings due to what it views as missing require statements -- require statements for all drivers supported by TypeORM. To suppress these warnings for unused drivers, you will need to edit your webpack config file.
+
+```js
+const FilterWarningsPlugin = require('webpack-filter-warnings-plugin');
+
+module.exports = {
+    ...
+    plugins: [
+        //ignore the drivers you don't want. This is the complete list of all drivers -- remove the suppressions for drivers you want to use.
+        new FilterWarningsPlugin({
+            exclude: [/mongodb/, /mssql/, /mysql/, /mysql2/, /oracledb/, /pg/, /pg-native/, /pg-query-stream/, /redis/, /sqlite3/]
+        })
+    ]
+};
 ```

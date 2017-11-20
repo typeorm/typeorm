@@ -9,8 +9,6 @@ describe("entity-model", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -23,7 +21,7 @@ describe("entity-model", () => {
         post.text = "Huge discussion how good or bad ActiveRecord is.";
         await post.save();
 
-        const loadedPost = await Post.findOneById(1);
+        const loadedPost = await Post.findOne(1);
 
         loadedPost!.should.be.instanceOf(Post);
         loadedPost!.id.should.be.eql(1);

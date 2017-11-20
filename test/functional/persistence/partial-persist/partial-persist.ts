@@ -15,8 +15,6 @@ describe("persistence > partial persist", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -48,7 +46,7 @@ describe("persistence > partial persist", () => {
         await postRepository.save(newPost);
 
         // load a post
-        const loadedPost = await postRepository.findOneById(1, {
+        const loadedPost = await postRepository.findOne(1, {
             join: {
                 alias: "post",
                 leftJoinAndSelect: {
@@ -71,7 +69,7 @@ describe("persistence > partial persist", () => {
         await postRepository.update({ title: "All about animals" }, { title: "All about bears" });
 
         // now check if update worked as expected, title is updated and all other columns are not touched
-        const loadedPostAfterTitleUpdate = await postRepository.findOneById(1, {
+        const loadedPostAfterTitleUpdate = await postRepository.findOne(1, {
             join: {
                 alias: "post",
                 leftJoinAndSelect: {
@@ -94,7 +92,7 @@ describe("persistence > partial persist", () => {
         await postRepository.update({ id: 1 }, { counters: { stars: 10 } });
 
         // now check if update worked as expected, stars counter is updated and all other columns are not touched
-        const loadedPostAfterStarsUpdate = await postRepository.findOneById(1, {
+        const loadedPostAfterStarsUpdate = await postRepository.findOne(1, {
             join: {
                 alias: "post",
                 leftJoinAndSelect: {
@@ -117,7 +115,7 @@ describe("persistence > partial persist", () => {
         await postRepository.save({ id: 1, categories: [{ id: 1, name: "Bears" }] });
 
         // now check if update worked as expected, name of category is updated and all other columns are not touched
-        const loadedPostAfterCategoryUpdate = await postRepository.findOneById(1, {
+        const loadedPostAfterCategoryUpdate = await postRepository.findOne(1, {
             join: {
                 alias: "post",
                 leftJoinAndSelect: {

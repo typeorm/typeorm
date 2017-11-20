@@ -432,7 +432,7 @@ createConnection(/*...*/).then(async connection => {
     let allPhotos = await photoRepository.find();
     console.log("All photos from the db: ", allPhotos);
 
-    let firstPhoto = await photoRepository.findOneById(1);
+    let firstPhoto = await photoRepository.findOne(1);
     console.log("First photo from the db: ", firstPhoto);
 
     let meAndBearsPhoto = await photoRepository.findOne({ name: "Me and Bears" });
@@ -462,7 +462,7 @@ import {Photo} from "./entity/Photo";
 createConnection(/*...*/).then(async connection => {
 
     /*...*/
-    let photoToUpdate = await photoRepository.findOneById(1);
+    let photoToUpdate = await photoRepository.findOne(1);
     photoToUpdate.name = "Me, my friends and polar bears";
     await photoRepository.save(photoToUpdate);
 
@@ -483,7 +483,7 @@ import {Photo} from "./entity/Photo";
 createConnection(/*...*/).then(async connection => {
 
     /*...*/
-    let photoToRemove = await photoRepository.findOneById(1);
+    let photoToRemove = await photoRepository.findOne(1);
     await photoRepository.remove(photoToRemove);
 
 }).catch(error => console.log(error));

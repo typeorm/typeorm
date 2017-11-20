@@ -38,6 +38,7 @@ import {
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {MongoEntityManager} from "../../entity-manager/MongoEntityManager";
+import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -52,6 +53,11 @@ export class MongoQueryRunner implements QueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Broadcaster used on this query runner to broadcast entity events.
+     */
+    broadcaster: Broadcaster;
 
     /**
      * Isolated entity manager working only with current query runner.
@@ -89,6 +95,7 @@ export class MongoQueryRunner implements QueryRunner {
     constructor(connection: Connection, databaseConnection: Db) {
         this.connection = connection;
         this.databaseConnection = databaseConnection;
+        this.broadcaster = new Broadcaster(this);
     }
 
     // -------------------------------------------------------------------------
@@ -399,8 +406,8 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Insert a new row with given values into the given table.
      * Returns value of inserted object id.
-     */
-    async insert(collectionName: string, keyValues: ObjectLiteral): Promise<any> {
+
+    async insert(collectionName: string, keyValues: ObjectLiteral): Promise<any> { // todo: fix any
         const results = await this.databaseConnection
             .collection(collectionName)
             .insertOne(keyValues);
@@ -409,28 +416,28 @@ export class MongoQueryRunner implements QueryRunner {
             result: results,
             generatedMap: generatedMap
         };
-    }
+    }*/
 
     /**
      * Updates rows that match given conditions in the given table.
-     */
-    async update(collectionName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
+
+    async update(collectionName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<any> { // todo: fix any
         await this.databaseConnection
             .collection(collectionName)
             .updateOne(conditions, valuesMap);
-    }
+    }*/
 
     /**
      * Deletes from the given table by a given conditions.
-     */
-    async delete(collectionName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
+
+    async delete(collectionName: string, conditions: ObjectLiteral|ObjectLiteral[]|string, maybeParameters?: any[]): Promise<any> { // todo: fix any
         if (typeof conditions === "string")
             throw new Error(`String condition is not supported by MongoDB driver.`);
 
         await this.databaseConnection
             .collection(collectionName)
             .deleteOne(conditions);
-    }
+    }*/
 
     /**
      * Inserts rows into the closure table.

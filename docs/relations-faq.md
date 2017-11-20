@@ -210,7 +210,7 @@ When you save the object it will check if there are any categories in the databa
 and it will detach all of them. Why? Because relation equal to `[]` or any items inside it will be considered
 like something was removed from it, there is no other way to check if an object was removed from entity or not.
  
-Therefoe, saving an object like this will bring you problems - it will remove all previously set categories.
+Therefore, saving an object like this will bring you problems - it will remove all previously set categories.
 
 How to avoid this behaviour? Simply don't initialize arrays in your entities.
 Same rule applies to a constructor - don't initialize it in a constructor as well.

@@ -16,6 +16,9 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {OrmUtils} from "../../util/OrmUtils";
+import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -218,20 +221,25 @@ export class PostgresDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
-        if (this.connection.entityMetadatas.some(metadata => metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0)) {
+        const hasUuidColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0;
+        });
+        const hasCitextColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.columns.filter(column => column.type === "citext").length > 0;
+        });
 
+        if (hasUuidColumns || hasCitextColumns) {
             await Promise.all([this.master, ...this.slaves].map(pool => {
                 return new Promise((ok, fail) => {
-                    pool.connect((err: any, connection: any, release: Function) => {
+                    pool.connect(async (err: any, connection: any, release: Function) => {
                         if (err) return fail(err);
-                        connection.query(`CREATE extension IF NOT EXISTS "uuid-ossp"`, (err: any) => {
-                            if (err)  {
-                                release();
-                                return fail(err);
-                            }
-                            release();
-                            ok();
-                        });
+                        if (hasUuidColumns)
+                            await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "uuid-ossp"`);
+                        if (hasCitextColumns)
+                            await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "citext"`);
+
+                        release();
+                        ok();
                     });
                 });
             }));
@@ -340,14 +348,14 @@ export class PostgresDriver implements Driver {
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
+        const builtParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
         if (!parameters || !Object.keys(parameters).length)
-            return [sql, []];
+            return [sql, builtParameters];
 
-        const builtParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
-            const value = parameters[key.substr(1)];
+            let value = parameters[key.substr(1)];
             if (value instanceof Array) {
                 return value.map((v: any) => {
                     builtParameters.push(v);
@@ -358,6 +366,7 @@ export class PostgresDriver implements Driver {
                 return value();
 
             } else {
+                if (value instanceof ArrayParameter) value = value.value;
                 builtParameters.push(value);
                 return "$" + builtParameters.length;
             }
@@ -559,6 +568,43 @@ export class PostgresDriver implements Driver {
         });
     }
 
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertResult: ObjectLiteral) {
+        if (!insertResult)
+            return undefined;
+
+        return Object.keys(insertResult).reduce((map, key) => {
+            const column = metadata.findColumnWithDatabaseName(key);
+            if (column) {
+                OrmUtils.mergeDeep(map, column.createValueMap(insertResult[key]));
+            }
+            return map;
+        }, {} as ObjectLiteral);
+    }
+
+    /**
+     * Returns true if driver supports RETURNING / OUTPUT statement.
+     */
+    isReturningSqlSupported(): boolean {
+        return true;
+    }
+
+    /**
+     * Returns true if driver supports uuid values generation on its own.
+     */
+    isUUIDGenerationSupported(): boolean {
+        return true;
+    }
+
+    /**
+     * Creates an escaped parameter.
+     */
+    createParameter(parameterName: string, index: number): string {
+        return "$" + (index + 1);
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -632,6 +678,18 @@ export class PostgresDriver implements Driver {
         await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
         return new Promise<void>((ok, fail) => {
             pool.end((err: any) => err ? fail(err) : ok());
+        });
+    }
+
+    /**
+     * Executes given query.
+     */
+    protected executeQuery(connection: any, query: string) {
+        return new Promise((ok, fail) => {
+            connection.query(query, (err: any, result: any) => {
+                if (err) return fail(err);
+                ok(result);
+            });
         });
     }
 

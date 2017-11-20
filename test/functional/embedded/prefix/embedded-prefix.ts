@@ -9,8 +9,6 @@ describe("embedded > prefix functionality", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -29,7 +27,7 @@ describe("embedded > prefix functionality", () => {
         await postRepository.save(post);
 
         // now load it
-        const loadedPost = (await postRepository.findOneById(1))!;
+        const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(1);
         loadedPost.title.should.be.equal("Hello post");
         loadedPost.text.should.be.equal("This is text about the post");

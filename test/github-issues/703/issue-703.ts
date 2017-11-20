@@ -4,13 +4,11 @@ import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 
-describe("github issues > #703 findOneById does not return an empty array on OneToMany relationship", () => {
+describe("github issues > #703.findOne does not return an empty array on OneToMany relationship", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -28,7 +26,7 @@ describe("github issues > #703 findOneById does not return an empty array on One
         post.categories = [];
         await connection.manager.save(post);
 
-        const loadedPost = await connection.getRepository(Post).findOneById(1, {
+        const loadedPost = await connection.getRepository(Post).findOne(1, {
             relations: ["categories"]
         });
 

@@ -27,6 +27,12 @@ export type TestingConnectionOptions = ConnectionOptions & {
 export interface TestingOptions {
 
     /**
+     * Dirname of the test directory.
+     * If specified, entities will be loaded from that directory.
+     */
+    __dirname?: string;
+
+    /**
      * Connection name to be overridden.
      * This can be used to create multiple connections with single connection configuration.
      */
@@ -182,6 +188,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.synchronize = options.schemaCreate;
             if (options && options.schema)
                 newOptions.schema = options.schema;
+            if (options && options.__dirname)
+                newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"];
             return newOptions;
         });
 }

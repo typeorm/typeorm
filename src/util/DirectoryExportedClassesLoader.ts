@@ -20,7 +20,7 @@ export function importClassesFromDirectories(directories: string[], formats = ["
     }
 
     const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(PlatformTools.load("glob").sync(PlatformTools.pathNormilize(dir)));
+        return allDirs.concat(PlatformTools.load("glob").sync(PlatformTools.pathNormalize(dir)));
     }, [] as string[]);
 
     const dirs = allFiles
@@ -39,7 +39,7 @@ export function importClassesFromDirectories(directories: string[], formats = ["
 export function importJsonsFromDirectories(directories: string[], format = ".json"): any[] {
 
     const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(PlatformTools.load("glob").sync(PlatformTools.pathNormilize(dir)));
+        return allDirs.concat(PlatformTools.load("glob").sync(PlatformTools.pathNormalize(dir)));
     }, [] as string[]);
 
     return allFiles

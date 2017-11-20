@@ -3,11 +3,10 @@ import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStar
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {Table} from "../../schema-builder/schema/Table";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
-import {OrmUtils} from "../../util/OrmUtils";
-import {InsertResult} from "../InsertResult";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {WebsqlDriver} from "./WebsqlDriver";
+import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -18,6 +17,7 @@ declare function openDatabase(...params: any[]): any;
  * Runs queries on a single websql database connection.
  */
 export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
+
     /**
      * Real database connection from a connection pool used to perform queries.
      */
@@ -42,6 +42,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
 
         this.driver = driver;
         this.connection = driver.connection;
+        this.broadcaster = new Broadcaster(this);
     }
 
     // -------------------------------------------------------------------------
@@ -169,7 +170,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
-     */
+     // todo: check if it works
     async insert(tableName: string, keyValues: ObjectLiteral): Promise<InsertResult> {
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => `"${key}"`).join(", ");
@@ -202,7 +203,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
                 });
             });
         });
-    }
+    }*/
 
     // TODO: finish the table schema loading
     /**

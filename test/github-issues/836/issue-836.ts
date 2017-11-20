@@ -9,34 +9,44 @@ describe("github issues > #836 .save won't update entity when it contains OneToO
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should work perfectly", () => Promise.all(connections.map(async connection => {
 
-        const user = new User();
-        user.email = "user@user.com";
-        user.username = "User User";
-        user.privilege = 0;
-        await connection.manager.save(user);
+        // just insert another dummy user
+        const user1 = new User();
+        user1.email = "user1@user.com";
+        user1.username = "User 1";
+        user1.privilege = 0;
+        await connection.manager.save(user1);
 
+        // create a user but do not insert it
+        const user2 = new User();
+        user2.email = "user2@user.com";
+        user2.username = "User 2";
+        user2.privilege = 0;
+
+        // now create credentials and let user to be saved by cascades
         const credential = new UserCredential();
         credential.password = "ABC";
         credential.salt = "CDE";
-        credential.user = user;
+        credential.user = user2;
         await connection.manager.save(credential);
 
-        // const loadedCredentials = await connection.manager.findOneById(UserCredential, 1, {
-        //     alias: "user_credential",
-        //     innerJoinAndSelect: {
-        //         user: "user_credential.user",
-        //     },
-        // });
-
-        // todo: finish this test - cascades needs to be fixed first.
+        // check if credentials and user are saved properly
+        const loadedCredentials = await connection.manager.findOne(UserCredential, 2, { relations: ["user"] });
+        loadedCredentials!.should.be.eql({
+            user: {
+                id: 2,
+                email: "user2@user.com",
+                username: "User 2",
+                privilege: 0
+            },
+            password: "ABC",
+            salt: "CDE"
+        });
 
     })));
 

@@ -159,7 +159,7 @@ export class EmbeddedMetadata {
         this.prefix = this.buildPrefix(connection);
         this.parentPropertyNames = this.buildParentPropertyNames();
         this.parentPrefixes = this.buildParentPrefixes();
-        this.propertyPath = this.parentPrefixes.join(".");
+        this.propertyPath = this.parentPropertyNames.join(".");
         this.embeddedMetadataTree = this.buildEmbeddedMetadataTree();
         this.columnsFromTree = this.buildColumnsFromTree();
         this.relationsFromTree = this.buildRelationsFromTree();

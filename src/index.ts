@@ -14,6 +14,7 @@ import {MongoRepository} from "./repository/MongoRepository";
 import {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 import {PromiseUtils} from "./util/PromiseUtils";
 import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
+import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -106,6 +107,9 @@ export {UpdateQueryBuilder} from "./query-builder/UpdateQueryBuilder";
 export {RelationQueryBuilder} from "./query-builder/RelationQueryBuilder";
 export {Brackets} from "./query-builder/Brackets";
 export {WhereExpression} from "./query-builder/WhereExpression";
+export {InsertResult} from "./query-builder/result/InsertResult";
+export {UpdateResult} from "./query-builder/result/UpdateResult";
+export {DeleteResult} from "./query-builder/result/DeleteResult";
 export {QueryRunner} from "./query-runner/QueryRunner";
 export {EntityManager} from "./entity-manager/EntityManager";
 export {MongoEntityManager} from "./entity-manager/MongoEntityManager";
@@ -221,6 +225,15 @@ export function getManager(connectionName: string = "default"): EntityManager {
  */
 export function getMongoManager(connectionName: string = "default"): MongoEntityManager {
     return getConnectionManager().get(connectionName).manager as MongoEntityManager;
+}
+
+/**
+ * Gets Sqljs entity manager from connection name.
+ * "default" connection is used, when no name is specified.
+ * Only works when Sqljs driver is used.
+ */
+export function getSqljsManager(connectionName: string = "default"): SqljsEntityManager {
+    return getConnectionManager().get(connectionName).manager as SqljsEntityManager;
 }
 
 /**

@@ -12,7 +12,6 @@ describe("relations > eager relations > basic", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -60,7 +59,7 @@ describe("relations > eager relations > basic", () => {
     it("should load all eager relations when object is loaded", () => Promise.all(connections.map(async connection => {
         await prepareData(connection);
 
-        const loadedPost = await connection.manager.findOneById(Post, 1);
+        const loadedPost = await connection.manager.findOne(Post, 1);
         loadedPost!.should.be.eql({
             id: 1,
             title: "about eager relations",

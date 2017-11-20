@@ -28,6 +28,22 @@ export interface WhereExpression {
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
+    where(where: ObjectLiteral, parameters?: ObjectLiteral): this;
+
+    /**
+     * Sets WHERE condition in the query builder.
+     * If you had previously WHERE expression defined,
+     * calling this function will override previously set WHERE conditions.
+     * Additionally you can add parameters used in where expression.
+     */
+    where(where: ObjectLiteral[], parameters?: ObjectLiteral): this;
+
+    /**
+     * Sets WHERE condition in the query builder.
+     * If you had previously WHERE expression defined,
+     * calling this function will override previously set WHERE conditions.
+     * Additionally you can add parameters used in where expression.
+     */
     where(subQuery: (qb: this) => string, parameters?: ObjectLiteral): this;
 
     /**
@@ -84,7 +100,7 @@ export interface WhereExpression {
      * If you have multiple primary keys you need to pass object with property names and values specified,
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
-    andWhereInIds(ids: any[]): this;
+    andWhereInIds(ids: any|any[]): this;
 
     /**
      * Adds new OR WHERE with conditions for the given ids.
@@ -94,7 +110,7 @@ export interface WhereExpression {
      * If you have multiple primary keys you need to pass object with property names and values specified,
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
-    orWhereInIds(ids: any[]): this;
+    orWhereInIds(ids: any|any[]): this;
 
 
 }

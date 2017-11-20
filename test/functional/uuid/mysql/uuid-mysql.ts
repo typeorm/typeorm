@@ -12,8 +12,6 @@ describe("uuid-mysql", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
-            schemaCreate: true,
-            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
@@ -30,20 +28,20 @@ describe("uuid-mysql", () => {
 
         const post = new Post();
         await postRepository.save(post);
-        const loadedPost = await postRepository.findOneById(1);
+        const loadedPost = await postRepository.findOne(1);
         expect(loadedPost!.uuid).to.be.exist;
         postTableSchema!.findColumnByName("uuid")!.type.should.be.equal("varchar");
 
         const post2 = new Post();
         post2.uuid = "fd357b8f-8838-42f6-b7a2-ae027444e895";
         await postRepository.save(post2);
-        const loadedPost2 = await postRepository.findOneById(2);
+        const loadedPost2 = await postRepository.findOne(2);
         expect(loadedPost2!.uuid).to.equal("fd357b8f-8838-42f6-b7a2-ae027444e895");
 
         const question = new Question();
         question.uuid2 = "fd357b8f-8838-42f6-b7a2-ae027444e895";
         const savedQuestion = await questionRepository.save(question);
-        const loadedQuestion = await questionRepository.findOneById(savedQuestion.id);
+        const loadedQuestion = await questionRepository.findOne(savedQuestion.id);
         expect(loadedQuestion!.id).to.be.exist;
         expect(loadedQuestion!.uuid).to.be.exist;
         expect(loadedQuestion!.uuid2).to.equal("fd357b8f-8838-42f6-b7a2-ae027444e895");
@@ -61,7 +59,7 @@ describe("uuid-mysql", () => {
         question2.uuid3 = null;
         question2.uuid4 = null;
         await questionRepository.save(question2);
-        const loadedQuestion2 = await questionRepository.findOneById("1ecad7f6-23ee-453e-bb44-16eca26d5189");
+        const loadedQuestion2 = await questionRepository.findOne("1ecad7f6-23ee-453e-bb44-16eca26d5189");
         expect(loadedQuestion2!.id).to.equal("1ecad7f6-23ee-453e-bb44-16eca26d5189");
         expect(loadedQuestion2!.uuid).to.equal("35b44650-b2cd-44ec-aa54-137fbdf1c373");
         expect(loadedQuestion2!.uuid2).to.equal("fd357b8f-8838-42f6-b7a2-ae027444e895");

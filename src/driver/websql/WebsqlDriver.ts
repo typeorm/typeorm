@@ -6,6 +6,7 @@ import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
 import {Connection} from "../../connection/Connection";
 import {WebSqlConnectionOptions} from "./WebSqlConnectionOptions";
 import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver";
+import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with WebSQL in the browser.
@@ -101,17 +102,19 @@ export class WebsqlDriver extends AbstractSqliteDriver {
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
+        const escapedParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
         if (!parameters || !Object.keys(parameters).length)
-            return [sql, []];
-        const escapedParameters: any[] = [];
+            return [sql, escapedParameters];
+
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            const value = parameters[key.substr(1)];
+            let value = parameters[key.substr(1)];
             if (value instanceof Function) {
                 return value();
 
             } else {
+                if (value instanceof ArrayParameter) value = value.value;
                 escapedParameters.push(value);
                 return "?";
             }

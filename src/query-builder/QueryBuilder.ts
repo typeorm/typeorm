@@ -16,8 +16,9 @@ import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectio
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {WhereExpression} from "./WhereExpression";
 import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -265,18 +266,24 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Checks if given relation exists in the entity.
      * Returns true if relation exists, false otherwise.
+     *
+     * todo: move this method to manager? or create a shortcut?
      */
     hasRelation<T>(target: ObjectType<T>|string, relation: string): boolean;
 
     /**
      * Checks if given relations exist in the entity.
      * Returns true if relation exists, false otherwise.
+     *
+     * todo: move this method to manager? or create a shortcut?
      */
     hasRelation<T>(target: ObjectType<T>|string, relation: string[]): boolean;
 
     /**
      * Checks if given relation or relations exist in the entity.
      * Returns true if relation exists, false otherwise.
+     *
+     * todo: move this method to manager? or create a shortcut?
      */
     hasRelation<T>(target: ObjectType<T>|string, relation: string|string[]): boolean {
         const entityMetadata = this.connection.getMetadata(target);
@@ -331,14 +338,6 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
-     * Gets generated sql that will be executed.
-     * Parameters in the query are escaped for the currently used driver.
-     */
-    getSql(): string {
-        return this.connection.driver.escapeQueryWithParameters(this.getQuery(), this.getParameters())[0];
-    }
-
-    /**
      * Prints sql to stdout using console.log.
      */
     printSql(): this {
@@ -347,10 +346,21 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
+     * Gets generated sql that will be executed.
+     * Parameters in the query are escaped for the currently used driver.
+     */
+    getSql(): string {
+        return this.getQueryAndParameters()[0];
+    }
+
+    /**
      * Gets query to be executed with all parameters used in it.
      */
     getQueryAndParameters(): [string, any[]] {
-        return this.connection.driver.escapeQueryWithParameters(this.getQuery(), this.getParameters());
+        // this execution order is important because getQuery method generates this.expressionMap.nativeParameters values
+        const query = this.getQuery();
+        const parameters = this.getParameters();
+        return this.connection.driver.escapeQueryWithParameters(query, parameters, this.expressionMap.nativeParameters);
     }
 
     /**
@@ -365,6 +375,9 @@ export abstract class QueryBuilder<Entity> {
         } finally {
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
                 await queryRunner.release();
+            }
+            if (this.connection.driver instanceof SqljsDriver) {
+                await this.connection.driver.autoSave();
             }
         }
     }
@@ -407,8 +420,26 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets or overrides query builder's QueryRunner.
      */
-    setQueryRunner(queryRunner: QueryRunner) {
+    setQueryRunner(queryRunner: QueryRunner): this {
         this.queryRunner = queryRunner;
+        return this;
+    }
+
+    /**
+     * Indicates if listeners and subscribers must be called before and after query execution.
+     * Enabled by default.
+     */
+    callListeners(enabled: boolean): this {
+        this.expressionMap.callListeners = enabled;
+        return this;
+    }
+
+    /**
+     * If set to true the query will be wrapped into a transaction.
+     */
+    useTransaction(enabled: boolean): this {
+        this.expressionMap.useTransaction = enabled;
+        return this;
     }
 
     // -------------------------------------------------------------------------
@@ -557,6 +588,59 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
+     * Creates "RETURNING" / "OUTPUT" expression.
+     */
+    protected createReturningExpression(): string {
+        const columns = this.getReturningColumns();
+
+        // also add columns we must auto-return to perform entity updation
+        // if user gave his own returning
+        if (typeof this.expressionMap.returning !== "string" &&
+            this.expressionMap.extraReturningColumns.length > 0 &&
+            this.connection.driver.isReturningSqlSupported()) {
+            columns.push(...this.expressionMap.extraReturningColumns.filter(column => {
+                return columns.indexOf(column) === -1;
+            }));
+        }
+
+        if (columns.length) {
+            return columns.map(column => {
+                const name = this.escape(column.databaseName);
+                if (this.connection.driver instanceof SqlServerDriver) {
+                    if (this.expressionMap.queryType === "insert" || this.expressionMap.queryType === "update") {
+                        return "INSERTED." + name;
+                    } else {
+                        return this.escape(this.getMainTableName()) + "." + name;
+                    }
+                } else {
+                    return name;
+                }
+            }).join(", ");
+
+        } else if (typeof this.expressionMap.returning === "string") {
+            return this.expressionMap.returning;
+        }
+
+        return "";
+    }
+
+    /**
+     * If returning / output cause is set to array of column names,
+     * then this method will return all column metadatas of those column names.
+     */
+    protected getReturningColumns(): ColumnMetadata[] {
+        const columns: ColumnMetadata[] = [];
+        if (this.expressionMap.returning instanceof Array) {
+            (this.expressionMap.returning as string[]).forEach(columnName => {
+                if (this.expressionMap.mainAlias!.hasMetadata) {
+                    columns.push(...this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(columnName));
+                }
+            });
+        }
+        return columns;
+    }
+
+    /**
      * Concatenates all added where expressions into one string.
      */
     protected createWhereExpressionString(): string {
@@ -575,34 +659,40 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates "WHERE" expression and variables for the given "ids".
      */
-    protected createWhereIdsExpression(ids: any[]): [string, ObjectLiteral] {
+    protected createWhereIdsExpression(ids: any|any[]): string {
+        ids = ids instanceof Array ? ids : [ids];
         const metadata = this.expressionMap.mainAlias!.metadata;
 
         // create shortcuts for better readability
         const alias = this.expressionMap.aliasNamePrefixingEnabled ? this.escape(this.expressionMap.mainAlias!.name) + "." : "";
-        const parameters: ObjectLiteral = {};
-        const whereStrings = ids.map((id, index) => {
-            id = id instanceof Object ? id : metadata.createEntityIdMap(id);
+        let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
+        const whereStrings = (ids as any[]).map((id, index) => {
+            id = metadata.ensureEntityIdMap(id);
             const whereSubStrings: string[] = [];
             metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
-                whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
-                parameters["id_" + index + "_" + secondIndex] = primaryColumn.getEntityValue(id);
+                const parameterName = "id_" + index + "_" + secondIndex;
+                // whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
+                whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + " = " + this.connection.driver.createParameter(parameterName, parameterIndex));
+                this.expressionMap.nativeParameters[parameterName] = primaryColumn.getEntityValue(id);
+                parameterIndex++;
             });
             metadata.parentIdColumns.forEach((parentIdColumn, secondIndex) => {
-                whereSubStrings.push(alias + this.escape(parentIdColumn.databaseName) + "=:parentId_" + index + "_" + secondIndex);
-                parameters["parentId_" + index + "_" + secondIndex] = parentIdColumn.getEntityValue(id);
+                // whereSubStrings.push(alias + this.escape(parentIdColumn.databaseName) + "=:parentId_" + index + "_" + secondIndex);
+                const parameterName = "parentId_" + index + "_" + secondIndex;
+                whereSubStrings.push(alias + this.escape(parentIdColumn.databaseName) + " = " + this.connection.driver.createParameter(parameterName, parameterIndex));
+                this.expressionMap.nativeParameters[parameterName] = parentIdColumn.getEntityValue(id);
+                parameterIndex++;
             });
             return whereSubStrings.join(" AND ");
         });
 
-        const whereString = whereStrings.length > 1 ? "(" + whereStrings.join(" OR ") + ")" : whereStrings[0];
-        return [whereString, parameters];
+        return whereStrings.length > 1 ? whereStrings.map(whereString => "(" + whereString + ")").join(" OR ") : whereStrings[0];
     }
 
     /**
      * Computes given where argument - transforms to a where string all forms it can take.
      */
-    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets|ObjectLiteral) {
+    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[]) {
         if (typeof where === "string")
             return where;
 
@@ -617,36 +707,52 @@ export abstract class QueryBuilder<Entity> {
             return where(this);
 
         } else if (where instanceof Object) {
-            if (this.expressionMap.mainAlias!.metadata) {
-                const propertyPaths = EntityMetadataUtils.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
-                propertyPaths.forEach((propertyPath, index) => {
-                    const parameterValue = EntityMetadataUtils.getPropertyPathValue((where as ObjectLiteral), propertyPath);
-                    const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : propertyPath;
-                    if (parameterValue === null) {
-                        ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
+            const wheres: ObjectLiteral[] = where instanceof Array ? where : [where];
+            let andConditions: string[];
 
-                    } else {
-                        const parameterName = "where_" + index;
-                        ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
-                        this.setParameter(parameterName, parameterValue);
-                    }
+            if (this.expressionMap.mainAlias!.hasMetadata) {
+                andConditions = wheres.map((where, whereIndex) => {
+                    const propertyPaths = EntityMetadataUtils.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
+
+                    return propertyPaths.map((propertyPath, propertyIndex) => {
+                        const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);
+                        return columns.map((column, columnIndex) => {
+
+                            const parameterValue = EntityMetadataUtils.getPropertyPathValue(where, column.propertyPath);
+                            const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
+                            if (parameterValue === null) {
+                                return `${aliasPath} IS NULL`;
+
+                            } else {
+                                const parameterName = "where_" + whereIndex + "_" + propertyIndex + "_" + columnIndex;
+                                this.setParameter(parameterName, parameterValue);
+                                return `${aliasPath} = :${parameterName}`;
+                            }
+                        }).join(" AND ");
+                    }).join(" AND ");
                 });
 
             } else {
-                Object.keys(where).forEach((key, index) => {
-                    const parameterValue = (where as ObjectLiteral)[key];
-                    const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${key}` : key;
-                    if (parameterValue === null) {
-                        ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
+                andConditions = wheres.map((where, whereIndex) => {
+                    return Object.keys(where).map((key, parameterIndex) => {
+                        const parameterValue = where[key];
+                        const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${key}` : key;
+                        if (parameterValue === null) {
+                            return `${aliasPath} IS NULL`;
 
-                    } else {
-                        const parameterName = "where_" + index;
-                        ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
-                        this.setParameter(parameterName, parameterValue);
-                    }
+                        } else {
+                            const parameterName = "where_" + whereIndex + "_" + parameterIndex;
+                            this.setParameter(parameterName, parameterValue);
+                            return `${aliasPath} = :${parameterName}`;
+                        }
+                    }).join(" AND ");
                 });
-
             }
+
+            if (andConditions.length > 1)
+                return andConditions.map(where => "(" + where + ")").join(" OR ");
+
+            return andConditions.join("");
         }
 
         return "";

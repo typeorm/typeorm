@@ -102,8 +102,8 @@ describe("mongodb > basic repository actions", () => {
         }
         await postRepository.save(posts);
 
-        // assert findOneById method
-        const loadedPost1 = await postRepository.findOneById(post1.id);
+        // assert.findOne method
+        const loadedPost1 = await postRepository.findOne(post1.id);
         expect(loadedPost1!.id).to.be.eql(post1.id);
         expect(loadedPost1!.title).to.be.equal("First Post");
         expect(loadedPost1!.text).to.be.equal("Everything about first post");
@@ -231,7 +231,7 @@ describe("mongodb > basic repository actions", () => {
         post2.text = "Everything about second post";
         await postRepository.save(post2);
 
-        const loadedPost1 = await postRepository.findOneById(post1.id);
+        const loadedPost1 = await postRepository.findOne(post1.id);
         await postRepository.remove(loadedPost1!);
         await postRepository.remove(post2);
 

@@ -1,56 +1,7 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {RelationMetadata} from "../metadata/RelationMetadata";
-import {DateUtils} from "../util/DateUtils";
-
-/**
- * Holds information about insert operation into junction table.
- */
-export interface JunctionInsert {
-
-    /**
-     * Relation of the junction table.
-     */
-    relation: RelationMetadata;
-
-    /**
-     * Entities that needs to be "bind" to the subject.
-     */
-    junctionEntities: ObjectLiteral[];
-}
-
-/**
- * Holds information about remove operation from the junction table.
- */
-export interface JunctionRemove {
-
-    /**
-     * Relation of the junction table.
-     */
-    relation: RelationMetadata;
-
-    /**
-     * Entity ids that needs to be removed from the junction table.
-     */
-    junctionRelationIds: any[];
-}
-
-/**
- * Holds information about relation update in some subject.
- */
-export interface RelationUpdate {
-
-    /**
-     * Relation that needs to be updated.
-     */
-    relation: RelationMetadata;
-
-    /**
-     * New value that needs to be set into into new relation.
-     */
-    value: any;
-}
+import {SubjectChangeMap} from "./SubjectChangeMap";
+import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * Subject is a subject of persistence.
@@ -65,36 +16,52 @@ export interface RelationUpdate {
 export class Subject {
 
     // -------------------------------------------------------------------------
-    // Private Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Persist entity (changed entity).
-     */
-    private _persistEntity?: ObjectLiteral;
-
-    /**
-     * Database entity.
-     */
-    private _databaseEntity?: ObjectLiteral;
-
-    // -------------------------------------------------------------------------
-    // Public Readonly Properties
+    // Properties
     // -------------------------------------------------------------------------
 
     /**
      * Entity metadata of the subject entity.
      */
-    readonly metadata: EntityMetadata;
+    metadata: EntityMetadata;
 
     /**
-     * Date when this entity is persisted.
+     * Subject identifier.
+     * This identifier is not limited to table entity primary columns.
+     * This can be entity id or ids as well as some unique entity properties, like name or title.
+     * Insert / Update / Remove operation will be executed by a given identifier.
      */
-    readonly date: Date = new Date();
+    identifier: ObjectLiteral|undefined = undefined;
 
-    // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
+    /**
+     * Gets entity sent to the persistence (e.g. changed entity).
+     * If entity is not set then this subject is created only for the entity loaded from the database,
+     * or this subject is used for the junction operation (junction operations are relying only on identifier).
+     */
+    entity?: ObjectLiteral;
+
+    /**
+     * Database entity.
+     * THIS IS NOT RAW ENTITY DATA, its a real entity.
+     */
+    databaseEntity?: ObjectLiteral;
+
+    /**
+     * Changes needs to be applied in the database for the given subject.
+     */
+    changeMaps: SubjectChangeMap[] = [];
+
+    /**
+     * Generated values returned by a database (for example generated id or default values).
+     * Used in insert and update operations.
+     * Has entity-like structure (not just column database name and values).
+     */
+    generatedMap?: ObjectLiteral;
+
+    /**
+     * Inserted values with updated values of special and default columns.
+     * Has entity-like structure (not just column database name and values).
+     */
+    insertedValueSet?: ObjectLiteral;
 
     /**
      * Indicates if this subject can be inserted into the database.
@@ -114,56 +81,40 @@ export class Subject {
      */
     mustBeRemoved: boolean = false;
 
-    /**
-     * Differentiated columns between persisted and database entities.
-     */
-    diffColumns: ColumnMetadata[] = [];
-
-    /**
-     * Differentiated relations between persisted and database entities.
-     */
-    diffRelations: RelationMetadata[] = [];
-
-    /**
-     * List of relations which need to be unset.
-     * This is used to update relation from inverse side.
-     */
-    relationUpdates: RelationUpdate[] = [];
-
-    /**
-     * Records that needs to be inserted into the junction tables of this subject.
-     */
-    junctionInserts: JunctionInsert[] = [];
-
-    /**
-     * Records that needs to be removed from the junction tables of this subject.
-     */
-    junctionRemoves: JunctionRemove[] = [];
-
-    /**
-     * When subject is newly persisted it may have a generated entity id.
-     * In this case it should be written here.
-     */
-    generatedMap?: ObjectLiteral;
-
-    /**
-     * Generated id of the parent entity. Used in the class-table-inheritance.
-     */
-    parentGeneratedId?: any;
-
-    /**
-     * Used in newly persisted entities which are tree tables.
-     */
-    treeLevel?: number;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) {
-        this.metadata = metadata;
-        this._persistEntity = entity;
-        this._databaseEntity = databaseEntity;
+    constructor(options: {
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+        canBeInserted?: boolean,
+        canBeUpdated?: boolean,
+        mustBeRemoved?: boolean,
+        identifier?: ObjectLiteral,
+        changeMaps?: SubjectChangeMap[]
+    }) {
+        this.metadata = options.metadata;
+        this.entity = options.entity;
+        this.databaseEntity = options.databaseEntity;
+        if (options.canBeInserted !== undefined)
+            this.canBeInserted = options.canBeInserted;
+        if (options.canBeUpdated !== undefined)
+            this.canBeUpdated = options.canBeUpdated;
+        if (options.mustBeRemoved !== undefined)
+            this.mustBeRemoved = options.mustBeRemoved;
+        if (options.identifier !== undefined)
+            this.identifier = options.identifier;
+        if (options.changeMaps !== undefined)
+            this.changeMaps.push(...options.changeMaps);
+
+        if (this.entity) {
+            this.identifier = this.metadata.getEntityIdMap(this.entity);
+
+        } else if (this.databaseEntity) {
+            this.identifier = this.metadata.getEntityIdMap(this.databaseEntity);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -171,66 +122,12 @@ export class Subject {
     // -------------------------------------------------------------------------
 
     /**
-     * Gets entity sent to the persistence (e.g. changed entity).
-     * Throws error if persisted entity was not set.
-     */
-    get entity(): ObjectLiteral {
-        if (!this._persistEntity)
-            throw new Error(`Persistence entity is not set for the given subject.`);
-
-        return this._persistEntity;
-    }
-
-    /**
-     * Checks if subject has a persisted entity.
-     */
-    get hasEntity(): boolean {
-        return !!this._persistEntity;
-    }
-
-    /**
-     * Gets entity from the database (e.g. original entity).
-     * THIS IS NOT RAW ENTITY DATA.
-     * Throws error if database entity was not set.
-     */
-    get databaseEntity(): ObjectLiteral {
-        if (!this._databaseEntity)
-            throw new Error(`Database entity is not set for the given subject.`);
-
-        return this._databaseEntity;
-    }
-
-    /**
-     * Checks if subject has a database entity.
-     */
-    get hasDatabaseEntity(): boolean {
-        return !!this._databaseEntity;
-    }
-
-    /**
-     * Sets entity from the database (e.g. original entity).
-     * Once database entity set it calculates differentiated columns and relations
-     * between persistent entity and database entity.
-     */
-    set databaseEntity(databaseEntity: ObjectLiteral) {
-        this._databaseEntity = databaseEntity;
-        this.recompute();
-    }
-
-    /**
-     * Gets entity target from the entity metadata of this subject.
-     */
-    get entityTarget(): Function|string {
-        return this.metadata.target;
-    }
-
-    /**
      * Checks if this subject must be inserted into the database.
      * Subject can be inserted into the database if it is allowed to be inserted (explicitly persisted or by cascades)
      * and if it does not have database entity set.
      */
     get mustBeInserted() {
-        return this.canBeInserted && !this.hasDatabaseEntity;
+        return this.canBeInserted && !this.databaseEntity;
     }
 
     /**
@@ -239,173 +136,72 @@ export class Subject {
      * and if it does have differentiated columns or relations.
      */
     get mustBeUpdated() {
-        return this.canBeUpdated && (this.diffColumns.length > 0 || this.diffRelations.length > 0);
+        return this.canBeUpdated && this.identifier && (this.changeMaps.length > 0 || !!this.metadata.objectIdColumn); // for mongodb we do not compute changes - we always update entity
     }
-
-    /**
-     * Checks if this subject has relations to be updated.
-     */
-    get hasRelationUpdates(): boolean {
-        return this.relationUpdates.length > 0;
-    }
-
-    /**
-     * Gets id of the persisted entity.
-     * If entity is not set then it returns undefined.
-     * If entity itself has an id then it simply returns it.
-     * If entity does not have an id then it returns newly generated id.
-
-    get getPersistedEntityIdMap(): any|undefined {
-        if (!this.hasEntity)
-            return undefined;
-
-        const entityIdMap = this.metadata.getDatabaseEntityIdMap(this.entity);
-        if (entityIdMap)
-            return entityIdMap;
-
-        if (this.newlyGeneratedId)
-            return this.metadata.createSimpleDatabaseIdMap(this.newlyGeneratedId);
-
-        return undefined;
-    }*/
 
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
     /**
-     * Validates this subject for errors.
-     * Subject cannot be at the same time inserted and updated, removed and inserted, removed and updated.
+     * Creates a value set needs to be inserted / updated in the database.
+     * Value set is based on the entity and change maps of the subject.
+     * Important note: this method pops data from this subject's change maps.
      */
-    validate() {
+    createValueSetAndPopChangeMap(): ObjectLiteral {
+        const changeMapsWithoutValues: SubjectChangeMap[] = [];
+        const changeSet = this.changeMaps.reduce((updateMap, changeMap) => {
+            let value = changeMap.value;
+            if (value instanceof Subject) {
 
-        if (this.mustBeInserted && this.mustBeRemoved)
-            throw new Error(`Removed entity ${this.metadata.name} is also scheduled for insert operation. This looks like ORM problem. Please report a github issue.`);
+                // referenced columns can refer on values both which were just inserted and which were present in the model
+                // if entity was just inserted valueSets must contain all values from the entity and values just inserted in the database
+                // so, here we check if we have a value set then we simply use it as value to get our reference column values
+                // otherwise simply use an entity which cannot be just inserted at the moment and have all necessary data
+                value = value.insertedValueSet ? value.insertedValueSet : value.entity;
+            }
+            // value = changeMap.valueFactory ? changeMap.valueFactory(value) : changeMap.column.createValueMap(value);
 
-        if (this.mustBeUpdated && this.mustBeRemoved)
-            throw new Error(`Removed entity "${this.metadata.name}" is also scheduled for update operation. ` +
-                `Make sure you are not updating and removing same object (note that update or remove may be executed by cascade operations).`);
+            let valueMap: ObjectLiteral|undefined;
+            if (this.metadata.isJunction && changeMap.column) {
+                valueMap = changeMap.column.createValueMap(changeMap.column.referencedColumn!.getEntityValue(value));
 
-        if (this.mustBeInserted && this.mustBeUpdated)
-            throw new Error(`Inserted entity ${this.metadata.name} is also scheduled for updated operation. This looks like ORM problem. Please report a github issue.`);
+            } else if (changeMap.column) {
+                valueMap = changeMap.column.createValueMap(value);
 
-    }
+            } else if (changeMap.relation) {
 
-    /**
-     * Performs entity re-computations.
-     */
-    recompute() {
-        if (this.hasEntity && this._databaseEntity) {
-            this.computeDiffColumns();
-            this.computeDiffRelationalColumns();
-        }
-    }
+                // value can be a related object, for example: post.question = { id: 1 }
+                // or value can be a null or direct relation id, e.g. post.question = 1
+                // if its a direction relation id then we just set it to the valueMap,
+                // however if its an object then we need to extract its relation id map and set it to the valueMap
+                if (value instanceof Object) {
 
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
+                    // get relation id, e.g. referenced column name and its value,
+                    // for example: { id: 1 } which then will be set to relation, e.g. post.category = { id: 1 }
+                    const relationId = changeMap.relation!.getRelationIdMap(value);
 
-    /**
-     * Differentiate columns from the updated entity and entity stored in the database.
-     */
-    protected computeDiffColumns(): void {
-        this.diffColumns = this.metadata.columns.filter(column => {
+                    // but relation id can be empty, for example in the case when you insert a new post with category
+                    // and both post and category are newly inserted objects (by cascades) and in this case category will not have id
+                    // this means we need to insert post without question id and update post's questionId once question be inserted
+                    // that's why we create a new changeMap operation for future updation of the post entity
+                    if (relationId === undefined) {
+                        changeMapsWithoutValues.push(changeMap);
+                        this.canBeUpdated = true;
+                        return updateMap;
+                    }
+                    valueMap = changeMap.relation!.createValueMap(relationId);
 
-            // prepare both entity and database values to make comparision
-            let entityValue = column.getEntityValue(this.entity);
-            let databaseValue = column.getEntityValue(this.databaseEntity);
-            if (entityValue === undefined)
-                return false;
-
-            // normalize special values to make proper comparision (todo: arent they already normalized at this point?!)
-            if (entityValue !== null && entityValue !== undefined) {
-                if (column.type === "date") {
-                    entityValue = DateUtils.mixedDateToDateString(entityValue);
-
-                } else if (column.type === "time") {
-                    entityValue = DateUtils.mixedDateToTimeString(entityValue);
-
-                } else if (column.type === "datetime" || column.type === Date) {
-                    entityValue = DateUtils.mixedDateToUtcDatetimeString(entityValue);
-                    databaseValue = DateUtils.mixedDateToUtcDatetimeString(databaseValue);
-
-                } else if (column.type === "json" || column.type === "jsonb") {
-                    entityValue = JSON.stringify(entityValue);
-                    if (databaseValue !== null && databaseValue !== undefined)
-                        databaseValue = JSON.stringify(databaseValue);
-
-                } else if (column.type === "sample-array") {
-                    entityValue = DateUtils.simpleArrayToString(entityValue);
-                    databaseValue = DateUtils.simpleArrayToString(databaseValue);
+                } else { // value can be "null" or direct relation id here
+                    valueMap = changeMap.relation!.createValueMap(value);
                 }
             }
-            // todo: this mechanism does not get in count embeddeds in embeddeds
 
-            // if value is not defined then no need to update it
-            // if (!column.isInEmbedded && this.entity[column.propertyName] === undefined)
-            //     return false;
-            //
-            // if value is in embedded and is not defined then no need to update it
-            // if (column.isInEmbedded && (this.entity[column.embeddedProperty] === undefined || this.entity[column.embeddedProperty][column.propertyName] === undefined))
-            //     return false;
-
-            // if its a special column or value is not changed - then do nothing
-            if (column.isVirtual ||
-                column.isParentId ||
-                column.isDiscriminator ||
-                column.isUpdateDate ||
-                column.isVersion ||
-                column.isCreateDate ||
-                entityValue === databaseValue)
-                return false;
-
-            // filter out "relational columns" only in the case if there is a relation object in entity
-            const relation = this.metadata.findRelationWithDbName(column.databaseName);
-            if (relation) {
-                const value = relation.getEntityValue(this.entity);
-                if (value !== null && value !== undefined)
-                    return false;
-            }
-
-            return true;
-        });
-    }
-
-    /**
-     * Difference columns of the owning one-to-one and many-to-one columns.
-     */
-    protected computeDiffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */): void {
-        this.diffRelations = this.metadata.relations.filter(relation => {
-            if (!relation.isManyToOne && !(relation.isOneToOne && relation.isOwning))
-                return false;
-
-            // here we cover two scenarios:
-            // 1. related entity can be another entity which is natural way
-            // 2. related entity can be entity id which is hacked way of updating entity
-            // todo: what to do if there is a column with relationId? (cover this too?)
-            const entityValue = relation.getEntityValue(this.entity);
-            const updatedEntityRelationId: any = entityValue instanceof Object
-                    ? relation.inverseEntityMetadata.getEntityIdMixedMap(entityValue)
-                    : entityValue;
-
-            const dbEntityRelationId = relation.getEntityValue(this.databaseEntity);
-
-            // todo: try to find if there is update by relation operation - we dont need to generate update relation operation for this
-            // todo: if (updatesByRelations.find(operation => operation.targetEntity === this && operation.updatedRelation === relation))
-            // todo:     return false;
-
-            // we don't perform operation over undefined properties
-            if (updatedEntityRelationId === undefined)
-                return false;
-
-            // if both are empty totally no need to do anything
-            if ((updatedEntityRelationId === undefined || updatedEntityRelationId === null) &&
-                (dbEntityRelationId === undefined || dbEntityRelationId === null))
-                return false;
-
-            // if relation ids aren't equal then we need to update them
-            return updatedEntityRelationId !== dbEntityRelationId;
-        });
+            OrmUtils.mergeDeep(updateMap, valueMap);
+            return updateMap;
+        }, {} as ObjectLiteral);
+        this.changeMaps = changeMapsWithoutValues;
+        return changeSet;
     }
 
 }

@@ -11,7 +11,7 @@ import {getRepository} from "typeorm";
 import {User} from "./entity/User";
 
 const userRepository = getRepository(User); // you can also get it via getConnection().getRepository() or getManager().getRepository()
-const user = await userRepository.findOneById(1);
+const user = await userRepository.findOne(1);
 user.name = "Umed";
 await userRepository.save(user);
 ```

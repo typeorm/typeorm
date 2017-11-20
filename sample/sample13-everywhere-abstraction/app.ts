@@ -60,7 +60,7 @@ createConnection(options).then(connection => {
         .save(post)
         .then(post => {
             console.log("Post has been saved");
-            return postRepository.findOneById(post.id);
+            return postRepository.findOne(post.id);
         })
         .then(loadedPost => {
             console.log("post is loaded: ", loadedPost);
@@ -68,7 +68,7 @@ createConnection(options).then(connection => {
         })
         .then(blog => {
             console.log("Blog has been saved");
-            return blogRepository.findOneById(blog.id);
+            return blogRepository.findOne(blog.id);
         })
         .then(loadedBlog => {
             console.log("blog is loaded: ", loadedBlog);

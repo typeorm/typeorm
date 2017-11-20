@@ -87,17 +87,18 @@ describe("one-to-one", function() {
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
             
-            return postRepository.findOneById(savedPost.id).should.eventually.eql(expectedPost);
+            return postRepository.findOne(savedPost.id).should.eventually.eql(expectedPost);
         });
 
-        it("should have inserted post details in the database", function() {
+        it("should have inserted post details in the database", async function() {
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedPost.details.id;
             expectedDetails.authorName = savedPost.details.authorName;
             expectedDetails.comment = savedPost.details.comment;
             expectedDetails.metadata = savedPost.details.metadata;
-            
-            return postDetailsRepository.findOneById(savedPost.details.id).should.eventually.eql(expectedDetails);
+
+            const loadedPostDetails = await postDetailsRepository.findOne(savedPost.details.id);
+            loadedPostDetails!.should.be.eql(expectedDetails);
         });
 
         it("should load post and its details if left join used", async function() {
@@ -208,14 +209,14 @@ describe("one-to-one", function() {
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
-            return postRepository.findOneById(savedPost.id).should.eventually.eql(expectedPost);
+            return postRepository.findOne(savedPost.id).should.eventually.eql(expectedPost);
         });
 
         it("should have inserted category in the database", function() {
             const expectedPost = new PostCategory();
             expectedPost.id = savedPost.category.id;
             expectedPost.name = "technology";
-            return postCategoryRepository.findOneById(savedPost.category.id).should.eventually.eql(expectedPost);
+            return postCategoryRepository.findOne(savedPost.category.id).should.eventually.eql(expectedPost);
         });
 
         it("should load post and its category if left join used", function() {
@@ -322,6 +323,7 @@ describe("one-to-one", function() {
         });
     });
 
+    // todo: check why it generates extra query
     describe("cascade updates should be executed when cascadeUpdate option is set", function() {
         let newPost: Post, newImage: PostImage;
 

@@ -13,7 +13,7 @@ import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {EntityManager} from "../../entity-manager/EntityManager";
-import {InsertResult} from "../InsertResult";
+import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -36,6 +36,11 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Broadcaster used on this query runner to broadcast entity events.
+     */
+    broadcaster: Broadcaster;
 
     /**
      * Isolated entity manager working only with current query runner.
@@ -77,7 +82,8 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AbstractSqliteDriver) {}
+    constructor(driver: AbstractSqliteDriver) {
+    }
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -146,38 +152,6 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      */
     stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
         throw new Error(`Stream is not supported by sqlite driver.`);
-    }
-
-    /**
-     * Insert a new row with given values into the given table.
-     * Returns value of the generated column if given and generate column exist in the table.
-     */
-    async insert(tableName: string, keyValues: ObjectLiteral): Promise<InsertResult> {
-        throw new Error("Do not use AbstractSqlite directly, it has to be used with one of the sqlite drivers");
-    }
-
-    /**
-     * Updates rows that match given conditions in the given table.
-     */
-    async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
-        const updateValues = this.parametrize(valuesMap).join(", ");
-        const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
-        const query = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
-        const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
-        const conditionParams = Object.keys(conditions).map(key => conditions[key]);
-        const allParameters = updateParams.concat(conditionParams);
-        await this.query(query, allParameters);
-    }
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
-    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
-        const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
-        const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
-
-        const sql = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
-        await this.query(sql, parameters);
     }
 
     /**

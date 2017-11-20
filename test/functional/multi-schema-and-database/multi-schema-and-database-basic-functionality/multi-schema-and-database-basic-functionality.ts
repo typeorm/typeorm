@@ -21,7 +21,6 @@ describe("multi-schema-and-database > basic-functionality", () => {
                 entities: [Post, User, Category],
                 enabledDrivers: ["mssql", "postgres"],
                 schema: "custom",
-                dropSchema: true,
             });
         });
         beforeEach(() => reloadTestingDatabases(connections));
@@ -157,7 +156,6 @@ describe("multi-schema-and-database > basic-functionality", () => {
             connections = await createTestingConnections({
                 entities: [Question, Answer],
                 enabledDrivers: ["mssql"],
-                dropSchema: true,
             });
         });
         beforeEach(() => reloadTestingDatabases(connections));
@@ -229,7 +227,6 @@ describe("multi-schema-and-database > basic-functionality", () => {
             connections = await createTestingConnections({
                 entities: [Person],
                 enabledDrivers: ["mssql", "mysql"],
-                dropSchema: true,
             });
         });
         beforeEach(() => reloadTestingDatabases(connections));

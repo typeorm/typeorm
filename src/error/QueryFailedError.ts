@@ -4,7 +4,11 @@
 export class QueryFailedError extends Error {
 
     constructor(query: string, parameters: any[]|undefined, driverError: any) {
-        super(driverError.toString().replace(/error: /, "").replace(/Error: /, ""));
+        super();
+        this.message = driverError.toString()
+            .replace(/^error: /, "")
+            .replace(/^Error: /, "")
+            .replace(/^Request/, "");
         Object.setPrototypeOf(this, QueryFailedError.prototype);
         Object.assign(this, {
             ...driverError,

@@ -36,7 +36,7 @@ export class RawSqlResultsToEntityTransformer {
     transform(rawResults: any[], alias: Alias): any[] {
         return this.group(rawResults, alias)
             .map(group => this.transformRawResultsGroup(group, alias))
-            .filter(res => !!res);
+            .filter(res => res !== undefined);
     }
 
     // -------------------------------------------------------------------------
@@ -101,7 +101,7 @@ export class RawSqlResultsToEntityTransformer {
 
             // if user does not selected the whole entity or he used partial selection and does not select this particular column
             // then we don't add this column and its value into the entity
-            if (!this.expressionMap.selects.find(select => select.selection === alias.name || select.selection === alias.name + "." + column.propertyName))
+            if (!this.expressionMap.selects.find(select => select.selection === alias.name || select.selection === alias.name + "." + column.propertyPath))
                 return;
 
             column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
@@ -154,9 +154,10 @@ export class RawSqlResultsToEntityTransformer {
             }
 
             // transform joined data into entities
-            const mappedEntities = this.transform(rawResults, join.alias);
-            const result = !join.isMany ? mappedEntities[0] : mappedEntities;
-            if (!result) // if nothing was joined then simply return
+            let result: any = this.transform(rawResults, join.alias);
+            result = !join.isMany ? result[0] : result;
+            result = !join.isMany && result === undefined ? null : result; // this is needed to make relations to return null when its joined but nothing was found in the database
+            if (result === undefined) // if nothing was joined then simply return
                 return;
 
             // if join was mapped to some property then save result to that property

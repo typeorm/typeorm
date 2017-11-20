@@ -139,13 +139,31 @@ export class DbQueryResultCache implements QueryResultCache {
         }
 
         if (savedCache && savedCache.identifier) { // if exist then update
-            await queryRunner.update("query-result-cache", insertedValues, { identifier: insertedValues.identifier });
+
+            await queryRunner.manager
+                .createQueryBuilder()
+                .update("query-result-cache")
+                .set(insertedValues)
+                .where({ identifier: insertedValues.identifier })
+                .execute();
 
         } else if (savedCache && savedCache.query) { // if exist then update
-            await queryRunner.update("query-result-cache", insertedValues, { query: insertedValues.query });
+
+            await queryRunner.manager
+                .createQueryBuilder()
+                .update("query-result-cache")
+                .set(insertedValues)
+                .where({ query: insertedValues.query })
+                .execute();
 
         } else { // otherwise insert
-            await queryRunner.insert("query-result-cache", insertedValues);
+
+            await queryRunner.manager
+                .createQueryBuilder()
+                .insert()
+                .into("query-result-cache")
+                .values(insertedValues)
+                .execute();
         }
     }
 
@@ -161,7 +179,12 @@ export class DbQueryResultCache implements QueryResultCache {
      */
     async remove(identifiers: string[], queryRunner?: QueryRunner): Promise<void> {
         await Promise.all(identifiers.map(identifier => {
-            return this.getQueryRunner(queryRunner).delete("query-result-cache", { identifier });
+            return this.getQueryRunner(queryRunner).manager
+                .createQueryBuilder()
+                .delete()
+                .from("query-result-cache")
+                .where(identifier)
+                .execute();
         }));
     }
 

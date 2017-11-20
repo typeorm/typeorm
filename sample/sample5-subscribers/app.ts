@@ -41,7 +41,7 @@ createConnection(options).then(connection => {
         .save(post)
         .then(post => {
             console.log("Post has been saved");
-            return postRepository.findOneById(post.id);
+            return postRepository.findOne(post.id);
         })
         .then(loadedPost => {
             console.log("---------------------------");

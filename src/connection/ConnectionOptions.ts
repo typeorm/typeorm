@@ -6,6 +6,7 @@ import {OracleConnectionOptions} from "../driver/oracle/OracleConnectionOptions"
 import {WebSqlConnectionOptions} from "../driver/websql/WebSqlConnectionOptions";
 import {MongoConnectionOptions} from "../driver/mongodb/MongoConnectionOptions";
 import {CordovaConnectionOptions} from "../driver/cordova/CordovaConnectionOptions";
+import {SqljsConnectionOptions} from "../driver/sqljs/SqljsConnectionOptions";
 
 /**
  * ConnectionOptions is an interface with settings and options for specific connection.
@@ -20,4 +21,5 @@ export type ConnectionOptions =
     OracleConnectionOptions|
     WebSqlConnectionOptions|
     CordovaConnectionOptions|
+    SqljsConnectionOptions|
     MongoConnectionOptions;

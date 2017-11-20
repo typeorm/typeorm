@@ -20,24 +20,24 @@ createConnection(options).then(connection => {
     let postRepository = connection.getRepository(Post);
     let authorRepository = connection.getRepository(Author);
 
-    const authorPromise = authorRepository.findOneById(1).then(author => {
+    const authorPromise = authorRepository.findOne(1).then(author => {
         if (!author) {
             author = new Author();
             author.name = "Umed";
             return authorRepository.save(author).then(savedAuthor => {
-                return authorRepository.findOneById(1);
+                return authorRepository.findOne(1);
             });
         }
         return author;
     });
 
-    const postPromise = postRepository.findOneById(1).then(post => {
+    const postPromise = postRepository.findOne(1).then(post => {
         if (!post) {
             post = new Post();
             post.title = "Hello post";
             post.text = "This is post contents";
             return postRepository.save(post).then(savedPost => {
-                return postRepository.findOneById(1);
+                return postRepository.findOne(1);
             });
         }
         return post;

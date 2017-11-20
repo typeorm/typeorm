@@ -7,6 +7,7 @@ export type DatabaseType =
     "mariadb"|
     "sqlite"|
     "cordova"|
+    "sqljs"|
     "oracle"|
     "mssql"|
     "websql"|

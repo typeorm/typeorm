@@ -26,7 +26,7 @@ import {
     MongoCallback,
     MongoCountPreferences,
     MongodbIndexOptions,
-    MongoError,
+    MongoError, ObjectID,
     OrderedBulkOperation,
     ParallelCollectionScanOptions,
     ReadPreference,
@@ -42,6 +42,14 @@ import {FindManyOptions} from "../find-options/FindManyOptions";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {PlatformTools} from "../platform/PlatformTools";
+import {DeepPartial} from "../common/DeepPartial";
+import {QueryPartialEntity} from "../query-builder/QueryPartialEntity";
+import {SaveOptions} from "../repository/SaveOptions";
+import {InsertResult} from "../query-builder/result/InsertResult";
+import {UpdateResult} from "../query-builder/result/UpdateResult";
+import {RemoveOptions} from "../repository/RemoveOptions";
+import {DeleteResult} from "../query-builder/result/DeleteResult";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -144,8 +152,15 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Finds first entity that matches given conditions and/or find options.
      */
-    async findOne<Entity>(entityClassOrName: ObjectType<Entity>|string, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
-        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(optionsOrConditions);
+    async findOne<Entity>(entityClassOrName: ObjectType<Entity>|string,
+                          optionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|DeepPartial<Entity>,
+                          maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        const id = (optionsOrConditions instanceof objectIdInstance) || typeof optionsOrConditions === "string" ?  optionsOrConditions : undefined;
+        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery((id ? maybeOptions : optionsOrConditions) as any) || {};
+        if (id) {
+            query["_id"] = (id instanceof objectIdInstance) ? id : new objectIdInstance(id);
+        }
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindOneOptions(optionsOrConditions)) {
             if (optionsOrConditions.order)
@@ -158,24 +173,68 @@ export class MongoEntityManager extends EntityManager {
     }
 
     /**
-     * Finds entity by given id.
-     * Optionally find options or conditions can be applied.
+     * Inserts a given entity into the database.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient INSERT query.
+     * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
+     * You can execute bulk inserts using this method.
      */
-    async findOneById<Entity>(entityClassOrName: ObjectType<Entity>|string, id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
-        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
-        query["_id"] = (id instanceof objectIdInstance)
-            ? id
-            : new objectIdInstance(id);
-        const cursor = await this.createEntityCursor(entityClassOrName, query);
-        if (FindOptionsUtils.isFindOneOptions(optionsOrConditions)) {
-            if (optionsOrConditions.order)
-                cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
+    async insert<Entity>(target: ObjectType<Entity>|string, entity: QueryPartialEntity<Entity>|QueryPartialEntity<Entity>[], options?: SaveOptions): Promise<InsertResult> {
+        // todo: convert entity to its database name
+        const result = new InsertResult();
+        if (entity instanceof Array) {
+            result.raw = await this.insertMany(target, entity);
+            result.raw.insertedIds.forEach((insertedId: any) => {
+                result.generatedMaps.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), insertedId)!);
+                result.identifiers.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), insertedId)!);
+            });
+
+        } else {
+            result.raw = await this.insertOne(target, entity);
+            result.generatedMaps.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), result.raw.insertedId)!);
+            result.identifiers.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), result.raw.insertedId)!);
         }
 
-        // const result = await cursor.limit(1).next();
-        const result = await cursor.limit(1).toArray();
-        return result.length > 0 ? result[0] : undefined;
+        return result;
+    }
+
+    /**
+     * Updates entity partially. Entity can be found by a given conditions.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient UPDATE query.
+     * Does not check if entity exist in the database.
+     */
+    async update<Entity>(target: ObjectType<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
+        if (criteria instanceof Array) {
+            await Promise.all((criteria as any[]).map(criteriaItem => {
+                return this.update(target, criteriaItem, partialEntity);
+            }));
+
+        } else {
+            const metadata = this.connection.getMetadata(target);
+            await this.updateOne(target, this.convertMixedCriteria(metadata, criteria), partialEntity);
+        }
+
+        return new UpdateResult();
+    }
+
+    /**
+     * Deletes entities by a given conditions.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient DELETE query.
+     * Does not check if entity exist in the database.
+     */
+    async delete<Entity>(target: ObjectType<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
+        if (criteria instanceof Array) {
+            await Promise.all((criteria as any[]).map(criteriaItem => {
+                return this.delete(target, criteriaItem);
+            }));
+
+        } else {
+            await this.deleteOne(target, this.convertMixedCriteria(this.connection.getMetadata(target), criteria));
+        }
+
+        return new DeleteResult();
     }
 
     // -------------------------------------------------------------------------
@@ -547,6 +606,21 @@ export class MongoEntityManager extends EntityManager {
             }
             return orderCriteria;
         }, {} as ObjectLiteral);
+    }
+
+    /**
+     * Ensures given id is an id for query.
+     */
+    protected convertMixedCriteria(metadata: EntityMetadata, idMap: any): ObjectLiteral {
+        if (idMap instanceof Object) {
+            return metadata.getValueDatabasePaths(idMap);
+        }
+
+        // means idMap is just object id
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        return {
+            "_id": (idMap instanceof objectIdInstance) ? idMap : new objectIdInstance(idMap)
+        };
     }
 
 }
