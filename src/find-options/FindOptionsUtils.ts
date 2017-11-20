@@ -19,6 +19,7 @@ export class FindOptionsUtils {
                     possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
+                    typeof possibleOptions.withDeleted === "boolean" ||
                     (possibleOptions.cache instanceof Object ||
                     typeof possibleOptions.cache === "boolean" ||
                     typeof possibleOptions.cache === "number")

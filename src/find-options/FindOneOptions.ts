@@ -35,4 +35,9 @@ export interface FindOneOptions<Entity> {
      */
     cache?: boolean | number | { id: any, milliseconds: number };
 
+    /**
+     * Disables soft-delete filtering
+     */
+    withDeleted?: boolean;
+
 }

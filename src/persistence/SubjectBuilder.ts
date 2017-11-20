@@ -118,9 +118,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
      * Builds only remove operations for entity that is being removed.
      */
     async remove(entity: Entity, metadata: EntityMetadata): Promise<void> {
+        const mainSubject = new Subject(metadata, entity);
 
         // create subject for currently removed entity and mark that it must be removed
-        const mainSubject = new Subject(metadata, entity);
         mainSubject.mustBeRemoved = true;
         this.operateSubjects.push(mainSubject);
 
@@ -142,6 +142,35 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
         // finally find which operate subjects have remove operations in their junction tables
         await this.buildJunctionOperations({ insert: false, remove: true });
+
+    }
+
+    /**
+     * Builds only soft-delete updates for entity that is being "removed".
+     */
+    async softDelete(entity: Entity, metadata: EntityMetadata): Promise<void> {
+        if (metadata.softDeletedDateColumn) {
+            entity[metadata.softDeletedDateColumn.propertyName] = new Date(Date.now()); // this does not seem to be triggering the update
+            const subject = new Subject(metadata, entity);
+            subject.canBeUpdated = true;
+            this.operateSubjects.push(subject);
+            await this.loadOperateSubjectsDatabaseEntities();
+            await this.buildJunctionOperations({ insert: false, remove: false });
+        }
+    }
+
+    /**
+     * Build only soft-delete updates for entity that is being restored.
+     */
+    async restore(entity: Entity, metadata: EntityMetadata): Promise<void> {
+        if (metadata.softDeletedDateColumn) {
+            entity[metadata.softDeletedDateColumn.propertyName] = null; // this does not seem to be triggering the update
+            const subject = new Subject(metadata, entity);
+            subject.canBeUpdated = true;
+            this.operateSubjects.push(subject);
+            await this.loadOperateSubjectsDatabaseEntities();
+            await this.buildJunctionOperations({ insert: false, remove: false });
+        }
     }
 
     // -------------------------------------------------------------------------

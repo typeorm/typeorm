@@ -4,4 +4,4 @@
  * For example, "primary" means that it will be a primary column, or "createDate" means that it will create a create
  * date column.
  */
-export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"version"|"treeChildrenCount"|"treeLevel"|"discriminator"|"parentId"|"objectId"|"array";
+export type ColumnMode = "regular"|"virtual"|"createDate"|"updateDate"|"softDeleteDate"|"version"|"treeChildrenCount"|"treeLevel"|"discriminator"|"parentId"|"objectId"|"array";

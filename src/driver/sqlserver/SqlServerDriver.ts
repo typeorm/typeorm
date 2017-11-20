@@ -133,6 +133,7 @@ export class SqlServerDriver implements Driver {
         createDateDefault: "getdate()",
         updateDate: "datetime2",
         updateDateDefault: "getdate()",
+        softDeleteDate: "datetime2",
         version: "int",
         treeLevel: "int",
         migrationName: "varchar",

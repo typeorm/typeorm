@@ -128,6 +128,7 @@ export class OracleDriver implements Driver {
         createDateDefault: "CURRENT_TIMESTAMP",
         updateDate: "datetime",
         updateDateDefault: "CURRENT_TIMESTAMP",
+        softDeleteDate: "datetime",
         version: "number",
         treeLevel: "number",
         migrationName: "nvarchar",

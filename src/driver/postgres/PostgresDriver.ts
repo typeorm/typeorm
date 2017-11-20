@@ -149,6 +149,7 @@ export class PostgresDriver implements Driver {
         createDateDefault: "now()",
         updateDate: "timestamp",
         updateDateDefault: "now()",
+        softDeleteDate: "timestamp",
         version: "int",
         treeLevel: "int",
         migrationName: "varchar",

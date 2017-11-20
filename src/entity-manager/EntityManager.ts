@@ -412,6 +412,110 @@ export class EntityManager {
             .execute();
     }
 
+
+    /**
+     * Removes a given entity from the database.
+     */
+    restore<Entity>(entities: Entity[]): Promise<Entity[]>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    restore<Entity>(entity: Entity): Promise<Entity>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    restore<Entity>(targetOrEntity: ObjectType<Entity>|string, entity: Entity[]): Promise<Entity[]>;
+
+    /**
+     * Removes a given entity from the database.
+     */
+    restore<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[]): Promise<Entity|Entity[]> {
+
+        const target = (arguments.length > 1 && (targetOrEntity instanceof Function || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
+        const entity: Entity|Entity[] = target ? maybeEntity as Entity|Entity[] : targetOrEntity as Entity|Entity[];
+
+        return Promise.resolve().then(async () => {
+            const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+            const transactionEntityManager = this.connection.createEntityManager(queryRunner);
+
+            try {
+                const executors: SubjectOperationExecutor[] = [];
+                if (entity instanceof Array) {
+                    await Promise.all(entity.map(async entity => {
+                        const entityTarget = target ? target : entity.constructor;
+                        const metadata = this.connection.getMetadata(entityTarget);
+
+                        const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
+
+                        if (metadata.softDeletedDateColumn) {
+                            await databaseEntityLoader.restore(entity, metadata);
+                        }
+
+                        const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
+                        executors.push(executor);
+                    }));
+
+                } else {
+                    const finalTarget = target ? target : entity.constructor;
+                    const metadata = this.connection.getMetadata(finalTarget);
+
+                    const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
+                    if (metadata.softDeletedDateColumn) {
+                        await databaseEntityLoader.restore(entity, metadata);
+                    }
+
+                    const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
+                    executors.push(executor);
+                }
+
+                const executorsNeedsToBeExecuted = executors.filter(executor => executor.areExecutableOperations());
+                if (executorsNeedsToBeExecuted.length) {
+
+                    // start execute queries in a transaction
+                    // if transaction is already opened in this query runner then we don't touch it
+                    // if its not opened yet then we open it here, and once we finish - we close it
+                    let isTransactionStartedByItself = false;
+                    try {
+
+                        // open transaction if its not opened yet
+                        if (!queryRunner.isTransactionActive) {
+                            isTransactionStartedByItself = true;
+                            await queryRunner.startTransaction();
+                        }
+
+                        await Promise.all(executorsNeedsToBeExecuted.map(executor => {
+                            return executor.execute();
+                        }));
+
+                        // commit transaction if it was started by us
+                        if (isTransactionStartedByItself === true)
+                            await queryRunner.commitTransaction();
+
+                    } catch (error) {
+
+                        // rollback transaction if it was started by us
+                        if (isTransactionStartedByItself) {
+                            try {
+                                await queryRunner.rollbackTransaction();
+                            } catch (rollbackError) { }
+                        }
+
+                        throw error;
+                    }
+                }
+
+            } finally {
+                if (!this.queryRunner) // release it only if its created by this method
+                    await queryRunner.release();
+            }
+
+            return entity;
+        });
+    }
+
+
     /**
      * Removes a given entity from the database.
      */
@@ -456,7 +560,12 @@ export class EntityManager {
                         const metadata = this.connection.getMetadata(entityTarget);
 
                         const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-                        await databaseEntityLoader.remove(entity, metadata);
+
+                        if (metadata.softDeletedDateColumn) {
+                            await databaseEntityLoader.softDelete(entity, metadata);
+                        } else {
+                            await databaseEntityLoader.remove(entity, metadata);
+                        }
 
                         const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
                         executors.push(executor);
@@ -467,7 +576,11 @@ export class EntityManager {
                     const metadata = this.connection.getMetadata(finalTarget);
 
                     const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-                    await databaseEntityLoader.remove(entity, metadata);
+                    if (metadata.softDeletedDateColumn) {
+                        await databaseEntityLoader.softDelete(entity, metadata);
+                    } else {
+                        await databaseEntityLoader.remove(entity, metadata);
+                    }
 
                     const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
                     executors.push(executor);
@@ -591,6 +704,7 @@ export class EntityManager {
     count<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<number> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
+        this.excludeSoftDeleted(qb, qb.alias, metadata, optionsOrConditions);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getCount();
     }
 
@@ -611,6 +725,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         this.joinEagerRelations(qb, qb.alias, metadata);
+        this.excludeSoftDeleted(qb, qb.alias, metadata, optionsOrConditions);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
     }
 
@@ -637,6 +752,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         this.joinEagerRelations(qb, qb.alias, metadata);
+        this.excludeSoftDeleted(qb, qb.alias, metadata, optionsOrConditions);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
     }
 
@@ -689,6 +805,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || metadata.name);
         this.joinEagerRelations(qb, qb.alias, metadata);
+        this.excludeSoftDeleted(qb, qb.alias, metadata, optionsOrConditions);
         return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getOne();
     }
 
@@ -860,6 +977,16 @@ export class EntityManager {
             qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
             this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
         });
+    }
+
+    /**
+     * Adds soft delete if needed to a find query
+     */
+    protected excludeSoftDeleted(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata, optionsOrConditions: FindManyOptions<any>|Partial<any>|undefined) {
+        if (metadata.softDeletedDateColumn && ( !optionsOrConditions || !FindOptionsUtils.isFindOneOptions(optionsOrConditions) ||
+                !(<FindOneOptions<any>>optionsOrConditions).withDeleted)) {
+            qb.andWhere(alias + "." + metadata.softDeletedDateColumn.databaseName + " IS NULL");
+        }
     }
 
 }
