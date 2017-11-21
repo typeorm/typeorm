@@ -99,7 +99,9 @@ export class FindOptionsUtils {
 
         if (options.where) {
             for (const property in options.where) {
-                const data: any[] | {} = (<any>options.where)[property];
+                const data: any[] | {
+                    range?: [number, number] | [number, null] | [null, number];
+                } = (<any>options.where)[property];
                 if (Array.isArray(data)) {
                     qb.where({
                         [property]: data.shift(),
@@ -108,6 +110,15 @@ export class FindOptionsUtils {
                         qb.orWhere(`${qb.alias}.${property} = :${property}`, {
                             [property]: where,
                         });
+                    }
+                } else if (data.range) {
+                    if (typeof data.range[0] === "number") {
+                        qb.where(`${qb.alias}.${property} >= ${data.range[0]}`);
+                        if (typeof data.range[1] === "number") {
+                            qb.andWhere(`${qb.alias}.${property} <= ${data.range[1]}`);
+                        }
+                    } else if (typeof data.range[1] === "number") {
+                        qb.where(`${qb.alias}.${property} <= ${data.range[1]}`);
                     }
                 } else {
                     qb.where(options.where);
