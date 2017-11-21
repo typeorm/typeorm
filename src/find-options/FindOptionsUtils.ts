@@ -1,6 +1,6 @@
-import {FindManyOptions} from "./FindManyOptions";
-import {FindOneOptions} from "./FindOneOptions";
-import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import { FindManyOptions } from "./FindManyOptions";
+import { FindOneOptions } from "./FindOneOptions";
+import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder";
 
 /**
  * Utilities to work with FindOptions.
@@ -10,27 +10,25 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindOneOptions interface.
      */
-    static isFindOneOptions(obj: any): obj is FindOneOptions<any> {
+    public static isFindOneOptions(obj: any): obj is FindOneOptions<any> {
         const possibleOptions: FindOneOptions<any> = obj;
         return possibleOptions &&
-                (
-                    possibleOptions.select instanceof Array ||
-                    possibleOptions.where instanceof Object ||
-                    possibleOptions.relations instanceof Array ||
-                    possibleOptions.join instanceof Object ||
-                    possibleOptions.order instanceof Object ||
-                    possibleOptions.cache instanceof Object ||
+            (
+                possibleOptions.select instanceof Array ||
+                possibleOptions.where instanceof Object ||
+                possibleOptions.relations instanceof Array ||
+                possibleOptions.join instanceof Object ||
+                possibleOptions.order instanceof Object ||
+                (possibleOptions.cache instanceof Object ||
                     typeof possibleOptions.cache === "boolean" ||
-                    typeof possibleOptions.cache === "number" ||
-                    possibleOptions.loadRelationIds instanceof Object ||
-                    typeof possibleOptions.loadRelationIds === "boolean"
-                );
+                    typeof possibleOptions.cache === "number")
+            );
     }
 
     /**
      * Checks if given object is really instance of FindManyOptions interface.
      */
-    static isFindManyOptions(obj: any): obj is FindManyOptions<any> {
+    public static isFindManyOptions(obj: any): obj is FindManyOptions<any> {
         const possibleOptions: FindManyOptions<any> = obj;
         return possibleOptions && (
             this.isFindOneOptions(possibleOptions) ||
@@ -42,51 +40,100 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindOptions interface.
      */
-    static extractFindManyOptionsAlias(object: any): string|undefined {
-        if (this.isFindManyOptions(object) && object.join)
+    public static extractFindOneOptionsAlias(object: any): string | undefined {
+        if (this.isFindOneOptions(object) && object.join) {
             return object.join.alias;
-
+        }
         return undefined;
+    }
+
+    /**
+     * Checks if given object is really instance of FindOptions interface.
+     */
+    public static extractFindManyOptionsAlias(object: any): string | undefined {
+        if (this.isFindManyOptions(object) && object.join) {
+            return object.join.alias;
+        }
+        return undefined;
+    }
+
+    /**
+     * Applies give find one options to the given query builder.
+     */
+    public static applyFindOneOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T> | Partial<T> | undefined): SelectQueryBuilder<T> {
+        if (this.isFindOneOptions(options)) {
+            return this.applyOptionsToQueryBuilder(qb, options);
+        }
+        if (options) {
+            return qb.where(options);
+        }
+        return qb;
     }
 
     /**
      * Applies give find many options to the given query builder.
      */
-    static applyFindManyOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindManyOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
-        if (this.isFindManyOptions(options))
+    public static applyFindManyOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindManyOptions<T> | Partial<T> | undefined): SelectQueryBuilder<T> {
+        if (this.isFindManyOptions(options)) {
             return this.applyOptionsToQueryBuilder(qb, options);
-
-        if (options)
+        }
+        if (options) {
             return qb.where(options);
-
+        }
         return qb;
     }
 
     /**
      * Applies give find options to the given query builder.
      */
-    static applyOptionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T>|FindManyOptions<T>|undefined): SelectQueryBuilder<T> {
+    public static applyOptionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T> | FindManyOptions<T> | undefined): SelectQueryBuilder<T> {
 
         // if options are not set then simply return query builder. This is made for simplicity of usage.
-        if (!options || (!this.isFindOneOptions(options) && !this.isFindManyOptions(options)))
+        if (!options || (!this.isFindOneOptions(options) && !this.isFindManyOptions(options))) {
             return qb;
-
+        }
         // apply all options from FindOptions
         if (options.select) {
-            qb.select(options.select.map(selection => qb.alias + "." + selection));
+            qb.select(options.select.map((selection) => qb.alias + "." + selection));
         }
 
-        if (options.where)
-            qb.where(options.where);
+        if (options.where) {
+            for (const property in options.where) {
+                const data: any[] | {
+                    range?: [number, number] | [number, null] | [null, number];
+                } = (<any>options.where)[property];
+                if (Array.isArray(data)) {
+                    qb.where({
+                        [property]: data.shift(),
+                    });
+                    for (const where of data) {
+                        qb.orWhere(`${qb.alias}.${property} = :${property}`, {
+                            [property]: where,
+                        });
+                    }
+                } else if (data.range) {
+                    if (typeof data.range[0] === "number") {
+                        qb.where(`${qb.alias}.${property} >= ${data.range[0]}`);
+                        if (typeof data.range[1] === "number") {
+                            qb.andWhere(`${qb.alias}.${property} <= ${data.range[1]}`);
+                        }
+                    } else if (typeof data.range[1] === "number") {
+                        qb.where(`${qb.alias}.${property} <= ${data.range[1]}`);
+                    }
+                } else {
+                    qb.where(options.where);
+                }
+            }
+        }
 
-        if ((options as FindManyOptions<T>).skip)
+        if ((options as FindManyOptions<T>).skip) {
             qb.skip((options as FindManyOptions<T>).skip!);
-
-        if ((options as FindManyOptions<T>).take)
+        }
+        if ((options as FindManyOptions<T>).take) {
             qb.take((options as FindManyOptions<T>).take!);
-
-        if (options.order)
-            Object.keys(options.order).forEach(key => {
+        }
+        if (options.order) {
+            Object.keys(options.order).forEach((key) => {
                 const order = ((options as FindOneOptions<T>).order as any)[key as any];
                 switch (order) {
                     case 1:
@@ -103,32 +150,37 @@ export class FindOptionsUtils {
                         break;
                 }
             });
-
-        if (options.relations)
-            options.relations.forEach(relation => {
+        }
+        if (options.relations) {
+            options.relations.forEach((relation) => {
                 qb.leftJoinAndSelect(qb.alias + "." + relation, relation);
             });
+        }
 
         if (options.join) {
-            if (options.join.leftJoin)
-                Object.keys(options.join.leftJoin).forEach(key => {
+            if (options.join.leftJoin) {
+                Object.keys(options.join.leftJoin).forEach((key) => {
                     qb.leftJoin(options.join!.leftJoin![key], key);
                 });
+            }
 
-            if (options.join.innerJoin)
-                Object.keys(options.join.innerJoin).forEach(key => {
+            if (options.join.innerJoin) {
+                Object.keys(options.join.innerJoin).forEach((key) => {
                     qb.innerJoin(options.join!.innerJoin![key], key);
                 });
+            }
 
-            if (options.join.leftJoinAndSelect)
-                Object.keys(options.join.leftJoinAndSelect).forEach(key => {
+            if (options.join.leftJoinAndSelect) {
+                Object.keys(options.join.leftJoinAndSelect).forEach((key) => {
                     qb.leftJoinAndSelect(options.join!.leftJoinAndSelect![key], key);
                 });
+            }
 
-            if (options.join.innerJoinAndSelect)
-                Object.keys(options.join.innerJoinAndSelect).forEach(key => {
+            if (options.join.innerJoinAndSelect) {
+                Object.keys(options.join.innerJoinAndSelect).forEach((key) => {
                     qb.innerJoinAndSelect(options.join!.innerJoinAndSelect![key], key);
                 });
+            }
         }
 
         if (options.cache) {
@@ -138,13 +190,6 @@ export class FindOptionsUtils {
             } else {
                 qb.cache(options.cache);
             }
-        }
-
-        if (options.loadRelationIds === true) {
-            qb.loadAllRelationIds();
-
-        } else if (options.loadRelationIds instanceof Object) {
-            qb.loadAllRelationIds(options.loadRelationIds as any);
         }
 
         return qb;
