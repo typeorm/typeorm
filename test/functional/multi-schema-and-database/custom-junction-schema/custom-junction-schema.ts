@@ -25,11 +25,11 @@ describe("multi-schema-and-database > custom-junction-schema", () => {
         const junctionTable = await queryRunner.getTable("yoman." + junctionMetadata.tableName);
         await queryRunner.release();
         expect(postTable).not.to.be.empty;
-        postTable!.schema!.should.be.equal("yoman");
+        postTable!.name!.should.be.equal("yoman.post");
         expect(categoryTable).not.to.be.empty;
-        categoryTable!.schema!.should.be.equal("yoman");
+        categoryTable!.name!.should.be.equal("yoman.category");
         expect(junctionTable).not.to.be.empty;
-        junctionTable!.schema!.should.be.equal("yoman");
+        junctionTable!.name!.should.be.equal("yoman." + junctionMetadata.tableName);
     })));
 
 });

@@ -5,7 +5,7 @@ import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
 /**
  * Marks a specific property of the class as a children of the tree.
  */
-export function TreeChildren(options?: { cascadeInsert?: boolean, cascadeUpdate?: boolean, lazy?: boolean }): Function {
+export function TreeChildren(options?: RelationOptions): Function {
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 

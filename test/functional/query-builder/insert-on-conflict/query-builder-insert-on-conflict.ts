@@ -36,7 +36,7 @@ describe("query builder > insertion > on conflict", () => {
             .onConflict(`("id") DO NOTHING`)
             .execute();
 
-        await connection.manager.findOneById(Post, "post#1").should.eventually.be.eql({
+        await connection.manager.findOne(Post, "post#1").should.eventually.be.eql({
             id: "post#1",
             title: "About post"
         });
@@ -49,7 +49,7 @@ describe("query builder > insertion > on conflict", () => {
             .setParameter("title", post2.title)
             .execute();
 
-        await connection.manager.findOneById(Post, "post#1").should.eventually.be.eql({
+        await connection.manager.findOne(Post, "post#1").should.eventually.be.eql({
             id: "post#1",
             title: "Again post"
         });

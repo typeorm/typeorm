@@ -17,6 +17,7 @@ import {TransactionEntityMetadataArgs} from "./TransactionEntityMetadataArgs";
 import {TransactionRepositoryMetadataArgs} from "./TransactionRepositoryMetadataArgs";
 import {MetadataUtils} from "../metadata-builder/MetadataUtils";
 import {GeneratedMetadataArgs} from "./GeneratedMetadataArgs";
+import {UniqueMetadataArgs} from "./UniqueMetadataArgs";
 
 /**
  * Storage all metadatas args of all available types: tables, columns, subscribers, relations, etc.
@@ -36,6 +37,7 @@ export class MetadataArgsStorage {
     readonly namingStrategies: NamingStrategyMetadataArgs[] = [];
     readonly entitySubscribers: EntitySubscriberMetadataArgs[] = [];
     readonly indices: IndexMetadataArgs[] = [];
+    readonly uniques: UniqueMetadataArgs[] = [];
     readonly columns: ColumnMetadataArgs[] = [];
     readonly generations: GeneratedMetadataArgs[] = [];
     readonly relations: RelationMetadataArgs[] = [];
@@ -96,6 +98,14 @@ export class MetadataArgsStorage {
         // todo: implement parent-entity overrides?
         return this.indices.filter(index => {
             return target instanceof Array ? target.indexOf(index.target) !== -1 : index.target === target;
+        });
+    }
+
+    filterUniques(target: Function|string): UniqueMetadataArgs[];
+    filterUniques(target: (Function|string)[]): UniqueMetadataArgs[];
+    filterUniques(target: (Function|string)|(Function|string)[]): UniqueMetadataArgs[] {
+        return this.uniques.filter(unique => {
+            return target instanceof Array ? target.indexOf(unique.target) !== -1 : unique.target === target;
         });
     }
 

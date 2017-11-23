@@ -2,26 +2,22 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {Table} from "../../schema-builder/schema/Table";
-import {TableIndex} from "../../schema-builder/schema/TableIndex";
-import {TableForeignKey} from "../../schema-builder/schema/TableForeignKey";
-import {TablePrimaryKey} from "../../schema-builder/schema/TablePrimaryKey";
-import {RandomGenerator} from "../../util/RandomGenerator";
+import {Table} from "../../schema-builder/table/Table";
+import {TableIndex} from "../../schema-builder/table/TableIndex";
+import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
-import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
-import {EntityManager} from "../../entity-manager/EntityManager";
-import {InsertResult} from "../InsertResult";
+import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
+import {TableUnique} from "../../schema-builder/table/TableUnique";
+import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
+import {OrmUtils} from "../../util/OrmUtils";
 
 /**
  * Runs queries on a single sqlite database connection.
- *
- * Does not support compose primary keys with autoincrement field.
- * todo: need to throw exception for this case.
  */
-export class AbstractSqliteQueryRunner implements QueryRunner {
+export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -32,52 +28,13 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      */
     driver: AbstractSqliteDriver;
 
-    /**
-     * Connection used by this query runner.
-     */
-    connection: Connection;
-
-    /**
-     * Isolated entity manager working only with current query runner.
-     */
-    manager: EntityManager;
-
-    /**
-     * Indicates if connection for this query runner is released.
-     * Once its released, query runner cannot run queries anymore.
-     */
-    isReleased = false;
-
-    /**
-     * Indicates if transaction is in progress.
-     */
-    isTransactionActive = false;
-
-    /**
-     * Stores temporarily user data.
-     * Useful for sharing data with subscribers.
-     */
-    data = {};
-
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Indicates if special query runner mode in which sql queries won't be executed is enabled.
-     */
-    protected sqlMemoryMode: boolean = false;
-
-    /**
-     * Sql-s stored if "sql in memory" mode is enabled.
-     */
-    protected sqlsInMemory: string[] = [];
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AbstractSqliteDriver) {}
+    constructor() {
+        super();
+    }
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -93,9 +50,11 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
 
     /**
      * Releases used database connection.
-     * We don't do anything here because sqlite do not support multiple connections thus query runners.
+     * We just clear loaded tables and sql in memory, because sqlite do not support multiple connections thus query runners.
      */
     release(): Promise<void> {
+        this.loadedTables = [];
+        this.clearSqlMemory();
         return Promise.resolve();
     }
 
@@ -135,49 +94,10 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     }
 
     /**
-     * Executes a given SQL query.
-     */
-    query(query: string, parameters?: any[]): Promise<any> {
-        throw new Error("Do not use AbstractSqlite directly, it has to be used with one of the sqlite drivers");
-    }
-
-    /**
      * Returns raw data stream.
      */
     stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
         throw new Error(`Stream is not supported by sqlite driver.`);
-    }
-
-    /**
-     * Insert a new row with given values into the given table.
-     * Returns value of the generated column if given and generate column exist in the table.
-     */
-    async insert(tableName: string, keyValues: ObjectLiteral): Promise<InsertResult> {
-        throw new Error("Do not use AbstractSqlite directly, it has to be used with one of the sqlite drivers");
-    }
-
-    /**
-     * Updates rows that match given conditions in the given table.
-     */
-    async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
-        const updateValues = this.parametrize(valuesMap).join(", ");
-        const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
-        const query = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
-        const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
-        const conditionParams = Object.keys(conditions).map(key => conditions[key]);
-        const allParameters = updateParams.concat(conditionParams);
-        await this.query(query, allParameters);
-    }
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
-    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
-        const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
-        const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
-
-        const sql = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
-        await this.query(sql, parameters);
     }
 
     /**
@@ -204,17 +124,470 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     }
 
     /**
-     * Loads given table's data from the database.
+     * Returns all available database names including system databases.
      */
-    async getTable(tableName: string): Promise<Table|undefined> {
-        const tables = await this.getTables([tableName]);
-        return tables.length > 0 ? tables[0] : undefined;
+    async getDatabases(): Promise<string[]> {
+        return Promise.resolve([]);
     }
+
+    /**
+     * Returns all available schema names including system schemas.
+     * If database parameter specified, returns schemas of that database.
+     */
+    async getSchemas(database?: string): Promise<string[]> {
+        return Promise.resolve([]);
+    }
+
+    /**
+     * Checks if database with the given name exist.
+     */
+    async hasDatabase(database: string): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    /**
+     * Checks if schema with the given name exist.
+     */
+    async hasSchema(schema: string): Promise<boolean> {
+        throw new Error(`This driver does not support table schemas`);
+    }
+
+    /**
+     * Checks if table with the given name exist in the database.
+     */
+    async hasTable(tableOrName: Table|string): Promise<boolean> {
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const sql = `SELECT * FROM "sqlite_master" WHERE "type" = 'table' AND "name" = '${tableName}'`;
+        const result = await this.query(sql);
+        return result.length ? true : false;
+    }
+
+    /**
+     * Creates a new database.
+     */
+    async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Drops database.
+     */
+    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Creates a new table schema.
+     */
+    async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Drops table schema.
+     */
+    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Creates a new table.
+     */
+    async createTable(table: Table, ifNotExist: boolean = false, createForeignKeys: boolean = true, createIndices: boolean = true): Promise<void> {
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+
+        if (ifNotExist) {
+            const isTableExist = await this.hasTable(table);
+            if (isTableExist) return Promise.resolve();
+        }
+
+        upQueries.push(this.createTableSql(table, createForeignKeys));
+        downQueries.push(this.dropTableSql(table));
+
+        if (createIndices) {
+            table.indices.forEach(index => {
+
+                // new index may be passed without name. In this case we generate index name manually.
+                if (!index.name)
+                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+                upQueries.push(this.createIndexSql(table, index));
+                downQueries.push(this.dropIndexSql(index));
+            });
+        }
+
+        await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
+     * Drops the table.
+     */
+    async dropTable(tableOrName: Table|string, ifExist?: boolean, dropForeignKeys: boolean = true, dropIndices: boolean = true): Promise<void> {
+        // if dropTable called with dropForeignKeys = true, we must create foreign keys in down query.
+        const createForeignKeys: boolean = dropForeignKeys;
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+
+        if (dropIndices) {
+            table.indices.forEach(index => {
+                upQueries.push(this.dropIndexSql(index));
+                downQueries.push(this.createIndexSql(table, index));
+            });
+        }
+
+        upQueries.push(this.dropTableSql(table, ifExist));
+        downQueries.push(this.createTableSql(table, createForeignKeys));
+
+        await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
+     * Renames the given table.
+     */
+    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
+        const oldTableName = oldTableOrName instanceof Table ? oldTableOrName.name : oldTableOrName;
+        const newTableName = newTableOrName instanceof Table ? newTableOrName.name : newTableOrName;
+
+        const up = `ALTER TABLE "${oldTableName}" RENAME TO "${newTableName}"`;
+        const down = `ALTER TABLE "${newTableName}" RENAME TO "${oldTableName}"`;
+
+        await this.executeQueries(up, down);
+    }
+
+    /**
+     * Checks if column with the given name exist in the given table.
+     */
+    async hasColumn(tableName: string, columnName: string): Promise<boolean> {
+        const sql = `PRAGMA table_info("${tableName}")`;
+        const columns: ObjectLiteral[] = await this.query(sql);
+        return !!columns.find(column => column["name"] === columnName);
+    }
+
+    /**
+     * Creates a new column from the column in the table.
+     */
+    async addColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        return this.addColumns(table!, [column]);
+    }
+
+    /**
+     * Creates a new columns from the column in the table.
+     */
+    async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const changedTable = table.clone();
+        columns.forEach(column => changedTable.addColumn(column));
+        await this.recreateTable(changedTable, table);
+        columns.forEach(column => table.addColumn(column));
+    }
+
+    /**
+     * Renames column in the given table.
+     */
+    async renameColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newTableColumnOrName: TableColumn|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const oldColumn = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName : table.columns.find(c => c.name === oldTableColumnOrName);
+        if (!oldColumn)
+            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+
+        let newColumn: TableColumn|undefined = undefined;
+        if (newTableColumnOrName instanceof TableColumn) {
+            newColumn = newTableColumnOrName;
+        } else {
+            newColumn = oldColumn.clone();
+            newColumn.name = newTableColumnOrName;
+        }
+
+        return this.changeColumn(table, oldColumn, newColumn);
+    }
+
+    /**
+     * Changes a column in the table.
+     */
+    async changeColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newColumn: TableColumn): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const oldColumn = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName : table.columns.find(c => c.name === oldTableColumnOrName);
+        if (!oldColumn)
+            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+
+        await this.changeColumns(table, [{oldColumn, newColumn}]);
+    }
+
+    /**
+     * Changes a column in the table.
+     * Changed column looses all its keys in the db.
+     */
+    async changeColumns(tableOrName: Table|string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const changedTable = table.clone();
+        changedColumns.forEach(changedColumnSet => {
+            if (changedColumnSet.newColumn.name !== changedColumnSet.oldColumn.name) {
+                changedTable.findColumnUniques(changedColumnSet.oldColumn).forEach(unique => {
+                    unique.columnNames.splice(unique.columnNames.indexOf(changedColumnSet.oldColumn.name), 1);
+                    unique.columnNames.push(changedColumnSet.newColumn.name);
+                    unique.name = this.connection.namingStrategy.uniqueConstraintName(changedTable, unique.columnNames);
+                });
+
+                changedTable.findColumnForeignKeys(changedColumnSet.oldColumn).forEach(fk => {
+                    fk.columnNames.splice(fk.columnNames.indexOf(changedColumnSet.oldColumn.name), 1);
+                    fk.columnNames.push(changedColumnSet.newColumn.name);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(changedTable, fk.columnNames);
+                });
+
+                changedTable.findColumnIndices(changedColumnSet.oldColumn).forEach(index => {
+                    index.columnNames.splice(index.columnNames.indexOf(changedColumnSet.oldColumn.name), 1);
+                    index.columnNames.push(changedColumnSet.newColumn.name);
+                    index.name = this.connection.namingStrategy.indexName(changedTable, index.columnNames);
+                });
+            }
+            const originalColumn = changedTable.columns.find(column => column.name === changedColumnSet.oldColumn.name);
+            if (originalColumn)
+                changedTable.columns[changedTable.columns.indexOf(originalColumn)] = changedColumnSet.newColumn;
+        });
+
+        // recreate table and replace columns in original table
+        await this.recreateTable(changedTable, table);
+        changedColumns.forEach(changedColumnSet => {
+            const originalColumn = table.columns.find(column => column.name === changedColumnSet.oldColumn.name);
+            if (originalColumn)
+                table.columns[table.columns.indexOf(originalColumn)] = changedColumnSet.newColumn;
+        });
+        // replace table in loadedTables
+        this.replaceCachedTable(table, changedTable);
+
+        // replace changed constraints in original table
+        table.uniques = changedTable.uniques;
+        table.foreignKeys = changedTable.foreignKeys;
+        table.indices = changedTable.indices;
+    }
+
+    /**
+     * Drops column in the table.
+     */
+    async dropColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
+        return this.dropColumns(table!, [column]);
+    }
+
+    /**
+     * Drops the columns in the table.
+     */
+    async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // clone original table and remove column and its constraints from cloned table
+        const changedTable = table.clone();
+        columns.forEach(column => {
+            changedTable.removeColumn(column);
+            changedTable.findColumnUniques(column).forEach(unique => changedTable.removeUniqueConstraint(unique));
+            changedTable.findColumnIndices(column).forEach(index => changedTable.removeIndex(index));
+            changedTable.findColumnForeignKeys(column).forEach(fk => changedTable.removeForeignKey(fk));
+        });
+
+        await this.recreateTable(changedTable, table);
+
+        // remove column and its constraints from original table.
+        columns.forEach(column => {
+            table.removeColumn(column);
+            table.findColumnUniques(column).forEach(unique => table.removeUniqueConstraint(unique));
+            table.findColumnIndices(column).forEach(index => table.removeIndex(index));
+            table.findColumnForeignKeys(column).forEach(fk => table.removeForeignKey(fk));
+        });
+    }
+
+    /**
+     * Updates table's primary keys.
+     */
+    async updatePrimaryKeys(dbTable: Table): Promise<void> {
+        // await this.recreateTable(dbTable);
+    }
+
+    /**
+     * Creates a new primary key.
+     */
+    async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        // clone original table and mark columns as primary
+        const changedTable = table.clone();
+        changedTable.columns.forEach(column => {
+            if (columnNames.find(columnName => columnName === column.name))
+                column.isPrimary = true;
+        });
+
+        await this.recreateTable(changedTable, table);
+        // mark columns as primary in original table
+        table.columns.forEach(column => {
+            if (columnNames.find(columnName => columnName === column.name))
+                column.isPrimary = true;
+        });
+    }
+
+    /**
+     * Drops a primary key.
+     */
+    async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        // clone original table and mark primary columns as non-primary
+        const changedTable = table.clone();
+        changedTable.primaryColumns.forEach(column => {
+            column.isPrimary = false;
+        });
+
+        await this.recreateTable(changedTable, table);
+        // mark primary columns as non-primary in original table
+        table.primaryColumns.forEach(column => {
+            column.isPrimary = false;
+        });
+    }
+
+    /**
+     * Creates a new unique constraint.
+     */
+    async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        // clone original table and add unique constraint in to cloned table
+        const changedTable = table.clone();
+        changedTable.addUniqueConstraint(uniqueConstraint);
+
+        await this.recreateTable(changedTable, table);
+        // add unique constraint in to original table.
+        table.addUniqueConstraint(uniqueConstraint);
+    }
+
+    /**
+     * Drops an unique constraint.
+     */
+    async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
+        if (!uniqueConstraint)
+            throw new Error(`Supplied unique constraint does not found in table ${table.name}`);
+        // clone original table and remove foreign keys from cloned table
+        const changedTable = table.clone();
+        changedTable.removeUniqueConstraint(uniqueConstraint);
+        await this.recreateTable(changedTable, table);
+        // remove foreign keys from original table.
+        table.removeUniqueConstraint(uniqueConstraint);
+    }
+
+    /**
+     * Creates a new foreign key.
+     */
+    async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
+        await this.createForeignKeys(tableOrName as any, [foreignKey]);
+    }
+
+    /**
+     * Creates a new foreign keys.
+     */
+    async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        // clone original table and add foreign keys in to cloned table
+        const changedTable = table.clone();
+        foreignKeys.forEach(foreignKey => changedTable.addForeignKey(foreignKey));
+
+        await this.recreateTable(changedTable, table);
+        // add foreign keys in to original table.
+        foreignKeys.forEach(foreignKey => table.addForeignKey(foreignKey));
+    }
+
+    /**
+     * Drops a foreign key from the table.
+     */
+    async dropForeignKey(tableOrName: Table|string, foreignKeyOrName: TableForeignKey|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const foreignKey = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName : table.foreignKeys.find(fk => fk.name === foreignKeyOrName);
+        if (!foreignKey)
+            throw new Error(`Supplied foreign key does not found in table ${table.name}`);
+
+        await this.dropForeignKeys(tableOrName as any, [foreignKey]);
+    }
+
+    /**
+     * Drops a foreign keys from the table.
+     */
+    async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        // clone original table and remove foreign keys from cloned table
+        const changedTable = table.clone();
+        foreignKeys.forEach(foreignKey => changedTable.removeForeignKey(foreignKey));
+        await this.recreateTable(changedTable, table);
+        // remove foreign keys from original table.
+        foreignKeys.forEach(foreignKey => table.removeForeignKey(foreignKey));
+    }
+
+    /**
+     * Creates a new index.
+     */
+    async createIndex(tableOrName: Table|string, index: TableIndex): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // new index may be passed without name. In this case we generate index name manually.
+        if (!index.name)
+            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+
+        const up = this.createIndexSql(table, index);
+        const down = this.dropIndexSql(index);
+        await this.executeQueries(up, down);
+        table.addIndex(index);
+    }
+
+    /**
+     * Drops an index from the table.
+     */
+    async dropIndex(tableOrName: Table|string, indexOrName: TableIndex|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
+        if (!index)
+            throw new Error(`Supplied index does not found in table ${table.name}`);
+
+        const up = this.dropIndexSql(index);
+        const down = this.createIndexSql(table, index);
+        await this.executeQueries(up, down);
+        table.removeIndex(index);
+    }
+
+    /**
+     * Clears all table contents.
+     * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     */
+    async clearTable(tableName: string): Promise<void> {
+        await this.query(`DELETE FROM "${tableName}"`);
+    }
+
+    /**
+     * Removes all tables from the currently connected database.
+     */
+    async clearDatabase(): Promise<void> {
+        await this.query(`PRAGMA foreign_keys = OFF;`);
+        await this.startTransaction();
+        try {
+            const selectDropsQuery = `SELECT 'DROP TABLE "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'table' AND "name" != 'sqlite_sequence'`;
+            const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
+            await Promise.all(dropQueries.map(q => this.query(q["query"])));
+            await this.commitTransaction();
+
+        } catch (error) {
+            try { // we throw original error even if rollback thrown an error
+                await this.rollbackTransaction();
+            } catch (rollbackError) { }
+            throw error;
+
+        } finally {
+            await this.query(`PRAGMA foreign_keys = ON;`);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
      */
-    async getTables(tableNames: string[]): Promise<Table[]> {
+    protected async loadTables(tableNames: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
         if (!tableNames || !tableNames.length)
             return [];
@@ -222,7 +595,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
         const tableNamesString = tableNames.map(tableName => `'${tableName}'`).join(", ");
 
         // load tables, columns, indices and foreign keys
-        const dbTables: ObjectLiteral[] = await this.query(`SELECT * FROM sqlite_master WHERE type = 'table' AND name IN (${tableNamesString})`);
+        const dbTables: ObjectLiteral[] = await this.query(`SELECT * FROM "sqlite_master" WHERE "type" = 'table' AND "name" IN (${tableNamesString})`);
 
         // if tables were not found in the db, no need to proceed
         if (!dbTables || !dbTables.length)
@@ -230,7 +603,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
 
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
-            const table = new Table(dbTable["name"]);
+            const table = new Table({name: dbTable["name"]});
 
             // load columns and indices
             const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
@@ -267,7 +640,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                 tableColumn.isNullable = dbColumn["notnull"] === 0;
                 // primary keys are numbered starting with 1, columns that aren't primary keys are marked with 0
                 tableColumn.isPrimary = dbColumn["pk"] > 0;
-                tableColumn.comment = ""; // todo later
+                tableColumn.comment = ""; // SQLite does not support column comments
                 tableColumn.isGenerated = autoIncrementColumnName === dbColumn["name"];
                 if (tableColumn.isGenerated) {
                     tableColumn.generationStrategy = "increment";
@@ -285,39 +658,34 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                         }
                     }
                 }
-                const columnForeignKeys = dbForeignKeys
-                    .filter(foreignKey => foreignKey["from"] === dbColumn["name"])
-                    .map(foreignKey => {
-                        // const keyName = this.driver.namingStrategy.foreignKeyName(dbTable["name"], [foreignKey["from"]], foreignKey["table"], [foreignKey["to"]]);
-                        // todo: figure out solution here, name should be same as naming strategy generates!
-                        const key = `${dbTable["name"]}_${[foreignKey["from"]].join("_")}_${foreignKey["table"]}_${[foreignKey["to"]].join("_")}`;
-                        const keyName = "fk_" + RandomGenerator.sha1(key).substr(0, 27);
-                        return new TableForeignKey(keyName, [foreignKey["from"]], [foreignKey["to"]], foreignKey["table"], foreignKey["on_delete"]); // todo: how sqlite return from and to when they are arrays? (multiple column foreign keys)
-                    });
-                table.addForeignKeys(columnForeignKeys);
+
                 return tableColumn;
             });
 
-            // create primary key schema
-            await Promise.all(dbIndices
-                .filter(index => index["origin"] === "pk")
-                .map(async index => {
-                    const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${index["name"]}")`);
-                    const indexColumns = indexInfos.map(indexInfo => indexInfo["name"]);
-                    indexColumns.forEach(indexColumn => {
-                        table.primaryKeys.push(new TablePrimaryKey(index["name"], indexColumn));
-                    });
-                }));
+            // build foreign keys
+            const tableForeignKeyConstraints = OrmUtils.uniq(dbForeignKeys, dbForeignKey => dbForeignKey["id"]);
+            table.foreignKeys = tableForeignKeyConstraints.map(foreignKey => {
+                const ownForeignKeys = dbForeignKeys.filter(dbForeignKey => dbForeignKey["id"] === foreignKey["id"] && dbForeignKey["table"] === foreignKey["table"]);
+                const columnNames = ownForeignKeys.map(dbForeignKey => dbForeignKey["from"]);
+                const referencedColumnNames = ownForeignKeys.map(dbForeignKey => dbForeignKey["to"]);
+                // build foreign key name, because we can not get it directly.
+                const fkName = this.connection.namingStrategy.foreignKeyName(table, columnNames);
 
-            // create index schemas from the loaded indices
-            const indicesPromises = dbIndices
-                .filter(dbIndex => {
-                    return dbIndex["origin"] !== "pk" &&
-                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"])) &&
-                        (!table.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["name"]));
-                })
+                return new TableForeignKey({
+                    name: fkName,
+                    columnNames: columnNames,
+                    referencedTableName: foreignKey["table"],
+                    referencedColumnNames: referencedColumnNames,
+                    onDelete: foreignKey["on_delete"],
+                    onUpdate: foreignKey["on_update"]
+                });
+            });
+
+            // build unique constraints
+            const tableUniquePromises = dbIndices
+                .filter(dbIndex => dbIndex["origin"] === "u")
                 .map(dbIndex => dbIndex["name"])
-                .filter((value, index, self) => self.indexOf(value) === index) // unqiue
+                .filter((value, index, self) => self.indexOf(value) === index)
                 .map(async dbIndexName => {
                     const dbIndex = dbIndices.find(dbIndex => dbIndex["name"] === dbIndexName);
                     const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${dbIndex!["name"]}")`);
@@ -325,25 +693,42 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                         .sort((indexInfo1, indexInfo2) => parseInt(indexInfo1["seqno"]) - parseInt(indexInfo2["seqno"]))
                         .map(indexInfo => indexInfo["name"]);
 
-                    // check if db index is generated by sqlite itself and has special use case
-                    if (dbIndex!["name"].substr(0, "sqlite_autoindex".length) === "sqlite_autoindex") {
-                        if (dbIndex!["unique"] === 1) { // this means we have a special index generated for a column
-                            // so we find and update the column
-                            indexColumns.forEach(columnName => {
-                                const column = table.columns.find(column => column.name === columnName);
-                                if (column)
-                                    column.isUnique = true;
-                            });
-                        }
-
-                        return Promise.resolve(undefined);
-
-                    } else {
-                        const isUnique = dbIndex!["unique"] === "1" || dbIndex!["unique"] === 1;
-                        return new TableIndex(dbTable["name"], dbIndex!["name"], indexColumns, isUnique);
+                    if (indexColumns.length === 1) {
+                        const column = table.columns.find(column => {
+                            return !!indexColumns.find(indexColumn => indexColumn === column.name);
+                        });
+                        if (column)
+                            column.isUnique = true;
                     }
-                });
 
+                    return new TableUnique({
+                        name: this.connection.namingStrategy.uniqueConstraintName(table, indexColumns),
+                        columnNames: indexColumns
+                    });
+                });
+            table.uniques = (await Promise.all(tableUniquePromises)) as TableUnique[];
+
+            // build indices
+            const indicesPromises = dbIndices
+                .filter(dbIndex => dbIndex["origin"] === "c")
+                .map(dbIndex => dbIndex["name"])
+                .filter((value, index, self) => self.indexOf(value) === index) // unqiue
+                .map(async dbIndexName => {
+
+                    const dbIndex = dbIndices.find(dbIndex => dbIndex["name"] === dbIndexName);
+                    const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${dbIndex!["name"]}")`);
+                    const indexColumns = indexInfos
+                        .sort((indexInfo1, indexInfo2) => parseInt(indexInfo1["seqno"]) - parseInt(indexInfo2["seqno"]))
+                        .map(indexInfo => indexInfo["name"]);
+
+                    const isUnique = dbIndex!["unique"] === "1" || dbIndex!["unique"] === 1;
+                    return new TableIndex(<TableIndexOptions>{
+                        table: table,
+                        name: dbIndex!["name"],
+                        columnNames: indexColumns,
+                        isUnique: isUnique
+                    });
+                });
             const indices = await Promise.all(indicesPromises);
             table.indices = indices.filter(index => !!index) as TableIndex[];
 
@@ -352,293 +737,94 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     }
 
     /**
-     * Checks if database with the given name exist.
+     * Builds create table sql.
      */
-    async hasDatabase(database: string): Promise<boolean> {
-        return Promise.resolve(false);
-    }
+    protected createTableSql(table: Table, createForeignKeys?: boolean): string {
 
-    /**
-     * Checks if table with the given name exist in the database.
-     */
-    async hasTable(tableName: string): Promise<boolean> {
-        const sql = `SELECT * FROM sqlite_master WHERE type = 'table' AND name = '${tableName}'`;
-        const result = await this.query(sql);
-        return result.length ? true : false;
-    }
+        const primaryColumns = table.columns.filter(column => column.isPrimary);
+        const hasAutoIncrement = primaryColumns.find(column => column.isGenerated && column.generationStrategy === "increment");
+        const skipPrimary = primaryColumns.length > 1;
+        if (skipPrimary && hasAutoIncrement)
+            throw new Error(`Sqlite does not support AUTOINCREMENT on composite primary key`);
 
-    /**
-     * Creates a database if it's not created.
-     */
-    createDatabase(database: string): Promise<void[]> {
-        return Promise.resolve([]);
-    }
-
-    /**
-     * Creates a schema if it's not created.
-     */
-    createSchema(schemas: string[]): Promise<void[]> {
-        return Promise.resolve([]);
-    }
-
-    /**
-     * Creates a new table from the given table metadata and column metadatas.
-     */
-    async createTable(table: Table): Promise<void> {
-        // skip columns with foreign keys, we will add them later
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, skipPrimary)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
-        const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
-        if (primaryKeyColumns.length > 0)
-            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `${column.name}`).join(", ")})`; // for some reason column escaping here generates a wrong schema
+
+        table.columns
+            .filter(column => column.isUnique)
+            .forEach(column => {
+                const isUniqueExist = !!table.uniques.find(unique => {
+                    return !!(unique.columnNames.length === 1 && unique.columnNames.find(columnName => columnName === column.name));
+                });
+                if (!isUniqueExist)
+                    table.uniques.push(new TableUnique({
+                        name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),
+                        columnNames: [column.name]
+                    }));
+            });
+
+        if (table.uniques.length > 0) {
+            const uniquesSql = table.uniques.map(unique => {
+                const uniqueName = unique.name ? unique.name : this.connection.namingStrategy.uniqueConstraintName(table.name, unique.columnNames);
+                const columnNames = unique.columnNames.map(columnName => `"${columnName}"`).join(", ");
+                return `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`;
+            }).join(", ");
+
+            sql += `, ${uniquesSql}`;
+        }
+
+        if (table.foreignKeys.length > 0 && createForeignKeys) {
+            const foreignKeysSql = table.foreignKeys.map(fk => {
+                const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
+                if (!fk.name)
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames);
+                const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
+
+                let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES "${fk.referencedTableName}" (${referencedColumnNames})`;
+                if (fk.onDelete)
+                    constraint += ` ON DELETE ${fk.onDelete}`;
+                if (fk.onUpdate)
+                    constraint += ` ON UPDATE ${fk.onUpdate}`;
+
+                return constraint;
+            }).join(", ");
+
+            sql += `, ${foreignKeysSql}`;
+        }
+
+        if (primaryColumns.length > 1) {
+            const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
+            sql += `, PRIMARY KEY (${columnNames})`;
+        }
+
         sql += `)`;
-        await this.query(sql);
+
+        return sql;
     }
 
     /**
-     * Drops the table.
+     * Builds drop table sql.
      */
-    async dropTable(tableName: string): Promise<void> {
-        let sql = `DROP TABLE "${tableName}"`;
-        await this.query(sql);
+    protected dropTableSql(tableOrName: Table|string, ifExist?: boolean): string {
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        return ifExist ? `DROP TABLE IF EXISTS "${tableName}"` : `DROP TABLE "${tableName}"`;
     }
 
     /**
-     * Checks if column with the given name exist in the given table.
+     * Builds create index sql.
      */
-    async hasColumn(tableName: string, columnName: string): Promise<boolean> {
-        const sql = `PRAGMA table_info("${tableName}")`;
-        const columns: ObjectLiteral[] = await this.query(sql);
-        return !!columns.find(column => column["name"] === columnName);
+    protected createIndexSql(table: Table, index: TableIndex): string {
+        const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
+        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table.name}" (${columns})`;
     }
 
     /**
-     * Creates a new column from the column in the table.
+     * Builds drop index sql.
      */
-    async addColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
-        const table = await this.getTableSchema(tableOrName);
-        const newTableSchema = table.clone();
-        newTableSchema.addColumns([column]);
-        await this.recreateTable(newTableSchema, table);
+    protected dropIndexSql(indexOrName: TableIndex|string): string {
+        let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
+        return `DROP INDEX "${indexName}"`;
     }
-
-    /**
-     * Creates a new columns from the column in the table.
-     */
-    async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        const table = await this.getTableSchema(tableOrName);
-        const newTableSchema = table.clone();
-        newTableSchema.addColumns(columns);
-        await this.recreateTable(newTableSchema, table);
-    }
-
-    /**
-     * Renames column in the given table.
-     */
-    async renameColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newTableColumnOrName: TableColumn|string): Promise<void> {
-
-        let table: Table|undefined = undefined;
-        if (tableOrName instanceof Table) {
-            table = tableOrName;
-        } else {
-            table = await this.getTable(tableOrName);
-        }
-
-        if (!table)
-            throw new Error(`Table ${tableOrName} was not found.`);
-
-        let oldColumn: TableColumn|undefined = undefined;
-        if (oldTableColumnOrName instanceof TableColumn) {
-            oldColumn = oldTableColumnOrName;
-        } else {
-            oldColumn = table.columns.find(column => column.name === oldTableColumnOrName);
-        }
-
-        if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${tableOrName}" table.`);
-
-        let newColumn: TableColumn|undefined = undefined;
-        if (newTableColumnOrName instanceof TableColumn) {
-            newColumn = newTableColumnOrName;
-        } else {
-            newColumn = oldColumn.clone();
-            newColumn.name = newTableColumnOrName;
-        }
-
-        return this.changeColumn(table, oldColumn, newColumn);
-    }
-
-    /**
-     * Changes a column in the table.
-     */
-    async changeColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newColumn: TableColumn): Promise<void> {
-        let table: Table|undefined = undefined;
-        if (tableOrName instanceof Table) {
-            table = tableOrName;
-        } else {
-            table = await this.getTable(tableOrName);
-        }
-
-        if (!table)
-            throw new Error(`Table ${tableOrName} was not found.`);
-
-        let oldColumn: TableColumn|undefined = undefined;
-        if (oldTableColumnOrName instanceof TableColumn) {
-            oldColumn = oldTableColumnOrName;
-        } else {
-            oldColumn = table.columns.find(column => column.name === oldTableColumnOrName);
-        }
-
-        if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${tableOrName}" table.`);
-
-        // todo: fix it. it should not depend on table
-        return this.recreateTable(table);
-    }
-
-    /**
-     * Changes a column in the table.
-     * Changed column looses all its keys in the db.
-     */
-    async changeColumns(table: Table, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
-        // todo: fix it. it should not depend on table
-        return this.recreateTable(table);
-    }
-
-    /**
-     * Drops column in the table.
-     */
-    async dropColumn(table: Table, column: TableColumn): Promise<void> {
-        return this.dropColumns(table, [column]);
-    }
-
-    /**
-     * Drops the columns in the table.
-     */
-    async dropColumns(table: Table, columns: TableColumn[]): Promise<void> {
-        const updatingTableSchema = table.clone();
-        updatingTableSchema.removeColumns(columns);
-        return this.recreateTable(updatingTableSchema);
-    }
-
-    /**
-     * Updates table's primary keys.
-     */
-    async updatePrimaryKeys(dbTable: Table): Promise<void> {
-        return this.recreateTable(dbTable);
-    }
-
-    /**
-     * Creates a new foreign key.
-     */
-    async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
-        return this.createForeignKeys(tableOrName as any, [foreignKey]);
-    }
-
-    /**
-     * Creates a new foreign keys.
-     */
-    async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        const table = await this.getTableSchema(tableOrName);
-        const changedTableSchema = table.clone();
-        changedTableSchema.addForeignKeys(foreignKeys);
-        return this.recreateTable(changedTableSchema);
-    }
-
-    /**
-     * Drops a foreign key from the table.
-     */
-    async dropForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
-        return this.dropForeignKeys(tableOrName as any, [foreignKey]);
-    }
-
-    /**
-     * Drops a foreign keys from the table.
-     */
-    async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        const table = await this.getTableSchema(tableOrName);
-        const changedTableSchema = table.clone();
-        changedTableSchema.removeForeignKeys(foreignKeys);
-        return this.recreateTable(changedTableSchema);
-    }
-
-    /**
-     * Creates a new index.
-     */
-    async createIndex(table: Table|string, index: TableIndex): Promise<void> {
-        const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table instanceof Table ? table.name : table}"(${columnNames})`;
-        await this.query(sql);
-    }
-
-    /**
-     * Drops an index from the table.
-     */
-    async dropIndex(tableSchemeOrName: Table|string, indexName: string): Promise<void> {
-        const sql = `DROP INDEX "${indexName}"`;
-        await this.query(sql);
-    }
-
-    /**
-     * Truncates table.
-     */
-    async truncate(tableName: string): Promise<void> {
-        await this.query(`DELETE FROM "${tableName}"`);
-    }
-
-    /**
-     * Removes all tables from the currently connected database.
-     */
-    async clearDatabase(): Promise<void> {
-        await this.query(`PRAGMA foreign_keys = OFF;`);
-        await this.startTransaction();
-        try {
-            const selectDropsQuery = `select 'drop table "' || name || '";' as query from sqlite_master where type = 'table' and name != 'sqlite_sequence'`;
-            const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-            await Promise.all(dropQueries.map(q => this.query(q["query"])));
-            await this.commitTransaction();
-
-        } catch (error) {
-            try { // we throw original error even if rollback thrown an error
-                await this.rollbackTransaction();
-            } catch (rollbackError) { }
-            throw error;
-
-        } finally {
-            await this.query(`PRAGMA foreign_keys = ON;`);
-        }
-    }
-
-    /**
-     * Enables special query runner mode in which sql queries won't be executed,
-     * instead they will be memorized into a special variable inside query runner.
-     * You can get memorized sql using getMemorySql() method.
-     */
-    enableSqlMemory(): void {
-        this.sqlMemoryMode = true;
-    }
-
-    /**
-     * Disables special query runner mode in which sql queries won't be executed
-     * started by calling enableSqlMemory() method.
-     *
-     * Previously memorized sql will be flushed.
-     */
-    disableSqlMemory(): void {
-        this.sqlsInMemory = [];
-        this.sqlMemoryMode = false;
-    }
-
-    /**
-     * Gets sql stored in the memory. Parameters in the sql are already replaced.
-     */
-    getMemorySql(): (string|{ up: string, down: string })[] {
-        return this.sqlsInMemory;
-    }
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
@@ -650,94 +836,84 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: TableColumn): string {
+    protected buildCreateColumnSql(column: TableColumn, skipPrimary?: boolean): string {
         let c = "\"" + column.name + "\"";
         if (column instanceof ColumnMetadata) {
             c += " " + this.driver.normalizeType(column);
         } else {
             c += " " + this.connection.driver.createFullType(column);
         }
+
+        if (column.isPrimary && !skipPrimary)
+            c += " PRIMARY KEY";
+        if (column.isGenerated === true && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
+            c += " AUTOINCREMENT";
         if (column.collation)
             c += " COLLATE " + column.collation;
         if (column.isNullable !== true)
             c += " NOT NULL";
-        if (column.isUnique === true)
-            c += " UNIQUE";
-        if (column.isGenerated === true && column.generationStrategy === "increment") { // don't use skipPrimary here since updates can update already exist primary without auto inc.
-            c += " PRIMARY KEY AUTOINCREMENT";
-        } else if (column.isPrimary === true && column.isGenerated === true) {
-            c += " PRIMARY KEY";
-        }
-
-        if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
+        if (column.default !== undefined && column.default !== null)
             c += " DEFAULT (" + column.default + ")";
-        }
 
         return c;
     }
 
-    protected async recreateTable(table: Table, oldTableSchema?: Table, migrateData = true): Promise<void> {
-        // const withoutForeignKeyColumns = columns.filter(column => column.foreignKeys.length === 0);
-        // const createForeignKeys = options && options.createForeignKeys;
-        const columnDefinitions = table.columns.map(dbColumn => this.buildCreateColumnSql(dbColumn)).join(", ");
-        const columnNames = table.columns.map(column => `"${column.name}"`).join(", ");
+    protected async recreateTable(newTable: Table, oldTable: Table, migrateData = true): Promise<void> {
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
 
-        let sql1 = `CREATE TABLE "temporary_${table.name}" (${columnDefinitions}`;
-        // if (options && options.createForeignKeys) {
-        table.foreignKeys.forEach(foreignKey => {
-            const columnNames = foreignKey.columnNames.map(name => `"${name}"`).join(", ");
-            const referencedColumnNames = foreignKey.referencedColumnNames.map(name => `"${name}"`).join(", ");
-            sql1 += `, FOREIGN KEY(${columnNames}) REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
-            if (foreignKey.onDelete) sql1 += " ON DELETE " + foreignKey.onDelete;
+        // drop old table indices
+        oldTable.indices.forEach(index => {
+            upQueries.push(this.dropIndexSql(index));
+            downQueries.push(this.createIndexSql(oldTable, index));
         });
 
-        const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
-        if (primaryKeyColumns.length > 0)
-            sql1 += `, PRIMARY KEY(${primaryKeyColumns.map(column => `${column.name}`).join(", ")})`; // for some reason column escaping here generate a wrong schema
+        // change table name into 'temporary_table'
+        newTable.name = "temporary_" + newTable.name;
 
-        sql1 += ")";
+        // create new table
+        upQueries.push(this.createTableSql(newTable, true));
+        downQueries.push(this.dropTableSql(newTable));
 
-        // todo: need also create uniques and indices?
-
-        // recreate a table with a temporary name
-        await this.query(sql1);
-
-        // we need only select data from old columns
-        const oldColumnNames = oldTableSchema ? oldTableSchema.columns.map(column => `"${column.name}"`).join(", ") : columnNames;
-
-        // migrate all data from the table into temporary table
+        // migrate all data from the old table into new table
         if (migrateData) {
-            const sql2 = `INSERT INTO "temporary_${table.name}"(${oldColumnNames}) SELECT ${oldColumnNames} FROM "${table.name}"`;
-            await this.query(sql2);
+            let newColumnNames = newTable.columns.map(column => `"${column.name}"`).join(", ");
+            let oldColumnNames = oldTable.columns.map(column => `"${column.name}"`).join(", ");
+            if (oldTable.columns.length < newTable.columns.length) {
+                newColumnNames = newTable.columns.filter(column => {
+                    return oldTable.columns.find(c => c.name === column.name);
+                }).map(column => `"${column.name}"`).join(", ");
+
+            } else if (oldTable.columns.length > newTable.columns.length) {
+                oldColumnNames = oldTable.columns.filter(column => {
+                    return newTable.columns.find(c => c.name === column.name);
+                }).map(column => `"${column.name}"`).join(", ");
+            }
+
+            upQueries.push(`INSERT INTO "${newTable.name}"(${newColumnNames}) SELECT ${oldColumnNames} FROM "${oldTable.name}"`);
+            downQueries.push(`INSERT INTO "${oldTable.name}"(${oldColumnNames}) SELECT ${newColumnNames} FROM "${newTable.name}"`);
         }
 
         // drop old table
-        const sql3 = `DROP TABLE "${table.name}"`;
-        await this.query(sql3);
+        upQueries.push(this.dropTableSql(oldTable));
+        downQueries.push(this.createTableSql(oldTable, true));
 
-        // rename temporary table
-        const sql4 = `ALTER TABLE "temporary_${table.name}" RENAME TO "${table.name}"`;
-        await this.query(sql4);
+        // rename old table
+        upQueries.push(`ALTER TABLE "${newTable.name}" RENAME TO "${oldTable.name}"`);
+        downQueries.push(`ALTER TABLE "${oldTable.name}" RENAME TO "${newTable.name}"`);
+        newTable.name = oldTable.name;
 
-        // also re-create indices
-        const indexPromises = table.indices.map(index => this.createIndex(table.name, index));
-        // const uniquePromises = table.uniqueKeys.map(key => this.createIndex(key));
-        await Promise.all(indexPromises/*.concat(uniquePromises)*/);
-    }
+        // recreate table indices
+        newTable.indices.forEach(index => {
+            // new index may be passed without name. In this case we generate index name manually.
+            if (!index.name)
+                index.name = this.connection.namingStrategy.indexName(newTable.name, index.columnNames);
+            upQueries.push(this.createIndexSql(newTable, index));
+            downQueries.push(this.dropIndexSql(index));
+        });
 
-    /**
-     * If given value is a table name then it loads its table schema representation from the database.
-     */
-    protected async getTableSchema(tableOrName: Table|string): Promise<Table> {
-        if (tableOrName instanceof Table) {
-            return tableOrName;
-        } else {
-            const table = await this.getTable(tableOrName);
-            if (!table)
-                throw new Error(`Table named ${tableOrName} was not found in the database.`);
-
-            return table;
-        }
+        await this.executeQueries(upQueries, downQueries);
+        this.replaceCachedTable(oldTable, newTable);
     }
 
 }

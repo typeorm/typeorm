@@ -13,8 +13,7 @@ export class ActivityEntity {
     endDate: Date;
 
     @ManyToMany(type => TileEntity, tile => tile.activities, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     tiles: TileEntity[];
 

@@ -17,6 +17,7 @@ import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {ColumnOptions} from "../decorator/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
+import {UniqueMetadata} from "../metadata/UniqueMetadata";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -163,6 +164,11 @@ export class EntityMetadataBuilder {
             entityMetadata.indices.forEach(index => index.build(this.connection.namingStrategy));
         });
 
+        // build all unique constraints (need to do it after relations and their join columns are built)
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.uniques.forEach(unique => unique.build(this.connection.namingStrategy));
+        });
+
         entityMetadatas
             .filter(metadata => !!metadata.parentEntityMetadata && metadata.tableType === "class-table-child")
             .forEach(metadata => {
@@ -303,6 +309,10 @@ export class EntityMetadataBuilder {
         entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(inheritanceTree).map(args => {
             return new IndexMetadata({ entityMetadata, args });
         });
+        // TODO: ownUniques?
+        entityMetadata.uniques = this.metadataArgsStorage.filterUniques(inheritanceTree).map(args => {
+            return new UniqueMetadata({ entityMetadata, args });
+        });
         entityMetadata.ownListeners = this.metadataArgsStorage.filterListeners(inheritanceTree).map(args => {
             return new EntityListenerMetadata({ entityMetadata: entityMetadata, args: args });
         });
@@ -338,6 +348,7 @@ export class EntityMetadataBuilder {
             });
             embeddedMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(targets));
             embeddedMetadata.embeddeds.forEach(subEmbedded => subEmbedded.parentEmbeddedMetadata = embeddedMetadata);
+            entityMetadata.allEmbeddeds.push(embeddedMetadata);
             return embeddedMetadata;
         });
     }
@@ -370,6 +381,7 @@ export class EntityMetadataBuilder {
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
         entityMetadata.hasMultiplePrimaryKeys = entityMetadata.primaryColumns.length > 1;
         entityMetadata.generatedColumns = entityMetadata.columns.filter(column => column.isGenerated || column.isObjectId);
+        entityMetadata.hasUUIDGeneratedColumns = entityMetadata.columns.filter(column => column.isGenerated || column.generationStrategy === "uuid").length > 0;
         entityMetadata.createDateColumn = entityMetadata.columns.find(column => column.isCreateDate);
         entityMetadata.updateDateColumn = entityMetadata.columns.find(column => column.isUpdateDate);
         entityMetadata.versionColumn = entityMetadata.columns.find(column => column.isVersion);

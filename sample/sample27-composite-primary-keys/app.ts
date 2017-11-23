@@ -28,7 +28,7 @@ createConnection(options).then(async connection => {
     console.log("Post has been saved: ", post);
 
     console.log("now loading the post: ");
-    const loadedPost = await postRepository.findOneById({ id: 1, type: "person" });
+    const loadedPost = await postRepository.findOne({ id: 1, type: "person" });
     console.log("loaded post: ", loadedPost);
 
 }, error => console.log("Error: ", error));

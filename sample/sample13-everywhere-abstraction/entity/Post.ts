@@ -11,8 +11,7 @@ export class Post extends BaseObject {
     text: string;
 
     @ManyToMany(type => PostCategory, category => category.posts, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     @JoinTable()
     categories: PostCategory[] = [];

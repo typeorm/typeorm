@@ -9,8 +9,6 @@ describe("github issues > #463 saving empty string array", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         enabledDrivers: ["postgres"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -19,7 +17,7 @@ describe("github issues > #463 saving empty string array", () => {
         const post = new Post();
         post.names = [];
         await connection.getRepository(Post).save(post);
-        const loadedPost = await connection.getRepository(Post).findOneById(1);
+        const loadedPost = await connection.getRepository(Post).findOne(1);
         loadedPost!.names.length.should.be.eql(0);
     })));
 

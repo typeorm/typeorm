@@ -1,13 +1,12 @@
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {Table} from "../../schema-builder/schema/Table";
+import {Table} from "../../schema-builder/table/Table";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
-import {OrmUtils} from "../../util/OrmUtils";
-import {InsertResult} from "../InsertResult";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {WebsqlDriver} from "./WebsqlDriver";
+import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -18,6 +17,7 @@ declare function openDatabase(...params: any[]): any;
  * Runs queries on a single websql database connection.
  */
 export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
+
     /**
      * Real database connection from a connection pool used to perform queries.
      */
@@ -38,10 +38,10 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(driver: WebsqlDriver) {
-        super(driver);
-
+        super();
         this.driver = driver;
         this.connection = driver.connection;
+        this.broadcaster = new Broadcaster(this);
     }
 
     // -------------------------------------------------------------------------
@@ -169,7 +169,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
-     */
+     // todo: check if it works
     async insert(tableName: string, keyValues: ObjectLiteral): Promise<InsertResult> {
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => `"${key}"`).join(", ");
@@ -202,7 +202,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
                 });
             });
         });
-    }
+    }*/
 
     // TODO: finish the table schema loading
     /**
@@ -225,7 +225,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
 
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
-            const table = new Table(dbTable["name"]);
+            const table = new Table({name: dbTable["name"]});
 
             // load columns and indices
             /*const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
@@ -256,6 +256,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
             // create columns from the loaded columns
             table.columns = dbColumns.map(dbColumn => {
                 const tableColumn = new TableColumn();
+                tableColumn.table = table;
                 tableColumn.name = dbColumn["name"];
                 tableColumn.type = dbColumn["type"].toLowerCase();
                 tableColumn.default = dbColumn["dflt_value"] !== null && dbColumn["dflt_value"] !== undefined ? dbColumn["dflt_value"] : undefined;

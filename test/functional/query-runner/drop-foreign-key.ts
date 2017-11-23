@@ -1,0 +1,39 @@
+import "reflect-metadata";
+import {Connection} from "../../../src/connection/Connection";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+
+describe("query runner > drop foreign key", () => {
+
+    let connections: Connection[];
+    before(async () => {
+        connections = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mssql", "mysql", "postgres", "sqlite"],
+            schemaCreate: true,
+            dropSchema: true,
+        });
+    });
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
+
+    it("should correctly drop foreign key and revert drop", () => Promise.all(connections.map(async connection => {
+
+        const queryRunner = connection.createQueryRunner();
+
+        let table = await queryRunner.getTable("student");
+        table!.foreignKeys.length.should.be.equal(2);
+
+        await queryRunner.dropForeignKey(table!, table!.foreignKeys[0]);
+
+        table = await queryRunner.getTable("student");
+        table!.foreignKeys.length.should.be.equal(1);
+
+        await queryRunner.executeMemoryDownSql();
+
+        table = await queryRunner.getTable("student");
+        table!.foreignKeys.length.should.be.equal(2);
+
+        await queryRunner.release();
+    })));
+
+});

@@ -2,6 +2,7 @@ import {createConnection} from "../index";
 import {Connection} from "../connection/Connection";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {highlight} from "cli-highlight";
+
 const chalk = require("chalk");
 
 /**
@@ -41,18 +42,18 @@ export class SchemaLogCommand {
                 logging: false
             });
             connection = await createConnection(connectionOptions);
-            const sqls = await connection.driver.createSchemaBuilder().log();
-            if (sqls.length === 0) {
+            const sqlInMemory = await connection.driver.createSchemaBuilder().log();
+            if (sqlInMemory.upQueries.length === 0) {
                 console.log(chalk.yellow("Your schema is up to date - there are no queries to be executed by schema syncronization."));
 
             } else {
-                const lengthSeparators = String(sqls.length).split("").map(char => "-").join("");
+                const lengthSeparators = String(sqlInMemory.upQueries.length).split("").map(char => "-").join("");
                 console.log(chalk.yellow("---------------------------------------------------------------" + lengthSeparators));
-                console.log(chalk.yellow.bold(`-- Schema syncronization will execute following sql queries (${chalk.white(sqls.length)}):`));
+                console.log(chalk.yellow.bold(`-- Schema syncronization will execute following sql queries (${chalk.white(sqlInMemory.upQueries.length)}):`));
                 console.log(chalk.yellow("---------------------------------------------------------------" + lengthSeparators));
 
-                sqls.forEach(sql => {
-                    let sqlString = typeof sql === "string" ? sql : sql.up;
+                sqlInMemory.upQueries.forEach(query => {
+                    let sqlString = query;
                     sqlString = sqlString.trim();
                     sqlString = sqlString.substr(-1) === ";" ? sqlString : sqlString + ";";
                     console.log(highlight(sqlString));

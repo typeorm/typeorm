@@ -12,7 +12,7 @@ export class Post {
     key: number;
 
     @OneToOne(type => PostDetails, details => details.post, {
-        cascadeInsert: true
+        cascade: ["insert"]
     })
     @JoinColumn()
     details: PostDetails;

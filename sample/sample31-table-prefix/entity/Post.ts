@@ -17,12 +17,12 @@ export class Post {
     text: string;
 
     @ManyToOne(type => Author, {
-        cascadeInsert: true
+        cascade: ["insert"]
     })
     author: Author;
 
     @ManyToMany(type => Category, {
-        cascadeInsert: true
+        cascade: ["insert"]
     })
     @JoinTable()
     categories: Category[];

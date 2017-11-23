@@ -20,8 +20,7 @@ export class Request {
     success: boolean;
 
     @OneToOne(type => Ticket, ticket => ticket.request, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     ticket: Ticket;
 

@@ -22,17 +22,13 @@
     "post": {
       "target": "Post",
       "type": "many-to-one",
-      "cascadeInsert": true,
-      "cascadeUpdate": true,
-      "cascadeRemove": true,
+      "cascade": true,
       "inverseSide": "images"
     },
     "secondaryImages": {
       "target": "Post",
       "type": "many-to-one",
-      "cascadeInsert": true,
-      "cascadeUpdate": true,
-      "cascadeRemove": true,
+      "cascade": true,
       "inverseSide": "secondaryImages"
     }
   }

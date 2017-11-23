@@ -27,9 +27,6 @@ import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {LoggerFactory} from "../logger/LoggerFactory";
 import {QueryResultCacheFactory} from "../cache/QueryResultCacheFactory";
 import {QueryResultCache} from "../cache/QueryResultCache";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {PromiseUtils} from "../util/PromiseUtils";
 import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
 
 /**
@@ -131,7 +128,7 @@ export class Connection {
 
     /**
      * Gets a sql.js specific Entity Manager that allows to perform special load and save operations
-     * 
+     *
      * Available only in connection with the sqljs driver.
      */
     get sqljsManager(): SqljsEntityManager {
@@ -237,21 +234,7 @@ export class Connection {
      */
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.createQueryRunner("master");
-        const schemas = this.entityMetadatas
-            .filter(metadata => metadata.schema)
-            .map(metadata => metadata.schema!);
-
-        if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
-            const databases: string[] = this.driver.database ? [this.driver.database] : [];
-            this.entityMetadatas.forEach(metadata => {
-                if (metadata.database && databases.indexOf(metadata.database) === -1)
-                    databases.push(metadata.database);
-            });
-
-            await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(schemas, database));
-        } else {
-            await queryRunner.clearDatabase(schemas);
-        }
+        await queryRunner.clearDatabase();
         await queryRunner.release();
     }
 
@@ -419,7 +402,7 @@ export class Connection {
 
         return relationMetadata.junctionEntityMetadata;
     }
-    
+
     /**
      * Creates an Entity Manager for the current connection with the help of the EntityManagerFactory.
      */

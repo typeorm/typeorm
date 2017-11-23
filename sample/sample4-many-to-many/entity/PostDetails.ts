@@ -26,8 +26,7 @@ export class PostDetails {
     metadata: string|null;
     
     @ManyToMany(type => Post, post => post.details, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     posts: Post[];
 

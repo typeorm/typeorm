@@ -87,7 +87,7 @@ describe("many-to-many", function() {
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
             
-            return postRepository.findOneById(savedPost.id).should.eventually.eql(expectedPost);
+            return postRepository.findOne(savedPost.id).should.eventually.eql(expectedPost);
         });
 
         it("should have inserted post details in the database", function() {
@@ -97,7 +97,7 @@ describe("many-to-many", function() {
             expectedDetails.comment = savedPost.details[0].comment;
             expectedDetails.metadata = savedPost.details[0].metadata;
             
-            return postDetailsRepository.findOneById(savedPost.details[0].id).should.eventually.eql(expectedDetails);
+            return postDetailsRepository.findOne(savedPost.details[0].id).should.eventually.eql(expectedDetails);
         });
 
         it("should load post and its details if left join used", function() {
@@ -211,14 +211,14 @@ describe("many-to-many", function() {
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
-            return postRepository.findOneById(savedPost.id).should.eventually.eql(expectedPost);
+            return postRepository.findOne(savedPost.id).should.eventually.eql(expectedPost);
         });
 
         it("should have inserted category in the database", function() {
             const expectedPost = new PostCategory();
             expectedPost.id = savedPost.categories[0].id;
             expectedPost.name = "technology";
-            return postCategoryRepository.findOneById(savedPost.categories[0].id).should.eventually.eql(expectedPost);
+            return postCategoryRepository.findOne(savedPost.categories[0].id).should.eventually.eql(expectedPost);
         });
 
         it("should load post and its category if left join used", function() {
@@ -472,7 +472,7 @@ describe("many-to-many", function() {
             expectedPost.id = newPost.id;
             expectedPost.text = newPost.text;
             expectedPost.title = newPost.title;
-            return postRepository.findOneById(savedDetails.id).should.eventually.eql(expectedPost);
+            return postRepository.findOne(savedDetails.id).should.eventually.eql(expectedPost);
         });
 
         it("should have inserted details in the database", function() {
@@ -481,7 +481,7 @@ describe("many-to-many", function() {
             expectedDetails.comment = details.comment;
             expectedDetails.metadata = null;
             expectedDetails.authorName = null;
-            return postDetailsRepository.findOneById(details.id).should.eventually.eql(expectedDetails);
+            return postDetailsRepository.findOne(details.id).should.eventually.eql(expectedDetails);
         });
 
         it("should load post and its details if left join used", function() {
@@ -502,62 +502,6 @@ describe("many-to-many", function() {
                 .where("details.id=:id", { id: savedDetails.id })
                 .getOne()
                 .should.eventually.eql(expectedDetails);
-        });
-
-    });
-    
-    // -------------------------------------------------------------------------
-    // Remove the post
-    // -------------------------------------------------------------------------
-
-    describe("remove post should remove it but not post details because of cascade settings", function() {
-        let newPost: Post, details: PostDetails, savedPostId: number, savedDetailsId: number;
-
-        before(reloadDatabase);
-
-        before(function() {
-            details = new PostDetails();
-            details.comment = "post details comment";
-            
-            newPost = new Post();
-            newPost.text = "Hello post";
-            newPost.title = "this is post title";
-            newPost.details = [];
-            newPost.details.push(details);
-
-            return postRepository
-                .save(newPost) // first save
-                .then(savedPost => {
-                    savedPostId = (savedPost as Post).id;
-                    savedDetailsId = details.id;
-                    return postRepository.remove(newPost);
-                }); // now remove newly saved
-        });
-
-        it("should have a savedPostId and savedDetailsId because it was persisted before removal", function () {
-            expect(savedPostId).not.to.be.empty;
-            expect(savedDetailsId).not.to.be.empty;
-        });
-
-        it("should not have a post id since object was removed from the db", function () {
-            expect(newPost.id).to.be.empty;
-        });
-
-        it("should have a details id since details was not removed from db because of cascades settings", function () {
-            expect(details.id).not.to.be.empty;
-        });
-
-        it("should not have post in the database", function() {
-            return postRepository.findOneById(savedPostId).should.eventually.eql(undefined);
-        });
-
-        it("should have details in the database because it was not removed because cascades do not allow it", function() {
-            const details = new PostDetails();
-            details.id = savedDetailsId;
-            details.comment = "post details comment";
-            details.metadata = null;
-            details.authorName = null;
-            return postDetailsRepository.findOneById(savedDetailsId).should.eventually.eql(details);
         });
 
     });

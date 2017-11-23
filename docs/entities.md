@@ -173,16 +173,16 @@ When you save entities using `save` it always tries to find a entity in the data
 If id/ids are found then it will update this row in the database. 
 If there is no row with the id/ids, a new row will be inserted.
  
-To find a entity by id you can use `manager.findOneById` or `repository.findOneById`. Example:
+To find a entity by id you can use `manager.findOne` or `repository.findOne`. Example:
 
 ```typescript
 // find one by id with single primary key
-const person = await connection.manager.findOneById(Person, 1);
-const person = await connection.getRepository(Person).findOneById(1);
+const person = await connection.manager.findOne(Person, 1);
+const person = await connection.getRepository(Person).findOne(1);
 
 // find one by id with composite primary keys
-const user = await connection.manager.findOneById(User, { firstName: "Umed", lastName: "Khudoiberdiev" });
-const user = await connection.getRepository(User).findOneById({ firstName: "Umed", lastName: "Khudoiberdiev" });
+const user = await connection.manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
+const user = await connection.getRepository(User).findOne({ firstName: "Timber", lastName: "Saw" });
 ```
 
 ### Special columns

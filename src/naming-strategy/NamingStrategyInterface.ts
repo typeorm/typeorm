@@ -2,6 +2,8 @@
  * Naming strategy defines how auto-generated names for such things like table name, or table column gonna be
  * generated.
  */
+import {Table} from "../schema-builder/table/Table";
+
 export interface NamingStrategyInterface {
 
     /**
@@ -35,9 +37,34 @@ export interface NamingStrategyInterface {
     relationName(propertyName: string): string;
 
     /**
+     * Gets the table's primary key name from the given table name and column names.
+     */
+    primaryKeyName(tableOrName: Table|string, columnNames: string[]): string;
+
+    /**
+     * Gets the table's unique constraint name from the given table name and column names.
+     */
+    uniqueConstraintName(tableOrName: Table|string, columnNames: string[]): string;
+
+    /**
+     * Gets the table's default constraint name from the given table name and column name.
+     */
+    defaultConstraintName(tableOrName: Table|string, columnName: string): string;
+
+    /**
+     * Gets the name of the foreign key.
+     */
+    foreignKeyName(tableOrName: Table|string, columnNames: string[]): string;
+
+    /**
      * Gets the name of the index - simple and compose index.
      */
-    indexName(customName: string|undefined, tableName: string, columns: string[]): string;
+    indexName(tableOrName: Table|string, columns: string[]): string;
+
+    /**
+     * Gets the name of the check constraint.
+     */
+    checkConstraintName(tableOrName: Table|string, columns: string[]): string;
 
     /**
      * Gets the name of the join column used in the one-to-one and many-to-one relations.
@@ -62,11 +89,6 @@ export interface NamingStrategyInterface {
      * Gets the name of the column used for columns in the junction tables.
      */
     joinTableColumnName(tableName: string, propertyName: string, columnName?: string): string;
-
-    /**
-     * Gets the name of the foreign key.
-     */
-    foreignKeyName(tableName: string, columnNames: string[], referencedTableName: string, referencedColumnNames: string[]): string;
 
     /**
      * Gets the column name of the column with foreign key to the parent table used in the class table inheritance.

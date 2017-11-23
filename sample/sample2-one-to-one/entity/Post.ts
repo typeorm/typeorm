@@ -21,9 +21,7 @@ export class Post {
 
     // post has relation with category, however inverse relation is not set (category does not have relation with post set)
     @OneToOne(type => PostCategory, {
-        cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascade: true
     })
     @JoinColumn()
     category: PostCategory;
@@ -31,7 +29,7 @@ export class Post {
     // post has relation with details. cascade inserts here means if new PostDetails instance will be set to this 
     // relation it will be inserted automatically to the db when you save this Post entity
     @OneToOne(type => PostDetails, details => details.post, {
-        cascadeInsert: true
+        cascade: ["insert"]
     })
     @JoinColumn()
     details: PostDetails;
@@ -39,24 +37,20 @@ export class Post {
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
     // it will be inserted automatically to the db when you save this Post entity
     @OneToOne(type => PostImage, image => image.post, {
-        cascadeUpdate: true
+        cascade: ["update"]
     })
     @JoinColumn()
     image: PostImage;
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
     // it will be inserted automatically to the db when you save this Post entity
-    @OneToOne(type => PostMetadata, metadata => metadata.post, {
-        cascadeRemove: true
-    })
+    @OneToOne(type => PostMetadata, metadata => metadata.post)
     @JoinColumn()
     metadata: PostMetadata|null;
 
     // post has relation with details. full cascades here
     @OneToOne(type => PostInformation, information => information.post, {
-        cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascade: true
     })
     @JoinColumn()
     information: PostInformation;

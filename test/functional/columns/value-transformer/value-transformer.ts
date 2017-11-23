@@ -9,7 +9,6 @@ describe("columns > value-transformer functionality", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [Post],
-        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -30,7 +29,7 @@ describe("columns > value-transformer functionality", () => {
         await postRepository.save(post);
 
         // check if all columns are updated except for readonly columns
-        const loadedPost = await postRepository.findOneById(1);
+        const loadedPost = await postRepository.findOne(1);
         expect(loadedPost!.title).to.be.equal("About columns1");
         expect(loadedPost!.tags).to.deep.eq(["very", "simple"]);
 

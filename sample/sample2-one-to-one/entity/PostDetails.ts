@@ -17,9 +17,7 @@ export class PostDetails {
     metadata: string;
     
     @OneToOne(type => Post, post => post.details, {
-        cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascade: true
     })
     post: Post;
 

@@ -1,7 +1,6 @@
 import {Driver} from "../Driver";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {AbstractSqliteQueryRunner} from "./AbstractSqliteQueryRunner";
 import {DateUtils} from "../../util/DateUtils";
 import {Connection} from "../../connection/Connection";
 import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
@@ -9,14 +8,16 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {RandomGenerator} from "../../util/RandomGenerator";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {OrmUtils} from "../../util/OrmUtils";
+import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with sqlite DBMS.
  */
-export class AbstractSqliteDriver implements Driver {
+export abstract class AbstractSqliteDriver implements Driver {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -158,6 +159,15 @@ export class AbstractSqliteDriver implements Driver {
     }
 
     // -------------------------------------------------------------------------
+    // Public Abstract
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates a query runner used to execute database queries.
+     */
+    abstract createQueryRunner(mode: "master"|"slave"): QueryRunner;
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
@@ -193,16 +203,6 @@ export class AbstractSqliteDriver implements Driver {
     }
 
     /**
-     * Creates a query runner used to execute database queries.
-     */
-    createQueryRunner(mode: "master"|"slave" = "master") {
-        if (!this.queryRunner)
-            this.queryRunner = new AbstractSqliteQueryRunner(this);
-
-        return this.queryRunner;
-    }
-
-    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
@@ -223,9 +223,6 @@ export class AbstractSqliteDriver implements Driver {
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             return DateUtils.mixedDateToUtcDatetimeString(value); // to string conversation needs because SQLite stores fate as integer number, when date came as Object
-
-        } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
-            return RandomGenerator.uuid4();
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
@@ -267,26 +264,29 @@ export class AbstractSqliteDriver implements Driver {
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
+        const builtParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
         if (!parameters || !Object.keys(parameters).length)
-            return [sql, []];
+            return [sql, builtParameters];
 
-        const builtParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
-            const value = parameters[key.substr(1)];
+            let value = parameters[key.substr(1)];
             if (value instanceof Array) {
                 return value.map((v: any) => {
                     builtParameters.push(v);
-                    return "$" + builtParameters.length;
+                    return "?";
+                    // return "$" + builtParameters.length;
                 }).join(", ");
 
             } else if (value instanceof Function) {
                 return value();
 
             } else {
+                if (value instanceof ArrayParameter) value = value.value;
                 builtParameters.push(value);
-                return "$" + builtParameters.length;
+                return "?";
+                // return "$" + builtParameters.length;
             }
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, builtParameters];
@@ -297,6 +297,16 @@ export class AbstractSqliteDriver implements Driver {
      */
     escape(columnName: string): string {
         return "\"" + columnName + "\"";
+    }
+
+    /**
+     * Build full table name with database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     *
+     * Returns only simple table name because all inherited drivers does not supports schema and database.
+     */
+    buildTableName(tableName: string, schema?: string, database?: string): string {
+        return tableName;
     }
 
     /**
@@ -329,21 +339,21 @@ export class AbstractSqliteDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(column: ColumnMetadata): string {
-        if (typeof column.default === "number") {
-            return "" + column.default;
+    normalizeDefault(defaultValue: string): string {
+        if (typeof defaultValue === "number") {
+            return "" + defaultValue;
 
-        } else if (typeof column.default === "boolean") {
-            return column.default === true ? "1" : "0";
+        } else if (typeof defaultValue === "boolean") {
+            return defaultValue === true ? "1" : "0";
 
-        } else if (typeof column.default === "function") {
-            return column.default();
+        } else if (typeof defaultValue === "function") {
+            return defaultValue();
 
-        } else if (typeof column.default === "string") {
-            return `'${column.default}'`;
+        } else if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
 
         } else {
-            return column.default;
+            return defaultValue;
         }
     }
 
@@ -409,6 +419,48 @@ export class AbstractSqliteDriver implements Driver {
      */
     obtainSlaveConnection(): Promise<any> {
         return Promise.resolve();
+    }
+
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+        const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
+            let value: any;
+            if (generatedColumn.generationStrategy === "increment" && insertResult) {
+                value = insertResult;
+            // } else if (generatedColumn.generationStrategy === "uuid") {
+            //     value = insertValue[generatedColumn.databaseName];
+            }
+
+            if (!value) return map;
+            return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
+        }, {} as ObjectLiteral);
+
+        return Object.keys(generatedMap).length > 0 ? generatedMap : undefined;
+    }
+
+    /**
+     * Returns true if driver supports RETURNING / OUTPUT statement.
+     */
+    isReturningSqlSupported(): boolean {
+        return false;
+    }
+
+    /**
+     * Returns true if driver supports uuid values generation on its own.
+     */
+    isUUIDGenerationSupported(): boolean {
+        return false;
+    }
+
+    /**
+     * Creates an escaped parameter.
+     */
+    createParameter(parameterName: string, index: number): string {
+        // return "$" + (index + 1);
+        return "?";
+        // return "$" + parameterName;
     }
 
     // -------------------------------------------------------------------------

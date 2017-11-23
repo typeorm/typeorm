@@ -14,8 +14,6 @@ describe.skip("github issues > #838 Time zones for timestamp columns are incorre
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            schemaCreate: true,
-            dropSchema: true,
             enabledDrivers: [
                 "postgres"
             ]
@@ -32,7 +30,7 @@ describe.skip("github issues > #838 Time zones for timestamp columns are incorre
         // const results = await postgresConnection.query(`SELECT date FROM "flight" WHERE id = 1`);
         // console.log(results);
         await postgresConnection.query(`INSERT INTO "flight" ("id", "date") VALUES (1, '${testDateString}');`);
-        const flight = await postgresConnection.manager.findOneById(Flight, 1);
+        const flight = await postgresConnection.manager.findOne(Flight, 1);
         expect(flight!.date.toISOString()).to.equal(new Date(testDateString).toISOString());
     });
 

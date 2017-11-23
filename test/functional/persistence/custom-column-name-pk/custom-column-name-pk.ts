@@ -9,8 +9,6 @@ describe("persistence > cascade operations with custom name", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -48,7 +46,8 @@ describe("persistence > cascade operations with custom name", () => {
 
             posts.should.be.eql([{
                 id: 1,
-                title: "Hello Post #1"
+                title: "Hello Post #1",
+                category: null
             }]);
         })));
 

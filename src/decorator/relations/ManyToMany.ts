@@ -8,7 +8,7 @@ import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
  * multiple instances of Entity1. To achieve it, this type of relation creates a junction table, where it storage
  * entity1 and entity2 ids. This is owner side of the relationship.
  */
-export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>, options?: { cascadeInsert?: boolean, cascadeUpdate?: boolean, lazy?: boolean, eager?: boolean }): Function;
+export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>, options?: RelationOptions): Function;
 
 /**
  * Many-to-many is a type of relationship when Entity1 can have multiple instances of Entity2, and Entity2 can have
@@ -17,7 +17,7 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>, optio
  */
 export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>,
                               inverseSide?: string|((object: T) => any),
-                              options?: { cascadeInsert?: boolean, cascadeUpdate?: boolean, lazy?: boolean, eager?: boolean }): Function;
+                              options?: RelationOptions): Function;
 
 /**
  * Many-to-many is a type of relationship when Entity1 can have multiple instances of Entity2, and Entity2 can have
@@ -25,8 +25,8 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>,
  * entity1 and entity2 ids. This is owner side of the relationship.
  */
 export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>,
-                              inverseSideOrOptions?: string|((object: T) => any)|{ cascadeInsert?: boolean, cascadeUpdate?: boolean, lazy?: boolean, eager?: boolean },
-                              options?: { cascadeInsert?: boolean, cascadeUpdate?: boolean, lazy?: boolean, eager?: boolean }): Function {
+                              inverseSideOrOptions?: string|((object: T) => any)|RelationOptions,
+                              options?: RelationOptions): Function {
     let inverseSideProperty: string|((object: T) => any);
     if (typeof inverseSideOrOptions === "object") {
         options = <RelationOptions> inverseSideOrOptions;

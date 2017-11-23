@@ -97,10 +97,7 @@ export class EntitySchemaTransformer {
                         isTreeParent: relationSchema.isTreeParent,
                         isTreeChildren: relationSchema.isTreeChildren,
                         options: {
-                            cascadeAll: relationSchema.cascadeAll,
-                            cascadeInsert: relationSchema.cascadeInsert,
-                            cascadeUpdate: relationSchema.cascadeUpdate,
-                            cascadeRemove: relationSchema.cascadeRemove,
+                            cascade: relationSchema.cascade,
                             nullable: relationSchema.nullable,
                             onDelete: relationSchema.onDelete
                         }

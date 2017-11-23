@@ -4,6 +4,26 @@
 export class PromiseUtils {
 
     /**
+     * Creates a new promise with resolved value used for lazy relations.
+     */
+    static create(value: any) {
+        const promise = Promise.resolve(value);
+        (promise as any)["__value__"] = value;
+        return promise;
+    }
+
+    /**
+     * If given value is a promise created by "create" method this method gets its value.
+     * If given value is not a promise then given value is returned back.
+     */
+    static extractValue(object: any) {
+        if (object instanceof Promise && (object as any)["__value__"])
+            return (object as any)["__value__"];
+
+        return object;
+    }
+
+    /**
      * Runs given callback that returns promise for each item in the given collection in order.
      * Operations executed after each other, right after previous promise being resolved.
      */

@@ -1,0 +1,343 @@
+import {TableColumn} from "./TableColumn";
+import {TableIndex} from "./TableIndex";
+import {TableForeignKey} from "./TableForeignKey";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {Driver} from "../../driver/Driver";
+import {ColumnType} from "../../driver/types/ColumnTypes";
+import {TableOptions} from "../options/TableOptions";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {TableUtils} from "../util/TableUtils";
+import {TableUnique} from "./TableUnique";
+import {TableCheck} from "./TableCheck";
+
+/**
+ * Table in the database represented in this class.
+ */
+export class Table {
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Contains database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     */
+    name: string;
+
+    /**
+     * Table columns.
+     */
+    columns: TableColumn[] = [];
+
+    /**
+     * Table indices.
+     */
+    indices: TableIndex[] = [];
+
+    /**
+     * Table foreign keys.
+     */
+    foreignKeys: TableForeignKey[] = [];
+
+    /**
+     * Table unique constraints.
+     */
+    uniques: TableUnique[] = [];
+
+    /**
+     * Table check constraints.
+     */
+    checks: TableCheck[] = [];
+
+    /**
+     * Indicates if table was just created.
+     * This is needed, for example to check if we need to skip primary keys creation
+     * for new tables.
+     */
+    justCreated: boolean = false;
+
+    /**
+     * Table engine.
+     */
+    engine?: string;
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    constructor(options?: TableOptions) {
+        if (options) {
+            this.name = options.name;
+
+            if (options.columns)
+                this.columns = options.columns.map(column => new TableColumn(column));
+
+            if (options.indices)
+                this.indices = options.indices.map(index => new TableIndex(index));
+
+            if (options.foreignKeys)
+                this.foreignKeys = options.foreignKeys.map(foreignKey => new TableForeignKey(foreignKey));
+
+            if (options.uniques)
+                this.uniques = options.uniques.map(unique => new TableUnique(unique));
+
+            if (options.checks)
+                this.checks = options.checks.map(check => new TableCheck(check));
+
+            if (options.justCreated !== undefined)
+                this.justCreated = options.justCreated;
+
+            this.engine = options.engine;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+
+    get primaryColumns(): TableColumn[] {
+        return this.columns.filter(column => column.isPrimary);
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Clones this table to a new table with all properties cloned.
+     */
+    clone(): Table {
+        return new Table(<TableOptions>{
+            name: this.name,
+            columns: this.columns.map(column => column.clone()),
+            indices: this.indices.map(constraint => constraint.clone()),
+            foreignKeys: this.foreignKeys.map(constraint => constraint.clone()),
+            uniques: this.uniques.map(constraint => constraint.clone()),
+            checks: this.checks.map(constraint => constraint.clone()),
+            justCreated: this.justCreated,
+            engine: this.engine,
+        });
+    }
+
+    /**
+     * Add column and creates its constraints.
+     */
+    addColumn(column: TableColumn): void {
+        this.columns.push(column);
+    }
+
+    /**
+     * Remove column and its constraints.
+     */
+    removeColumn(column: TableColumn): void {
+        const foundColumn = this.columns.find(c => c.name === column.name);
+        if (foundColumn)
+            this.columns.splice(this.columns.indexOf(foundColumn), 1);
+    }
+
+    /**
+     * Replaces given column.
+     */
+    replaceColumn(oldColumn: TableColumn, newColumn: TableColumn): void {
+        this.columns[this.columns.indexOf(oldColumn)] = newColumn;
+    }
+
+    /**
+     * Adds unique constraint.
+     */
+    addUniqueConstraint(uniqueConstraint: TableUnique): void {
+        this.uniques.push(uniqueConstraint);
+        if (uniqueConstraint.columnNames.length === 1) {
+            const uniqueColumn = this.columns.find(column => column.name === uniqueConstraint.columnNames[0]);
+            if (uniqueColumn)
+                uniqueColumn.isUnique = true;
+        }
+    }
+
+    /**
+     * Removes unique constraint.
+     */
+    removeUniqueConstraint(removedUnique: TableUnique): void {
+        const foundUnique = this.uniques.find(unique => unique.name === removedUnique.name);
+        if (foundUnique) {
+            this.uniques.splice(this.uniques.indexOf(foundUnique), 1);
+            if (foundUnique.columnNames.length === 1) {
+                const uniqueColumn = this.columns.find(column => column.name === foundUnique.columnNames[0]);
+                if (uniqueColumn)
+                    uniqueColumn.isUnique = false;
+            }
+        }
+    }
+
+    /**
+     * Adds foreign keys.
+     */
+    addForeignKey(foreignKey: TableForeignKey): void {
+        this.foreignKeys.push(foreignKey);
+    }
+
+    /**
+     * Removes foreign key.
+     */
+    removeForeignKey(removedForeignKey: TableForeignKey): void {
+        const fk = this.foreignKeys.find(foreignKey => foreignKey.name === removedForeignKey.name);
+        if (fk)
+            this.foreignKeys.splice(this.foreignKeys.indexOf(fk), 1);
+    }
+
+    /**
+     * Adds index.
+     */
+    addIndex(index: TableIndex): void {
+        this.indices.push(index);
+    }
+
+    /**
+     * Removes index.
+     */
+    removeIndex(tableIndex: TableIndex): void {
+        const index = this.indices.find(index => index.name === tableIndex.name);
+        if (index)
+            this.indices.splice(this.indices.indexOf(index), 1);
+    }
+
+    /**
+     * Differentiate columns of this table and columns from the given column metadatas columns
+     * and returns only changed.
+     */
+    findChangedColumns(driver: Driver, columnMetadatas: ColumnMetadata[]): TableColumn[] {
+        return this.columns.filter(tableColumn => {
+            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.databaseName === tableColumn.name);
+            if (!columnMetadata)
+                return false; // we don't need new columns, we only need exist and changed
+
+            // console.log(tableColumn.name, "!==", columnMetadata.databaseName); //  ||
+            // console.log(tableColumn.type, "!==", driver.normalizeType(columnMetadata)); // ||
+            // console.log(tableColumn.comment, "!==", columnMetadata.comment); //  ||
+            // console.log(this.compareDefaultValues(driver.normalizeDefault(columnMetadata), tableColumn.default)); // || // we included check for generated here, because generated columns already can have default values
+            // console.log(tableColumn.isNullable, "!==", columnMetadata.isNullable); //  ||
+            // console.log(tableColumn.isUnique, "!==", columnMetadata.isUnique); //  ||
+            // console.log(tableColumn.isGenerated, "!==", columnMetadata.isGenerated);
+
+            return  tableColumn.name !== columnMetadata.databaseName ||
+                    tableColumn.type !== driver.normalizeType(columnMetadata) ||
+                    tableColumn.comment !== columnMetadata.comment ||
+                    (!tableColumn.isGenerated && !this.compareDefaultValues(driver.normalizeDefault(columnMetadata.default), tableColumn.default)) || // we included check for generated here, because generated columns already can have default values
+                    tableColumn.isNullable !== columnMetadata.isNullable ||
+                    tableColumn.isUnique !== driver.normalizeIsUnique(columnMetadata) ||
+                    // tableColumn.isPrimary !== columnMetadata.isPrimary ||
+                    tableColumn.isGenerated !== columnMetadata.isGenerated ||
+                    !this.compareColumnLengths(driver, tableColumn, columnMetadata);
+        });
+    }
+
+    findColumnByName(name: string): TableColumn|undefined {
+        return this.columns.find(column => column.name === name);
+    }
+
+    /**
+     * Returns all column indices.
+     */
+    findColumnIndices(column: TableColumn): TableIndex[] {
+        return this.indices.filter(index => {
+           return !!index.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
+    /**
+     * Returns all column foreign keys.
+     */
+    findColumnForeignKeys(column: TableColumn): TableForeignKey[] {
+        return this.foreignKeys.filter(foreignKey => {
+            return !!foreignKey.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
+    /**
+     * Returns all column uniques.
+     */
+    findColumnUniques(column: TableColumn): TableUnique[] {
+        return this.uniques.filter(unique => {
+            return !!unique.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
+    /**
+     * Returns all column checks.
+     */
+    findColumnChecks(column: TableColumn): TableCheck[] {
+        return this.checks.filter(check => {
+            return !!check.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Compare column lengths only if the datatype supports it.
+     */
+    protected compareColumnLengths(driver: Driver, tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
+
+        const normalizedColumn = driver.normalizeType(columnMetadata) as ColumnType;
+        if (driver.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
+            let metadataLength = driver.getColumnLength(columnMetadata);
+
+            // if we found something to compare with then do it, else skip it
+            // use use case insensitive comparison to catch "MAX" vs "Max" case
+            if (metadataLength)
+                return tableColumn.length.toLowerCase() === metadataLength.toLowerCase();
+        }
+
+        return true;
+
+    }
+
+    /**
+     * Checks if "DEFAULT" values in the column metadata and in the database are equal.
+     */
+    protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
+        if (typeof columnMetadataValue === "string" && typeof databaseValue === "string") {
+
+            // we need to cut out "((x))" where x number generated by mssql
+            columnMetadataValue = columnMetadataValue.replace(/\(\([0-9.]*\)\)$/g, "$1");
+            databaseValue = databaseValue.replace(/\(\(([0-9.]*?)\)\)$/g, "$1");
+
+            // we need to cut out "(" because in mssql we can understand returned value is a string or a function
+            // as result compare cannot understand if default is really changed or not
+            columnMetadataValue = columnMetadataValue.replace(/^\(|\)$/g, "");
+            databaseValue = databaseValue.replace(/^\(|\)$/g, "");
+
+            // we need to cut out "'" because in mysql we can understand returned value is a string or a function
+            // as result compare cannot understand if default is really changed or not
+            columnMetadataValue = columnMetadataValue.replace(/^'+|'+$/g, "");
+            databaseValue = databaseValue.replace(/^'+|'+$/g, "");
+        }
+
+        return columnMetadataValue === databaseValue;
+    }
+
+    // -------------------------------------------------------------------------
+    // Static Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates table from a given entity metadata.
+     */
+    static create(entityMetadata: EntityMetadata, driver: Driver): Table {
+        const options: TableOptions = {
+            name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
+            engine: entityMetadata.engine,
+            columns: entityMetadata.columns
+                .filter(column => column)
+                .map(column => TableUtils.createTableColumnOptions(column, driver)),
+            indices: entityMetadata.indices.map(index => TableIndex.create(index)),
+            uniques: entityMetadata.uniques.map(unique => TableUnique.create(unique)),
+        };
+
+        return new Table(options);
+    }
+
+}

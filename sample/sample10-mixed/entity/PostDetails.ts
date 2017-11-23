@@ -19,13 +19,12 @@ export class PostDetails {
     post: Post;
 
     @OneToMany(type => Category, category => category.details, {
-        cascadeInsert: true
+        cascade: ["insert"]
     })
     categories: Category[];
 
     @ManyToOne(type => Chapter, chapter => chapter.postDetails, {
-        cascadeInsert: true,
-        cascadeRemove: true
+        cascade: ["insert"]
     })
     chapter: Chapter;
 

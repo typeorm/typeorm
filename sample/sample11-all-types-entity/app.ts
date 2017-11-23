@@ -77,7 +77,7 @@ createConnection(options).then(connection => {
             return postRepository.save(entity);
         })
         .then(entity => {
-            return postRepository.findOneById(entity.id);
+            return postRepository.findOne(entity.id);
         })
         .then(entity => {
             console.log("Entity is loaded: ", entity);

@@ -14,7 +14,7 @@ export class User {
   @Column() handedness: string;
 
   @ManyToMany(type => Role, {
-    cascadeInsert: true
+      cascade: ["insert"]
 })
   @JoinTable()
   roles: Role[];

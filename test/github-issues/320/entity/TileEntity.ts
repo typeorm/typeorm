@@ -10,21 +10,18 @@ export class TileEntity {
     id: number;
 
     @ManyToMany(type => TileEntity, tile => tile.children, {
-        cascadeInsert: true,
-        cascadeUpdate: false
+        cascade: ["insert"]
     })
     @JoinTable()
     parents: TileEntity[];
 
     @ManyToMany(type => TileEntity, tile => tile.parents, {
-        cascadeInsert: true,
-        cascadeUpdate: false
+        cascade: ["insert"]
     })
     children: TileEntity[];
 
     @ManyToMany(type => ActivityEntity, activity => activity.tiles, {
-        cascadeInsert: true,
-        cascadeUpdate: false
+        cascade: ["insert"]
     })
     @JoinTable()
     activities: ActivityEntity[];

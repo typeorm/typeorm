@@ -5,7 +5,7 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {expect} from "chai";
 
-describe("github issues > #1055 already loaded via query builder relations should not be loaded again when they are lazily loaded", () => {
+describe("github issues > #996 already loaded via query builder relations should not be loaded again when they are lazily loaded", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

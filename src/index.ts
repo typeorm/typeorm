@@ -67,6 +67,7 @@ export * from "./decorator/tree/TreeLevelColumn";
 export * from "./decorator/tree/TreeParent";
 export * from "./decorator/tree/TreeChildren";
 export * from "./decorator/Index";
+export * from "./decorator/Unique";
 export * from "./decorator/Generated";
 export * from "./decorator/DiscriminatorValue";
 export * from "./decorator/EntityRepository";
@@ -85,11 +86,10 @@ export * from "./repository/TreeRepository";
 export * from "./repository/MongoRepository";
 export * from "./repository/RemoveOptions";
 export * from "./repository/SaveOptions";
-export * from "./schema-builder/schema/TableColumn";
-export * from "./schema-builder/schema/TableForeignKey";
-export * from "./schema-builder/schema/TableIndex";
-export * from "./schema-builder/schema/TablePrimaryKey";
-export * from "./schema-builder/schema/Table";
+export * from "./schema-builder/table/TableColumn";
+export * from "./schema-builder/table/TableForeignKey";
+export * from "./schema-builder/table/TableIndex";
+export * from "./schema-builder/table/Table";
 export * from "./driver/mongodb/typings";
 export * from "./driver/types/DatabaseType";
 export * from "./driver/sqlserver/MssqlParameter";
@@ -107,6 +107,9 @@ export {UpdateQueryBuilder} from "./query-builder/UpdateQueryBuilder";
 export {RelationQueryBuilder} from "./query-builder/RelationQueryBuilder";
 export {Brackets} from "./query-builder/Brackets";
 export {WhereExpression} from "./query-builder/WhereExpression";
+export {InsertResult} from "./query-builder/result/InsertResult";
+export {UpdateResult} from "./query-builder/result/UpdateResult";
+export {DeleteResult} from "./query-builder/result/DeleteResult";
 export {QueryRunner} from "./query-runner/QueryRunner";
 export {EntityManager} from "./entity-manager/EntityManager";
 export {MongoEntityManager} from "./entity-manager/MongoEntityManager";
@@ -224,6 +227,11 @@ export function getMongoManager(connectionName: string = "default"): MongoEntity
     return getConnectionManager().get(connectionName).manager as MongoEntityManager;
 }
 
+/**
+ * Gets Sqljs entity manager from connection name.
+ * "default" connection is used, when no name is specified.
+ * Only works when Sqljs driver is used.
+ */
 export function getSqljsManager(connectionName: string = "default"): SqljsEntityManager {
     return getConnectionManager().get(connectionName).manager as SqljsEntityManager;
 }

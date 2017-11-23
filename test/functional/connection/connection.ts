@@ -178,10 +178,10 @@ describe("Connection", () => {
             const post = new Post();
             post.title = "new post";
             await postRepository.save(post);
-            const loadedPost = await postRepository.findOneById(post.id);
+            const loadedPost = await postRepository.findOne(post.id);
             expect(loadedPost).to.be.eql(post);
             await connection.synchronize(true);
-            const againLoadedPost = await postRepository.findOneById(post.id);
+            const againLoadedPost = await postRepository.findOne(post.id);
             expect(againLoadedPost).to.be.empty;
         })));
 

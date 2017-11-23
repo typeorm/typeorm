@@ -11,8 +11,6 @@ describe("database schema > column length > mssql", () => {
         connections = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["mysql"],
-            schemaCreate: true,
-            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

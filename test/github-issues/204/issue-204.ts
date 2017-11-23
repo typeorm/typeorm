@@ -29,7 +29,7 @@ describe("github issues > #204 jsonb array is not persisted correctly", () => {
         ];
         await connection.manager.save(record);
 
-        const foundRecord = await connection.manager.findOneById(Record, record.id);
+        const foundRecord = await connection.manager.findOne(Record, record.id);
         expect(foundRecord).to.be.not.undefined;
         foundRecord!.datas.should.be.eql([
             new RecordData("hello1", "hello2", "hello3", "hello4", true, false),

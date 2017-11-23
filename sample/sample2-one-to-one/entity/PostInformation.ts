@@ -11,7 +11,7 @@ export class PostInformation {
     text: string;
     
     @OneToOne(type => Post, post => post.information, {
-        cascadeUpdate: true,
+        cascade: ["update"]
     })
     post: Post;
 

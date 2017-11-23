@@ -18,9 +18,7 @@
     "posts": {
       "target": "Post",
       "type": "many-to-many",
-      "cascadeInsert": true,
-      "cascadeUpdate": true,
-      "cascadeRemove": true,
+      "cascade": true,
       "inverseSide": "categories"
     }
   }

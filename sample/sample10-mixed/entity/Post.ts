@@ -23,16 +23,13 @@ export class Post {
     text: string;
 
     @OneToOne(type => PostDetails, details => details.post, {
-        cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascade: true
     })
     @JoinColumn()
     details: PostDetails;
 
     @OneToMany(type => Image, image => image.post, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     images: Image[] = [];
 
@@ -40,8 +37,7 @@ export class Post {
     secondaryImages: Image[];
 
     @ManyToOne(type => Cover, cover => cover.posts, {
-        cascadeInsert: true,
-        cascadeRemove: true
+        cascade: ["insert"]
     })
     @JoinColumn({ name: "coverId" })
     cover: Cover;
@@ -52,8 +48,7 @@ export class Post {
     coverId: number;
 
     @ManyToMany(type => Category, category => category.posts, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     @JoinTable()
     categories: Category[];

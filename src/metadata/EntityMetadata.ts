@@ -17,6 +17,7 @@ import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
 import {Driver} from "../driver/Driver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {UniqueMetadata} from "./UniqueMetadata";
 
 /**
  * Contains all entity metadata.
@@ -211,6 +212,11 @@ export class EntityMetadata {
     indices: IndexMetadata[] = [];
 
     /**
+     * Entity's unique metadatas.
+     */
+    uniques: UniqueMetadata[] = [];
+
+    /**
      * Entity's foreign key metadatas.
      */
     foreignKeys: ForeignKeyMetadata[] = [];
@@ -219,6 +225,11 @@ export class EntityMetadata {
      * Entity's embedded metadatas.
      */
     embeddeds: EmbeddedMetadata[] = [];
+
+    /**
+     * All embeddeds - embeddeds from this entity metadata and from all child embeddeds, etc.
+     */
+    allEmbeddeds: EmbeddedMetadata[] = [];
 
     /**
      * Entity listener metadatas.
@@ -241,6 +252,11 @@ export class EntityMetadata {
      * Checks if entity's table has multiple primary columns.
      */
     hasMultiplePrimaryKeys: boolean;
+
+    /**
+     * Indicates if this entity metadata has uuid generated columns.
+     */
+    hasUUIDGeneratedColumns: boolean;
 
     /**
      * Gets the column with generated flag.
@@ -399,6 +415,7 @@ export class EntityMetadata {
         parentClosureEntityMetadata?: EntityMetadata,
         args: TableMetadataArgs
     }) {
+        // todo: store connection inside a public property
         const namingStrategy = options.connection.namingStrategy;
         const entityPrefix = options.connection.options.entityPrefix;
         this.lazyRelationsWrapper = new LazyRelationsWrapper(options.connection);
@@ -467,6 +484,8 @@ export class EntityMetadata {
     /**
      * Compares ids of the two entities.
      * Returns true if they match, false otherwise.
+     *
+     * todo: extract into Utils all those static methods
      */
     compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined): boolean {
         if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
@@ -478,12 +497,14 @@ export class EntityMetadata {
     /**
      * Compares two different entity instances by their ids.
      * Returns true if they match, false otherwise.
+     *
+     * @deprecated performance bottleneck
      */
     compareEntities(firstEntity: ObjectLiteral, secondEntity: ObjectLiteral): boolean {
 
         // if any entity ids are empty then they aren't equal
-        const isFirstEntityEmpty = this.isEntityMapEmpty(firstEntity);
-        const isSecondEntityEmpty = this.isEntityMapEmpty(secondEntity);
+        const isFirstEntityEmpty = this.isEntityIdMapEmpty(firstEntity);
+        const isSecondEntityEmpty = this.isEntityIdMapEmpty(secondEntity);
         if (isFirstEntityEmpty || isSecondEntityEmpty)
             return false;
 
@@ -503,7 +524,7 @@ export class EntityMetadata {
      * Finds embedded with a given property path.
      */
     findEmbeddedWithPropertyPath(propertyPath: string): EmbeddedMetadata|undefined {
-        return this.embeddeds.find(embedded => {
+        return this.allEmbeddeds.find(embedded => {
             return embedded.propertyPath === propertyPath;
         });
     }
@@ -516,20 +537,21 @@ export class EntityMetadata {
     }
 
     /**
-     * Finds column with a given property path.
+     * Finds columns with a given property path.
+     * Relations can contain multiple columns.
      */
-    findColumnWithPropertyPath(propertyPath: string): ColumnMetadata|undefined {
+    findColumnsWithPropertyPath(propertyPath: string): ColumnMetadata[] {
         const column = this.columns.find(column => column.propertyPath === propertyPath);
         if (column)
-            return column;
+            return [column];
 
         // in the case if column with property path was not found, try to find a relation with such property path
         // if we find relation and it has a single join column then its the column user was seeking
         const relation = this.relations.find(relation => relation.propertyPath === propertyPath);
-        if (relation && relation.joinColumns.length === 1)
-            return relation.joinColumns[0];
+        if (relation && relation.joinColumns)
+            return relation.joinColumns;
 
-        return undefined;
+        return [];
     }
 
     /**
@@ -563,15 +585,19 @@ export class EntityMetadata {
     }
 
     /**
-     * Creates entity id map from the given entity ids array.
+     * Ensures that given object is an entity id map.
+     * If given id is an object then it means its already id map.
+     * If given id isn't an object then it means its a value of the id column
+     * and it creates a new id map with this value and name of the primary column.
      */
-    createEntityIdMap(ids: any|any[]) {
-        if (!(ids instanceof Array))
-            ids = [ids];
+    ensureEntityIdMap(id: any): ObjectLiteral {
+        if (id instanceof Object)
+            return id;
 
-        return this.primaryColumns.reduce((map, column, index) => {
-            return OrmUtils.mergeDeep(map, column.createValueMap(ids[index]));
-        }, {} as ObjectLiteral);
+        if (this.hasMultiplePrimaryKeys)
+            throw new Error(`Cannot create entity id map for a single value because this entity metadata contains multiple primary columns.`);
+
+        return this.primaryColumns[0].createValueMap(id);
     }
 
     /**
@@ -579,7 +605,7 @@ export class EntityMetadata {
      * If they all aren't empty it returns true.
      * If at least one id in the given map is empty it returns false.
      */
-    isEntityMapEmpty(entity: ObjectLiteral): boolean {
+    isEntityIdMapEmpty(entity: ObjectLiteral): boolean {
         return !this.primaryColumns.every(column => {
             const value = column.getEntityValue(entity);
             return value !== null && value !== undefined;
@@ -596,13 +622,50 @@ export class EntityMetadata {
         if (!entity) // todo: shall it accept an empty entity? try to remove this
             return undefined;
 
-        const map = this.primaryColumns.reduce((map, column) => {
+        return this.getValueMap(entity, this.primaryColumns);
+    }
+
+    /**
+     * Creates value map from the given values and columns.
+     * Examples of usages are primary columns map and join columns map.
+     */
+    getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[]): ObjectLiteral|undefined {
+        const map = columns.reduce((map, column) => {
             if (column.isObjectId)
                 return Object.assign(map, column.getEntityValueMap(entity));
 
             return OrmUtils.mergeDeep(map, column.getEntityValueMap(entity));
         }, {});
         return Object.keys(map).length > 0 ? map : undefined;
+    }
+
+    getValueDatabasePaths(entity: ObjectLiteral): ObjectLiteral {
+        return this.columns.reduce((query, column) => {
+            const columnValue = column.getEntityValue(entity);
+            if (columnValue !== undefined)
+                query[column.databasePath] = columnValue;
+            return query;
+        }, {} as any);
+    }
+
+    /**
+     * Replaces in a new object all property name of the given entity into their database names.
+     */
+    convertPropertiesMapToDatabaseMap(entity: ObjectLiteral) {
+        const map: ObjectLiteral = {};
+        this.columns.forEach(column => {
+            if (column.isVirtual) return;
+
+            OrmUtils.mergeDeep(map, column.createValueMap(column.getEntityValue(entity)));
+        });
+        this.relations.forEach(relation => {
+            let relationValue = relation.getEntityValue(entity);
+            if (relationValue instanceof Object)
+                relationValue = relation.createValueMap(this.convertPropertiesMapToDatabaseMap(relationValue));
+
+            OrmUtils.mergeDeep(map, relationValue);
+        });
+        return map;
     }
 
     /**
@@ -636,8 +699,9 @@ export class EntityMetadata {
         const idMap = this.getEntityIdMap(entity);
         if (this.hasMultiplePrimaryKeys) {
             return idMap;
+
         } else if (idMap) {
-            return idMap[this.primaryColumns[0].propertyName]; // todo: what about parent primary column?
+            return this.primaryColumns[0].getEntityValue(idMap); // todo: what about parent primary column?
         }
 
         return idMap;
@@ -679,11 +743,7 @@ export class EntityMetadata {
      */
     registerColumn(column: ColumnMetadata) {
         this.ownColumns.push(column);
-        this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.ownColumns);
-        this.parentIdColumns = this.columns.filter(column => column.isParentId);
-        this.primaryColumns = this.columns.filter(column => column.isPrimary);
-        this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
-        this.propertiesMap = this.createPropertiesMap();
+        this.recomputeColumnDependencies( this.ownColumns);
     }
 
     /**
@@ -706,7 +766,18 @@ export class EntityMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * Builds table path using database name and schema name and table name.
+     * Recomputes all column dependencies
+     */
+    protected recomputeColumnDependencies(ownColumns: ColumnMetadata[]): void {
+        this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), ownColumns);
+        this.parentIdColumns = this.columns.filter(column => column.isParentId);
+        this.primaryColumns = this.columns.filter(column => column.isPrimary);
+        this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
+        this.propertiesMap = this.createPropertiesMap();
+    }
+
+    /**
+     * Builds table path using database, schema name and table name.
      */
     protected buildTablePath(driver: Driver): string {
         let tablePath = this.tableName;

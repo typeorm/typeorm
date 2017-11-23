@@ -29,7 +29,7 @@ describe("github issues > #1034 Issue using setter with promises", () => {
         await connection.manager.save(circle);
 
         users.push(user);
-        const circleFromDB = await connection.manager.findOneById(Circle, circle.getId());
+        const circleFromDB = await connection.manager.findOne(Circle, circle.getId());
         expect(circleFromDB).is.not.undefined;
 
         // Setting users with setter

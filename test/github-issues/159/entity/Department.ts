@@ -15,7 +15,7 @@ export class Department {
     name: string;
 
     @OneToOne(type => Employee, {
-        cascadeInsert: true,
+        cascade: ["insert"],
         nullable: false
     })
     @JoinColumn()

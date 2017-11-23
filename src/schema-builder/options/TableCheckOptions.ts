@@ -1,0 +1,20 @@
+/**
+ * Database's table check constraint options.
+ */
+export interface TableCheckOptions {
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Constraint name.
+     */
+    name: string;
+
+    /**
+     * Column that contains this constraint.
+     */
+    columnNames: string[];
+
+}

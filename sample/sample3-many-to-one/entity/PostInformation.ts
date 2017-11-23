@@ -11,7 +11,7 @@ export class PostInformation {
     text: string;
     
     @OneToMany(type => Post, post => post.information, {
-        cascadeUpdate: true,
+        cascade: ["update"],
     })
     posts: Post[];
 

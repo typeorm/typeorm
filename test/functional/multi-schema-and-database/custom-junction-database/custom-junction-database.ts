@@ -26,11 +26,11 @@ describe("multi-schema-and-database > custom-junction-database", () => {
             const junctionMetadata = connection.getManyToManyMetadata(Post, "categories")!;
             const junctionTable = await queryRunner.getTable("yoman.." + junctionMetadata.tableName);
             expect(postTable).not.to.be.empty;
-            postTable!.database!.should.be.equal("yoman");
+            postTable!.name!.should.be.equal("yoman..post");
             expect(categoryTable).not.to.be.empty;
-            categoryTable!.database!.should.be.equal("yoman");
+            categoryTable!.name!.should.be.equal("yoman..category");
             expect(junctionTable).not.to.be.empty;
-            junctionTable!.database!.should.be.equal("yoman");
+            junctionTable!.name!.should.be.equal("yoman.." + junctionMetadata.tableName);
 
         } else { // mysql
             const postTable = await queryRunner.getTable("yoman.post");
@@ -38,11 +38,11 @@ describe("multi-schema-and-database > custom-junction-database", () => {
             const junctionMetadata = connection.getManyToManyMetadata(Post, "categories")!;
             const junctionTable = await queryRunner.getTable("yoman." + junctionMetadata.tableName);
             expect(postTable).not.to.be.empty;
-            postTable!.database!.should.be.equal("yoman");
+            postTable!.name!.should.be.equal("yoman.post");
             expect(categoryTable).not.to.be.empty;
-            categoryTable!.database!.should.be.equal("yoman");
+            categoryTable!.name!.should.be.equal("yoman.category");
             expect(junctionTable).not.to.be.empty;
-            junctionTable!.database!.should.be.equal("yoman");
+            junctionTable!.name!.should.be.equal("yoman." + junctionMetadata.tableName);
         }
         await queryRunner.release();
     })));

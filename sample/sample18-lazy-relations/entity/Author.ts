@@ -12,8 +12,7 @@ export class Author {
     name: string;
 
     @OneToMany(type => Post, post => post.author, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     posts: Promise<Post[]>;
 

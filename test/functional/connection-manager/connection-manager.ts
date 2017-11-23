@@ -128,7 +128,7 @@ describe("ConnectionManager", () => {
 
             // recreate connection and find previously saved post
             connection = await connectionManager.create(options).connect();
-            const loadedPost = (await connection.manager.findOneById(Post, 1))!;
+            const loadedPost = (await connection.manager.findOne(Post, 1))!;
             loadedPost.should.be.instanceof(Post);
             loadedPost.should.be.eql({ id: 1, title: "Hello post" });
             await connection.close();
@@ -151,7 +151,7 @@ describe("ConnectionManager", () => {
 
             // recreate connection and find previously saved post
             connection = await connectionManager.create(options).connect();
-            const loadedPost = await connection.manager.findOneById(Post, 1);
+            const loadedPost = await connection.manager.findOne(Post, 1);
             expect(loadedPost).to.be.undefined;
             await connection.close();
          });
@@ -173,7 +173,7 @@ describe("ConnectionManager", () => {
 
             // recreate connection and find previously saved post
             connection = await connectionManager.createAndConnect(options);
-            const loadedPost = await connection.manager.findOneById(Post, 1);
+            const loadedPost = await connection.manager.findOne(Post, 1);
             expect(loadedPost).to.be.undefined;
 
             await connection.close();
@@ -196,7 +196,7 @@ describe("ConnectionManager", () => {
 
             // recreate connection and find previously saved post
             connection = await connectionManager.createAndConnect(options);
-            const loadedPost = await connection.manager.findOneById(Post, 1);
+            const loadedPost = await connection.manager.findOne(Post, 1);
             expect(loadedPost).to.be.undefined;
             await connection.close();
          });*/

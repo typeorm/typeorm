@@ -432,7 +432,7 @@ createConnection(/*...*/).then(async connection => {
     let allPhotos = await photoRepository.find();
     console.log("All photos from the db: ", allPhotos);
 
-    let firstPhoto = await photoRepository.findOneById(1);
+    let firstPhoto = await photoRepository.findOne(1);
     console.log("First photo from the db: ", firstPhoto);
 
     let meAndBearsPhoto = await photoRepository.findOne({ name: "Me and Bears" });
@@ -462,7 +462,7 @@ import {Photo} from "./entity/Photo";
 createConnection(/*...*/).then(async connection => {
 
     /*...*/
-    let photoToUpdate = await photoRepository.findOneById(1);
+    let photoToUpdate = await photoRepository.findOne(1);
     photoToUpdate.name = "Me, my friends and polar bears";
     await photoRepository.save(photoToUpdate);
 
@@ -483,7 +483,7 @@ import {Photo} from "./entity/Photo";
 createConnection(/*...*/).then(async connection => {
 
     /*...*/
-    let photoToRemove = await photoRepository.findOneById(1);
+    let photoToRemove = await photoRepository.findOne(1);
     await photoRepository.remove(photoToRemove);
 
 }).catch(error => console.log(error));
@@ -697,19 +697,13 @@ export class Photo {
     /// ... 其他列
 
     @OneToOne(type => PhotoMetadata, metadata => metadata.photo, {
-        cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascade: true,
     })
     metadata: PhotoMetadata;
 }
 ```
 
-* **cascadeInsert** - 如果表中没有关系中的metadata，则自动insert，即我们不需要再手动insert一个新的photoMetadata对象。
-* **cascadeUpdate** - 如果metadata有变化，则自动update。
-* **cascadeRemove** - 如果把photo里的metadata移除了，也就是为空，则会自动remove表中的这条metadata数据。
-
-使用cascadeInsert就可以不需要像上面那边先存photo再存metadata了。
+使用cascade就可以不需要像上面那边先存photo再存metadata了。
 现在我们来单单存photo对象，由于cascade的作用，metadata也会自动存上。
 
 ```typescript
@@ -834,9 +828,7 @@ export class Album {
     name: string;
 
     @ManyToMany(type => Photo, photo => photo.albums, {  // 备注: 会在下面的Photo类里添加"albums"属性
-        cascadeInsert: true, // 在添加Album时，会自动添加相册里的Photo
-        cascadeUpdate: true, // 在更新Album时，会自动更新相册里的Photo 
-        cascadeRemove: true  // 在移除Album时，会自动移除相册里的Photo
+        cascade:true
     })
     @JoinTable()
     photos: Photo[];
@@ -852,9 +844,7 @@ export class Photo {
     /// ... 其他列
 
     @ManyToMany(type => Album, album => album.photos, {
-        cascadeInsert: true, // 在添加Album时，会自动添加相册里的Photo
-        cascadeUpdate: true, // 在更新Album时，会自动更新相册里的Photo 
-        cascadeRemove: true  // 在移除Album时，会自动移除相册里的Photo
+        cascade: true
     })
     albums: Album[];
 }

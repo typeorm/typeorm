@@ -11,7 +11,7 @@ export class Post {
     title: string;
 
     @ManyToOne(type => Author, {
-        cascadeInsert: true
+        cascade: ["insert"]
     })
     author: Author;
 

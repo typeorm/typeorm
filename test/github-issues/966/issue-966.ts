@@ -9,7 +9,6 @@ describe("github issues > #966 Inheritance in embeddables", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -28,7 +27,7 @@ describe("github issues > #966 Inheritance in embeddables", () => {
 
         await repository.save(user);
 
-        const loadedUser = await repository.findOneById(user.id);
+        const loadedUser = await repository.findOne(user.id);
 
         expect(info).to.deep.equal(loadedUser!.info);
     })));

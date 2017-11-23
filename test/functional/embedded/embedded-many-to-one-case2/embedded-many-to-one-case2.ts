@@ -12,8 +12,6 @@ describe("embedded > embedded-many-to-one-case2", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -335,7 +333,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
                 .where("user.id = :id", { id: 2 })
                 .getOne();
 
-            expect(loadedUser!.likedPost).to.be.empty;
+            expect(loadedUser!.likedPost).to.be.null;
         })));
     });
 });

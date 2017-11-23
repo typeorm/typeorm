@@ -21,8 +21,7 @@ export class Post {
 
     // post has relation with category, however inverse relation is not set (category does not have relation with post set)
     @ManyToMany(type => PostCategory, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     @JoinTable()
     categories: PostCategory[];
@@ -30,7 +29,7 @@ export class Post {
     // post has relation with details. cascade inserts here means if new PostDetails instance will be set to this 
     // relation it will be inserted automatically to the db when you save this Post entity
     @ManyToMany(type => PostDetails, details => details.posts, {
-        cascadeInsert: true
+        cascade: ["insert"]
     })
     @JoinTable()
     details: PostDetails[];
@@ -38,7 +37,7 @@ export class Post {
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
     // it will be inserted automatically to the db when you save this Post entity
     @ManyToMany(type => PostImage, image => image.posts, {
-        cascadeUpdate: true
+        cascade: ["update"]
     })
     @JoinTable()
     images: PostImage[];
@@ -51,8 +50,7 @@ export class Post {
 
     // post has relation with details. full cascades here
     @ManyToMany(type => PostInformation, information => information.posts, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     @JoinTable()
     informations: PostInformation[];

@@ -11,8 +11,6 @@ describe("github issues > #485 If I set the datatype of PrimaryGeneratedColumn t
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
-            schemaCreate: true,
-            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
@@ -27,7 +25,7 @@ describe("github issues > #485 If I set the datatype of PrimaryGeneratedColumn t
 
         const post = new Post();
         const savedPost = await postRepository.save(post);
-        const loadedPost = await postRepository.findOneById(savedPost.id);
+        const loadedPost = await postRepository.findOne(savedPost.id);
 
         expect(loadedPost).to.be.not.undefined;
         expect(loadedPost!.id).to.equal(savedPost.id);

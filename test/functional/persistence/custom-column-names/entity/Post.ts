@@ -18,8 +18,7 @@ export class Post {
     categoryId: number;
 
     @ManyToOne(type => Category, category => category.posts, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     @JoinColumn({ name: "categoryId" })
     category: Category;

@@ -1,9 +1,9 @@
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {Table} from "../../schema-builder/schema/Table";
-import {TableForeignKey} from "../../schema-builder/schema/TableForeignKey";
-import {TableIndex} from "../../schema-builder/schema/TableIndex";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
+import {Table} from "../../schema-builder/table/Table";
+import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {
     AggregationCursor,
     BulkWriteOpResultObject,
@@ -38,6 +38,9 @@ import {
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {MongoEntityManager} from "../../entity-manager/MongoEntityManager";
+import {SqlInMemory} from "../SqlInMemory";
+import {TableUnique} from "../../schema-builder/table/TableUnique";
+import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -52,6 +55,11 @@ export class MongoQueryRunner implements QueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Broadcaster used on this query runner to broadcast entity events.
+     */
+    broadcaster: Broadcaster;
 
     /**
      * Isolated entity manager working only with current query runner.
@@ -78,6 +86,11 @@ export class MongoQueryRunner implements QueryRunner {
     data = {};
 
     /**
+     * All synchronized tables in the database.
+     */
+    loadedTables: Table[];
+
+    /**
      * Real database connection from a connection pool used to perform queries.
      */
     databaseConnection: Db;
@@ -89,6 +102,7 @@ export class MongoQueryRunner implements QueryRunner {
     constructor(connection: Connection, databaseConnection: Db) {
         this.connection = connection;
         this.databaseConnection = databaseConnection;
+        this.broadcaster = new Broadcaster(this);
     }
 
     // -------------------------------------------------------------------------
@@ -399,8 +413,8 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Insert a new row with given values into the given table.
      * Returns value of inserted object id.
-     */
-    async insert(collectionName: string, keyValues: ObjectLiteral): Promise<any> {
+
+    async insert(collectionName: string, keyValues: ObjectLiteral): Promise<any> { // todo: fix any
         const results = await this.databaseConnection
             .collection(collectionName)
             .insertOne(keyValues);
@@ -409,33 +423,48 @@ export class MongoQueryRunner implements QueryRunner {
             result: results,
             generatedMap: generatedMap
         };
-    }
+    }*/
 
     /**
      * Updates rows that match given conditions in the given table.
-     */
-    async update(collectionName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
+
+    async update(collectionName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<any> { // todo: fix any
         await this.databaseConnection
             .collection(collectionName)
             .updateOne(conditions, valuesMap);
-    }
+    }*/
 
     /**
      * Deletes from the given table by a given conditions.
-     */
-    async delete(collectionName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
+
+    async delete(collectionName: string, conditions: ObjectLiteral|ObjectLiteral[]|string, maybeParameters?: any[]): Promise<any> { // todo: fix any
         if (typeof conditions === "string")
             throw new Error(`String condition is not supported by MongoDB driver.`);
 
         await this.databaseConnection
             .collection(collectionName)
             .deleteOne(conditions);
-    }
+    }*/
 
     /**
      * Inserts rows into the closure table.
      */
     async insertIntoClosureTable(collectionName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Returns all available database names including system databases.
+     */
+    async getDatabases(): Promise<string[]> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Returns all available schema names including system schemas.
+     * If database parameter specified, returns schemas of that database.
+     */
+    async getSchemas(database?: string): Promise<string[]> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -462,6 +491,13 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Checks if schema with the given name exist.
+     */
+    async hasSchema(schema: string): Promise<boolean> {
+        throw new Error(`Check schema queries are not supported by MongoDB driver.`);
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(collectionName: string): Promise<boolean> {
@@ -471,15 +507,29 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a database if it's not created.
      */
-    createDatabase(database: string): Promise<void[]> {
+    async createDatabase(database: string): Promise<void> {
         throw new Error(`Database create queries are not supported by MongoDB driver.`);
     }
 
     /**
-     * Creates a schema if it's not created.
+     * Drops database.
      */
-    createSchema(schemas: string[]): Promise<void[]> {
+    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+        throw new Error(`Database drop queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Creates a new table schema.
+     */
+    async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
         throw new Error(`Schema create queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Drops table schema.
+     */
+    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+        throw new Error(`Schema drop queries are not supported by MongoDB driver.`);
     }
 
     /**
@@ -492,7 +542,14 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops the table.
      */
-    async dropTable(tableName: string): Promise<void> {
+    async dropTable(tableName: Table|string): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Renames the given table.
+     */
+    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -534,21 +591,21 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Changes a column in the table.
      */
-    async changeColumns(table: Table, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
+    async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops column in the table.
      */
-    async dropColumn(table: Table, column: TableColumn): Promise<void> {
+    async dropColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(table: Table, columns: TableColumn[]): Promise<void> {
+    async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -556,6 +613,34 @@ export class MongoQueryRunner implements QueryRunner {
      * Updates table's primary keys.
      */
     async updatePrimaryKeys(table: Table): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Creates a new primary key.
+     */
+    async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Drops a primary key.
+     */
+    async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Creates a new unique constraint.
+     */
+    async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Drops an unique constraint.
+     */
+    async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -590,7 +675,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a new index.
      */
-    async createIndex(collectionName: string, index: TableIndex): Promise<void> {
+    async createIndex(tableOrName: Table|string, index: TableIndex): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -604,7 +689,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops collection.
      */
-    async truncate(collectionName: string): Promise<void> {
+    async clearTable(collectionName: string): Promise<void> {
         await this.databaseConnection
             .dropCollection(collectionName);
     }
@@ -629,9 +714,30 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Flushes all memorized sqls.
+     */
+    clearSqlMemory(): void {
+        throw new Error(`This operation is not supported by MongoDB driver.`);
+    }
+
+    /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql():  (string|{ up: string, down: string })[] {
+    getMemorySql():  SqlInMemory {
+        throw new Error(`This operation is not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Executes up sql queries.
+     */
+    async executeMemoryUpSql(): Promise<void> {
+        throw new Error(`This operation is not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Executes down sql queries.
+     */
+    async executeMemoryDownSql(): Promise<void> {
         throw new Error(`This operation is not supported by MongoDB driver.`);
     }
 

@@ -45,18 +45,18 @@ export class LazyRelationsWrapper {
                     delete this[promiseIndex];
                     return this[dataIndex];
 
-                }); // .catch((err: any) => { throw err; });
+                });
                 return this[promiseIndex];
             },
-            set: function(promise: Promise<any>) {
-                if (promise instanceof Promise) { // if set data is a promise then wait for its resolve and save in the object
-                    promise.then(result => {
+            set: function(value: any|Promise<any>) {
+                if (value instanceof Promise) { // if set data is a promise then wait for its resolve and save in the object
+                    value.then(result => {
                         this[dataIndex] = result;
                         this[resolveIndex] = true;
                     });
 
                 } else { // if its direct data set (non promise, probably not safe-typed)
-                    this[dataIndex] = promise;
+                    this[dataIndex] = value;
                     this[resolveIndex] = true;
                 }
             },

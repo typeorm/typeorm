@@ -13,8 +13,6 @@ describe("repository > deleteById methods", function() {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -44,7 +42,7 @@ describe("repository > deleteById methods", function() {
         ]);
 
         // remove one
-        await postRepository.deleteById(1);
+        await postRepository.delete(1);
 
         // load to check
         const loadedPosts = await postRepository.find();
@@ -78,7 +76,7 @@ describe("repository > deleteById methods", function() {
         ]);
 
         // remove multiple
-        await postRepository.removeByIds([2, 3]);
+        await postRepository.delete([2, 3]);
 
         // load to check
         const loadedPosts = await postRepository.find();

@@ -11,7 +11,6 @@ describe("indices > create schema", () => {
     before(async () => connections = await createTestingConnections({
         entities: [Person],
         schemaCreate: false,
-        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

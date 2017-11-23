@@ -20,38 +20,32 @@ export class Post {
 
     // post has relation with category, however inverse relation is not set (category does not have relation with post set)
     @ManyToOne(type => PostCategory, {
-        cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascade: true
     })
     category: PostCategory;
 
     // post has relation with details. cascade inserts here means if new PostDetails instance will be set to this 
     // relation it will be inserted automatically to the db when you save this Post entity
     @ManyToOne(type => PostDetails, details => details.posts, {
-        cascadeInsert: true
+        cascade: ["insert"]
     })
     details: PostDetails;
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
     // it will be inserted automatically to the db when you save this Post entity
     @ManyToOne(type => PostImage, image => image.posts, {
-        cascadeUpdate: true
+        cascade: ["update"]
     })
     image: PostImage;
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
     // it will be inserted automatically to the db when you save this Post entity
-    @ManyToOne(type => PostMetadata, metadata => metadata.posts, {
-        cascadeRemove: true
-    })
+    @ManyToOne(type => PostMetadata, metadata => metadata.posts)
     metadata: PostMetadata|null;
 
     // post has relation with details. full cascades here
     @ManyToOne(type => PostInformation, information => information.posts, {
-        cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascade: true
     })
     information: PostInformation;
 

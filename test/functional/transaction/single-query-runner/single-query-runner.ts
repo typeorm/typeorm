@@ -10,8 +10,6 @@ describe("transaction > single query runner", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -57,6 +55,7 @@ describe("transaction > single query runner", () => {
 
         const loadedPost6 = await entityManager.findOne(Post, { title: "Hello World" });
         expect(loadedPost6).to.be.eql({ id: 1, title: "Hello World" });
+        await entityManager.queryRunner!.release();
     })));
 
 });

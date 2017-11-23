@@ -10,8 +10,6 @@ describe("transaction > return data from transaction", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
         enabledDrivers: ["mysql", "sqlite", "postgres"] // todo: for some reasons mariadb tests are not passing here
     }));
     beforeEach(() => reloadTestingDatabases(connections));

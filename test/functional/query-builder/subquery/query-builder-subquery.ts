@@ -14,8 +14,6 @@ describe("query builder > sub-query", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -314,8 +312,8 @@ describe("query builder > sub-query", () => {
             .getMany();
 
         posts.should.be.eql([
-            { id: 1, title: "Alex Messer", categories: [] },
-            { id: 2, title: "Dima Zotov", categories: [] },
+            { id: 1, title: "Alex Messer" },
+            { id: 2, title: "Dima Zotov" },
         ]);
     })));
 

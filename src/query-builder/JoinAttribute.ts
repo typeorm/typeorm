@@ -69,6 +69,21 @@ export class JoinAttribute {
     }
 
     /**
+     * Indicates if this join is selected.
+     */
+    get isSelected(): boolean {
+        for (const select of this.queryExpressionMap.selects) {
+            if (select.selection === this.alias.name)
+                return true;
+
+            if (this.metadata && !!this.metadata.columns.find(column => select.selection === this.alias.name + "." + column.propertyPath))
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Name of the table which we should join.
      */
     get tableName(): string {

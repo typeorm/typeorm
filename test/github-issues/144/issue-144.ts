@@ -3,13 +3,12 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../src/connection/Connection";
 import {Student} from "./entity/Student";
 
-describe("github issues > #144 Class Table Inheritance doesn't seem to work", () => {
+// todo fix this test once class table inheritance support is back
+describe.skip("github issues > #144 Class Table Inheritance doesn't seem to work", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,        
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

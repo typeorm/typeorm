@@ -1,15 +1,11 @@
-import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
-import {OrmUtils} from "../../util/OrmUtils";
-import {InsertResult} from "../InsertResult";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {SqljsDriver} from "./SqljsDriver";
+import {Broadcaster} from "../../subscriber/Broadcaster";
+import {QueryFailedError} from "../../error/QueryFailedError";
 
 /**
  * Runs queries on a single sqlite database connection.
- *
- * Does not support compose primary keys with autoincrement field.
- * todo: need to throw exception for this case.
  */
 export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     
@@ -23,9 +19,10 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(driver: SqljsDriver) {
-        super(driver);
+        super();
         this.driver = driver;
         this.connection = driver.connection;
+        this.broadcaster = new Broadcaster(this);
     }
 
     // -------------------------------------------------------------------------
@@ -49,7 +46,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         return new Promise<any[]>(async (ok, fail) => {
-            const databaseConnection = await this.connect();
+            const databaseConnection = this.driver.databaseConnection;
             this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
             try {
@@ -73,78 +70,9 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 ok(result);
             }
             catch (e) {
-                fail(e);
+                this.driver.connection.logger.logQueryError(e, query, parameters, this);
+                fail(new QueryFailedError(query, parameters, e));
             }
         });
-    }
-
-    /**
-     * Insert a new row with given values into the given table.
-     * Returns value of the generated column if given and generate column exist in the table.
-     */
-    async insert(tableName: string, keyValues: ObjectLiteral): Promise<InsertResult> {
-        const keys = Object.keys(keyValues);
-        const columns = keys.map(key => `"${key}"`).join(", ");
-        const values = keys.map((key) => "?").join(",");
-        const generatedColumns = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName).generatedColumns : [];
-        const sql = columns.length > 0 ? (`INSERT INTO "${tableName}"(${columns}) VALUES (${values})`) : `INSERT INTO "${tableName}" DEFAULT VALUES`;
-        const parameters = keys.map(key => keyValues[key]);
-
-        return new Promise<InsertResult>(async (ok, fail) => {
-            this.driver.connection.logger.logQuery(sql, parameters, this);
-            const databaseConnection = await this.connect();
-            try {
-                const statement = databaseConnection.prepare(sql);
-                statement.bind(parameters);
-                statement.step();
-                
-                const generatedMap = generatedColumns.reduce((map, generatedColumn) => {
-                    let value = keyValues[generatedColumn.databaseName];
-                    // seems to be the only way to get the inserted id, see https://github.com/kripken/sql.js/issues/77
-                    if (generatedColumn.isPrimary && generatedColumn.generationStrategy === "increment") {
-                        value = databaseConnection.exec("SELECT last_insert_rowid()")[0].values[0][0];
-                    }
-                    
-                    if (!value) return map;
-                    return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
-                }, {} as ObjectLiteral);
-
-                if (!this.isTransactionActive) {
-                    await this.driver.autoSave();
-                }
-                
-                ok({
-                    result: undefined,
-                    generatedMap: Object.keys(generatedMap).length > 0 ? generatedMap : undefined
-                });
-            }
-            catch (e) {
-                fail(e);
-            }
-        });
-    }
-
-    /**
-     * Updates rows that match given conditions in the given table.
-     * Calls AbstractSqliteQueryRunner.update() and runs autoSave if update() was not called in a transaction.
-     */
-    async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
-        await super.update(tableName, valuesMap, conditions);
-        
-        if (!this.isTransactionActive) {
-            await this.driver.autoSave();
-        }
-    }
-
-    /**
-     * Deletes from the given table by a given conditions.
-     * Calls AbstractSqliteQueryRunner.delete() and runs autoSave if delete() was not called in a transaction.
-     */
-    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
-        await super.delete(tableName, conditions, maybeParameters);
-        
-        if (!this.isTransactionActive) {
-            await this.driver.autoSave();
-        }
     }
 }

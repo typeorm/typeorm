@@ -15,9 +15,7 @@ export class BaseObject extends BasePost {
     title: string;
 
     @ManyToOne(type => PostAuthor, post => post.posts, {
-        cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascade: true
     })
     author: PostAuthor;
 

@@ -19,9 +19,11 @@ export class FindOptionsUtils {
                     possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
-                    (possibleOptions.cache instanceof Object ||
+                    possibleOptions.cache instanceof Object ||
                     typeof possibleOptions.cache === "boolean" ||
-                    typeof possibleOptions.cache === "number")
+                    typeof possibleOptions.cache === "number" ||
+                    possibleOptions.loadRelationIds instanceof Object ||
+                    typeof possibleOptions.loadRelationIds === "boolean"
                 );
     }
 
@@ -40,34 +42,11 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindOptions interface.
      */
-    static extractFindOneOptionsAlias(object: any): string|undefined {
-        if (this.isFindOneOptions(object) && object.join)
-            return object.join.alias;
-
-        return undefined;
-    }
-
-    /**
-     * Checks if given object is really instance of FindOptions interface.
-     */
     static extractFindManyOptionsAlias(object: any): string|undefined {
         if (this.isFindManyOptions(object) && object.join)
             return object.join.alias;
 
         return undefined;
-    }
-
-    /**
-     * Applies give find one options to the given query builder.
-     */
-    static applyFindOneOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
-        if (this.isFindOneOptions(options))
-            return this.applyOptionsToQueryBuilder(qb, options);
-
-        if (options)
-            return qb.where(options);
-
-        return qb;
     }
 
     /**
@@ -159,6 +138,13 @@ export class FindOptionsUtils {
             } else {
                 qb.cache(options.cache);
             }
+        }
+
+        if (options.loadRelationIds === true) {
+            qb.loadAllRelationIds();
+
+        } else if (options.loadRelationIds instanceof Object) {
+            qb.loadAllRelationIds(options.loadRelationIds as any);
         }
 
         return qb;

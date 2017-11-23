@@ -18,15 +18,13 @@ export class Post {
     text: string;
 
     @ManyToOne(type => Author, author => author.posts, {
-        cascadeInsert: true,
-        cascadeRemove: true,
+        cascade: ["insert"],
         onDelete: "SET NULL"
     })
     author: Promise<Author|null>;
 
     @ManyToMany(type => Category, category => category.posts, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     @JoinTable()
     categories: Promise<Category[]>;

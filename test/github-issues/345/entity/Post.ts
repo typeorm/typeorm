@@ -14,7 +14,7 @@ export class Post {
     title: string;
 
     @ManyToMany(() => Category, category => category.posts, {
-        cascadeInsert: true
+        cascade: ["insert"]
     })
     categories: Category[];
 

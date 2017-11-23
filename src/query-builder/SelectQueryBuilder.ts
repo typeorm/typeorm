@@ -12,7 +12,6 @@ import {RelationIdLoader} from "./relation-id/RelationIdLoader";
 import {RelationIdMetadataToAttributeTransformer} from "./relation-id/RelationIdMetadataToAttributeTransformer";
 import {RelationCountLoader} from "./relation-count/RelationCountLoader";
 import {RelationCountMetadataToAttributeTransformer} from "./relation-count/RelationCountMetadataToAttributeTransformer";
-import {Broadcaster} from "../subscriber/Broadcaster";
 import {QueryBuilder} from "./QueryBuilder";
 import {ReadStream} from "../platform/PlatformTools";
 import {LockNotSupportedOnGivenDriverError} from "../error/LockNotSupportedOnGivenDriverError";
@@ -594,13 +593,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * LEFT JOINs relation id and maps it into some entity's property.
      * Optionally, you can add condition and parameters used in condition.
      */
-    loadRelationIdAndMap(mapToProperty: string, relationName: string): this;
-
-    /**
-     * LEFT JOINs relation id and maps it into some entity's property.
-     * Optionally, you can add condition and parameters used in condition.
-     */
-    loadRelationIdAndMap(mapToProperty: string, relationName: string, options: { disableMixedMap: boolean }): this;
+    loadRelationIdAndMap(mapToProperty: string, relationName: string, options?: { disableMixedMap?: boolean }): this;
 
     /**
      * LEFT JOINs relation id and maps it into some entity's property.
@@ -667,13 +660,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Loads all relation ids for all relations of the selected entity.
      * All relation ids will be mapped to relation property themself.
+     * If array of strings is given then loads only relation ids of the given properties.
      */
-    loadAllRelationIds(): this {
+    loadAllRelationIds(options?: { relations?: string[], disableMixedMap?: boolean }): this { // todo: add skip relations
         this.expressionMap.mainAlias!.metadata.relations.forEach(relation => {
+            if (options !== undefined && options.relations !== undefined && options.relations.indexOf(relation.propertyPath) === -1)
+                return;
+
             this.loadRelationIdAndMap(
                 this.expressionMap.mainAlias!.name + "." + relation.propertyPath,
                 this.expressionMap.mainAlias!.name + "." + relation.propertyPath,
-                { disableMixedMap: true }
+                options
             );
         });
         return this;
@@ -685,7 +682,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
-    where(where: Brackets|string|((qb: this) => string)|ObjectLiteral, parameters?: ObjectLiteral): this {
+    where(where: Brackets|string|((qb: this) => string)|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
         this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
         const condition = this.computeWhereParameter(where);
         if (condition)
@@ -724,10 +721,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     whereInIds(ids: any|any[]): this {
-        ids = ids instanceof Array ? ids : [ids];
-        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
-        this.where(whereExpression, parameters);
-        return this;
+        return this.where(this.createWhereIdsExpression(ids));
     }
 
     /**
@@ -738,10 +732,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * If you have multiple primary keys you need to pass object with property names and values specified,
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
-    andWhereInIds(ids: any[]): this {
-        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
-        this.andWhere(whereExpression, parameters);
-        return this;
+    andWhereInIds(ids: any|any[]): this {
+        return this.andWhere(this.createWhereIdsExpression(ids));
     }
 
     /**
@@ -752,10 +744,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * If you have multiple primary keys you need to pass object with property names and values specified,
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
-    orWhereInIds(ids: any[]): this {
-        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
-        this.orWhere(whereExpression, parameters);
-        return this;
+    orWhereInIds(ids: any|any[]): this {
+        return this.orWhere(this.createWhereIdsExpression(ids));
     }
 
     /**
@@ -962,8 +952,33 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         this.expressionMap.queryEntity = false;
         const queryRunner = this.obtainQueryRunner();
+        let transactionStartedByUs: boolean = false;
         try {
-            return await this.loadRawResults(queryRunner);
+
+            // start transaction if it was enabled
+            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction();
+                transactionStartedByUs = true;
+            }
+
+            const results = await this.loadRawResults(queryRunner);
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction();
+            }
+
+            return results;
+
+        } catch (error) {
+
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+            throw error;
 
         } finally {
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
@@ -977,9 +992,34 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     async getRawAndEntities(): Promise<{ entities: Entity[], raw: any[] }> {
         const queryRunner = this.obtainQueryRunner();
+        let transactionStartedByUs: boolean = false;
         try {
+
+            // start transaction if it was enabled
+            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction();
+                transactionStartedByUs = true;
+            }
+
             this.expressionMap.queryEntity = true;
-            return await this.executeEntitiesAndRawResults(queryRunner);
+            const results = await this.executeEntitiesAndRawResults(queryRunner);
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction();
+            }
+
+            return results;
+
+        } catch (error) {
+
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+            throw error;
 
         } finally {
             if (queryRunner !== this.queryRunner) // means we created our own query runner
@@ -998,12 +1038,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             const metadata = this.expressionMap.mainAlias!.metadata;
 
             if (this.expressionMap.lockVersion instanceof Date) {
-                const actualVersion = result[metadata.updateDateColumn!.propertyName]; // what if columns arent set?
+                const actualVersion = metadata.updateDateColumn!.getEntityValue(result); // what if columns arent set?
                 if (actualVersion.getTime() !== this.expressionMap.lockVersion.getTime())
                     throw new OptimisticLockVersionMismatchError(metadata.name, this.expressionMap.lockVersion, actualVersion);
 
             } else {
-                const actualVersion = result[metadata.versionColumn!.propertyName]; // what if columns arent set?
+                const actualVersion = metadata.versionColumn!.getEntityValue(result); // what if columns arent set?
                 if (actualVersion !== this.expressionMap.lockVersion)
                     throw new OptimisticLockVersionMismatchError(metadata.name, this.expressionMap.lockVersion, actualVersion);
             }
@@ -1032,8 +1072,33 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             throw new OptimisticLockCanNotBeUsedError();
 
         const queryRunner = this.obtainQueryRunner();
+        let transactionStartedByUs: boolean = false;
         try {
-            return await this.executeCountQuery(queryRunner);
+
+            // start transaction if it was enabled
+            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction();
+                transactionStartedByUs = true;
+            }
+
+            const results = await this.executeCountQuery(queryRunner);
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction();
+            }
+
+            return results;
+
+        } catch (error) {
+
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+            throw error;
 
         } finally {
             if (queryRunner !== this.queryRunner) // means we created our own query runner
@@ -1050,10 +1115,35 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             throw new OptimisticLockCanNotBeUsedError();
 
         const queryRunner = this.obtainQueryRunner();
+        let transactionStartedByUs: boolean = false;
         try {
+
+            // start transaction if it was enabled
+            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction();
+                transactionStartedByUs = true;
+            }
+
             const entitiesAndRaw = await this.executeEntitiesAndRawResults(queryRunner);
             const count = await this.executeCountQuery(queryRunner);
-            return [entitiesAndRaw.entities, count];
+            const results: [Entity[], number] = [entitiesAndRaw.entities, count];
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction();
+            }
+
+            return results;
+
+        } catch (error) {
+
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+            throw error;
 
         } finally {
             if (queryRunner !== this.queryRunner) // means we created our own query runner
@@ -1068,13 +1158,38 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         this.expressionMap.queryEntity = false;
         const [sql, parameters] = this.getQueryAndParameters();
         const queryRunner = this.obtainQueryRunner();
+        let transactionStartedByUs: boolean = false;
         try {
+
+            // start transaction if it was enabled
+            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction();
+                transactionStartedByUs = true;
+            }
+
             const releaseFn = () => {
                 if (queryRunner !== this.queryRunner) // means we created our own query runner
                     return queryRunner.release();
                 return;
             };
-            return queryRunner.stream(sql, parameters, releaseFn, releaseFn);
+            const results = queryRunner.stream(sql, parameters, releaseFn, releaseFn);
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction();
+            }
+
+            return results;
+
+        } catch (error) {
+
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+            throw error;
 
         } finally {
             if (queryRunner !== this.queryRunner) // means we created our own query runner
@@ -1536,7 +1651,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             columns.push(...metadata.columns.filter(column => column.isSelect === true));
         }
         columns.push(...metadata.columns.filter(column => {
-            return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
+            return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyPath);
         }));
 
         // if user used partial selection and did not select some primary columns which are required to be selected
@@ -1546,7 +1661,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const allColumns = [...columns, ...nonSelectedPrimaryColumns];
 
         return allColumns.map(column => {
-            const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyName);
+            const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
             return {
                 selection: this.escape(aliasName) + "." + this.escape(column.databaseName),
                 aliasName: selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.databaseName,
@@ -1562,7 +1677,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             return [mainSelect];
 
         return this.expressionMap.selects.filter(select => {
-            return metadata.columns.some(column => select.selection === aliasName + "." + column.propertyName);
+            return metadata.columns.some(column => select.selection === aliasName + "." + column.propertyPath);
         });
     }
 
@@ -1627,7 +1742,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 throw new NoVersionOrUpdateDateColumnError(metadata.name);
         }
 
-        const broadcaster = new Broadcaster(this.connection);
         const relationIdLoader = new RelationIdLoader(this.connection, queryRunner, this.expressionMap.relationIdAttributes);
         const relationCountLoader = new RelationCountLoader(this.connection, queryRunner, this.expressionMap.relationCountAttributes);
         const relationIdMetadataTransformer = new RelationIdMetadataToAttributeTransformer(this.expressionMap);
@@ -1666,6 +1780,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 .orderBy(orderBys)
                 .cache(this.expressionMap.cache ? this.expressionMap.cache : this.expressionMap.cacheId, this.expressionMap.cacheDuration)
                 .setParameters(this.getParameters())
+                .setNativeParameters(this.expressionMap.nativeParameters)
                 .getRawMany();
 
             if (rawResults.length > 0) {
@@ -1674,8 +1789,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (metadata.hasMultiplePrimaryKeys) {
                     condition = rawResults.map((result, index) => {
                         return metadata.primaryColumns.map(primaryColumn => {
-                            parameters[`ids_${index}_${primaryColumn.propertyName}`] = result[`ids_${mainAliasName}_${primaryColumn.databaseName}`];
-                            return `${mainAliasName}.${primaryColumn.propertyName}=:ids_${index}_${primaryColumn.databaseName}`;
+                            parameters[`ids_${index}_${primaryColumn.databaseName}`] = result[`ids_${mainAliasName}_${primaryColumn.databaseName}`];
+                            return `${mainAliasName}.${primaryColumn.propertyPath}=:ids_${index}_${primaryColumn.databaseName}`;
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
@@ -1683,10 +1798,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     const areAllNumbers = ids.every((id: any) => typeof id === "number");
                     if (areAllNumbers) {
                         // fixes #190. if all numbers then its safe to perform query without parameter
-                        condition = `${mainAliasName}.${metadata.primaryColumns[0].propertyName} IN (${ids.join(", ")})`;
+                        condition = `${mainAliasName}.${metadata.primaryColumns[0].propertyPath} IN (${ids.join(", ")})`;
                     } else {
                         parameters["ids"] = ids;
-                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyName + " IN (:ids)";
+                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyPath + " IN (:ids)";
                     }
                 }
                 rawResults = await this.clone()
@@ -1708,8 +1823,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             entities = transformer.transform(rawResults, this.expressionMap.mainAlias!);
 
             // broadcast all "after load" events
-            if (this.expressionMap.mainAlias.hasMetadata)
-                await broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, entities);
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias.hasMetadata)
+                await queryRunner.broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, entities);
         }
 
         return {

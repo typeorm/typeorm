@@ -24,7 +24,7 @@ This code is equivalent to doing this:
 import {getManager} from "typeorm";
 
 const postRepository = getRepository(Post);
-const post = await postRepository.findOneById(1, { relations: ["categories"] });
+const post = await postRepository.findOne(1, { relations: ["categories"] });
 post.categories.push(category);
 await postRepository.save(post);
 ```
@@ -110,7 +110,7 @@ To load those relations you can use following code:
 ```typescript
 import {getConnection} from "typeorm";
 
-const post = await getConnection().manager.findOneById(Post, 1);
+const post = await getConnection().manager.findOne(Post, 1);
 
 post.categories = await getConnection()
     .createQueryBuilder()

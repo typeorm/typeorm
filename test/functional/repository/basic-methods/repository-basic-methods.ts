@@ -25,8 +25,6 @@ describe("repository > basic methods", () => {
     before(async () => connections = await createTestingConnections({
         entities: [Post, Blog, Category],
         entitySchemas: [userSchema, questionSchema],
-        schemaCreate: true,
-        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

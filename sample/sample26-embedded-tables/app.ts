@@ -34,7 +34,7 @@ createConnection(options).then(connection => {
             console.log("question has been saved: ", savedQuestion);
             
             // lets load it now:
-            return questionRepository.findOneById(savedQuestion.id);
+            return questionRepository.findOne(savedQuestion.id);
         })
         .then(loadedQuestion => {
             console.log("question has been loaded: ", loadedQuestion);

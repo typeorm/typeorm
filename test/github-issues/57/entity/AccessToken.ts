@@ -12,8 +12,7 @@ export class AccessToken {
     primaryKey: number;
 
     @OneToOne(type => User, user => user.access_token, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     user: User;
 

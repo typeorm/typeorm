@@ -17,8 +17,7 @@ export class User {
     email: string;
 
     @OneToOne(type => AccessToken, token => token.user, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     @JoinColumn()
     access_token: AccessToken;

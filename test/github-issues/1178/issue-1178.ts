@@ -20,21 +20,25 @@ describe("github issues > #1178 subqueries must work in insert statements", () =
         user.name = "Timber Saw";
         await connection.manager.save(user);
 
-        await connection.getRepository(Post)
+        await connection
+            .getRepository(Post)
             .createQueryBuilder()
             .insert()
             .values({
                 name: "First post",
-                userId: () => `(SELECT "user"."id" FROM "user" WHERE "user"."name" = :userName)`,
+                user: () => `(SELECT "user"."id" FROM "user" WHERE "user"."name" = :userName)`,
             })
             .setParameter("userName",  "Timber Saw")
             .returning("*")
             .execute();
 
-        await connection.manager.findOneById(Post, 1).should.eventually.eql({
+        await connection.manager.findOne(Post, 1, { relations: ["user"] }).should.eventually.eql({
             id: 1,
             name: "First post",
-            userId: 1
+            user: {
+                id: 1,
+                name: "Timber Saw"
+            }
         });
     })));
 

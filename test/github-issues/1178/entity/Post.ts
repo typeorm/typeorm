@@ -1,4 +1,6 @@
 import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src/index";
+import {User} from "./User";
+import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
 
 @Entity()
 export class Post {
@@ -9,7 +11,7 @@ export class Post {
     @Column()
     name: string;
 
-    @Column()
-    userId: number;
+    @ManyToOne(type => User)
+    user: User;
 
 }

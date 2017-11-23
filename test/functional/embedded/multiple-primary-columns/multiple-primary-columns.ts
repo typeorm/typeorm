@@ -10,8 +10,6 @@ describe("embedded > multiple-primary-column", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -50,14 +48,14 @@ describe("embedded > multiple-primary-column", () => {
         expect(loadedPosts[1].title).to.be.equal("About airplanes");
         expect(loadedPosts[1].counters.should.be.eql({ code: 2, comments: 2, favorites: 3, likes: 4 }));
 
-        const loadedPost = (await postRepository.findOneById({ id: 1, counters: { code: 1 } }))!;
+        const loadedPost = (await postRepository.findOne({ id: 1, counters: { code: 1 } }))!;
         expect(loadedPost.title).to.be.equal("About cars");
         expect(loadedPost.counters.should.be.eql({ code: 1, comments: 1, favorites: 2, likes: 3 }));
 
         loadedPost.counters.favorites += 1;
         await postRepository.save(loadedPost);
 
-        const loadedPost2 = (await postRepository.findOneById({ id: 1, counters: { code: 1 } }))!;
+        const loadedPost2 = (await postRepository.findOne({ id: 1, counters: { code: 1 } }))!;
         expect(loadedPost.title).to.be.equal("About cars");
         expect(loadedPost.counters.should.be.eql({ code: 1, comments: 1, favorites: 3, likes: 3 }));
 

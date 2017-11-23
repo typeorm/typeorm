@@ -1,7 +1,6 @@
 import {QueryResultCache} from "./QueryResultCache";
 import {QueryResultCacheOptions} from "./QueryResultCacheOptions";
-import {Table} from "../schema-builder/schema/Table";
-import {TableColumn} from "../schema-builder/schema/TableColumn";
+import {Table} from "../schema-builder/table/Table";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Connection} from "../connection/Connection";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -46,44 +45,49 @@ export class DbQueryResultCache implements QueryResultCache {
         if (tableExist)
             return;
 
-        await queryRunner.createTable(new Table("query-result-cache", [ // createTableIfNotExist
-            new TableColumn({
-                name: "id",
-                isNullable: true,
-                isPrimary: true,
-                type: driver.normalizeType({ type: driver.mappedDataTypes.cacheId }),
-                generationStrategy: "increment",
-                isGenerated: true
-            }),
-            new TableColumn({
-                name: "identifier",
-                type: driver.normalizeType({ type: driver.mappedDataTypes.cacheIdentifier }),
-                isNullable: true
-            }),
-            new TableColumn({
-                name: "time",
-                type: driver.normalizeType({ type: driver.mappedDataTypes.cacheTime }),
-                isPrimary: false,
-                isNullable: false
-            }),
-            new TableColumn({
-                name: "duration",
-                type: driver.normalizeType({ type: driver.mappedDataTypes.cacheDuration }),
-                isPrimary: false,
-                isNullable: false
-            }),
-            new TableColumn({
-                name: "query",
-                type: driver.normalizeType({ type: driver.mappedDataTypes.cacheQuery }),
-                isPrimary: false,
-                isNullable: false
-            }),
-            new TableColumn({
-                name: "result",
-                type: driver.normalizeType({ type: driver.mappedDataTypes.cacheResult }),
-                isNullable: false
-            }),
-        ]));
+        await queryRunner.createTable(new Table(
+            {
+                name: "query-result-cache",
+                columns: [
+                    {
+                        name: "id",
+                        isNullable: true,
+                        isPrimary: true,
+                        type: driver.normalizeType({type: driver.mappedDataTypes.cacheId}),
+                        generationStrategy: "increment",
+                        isGenerated: true
+                    },
+                    {
+                        name: "identifier",
+                        type: driver.normalizeType({type: driver.mappedDataTypes.cacheIdentifier}),
+                        isNullable: true
+                    },
+                    {
+                        name: "time",
+                        type: driver.normalizeType({type: driver.mappedDataTypes.cacheTime}),
+                        isPrimary: false,
+                        isNullable: false
+                    },
+                    {
+                        name: "duration",
+                        type: driver.normalizeType({type: driver.mappedDataTypes.cacheDuration}),
+                        isPrimary: false,
+                        isNullable: false
+                    },
+                    {
+                        name: "query",
+                        type: driver.normalizeType({type: driver.mappedDataTypes.cacheQuery}),
+                        isPrimary: false,
+                        isNullable: false
+                    },
+                    {
+                        name: "result",
+                        type: driver.normalizeType({type: driver.mappedDataTypes.cacheResult}),
+                        isNullable: false
+                    },
+                ]
+            },
+        ));
     }
 
     /**
@@ -139,13 +143,31 @@ export class DbQueryResultCache implements QueryResultCache {
         }
 
         if (savedCache && savedCache.identifier) { // if exist then update
-            await queryRunner.update("query-result-cache", insertedValues, { identifier: insertedValues.identifier });
+
+            await queryRunner.manager
+                .createQueryBuilder()
+                .update("query-result-cache")
+                .set(insertedValues)
+                .where({ identifier: insertedValues.identifier })
+                .execute();
 
         } else if (savedCache && savedCache.query) { // if exist then update
-            await queryRunner.update("query-result-cache", insertedValues, { query: insertedValues.query });
+
+            await queryRunner.manager
+                .createQueryBuilder()
+                .update("query-result-cache")
+                .set(insertedValues)
+                .where({ query: insertedValues.query })
+                .execute();
 
         } else { // otherwise insert
-            await queryRunner.insert("query-result-cache", insertedValues);
+
+            await queryRunner.manager
+                .createQueryBuilder()
+                .insert()
+                .into("query-result-cache")
+                .values(insertedValues)
+                .execute();
         }
     }
 
@@ -153,7 +175,7 @@ export class DbQueryResultCache implements QueryResultCache {
      * Clears everything stored in the cache.
      */
     async clear(queryRunner: QueryRunner): Promise<void> {
-        return this.getQueryRunner(queryRunner).truncate("query-result-cache");
+        return this.getQueryRunner(queryRunner).clearTable("query-result-cache");
     }
 
     /**
@@ -161,7 +183,12 @@ export class DbQueryResultCache implements QueryResultCache {
      */
     async remove(identifiers: string[], queryRunner?: QueryRunner): Promise<void> {
         await Promise.all(identifiers.map(identifier => {
-            return this.getQueryRunner(queryRunner).delete("query-result-cache", { identifier });
+            return this.getQueryRunner(queryRunner).manager
+                .createQueryBuilder()
+                .delete()
+                .from("query-result-cache")
+                .where(identifier)
+                .execute();
         }));
     }
 

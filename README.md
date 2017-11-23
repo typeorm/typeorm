@@ -110,7 +110,7 @@ user.age = 25;
 await repository.save(user);
 
 const allUsers = await repository.find();
-const firstUser = await repository.findOneById(1);
+const firstUser = await repository.findOne(1); // find by id
 const timber = await repository.findOne({ firstName: "Timber", lastName: "Saw" });
 
 await repository.remove(timber);
@@ -149,7 +149,7 @@ user.age = 25;
 await user.save();
 
 const allUsers = await User.find();
-const firstUser = await User.findOneById(1);
+const firstUser = await User.findOne(1);
 const timber = await User.findOne({ firstName: "Timber", lastName: "Saw" });
 
 await timber.remove();
@@ -310,8 +310,7 @@ creating more entities.
 
 What are you expecting from ORM?
 First of all you are expecting it will create a database tables for you
-and find / insert / update / delete your data without pain and  
-having to write lot of hardly maintainable SQL queries.
+and find / insert / update / delete your data without pain and having to write lot of hardly maintainable SQL queries.
 This guide will show you how to setup TypeORM from scratch and make it to do what you are expecting from ORM.
 
 ### Create a model
@@ -716,7 +715,7 @@ createConnection(/*...*/).then(async connection => {
     let allPhotos = await photoRepository.find();
     console.log("All photos from the db: ", allPhotos);
 
-    let firstPhoto = await photoRepository.findOneById(1);
+    let firstPhoto = await photoRepository.findOne(1);
     console.log("First photo from the db: ", firstPhoto);
 
     let meAndBearsPhoto = await photoRepository.findOne({ name: "Me and Bears" });
@@ -746,7 +745,7 @@ import {Photo} from "./entity/Photo";
 createConnection(/*...*/).then(async connection => {
 
     /*...*/
-    let photoToUpdate = await photoRepository.findOneById(1);
+    let photoToUpdate = await photoRepository.findOne(1);
     photoToUpdate.name = "Me, my friends and polar bears";
     await photoRepository.save(photoToUpdate);
 
@@ -766,7 +765,7 @@ import {Photo} from "./entity/Photo";
 createConnection(/*...*/).then(async connection => {
 
     /*...*/
-    let photoToRemove = await photoRepository.findOneById(1);
+    let photoToRemove = await photoRepository.findOne(1);
     await photoRepository.remove(photoToRemove);
 
 }).catch(error => console.log(error));
@@ -987,20 +986,13 @@ export class Photo {
     /// ... other columns
 
     @OneToOne(type => PhotoMetadata, metadata => metadata.photo, {
-        cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascade: true,
     })
     metadata: PhotoMetadata;
 }
 ```
 
-* **cascadeInsert** - automatically insert metadata in the relation if it does not exist in its table. 
-    This means that we don't need to manually insert a newly created `photoMetadata` object.
-* **cascadeUpdate** - automatically update metadata in the relation if something is changed in this object.
-* **cascadeRemove** - automatically remove metadata from its table if you removed metadata from photo object.
-
-Using `cascadeInsert` allows us not to separately save photo and separately save metadata objects now. 
+Using `cascade` allows us not to separately save photo and separately save metadata objects now. 
 Now we can simply save a photo object, and the metadata object will be saved automatically because of cascade options.
 
 ```typescript
@@ -1010,7 +1002,7 @@ createConnection(options).then(async connection => {
     let photo = new Photo();
     photo.name = "Me and Bears";
     photo.description = "I am near polar bears";
-    photo.filename = "photo-with-bears.jpg"
+    photo.filename = "photo-with-bears.jpg";
     photo.isPublished = true;
 
     // create photo metadata object
@@ -1191,7 +1183,7 @@ await connection.manager.save(photo);
 // now lets load them:
 const loadedPhoto = await connection
     .getRepository(Photo)
-    .findOneById(1, { relations: ["albums"] });
+    .findOne(1, { relations: ["albums"] });
 ```
 
 `loadedPhoto` will be equal to:

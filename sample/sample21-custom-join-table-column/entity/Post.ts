@@ -19,7 +19,7 @@ export class Post {
     text: string;
 
     @ManyToOne(type => Author, author => author.posts, {
-        cascadeAll: true
+        cascade: true
     })
     @JoinColumn({ // todo: not yet fixed
         name: "user"
@@ -27,8 +27,7 @@ export class Post {
     author: Author;
 
     @ManyToMany(type => Category, category => category.posts, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     @JoinTable({
         name: "_post_categories"

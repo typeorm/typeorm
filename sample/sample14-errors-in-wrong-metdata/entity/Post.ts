@@ -18,17 +18,14 @@ export class Post {
     text: string;
 
     @OneToOne(type => PostAuthor, author => author.post, {
-        cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascade: true
     })
     @JoinColumn() // comment this and you'll get an error because JoinColumn must be at least on one side of the one-to-one relationship
     // @JoinTable() // uncomment this and you'll get an error because JoinTable is not allowed here (only many-to-many)
     author: PostAuthor;
 
     @OneToMany(type => PostAuthor, author => author.editedPost, {
-        cascadeInsert: true,
-        cascadeUpdate: true
+        cascade: true
     })
     // @JoinColumn() // uncomment this and you'll get an error, because JoinColumn is not allowed here (only many-to-one/one-to-one)
     // @JoinTable() // uncomment this and you'll get an error because JoinTable is not allowed here (only many-to-many)
