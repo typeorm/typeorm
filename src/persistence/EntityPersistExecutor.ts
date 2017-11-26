@@ -1,169 +1,208 @@
-import {ObjectLiteral} from "../common/ObjectLiteral";
-import {SaveOptions} from "../repository/SaveOptions";
-import {RemoveOptions} from "../repository/RemoveOptions";
-import {MustBeEntityError} from "../error/MustBeEntityError";
-import {SubjectExecutor} from "./SubjectExecutor";
-import {CannotDetermineEntityError} from "../error/CannotDetermineEntityError";
-import {QueryRunner} from "../query-runner/QueryRunner";
-import {Connection} from "../connection/Connection";
-import {Subject} from "./Subject";
-import {OneToManySubjectBuilder} from "./subject-builder/OneToManySubjectBuilder";
-import {OneToOneInverseSideSubjectBuilder} from "./subject-builder/OneToOneInverseSideSubjectBuilder";
-import {ManyToManySubjectBuilder} from "./subject-builder/ManyToManySubjectBuilder";
-import {SubjectDatabaseEntityLoader} from "./SubjectDatabaseEntityLoader";
-import {CascadesSubjectBuilder} from "./subject-builder/CascadesSubjectBuilder";
+import { ObjectLiteral } from "../common/ObjectLiteral";
+import { SaveOptions } from "../repository/SaveOptions";
+import { RemoveOptions } from "../repository/RemoveOptions";
+import { MustBeEntityError } from "../error/MustBeEntityError";
+import { SubjectExecutor } from "./SubjectExecutor";
+import { CannotDetermineEntityError } from "../error/CannotDetermineEntityError";
+import { QueryRunner } from "../query-runner/QueryRunner";
+import { Connection } from "../connection/Connection";
+import { Subject } from "./Subject";
+import { OneToManySubjectBuilder } from "./subject-builder/OneToManySubjectBuilder";
+import { OneToOneInverseSideSubjectBuilder } from "./subject-builder/OneToOneInverseSideSubjectBuilder";
+import { ManyToManySubjectBuilder } from "./subject-builder/ManyToManySubjectBuilder";
+import { SubjectDatabaseEntityLoader } from "./SubjectDatabaseEntityLoader";
+import { CascadesSubjectBuilder } from "./subject-builder/CascadesSubjectBuilder";
 
 /**
  * Persists a single entity or multiple entities - saves or removes them.
  */
 export class EntityPersistExecutor {
 
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // Protected Properties
+  // -------------------------------------------------------------------------
 
-    /**
-     * All subjects being persisted in this executor.
-     */
-    protected subjects: Subject[] = [];
+  /**
+   * All subjects being persisted in this executor.
+   */
+  protected subjects: Subject[] = [];
 
-    // -------------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // Constructor
+  // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection,
-                protected queryRunner: QueryRunner|undefined,
-                protected mode: "save"|"remove",
-                protected target: Function|string|undefined,
-                protected entity: ObjectLiteral|ObjectLiteral[],
-                protected options: SaveOptions|RemoveOptions|undefined) {
-    }
+  constructor(protected connection: Connection,
+    protected queryRunner: QueryRunner | undefined,
+    protected mode: "save" | "remove",
+    protected target: Function | string | undefined,
+    protected entity: ObjectLiteral | ObjectLiteral[],
+    protected options: SaveOptions | RemoveOptions | undefined) {
+  }
 
-    // -------------------------------------------------------------------------
-    // Public Methods
-    // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // Public Methods
+  // -------------------------------------------------------------------------
 
-    /**
-     * Executes persistence operation ob given entity or entities.
-     */
-    execute(): Promise<void> {
+  /**
+   * Executes persistence operation ob given entity or entities.
+   */
+  execute(): Promise<void> {
 
-        // check if entity we are going to save is valid and is an object
-        if (!this.entity || !(this.entity instanceof Object))
-            return Promise.reject(new MustBeEntityError(this.mode, this.entity));
+    // check if entity we are going to save is valid and is an object
+    if (!this.entity || !(this.entity instanceof Object))
+      return Promise.reject(new MustBeEntityError(this.mode, this.entity));
 
-        // we MUST call "fake" resolve here to make sure all properties of lazily loaded relations are resolved
-        return Promise.resolve().then(async () => {
+    // we MUST call "fake" resolve here to make sure all properties of lazily loaded relations are resolved
+    return Promise.resolve().then(async () => {
 
-            // if query runner is already defined in this class, it means this entity manager was already created for a single connection
-            // if its not defined we create a new query runner - single connection where we'll execute all our operations
-            const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+      // if query runner is already defined in this class, it means this entity manager was already created for a single connection
+      // if its not defined we create a new query runner - single connection where we'll execute all our operations
+      const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
 
-            // save data in the query runner - this is useful functionality to share data from outside of the world
-            // with third classes - like subscribers and listener methods
-            if (this.options && this.options.data)
-                queryRunner.data = this.options.data;
+      // save data in the query runner - this is useful functionality to share data from outside of the world
+      // with third classes - like subscribers and listener methods
+      if (this.options && this.options.data)
+        queryRunner.data = this.options.data;
 
+      try {
+        // construct the executor that will perform the persistence ops
+        const executor = await this.createSubjectExecutor(queryRunner);
+
+        // make sure we have at least one executable operation before we create a transaction and proceed
+        // if we don't have operations it means we don't really need to update or remove something
+        if (!executor.hasExecutableOperations)
+          return;
+
+        // start execute queries in a transaction
+        // if transaction is already opened in this query runner then we don't touch it
+        // if its not opened yet then we open it here, and once we finish - we close it
+        let isTransactionStartedByUs = false;
+        try {
+
+          // open transaction if its not opened yet
+          if (!queryRunner.isTransactionActive) {
+            isTransactionStartedByUs = true;
+            await queryRunner.startTransaction();
+          }
+
+          // execute all persistence operations for all entities we have
+          await executor.execute();
+
+          // commit transaction if it was started by us
+          // console.time("commit");
+          if (isTransactionStartedByUs === true)
+            await queryRunner.commitTransaction();
+          // console.timeEnd("commit");
+
+        } catch (error) {
+
+          // rollback transaction if it was started by us
+          if (isTransactionStartedByUs) {
             try {
+              await queryRunner.rollbackTransaction();
+            } catch (rollbackError) { }
+          }
+          throw error;
+        }
 
-                // collect all operate subjects
-                const entities: ObjectLiteral[] = this.entity instanceof Array ? this.entity : [this.entity];
-                // console.time("building subjects...");
+      } finally {
 
-                // create subjects for all entities we received for the persistence
-                entities.forEach(entity => {
-                    const entityTarget = this.target ? this.target : entity.constructor;
-                    if (entityTarget === Object)
-                        throw new CannotDetermineEntityError(this.mode);
+        // release query runner only if its created by us
+        if (!this.queryRunner)
+          await queryRunner.release();
+      }
+    });
+  }
 
-                    this.subjects.push(new Subject({
-                        metadata: this.connection.getMetadata(entityTarget),
-                        entity: entity,
-                        canBeInserted: this.mode === "save",
-                        canBeUpdated: this.mode === "save",
-                        mustBeRemoved: this.mode === "remove"
-                    }));
-                });
+  /**
+   * Executes persistence operation ob given entity or entities.
+   */
+  async executeNoTransaction(): Promise<void> {
 
-                // console.time("building cascades...");
-                // go thought each entity with metadata and create subjects and subjects by cascades for them
-                this.subjects.forEach(subject => {
-                    // next step we build list of subjects we will operate with
-                    // these subjects are subjects that we need to insert or update alongside with main persisted entity
-                    new CascadesSubjectBuilder(subject, this.subjects).build();
-                });
-                // console.timeEnd("building cascades...");
+    // check if entity we are going to save is valid and is an object
+    if (!this.entity || !(this.entity instanceof Object))
+      throw new MustBeEntityError(this.mode, this.entity);
 
-                // load database entities for all subjects we have
-                // next step is to load database entities for all operate subjects
-                // console.time("loading...");
-                await new SubjectDatabaseEntityLoader(queryRunner, this.subjects).load(this.mode);
-                // console.timeEnd("loading...");
+    // if query runner is already defined in this class, it means this entity manager was already created for a single connection
+    // if its not defined we create a new query runner - single connection where we'll execute all our operations
+    const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
 
-                // console.time("other subjects...");
-                // build all related subjects and change maps
-                if (this.mode === "save") {
-                    new OneToManySubjectBuilder(this.subjects).build();
-                    new OneToOneInverseSideSubjectBuilder(this.subjects).build();
-                    new ManyToManySubjectBuilder(this.subjects).build();
-                } else {
-                    this.subjects.forEach(subject => {
-                        if (subject.mustBeRemoved) {
-                            new ManyToManySubjectBuilder(this.subjects).buildForAllRemoval(subject);
-                        }
-                    });
-                }
-                // console.timeEnd("other subjects...");
-                // console.timeEnd("building subjects...");
-                // console.log("subjects", subjects);
+    // save data in the query runner - this is useful functionality to share data from outside of the world
+    // with third classes - like subscribers and listener methods
+    if (this.options && this.options.data)
+      queryRunner.data = this.options.data;
 
-                // create a subject executor
-                const executor = new SubjectExecutor(queryRunner, this.subjects);
+    // construct the executor that will perform the persistence ops
+    const executor = await this.createSubjectExecutor(queryRunner);
 
-                // make sure we have at least one executable operation before we create a transaction and proceed
-                // if we don't have operations it means we don't really need to update or remove something
-                if (!executor.hasExecutableOperations)
-                    return;
+    // make sure we have at least one executable operation before we create a transaction and proceed
+    // if we don't have operations it means we don't really need to update or remove something
+    if (!executor.hasExecutableOperations)
+      return;
 
-                // start execute queries in a transaction
-                // if transaction is already opened in this query runner then we don't touch it
-                // if its not opened yet then we open it here, and once we finish - we close it
-                let isTransactionStartedByUs = false;
-                try {
+    // execute all persistence operations for all entities we have
+    await executor.execute();
+  }
 
-                    // open transaction if its not opened yet
-                    if (!queryRunner.isTransactionActive) {
-                        isTransactionStartedByUs = true;
-                        await queryRunner.startTransaction();
-                    }
 
-                    // execute all persistence operations for all entities we have
-                    await executor.execute();
+  protected async createSubjectExecutor(queryRunner: QueryRunner): Promise<SubjectExecutor> {
+    // check if entity we are going to save is valid and is an object
+    if (!this.entity || !(this.entity instanceof Object))
+      return Promise.reject(new MustBeEntityError(this.mode, this.entity));
 
-                    // commit transaction if it was started by us
-                    // console.time("commit");
-                    if (isTransactionStartedByUs === true)
-                        await queryRunner.commitTransaction();
-                    // console.timeEnd("commit");
+    // collect all operate subjects
+    const entities: ObjectLiteral[] = this.entity instanceof Array ? this.entity : [this.entity];
+    // console.time("building subjects...");
 
-                } catch (error) {
+    // create subjects for all entities we received for the persistence
+    entities.forEach(entity => {
+      const entityTarget = this.target ? this.target : entity.constructor;
+      if (entityTarget === Object)
+        throw new CannotDetermineEntityError(this.mode);
 
-                    // rollback transaction if it was started by us
-                    if (isTransactionStartedByUs) {
-                        try {
-                            await queryRunner.rollbackTransaction();
-                        } catch (rollbackError) { }
-                    }
-                    throw error;
-                }
+      this.subjects.push(new Subject({
+        metadata: this.connection.getMetadata(entityTarget),
+        entity: entity,
+        canBeInserted: this.mode === "save",
+        canBeUpdated: this.mode === "save",
+        mustBeRemoved: this.mode === "remove"
+      }));
+    });
 
-            } finally {
+    // console.time("building cascades...");
+    // go thought each entity with metadata and create subjects and subjects by cascades for them
+    this.subjects.forEach(subject => {
+      // next step we build list of subjects we will operate with
+      // these subjects are subjects that we need to insert or update alongside with main persisted entity
+      new CascadesSubjectBuilder(subject, this.subjects).build();
+    });
+    // console.timeEnd("building cascades...");
 
-                // release query runner only if its created by us
-                if (!this.queryRunner)
-                    await queryRunner.release();
-            }
-        });
+    // load database entities for all subjects we have
+    // next step is to load database entities for all operate subjects
+    // console.time("loading...");
+    await new SubjectDatabaseEntityLoader(queryRunner, this.subjects).load(this.mode);
+    // console.timeEnd("loading...");
+
+    // console.time("other subjects...");
+    // build all related subjects and change maps
+    if (this.mode === "save") {
+      new OneToManySubjectBuilder(this.subjects).build();
+      new OneToOneInverseSideSubjectBuilder(this.subjects).build();
+      new ManyToManySubjectBuilder(this.subjects).build();
+    } else {
+      this.subjects.forEach(subject => {
+        if (subject.mustBeRemoved) {
+          new ManyToManySubjectBuilder(this.subjects).buildForAllRemoval(subject);
+        }
+      });
     }
+    // console.timeEnd("other subjects...");
+    // console.timeEnd("building subjects...");
+    // console.log("subjects", subjects);
+
+    // create a subject executor
+    return new SubjectExecutor(queryRunner, this.subjects);
+  }
 
 }
