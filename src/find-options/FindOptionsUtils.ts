@@ -1,7 +1,7 @@
 import { FindManyOptions } from "./FindManyOptions";
 import { FindOneOptions } from "./FindOneOptions";
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder";
-import { DeepPartial } from '../common/DeepPartial';
+import { DeepPartial } from "../common/DeepPartial";
 /**
  * Utilities to work with FindOptions.
  */
