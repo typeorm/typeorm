@@ -165,7 +165,8 @@ export class EntityPersistExecutor {
         entity: entity,
         canBeInserted: this.mode === "save",
         canBeUpdated: this.mode === "save",
-        mustBeRemoved: this.mode === "remove"
+        mustBeRemoved: this.mode === "remove",
+        reloadEntity: (this.options || {}).reloadEntity
       }));
     });
 

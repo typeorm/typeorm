@@ -9,4 +9,9 @@ export interface SaveOptions {
      */
     data?: any;
 
+    /**
+     * Flag to determine whether the entity that is being persisted
+     * should be reloaded during the persistence operation
+     */
+    reloadEntity?: boolean;
 }

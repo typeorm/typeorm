@@ -203,7 +203,7 @@ export class SubjectExecutor {
                     .insert()
                     .into(subjects[0].metadata.target)
                     .values(insertMaps)
-                    .updateEntity(true)
+                    .updateEntity(subjects[0].reloadEntity)
                     .callListeners(false)
                     .execute();
             }

@@ -376,7 +376,7 @@ export class EntityManager {
   /**
    * Removes a given entity from the database.
    */
-  async removeNoTransaction<Entity>(entity: Entity[], options?: RemoveOptions): Promise<Entity>;
+  async removeNoTransaction<Entity>(entity: Entity[], options?: RemoveOptions): Promise<Entity[]>;
 
   /**
    * Removes a given entity from the database.
