@@ -322,8 +322,7 @@ export class EntityManager {
     const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
     // execute save operation
-    await new EntityPersistExecutor(this.connection, this.queryRunner, "save", target, entity, options)
-      .executeNoTransaction();
+    await new EntityPersistExecutor(this.connection, this.queryRunner, "save", target, entity, options).executeNoTransaction();
     return entity;
   }
 
@@ -394,8 +393,7 @@ export class EntityManager {
     const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
     // execute save operation
-    await new EntityPersistExecutor(this.connection, this.queryRunner, "remove", target, entity, options)
-      .executeNoTransaction()
+    await new EntityPersistExecutor(this.connection, this.queryRunner, "remove", target, entity, options).executeNoTransaction();
     return entity;
   }
 
