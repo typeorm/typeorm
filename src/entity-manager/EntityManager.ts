@@ -534,12 +534,15 @@ export class EntityManager {
             FindOptionsUtils.applyOptionsToQueryBuilder(qb, maybeOptions);
         }
 
-        if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions)) {
+        if (!maybeOptions && FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions)) {
             FindOptionsUtils.applyOptionsToQueryBuilder(qb, idOrOptionsOrConditions);
 
         } else if (idOrOptionsOrConditions instanceof Object) {
-            qb.where(idOrOptionsOrConditions as any);
-
+            if (maybeOptions && maybeOptions.where) {
+                qb.andWhere(idOrOptionsOrConditions as any);
+            } else {
+                qb.where(idOrOptionsOrConditions as any);
+            }
         } else if (typeof idOrOptionsOrConditions === "string" || typeof idOrOptionsOrConditions === "number" || (idOrOptionsOrConditions as any) instanceof Date) {
             qb.andWhereInIds(metadata.ensureEntityIdMap(idOrOptionsOrConditions));
         }
