@@ -5,7 +5,6 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {DeletableEntity} from "./entity/DeletableEntity";
 import {ChildDeletableEntity} from "./entity/ChildDeletableEntity";
 import {NonSoftDeletableEntity} from "./entity/NonSoftDeletableEntity";
-import {RestoreOnNonSoftDeleteEntity} from "../../../src/error/RestoreOnNonSoftDeleteEntity";
 
 async function createSimpleTestingEntities(connection: Connection) {
     const deletableEntityRepo = connection.getRepository(DeletableEntity);
