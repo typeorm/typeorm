@@ -17,7 +17,7 @@ export function VersionColumn(options?: ColumnOptions): Function {
         const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
-            mode: "version",
+            category: "version",
             options: options
         };
         getMetadataArgsStorage().columns.push(args);

@@ -20,7 +20,7 @@ export function ObjectIdColumn(options?: ColumnOptions): Function {
         const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
-            mode: "objectId",
+            category: "objectId",
             options: options
         };
         getMetadataArgsStorage().columns.push(args);

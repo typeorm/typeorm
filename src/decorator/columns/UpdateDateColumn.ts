@@ -12,7 +12,7 @@ export function UpdateDateColumn(options?: ColumnOptions): Function {
         const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
-            mode: "updateDate",
+            category: "updateDate",
             options: options ? options : {}
         };
         getMetadataArgsStorage().columns.push(args);

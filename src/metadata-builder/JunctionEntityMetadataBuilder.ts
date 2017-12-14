@@ -64,7 +64,7 @@ export class JunctionEntityMetadataBuilder {
                 referencedColumn: referencedColumn,
                 args: {
                     target: "",
-                    mode: "virtual",
+                    category: "virtual",
                     propertyName: columnName,
                     options: {
                         name: columnName,
@@ -92,7 +92,7 @@ export class JunctionEntityMetadataBuilder {
                 referencedColumn: inverseReferencedColumn,
                 args: {
                     target: "",
-                    mode: "virtual",
+                    category: "virtual",
                     propertyName: columnName,
                     options: {
                         length: inverseReferencedColumn.length,

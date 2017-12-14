@@ -275,13 +275,13 @@ export class ColumnMetadata {
         }
         if (options.args.options.array)
             this.isArray = options.args.options.array;
-        if (options.args.mode) {
-            this.isVirtual = options.args.mode === "virtual";
-            this.isTreeLevel = options.args.mode === "treeLevel";
-            this.isCreateDate = options.args.mode === "createDate";
-            this.isUpdateDate = options.args.mode === "updateDate";
-            this.isVersion = options.args.mode === "version";
-            this.isObjectId = options.args.mode === "objectId";
+        if (options.args.category) {
+            this.isVirtual = options.args.category === "virtual";
+            this.isTreeLevel = options.args.category === "treeLevel";
+            this.isCreateDate = options.args.category === "createDate";
+            this.isUpdateDate = options.args.category === "updateDate";
+            this.isVersion = options.args.category === "version";
+            this.isObjectId = options.args.category === "objectId";
         }
         if (options.args.options.transformer)
             this.transformer = options.args.options.transformer;

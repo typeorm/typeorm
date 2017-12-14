@@ -111,7 +111,7 @@ export class RelationJoinColumnBuilder {
                     entityMetadata: relation.entityMetadata,
                     args: {
                         target: "",
-                        mode: "virtual",
+                        category: "virtual",
                         propertyName: relation.propertyName,
                         options: {
                             name: joinColumnName,

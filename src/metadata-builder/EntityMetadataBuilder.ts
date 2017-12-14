@@ -277,7 +277,7 @@ export class EntityMetadataBuilder {
                     entityMetadata: entityMetadata,
                     args: {
                         target: entityMetadata.target,
-                        mode: "virtual",
+                        category: "virtual",
                         propertyName: discriminatorColumnName,
                         options: entityInheritance.column || {
                             name: "type",

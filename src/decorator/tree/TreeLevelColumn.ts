@@ -11,7 +11,7 @@ export function TreeLevelColumn(): Function {
         const args: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
-            mode: "treeLevel",
+            category: "treeLevel",
             options: {}
         };
         getMetadataArgsStorage().columns.push(args);

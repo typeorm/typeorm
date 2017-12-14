@@ -65,7 +65,7 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
             target: object.constructor,
             propertyName: propertyName,
             // propertyType: reflectedType,
-            mode: "regular",
+            category: "regular",
             options: options
         };
         getMetadataArgsStorage().columns.push(args);
