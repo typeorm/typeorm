@@ -55,6 +55,13 @@ export class BaseEntity {
         return (this.constructor as any).getRepository().remove(this);
     }
 
+    /**
+     * Restores current entity if it was soft deleted.
+     */
+    restore(): Promise<this> {
+        return (this.constructor as any).getRepository().restore(this);
+    }
+
     // -------------------------------------------------------------------------
     // Public Static Methods
     // -------------------------------------------------------------------------
