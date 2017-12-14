@@ -8,7 +8,7 @@ import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
 import {JoinTableOptions} from "../decorator/options/JoinTableOptions";
 import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
-import {ColumnMode} from "../metadata-args/types/ColumnMode";
+import {ColumnCategory} from "../metadata-args/types/ColumnCategory";
 import {GeneratedMetadataArgs} from "../metadata-args/GeneratedMetadataArgs";
 
 /**
@@ -42,7 +42,7 @@ export class EntitySchemaTransformer {
             // add columns metadata args from the schema
             Object.keys(schema.columns).forEach(columnName => {
                 const tableColumn = schema.columns[columnName];
-                let mode: ColumnMode = "regular";
+                let mode: ColumnCategory = "regular";
                 if (tableColumn.createDate)
                     mode = "createDate";
                 if (tableColumn.updateDate)
@@ -56,7 +56,7 @@ export class EntitySchemaTransformer {
 
                 const columnAgrs: ColumnMetadataArgs = {
                     target: schema.target || schema.name,
-                    mode: mode,
+                    category: mode,
                     propertyName: columnName,
                     options: {
                         type: tableColumn.type,

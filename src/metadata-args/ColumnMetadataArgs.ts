@@ -1,5 +1,5 @@
 import {ColumnOptions} from "../decorator/options/ColumnOptions";
-import {ColumnMode} from "./types/ColumnMode";
+import {ColumnCategory} from "./types/ColumnCategory";
 
 /**
  * Arguments for ColumnMetadata class.
@@ -28,7 +28,7 @@ export interface ColumnMetadataArgs {
      *
      * todo: find name better then "mode".
      */
-    readonly mode: ColumnMode;
+    readonly category: ColumnCategory;
 
     /**
      * Extra column options.

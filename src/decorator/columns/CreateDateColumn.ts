@@ -23,7 +23,7 @@ export function CreateDateColumn(options?: ColumnOptions): Function {
             target: object.constructor,
             propertyName: propertyName,
             // propertyType: reflectedType,
-            mode: "createDate",
+            category: "createDate",
             options: options
         };
         getMetadataArgsStorage().columns.push(args);

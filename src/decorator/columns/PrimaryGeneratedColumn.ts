@@ -68,7 +68,7 @@ export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|Pr
         const columnArgs: ColumnMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
-            mode: "regular",
+            category: "regular",
             options: options
         };
         getMetadataArgsStorage().columns.push(columnArgs);

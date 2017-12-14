@@ -108,7 +108,7 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
             const args: ColumnMetadataArgs = {
                 target: object.constructor,
                 propertyName: propertyName,
-                mode: "regular",
+                category: "regular",
                 options: options
             };
             getMetadataArgsStorage().columns.push(args);
