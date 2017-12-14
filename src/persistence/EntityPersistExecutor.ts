@@ -14,6 +14,7 @@ import {SubjectDatabaseEntityLoader} from "./SubjectDatabaseEntityLoader";
 import {CascadesSubjectBuilder} from "./subject-builder/CascadesSubjectBuilder";
 import {OrmUtils} from "../util/OrmUtils";
 import {PromiseUtils} from "../util/PromiseUtils";
+import {RestoreOnNonSoftDeleteEntity} from "../error/RestoreOnNonSoftDeleteEntity";
 
 /**
  * Persists a single entity or multiple entities - saves or removes them.
@@ -74,9 +75,12 @@ export class EntityPersistExecutor {
                         if (entityTarget === Object)
                             throw new CannotDetermineEntityError(this.mode);
 
-                        if (this.mode === "restore" && metadata.softDeletedDateColumn) {
+                        if (this.mode === "restore") {
+                            if (!metadata.softDeletedDateColumn)
+                                throw new RestoreOnNonSoftDeleteEntity();
                             metadata.softDeletedDateColumn.setEntityValue(entity, null);
                         }
+
                         if (this.mode === "remove" && metadata.softDeletedDateColumn) {
                             metadata.softDeletedDateColumn.setEntityValue(entity, new Date());
                             this.mode = "save";

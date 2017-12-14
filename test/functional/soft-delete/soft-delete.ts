@@ -4,6 +4,8 @@ import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {DeletableEntity} from "./entity/DeletableEntity";
 import {ChildDeletableEntity} from "./entity/ChildDeletableEntity";
+import {NonSoftDeletableEntity} from "./entity/NonSoftDeletableEntity";
+import {RestoreOnNonSoftDeleteEntity} from "../../../src/error/RestoreOnNonSoftDeleteEntity";
 
 async function createSimpleTestingEntities(connection: Connection) {
     const deletableEntityRepo = connection.getRepository(DeletableEntity);
@@ -162,5 +164,14 @@ describe("soft-delete functionality", () => {
         const entity = await repository.findOne(1);
 
         expect(entity!.children).to.be.lengthOf(1);
+    })));
+
+    it("throws correct error when trying to restore a non soft deletable entity", () => Promise.all(connections.map(async connection => {
+        const repository = connection.getRepository(NonSoftDeletableEntity);
+        const entity = new NonSoftDeletableEntity();
+        entity.col1 = "aa";
+        await repository.save(entity);
+        await repository.remove(entity);
+        await expect(repository.restore(entity)).to.eventually.be.rejectedWith("Cannot restore an entity which does not have a SoftDeleteDateColumn");
     })));
 });
