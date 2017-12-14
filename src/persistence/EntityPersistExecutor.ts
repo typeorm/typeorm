@@ -71,9 +71,10 @@ export class EntityPersistExecutor {
                     // create subjects for all entities we received for the persistence
                     entities.forEach(entity => {
                         const entityTarget = this.target ? this.target : entity.constructor;
-                        const metadata = this.connection.getMetadata(entityTarget);
                         if (entityTarget === Object)
                             throw new CannotDetermineEntityError(this.mode);
+
+                        const metadata = this.connection.getMetadata(entityTarget);
 
                         if (this.mode === "restore") {
                             if (!metadata.softDeletedDateColumn)
