@@ -74,6 +74,7 @@ Some of TypeORM features:
 * produced code is performant, flexible, clean and maintainable
 * follows all possible best practices
 * CLI
+* soft-deleting
 
 And more...
 

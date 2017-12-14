@@ -122,6 +122,19 @@ await repository.remove([
 ]);
 ```
 
+* `restore` - Restores a soft deleted entity or array of entities.
+This will restore the soft deleted date from the entity, no longer excluding it from queries.
+This will only work on entities which have a `@SoftDeleteDateColumn`.
+
+```typescript
+await repository.restore(user);
+await repository.restore([
+    category1,
+    category2,
+    category3
+]);
+```
+
 * `insert` - Inserts a new entity.
 
 ```typescript

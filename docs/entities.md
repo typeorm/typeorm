@@ -198,6 +198,10 @@ You don't need set this column - it will be automatically set.
 each time you call `save` of entity manager or repository.
 You don't need set this column - it will be automatically set.
 
+* `@SoftDeleteDateColumn` is a special column that denotes if the entity has been deleted. This will
+allow you to delete and entity, but not actually delete it. 
+You don't need set this column - it will be automatically set.
+
 * `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)  
 each time you call `save` of entity manager or repository.
 You don't need set this column - it will be automatically set.

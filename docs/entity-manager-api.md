@@ -110,14 +110,24 @@ await manager.save([
 
 * `remove` - Removes a given entity or array of entities.
 It removes all given entities in a single transaction (in the case of entity manager is not transactional).
+If the entity has a `@SoftDeleteDateColumn`, the entity is soft-deleted, and not truly removed from the DB.
 
 ```typescript
-await manager.remove(user);
-await manager.remove([
+await manager.restore(user);
+await manager.restore([
     category1,
     category2,
     category3
 ]);
+```
+
+* `restore` - Restores a soft deleted entity or array of entities.
+This will restore the soft deleted date from the entity, no longer excluding it from queries.
+This will only work on entities which have a `@SoftDeleteDateColumn`.
+
+```typescript
+await manager.restore(user);
+await manager.restore([user1, user2]);
 ```
 
 * `insert` - Inserts a new entity.

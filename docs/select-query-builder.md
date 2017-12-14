@@ -22,6 +22,7 @@
 * [Using pagination](#using-pagination)
 * [Set locking](#set-locking)
 * [Partial selection](#partial-selection)
+* [Soft deleted records](#soft-deleted-records)
 * [Using subqueries](#using-subqueries)
 
 ## What is `QueryBuilder`
@@ -818,6 +819,18 @@ const users = await getRepository(User)
 ````
 
 This will only select `id` and `name` of `User`.
+
+## Soft deleted records
+
+You can retreive softdelete entities via the following method:
+
+```typescript
+const allUsers = await getRepository(User)
+    .createQueryBuilder("user")
+    .withDeleted()
+    .getMany();
+
+```
 
 ## Using subqueries
 
