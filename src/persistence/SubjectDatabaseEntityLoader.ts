@@ -29,7 +29,7 @@ export class SubjectDatabaseEntityLoader {
      * loadAllRelations flag is used to load all relation ids of the object, no matter if they present in subject entity or not.
      * This option is used for deletion.
      */
-    async load(operationType: "save"|"remove"): Promise<void> {
+    async load(operationType: "save"|"remove"|"restore"): Promise<void> {
 
         // we are grouping subjects by target to perform more optimized queries using WHERE IN operator
         // go through the groups and perform loading of database entities of each subject in the group
@@ -61,7 +61,7 @@ export class SubjectDatabaseEntityLoader {
             // this is for optimization purpose - this way we don't load relation ids for entities
             // whose relations are undefined, and since they are undefined its really pointless to
             // load something for them, since undefined properties are skipped by the orm
-            if (operationType === "save") {
+            if (operationType === "save" || operationType === "restore") {
                 subjectGroup.subjects.forEach(subject => {
 
                     // gets all relation property paths that exist in the persisted entity.
@@ -81,6 +81,7 @@ export class SubjectDatabaseEntityLoader {
             }
 
             const findOptions: FindManyOptions<any> = {
+                withDeleted: true,
                 loadRelationIds: {
                     relations: loadRelationPropertyPaths,
                     disableMixedMap: true

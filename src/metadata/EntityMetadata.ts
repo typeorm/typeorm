@@ -242,6 +242,11 @@ export class EntityMetadata {
     updateDateColumn?: ColumnMetadata;
 
     /**
+     * Gets entity column which contains a soft deleted date value.
+     */
+    softDeletedDateColumn?: ColumnMetadata;
+
+    /**
      * Gets entity column which contains an entity version.
      */
     versionColumn?: ColumnMetadata;

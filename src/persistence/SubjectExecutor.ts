@@ -316,6 +316,7 @@ export class SubjectExecutor {
                     .manager
                     .createQueryBuilder()
                     .update(subject.metadata.target)
+                    .withDeleted(true)
                     .set(updateMap)
                     .updateEntity(this.options && this.options.reload === false ? false : true)
                     .callListeners(false);

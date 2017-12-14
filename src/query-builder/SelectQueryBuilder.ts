@@ -1248,7 +1248,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                    condition?: string,
                    parameters?: ObjectLiteral,
                    mapToProperty?: string,
-                   isMappingMany?: boolean): void {
+                   isMappingMany?: boolean,
+                   withDeleted?: false): void {
 
         this.setParameters(parameters || {});
 
@@ -1276,7 +1277,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     metadata: joinAttribute.relation.junctionEntityMetadata
                 });
             }
-
+            if (joinAttribute.metadata.softDeletedDateColumn && !withDeleted) {
+                if (joinAttribute.condition) {
+                    joinAttribute.condition = `(${joinAttribute.condition}) AND ${joinAttribute.alias}.${joinAttribute.metadata.softDeletedDateColumn.propertyName} IS NULL`;
+                } else {
+                    joinAttribute.condition = `${joinAttribute.alias.name}.${joinAttribute.metadata.softDeletedDateColumn.propertyName} IS NULL`;
+                }
+            }
         } else {
             let subQuery: string = "";
             if (entityOrProperty instanceof Function) {

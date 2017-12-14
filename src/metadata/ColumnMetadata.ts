@@ -194,6 +194,11 @@ export class ColumnMetadata {
     isUpdateDate: boolean = false;
 
     /**
+      * Indicates if this column contains an entity soft delete date.
+      */
+    isSoftDeleteDate: boolean = false;
+
+    /**
      * Indicates if this column contains an entity version.
      */
     isVersion: boolean = false;
@@ -280,6 +285,7 @@ export class ColumnMetadata {
             this.isTreeLevel = options.args.mode === "treeLevel";
             this.isCreateDate = options.args.mode === "createDate";
             this.isUpdateDate = options.args.mode === "updateDate";
+            this.isSoftDeleteDate = options.args.mode === "softDeleteDate";
             this.isVersion = options.args.mode === "version";
             this.isObjectId = options.args.mode === "objectId";
         }
@@ -300,6 +306,11 @@ export class ColumnMetadata {
                 this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
             if (!this.precision && options.connection.driver.mappedDataTypes.updateDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
+        }
+        if (this.isSoftDeleteDate) {
+            this.type = options.connection.driver.mappedDataTypes.softDeleteDate;
+            if (!this.precision && options.connection.driver.mappedDataTypes.softDeleteDatePrecision)
+                    this.precision = options.connection.driver.mappedDataTypes.softDeleteDatePrecision;
         }
         if (this.isVersion)
             this.type = options.connection.driver.mappedDataTypes.version;

@@ -37,6 +37,11 @@ export interface FindOneOptions<Entity> {
     cache?: boolean | number | { id: any, milliseconds: number };
 
     /**
+     * Disables soft-delete filtering
+     */
+    withDeleted?: boolean;
+
+    /**
      * If sets to true then loads all relation ids of the entity and maps them into relation values (not relation objects).
      * If array of strings is given then loads only relation ids of the given properties.
      */

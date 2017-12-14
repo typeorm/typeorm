@@ -16,6 +16,10 @@ export interface EntitySchemaColumn {
      * Indicates if this column is an update date column.
      */
     updateDate?: boolean;
+    /**
+     * Indicates if this column is a soft delete date column.
+    */
+    softDeleteDate?: boolean;
 
     /**
      * Indicates if this column is a version column.

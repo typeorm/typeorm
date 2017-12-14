@@ -234,6 +234,11 @@ export class QueryExpressionMap {
     useTransaction: boolean = false;
 
     /**
+     * Include soft-deleted entities if entity is soft-deletable
+     */
+    withDeleted: boolean = false;
+
+    /**
      * Extra parameters.
      * Used in InsertQueryBuilder to avoid default parameters mechanizm and execute high performance insertions.
      */
@@ -392,6 +397,7 @@ export class QueryExpressionMap {
         map.callListeners = this.callListeners;
         map.useTransaction = this.useTransaction;
         map.nativeParameters = this.nativeParameters;
+        map.withDeleted = this.withDeleted;
         return map;
     }
 

@@ -336,6 +336,40 @@ export class EntityManager {
     }
 
     /**
+     * Restores a given soft-deleted entity.
+     */
+    restore<Entity>(entity: Entity): Promise<Entity>;
+
+    /**
+     * Restores a given soft-deleted entity.
+     */
+    restore<Entity>(entity: Entity[]): Promise<Entity[]>;
+
+    /**
+     * Restores a given soft-deleted entity.
+     */
+    restore<Entity>(target: ObjectType<Entity>|string, entity: Entity): Promise<Entity>;
+
+    /**
+     * Restores a given soft-deleted entity.
+     */
+    restore<Entity>(target: ObjectType<Entity>|string, entity: Entity[]): Promise<Entity[]>;
+
+    /**
+     * Restores a given soft-deleted entity.
+     */
+    restore<Entity>(targetOrEntity: Entity|Entity[]|Function|string, maybeEntity?: Entity|Entity[]): Promise<Entity|Entity[]> {
+        // normalize mixed parameters
+        const target = (arguments.length > 1 && (targetOrEntity instanceof Function || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
+        const entity: Entity|Entity[] = target ? maybeEntity as Entity|Entity[] : targetOrEntity as Entity|Entity[];
+
+        // execute save operation
+            return new EntityPersistExecutor(this.connection, this.queryRunner, "restore", target, entity, undefined)
+            .execute()
+            .then(() => entity);
+    }
+
+    /**
      * Inserts a given entity into the database.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT query.

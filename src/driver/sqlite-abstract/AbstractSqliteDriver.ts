@@ -132,6 +132,7 @@ export class AbstractSqliteDriver implements Driver {
         createDateDefault: "datetime('now')",
         updateDate: "datetime",
         updateDateDefault: "datetime('now')",
+        softDeleteDate: "datetime",
         version: "integer",
         treeLevel: "integer",
         migrationName: "varchar",

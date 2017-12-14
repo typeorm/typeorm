@@ -26,7 +26,7 @@ export class EntityPersistExecutor {
 
     constructor(protected connection: Connection,
                 protected queryRunner: QueryRunner|undefined,
-                protected mode: "save"|"remove",
+                protected mode: "save"|"remove"|"restore",
                 protected target: Function|string|undefined,
                 protected entity: ObjectLiteral|ObjectLiteral[],
                 protected options?: SaveOptions & RemoveOptions) {
@@ -70,14 +70,23 @@ export class EntityPersistExecutor {
                     // create subjects for all entities we received for the persistence
                     entities.forEach(entity => {
                         const entityTarget = this.target ? this.target : entity.constructor;
+                        const metadata = this.connection.getMetadata(entityTarget);
                         if (entityTarget === Object)
                             throw new CannotDetermineEntityError(this.mode);
 
+                        if (this.mode === "restore" && metadata.softDeletedDateColumn) {
+                            metadata.softDeletedDateColumn.setEntityValue(entity, null);
+                        }
+                        if (this.mode === "remove" && metadata.softDeletedDateColumn) {
+                            metadata.softDeletedDateColumn.setEntityValue(entity, new Date());
+                            this.mode = "save";
+                        }
+
                         subjects.push(new Subject({
-                            metadata: this.connection.getMetadata(entityTarget),
+                            metadata: metadata,
                             entity: entity,
                             canBeInserted: this.mode === "save",
-                            canBeUpdated: this.mode === "save",
+                            canBeUpdated: this.mode === "save" || this.mode === "restore",
                             mustBeRemoved: this.mode === "remove"
                         }));
                     });
@@ -99,7 +108,7 @@ export class EntityPersistExecutor {
 
                     // console.time("other subjects...");
                     // build all related subjects and change maps
-                    if (this.mode === "save") {
+                    if (this.mode === "save" || this.mode === "restore") {
                         new OneToManySubjectBuilder(subjects).build();
                         new OneToOneInverseSideSubjectBuilder(subjects).build();
                         new ManyToManySubjectBuilder(subjects).build();

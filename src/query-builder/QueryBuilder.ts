@@ -457,6 +457,14 @@ export abstract class QueryBuilder<Entity> {
         return this;
     }
 
+    /**
+     * If set to true, the query will return soft deleted entities.
+     */
+    withDeleted(withDeleted: boolean = true): this {
+        this.expressionMap.withDeleted = withDeleted;
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -583,23 +591,62 @@ export abstract class QueryBuilder<Entity> {
      * Creates "WHERE" expression.
      */
     protected createWhereExpression() {
+        // TODO Refactor this. Kind of ugly with the softDeleteExpression being a condition on every line. Has to be a better way.
         const conditions = this.createWhereExpressionString();
+        let softDeleteExpression = this.getSoftDeleteExpression();
 
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata;
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
                 const condition = `${this.replacePropertyNames(this.expressionMap.mainAlias!.name + "." + metadata.discriminatorColumn.databaseName)} IN (:discriminatorColumnValues)`;
-                return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${condition}`;
+                if (softDeleteExpression.length) {
+                        return ` WHERE (${ conditions.length ? "(" + conditions + ") AND" : "" } ${condition}) AND (${softDeleteExpression})`;
+                   } else {
+                        return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${condition}`;
+                }
             }
         }
 
         if (!conditions.length) // TODO copy in to discriminator condition
-            return this.expressionMap.extraAppendedAndWhereCondition ? " WHERE " + this.replacePropertyNames(this.expressionMap.extraAppendedAndWhereCondition) : "";
+            if (this.expressionMap.extraAppendedAndWhereCondition) {
+                if (softDeleteExpression.length) {
+                        return ` WHERE (${this.replacePropertyNames(this.expressionMap.extraAppendedAndWhereCondition)}) AND (${softDeleteExpression})`;
+                    } else {
+                        return ` WHERE ${this.replacePropertyNames(this.expressionMap.extraAppendedAndWhereCondition)}`;
+                    }
+            } else if (softDeleteExpression.length) {
+                return ` WHERE ${softDeleteExpression}`;
+            }
 
         if (this.expressionMap.extraAppendedAndWhereCondition)
-            return " WHERE (" + conditions + ") AND " + this.replacePropertyNames(this.expressionMap.extraAppendedAndWhereCondition);
+            if (softDeleteExpression.length) {
+                return ` WHERE (${conditions}) AND (${this.replacePropertyNames(this.expressionMap.extraAppendedAndWhereCondition)}) AND (${softDeleteExpression})`;
+            } else {
+                return ` WHERE (${conditions}) AND ${this.replacePropertyNames(this.expressionMap.extraAppendedAndWhereCondition)}`;
+            }
 
-        return " WHERE " + conditions;
+        if (conditions) {
+            if (softDeleteExpression.length) {
+                    return ` WHERE (${conditions}) AND (${softDeleteExpression})`;
+                } else {
+                    return ` WHERE ${conditions}`;
+                }
+            } else if (softDeleteExpression.length) {
+                return ` WHERE (${softDeleteExpression})`;
+            } else {
+                return "";
+            }
+    }
+
+    protected getSoftDeleteExpression() {
+        if (!this.expressionMap.withDeleted && this.expressionMap.mainAlias!.hasMetadata) {
+            const metadata = this.expressionMap.mainAlias!.metadata;
+
+            if (metadata.softDeletedDateColumn) {
+                return `${this.replacePropertyNames(this.expressionMap.mainAlias!.name + "." + metadata.softDeletedDateColumn.databaseName)} IS NULL`;
+            }
+        }
+        return "";
     }
 
     /**

@@ -133,6 +133,8 @@ export class MysqlDriver implements Driver {
         updateDate: "datetime",
         updateDatePrecision: 6,
         updateDateDefault: "CURRENT_TIMESTAMP(6)",
+        softDeleteDate: "datetime",
+        softDeleteDatePrecision: 6,
         version: "int",
         treeLevel: "int",
         migrationName: "varchar",

@@ -27,6 +27,7 @@ export class FindOptionsUtils {
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
                     possibleOptions.cache instanceof Object ||
+                    typeof possibleOptions.withDeleted === "boolean" ||
                     typeof possibleOptions.cache === "boolean" ||
                     typeof possibleOptions.cache === "number" ||
                     possibleOptions.loadRelationIds instanceof Object ||
@@ -82,6 +83,9 @@ export class FindOptionsUtils {
         if (options.select) {
             qb.select(options.select.map(selection => qb.alias + "." + selection));
         }
+
+        if (options.withDeleted)
+            qb.withDeleted(options.withDeleted);
 
         if (options.where)
             qb.where(options.where);

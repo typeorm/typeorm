@@ -72,6 +72,7 @@ export class MongoDriver implements Driver {
         createDateDefault: "",
         updateDate: "int",
         updateDateDefault: "",
+        softDeleteDate: "int",
         version: "int",
         treeLevel: "int",
         migrationName: "int",

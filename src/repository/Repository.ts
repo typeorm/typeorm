@@ -155,6 +155,23 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+      * Restores a given entities that were soft-deleted
+      */
+    async restore(entities: Entity[]): Promise<Entity[]>;
+
+    /**
+      * Restores a given entities that were soft-deleted
+      */
+    async restore(entity: Entity): Promise<Entity>;
+
+    /**
+      * Restores a given entities that were soft-deleted
+      */
+    async restore(entityOrEntities: Entity|Entity[]): Promise<Entity|Entity[]> {
+        return this.manager.restore(entityOrEntities);
+    }
+
+    /**
      * Inserts a given entity into the database.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT query.

@@ -37,6 +37,16 @@ export interface MappedColumnTypes {
     updateDateDefault: string;
 
     /**
+     * Default value should be used by a databse for "deleted date" column.
+     */
+    softDeleteDate: ColumnType;
+
+    /**
+     * Precision of datetime column. Used in MySql to define milliseconds.
+     */
+    softDeleteDatePrecision?: number;
+
+    /**
      * Column type for the version column.
      */
     version: ColumnType;
