@@ -162,6 +162,10 @@ export class ColumnMetadata {
 
     /**
      * Indicates if column is virtual. Virtual columns are not mapped to the entity.
+     *
+     * If user used partial selection and did not select some primary columns which are required to be selected
+     * we select those primary columns and mark them as "virtual". Later virtual column values will be removed from final entity
+     * to make entity contain exactly what user selected
      */
     isVirtual: boolean = false;
 
@@ -211,6 +215,19 @@ export class ColumnMetadata {
      * this column when reading or writing to the database.
      */
     transformer?: ValueTransformer;
+
+    /**
+     * It specifies a SQL query. A completed SQL string (maybe a subquery or a chain of SQL).
+     * Or it maybe a function returning a SQL string. (Executable context is Column context)
+     * @property {String} [sql]
+     */
+    sql?: string;
+
+    /**
+     * Alias column name. By default is propertyName.
+     * @property {String} [aliasName=this.propertyName]
+     */
+    aliasName?: string;
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -286,6 +303,13 @@ export class ColumnMetadata {
         }
         if (options.args.options.transformer)
             this.transformer = options.args.options.transformer;
+        if (options.args.options.sql) {
+            this.sql = `(${(typeof options.args.options.sql === "string")
+                ? options.args.options.sql
+                : options.args.options.sql.call(this)})`; // TODO: вместо   this   нужен scope       EntityMetadata
+            this.aliasName = options.args.options.aliasName || this.propertyName;
+            this.isVirtual = true;
+        }
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;
         if (this.isCreateDate) {
@@ -307,8 +331,7 @@ export class ColumnMetadata {
     }
 
     // ---------------------------------------------------------------------
-    // Public Methods
-    // ---------------------------------------------------------------------
+    // region Public Methods
 
     /**
      * Creates entity id map from the given entity ids array.
@@ -480,9 +503,11 @@ export class ColumnMetadata {
         }
     }
 
+    // endregion
+    // =====================================================================
+
     // ---------------------------------------------------------------------
-    // Builder Methods
-    // ---------------------------------------------------------------------
+    // region Builder Methods
 
     build(connection: Connection): this {
         this.propertyPath = this.buildPropertyPath();
@@ -491,9 +516,11 @@ export class ColumnMetadata {
         return this;
     }
 
+    // endregion
+    // =====================================================================
+
     // ---------------------------------------------------------------------
-    // Protected Methods
-    // ---------------------------------------------------------------------
+    // region Protected Methods
 
     protected buildPropertyPath(): string {
         let path = "";
@@ -515,4 +542,6 @@ export class ColumnMetadata {
         return connection.namingStrategy.columnName(this.propertyName, this.givenDatabaseName, propertyNames);
     }
 
+    // endregion
+    // =====================================================================
 }

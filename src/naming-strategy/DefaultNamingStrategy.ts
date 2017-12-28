@@ -30,7 +30,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         if (embeddedPrefixes.length)
             return camelCase(embeddedPrefixes.join("_")) + (customName ? titleCase(customName) : titleCase(propertyName));
 
-        return customName ? customName : propertyName;
+        return customName || propertyName;
     }
 
     relationName(propertyName: string): string {

@@ -110,5 +110,15 @@ export interface ColumnOptions {
      * this column when reading or writing to the database.
      */
     transformer?: ValueTransformer;
-    
+
+    /**
+     * It specifies a SQL query. A completed SQL string (maybe a subquery or a chain of SQL).
+     * Or it maybe a function returning a SQL string. (Executable context is Column context)
+     */
+    sql?: string|Function;
+
+    /**
+     * Alias column name.
+     */
+    aliasName?: string;
 }
