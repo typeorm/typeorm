@@ -1279,8 +1279,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 return this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
             });
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
-        if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver)
-            return "SELECT ROWNUM " + this.escape("RN") + "," + selection + " FROM " + froms.join(", ") + lock;
 
         return "SELECT " + selection + " FROM " + froms.join(", ") + lock;
     }
@@ -1418,12 +1416,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     protected createLimitOffsetOracleSpecificExpression(sql: string): string {
         if ((this.expressionMap.offset || this.expressionMap.limit) && this.connection.driver instanceof OracleDriver) {
-            sql = "SELECT * FROM (" + sql + ") WHERE ";
-            if (this.expressionMap.offset) {
-                sql += this.escape("RN") + " >= " + this.expressionMap.offset;
-            }
+            sql = "SELECT * FROM ( SELECT X.*, rownum AS rnum FROM (" + sql + ") X";
             if (this.expressionMap.limit) {
-                sql += (this.expressionMap.offset ? " AND " : "") + this.escape("RN") + " <= " + ((this.expressionMap.offset || 0) + this.expressionMap.limit);
+                sql += " WHERE rownum <= " + ((this.expressionMap.offset || 0) + this.expressionMap.limit) + ")";
+            } else {
+                sql += ")";
+            }
+            if (this.expressionMap.offset) {
+                sql += " WHERE rnum > " + (this.expressionMap.offset);
             }
         }
         return sql;
