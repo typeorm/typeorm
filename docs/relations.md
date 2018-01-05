@@ -147,7 +147,7 @@ Column name for such relation will become `categoryName`
 `@JoinTable` is used for `many-to-many` relations and describes join columns of the "junction" table.
 A junction table is a special separate table created automatically by TypeORM with columns that refer to the related entities.
 You can change column names inside junction tables and their referenced columns with `@JoinColumn`:
-You can also change the ame of the generated "junction" table.
+You can also change the name of the generated "junction" table.
 
 ```typescript
 @ManyToMany(type => Category)
