@@ -1736,7 +1736,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const selectString = Object.keys(orderBys)
             .map(orderCriteria => {
                 if (orderCriteria.indexOf(".") !== -1) {
-                    const [aliasName, propertyPath] = orderCriteria.split(".");
+                    let [aliasName, propertyPath] = orderCriteria.split(".");
+                    if(aliasName.indexOf('-') === 0 && parentAlias=='distinctAlias') {
+                        aliasName = aliasName.substring(1)
+                    }
                     const alias = this.expressionMap.findAliasByName(aliasName);
                     const column = alias.metadata.findColumnWithPropertyName(propertyPath);
                     return this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName);
@@ -1752,7 +1755,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const orderByObject: OrderByCondition = {};
         Object.keys(orderBys).forEach(orderCriteria => {
             if (orderCriteria.indexOf(".") !== -1) {
-                const [aliasName, propertyPath] = orderCriteria.split(".");
+                let [aliasName, propertyPath] = orderCriteria.split(".");
+                if(aliasName.indexOf('-') === 0 && parentAlias=='distinctAlias') {
+                    aliasName = aliasName.substring(1)
+                }
                 const alias = this.expressionMap.findAliasByName(aliasName);
                 const column = alias.metadata.findColumnWithPropertyName(propertyPath);
                 orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = orderBys[orderCriteria];
