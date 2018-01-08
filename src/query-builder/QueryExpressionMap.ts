@@ -294,8 +294,8 @@ export class QueryExpressionMap {
      */
     findAliasByName(aliasName: string): Alias {
         const alias = this.aliases.find(alias => alias.name === aliasName);
-        if(aliasName.indexOf('-') === 0) {
-            aliasName = aliasName.substring(1)
+        if((this.connection.driver.options.type == "mysql" || this.connection.driver.options.type == "mariadb") && aliasName.indexOf('-') === 0) {
+          aliasName = aliasName.substring(1)
         }
         if (!alias)
             throw new Error(`"${aliasName}" alias was not found. Maybe you forgot to join it?`);

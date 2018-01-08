@@ -1737,8 +1737,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             .map(orderCriteria => {
                 if (orderCriteria.indexOf(".") !== -1) {
                     let [aliasName, propertyPath] = orderCriteria.split(".");
-                    if(aliasName.indexOf('-') === 0 && parentAlias=='distinctAlias') {
-                        aliasName = aliasName.substring(1)
+                    if((this.connection.driver.options.type == "mysql" || this.connection.driver.options.type == "mariadb") && aliasName.indexOf('-') === 0 && parentAlias=='distinctAlias') {
+                      aliasName = aliasName.substring(1)
                     }
                     const alias = this.expressionMap.findAliasByName(aliasName);
                     const column = alias.metadata.findColumnWithPropertyName(propertyPath);
@@ -1756,8 +1756,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         Object.keys(orderBys).forEach(orderCriteria => {
             if (orderCriteria.indexOf(".") !== -1) {
                 let [aliasName, propertyPath] = orderCriteria.split(".");
-                if(aliasName.indexOf('-') === 0 && parentAlias=='distinctAlias') {
-                    aliasName = aliasName.substring(1)
+                if((this.connection.driver.options.type == "mysql" || this.connection.driver.options.type == "mariadb") && aliasName.indexOf('-') === 0 && parentAlias=='distinctAlias') {
+                  aliasName = aliasName.substring(1)
                 }
                 const alias = this.expressionMap.findAliasByName(aliasName);
                 const column = alias.metadata.findColumnWithPropertyName(propertyPath);
