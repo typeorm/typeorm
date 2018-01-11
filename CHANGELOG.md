@@ -8,6 +8,7 @@ feel free to ask us and community.
 ## 0.1.11
 
 * postgres extensions now gracefully handled when user does not have rights to use them ([#1407](https://github.com/typeorm/typeorm/issues/1407))
+* EntitySubscriber now firing events on subclass entity ([#1369](https://github.com/typeorm/typeorm/issues/1369))
 
 ## 0.1.10
 
