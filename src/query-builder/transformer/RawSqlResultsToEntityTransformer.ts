@@ -52,9 +52,9 @@ export class RawSqlResultsToEntityTransformer {
             const id = alias.metadata.primaryColumns.map(column => rawResult[alias.name + "_" + column.databaseName]).join("_"); // todo: check partial
             if (!id) return;
 
-            let group: { id: any, items: any[] }
+            let group: { id: any, items: any[] };
             if (id in groupedResults) {
-                group = groupedResults[id]
+                group = groupedResults[id];
             } else {
                 group = { id: id, items: [] };
             }
