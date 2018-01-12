@@ -465,7 +465,15 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
             newColumn.name = newTableColumnOrName;
         }
 
-        return this.changeColumn(table, oldColumn, newColumn);
+        const oldTable = table.clone();
+        table.replaceColumn(oldColumn, newColumn);
+
+        const reinsertData = async (table: Table, oldColumns: string, newColumns: string): Promise<any> => {
+            const statement = `INSERT INTO "temporary_${table.name}"(${newColumns}) SELECT ${oldColumns} FROM "${table.name}"`;
+            await this.query(statement);
+        };
+
+        return this.recreateTable(table, oldTable, reinsertData);
     }
 
     /**
@@ -492,8 +500,11 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${tableOrName}" table.`);
 
+        const oldTable = table.clone();
+        table.replaceColumn(oldColumn, newColumn);
+
         // todo: fix it. it should not depend on table
-        return this.recreateTable(table);
+        return this.recreateTable(table, oldTable);
     }
 
     /**
@@ -676,7 +687,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
         return c;
     }
 
-    protected async recreateTable(table: Table, oldTableSchema?: Table, migrateData = true): Promise<void> {
+    protected async recreateTable(table: Table, oldTableSchema?: Table, insertHookMethod?: (newTable: Table, oldColumnNames: string, newColumnNames: string) => Promise<any>): Promise<void> {
         // const withoutForeignKeyColumns = columns.filter(column => column.foreignKeys.length === 0);
         // const createForeignKeys = options && options.createForeignKeys;
         const columnDefinitions = table.columns.map(dbColumn => this.buildCreateColumnSql(dbColumn)).join(", ");
@@ -706,9 +717,12 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
         const oldColumnNames = oldTableSchema ? oldTableSchema.columns.map(column => `"${column.name}"`).join(", ") : columnNames;
 
         // migrate all data from the table into temporary table
-        if (migrateData) {
+        if (!insertHookMethod) {
             const sql2 = `INSERT INTO "temporary_${table.name}"(${oldColumnNames}) SELECT ${oldColumnNames} FROM "${table.name}"`;
             await this.query(sql2);
+        }
+        else {
+            await insertHookMethod(table, oldColumnNames, columnNames);
         }
 
         // drop old table

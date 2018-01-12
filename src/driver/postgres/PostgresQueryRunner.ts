@@ -625,17 +625,18 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${tableOrName}" table.`);
 
-        if (this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn) ||
-            oldColumn.name !== newColumn.name) {
-
+        if (this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
             let up = `ALTER TABLE ${this.escapeTablePath(tableOrName)} ALTER COLUMN "${oldColumn.name}"`;
             if (this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
                 up += ` TYPE ${this.connection.driver.createFullType(newColumn)}`;
             }
-            if (oldColumn.name !== newColumn.name) { // todo: make rename in a separate query too. Need also change sequences and their defaults
-                up += ` RENAME TO ` + newColumn.name;
-            }
             sql.push({up, down: `-- TODO: revert ${up}`}); // TODO: Add revert logic
+        }
+        
+        if (oldColumn.name !== newColumn.name) {
+            let up = `ALTER TABLE ${this.escapeTablePath(tableOrName)} RENAME "${oldColumn.name}" TO "${newColumn.name}"`;
+            let down = `ALTER TABLE  ${this.escapeTablePath(tableOrName)} RENAME "${newColumn.name}" TO "${oldColumn.name}"`;
+            sql.push({up, down});
         }
 
         if (oldColumn.isNullable !== newColumn.isNullable) {
