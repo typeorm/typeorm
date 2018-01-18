@@ -59,12 +59,24 @@ export class FindOptionsUtils {
     /**
      * Applies give find many options to the given query builder.
      */
-    static applyFindManyOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindManyOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
-        if (this.isFindManyOptions(options))
-            return this.applyOptionsToQueryBuilder(qb, options);
-
+    static applyFindManyOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, optionsOrConditions: FindManyOptions<T>|Partial<T>|undefined, maybeOptions?: FindManyOptions<T>): SelectQueryBuilder<T> {
+        const options = maybeOptions && this.isFindManyOptions(maybeOptions)
+            ? maybeOptions
+            : (this.isFindManyOptions(optionsOrConditions) || undefined) && optionsOrConditions as FindManyOptions<T>;
+        const conditions = optionsOrConditions && !this.isFindManyOptions(optionsOrConditions)
+            ? optionsOrConditions as Partial<T>
+            : undefined;
         if (options)
-            return qb.where(options);
+            this.applyOptionsToQueryBuilder(qb, options);
+
+        if (conditions) {
+            if (options && options.where) {
+                qb.andWhere(conditions);
+            } else {
+                qb.where(conditions);
+            }
+        }
+
 
         return qb;
     }
