@@ -1,6 +1,8 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
+ * alias name for query or table
+ * @class Alias
  */
 export class Alias {
 
