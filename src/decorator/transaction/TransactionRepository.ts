@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import {getMetadataArgsStorage} from "../../index";
 import {TransactionRepositoryMetadataArgs} from "../../metadata-args/TransactionRepositoryMetadataArgs";
 
