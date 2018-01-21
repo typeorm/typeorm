@@ -19,6 +19,8 @@
         "noUnusedLocals": true
     },
     "exclude": [
+        ".vscode",
+        ".idea",
         "tmp",
         "temp",
         "build",
