@@ -4,6 +4,7 @@ import {Connection} from "../../src/connection/Connection";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 import {DatabaseType} from "../../src/driver/types/DatabaseType";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
+import * as path from "path";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -41,17 +42,17 @@ export interface TestingOptions {
     /**
      * Entities needs to be included in the connection for the given test suite.
      */
-    entities?: string[]|Function[];
+    entities?: string[] | Function[];
 
     /**
      * Subscribers needs to be included in the connection for the given test suite.
      */
-    subscribers?: string[]|Function[];
+    subscribers?: string[] | Function[];
 
     /**
      * Entity schemas needs to be included in the connection for the given test suite.
      */
-    entitySchemas?: string[]|EntitySchema[];
+    entitySchemas?: string[] | EntitySchema[];
 
     /**
      * Indicates if schema sync should be performed or not.
@@ -77,7 +78,7 @@ export interface TestingOptions {
     /**
      * Schema name used for postgres driver.
      */
-    cache?: boolean|{
+    cache?: boolean | {
 
         /**
          * Type of caching.
@@ -86,7 +87,7 @@ export interface TestingOptions {
          * - "mongodb" means cached values will be stored in mongodb database. You must provide mongodb connection options.
          * - "redis" means cached values will be stored inside redis. You must provide redis connection options.
          */
-        type?: "database"|"redis";
+        type?: "database" | "redis";
 
         /**
          * Used to provide mongodb / redis connection options.
@@ -146,10 +147,9 @@ export function getTypeOrmConfig(): TestingConnectionOptions[] {
     try {
 
         try {
-            return require(__dirname + "/../../../../ormconfig.json");
-
+            return require(path.join(__dirname, "/../../../../ormconfig.json"));
         } catch (err) {
-            return require(__dirname + "/../../ormconfig.json");
+            return require(path.join(__dirname, "/../../ormconfig.json"));
         }
 
     } catch (err) {
@@ -231,8 +231,8 @@ export function reloadTestingDatabases(connections: Connection[]) {
  * @deprecated Old method of creating connection. Don't use it anymore. Use createTestingConnections instead.
  */
 export function setupConnection(callback: (connection: Connection) => any, entities: Function[]) {
-    return function() {
-        return createConnection(setupSingleTestingConnection("mysql", { entities: entities }))
+    return function () {
+        return createConnection(setupSingleTestingConnection("mysql", {entities: entities}))
             .then(connection => {
                 if (callback)
                     callback(connection);
@@ -248,7 +248,7 @@ export function generateRandomText(length: number): string {
     let text = "";
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-    for (let i = 0; i <= length; i++ )
+    for (let i = 0; i <= length; i++)
         text += characters.charAt(Math.floor(Math.random() * characters.length));
 
     return text;
