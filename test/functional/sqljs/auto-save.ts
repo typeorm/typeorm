@@ -1,27 +1,27 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
+import {Connection} from "../../../src/connection/Connection";
 import {createTestingConnections} from "../../utils/test-utils";
 
 describe("sqljs driver > autosave", () => {
-    it("should call autoSaveCallback on insert, update and delete", async () => {
-        let saves = 0;
-        const callback = (database: Uint8Array) => {
-            saves++;
-        };
+    let connections: Connection[];
+    let saves = 0;
+    const callback = (database: Uint8Array) => {
+        saves++;
+    };
 
-        let connections = await createTestingConnections({
-            enabledDrivers: ["sqljs"],
-            entities: [Post],
-            schemaCreate: true,
-            driverSpecific: {
-                autoSaveCallback: callback,
-                autoSave: true
-            }
-        });
+    before(async () => connections = await createTestingConnections({
+        entities: [Post],
+        schemaCreate: true,
+        enabledDrivers: ["sqljs"],
+        driverSpecific: {
+            autoSaveCallback: callback,
+            autoSave: true
+        }
+    }));
 
-        const connection = connections[0];
-
+    it("should call autoSaveCallback on insert, update and delete", () => Promise.all(connections.map(async connection => {
         let posts = [
             {
                 title: "second post"
@@ -53,26 +53,27 @@ describe("sqljs driver > autosave", () => {
         await connection.close();
 
         expect(saves).to.be.equal(7);
-    });
+    })));
+});
 
-    it("should not call autoSaveCallback when autoSave is disabled", async () => {
-        let saves = 0;
-        const callback = (database: Uint8Array) => {
-            saves++;
-        };
-        
-        let connections = await createTestingConnections({
-            enabledDrivers: ["sqljs"],
-            entities: [Post],
-            schemaCreate: true,
-            driverSpecific: {
-                autoSaveCallback: callback,
-                autoSave: false
-            }
-        });
+describe("sqljs driver > autosave off", () => {
+    let connections: Connection[];
+    let saves = 0;
+    const callback = (database: Uint8Array) => {
+        saves++;
+    };
 
-        let connection = connections[0];
-        
+    before(async () => connections = await createTestingConnections({
+        entities: [Post],
+        schemaCreate: true,
+        enabledDrivers: ["sqljs"],
+        driverSpecific: {
+            autoSaveCallback: callback,
+            autoSave: false
+        }
+    }));
+
+    it("should not call autoSaveCallback when autoSave is disabled", () => Promise.all(connections.map(async connection => {
         const repository = connection.getRepository(Post);
         let post = new Post();
         post.title = "A post";
@@ -91,5 +92,5 @@ describe("sqljs driver > autosave", () => {
         await connection.close();
 
         expect(saves).to.be.equal(0);
-    });
+    })));
 });

@@ -79,6 +79,33 @@ describe("query builder > order-by", () => {
 
     })));
 
+    it("should be always in right order(custom order)", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof MysqlDriver)) // IS NULL / IS NOT NULL only supported by mysql
+            return;
+
+        const post1 = new Post();
+        post1.myOrder = 1;
+
+        const post2 = new Post();
+        post2.myOrder = 2;
+        await connection.manager.save([post1, post2]);
+
+        const loadedPost1 = await connection.manager
+            .createQueryBuilder(Post, "post")
+            .addOrderBy("post.myOrder IS NULL", "ASC")
+            .getOne();
+
+        expect(loadedPost1!.myOrder).to.be.equal(1);
+
+        const loadedPost2 = await connection.manager
+            .createQueryBuilder(Post, "post")
+            .addOrderBy("post.myOrder IS NOT NULL", "ASC")
+            .getOne();
+
+        expect(loadedPost2!.myOrder).to.be.equal(1);
+
+    })));
+
     it("should be able to order by sql statement", () => Promise.all(connections.map(async connection => {
         if (!(connection.driver instanceof MysqlDriver)) return; // DIV statement does not supported by all drivers
 

@@ -81,6 +81,7 @@ describe("database schema > column types > postgres", () => {
         post.xml = "<book><title>Manual</title><chapter>...</chapter></book>";
         post.array = [1, 2, 3];
         post.simpleArray = ["A", "B", "C"];
+        post.simpleJson = { param: "VALUE" };
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -144,6 +145,7 @@ describe("database schema > column types > postgres", () => {
         loadedPost.simpleArray[0].should.be.equal(post.simpleArray[0]);
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
+        loadedPost.simpleJson.param.should.be.equal(post.simpleJson.param);
 
         table!.findColumnByName("id")!.type.should.be.equal("integer");
         table!.findColumnByName("name")!.type.should.be.equal("character varying");
@@ -199,6 +201,7 @@ describe("database schema > column types > postgres", () => {
         table!.findColumnByName("array")!.type.should.be.equal("integer");
         table!.findColumnByName("array")!.isArray!.should.be.true;
         table!.findColumnByName("simpleArray")!.type.should.be.equal("text");
+        table!.findColumnByName("simpleJson")!.type.should.be.equal("text");
 
     })));
 

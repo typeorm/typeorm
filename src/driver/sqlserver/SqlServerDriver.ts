@@ -298,6 +298,9 @@ export class SqlServerDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.simpleJsonToString(value);
         }
 
         return value;
@@ -331,6 +334,9 @@ export class SqlServerDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.stringToSimpleArray(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.stringToSimpleJson(value);
         }
 
         return value;
@@ -359,6 +365,9 @@ export class SqlServerDriver implements Driver {
             return "uniqueidentifier";
 
         } else if (column.type === "simple-array") {
+            return "ntext";
+
+        } else if (column.type === "simple-json") {
             return "ntext";
 
         } else if (column.type === "integer") {

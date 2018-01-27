@@ -5,6 +5,18 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.1.13
+* added simple-json column type ([#1448](https://github.com/typeorm/typeorm/pull/1488))
+
+## 0.1.12
+
+* EntitySubscriber now fires events on subclass entity ([#1369](https://github.com/typeorm/typeorm/issues/1369))
+* fixed error with entity schema validator being async  ([#1448](https://github.com/typeorm/typeorm/issues/1448))
+
+## 0.1.11
+
+* postgres extensions now gracefully handled when user does not have rights to use them ([#1407](https://github.com/typeorm/typeorm/issues/1407))
+
 ## 0.1.10
 
 * `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`)

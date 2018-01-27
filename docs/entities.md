@@ -10,6 +10,7 @@
     * [Column types for `sqlite` / `websql`](#column-types-for-sqlite--websql--cordova)
     * [Column types for `mssql`](#column-types-for-mssql)
     * [`simple-array` column type](#simple-array-column-type)
+    * [`simple-json` column type](#simple-json-column-type)
     * [Columns with generated values](#columns-with-generated-values)
 * [Column options](#column-options)
 
@@ -263,7 +264,7 @@ or
 
 `int`, `tinyint`, `smallint`, `bigint`, `dec`, `decimal`, `numeric`, `float`, `dec`, `decimal`, 
 `numeric`, `real`, `datetime`, `datetime2`, `datetimeoffset`, `time`, `timestamp`, 
-`int`, `tinyint`, `smallint`, `bigint`, `nvarchar`, `varchar`, `char`, `nchar`, `binary`, `varbinary`,
+`nvarchar`, `varchar`, `char`, `nchar`, `binary`, `varbinary`,
 `bit`, `smallmoney`, `money`, `text`, `ntext`, `image`, `smalldatetime`, `date`, `xml`, `varbinary`,
 `cursor`, `hierarchyid`, `sql_variant`, `table`
   
@@ -299,6 +300,34 @@ When you'll load data from the database, the names will be returned as an array 
 just like you stored them.
 
 Note you **MUST NOT** have any comma in values you write.
+
+### `simple-json` column type
+
+There is a special column type called `simple-json` which can store any values which can be stored in database
+via JSON.stringify.
+Very useful when you do not have json type in your database and you want to store and load object
+without any hustle.
+For example:
+
+```typescript
+@Entity()
+export class User {
+    
+    @PrimaryGeneratedColumn()
+    id: number;
+ 
+    @Column("simple-json")
+    profile: { name: string, nickname: string };
+    
+}
+```
+```typescript
+const user = new User();
+user.profile = { name: "John", nickname: "Malkovich" };
+```
+
+Will be stored in a single database column as `{"name":"John","nickname":"Malkovich"}` value.
+When you'll load data from the database, you will have your object/array/primitive back via JSON.parse
 
 ### Columns with generated values
 

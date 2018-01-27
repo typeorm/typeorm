@@ -244,7 +244,8 @@ export class Broadcaster {
         return  !subscriber.listenTo ||
                 !subscriber.listenTo() ||
                 subscriber.listenTo() === Object ||
-                subscriber.listenTo() === target;
+                subscriber.listenTo() === target ||
+                subscriber.listenTo().isPrototypeOf(target);
     }
 
 }

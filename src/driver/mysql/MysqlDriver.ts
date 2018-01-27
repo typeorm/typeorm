@@ -309,6 +309,9 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.simpleJsonToString(value);
         }
 
         return value;
@@ -341,6 +344,9 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.stringToSimpleArray(value);
+            
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.stringToSimpleJson(value);
         }
 
         return value;
@@ -369,6 +375,9 @@ export class MysqlDriver implements Driver {
             return "varchar";
 
         } else if (column.type === "simple-array") {
+            return "text";
+
+        } else if (column.type === "simple-json") {
             return "text";
 
         } else {

@@ -111,6 +111,11 @@ export class WebsqlDriver extends AbstractSqliteDriver {
             if (value instanceof Function) {
                 return value();
 
+            }
+            // Websql doesn't support queries boolean values. Therefore 1 and 0 has to be used.
+            else if ((typeof value) === "boolean") {
+                escapedParameters.push((value ? 1 : 0));
+                return "?";
             } else {
                 escapedParameters.push(value);
                 return "?";

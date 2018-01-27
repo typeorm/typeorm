@@ -184,7 +184,7 @@ const timber = await repository.findOne({ firstName: "Timber" });
 * `findOneById` - Finds entity with given id.
 
 ```typescript
-const user = await repository.findOne(1);
+const user = await repository.findOneById(1);
 ```
 
 * `query` - Executes a raw SQL query.

@@ -20,7 +20,7 @@ There are several types of relations:
 
 There are several options you can specify for relations:
 
-* `eager: boolean` - If set to true, the relation will always be loaded with the main entity when using `find*` methods or `QueryBuilder` on this entity 
+* `eager: boolean` - If set to true, the relation will always be loaded with the main entity when using `find*` methods. If you use `QueryBuilder`, eager relations are disabled and you have to use `leftJoinAndSelect` to load the relation.
 * `cascadeInsert: boolean` - If set to true, the related object will be inserted into database if it does not exist yet.
 * `cascadeUpdate: boolean` - If set to true, the related object will be updated in the database on entity save.
 * `cascadeRemove: boolean` - If set to true, the related object will be removed from the database on entity save and without related object.

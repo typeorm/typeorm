@@ -229,12 +229,20 @@ export class PostgresDriver implements Driver {
             await Promise.all([this.master, ...this.slaves].map(pool => {
                 return new Promise((ok, fail) => {
                     pool.connect(async (err: any, connection: any, release: Function) => {
+                        const { logger } = this.connection;
                         if (err) return fail(err);
                         if (hasUuidColumns)
-                            await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "uuid-ossp"`);
+                            try {
+                                await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "uuid-ossp"`);
+                            } catch (_) {
+                                logger.log("warn", "At least one of the entities has uuid column, but the 'uuid-ossp' extension cannot be installed automatically. Please it manually using superuser rights");
+                            }
                         if (hasCitextColumns)
-                            await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "citext"`);
-
+                            try {
+                                await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "citext"`);
+                            } catch (_) {
+                                logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please it manually using superuser rights");
+                            }
                         release();
                         ok();
                     });
@@ -303,6 +311,9 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
+            
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.simpleJsonToString(value);
         }
 
         return value;
@@ -336,6 +347,9 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.stringToSimpleArray(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.stringToSimpleJson(value);
         }
 
         return value;
@@ -395,6 +409,9 @@ export class PostgresDriver implements Driver {
             type += "boolean";
 
         } else if (column.type === "simple-array") {
+            type += "text";
+
+        } else if (column.type === "simple-json") {
             type += "text";
 
         } else {
