@@ -1,9 +1,11 @@
-import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
-import {createConnection, createConnections} from "../../src/index";
-import {Connection} from "../../src/connection/Connection";
-import {EntitySchema} from "../../src/entity-schema/EntitySchema";
-import {DatabaseType} from "../../src/driver/types/DatabaseType";
-import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
+import {
+    Connection,
+    ConnectionOptions,
+    createConnections,
+    DatabaseType,
+    EntitySchema,
+    NamingStrategyInterface
+} from "../../src";
 import * as path from "path";
 
 /**
@@ -215,7 +217,7 @@ export async function createTestingConnections(options?: TestingOptions): Promis
  * Closes testing connections if they are connected.
  */
 export function closeTestingConnections(connections: Connection[]) {
-    return Promise.all(connections.map(connection => connection.isConnected ? connection.close() : undefined));
+    return Promise.all((connections || []).map(connection => connection.isConnected ? connection.close() : undefined));
 }
 
 /**
@@ -223,22 +225,6 @@ export function closeTestingConnections(connections: Connection[]) {
  */
 export function reloadTestingDatabases(connections: Connection[]) {
     return Promise.all(connections.map(connection => connection.synchronize(true)));
-}
-
-/**
- * Setups connection.
- *
- * @deprecated Old method of creating connection. Don't use it anymore. Use createTestingConnections instead.
- */
-export function setupConnection(callback: (connection: Connection) => any, entities: Function[]) {
-    return function () {
-        return createConnection(setupSingleTestingConnection("mysql", {entities: entities}))
-            .then(connection => {
-                if (callback)
-                    callback(connection);
-                return connection;
-            });
-    };
 }
 
 /**
