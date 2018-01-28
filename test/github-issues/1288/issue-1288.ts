@@ -5,7 +5,7 @@ import {expect} from "chai";
 import {JoinEntity} from "./entity/JoinEntity";
 import {TestEntity} from "./entity/TestEntity";
 
-describe("github issues > #1288 db calculated columns (sql in @Column)", () => {
+describe("github issues > #1288 check calculated columns (sql in @Column)", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -21,7 +21,6 @@ describe("github issues > #1288 db calculated columns (sql in @Column)", () => {
     });
 
     it("should persist successfully and return entity", () => Promise.all(connections.map(async connection => {
-        // create objects to save
         const joinEntity1 = new JoinEntity();
         joinEntity1.spec = "Entity #1 spec (for TestEntity)";
 
@@ -31,27 +30,28 @@ describe("github issues > #1288 db calculated columns (sql in @Column)", () => {
         const testEntity2 = new TestEntity();
         testEntity2.name = "Entity #2";
 
-        // persist
+
         await connection.manager.save([
             testEntity1,
             testEntity2
         ]);
 
+
         const queryBuilder = connection.manager.createQueryBuilder(TestEntity, "testEntity");
 
-        const subQuery = queryBuilder
-            .subQuery()
-            .from(TestEntity, "innerTestEntity")
-            .select(["id"])
-            .where("innerTestEntity.id = :innerId", {innerId: 1});
-
         const results = await queryBuilder
-            .select("testEntity")
-            .where(`testEntity.id IN ${subQuery.getQuery()}`)
+            .where("name = 'Entity #1'")
             .getMany();
 
-        expect(results.length).to.be.equal(1);
-        expect(results).to.eql([{id: 1, name: "Entity #1"}]);
+        expect(results.length).to.be.eq(1);
+        expect(results).to.eql([{
+            id: 1,
+            name: "Entity #1",
+            width: 1,
+            height: 1,
+            idName_area: 2,
+            idName: "1 + Entity #1",
+            jName: {id: 1, spec: "val from TestEntity"}
+        }]);
     })));
-
 });

@@ -95,7 +95,7 @@ export class RawSqlResultsToEntityTransformer {
     protected transformColumns(rawResults: any[], alias: Alias, entity: ObjectLiteral, metadata: EntityMetadata): boolean {
         let hasData = false;
         metadata.columns.forEach(column => {
-            const value = rawResults[0][alias.name + "_" + column.databaseName];
+            const value = rawResults[0][column.aliasName || (alias.name + "_" + column.databaseName)];
             if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
                 return;
 

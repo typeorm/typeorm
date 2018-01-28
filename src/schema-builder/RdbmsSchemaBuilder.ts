@@ -322,8 +322,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             // generate a map of new/old columns
             const newAndOldTableColumns = updatedTableColumns.map(changedTableColumn => {
                 const columnMetadata = metadata.columns.find(column => column.databaseName === changedTableColumn.name);
-                const newTableColumn = TableColumn.create(columnMetadata!, 
-                    this.connection.driver.normalizeType(columnMetadata!), 
+                const newTableColumn = TableColumn.create(columnMetadata!,
+                    this.connection.driver.normalizeType(columnMetadata!),
                     this.connection.driver.normalizeDefault(columnMetadata!),
                     this.connection.driver.getColumnLength(columnMetadata!));
                 table.replaceColumn(changedTableColumn, newTableColumn);
@@ -413,7 +413,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         return true;
                     if (metadataIndex.columns.findIndex((col, i) => col.databaseName !== tableIndex.columnNames[i]) !== -1)
                         return true;
-                    
+
                     return false;
                 })
                 .map(async tableIndex => {
@@ -510,14 +510,16 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates new columns from the given column metadatas.
      */
     protected metadataColumnsToTableColumns(columns: ColumnMetadata[]): TableColumn[] {
-        return columns.map(columnMetadata => {
-            return TableColumn.create(
-                columnMetadata,
-                this.connection.driver.normalizeType(columnMetadata),
-                this.connection.driver.normalizeDefault(columnMetadata),
-                this.connection.driver.getColumnLength(columnMetadata)
-            );
-        });
+        return columns.reduce((r, columnMetadata) => {
+            if (!columnMetadata.sql)
+                r.push(TableColumn.create(
+                    columnMetadata,
+                    this.connection.driver.normalizeType(columnMetadata),
+                    this.connection.driver.normalizeDefault(columnMetadata),
+                    this.connection.driver.getColumnLength(columnMetadata)
+                ));
+            return r;
+        }, ([] as TableColumn[]));
     }
 
 }

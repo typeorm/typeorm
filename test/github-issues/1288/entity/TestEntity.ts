@@ -1,4 +1,5 @@
 import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import {JoinEntity} from "./JoinEntity";
 
 @Entity("test_1288")
 export class TestEntity {
@@ -9,35 +10,44 @@ export class TestEntity {
     @Column()
     name: string;
 
+    @Column()
+    width: number = 1;
+
+    @Column()
+    height: number = 1;
+
     /**
      * calculated column name ('id - name')
      */
     // TODO: @Column({
     //     sql: () => {
-    //         return `CONCAT(id, "-", name, ${this.jName})`;
+    //         return `(width + height) * ${this.rate})`;
     //     }
     // })
-    // idMinusName: string;
+    // area: number;
+
+    // rate: number = 3;
 
     /**
-     * calculated column name with postfix '_'
+     * calculated column
      */
     @Column({
-        sql: "CONCAT( id, name, \"_\")",
+        sql: "width + height",
         aliasName: "pupel"
     })
-    idName_: string;
+    idName_area: string;
 
     /**
      * calculated column name with space gap
      */
     @Column({
-        sql: "CONCAT( id, \" \", name)"
+        sql: "id || ' + ' || name"
     })
     idName: string;
 
     /**
      * @todo joinable column
      */
-    jName: string = "fffffffff";
+    @Column(type => JoinEntity)
+    jName: JoinEntity = new JoinEntity({spec: "val from TestEntity"});
 }

@@ -1542,7 +1542,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         const columns: ColumnMetadata[] = [];
         if (hasMainAlias) {
-            columns.push(...metadata.columns.filter(column => column.isSelect === true /*&& !column.sql*/));
+            columns.push(...metadata.columns.filter(column => column.isSelect));
         }
         columns.push(...metadata.columns.filter(column => {
             return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
@@ -1560,8 +1560,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     || (select.selection === column.aliasName));
             return {
                 selection: column.sql || (this.escape(aliasName) + "." + this.escape(column.databaseName)),
-                aliasName: column.aliasName
-                || (selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.databaseName),
+                aliasName: (selection && selection.aliasName
+                    ? selection.aliasName
+                    : column.aliasName || (aliasName + "_" + column.databaseName)),
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
                 virtual: selection ? selection.virtual === true : !hasMainAlias,
             };

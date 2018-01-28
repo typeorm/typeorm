@@ -306,10 +306,10 @@ export class ColumnMetadata {
         if (options.args.options.sql) {
             this.sql = `(${(typeof options.args.options.sql === "string")
                 ? options.args.options.sql
-                : options.args.options.sql.call(this)})`; // TODO: вместо   this   нужен scope       EntityMetadata
-            this.aliasName = options.args.options.aliasName || this.propertyName;
-            this.isVirtual = true;
+                : options.args.options.sql.call(this)})`; // TODO: вместо   this   нужен scope?       embeddedMetadata
         }
+        if (options.args.options.aliasName)
+            this.aliasName = options.args.options.aliasName;
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;
         if (this.isCreateDate) {
@@ -432,7 +432,7 @@ export class ColumnMetadata {
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
      */
-     getEntityValue(entity: ObjectLiteral): any|undefined {
+    getEntityValue(entity: ObjectLiteral): any|undefined {
         // if (entity === undefined || entity === null) return undefined; // uncomment if needed
 
         // extract column value from embeddeds of entity if column is in embedded
@@ -508,14 +508,12 @@ export class ColumnMetadata {
 
     // ---------------------------------------------------------------------
     // region Builder Methods
-
     build(connection: Connection): this {
         this.propertyPath = this.buildPropertyPath();
         this.databaseName = this.buildDatabaseName(connection);
         this.databaseNameWithoutPrefixes = connection.namingStrategy.columnName(this.propertyName, this.givenDatabaseName, []);
         return this;
     }
-
     // endregion
     // =====================================================================
 
