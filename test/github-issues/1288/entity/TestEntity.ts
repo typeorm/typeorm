@@ -1,5 +1,4 @@
 import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
-import {JoinEntity} from "./JoinEntity";
 
 @Entity("test_1288")
 export class TestEntity {
@@ -44,10 +43,4 @@ export class TestEntity {
         sql: "id || ' + ' || name"
     })
     idName: string;
-
-    /**
-     * @todo joinable column
-     */
-    @Column(type => JoinEntity)
-    jName: JoinEntity = new JoinEntity({spec: "val from TestEntity"});
 }

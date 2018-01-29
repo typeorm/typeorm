@@ -2,7 +2,6 @@ import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src";
 import {expect} from "chai";
-import {JoinEntity} from "./entity/JoinEntity";
 import {TestEntity} from "./entity/TestEntity";
 
 describe("github issues > #1288 check calculated columns (sql in @Column)", () => {
@@ -21,9 +20,6 @@ describe("github issues > #1288 check calculated columns (sql in @Column)", () =
     });
 
     it("should persist successfully and return entity", () => Promise.all(connections.map(async connection => {
-        const joinEntity1 = new JoinEntity();
-        joinEntity1.spec = "Entity #1 spec (for TestEntity)";
-
         const testEntity1 = new TestEntity();
         testEntity1.name = "Entity #1";
 
@@ -51,7 +47,6 @@ describe("github issues > #1288 check calculated columns (sql in @Column)", () =
             height: 1,
             idName_area: 2,
             idName: "1 + Entity #1",
-            jName: {id: 1, spec: "val from TestEntity"}
         }]);
     })));
 });
