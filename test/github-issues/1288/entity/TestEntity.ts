@@ -40,7 +40,7 @@ export class TestEntity {
      * calculated column name with space gap
      */
     @Column({
-        sql: "id || ' + ' || name"
+        sql: "CONCAT(id, ' + ', name)"
     })
     idName: string;
 }
