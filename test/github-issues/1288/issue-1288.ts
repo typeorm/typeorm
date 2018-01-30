@@ -39,6 +39,7 @@ describe("github issues > #1288 check calculated columns (sql in @Column)", () =
             .where("name = 'Entity #1'")
             .getMany();
 
+        console.log("DEBUG", results, connection.driver.options.name);
         expect(results.length).to.be.eq(1);
         expect(results).to.eql([{
             id: 1,
