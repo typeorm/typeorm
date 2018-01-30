@@ -375,6 +375,7 @@ export class Gulpfile {
     @SequenceTask("ci-tests")
     ciTests() {
         return [
+            "clean",
             "compile",
             "tslint",
             "wait",
