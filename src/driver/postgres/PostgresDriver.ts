@@ -324,7 +324,7 @@ export class PostgresDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
+            return columnMetadata.transformer.from(value);
 
         if (value === null || value === undefined)
             return value;
