@@ -59,7 +59,7 @@
     "gulp-uglify": "^3.0.0",
     "gulpclass": "^0.1.2",
     "mocha": "^2.5.3",
-    "mongodb": "^2.2.33",
+    "mongodb": "^3.0.2",
     "mssql": "^4.0.4",
     "mysql": "^2.15.0",
     "mysql2": "^1.4.1",
