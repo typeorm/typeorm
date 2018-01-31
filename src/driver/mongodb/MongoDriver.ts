@@ -334,7 +334,7 @@ export class MongoDriver implements Driver {
             ? `${this.options.username}:${this.options.password}@`
             : "";
 
-        return encodeURIComponent(`mongodb://${credentialsUrlPart}${this.options.host || "127.0.0.1"}:${this.options.port || "27017"}/${this.options.database}`)
+        return encodeURIComponent(`mongodb://${credentialsUrlPart}${this.options.host || "127.0.0.1"}:${this.options.port || "27017"}/${this.options.database}`);
     }
 
 }
