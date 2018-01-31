@@ -48,6 +48,11 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
+        if (this.sqlMemoryMode === true) {
+            this.sqlsInMemory.push(query);
+            return Promise.resolve();
+        }
+
         return new Promise<any[]>(async (ok, fail) => {
             const databaseConnection = await this.connect();
             this.driver.connection.logger.logQuery(query, parameters, this);

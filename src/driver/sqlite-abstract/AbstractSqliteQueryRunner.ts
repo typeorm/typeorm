@@ -272,6 +272,12 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                 if (tableColumn.isGenerated) {
                     tableColumn.generationStrategy = "increment";
                 }
+                // According to the SQlite docs, integer primary keys don't have an index.
+                // Therefore the primary key has to be added seperately.
+                // https://www.sqlite.org/lang_createtable.html#rowid
+                if (tableColumn.isPrimary && tableColumn.type === "integer") {
+                    table.addPrimaryKeys([new TablePrimaryKey(tableColumn.name, tableColumn.name)]);
+                }
 
                 // parse datatype and attempt to retrieve length
                 let pos = tableColumn.type.indexOf("(");
@@ -285,6 +291,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                         }
                     }
                 }
+
                 const columnForeignKeys = dbForeignKeys
                     .filter(foreignKey => foreignKey["from"] === dbColumn["name"])
                     .map(foreignKey => {
