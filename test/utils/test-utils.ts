@@ -173,16 +173,13 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
 
     return ormConfigConnectionOptionsArray
         .filter(connectionOptions => {
-            if (connectionOptions.skip === true)
+            if (connectionOptions.skip)
                 return false;
 
             if (options && options.enabledDrivers && options.enabledDrivers.length)
                 return options.enabledDrivers.indexOf(connectionOptions.type!) !== -1; // ! is temporary
 
-            if (connectionOptions.disabledIfNotEnabledImplicitly === true)
-                return false;
-
-            return true;
+            return !connectionOptions.disabledIfNotEnabledImplicitly;
         })
         .map(connectionOptions => {
             let newOptions: any = Object.assign({}, connectionOptions as ConnectionOptions, {
@@ -208,6 +205,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
 /**
  * Creates a testing connections based on the configuration in the ormconfig.json
  * and given options that can override some of its configuration for the test-specific use case.
+ * @param {TestingOptions} options
+ * @return {Promise<Connection[]>}
  */
 export async function createTestingConnections(options?: TestingOptions): Promise<Connection[]> {
     return createConnections(setupTestingConnections(options));
