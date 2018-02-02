@@ -146,5 +146,5 @@ All the tests are executed on our Continuous Integration infrastructure and a PR
 ## Using Docker
 
 To run your tests you need dbms installed on your machine. Alternatively, you can use docker
-with all dbms images inside it. To use dbms for your tests from docker simply run `docker-compose up`
-in the root of the project. Once all images are fetched and run you can run tests.
+with all dbms images inside it. To use dbms for your tests from docker simply run `docker-compose up -d`
+in the root of the project. Once all images are fetched and you can run tests.
