@@ -166,6 +166,11 @@ export class Connection {
         Object.assign(this, { isConnected: true });
 
         try {
+            // region for MySQL execute first query for adopt to some syntax
+            if (this.driver instanceof MysqlDriver) {
+                this.query("SET SESSION sql_mode = 'PIPES_AS_CONCAT'");
+            }
+            // endregion
 
             // build all metadatas registered in the current connection
             this.buildMetadatas();
