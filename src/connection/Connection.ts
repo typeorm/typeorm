@@ -5,7 +5,6 @@ import {ObjectType} from "../common/ObjectType";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
 import {CannotExecuteNotConnectedError} from "../error/CannotExecuteNotConnectedError";
-import {CannotConnectAlreadyConnectedError} from "../error/CannotConnectAlreadyConnectedError";
 import {TreeRepository} from "../repository/TreeRepository";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {EntityMetadata} from "../metadata/EntityMetadata";
@@ -152,8 +151,7 @@ export class Connection {
      * but it also can setup a connection pool with database to use.
      */
     async connect(): Promise<this> {
-        if (this.isConnected)
-            throw new CannotConnectAlreadyConnectedError(this.name);
+        if (this.isConnected) return this;
 
         // connect to the database via its driver
         await this.driver.connect();
