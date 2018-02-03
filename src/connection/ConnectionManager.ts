@@ -1,7 +1,6 @@
 import {Connection} from "./Connection";
 import {ConnectionNotFoundError} from "../error/ConnectionNotFoundError";
 import {ConnectionOptions} from "./ConnectionOptions";
-import {AlreadyHasActiveConnectionError} from "../error/AlreadyHasActiveConnectionError";
 
 /**
  * ConnectionManager is used to store and manage multiple orm connections.
@@ -54,7 +53,7 @@ export class ConnectionManager {
 
             // if connection is registered and its not closed then throw an error
             if (existConnection.isConnected)
-                throw new AlreadyHasActiveConnectionError(options.name || "default");
+                return existConnection;
 
             // if its registered but closed then simply remove it from the manager
             this.connections.splice(this.connections.indexOf(existConnection), 1);

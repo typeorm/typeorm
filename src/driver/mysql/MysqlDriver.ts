@@ -1,3 +1,4 @@
+///<reference path="MysqlQueryRunner.ts"/>
 import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
@@ -202,6 +203,8 @@ export class MysqlDriver implements Driver {
             this.pool = await this.createPool(this.createConnectionOptions(this.options, this.options));
             this.database = this.options.database;
         }
+
+        (new MysqlQueryRunner(this)).query("SET SESSION sql_mode = 'PIPES_AS_CONCAT'");
     }
 
     /**
