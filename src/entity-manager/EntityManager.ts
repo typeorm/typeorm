@@ -416,13 +416,21 @@ export class EntityManager {
     count<Entity>(entityClass: ObjectType<Entity>|string, conditions?: DeepPartial<Entity>): Promise<number>;
 
     /**
+     * Counts entities that match given conditions and options.
+     * Useful for pagination.
+     */
+    count<Entity>(entityClass: ObjectType<Entity>|string, conditions?: DeepPartial<Entity>, options?: FindManyOptions<Entity>): Promise<number>;
+
+    /**
      * Counts entities that match given find options or conditions.
      * Useful for pagination.
      */
-    async count<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<number> {
+    async count<Entity>(entityClass: ObjectType<Entity>|string,
+                        optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>,
+                        maybeOptions?: FindManyOptions<Entity>): Promise<number> {
         const metadata = this.connection.getMetadata(entityClass);
-        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
-        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getCount();
+        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(maybeOptions || optionsOrConditions) || metadata.name);
+        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions, maybeOptions).getCount();
     }
 
     /**
@@ -436,13 +444,20 @@ export class EntityManager {
     find<Entity>(entityClass: ObjectType<Entity>|string, conditions?: DeepPartial<Entity>): Promise<Entity[]>;
 
     /**
+     * Finds entities that matches given conditions and options.
+     */
+    find<Entity>(entityClass: ObjectType<Entity>|string, conditions?: DeepPartial<Entity>, options?: FindManyOptions<Entity>): Promise<Entity[]>;
+
+    /**
      * Finds entities that match given find options or conditions.
      */
-    async find<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
+    async find<Entity>(entityClass: ObjectType<Entity>|string,
+                       optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>,
+                       maybeOptions?: FindManyOptions<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass);
-        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
+        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(maybeOptions || optionsOrConditions) || metadata.name);
         FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
-        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
+        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions, maybeOptions).getMany();
     }
 
     /**
@@ -460,15 +475,24 @@ export class EntityManager {
     findAndCount<Entity>(entityClass: ObjectType<Entity>|string, conditions?: DeepPartial<Entity>): Promise<[Entity[], number]>;
 
     /**
+     * Finds entities that match given conditions and options.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (from and take options).
+     */
+    findAndCount<Entity>(entityClass: ObjectType<Entity>|string, conditions?: DeepPartial<Entity>, options?: FindManyOptions<Entity>): Promise<[Entity[], number]>;
+
+    /**
      * Finds entities that match given find options and conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    async findAndCount<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<[Entity[], number]> {
+    async findAndCount<Entity>(entityClass: ObjectType<Entity>|string,
+                               optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>,
+                               maybeOptions?: FindManyOptions<Entity>): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass);
-        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
+        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(maybeOptions || optionsOrConditions) || metadata.name);
         FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
-        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
+        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions, maybeOptions).getManyAndCount();
     }
 
     /**
@@ -485,16 +509,25 @@ export class EntityManager {
 
     /**
      * Finds entities with ids.
+     * Optionally options and conditions can be applied.
+     */
+    findByIds<Entity>(entityClass: ObjectType<Entity>|string, ids: any[], conditions?: DeepPartial<Entity>, options?: FindManyOptions<Entity>): Promise<Entity[]>;
+
+    /**
+     * Finds entities with ids.
      * Optionally find options or conditions can be applied.
      */
-    async findByIds<Entity>(entityClass: ObjectType<Entity>|string, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
+    async findByIds<Entity>(entityClass: ObjectType<Entity>|string,
+                            ids: any[],
+                            optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>,
+                            maybeOptions?: FindManyOptions<Entity>): Promise<Entity[]> {
 
         // if no ids passed, no need to execute a query - just return an empty array of values
         if (!ids.length)
             return Promise.resolve([]);
         const metadata = this.connection.getMetadata(entityClass);
-        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
-        FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
+        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(maybeOptions || optionsOrConditions) || metadata.name);
+        FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions, maybeOptions);
         FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
         return qb.andWhereInIds(ids).getMany();
     }
@@ -517,7 +550,9 @@ export class EntityManager {
     /**
      * Finds first entity that matches given conditions.
      */
-    async findOne<Entity>(entityClass: ObjectType<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|DeepPartial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+    async findOne<Entity>(entityClass: ObjectType<Entity>|string,
+                          idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|DeepPartial<Entity>,
+                          maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
         const metadata = this.connection.getMetadata(entityClass);
         let alias: string = metadata.name;
         if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions) && idOrOptionsOrConditions.join) {
@@ -534,12 +569,15 @@ export class EntityManager {
             FindOptionsUtils.applyOptionsToQueryBuilder(qb, maybeOptions);
         }
 
-        if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions)) {
+        if (!maybeOptions && FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions)) {
             FindOptionsUtils.applyOptionsToQueryBuilder(qb, idOrOptionsOrConditions);
 
         } else if (idOrOptionsOrConditions instanceof Object) {
-            qb.where(idOrOptionsOrConditions as any);
-
+            if (maybeOptions && maybeOptions.where) {
+                qb.andWhere(idOrOptionsOrConditions as any);
+            } else {
+                qb.where(idOrOptionsOrConditions as any);
+            }
         } else if (typeof idOrOptionsOrConditions === "string" || typeof idOrOptionsOrConditions === "number" || (idOrOptionsOrConditions as any) instanceof Date) {
             qb.andWhereInIds(metadata.ensureEntityIdMap(idOrOptionsOrConditions));
         }
@@ -565,7 +603,9 @@ export class EntityManager {
     /**
      * Finds first entity that matches given conditions or rejects the returned promise on error.
      */
-    async findOneOrFail<Entity>(entityClass: ObjectType<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|DeepPartial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity> {
+    async findOneOrFail<Entity>(entityClass: ObjectType<Entity>|string,
+                                idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|DeepPartial<Entity>,
+                                maybeOptions?: FindOneOptions<Entity>): Promise<Entity> {
         return this.findOne(entityClass, idOrOptionsOrConditions as any, maybeOptions).then((value) => {
             if (value === undefined) {
                 return Promise.reject(new EntityNotFoundError(entityClass, idOrOptionsOrConditions));

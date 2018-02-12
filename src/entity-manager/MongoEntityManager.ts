@@ -85,16 +85,21 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Finds entities that match given find options or conditions.
      */
-    async find<Entity>(entityClassOrName: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    async find<Entity>(entityClassOrName: ObjectType<Entity>|string,
+                       optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>,
+                       maybeOptions?: FindManyOptions<Entity>): Promise<Entity[]> {
+        const options = maybeOptions && FindOptionsUtils.isFindManyOptions(maybeOptions)
+            ? maybeOptions
+            : (FindOptionsUtils.isFindManyOptions(optionsOrConditions) || undefined) && optionsOrConditions as FindManyOptions<Entity>;
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
-        if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-            if (optionsOrConditions.skip)
-                cursor.skip(optionsOrConditions.skip);
-            if (optionsOrConditions.take)
-                cursor.limit(optionsOrConditions.take);
-            if (optionsOrConditions.order)
-                cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
+        if (options) {
+            if (options.skip)
+                cursor.skip(options.skip);
+            if (options.take)
+                cursor.limit(options.take);
+            if (options.order)
+                cursor.sort(this.convertFindOptionsOrderToOrderCriteria(options.order));
         }
         return cursor.toArray();
     }
@@ -104,16 +109,21 @@ export class MongoEntityManager extends EntityManager {
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    async findAndCount<Entity>(entityClassOrName: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[ Entity[], number ]> {
+    async findAndCount<Entity>(entityClassOrName: ObjectType<Entity>|string,
+                               optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>,
+                               maybeOptions?: FindManyOptions<Entity>): Promise<[ Entity[], number ]> {
+        const options = maybeOptions && FindOptionsUtils.isFindManyOptions(maybeOptions)
+            ? maybeOptions as FindManyOptions<Entity>
+            : (FindOptionsUtils.isFindManyOptions(optionsOrConditions) || undefined) && optionsOrConditions as FindManyOptions<Entity>;
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
-        if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-            if (optionsOrConditions.skip)
-                cursor.skip(optionsOrConditions.skip);
-            if (optionsOrConditions.take)
-                cursor.limit(optionsOrConditions.take);
-            if (optionsOrConditions.order)
-                cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
+        if (options) {
+            if (options.skip)
+                cursor.skip(options.skip);
+            if (options.take)
+                cursor.limit(options.take);
+            if (options.order)
+                cursor.sort(this.convertFindOptionsOrderToOrderCriteria(options.order));
         }
         const [results, count] = await Promise.all<any>([
             cursor.toArray(),
@@ -126,7 +136,9 @@ export class MongoEntityManager extends EntityManager {
      * Finds entities by ids.
      * Optionally find options can be applied.
      */
-    async findByIds<Entity>(entityClassOrName: ObjectType<Entity>|string, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    async findByIds<Entity>(entityClassOrName: ObjectType<Entity>|string, ids: any[],
+                            optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>,
+                            maybeOptions?: FindManyOptions<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
         const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
@@ -317,7 +329,9 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Count number of matching documents in the db to a query.
      */
-    count<Entity>(entityClassOrName: ObjectType<Entity>|string, query?: ObjectLiteral, options?: MongoCountPreferences): Promise<any> {
+    count<Entity>(entityClassOrName: ObjectType<Entity>|string,
+                  query?: ObjectLiteral,
+                  options?: MongoCountPreferences | ObjectLiteral): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.count(metadata.tableName, query, options);
     }
