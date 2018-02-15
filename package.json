@@ -9,6 +9,18 @@
     "name": "Umed Khudoiberdiev",
     "email": "pleerock.me@gmail.com"
   },
+  "browser": {
+    "redis": false,
+    "pg-query-stream": false,
+    "pg-native": false,
+    "pg": false,
+    "oracledb": false,
+    "mysql2": false,
+    "mysql": false,
+    "mssql": false,
+    "mongodb": false,
+    "sqlite3": false
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/typeorm/typeorm.git"
