@@ -1210,7 +1210,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     const hasMainAlias = this.expressionMap.selects.some(select => select.selection === join.alias.name);
                     if (hasMainAlias) {
                         allSelects.push({ selection: this.escape(join.alias.name!) + ".*" });
-                        excludedSelects.push({ selection: this.escape(join.alias.name!) });
+                        const excludedSelect = this.expressionMap.selects.find(select => select.selection === join.alias.name);
+                        excludedSelects.push(excludedSelect!);
                     }
                 }
             });

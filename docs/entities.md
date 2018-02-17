@@ -92,6 +92,8 @@ const connection: Connection = await createConnection({
 If you want to use an alternative table name for the `User` entity you can specify it in `@Entity`: `@Entity("my_users")`.
 If you want to set a base prefix for all database tables in your application you can specify `entityPrefix` in connection options.
 
+When using an entity constructor its arguments **must be optional**. Since ORM creates instances of entity classes when loading from the database, therefore it is not aware of your constructor arguments.
+
 Learn more about parameters @Entity in [Decorators reference](decorator-reference.md).
 
 ## Entity columns
@@ -237,27 +239,26 @@ or
 ### Column types for `mysql` / `mariadb`
 
 `int`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`, `float`, `double`, 
-`decimal`, `real`, `datetime`, `time`, `timestamp`, `int`, `tinyint`, `smallint`, `mediumint`, `bigint`, 
-`character`, `varchar`, `char`, `tinyblob`, `tinytext`, `mediumblob`, `mediumtext`, `blob`, `text`, 
-`longblob`, `longtext`, `date`, `year`, `enum`, `json`
+`real`, `datetime`, `time`, `timestamp`, `character`, `varchar`, `char`, `tinyblob`,
+`tinytext`, `mediumblob`, `mediumtext`, `blob`, `text`, `longblob`, `longtext`, `date`,
+`year`, `enum`, `json`
 
 ### Column types for `postgres`
 
-`int2`, `int2`, `int4`, `int8`, `integer`, `smallint`, `bigint`, `decimal`, `numeric`, `decimal`, 
-`numeric`, `real`, `double precision`, `time`, `time with time zone`, `time without time zone`,
-`timestamp`, `timestamp without time zone`, `timestamp with time zone`, `int`, `smallint`, `bigint`,
-`character varying`, `character`, `varchar`, `char`, `int2`, `integer`, `int4`, `int8`, 
-`float4`, `float8`, `smallserial`, `serial2`, `serial`, `serial4`, `bigserial`, `serial8`, 
-`money`, `boolean`, `bool`, `text`, `citext`, `bytea`, `date`, `interval`, `point`, `line`, `lseg`, `box`, 
+`int`, `int2`, `int4`, `int8`, `integer`, `smallint`, `bigint`, `float4`, `float8`,
+`numeric`, `decimal`, `real`, `double precision`, `time`, `time with time zone`,
+`time without time zone`, `timestamp`, `timestamp without time zone`, `timestamp with time zone`,
+`character varying`, `character`, `varchar`, `char`, `text`, `citext`,
+`smallserial`, `serial2`, `serial`, `serial4`, `bigserial`, `serial8`, 
+`money`, `boolean`, `bool` `bytea`, `date`, `interval`, `point`, `line`, `lseg`, `box`, 
 `circle`, `path`, `polygon`, `cidr`, `inet`, `macaddr`, `bit`, `bit varying`,
  `varbit`, `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb` 
 
 ### Column types for `sqlite` / `websql` / `cordova`
 
-`int`, `int2`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
-`numeric`, `float`, `double`, `decimal`, `numeric`, `real`, `double precision`, `datetime`, 
-`int`, `tinyint`, `smallint`, `mediumint`, `bigint`, `varying character`, `character`, `native character`, 
-`varchar`, `nchar`, `nvarchar2`, `int2`, `integer`, `int8`, `unsigned big int`, `boolean`, 
+`int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
+`numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`,
+`character`, `native character`, `varchar`, `nchar`, `nvarchar2`, `unsigned big int`, `boolean`, 
 `blob`, `text`, `clob`, `date`
  
 ### Column types for `mssql`
@@ -394,6 +395,7 @@ You can specify array of values or specify a enum class.
 * `array: boolean` - Used for postgres column types which can be array (for example int[])
 * `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to
 marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database.
+* `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
 

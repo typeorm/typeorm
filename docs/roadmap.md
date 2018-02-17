@@ -4,18 +4,18 @@ See what amazing new features we are expecting to land in the next TypeORM versi
 
 ## Note on 1.0.0 release
 
-We are planning to release a final stable `1.0.0` version somewhere in summer 2018.
-However TypeORM is already actively used in number of big production systems.
-Main API is already very stable, there are only few issues currently we have in following areas:
+We are planning to release a final stable `1.0.0` version somewhere in Summer 2018.
+However, TypeORM is already actively used in a number of big production systems.
+The main API is already very stable, and there are only a few issues currently in the following areas:
 `cascades`, `class and single table inheritance`, `naming strategy`, `subscribers`, `tree tables`.
-All issues in those areas are planning to be fixed in next minor versions.
-Your donations and contribution play a big role in achieving this goal.
-TypeORM follows a semantic versioning and until `1.0.0` breaking changes may appear in `0.x.x` versions,
-however since API is already quite stable we don't expect too much breaking changes.  
+All issues in those areas are planned to be fixed in upcoming minor versions.
+Your donations and contributions play a big role in achieving this goal.
+TypeORM follows a semantic versioning and until `1.0.0`, breaking changes may appear in `0.x.x` versions.
+However, since the API is already quite stable we don't expect too many breaking changes.  
 
 ## How to install latest development version?
 
-To install latest development version use following command:
+To install latest development version use the following command:
 
 ```
 npm i typeorm@next

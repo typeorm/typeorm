@@ -48,12 +48,12 @@ If you want to enable logging of failed queries only then only add `error`:
 
 There are other options you can use:
 
-* `query` - log all queries
-* `error` - log all failed queries and error
-* `schema` - log the schema build process
-* `warn` - log internal orm warnings
-* `info` - log internal orm informative messages
-* `log` - log internal orm log messages
+* `query` - logs all queries.
+* `error` - logs all failed queries and errors.
+* `schema` - logs the schema build process.
+* `warn` - logs internal orm warnings.
+* `info` - logs internal orm informative messages.
+* `log` - logs internal orm log messages.
 
 You can specify as many options as needed. 
 If you want to enable all logging you can simply specify `logging: "all"`:
@@ -68,7 +68,7 @@ If you want to enable all logging you can simply specify `logging: "all"`:
 
 ## Log long-running queries
 
-If you have performance issues you can log queries that take too much time to execute
+If you have performance issues, you can log queries that take too much time to execute
 by setting `maxQueryExecutionTime` in connection options:
 
 ```typescript
@@ -85,12 +85,12 @@ This code will log all queries which run more then `1 second`.
 
 TypeORM ships with 4 different types of logger:
 
-* `advanced-console` - this is default which logs all messages onto the console using color 
-and sql syntax highlighting (using [chalk](https://github.com/chalk/chalk))
+* `advanced-console` - this is the default logger which logs all messages into the console using color 
+and sql syntax highlighting (using [chalk](https://github.com/chalk/chalk)).
 * `simple-console` - this is a simple console logger which is exactly the same as the advanced logger, but it does not use any color highlighting.
-This logger can be used if you have problems / or don't like colorized logs
-* `file` - this logger writes all logs into `ormlogs.log` in the root folder of your project (near `package.json` and `ormconfig.json`)
-* `debug` - this logger uses [debug package](https://github.com/visionmedia/debug), to turn on logging set env variable `DEBUG=typeorm:*` (note logging option has no effect on this logger)
+This logger can be used if you have problems / or don't like colorized logs.
+* `file` - this logger writes all logs into `ormlogs.log` in the root folder of your project (near `package.json` and `ormconfig.json`).
+* `debug` - this logger uses [debug package](https://github.com/visionmedia/debug), to turn on logging set your env variable `DEBUG=typeorm:*` (note logging option has no effect on this logger).
 
 You can enable any of them in connection options:
 
@@ -135,8 +135,8 @@ createConnection({
 });
 ```
 
-If you defined your connection options in `ormconfig` file,
-then you can use it and override following way:
+If you defined your connection options in the `ormconfig` file,
+then you can use it and override it in the following way:
 
 ```typescript
 import {createConnection, getConnectionOptions} from "typeorm";
@@ -152,8 +152,8 @@ getConnectionOptions().then(connectionOptions => {
 });
 ```
 
-Logger methods can accept `QueryRunner` when its available. Its helpful if you want to log additional data.
-Also via query runner you can get access to additional data passed during persist/remove. For example:
+Logger methods can accept `QueryRunner` when it's available. It's helpful if you want to log additional data.
+Also, via query runner, you can get access to additional data passed during persist/remove. For example:
 
 ```typescript
 // user sends request during entity save

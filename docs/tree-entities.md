@@ -9,7 +9,8 @@ TypeORM supports the Adjacency list and Closure table patterns for storing tree 
 
 Adjacency list is a simple model with self-referencing. 
 The benefit of this approach is simplicity, 
-drawback is that you can't load big tree in once because of join limitations.
+drawback is that you can't load big trees in all at once because of join limitations.
+To learn more about the benefits and use of Adjacency Lists look at [this article by Matthew Schinckel](http://schinckel.net/2014/09/13/long-live-adjacency-lists/).
 Example:
 
 ```typescript
@@ -40,7 +41,7 @@ export class Category {
 
 
 Closure table stores relations between parent and child in a separate table in a special way. 
-Its efficient in both reads and writes. 
+It's efficient in both reads and writes. 
 To learn more about closure table take a look at [this awesome presentation by Bill Karwin](https://www.slideshare.net/billkarwin/models-for-hierarchical-data). 
 Example:
 

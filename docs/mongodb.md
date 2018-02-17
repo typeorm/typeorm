@@ -190,7 +190,7 @@ const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw
 Just like separate like `MongoEntityManager` there is a `MongoRepository` with extended `Repository`:
 
 ```typescript
-import {getMongoManager} from "typeorm";
+import {getMongoRepository} from "typeorm";
 
 const userRepository = getMongoRepository(User); // or connection.getMongoManager
 const timber = await userRepository.findOne({ firstName: "Timber", lastName: "Saw" });

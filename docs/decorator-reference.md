@@ -49,12 +49,12 @@ This code will create a database table named "users".
 
 You can also specify some additional entity options:
 
-* `name` - table name. If not specified then table name is generated from entity class name
-* `database` - database name in selected DB server
-* `schema` - schema name
-* `engine` - database engine to be set during table creation (works only in some databases)
-* `skipSync` - entities marked with this decorator are skipped from schema updates
-* `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`
+* `name` - table name. If not specified, then table name is generated from entity class name.
+* `database` - database name in selected DB server.
+* `schema` - schema name.
+* `engine` - database engine to be set during table creation (works only in some databases).
+* `skipSync` - entities marked with this decorator are skipped from schema updates.
+* `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`.
 
 Example:
 
@@ -106,13 +106,13 @@ export class User {
 * `type: ColumnType` - Column type. One of the [supported column types](entities.md#column-types).
 * `name: string` - Column name in the database table. 
 By default the column name is generated from the name of the property.
-You can change it by specifying your own name
-* `length: string|number` - Column type's length. For example if you want to create `varchar(150)` type 
+You can change it by specifying your own name.
+* `length: string|number` - Column type's length. For example, if you want to create `varchar(150)` type 
 you specify column type and length options.
 * `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. 
 By default column is `nullable: false`.
 * `default: string` - Adds database-level column's `DEFAULT` value. 
-* `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
+* `primary: boolean` - Marks column as primary. Same as using  `@PrimaryColumn`.
 * `unique: boolean` - Marks column as unique column (creates unique constraint).
 * `comment: string` - Database's column comment. Not supported by all database types.
 * `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
@@ -124,7 +124,7 @@ Used in some column types.
 * `collation: string` - Defines a column collation.
 * `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
 You can specify array of values or specify a enum class.
-* `array: boolean` - Used for postgres column types which can be array (for example int[])
+* `array: boolean` - Used for postgres column types which can be array (for example int[]).
 
 Learn more about [entity columns](entities.md#entity-columns).
 
@@ -148,7 +148,7 @@ Learn more about [entity columns](entities.md#entity-columns).
 
 #### `@PrimaryGeneratedColumn`
 
-Marks a property in your entity as a table generated primary column.
+Marks a property in your entity as a table-generated primary column.
 Column it creates is primary and its value is auto-generated.
 Example:
 
@@ -164,10 +164,10 @@ export class User {
 
 There are two generation strategies:
 
-* `increment` - uses AUTO_INCREMENT / SERIAL / SEQUENCE (depend on database type) to generate incremental number
-* `uuid` - generates unique `uuid` string
+* `increment` - uses AUTO_INCREMENT / SERIAL / SEQUENCE (depend on database type) to generate incremental number.
+* `uuid` - generates unique `uuid` string.
 
-Default generation strategy is `increment`, to change it to `uuid` simple pass it as first argument to decorator:
+Default generation strategy is `increment`, to change it to `uuid`, simply pass it as the first argument to decorator:
 
 ```typescript
 @Entity()
@@ -219,7 +219,7 @@ export class User {
 #### `@UpdateDateColumn`
 
 Special column that is automatically set to the entity's update time 
-each time you call `save` of entity manager or repository.
+each time you call `save` from entity manager or repository.
 You don't need to write a value into this column - it will be automatically set.
 
 ```typescript
@@ -235,7 +235,7 @@ export class User {
 #### `@VersionColumn`
 
 Special column that is automatically set to the entity's version (incremental number)  
-each time you call `save` of entity manager or repository.
+each time you call `save` from entity manager or repository.
 You don't need to write a value into this column - it will be automatically set.
 
 ```typescript
@@ -250,7 +250,7 @@ export class User {
 
 #### `@Generated`
 
-Marks column to have a generated value. For example:
+Marks column to be a generated value. For example:
 
 ```typescript
 @Entity()
@@ -263,7 +263,7 @@ export class User {
 }
 ```
 
-Value will be generated only once before inserting the entity into the database.
+Value will be generated only once, before inserting the entity into the database.
 
 ## Relation decorators
 
@@ -380,8 +380,8 @@ Learn more about [many-to-many relations](many-to-many-relations.md).
 
 #### `@JoinColumn`
 
-Defines which side of the relation contains join column with foreign key and 
-allows to customize join column name and referenced column name. 
+Defines which side of the relation contains the join column with a foreign key and 
+allows you to customize the join column name and referenced column name. 
 Example:
 
 ```typescript
@@ -401,8 +401,8 @@ export class Post {
 #### `@JoinTable`
 
 Used for `many-to-many` relations and describes join columns of the "junction" table.
-Junction table is a special separate table created automatically by TypeORM with columns referenced to the related entities.
-You can change the column names inside the junction table and their referenced columns as easy as with `@JoinColumn` decorator. You can also change the name of the generated "junction" table.
+Junction table is a special, separate table created automatically by TypeORM with columns referenced to the related entities.
+You can change the column names inside the junction table and their referenced columns with the `@JoinColumn` decorator. You can also change the name of the generated "junction" table.
 Example:
 
 ```typescript
@@ -427,13 +427,13 @@ export class Post {
 ```
 
 If the destination table has composite primary keys, 
-then array of properties must be send to `@JoinTable` decorator.
+then an array of properties must be sent to the `@JoinTable` decorator.
 
 #### `@RelationId`
 
-Loads id (or ids) of specific relation into property.
-For example if you have many-to-one `category` in your `Post` entity
-you can have category id by marking a new property with `@RelationId`.
+Loads id (or ids) of specific relations into properties.
+For example, if you have a many-to-one `category` in your `Post` entity,
+you can have a new category id by marking a new property with `@RelationId`.
 Example:
 
 ```typescript
@@ -449,7 +449,7 @@ export class Post {
 }
 ```
 
-This functionality works for all kind of relations including `many-to-many`:
+This functionality works for all kind of relations, including `many-to-many`:
 
 ```typescript
 @Entity()
@@ -465,7 +465,7 @@ export class Post {
 ```
 
 Relation id is used only for representation.
-The underlying relation is not added/removed/changed when chaning the value.
+The underlying relation is not added/removed/changed when chaining the value.
 
 ## Subscriber and listener decorators
 
@@ -605,8 +605,8 @@ Learn more about [listeners](listeners-and-subscribers.md).
 
 #### `@EventSubscriber`
 
-Marks a class as an event subscriber which can listen to specific entity events or any entity events.
-Events are firing using `QueryBuilder` and repository/manager methods.
+Marks a class as an event subscriber which can listen to specific entity events or any entity's events.
+Events are fired using `QueryBuilder` and repository/manager methods.
 Example:
 
 ```typescript
@@ -632,7 +632,7 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
 ```
 
 You can implement any method from `EntitySubscriberInterface`.
-To listen to any entity you just omit `listenTo` method and use `any`:
+To listen to any entity, you just omit the `listenTo` method and use `any`:
 
 ```typescript
 @EventSubscriber()
@@ -654,11 +654,11 @@ Learn more about [subscribers](listeners-and-subscribers.md).
 
 #### `@Index`
 
-This decorator allows to create database index for a specific column or columns.
-It also allows to mark column or columns to be unique.
-Decorator can be applied to columns or entity itself.
-Use it on a column when index on a single column is needed.
-And use it on the entity when a single index on multiple columns is required.
+This decorator allows you to create a database index for a specific column or columns.
+It also allows you to mark column or columns to be unique.
+This decorator can be applied to columns or an entity itself.
+Use it on a column when an index on a single column is needed
+and use it on the entity when a single index on multiple columns is required.
 Examples:
 
 ```typescript
@@ -697,7 +697,7 @@ Learn more about [indices](indices.md).
 #### `@Transaction`, `@TransactionManager` and `@TransactionRepository`
 
 `@Transaction` is used on a method and wraps all its execution into a single database transaction.
-All database queries must be performed using the by `@TransactionManager` provided manager 
+All database queries must be performed using the `@TransactionManager` provided manager 
 or with the transaction repositories injected with `@TransactionRepository`.
 Examples:
 
@@ -730,7 +730,7 @@ Learn more about [transactions](transactions.md).
 
 #### `@EntityRepository`
 
-Marks custom class as entity repository.
+Marks a custom class as an entity repository.
 Example:
 
 ```typescript

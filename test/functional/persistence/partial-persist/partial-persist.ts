@@ -25,7 +25,7 @@ describe("persistence > partial persist", () => {
     // Specifications
     // -------------------------------------------------------------------------
 
-    it("should persist partial entities without data loose", () => Promise.all(connections.map(async connection => {
+    it("should persist partial entities without data loss", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);

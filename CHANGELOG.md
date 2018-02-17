@@ -7,6 +7,7 @@ feel free to ask us and community.
 
 ## 0.1.13
 * added simple-json column type ([#1448](https://github.com/typeorm/typeorm/pull/1488))
+* fixed transform behaviour for timestamp columns ([#1140](https://github.com/typeorm/typeorm/issues/1140))
 
 ## 0.1.12
 

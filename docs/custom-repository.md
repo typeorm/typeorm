@@ -54,7 +54,7 @@ and you can access any method created inside it and any method in the standard e
 
 ## Custom repository extends standard AbstractRepository
 
-Second way to create a custom repository is to extend `AbstractRepository`:
+The second way to create a custom repository is to extend `AbstractRepository`:
 
 ```typescript
 import {EntityRepository, AbstractRepository} from "typeorm";
@@ -88,15 +88,15 @@ await userRepository.createAndSave("Timber", "Saw");
 const timber = await userRepository.findByName("Timber", "Saw");
 ```
 
-The difference between this type of repository and the previous one is, that it does not expose all methods `Repository` has.
+The difference between this type of repository and the previous one is that it does not expose all the methods `Repository` has.
 `AbstractRepository` does not have any public methods, 
-it only has protected methods like `manager` and `repository` which you can use in your own
+it only has protected methods, like `manager` and `repository`, which you can use in your own
 public methods.
 Extending `AbstractRepository` is useful if you don't want to expose all methods the standard `Repository` has to the public.
 
 ## Custom repository without extends
 
-Third way to create a repository is to not extend anything, 
+The third way to create a repository is to not extend anything, 
 but define a constructor which always accepts an entity manager instance:
 
 ```typescript
@@ -136,13 +136,13 @@ const timber = await userRepository.findByName("Timber", "Saw");
 
 This type of repository does not extend anything - you only need to define a constructor
 which must accept `EntityManager`. Then you can use it everywhere in your repository methods.
-Also this type of repository is not bound to a specific entity.
-Thus you can operate with multiple entities inside them. 
+Also, this type of repository is not bound to a specific entity,
+thus, you can operate with multiple entities inside them. 
 
 ## Using custom repositories in transactions or why custom repositories cannot be services
 
-Custom repositories cannot be services. 
-Because there isn't a single instance of a custom repository (just like regular repositories or entity manager) in the app.
+Custom repositories cannot be services, 
+because there isn't a single instance of a custom repository (just like regular repositories or entity manager) in the app.
 Besides the fact that there can be multiple connections in your app (where entity manager and repositories are different)
 repositories and managers are different in transactions as well. 
 For example:

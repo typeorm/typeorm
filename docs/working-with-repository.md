@@ -2,8 +2,8 @@
 
 `Repository` is just like `EntityManager` but its operations are limited to a concrete entity.
 
-You can access repository via `getRepository(Entity)` 
-or from `Connection#getRepository` or from `EntityManager#getRepository`.
+You can access repository via `getRepository(Entity)`, 
+`Connection#getRepository`, or `EntityManager#getRepository`.
 Example:
  
 ```typescript
@@ -17,7 +17,7 @@ await userRepository.save(user);
 ```
 
 There are 3 types of repositories:
-* `Repository` - Regular repository for any entity
+* `Repository` - Regular repository for any entity.
 * `TreeRepository` - Repository, extensions of `Repository` used for tree-entities 
 (like entities marked with `@ClosureEntity` decorator). 
 Has special methods to work with tree structures.

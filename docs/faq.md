@@ -13,8 +13,8 @@
 
 ## How do I update a database schema?
 
-One of the main responsibility of TypeORM is to keep your database tables in sync with your entities.
-There are two ways that help you to achieve this:
+One of the main responsibilities of TypeORM is to keep your database tables in sync with your entities.
+There are two ways that help you achieve this:
 
 * Use `synchronize: true` in your connection options:
     
@@ -26,7 +26,7 @@ There are two ways that help you to achieve this:
     });
     ```
 
-    This option automatically synces your database tables with the given entities each time you run this code. 
+    This option automatically syncs your database tables with the given entities each time you run this code. 
     This option is perfect during development, but in production you may not want this option to be enabled.
 
 * Use command line tools and run schema sync manually in the command line:
@@ -36,15 +36,15 @@ There are two ways that help you to achieve this:
     ```
     
     This command will execute schema synchronization. 
-    Note, to make command line tools to work, you must create a ormconfig.json file.
+    Note, to make command line tools work, you must create an ormconfig.json file.
 
 Schema sync is extremely fast. 
-If you are considering to disable synchronize option during development because of performance issues, 
+If you are considering the disable synchronize option during development because of performance issues, 
 first check how fast it is.
 
 ## How do I change a column name in the database?
 
-By default column names are generated from property names.
+By default, column names are generated from property names.
 You can simply change it by specifying a `name` column option:
 
 ```typescript
@@ -108,36 +108,36 @@ export class Photo {
 ```
 
 This example does not have a `@JoinColumn` which is incorrect.
-Why? Because to make a real relation we need to create a column in the database.
+Why? Because to make a real relation, we need to create a column in the database.
 We need to create a column `userId` in `photo` or `photoId` in `user`.
 But which column should be created - `userId` or `photoId`?
-TypeORM cannot decide it for you. 
-To make a decision you must use `@JoinColumn` on one of the sides.
+TypeORM cannot decide for you. 
+To make a decision, you must use `@JoinColumn` on one of the sides.
 If you put `@JoinColumn` in `Photo` then a column called `userId` will be created in the `photo` table.
 If you put `@JoinColumn` in `User` then a column called `photoId` will be created in the `user` table.
-The side with `@JoinColumn` will be called "owner side of the relationship".
-The other side of the relation, without `@JoinColumn` is called "inverse (non-owner) side of relationship".
+The side with `@JoinColumn` will be called the "owner side of the relationship".
+The other side of the relation, without `@JoinColumn`, is called the "inverse (non-owner) side of relationship".
 
-Same in a `@ManyToMany` relation you use `@JoinTable` to show the owner side of the relation.
+It is the same in a `@ManyToMany` relation. You use `@JoinTable` to show the owner side of the relation.
 
-In `@ManyToOne` or `@OneToMany` relations `@JoinColumn` is not necessary because 
-both decorators are different and where you put `@ManyToOne` decorator that table will have relational column. 
+In `@ManyToOne` or `@OneToMany` relations, `@JoinColumn` is not necessary because 
+both decorators are different, and the table where you put the `@ManyToOne` decorator will have the relational column. 
 
 `@JoinColumn` and `@JoinTable` decorators can also be used to specify additional
 join column / junction table settings, like join column name or junction table name. 
 
 ## How do I add extra columns into many-to-many (junction) table?
 
-Its not possible to add extra columns into the table created by a many-to-many relation.
-You'll need to create a separate entity and bind it using two many-to-one relations with target entities
-(effect will be same as creating a many-to-many table), 
+It's not possible to add extra columns into a table created by a many-to-many relation.
+You'll need to create a separate entity and bind it using two many-to-one relations with the target entities
+(the effect will be same as creating a many-to-many table), 
 and add extra columns in there.
 
 ## How to use TypeORM with a dependency injection tool?
 
-In TypeORM you can use service containers. Service containers allow you to inject custom services in some places, like in subscribers or custom naming strategies. Or for example, you can get access to ConnectionManager from any place using a service container.
+In TypeORM you can use service containers. Service containers allow you to inject custom services in some places, like in subscribers or custom naming strategies. For example, you can get access to ConnectionManager from any place using a service container.
 
-Here is a example for how you can setup typedi service containers with TypeORM. But note, that you can setup any service container with TypeORM.
+Here is an example for how you can set up typedi service containers with TypeORM. Note: you can setup any service container with TypeORM.
 
 ```typescript
 import {useContainer, createConnection} from "typeorm";
@@ -150,20 +150,20 @@ createConnection({/* ... */});
 
 ## How to handle outDir TypeScript compiler option?
 
-When you are using the `outDir` compiler option don't forget to copy assets and resources your app is using into the output directory.
-Or make sure to setup correct paths to those assets.
+When you are using the `outDir` compiler option, don't forget to copy assets and resources your app is using into the output directory.
+Otherwise, make sure to setup correct paths to those assets.
 
-One important thing to know is, that when you remove or move entities, the old entities are left untouched inside the ouput directory.
-For example you create a `Post` entity and rename it to `Blog`.
-You no longer have `Post.ts` in your project, however `Post.js` is left inside the output directory.
-Now when TypeORM reads entities from your output directory it sees two entities - `Post` and `Blog`.
+One important thing to know is that when you remove or move entities, the old entities are left untouched inside the ouput directory.
+For example, you create a `Post` entity and rename it to `Blog`,
+you no longer have `Post.ts` in your project. However, `Post.js` is left inside the output directory.
+Now, when TypeORM reads entities from your output directory, it sees two entities - `Post` and `Blog`.
 This may be a source of bugs. 
-That's why when you remove and move entities with `outDir` enabled its strongly recommended to remove your output directory and recompile the project again. 
+That's why when you remove and move entities with `outDir` enabled, it's strongly recommended to remove your output directory and recompile the project again. 
 
 ## How to use TypeORM with ts-node?
 
 You can prevent compiling files each time using [ts-node](https://github.com/TypeStrong/ts-node).
-If you are using ts-node you can specify `ts` entities inside your connection options:
+If you are using ts-node, you can specify `ts` entities inside your connection options:
 
 ```
 {
@@ -174,9 +174,9 @@ If you are using ts-node you can specify `ts` entities inside your connection op
 
 Also, if you are compiling js files into the same folder where your typescript files are, 
 make sure to use the `outDir` compiler option to prevent 
-[this issues](https://github.com/TypeStrong/ts-node/issues/432). 
+[this issue](https://github.com/TypeStrong/ts-node/issues/432). 
 
-Also if you want to use the ts-node CLI you can execute TypeORM the following way:
+Also, if you want to use the ts-node CLI, you can execute TypeORM the following way:
 
 ```
 ts-node ./node_modules/bin/typeorm schema:sync

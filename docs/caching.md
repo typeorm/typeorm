@@ -39,12 +39,12 @@ const users = await connection
     });
 ```
 
-This will execute a query to fetch all admin users and cache its result.
-Next time when you execute same code it will get admin users from the cache.
-Default cache time is equal to `1000 ms`, e.g. 1 second.
-This means cache will be invalid 1 second after you called the query builder code.
-In practice, it means that if users open user page 150 times within 3 seconds only three queries will be executed during this period.
-All users inserted during the 1 second of caching won't be returned to the user.
+This will execute a query to fetch all admin users and cache the results.
+Next time you execute the same code, it will get all admin users from the cache.
+Default cache lifetime is equal to `1000 ms`, e.g. 1 second.
+This means the cache will be invalid 1 second after the query builder code is called.
+In practice, this means that if users open the user page 150 times within 3 seconds, only three queries will be executed during this period.
+Any users inserted during the 1 second cache window won't be returned to the user.
 
 You can change cache time manually via `QueryBuilder`:
 
@@ -104,8 +104,8 @@ const users = await connection
     });
 ```
 
-It will allow you to granular control your cache,
-for example, clear cached results when you insert a new user:
+This gives you granular control of your cache,
+for example, clearing cached results when you insert a new user:
 
 ```typescript
 await connection.queryResultCache.remove(["users_admins"]);

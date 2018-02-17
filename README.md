@@ -309,16 +309,16 @@ creating more entities.
 ## Step-by-Step Guide
 
 What are you expecting from ORM?
-First of all you are expecting it will create a database tables for you
-and find / insert / update / delete your data without pain and  
-having to write lot of hardly maintainable SQL queries.
-This guide will show you how to setup TypeORM from scratch and make it to do what you are expecting from ORM.
+First of all, you are expecting it will create database tables for you
+and find / insert / update / delete your data without the pain of  
+having to write lots of hardly maintainable SQL queries.
+This guide will show you how to setup TypeORM from scratch and make it do what you are expecting from ORM.
 
 ### Create a model
 
 Working with database starts from creating tables. 
 How do you tell TypeORM to create a database table?
-Answer is - thought the models. 
+Answer is - through the models. 
 Your models in your app - are your database tables.
 
 For example, you have a `Photo` model:
@@ -334,14 +334,14 @@ export class Photo {
 ```
 
 And you want to store photos in your database.
-To store things in the database first you need a database table.
-And database tables are created from your models.
-Not all models, but only those you defined as *entities*. 
+To store things in the database, first you need a database table,
+and database tables are created from your models.
+Not all models, but only those you define as *entities*. 
         
 ### Create an entity
 
-*Entity* is your model decorated by `@Entity` decorator.
-Database table will be created for such model.
+*Entity* is your model decorated by an `@Entity` decorator.
+A database table will be created for such models.
 You work with entities everywhere with TypeORM.
 You can load/insert/update/remove and perform other operations with them.
 
@@ -361,13 +361,13 @@ export class Photo {
 }
 ```
 
-Now database table will be created for `Photo` entity and we'll be able to work with it anywhere in our app.
+Now, a database table will be created for the `Photo` entity and we'll be able to work with it anywhere in our app.
 We have created a database table, however what table can exist without columns?
 Let's create a few columns in our database table.
         
 ### Adding table columns
 
-To add database columns you simply need to decorate entity's properties you want to make a columns
+To add database columns, you simply need to decorate an entity's properties you want to make into a column
 with a `@Column` decorator.
 
 ```typescript
@@ -399,17 +399,16 @@ export class Photo {
 Now `id`, `name`, `description`, `filename`, `views` and `isPublished` columns will be added to the `photo` table.
 Column types in the database are inferred from the property types you used, e.g.
 `number` will be converted into `integer`, `string` into `varchar`, `boolean` into `bool`, etc.
-But you can use any column type your database support by implicitly specify a column type into `@Column` decorator.
+But you can use any column type your database supports by implicitly specifying a column type into the `@Column` decorator.
 
-We generated a database table with columns.
-But there is one thing left.
-Each database table must have a column with primary key. 
+We generated a database table with columns, but there is one thing left.
+Each database table must have a column with a primary key. 
 
 ### Creating a primary column
 
-Each entity **must** have at least one primary column.
-This is requirement and you can't avoid it. 
-To make a column a primary you need to use `@PrimaryColumn` decorator.
+Each entity **must** have at least one primary key column.
+This is a requirement and you can't avoid it. 
+To make a column a primary key, you need to use `@PrimaryColumn` decorator.
 
 ```typescript
 import {Entity, Column, PrimaryColumn} from "typeorm";
@@ -440,7 +439,7 @@ export class Photo {
 ### Creating an auto generated column
 
 Now, let's say you want your id column to be auto-generated (this is known as auto-increment / sequence / serial / generated identity column).
-To do that you need to change `@PrimaryColumn` decorator to `@PrimaryGeneratedColumn` decorator:
+To do that, you need to change the `@PrimaryColumn` decorator to a `@PrimaryGeneratedColumn` decorator:
 
 ```typescript
 import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
@@ -504,8 +503,8 @@ export class Photo {
 ```
 
 Column types are database-specific.
-You can set any column type your database support.
-More information on supported column types you can find [here](./docs/entities.md#column-types).
+You can set any column type your database supports.
+More information on supported column types can be found [here](./docs/entities.md#column-types).
 
 ### Creating a connection to the database
 
@@ -619,8 +618,8 @@ createConnection(/*...*/).then(connection => {
 ```
 
 Once your entity is saved it will get a newly generated id.
-`save` method returns instance of same object you pass to it.
-Its not a new copy of an object, it modifies its "id" and returns it.
+`save` method returns an instance of the same object you pass to it.
+It's not a new copy of the object, it modifies its "id" and returns it.
   
 ### Using async/await syntax
 
@@ -812,7 +811,7 @@ export class PhotoMetadata {
      
 Here, we are using a new decorator called `@OneToOne`. It allows us to create a one-to-one relationship between two entities. 
 `type => Photo` is a function that returns the class of the entity with which we want to make our relationship. 
-We are forced to use a function that returns a class, instead of using class directly, because of the language specifics.
+We are forced to use a function that returns a class, instead of using the class directly, because of the language specifics.
 We can also write it as `() => Photo`, but we use `type => Photo` as a convention to increase code readability.
 The type variable itself does not contain anything.
 
@@ -948,11 +947,11 @@ createConnection(/*...*/).then(async connection => {
 }).catch(error => console.log(error));
 ```
         
-Here photos will contain an array of photos from the database, and each photo will contain its photo metadata.
+Here, photos will contain an array of photos from the database, and each photo will contain its photo metadata.
 Learn more about Find Options in [this documentation](./docs/find-options.md).
 
-Using find options is good and dead simple, but if you need more complex query you should use `QueryBuilder` instead.
-`QueryBuilder` allows to use more complex queries in an elegant way:
+Using find options is good and dead simple, but if you need a more complex query, you should use `QueryBuilder` instead.
+`QueryBuilder` allows more complex queries to be used in an elegant way:
 
 ```typescript
 import {createConnection} from "typeorm";
@@ -972,9 +971,9 @@ createConnection(/*...*/).then(async connection => {
 }).catch(error => console.log(error));
 ```
 
-`QueryBuilder` allows to create and execute SQL query of almost any complexity.
-When you work with `QueryBuilder` think like you are creating SQL query.
-In this example "photo" and "metadata" are aliases applied to selected photos.
+`QueryBuilder` allows creation and execution of SQL queries of almost any complexity.
+When you work with `QueryBuilder`, think like you are creating an SQL query.
+In this example, "photo" and "metadata" are aliases applied to selected photos.
 You use aliases to access columns and properties of the selected data.
 
 ### Using cascades to automatically save related objects
@@ -1000,7 +999,7 @@ export class Photo {
 * **cascadeUpdate** - automatically update metadata in the relation if something is changed in this object.
 * **cascadeRemove** - automatically remove metadata from its table if you removed metadata from photo object.
 
-Using `cascadeInsert` allows us not to separately save photo and separately save metadata objects now. 
+Using `cascadeInsert` allows us to not have to separately save photo and metadata objects now. 
 Now we can simply save a photo object, and the metadata object will be saved automatically because of cascade options.
 
 ```typescript
@@ -1214,7 +1213,7 @@ const loadedPhoto = await connection
 
 ### Using QueryBuilder
 
-You can use QueryBuilder to build SQL query of almost any complexity. For example, you can do this:
+You can use QueryBuilder to build SQL queries of almost any complexity. For example, you can do this:
 
 ```typescript
 let photos = await connection

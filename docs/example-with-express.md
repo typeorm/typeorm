@@ -6,8 +6,8 @@
 
 ## Initial setup
 
-Lets create a simple application called "user" which stores users in the database
-and allow to create, update, remove, get a list of all users and a single user by id
+Let's create a simple application called "user" which stores users in the database
+and allows us to create, update, remove, and get a list of all users, as well as a single user by id
 within web api.
 
 First, create a directory called "user":
@@ -32,7 +32,7 @@ npm i typescript --save-dev
 ```
 
 Then let's create a `tsconfig.json` file which contains the configuration required for the application to 
-compile and run. Create it using your favorite editor and put following configuration:
+compile and run. Create it using your favorite editor and put the following configuration:
 
 ```json
 {
@@ -47,7 +47,7 @@ compile and run. Create it using your favorite editor and put following configur
 }
 ``` 
 
-Now lets create main application endpoint - `app.ts` inside `src` directory:
+Now let's create a main application endpoint - `app.ts` inside the `src` directory:
 
 ```
 mkdir src
@@ -55,30 +55,30 @@ cd src
 touch app.ts
 ```
 
-Let's add simple `console.log` inside it:
+Let's add a simple `console.log` inside it:
 
 ```typescript
 console.log("Application is up and running");
 ```
 
-Now its time to run our application.
-To run it you need to compile your typescript project first:
+Now it's time to run our application.
+To run it, you need to compile your typescript project first:
 
 ```
 tsc
 ```
 
-Once you compile it you should have `src/app.js` file generated.
-You can run it:
+Once you compile it, you should have a `src/app.js` file generated.
+You can run it using:
 
 ```
 node src/app.js
 ```
 
-You should see "Application is up and running" message in your console just right after you run the application.
+You should see the, "Application is up and running" message in your console right after you run the application.
 
 You must compile your files each time you make a change.
-Alternatively you can setup watcher or install [ts-node](http://github.com/ts-node/ts-node) to avoid manual compilation each time.
+Alternatively, you can setup watcher or install [ts-node](http://github.com/ts-node/ts-node) to avoid manual compilation each time.
 
 ## Adding Express to the application
 
@@ -93,7 +93,7 @@ npm i express body-parser @types/express @types/body-parser --save
 * `@types/express` is used to have a type information when using express
 * `@types/body-parser` is used to have a type information when using body parser
 
-Let's edit `src/app.ts` file and add express-related logic:
+Let's edit the `src/app.ts` file and add express-related logic:
 
 ```typescript
 import * as express from "express";
@@ -131,13 +131,13 @@ app.listen(3000);
 ```
 
 Now you can compile and run your project.
-You should have a express server running now with working routes.
-However those routes do not return any content yet.
+You should have an express server running now with working routes.
+However, those routes do not return any content yet.
 
 ## Adding TypeORM to the application
 
-Finally lets add TypeORM to the application. 
-In this example we will use `mysql` driver.
+Finally, let's add TypeORM to the application. 
+In this example, we will use `mysql` driver.
 Setup process for other drivers is similar.
 
 Let's install the required packages first:
@@ -242,7 +242,7 @@ export function UsersListAction(req: Request, res: Response) {
 }
 ```
 
-You even don't need `getConnection` in this example - you can directly use `getRepository` function:
+You don't even need `getConnection` in this example - you can directly use the `getRepository` function:
 
 ```typescript
 import {getRepository} from "typeorm";

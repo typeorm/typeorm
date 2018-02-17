@@ -70,16 +70,16 @@ const user = repository.create({
 }); // same as const user = new User(); user.firstName = "Timber"; user.lastName = "Saw";
 ```
 
-* `merge` - Merges multiple entities into a single entity
+* `merge` - Merges multiple entities into a single entity.
 
 ```typescript
 const user = new User();
 repository.merge(user, { firstName: "Timber" }, { lastName: "Saw" }); // same as user.firstName = "Timber"; user.lastName = "Saw";
 ```
 
-* `preload` - Creates a new entity from the given plain javascript object. If the entity already exist in the database, then
-it loads it (and everything related to it), replaces all values with the new ones from the given object
-and returns the new entity. The new entity is actually an entity loaded from the db with all properties
+* `preload` - Creates a new entity from the given plain javascript object. If the entity already exists in the database, then
+it loads it (and everything related to it), replaces all values with the new ones from the given object,
+and returns the new entity. The new entity is actually an entity loaded from the database with all properties
 replaced from the new object.
 
 ```typescript
@@ -98,7 +98,7 @@ const user = await repository.preload(partialUser);
 * `save` - Saves a given entity or array of entities.
 If the entity already exist in the database, it is updated.
 If the entity does not exist in the database, it is inserted.
-It saves all given entities in a single transaction (in the case of entity manager is not transactional).
+It saves all given entities in a single transaction (in the case of entity, manager is not transactional).
 Also supports partial updating since all undefined properties are skipped.
 
 ```typescript
@@ -125,7 +125,7 @@ await repository.updateById(1, { firstName: "Rizzrak" });
 ```
 
 * `remove` - Removes a given entity or array of entities.
-It removes all given entities in a single transaction (in the case of entity manager is not transactional).
+It removes all given entities in a single transaction (in the case of entity, manager is not transactional).
 
 ```typescript
 await repository.remove(user);

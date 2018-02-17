@@ -241,30 +241,30 @@ export class AbstractSqliteDriver implements Driver {
      * Prepares given value to a value to be hydrated, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
-
         if (value === null || value === undefined)
             return value;
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
-            return value ? true : false;
+            value = value ? true : false;
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            return DateUtils.normalizeHydratedDate(value);
+            value = DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value);
+            value = DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedTimeToString(value);
+            value = DateUtils.mixedTimeToString(value);
 
         } else if (columnMetadata.type === "simple-array") {
-            return DateUtils.stringToSimpleArray(value);
+            value = DateUtils.stringToSimpleArray(value);
 
         } else if (columnMetadata.type === "simple-json") {
-            return DateUtils.stringToSimpleJson(value);
+            value = DateUtils.stringToSimpleJson(value);
         }
+
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
 
         return value;
     }
