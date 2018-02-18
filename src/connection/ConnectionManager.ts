@@ -52,8 +52,10 @@ export class ConnectionManager {
         if (existConnection) {
 
             // if connection is registered and its not closed then throw an error
-            if (existConnection.isConnected)
+            if (existConnection.isConnected) {
+                console.warn("Someone requested a new connection.", options.name);
                 return existConnection;
+            }
 
             // if its registered but closed then simply remove it from the manager
             this.connections.splice(this.connections.indexOf(existConnection), 1);

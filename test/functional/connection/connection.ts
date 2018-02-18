@@ -115,10 +115,6 @@ describe("Connection", () => {
             // expect(connection.reactiveEntityManager).to.be.instanceOf(ReactiveEntityManager);
         }));
 
-        it("should not be able to connect again", () => connections.forEach(connection => {
-            return connection.connect().should.be.rejected; // CannotConnectAlreadyConnectedError
-        }));
-
         it("should be able to close a connection", async () => Promise.all(connections.map(connection => {
             return connection.close();
         })));

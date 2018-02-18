@@ -301,7 +301,7 @@ export class OracleDriver implements Driver {
             return value;
 
         if (columnMetadata.type === Boolean) {
-            value = value ? true : false;
+            value = !!value;
 
         } else if (columnMetadata.type === "datetime") {
             value = DateUtils.normalizeHydratedDate(value);

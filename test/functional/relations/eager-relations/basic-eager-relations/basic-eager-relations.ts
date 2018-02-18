@@ -1,11 +1,18 @@
 import "reflect-metadata";
 import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    equals,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
 import {User} from "./entity/User";
 import {Profile} from "./entity/Profile";
 import {Editor} from "./entity/Editor";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
+import {expect} from "chai";
+
 
 describe("relations > eager relations > basic", () => {
 
@@ -57,38 +64,17 @@ describe("relations > eager relations > basic", () => {
         await connection.manager.save(editor);
     }
 
-    it("should load all eager relations when object is loaded", () => Promise.all(connections.map(async connection => {
-        await prepareData(connection);
+    it("should load all eager relations when object is loaded",
+        () => Promise.all(connections.map(async connection => {
+            await prepareData(connection);
 
-        const loadedPost = await connection.manager.findOneById(Post, 1);
-        loadedPost!.should.be.eql({
-            id: 1,
-            title: "about eager relations",
-            primaryCategories: [{
+            const loadedPost = await connection.manager.findOneById(Post, 1);
+            console.info(loadedPost);
+
+            expect(equals(loadedPost, {
                 id: 1,
-                name: "primary category #1"
-            }, {
-                id: 2,
-                name: "primary category #2"
-            }],
-            secondaryCategories: [{
-                id: 3,
-                name: "secondary category #1"
-            }, {
-                id: 4,
-                name: "secondary category #2"
-            }],
-            author: {
-                id: 1,
-                firstName: "Timber",
-                lastName: "Saw",
-                profile: {
-                    id: 1,
-                    about: "I cut trees!"
-                }
-            },
-            editors: [{
-                user: {
+                title: "about eager relations",
+                author: {
                     id: 1,
                     firstName: "Timber",
                     lastName: "Saw",
@@ -96,18 +82,45 @@ describe("relations > eager relations > basic", () => {
                         id: 1,
                         about: "I cut trees!"
                     }
-                }
-            }]
-        });
-
-    })));
+                },
+                editors: [{
+                    user: {
+                        id: 1,
+                        firstName: "Timber",
+                        lastName: "Saw",
+                        profile: {
+                            id: 1,
+                            about: "I cut trees!"
+                        }
+                    }
+                }],
+                primaryCategories: [
+                    {
+                        id: 1,
+                        name: "primary category #1"
+                    },
+                    {
+                        id: 2,
+                        name: "primary category #2"
+                    }],
+                secondaryCategories: [
+                    {
+                        id: 3,
+                        name: "secondary category #1"
+                    },
+                    {
+                        id: 4,
+                        name: "secondary category #2"
+                    }]
+            })).to.be.true;
+        })));
 
     it("should not load eager relations when query builder is used", () => Promise.all(connections.map(async connection => {
         await prepareData(connection);
 
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         loadedPost!.should.be.eql({

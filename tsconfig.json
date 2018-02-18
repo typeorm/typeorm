@@ -1,5 +1,5 @@
 {
-    "version": "2.1.1",
+    "version": "2.6.1",
     "compilerOptions": {
         "lib": ["es5", "es6"],
         "outDir": "build/compiled",

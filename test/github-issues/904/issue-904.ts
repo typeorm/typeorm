@@ -1,7 +1,13 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    equals,
+    reloadTestingDatabases
+} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Category} from "./entity/Category";
+import {expect} from "chai";
 
 describe("github issues > #904 Using closure tables without @TreeLevelColumn will always fail on insert", () => {
 
@@ -61,7 +67,7 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
 
         const c1Tree = await categoryRepository.findDescendantsTree(c1);
         c1Tree.should.be.equal(c1);
-        c1Tree!.should.be.eql({
+        expect(equals(c1Tree, {
             id: 3,
             name: "c1",
             childCategories: [{
@@ -73,7 +79,7 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
                 name: "c12",
                 childCategories: []
             }]
-        });
+        })).to.be.true;
 
     })));
 
@@ -124,7 +130,7 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
 
         const c1Tree = await categoryRepository.findDescendantsTree(c1);
         c1Tree.should.be.equal(c1);
-        c1Tree!.should.be.eql({
+        expect(equals(c1Tree, {
             id: 3,
             name: "c1",
             childCategories: [{
@@ -136,7 +142,7 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
                 name: "c12",
                 childCategories: []
             }]
-        });
+        })).to.be.true;
 
     })));
 
@@ -168,35 +174,31 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
         await categoryRepository.save(c1);
 
         const tree = await categoryRepository.findTrees();
-        tree!.should.be.eql(
-            [
-                {
-                    id: 1,
-                    name: "a1",
+        expect(equals(tree, [
+            {
+                id: 1,
+                name: "a1",
+                childCategories: []
+            },
+            {
+                id: 2,
+                name: "b1",
+                childCategories: []
+            },
+            {
+                id: 3,
+                name: "c1",
+                childCategories: [{
+                    id: 4,
+                    name: "c11",
                     childCategories: []
-                },
-                {
-                    id: 2,
-                    name: "b1",
+                }, {
+                    id: 5,
+                    name: "c12",
                     childCategories: []
-                },
-                {
-                    id: 3,
-                    name: "c1",
-                    childCategories: [{
-                        id: 4,
-                        name: "c11",
-                        childCategories: []
-                    }, {
-                        id: 5,
-                        name: "c12",
-                        childCategories: []
-                    }]
-                }
-            ]);
+                }]
+            }
+        ])).to.be.true;
 
     })));
-
-
-
 });

@@ -245,7 +245,7 @@ export class AbstractSqliteDriver implements Driver {
             return value;
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
-            value = value ? true : false;
+            value = !!value;
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             value = DateUtils.normalizeHydratedDate(value);

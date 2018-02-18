@@ -327,7 +327,7 @@ export class PostgresDriver implements Driver {
             return value;
 
         if (columnMetadata.type === Boolean) {
-            value = value ? true : false;
+            value = !!value;
 
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === Date

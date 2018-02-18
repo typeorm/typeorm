@@ -215,8 +215,8 @@ export async function createTestingConnections(options?: TestingOptions): Promis
 /**
  * Closes testing connections if they are connected.
  */
-export function closeTestingConnections(connections: Connection[]) {
-    return Promise.all((connections || []).map(connection => connection.isConnected ? connection.close() : undefined));
+export function closeTestingConnections(connections: Connection[] = []) {
+    return Promise.all((connections).map(connection => connection.isConnected ? connection.close() : undefined));
 }
 
 /**
@@ -243,4 +243,52 @@ export function sleep(ms: number): Promise<void> {
     return new Promise<void>(ok => {
         setTimeout(ok, ms);
     });
+}
+
+/**
+ * сравнивает два объекта с учетом вложенностей
+ * @param {Array|Object} obj1
+ * @param {Array|Object} obj2
+ * @param {Boolean} [u=false] строгое соответствие (с приведением типов)
+ * @return {Boolean} <dd>false</dd> if not equals
+ * @member window
+ */
+export function equals(obj1: any, obj2: any, u: boolean = false) {
+    const excluded = ["$$hashKey"];
+
+    if (obj1 && obj2) {
+        if ((obj1.self && obj1.self.$isClass) || (obj2.self && obj2.self.$isClass))
+            throw new Error("Функция не предусмотрена для сравнения объектов от классов.");
+
+        let cnt1 = 0, cnt2 = 0;
+        for (let io in obj1) {
+            if (!obj1.hasOwnProperty(io)) continue;
+            if (excluded.indexOf(io) > -1) continue;
+            cnt1++;
+        }
+        for (let io in obj2) {
+            if (!obj2.hasOwnProperty(io)) continue;
+            if (excluded.indexOf(io) > -1) continue;
+            cnt2++;
+        }
+        if (cnt1 != cnt2) return false;
+    }
+
+    for (let io in obj1) {
+        if (!obj1.hasOwnProperty(io)) continue;
+        if (excluded.indexOf(io) > -1) continue;
+        if (u && typeof obj1[io] !== typeof obj2[io]) return false;
+        if (typeof (obj1[io]) == "function") {
+            if (obj1[io].toString() != obj2[io].toString()) return false;
+        } else if (obj1[io] instanceof Date) {
+            if ((new Date(obj1[io])).valueOf() !== (new Date(obj2[io])).valueOf()) return false;
+        } else if (typeof obj1[io] == "object") {
+            if (!equals(obj1[io], obj2[io])) return false;
+        } else if (!(u
+            ? (obj1[io] === obj2[io])
+            : (obj1[io] == obj2[io]))) {
+            return false;
+        }
+    }
+    return true;
 }
