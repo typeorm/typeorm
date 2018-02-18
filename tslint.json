@@ -25,7 +25,7 @@
         ],
         "semicolon": true,
         "triple-equals": [
-            true,
+            false,
             "allow-null-check"
         ],
         "typedef-whitespace": [
