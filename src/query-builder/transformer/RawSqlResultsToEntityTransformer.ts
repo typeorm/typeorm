@@ -94,20 +94,31 @@ export class RawSqlResultsToEntityTransformer {
     // get value from columns selections and put them into object
     protected transformColumns(rawResults: any[], alias: Alias, entity: ObjectLiteral, metadata: EntityMetadata): boolean {
         let hasData = false;
-        metadata.columns.forEach(column => {
-            const value = rawResults[0][alias.name + "_" + column.databaseName];
-            if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
-                return;
+        if (this.expressionMap.selects.find(function (select) { return select.selection === alias.name + ".*" })) {
+            metadata.columns.forEach(column => {
+                var value = rawResults[0][column.databaseName];
+                if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
+                    return;
+                column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
+                if (value !== null)
+                    hasData = true;
+            });
+        } else {
+            metadata.columns.forEach(column => {
+                const value = rawResults[0][alias.name + "_" + column.databaseName];
+                if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
+                    return;
 
-            // if user does not selected the whole entity or he used partial selection and does not select this particular column
-            // then we don't add this column and its value into the entity
-            if (!this.expressionMap.selects.find(select => select.selection === alias.name || select.selection === alias.name + "." + column.propertyName))
-                return;
+                // if user does not selected the whole entity or he used partial selection and does not select this particular column
+                // then we don't add this column and its value into the entity
+                if (!this.expressionMap.selects.find(select => select.selection === alias.name || select.selection === alias.name + "." + column.propertyName))
+                    return;
 
-            column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
-            if (value !== null) // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
-                hasData = true;
-        });
+                column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
+                if (value !== null) // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
+                    hasData = true;
+            });
+        }
 
         if (alias.metadata.parentEntityMetadata) {
             alias.metadata.parentEntityMetadata.columns.forEach(column => {
