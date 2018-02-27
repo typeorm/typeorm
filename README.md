@@ -988,7 +988,8 @@ export class Photo {
     @OneToOne(type => PhotoMetadata, metadata => metadata.photo, {
         cascadeInsert: true,
         cascadeUpdate: true,
-        cascadeRemove: true
+        cascadeRemove: true,
+        orphanedRowAction: OrphanedRowAction.Nullify
     })
     metadata: PhotoMetadata;
 }
@@ -998,6 +999,7 @@ export class Photo {
     This means that we don't need to manually insert a newly created `photoMetadata` object.
 * **cascadeUpdate** - automatically update metadata in the relation if something is changed in this object.
 * **cascadeRemove** - automatically remove metadata from its table if you removed metadata from photo object.
+* **orphanedRowAction** - specify how to handle removal of rows from its parent - nullify foreign key (default), or delete
 
 Using `cascadeInsert` allows us to not have to separately save photo and metadata objects now. 
 Now we can simply save a photo object, and the metadata object will be saved automatically because of cascade options.

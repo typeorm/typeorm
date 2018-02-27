@@ -7,6 +7,12 @@ import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {OnDeleteType} from "./types/OnDeleteType";
 import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
+import { OrphanedRowAction } from "../decorator/options/OrphanedRowAction";
+
+/**
+ * By default, any rows orphaned in a relationship will have their foreign key set to null.
+ */
+const DEFAULT_ORPHANED_ROW_ACTION = OrphanedRowAction.Nullify;
 
 /**
  * Contains all information about some entity's relation.
@@ -231,6 +237,11 @@ export class RelationMetadata {
      */
     inverseJoinColumns: ColumnMetadata[] = [];
 
+    /**
+     * When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
+     */
+    orphanedRowAction: OrphanedRowAction;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -258,6 +269,7 @@ export class RelationMetadata {
         this.onDelete = args.options.onDelete;
         this.isPrimary = args.options.primary || false;
         this.isEager = args.options.eager || false;
+        this.orphanedRowAction = args.options.orphanedRowAction || DEFAULT_ORPHANED_ROW_ACTION;
         this.isTreeParent = args.isTreeParent || false;
         this.isTreeChildren = args.isTreeChildren || false;
         this.type = args.type instanceof Function ? (args.type as () => any)() : args.type;
