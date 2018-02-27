@@ -1,4 +1,5 @@
 import {OnDeleteType} from "../../metadata/types/OnDeleteType";
+import { OrphanedRowAction } from "./OrphanedRowAction";
 
 // todo: add ON_UPDATE
 
@@ -57,5 +58,10 @@ export interface RelationOptions {
      * Eager flag cannot be set from both sides of relation - you can eager load only one side of the relationship.
      */
     eager?: boolean;
+
+    /**
+     * When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
+     */
+    orphanedRowAction?: OrphanedRowAction;
 
 }

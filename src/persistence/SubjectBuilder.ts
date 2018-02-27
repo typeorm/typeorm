@@ -5,6 +5,7 @@ import {Subject} from "./Subject";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {OrmUtils} from "../util/OrmUtils";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import {OrphanedRowAction} from "../decorator/options/OrphanedRowAction";
 
 /**
  * To be able to execute persistence operations we need to load all entities from the database we need.
@@ -727,10 +728,14 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         // reference to this entity from inverse side (from loaded database entity)
                         // this applies only on one-to-many relationship
                         } else if (relation.isOneToMany && relation.inverseRelation) {
-                            relatedEntitySubject.relationUpdates.push({
-                                relation: relation.inverseRelation,
-                                value: null
-                            }); // todo: implement same for one-to-one
+                            if (relation.inverseRelation.orphanedRowAction === OrphanedRowAction.Delete) {
+                                relatedEntitySubject.mustBeRemoved = true;
+                            } else {
+                                relatedEntitySubject.relationUpdates.push({
+                                    relation: relation.inverseRelation,
+                                    value: null
+                                }); // todo: implement same for one-to-one
+                            }
                         }
 
                     }

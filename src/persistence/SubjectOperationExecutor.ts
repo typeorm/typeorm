@@ -795,6 +795,7 @@ export class SubjectOperationExecutor {
      */
     private async updateRelations(subject: Subject) {
         const values: ObjectLiteral = {};
+
         subject.relationUpdates.forEach(setRelation => {
             setRelation.relation.joinColumns.forEach(joinColumn => {
                 const value = setRelation.value ? setRelation.value[joinColumn.referencedColumn!.propertyName] : null;
