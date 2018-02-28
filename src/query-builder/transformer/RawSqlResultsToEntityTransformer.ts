@@ -47,20 +47,24 @@ export class RawSqlResultsToEntityTransformer {
      * Groups given raw results by ids of given alias.
      */
     protected group(rawResults: any[], alias: Alias): any[][] {
-        const groupedResults: { id: any, items: any[] }[] = [];
+        const groupedResults: { [key: string]: { id: any, items: any[] } } = {};
         rawResults.forEach(rawResult => {
             const id = alias.metadata.primaryColumns.map(column => rawResult[alias.name + "_" + column.databaseName]).join("_"); // todo: check partial
             if (!id) return;
 
-            let group = groupedResults.find(groupedResult => groupedResult.id === id);
-            if (!group) {
+            let group: { id: any, items: any[] };
+            if (id in groupedResults) {
+                group = groupedResults[id];
+            } else {
                 group = { id: id, items: [] };
-                groupedResults.push(group);
             }
 
             group.items.push(rawResult);
         });
-        return groupedResults.map(group => group.items);
+
+        return Object.keys(groupedResults).map(function(key, index) {
+            return groupedResults[key].items;
+         });
     }
 
     /**
