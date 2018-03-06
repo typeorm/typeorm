@@ -574,7 +574,12 @@ export class SqlServerDriver implements Driver {
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
         return new Promise<void>((ok, fail) => {
-            const connection = new this.mssql.ConnectionPool(connectionOptions).connect((err: any) => {
+            const pool = new this.mssql.ConnectionPool(connectionOptions);
+
+            const { logger } = this.connection;
+            pool.on("error", (error: any) => logger.log("warn", `MSSQL pool raised an error. ${error}`));
+
+            const connection = pool.connect((err: any) => {
                 if (err) return fail(err);
                 ok(connection);
             });

@@ -459,12 +459,12 @@ export class MysqlDriver implements Driver {
         return new Promise<any>((ok, fail) => {
             if (this.poolCluster) {
                 this.poolCluster.getConnection("MASTER", (err: any, dbConnection: any) => {
-                    err ? fail(err) : ok(dbConnection);
+                    err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
                 });
 
             } else if (this.pool) {
                 this.pool.getConnection((err: any, dbConnection: any) => {
-                    err ? fail(err) : ok(dbConnection);
+                    err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
                 });
             } else {
                 fail(new Error(`Connection is not established with mysql database`));
@@ -559,6 +559,15 @@ export class MysqlDriver implements Driver {
                 ok(pool);
             });
         });
+    }
+
+    /**
+     * Attaches all required base handlers to a database connection, such as the unhandled error handler.
+     */
+    private prepareDbConnection(connection: any): any {
+        const { logger } = this.connection;
+        connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));
+        return connection;
     }
 
 }

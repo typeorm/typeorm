@@ -637,6 +637,8 @@ export class PostgresDriver implements Driver {
 
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions);
+        const { logger } = this.connection;
+        pool.on("error", (error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
 
         return new Promise((ok, fail) => {
             pool.connect((err: any, connection: any, release: Function) => {
