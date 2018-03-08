@@ -855,6 +855,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * calling this function will override previously set ORDER BY conditions.
      */
     orderBy(sort?: string|OrderByCondition, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
+        if (order !== undefined && order !== "ASC" && order !== "DESC")
+            throw new Error(`SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`);
+        if (nulls !== undefined && nulls !== "NULLS FIRST" && nulls !== "NULLS LAST")
+            throw new Error(`SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`);
+
         if (sort) {
             if (sort instanceof Object) {
                 this.expressionMap.orderBys = sort as OrderByCondition;
@@ -875,6 +880,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds ORDER BY condition in the query builder.
      */
     addOrderBy(sort: string, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
+        if (order !== undefined && order !== "ASC" && order !== "DESC")
+            throw new Error(`SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`);
+        if (nulls !== undefined && nulls !== "NULLS FIRST" && nulls !== "NULLS LAST")
+            throw new Error(`SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`);
+
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls };
         } else {
@@ -890,7 +900,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * then use instead take method instead.
      */
     limit(limit?: number): this {
-        this.expressionMap.limit = limit;
+        this.expressionMap.limit = this.normalizeNumber(limit);
+        if (this.expressionMap.limit !== undefined && isNaN(this.expressionMap.limit))
+            throw new Error(`Provided "limit" value is not a number. Please provide a numeric value.`);
+
         return this;
     }
 
@@ -901,7 +914,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * then use instead skip method instead.
      */
     offset(offset?: number): this {
-        this.expressionMap.offset = offset;
+        this.expressionMap.offset = this.normalizeNumber(offset);
+        if (this.expressionMap.offset !== undefined && isNaN(this.expressionMap.offset))
+            throw new Error(`Provided "offset" value is not a number. Please provide a numeric value.`);
+
         return this;
     }
 
@@ -909,7 +925,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Sets maximal number of entities to take.
      */
     take(take?: number): this {
-        this.expressionMap.take = take;
+        this.expressionMap.take = this.normalizeNumber(take);
+        if (this.expressionMap.take !== undefined && isNaN(this.expressionMap.take))
+            throw new Error(`Provided "take" value is not a number. Please provide a numeric value.`);
+
         return this;
     }
 
@@ -917,7 +936,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Sets number of entities to skip.
      */
     skip(skip?: number): this {
-        this.expressionMap.skip = skip;
+        this.expressionMap.skip = this.normalizeNumber(skip);
+        if (this.expressionMap.skip !== undefined && isNaN(this.expressionMap.skip))
+            throw new Error(`Provided "skip" value is not a number. Please provide a numeric value.`);
+
         return this;
     }
 
@@ -1811,6 +1833,16 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected mergeExpressionMap(expressionMap: Partial<QueryExpressionMap>): this {
         Object.assign(this.expressionMap, expressionMap);
         return this;
+    }
+
+    /**
+     * Normalizes a give number - converts to int if possible.
+     */
+    protected normalizeNumber(num: any) {
+        if (typeof num === "number" || num === undefined || num === null)
+            return num;
+
+        return Number(num);
     }
 
     /**

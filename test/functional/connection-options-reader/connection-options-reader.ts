@@ -11,4 +11,13 @@ describe("ConnectionOptionsReader", () => {
     const entities: EntititesList = options.entities as EntititesList;
     expect(entities.length).to.equal(1);
   });
+
+  it("properly loads sqlite in-memory/path config", async () => {
+    const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/sqlite-memory" });
+    const inmemoryOptions: ConnectionOptions = await connectionOptionsReader.get("memory");
+    expect(inmemoryOptions.database).to.equal(":memory:");
+    const fileOptions: ConnectionOptions = await connectionOptionsReader.get("file");
+    expect(fileOptions.database).to.have.string("/test");
+  });
+
 });

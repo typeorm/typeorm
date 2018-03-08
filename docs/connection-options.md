@@ -9,7 +9,7 @@
 * [`cordova` connection options](#cordova-connection-options)
 * [`mssql` connection options](#mssql-connection-options)
 * [`mongodb` connection options](#mongodb-connection-options)
-* [`sql.js` connection options](#sql.js-connection-options)
+* [`sql.js` connection options](#sqljs-connection-options)
 * [Connection options example](#connection-options-example)
     
 ## What is `ConnectionOptions`

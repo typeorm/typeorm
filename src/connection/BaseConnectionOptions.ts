@@ -49,6 +49,12 @@ export interface BaseConnectionOptions {
     readonly migrations?: Function[]|string[];
 
     /**
+     * Migrations table name, in case of different name from "migrations".
+     * Accepts single string name.
+     */
+    readonly migrationsTableName?: string;
+
+    /**
      * Naming strategy to be used to name tables and columns in the database.
      */
     readonly namingStrategy?: NamingStrategyInterface;

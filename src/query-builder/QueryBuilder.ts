@@ -410,8 +410,9 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets or overrides query builder's QueryRunner.
      */
-    setQueryRunner(queryRunner: QueryRunner) {
+    setQueryRunner(queryRunner: QueryRunner): this {
         this.queryRunner = queryRunner;
+        return this;
     }
 
     // -------------------------------------------------------------------------
@@ -622,17 +623,21 @@ export abstract class QueryBuilder<Entity> {
         } else if (where instanceof Object) {
             if (this.expressionMap.mainAlias!.metadata) {
                 const propertyPaths = EntityMetadataUtils.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
-                propertyPaths.forEach((propertyPath, index) => {
-                    const parameterValue = EntityMetadataUtils.getPropertyPathValue((where as ObjectLiteral), propertyPath);
-                    const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : propertyPath;
-                    if (parameterValue === null) {
-                        ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
+                propertyPaths.forEach((propertyPath, propertyIndex) => {
+                    const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);
+                    columns.forEach((column, columnIndex) => {
 
-                    } else {
-                        const parameterName = "where_" + index;
-                        ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
-                        this.setParameter(parameterName, parameterValue);
-                    }
+                        let parameterValue = column.getEntityValue(where);
+                        const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
+                        if (parameterValue === null) {
+                            ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
+
+                        } else {
+                            const parameterName = "where_" + propertyIndex + "_" + columnIndex;
+                            ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
+                            this.setParameter(parameterName, parameterValue);
+                        }
+                    });
                 });
 
             } else {

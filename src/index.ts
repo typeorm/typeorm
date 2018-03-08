@@ -23,6 +23,7 @@ import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
 export * from "./container";
 export * from "./common/ObjectType";
 export * from "./common/ObjectLiteral";
+export * from "./common/DeepPartial";
 export * from "./error/QueryFailedError";
 export * from "./decorator/columns/Column";
 export * from "./decorator/columns/CreateDateColumn";

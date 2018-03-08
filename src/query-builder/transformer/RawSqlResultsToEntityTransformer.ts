@@ -34,9 +34,14 @@ export class RawSqlResultsToEntityTransformer {
      * we need to group our result and we must have some unique id (primary key in our case)
      */
     transform(rawResults: any[], alias: Alias): any[] {
-        return this.group(rawResults, alias)
-            .map(group => this.transformRawResultsGroup(group, alias))
-            .filter(res => !!res);
+        const group = this.group(rawResults, alias);
+        const entities: any[] = [];
+        group.forEach(results => {
+            const entity = this.transformRawResultsGroup(results, alias);
+            if (entity !== undefined)
+                entities.push(entity);
+        });
+        return entities;
     }
 
     // -------------------------------------------------------------------------
@@ -46,21 +51,21 @@ export class RawSqlResultsToEntityTransformer {
     /**
      * Groups given raw results by ids of given alias.
      */
-    protected group(rawResults: any[], alias: Alias): any[][] {
-        const groupedResults: { id: any, items: any[] }[] = [];
+    protected group(rawResults: any[], alias: Alias): Map<string, any[]> {
+        const map = new Map();
+        const keys = alias.metadata.primaryColumns.map(column => alias.name + "_" + column.databaseName);
         rawResults.forEach(rawResult => {
-            const id = alias.metadata.primaryColumns.map(column => rawResult[alias.name + "_" + column.databaseName]).join("_"); // todo: check partial
+            const id = keys.map(key => rawResult[key]).join("_"); // todo: check partial
             if (!id) return;
 
-            let group = groupedResults.find(groupedResult => groupedResult.id === id);
-            if (!group) {
-                group = { id: id, items: [] };
-                groupedResults.push(group);
+            const items = map.get(id);
+            if (!items) {
+                map.set(id, [rawResult]);
+            } else {
+                items.push(rawResult);
             }
-
-            group.items.push(rawResult);
         });
-        return groupedResults.map(group => group.items);
+        return map;
     }
 
     /**

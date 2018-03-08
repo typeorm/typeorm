@@ -144,7 +144,7 @@ export class ConnectionOptionsReader {
 
             // make database path file in sqlite relative to package.json
             if (options.type === "sqlite") {
-                if (typeof options.database === "string" && options.database.substr(0, 1) !== "/") {
+                if (typeof options.database === "string" && options.database.substr(0, 1) !== "/" && options.database !== ":memory:") {
                     Object.assign(options, {
                         database: this.baseDirectory + "/" + options.database
                     });

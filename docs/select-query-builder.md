@@ -808,7 +808,7 @@ Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` 
 
 If you want to select only some entity properties, you can use the following syntax:
 
-````typescript
+```typescript
 const users = await getRepository(User)
     .createQueryBuilder("user")
     .select([
@@ -816,7 +816,7 @@ const users = await getRepository(User)
         "user.name"
     ])
     .getMany();
-````
+```
 
 This will only select the `id` and `name` of `User`.
 

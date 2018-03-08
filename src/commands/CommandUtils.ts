@@ -36,4 +36,8 @@ export class CommandUtils {
         });
     }
 
+
+    static async fileExists(filePath: string) {
+        return fs.existsSync(filePath);
+    }
 }

@@ -535,6 +535,24 @@ export class EntityMetadata {
     }
 
     /**
+     * Finds columns with a given property path.
+     * Property path can match a relation, and relations can contain multiple columns.
+     */
+    findColumnsWithPropertyPath(propertyPath: string): ColumnMetadata[] {
+        const column = this.columns.find(column => column.propertyPath === propertyPath);
+        if (column)
+            return [column];
+
+        // in the case if column with property path was not found, try to find a relation with such property path
+        // if we find relation and it has a single join column then its the column user was seeking
+        const relation = this.relations.find(relation => relation.propertyPath === propertyPath);
+        if (relation && relation.joinColumns)
+            return relation.joinColumns;
+
+        return [];
+    }
+
+    /**
      * Finds column with a given database name.
      */
     findColumnWithDatabaseName(databaseName: string): ColumnMetadata|undefined {
