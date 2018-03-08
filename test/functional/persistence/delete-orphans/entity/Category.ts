@@ -3,7 +3,7 @@ import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/Prima
 import {Post} from "./Post";
 import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
 
-@Entity()
+@Entity("category", { schema: "something" })
 export class Category {
 
     @PrimaryGeneratedColumn()

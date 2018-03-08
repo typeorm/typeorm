@@ -6,7 +6,7 @@ import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
 import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
 import { OrphanedRowAction } from "../../../../../src/decorator/options/OrphanedRowAction";
 
-@Entity()
+@Entity("post", { schema: "something" })
 export class Post {
 
     @PrimaryGeneratedColumn()
