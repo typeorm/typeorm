@@ -2,16 +2,19 @@
 ///<reference path="node_modules/@types/chai/index.d.ts"/>
 ///<reference path="node_modules/@types/mocha/index.d.ts"/>
 
-import {Gulpclass, Task, SequenceTask, MergedTask} from "gulpclass";
+import {Gulpclass, MergedTask, SequenceTask, Task} from "gulpclass";
 
+// const glob = require("glob");
 const gulp = require("gulp");
 const del = require("del");
 const shell = require("gulp-shell");
 const replace = require("gulp-replace");
 const rename = require("gulp-rename");
 const file = require("gulp-file");
+// const path = require('path');
 const uglify = require("gulp-uglify");
 const mocha = require("gulp-mocha");
+// const mochaP = require("mocha-parallel-executor");
 const chai = require("chai");
 const tslint = require("gulp-tslint");
 const stylish = require("tslint-stylish");
@@ -334,6 +337,28 @@ export class Gulpfile {
     /**
      * Runs mocha tests.
      */
+    // TODO: parallel mocha run need complite (dcp is not defined for TS)
+    // @Task()
+    // runTests() {
+    //     chai.should();
+    //     chai.use(require("sinon-chai"));
+    //     chai.use(require("chai-as-promised"));
+    //
+    //     return glob("./build/compiled/test/**/!(entity)/*.js", (er: any, files: Array<String>) => {
+    //         files = files.reduce((r: Array<String>, f: String) => {
+    //             f = path.resolve(f);
+    //             console.log(f);
+    //             if (f.indexOf("/entity/") === -1 && f.indexOf('/test/utils/') === -1) r.push(f);
+    //             return r;
+    //         }, []);
+    //         console.info(files);
+    //         mochaP({
+    //             root: "./test",
+    //             timeout: 15000000,
+    //             files: files
+    //         });
+    //     });
+    // }
     @Task()
     runTests() {
         chai.should();

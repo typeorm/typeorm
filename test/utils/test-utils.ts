@@ -292,3 +292,24 @@ export function equals(obj1: any, obj2: any, u: boolean = false) {
     }
     return true;
 }
+
+// TODO: for parallellizm and multithreading
+//
+// export function isNode() {
+//     return typeof process === "object" && typeof window === "undefined" && typeof importScripts !== "function";
+// }
+//
+// export function determineThreads() {
+//     var max = 4;
+//     if (isNode() && typeof os !== "undefined") {
+//         max = os.cpus().length;
+//     } else if (typeof navigator !== "undefined") {
+//         if (typeof navigator.hardwareConcurrency !== "undefined") {
+//             max = navigator.hardwareConcurrency;
+//         }
+//         if (max > 20 && navigator.userAgent.toLowerCase().indexOf("firefox") !== -1) {
+//             max = 20;
+//         }
+//     }
+//     return max;
+// }
