@@ -204,7 +204,8 @@ export class MysqlDriver implements Driver {
             this.database = this.options.database;
         }
 
-        (new MysqlQueryRunner(this)).query("SET SESSION sql_mode = 'PIPES_AS_CONCAT'");
+        if (this.options.usePipesAsConcat)
+            (new MysqlQueryRunner(this)).query("SET SESSION sql_mode = 'PIPES_AS_CONCAT'");
     }
 
     /**

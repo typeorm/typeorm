@@ -58,6 +58,11 @@ export interface MysqlConnectionOptions extends BaseConnectionOptions, MysqlConn
     readonly dateStrings?: boolean|string[];
 
     /**
+     * If treu then will be executed `SET SESSION sql_mode = 'PIPES_AS_CONCAT'` for allow using CONCAT in SQL-queries.
+     */
+    readonly usePipesAsConcat?: boolean;
+
+    /**
      * Prints protocol details to stdout. Can be true/false or an array of packet type names that should be printed.
      * (Default: false)
      */
