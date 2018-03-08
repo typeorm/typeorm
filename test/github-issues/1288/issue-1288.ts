@@ -10,7 +10,10 @@ describe("github issues > #1288 check calculated columns (sql in @Column)", () =
     before(async () => {
         return connections = await createTestingConnections({
             enabledDrivers: ["mysql", "postgres", "mariadb", "mssql", "oracle", "websql"],
-            entities: [__dirname + "/entity/*{.js,.ts}"]
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            driverSpecific: {
+                usePipesAsConcat: true
+            }
         });
     });
     beforeEach(() => {
