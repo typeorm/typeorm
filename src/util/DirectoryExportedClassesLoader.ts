@@ -19,9 +19,10 @@ export function importClassesFromDirectories(directories: string[], formats = ["
         return allLoaded;
     }
 
-    const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(PlatformTools.load("glob").sync(PlatformTools.pathNormalize(dir)));
-    }, [] as string[]);
+    const glob = PlatformTools.load("glob"),
+        allFiles = directories.reduce((allDirs, dir) => {
+            return allDirs.concat(glob.sync(PlatformTools.pathNormalize(dir)));
+        }, [] as string[]);
 
     const dirs = allFiles
         .filter(file => {
