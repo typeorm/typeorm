@@ -51,7 +51,8 @@ export class ConnectionManager {
         const existConnection = this.connections.find(connection => connection.name === (options.name || "default"));
         if (existConnection) {
 
-            // if connection is registered and its not closed then throw an error
+            // if the connection is registered and it's not closed
+            // then just return found the connection for to be continued.
             if (existConnection.isConnected) {
                 console.warn("Someone requested a new connection.", options.name);
                 return existConnection;
