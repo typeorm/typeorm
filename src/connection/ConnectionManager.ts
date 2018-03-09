@@ -54,7 +54,8 @@ export class ConnectionManager {
             // if the connection is registered and it's not closed
             // then just return found the connection for to be continued.
             if (existConnection.isConnected) {
-                console.warn("Someone requested a new connection.", options.name);
+                if (options.logging)
+                    console.info("Someone requested a new connection without close previous -", options.name);
                 return existConnection;
             }
 

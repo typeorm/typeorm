@@ -130,7 +130,7 @@ export class Connection {
 
     /**
      * Gets a sql.js specific Entity Manager that allows to perform special load and save operations
-     * 
+     *
      * Available only in connection with the sqljs driver.
      */
     get sqljsManager(): SqljsEntityManager {
@@ -197,6 +197,9 @@ export class Connection {
      * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
      */
     async close(): Promise<void> {
+        if (this.options.logging)
+            console.info(this.name, " connection closing.");
+
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name);
 
@@ -416,7 +419,7 @@ export class Connection {
 
         return relationMetadata.junctionEntityMetadata;
     }
-    
+
     /**
      * Creates an Entity Manager for the current connection with the help of the EntityManagerFactory.
      */
