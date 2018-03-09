@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 
-describe("persistence > multi primary keys", () => {
+describe("persistence > multi primary keys on both sides", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -17,7 +17,7 @@ describe("persistence > multi primary keys", () => {
 
     describe("insert", function () {
 
-        it("should insert entity when when there are multi column primary keys", () => Promise.all(connections.map(async connection => {
+        it("should insert entity when when there are multi column primary keys", async () => await Promise.all(connections.map(async connection => {
             const post1 = new Post();
             post1.title = "Hello Post #1";
             post1.firstId = 1;

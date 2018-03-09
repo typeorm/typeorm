@@ -17,9 +17,12 @@ describe("persistence > many-to-many.", function() {
         enabledDrivers: ["mysql", "mariadb", "postgres", "mssql", "oracle", "websql", "sqlite"],
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchema: true
+        dropSchema: true,
+        driverSpecific: {
+            logging: ["info"]
+        }
     }));
-    beforeEach(() => reloadTestingDatabases(connections));
+    beforeEach(async () => await reloadTestingDatabases(connections));
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -64,6 +67,7 @@ describe("persistence > many-to-many.", function() {
             });
             connection.close();
 
+            expect(connection.isConnected).to.be.false;
             expect(loadedUser!).not.to.be.empty;
             expect(loadedUser!.post).not.to.be.empty;
             expect(loadedUser!.post.categories).not.to.be.empty;
