@@ -223,8 +223,8 @@ export function closeTestingConnections(connections: Connection[] = []) {
 /**
  * Reloads all databases for all given connections.
  */
-export function reloadTestingDatabases(connections: Connection[]) {
-    return Promise.all(connections.map(connection => connection.synchronize(true)));
+export async function reloadTestingDatabases(connections: Connection[]) {
+    return await Promise.all(connections.map(connection => connection.synchronize(true)));
 }
 
 /**
