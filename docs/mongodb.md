@@ -259,7 +259,7 @@ Drops all indexes from the collection.
 
 #### `findOneAndUpdate`
 
-Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
+Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
 
 #### `geoHaystackSearch`
 

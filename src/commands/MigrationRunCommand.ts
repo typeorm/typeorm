@@ -44,6 +44,8 @@ export class MigrationRunCommand {
 
             await connection.runMigrations();
             await connection.close();
+            // exit process if no errors
+            process.exit(0);
 
         } catch (err) {
             if (connection) await (connection as Connection).close();

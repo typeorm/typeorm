@@ -131,7 +131,7 @@ Learn more about [Subscribers](./listeners-and-subscribers.md).
 You can create a new migration using CLI:
 
 ```
-typeorm migration:create -n UserMigration
+typeorm migrations:create -n UserMigration
 ```
 
 where `UserMigration` is a migration file and class name. 
@@ -151,7 +151,7 @@ If you have a multi-module project structure with multiple migrations in differe
 you can provide a path to the CLI command where you want to generate a migration:
 
 ```
-typeorm migration:create -n UserMigration -d src/user/migration
+typeorm migrations:create -n UserMigration -d src/user/migration
 ```
 
 Learn more about [Migrations](./migrations.md).
@@ -162,7 +162,7 @@ Automatic migration generation creates a new migration file
 and writes all sql queries that must be executed to update the database.
 
 ```
-typeorm migration:generate -n UserMigration
+typeorm migrations:generate -n UserMigration
 ```
 
 The rule of thumb is to generate a migration after each entity change.

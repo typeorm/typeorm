@@ -42,6 +42,21 @@ and each database will have its own configuration, own entities and overall ORM 
 For each connection a new `Connection` instance will be created.
 You must specify a unique name for each connection you create.
 
+The connection options can also be loaded from an ormconfig file. You can load all connections from
+the ormconfig file:
+```typescript
+import {createConnections} from "typeorm";
+
+const connections = await createConnections();
+```
+
+or you can specify which connection to create by name:
+```typescript
+import {createConnection} from "typeorm";
+
+const connection = await createConnection("db2Connection");
+```
+
 When working with connections you must specify a connection name to get a specific connection:
 
 ```typescript

@@ -69,9 +69,12 @@ import {createConnection, Connection} from "typeorm";
 // here createConnection will load connection options from
 // ormconfig.json / ormconfig.js / ormconfig.yml / ormconfig.env / ormconfig.xml
 // files, or from special environment variables
-// if ormconfig contains multiple connections then it will load connection named "default" 
+// if ormconfig contains multiple connections and no `name` is specified, then it will load connection named "default" 
 // or connection without name at all (which means it will be named "default" by default)
 const connection: Connection = await createConnection();
+
+// or you can specify the name of the connection to create
+const secondConnection: Connection = await createConnection("test2-connection");
 
 // if createConnections is called instead of createConnection then 
 // it will initialize and return all connections defined in ormconfig file

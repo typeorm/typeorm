@@ -51,7 +51,6 @@ export class Broadcaster {
      */
     async broadcastBeforeInsertEvent(manager: EntityManager, subject: Subject): Promise<void> {
 
-        // console.log(subject.metadata.listeners);
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT && listener.isAllowed(subject.entity))
             .map(entityListener => entityListener.execute(subject.entity));
@@ -208,8 +207,15 @@ export class Broadcaster {
 
         // collect load events for all children entities that were loaded with the main entity
         const children = this.connection.getMetadata(target).relations.reduce((promises, relation) => {
-            if (!entity.hasOwnProperty(relation.propertyName))
-                return promises;
+
+            // in lazy relations we cannot simply access to entity property because it will cause a getter and a database query
+            if (relation.isLazy) {
+                if (!entity.hasOwnProperty(relation.propertyName))
+                    return promises;
+            } else {
+                if (entity[relation.propertyName] === null || entity[relation.propertyName] === undefined)
+                    return promises;
+            }
 
             const value = relation.getEntityValue(entity);
             if (value instanceof Array) {

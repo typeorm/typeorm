@@ -472,6 +472,8 @@ export class PostgresDriver implements Driver {
      * Normalizes "default" value of the column.
      */
     normalizeDefault(column: ColumnMetadata): string {
+        const arrayCast = column.isArray ? `::${column.type}[]` : "";
+
         if (typeof column.default === "number") {
             return "" + column.default;
 
@@ -482,7 +484,7 @@ export class PostgresDriver implements Driver {
             return column.default();
 
         } else if (typeof column.default === "string") {
-            return `'${column.default}'`;
+            return `'${column.default}'${arrayCast}`;
 
         } else if (typeof column.default === "object") {
             return `'${JSON.stringify(column.default)}'`;
@@ -610,7 +612,7 @@ export class PostgresDriver implements Driver {
             try {
                 const pgNative = PlatformTools.load("pg-native");
                 if (pgNative && this.postgres.native) this.postgres = this.postgres.native;
-                
+
             } catch (e) { }
 
         } catch (e) { // todo: better error for browser env
@@ -637,6 +639,12 @@ export class PostgresDriver implements Driver {
 
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions);
+        const { logger } = this.connection;
+        /*
+          Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
+          cause the hosting app to crash.
+         */
+        pool.on("error", (error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
 
         return new Promise((ok, fail) => {
             pool.connect((err: any, connection: any, release: Function) => {
