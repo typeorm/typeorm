@@ -151,7 +151,12 @@ export class Connection {
      * but it also can setup a connection pool with database to use.
      */
     async connect(): Promise<this> {
-        if (this.isConnected) return this;
+        if (this.isConnected) {
+            if (this.options.logging)
+                console.info("Someone try connect without close exist", this.options.type, this.options.name);
+            //throw new AlreadyHasActiveConnectionError(this.name);
+            return this;
+        }
 
         // connect to the database via its driver
         await this.driver.connect();

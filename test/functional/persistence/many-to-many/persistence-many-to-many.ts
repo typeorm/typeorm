@@ -65,7 +65,7 @@ describe("persistence > many-to-many.", function() {
                     leftJoinAndSelect: {post: "user.post", categories: "post.categories"}
                 }
             });
-            connection.close();
+            await connection.close();
 
             expect(connection.isConnected).to.be.false;
             expect(loadedUser!).not.to.be.empty;

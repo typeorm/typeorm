@@ -7,6 +7,7 @@ import {
     NamingStrategyInterface
 } from "../../src";
 import * as path from "path";
+import {RandomGenerator} from "../../src/util/RandomGenerator";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -124,7 +125,7 @@ export interface TestingOptions {
 export function setupSingleTestingConnection(driverType: DatabaseType, options: TestingOptions): ConnectionOptions {
 
     const testingConnections = setupTestingConnections({
-        name: options.name ? options.name : undefined,
+        name: options.name ? options.name : RandomGenerator.uuid4(),
         entities: options.entities ? options.entities : [],
         subscribers: options.subscribers ? options.subscribers : [],
         entitySchemas: options.entitySchemas ? options.entitySchemas : [],
@@ -183,7 +184,7 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
         })
         .map(connectionOptions => {
             let newOptions: any = Object.assign({}, connectionOptions as ConnectionOptions, {
-                name: options && options.name ? options.name : connectionOptions.name,
+                name: (options && options.name ? options.name : connectionOptions.name) || RandomGenerator.uuid4(),
                 entities: options && options.entities ? options.entities : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
                 entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
@@ -216,7 +217,7 @@ export async function createTestingConnections(options?: TestingOptions): Promis
  * Closes testing connections if they are connected.
  */
 export function closeTestingConnections(connections: Connection[] = []) {
-    return Promise.all((connections).map(connection => connection.isConnected ? connection.close() : undefined));
+    return (connections).map(async connection => connection.isConnected ? await connection.close() : undefined);
 }
 
 /**
@@ -246,19 +247,18 @@ export function sleep(ms: number): Promise<void> {
 }
 
 /**
- * сравнивает два объекта с учетом вложенностей
+ * recursive compare ovjects
  * @param {Array|Object} obj1
  * @param {Array|Object} obj2
- * @param {Boolean} [u=false] строгое соответствие (с приведением типов)
+ * @param {Boolean} [u=false] strongly equal (with type casting)
  * @return {Boolean} <dd>false</dd> if not equals
- * @member window
  */
 export function equals(obj1: any, obj2: any, u: boolean = false) {
     const excluded = ["$$hashKey"];
 
     if (obj1 && obj2) {
         if ((obj1.self && obj1.self.$isClass) || (obj2.self && obj2.self.$isClass))
-            throw new Error("Функция не предусмотрена для сравнения объектов от классов.");
+            throw new Error("This function does not apply to compare classes.");
 
         let cnt1 = 0, cnt2 = 0;
         for (let io in obj1) {
@@ -280,11 +280,14 @@ export function equals(obj1: any, obj2: any, u: boolean = false) {
         if (u && typeof obj1[io] !== typeof obj2[io]) return false;
         if (typeof (obj1[io]) == "function") {
             if (obj1[io].toString() != obj2[io].toString()) return false;
-        } else if (obj1[io] instanceof Date) {
+        }
+        else if (obj1[io] instanceof Date) {
             if ((new Date(obj1[io])).valueOf() !== (new Date(obj2[io])).valueOf()) return false;
-        } else if (typeof obj1[io] == "object") {
+        }
+        else if (typeof obj1[io] == "object") {
             if (!equals(obj1[io], obj2[io])) return false;
-        } else if (!(u
+        }
+        else if (!(u
             ? (obj1[io] === obj2[io])
             : (obj1[io] == obj2[io]))) {
             return false;

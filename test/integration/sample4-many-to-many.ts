@@ -24,7 +24,7 @@ describe("many-to-many", function() {
         }));
     });
 
-    after(() => connection.close());
+    after(async () => await connection.close());
 
     // clean up database before each test
     function reloadDatabase() {

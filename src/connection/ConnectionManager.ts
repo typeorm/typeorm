@@ -50,12 +50,12 @@ export class ConnectionManager {
         // check if such connection is already registered
         const existConnection = this.connections.find(connection => connection.name === (options.name || "default"));
         if (existConnection) {
-
             // if the connection is registered and it's not closed
             // then just return found the connection for to be continued.
             if (existConnection.isConnected) {
                 if (options.logging)
-                    console.info("Someone requested a new connection without close previous -", options.name);
+                    console.info("Someone requested a new connection without close previous -",
+                        options.type, options.name);
                 return existConnection;
             }
 

@@ -17,7 +17,7 @@ describe("persistence > custom-column-names", function() {
     before(async () => connection = (await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"]
     }))[0]);
-    after(() => connection.close());
+    after(async () => await connection.close());
 
     // clean up database before each test
     function reloadDatabase() {
