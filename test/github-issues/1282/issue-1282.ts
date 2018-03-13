@@ -16,13 +16,11 @@ describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumn
         entities: [__dirname + "/entity/*{.js,.ts}"],
         namingStrategy
     }));
-    beforeEach(async () => {
-        return await reloadTestingDatabases(connections);
-    });
+    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
 
-    it("NamingStrategyUnderTest#", () => Promise.all(connections.map(async connection => {
+    it("NamingStrategyUnderTest#", async () => await Promise.all(connections.map(async connection => {
 
         await connection.getRepository(Animal).find();
 
