@@ -154,7 +154,7 @@ export class Connection {
         if (this.isConnected) {
             if (this.options.logging)
                 console.info("Someone try connect without close exist", this.options.type, this.options.name);
-            //throw new AlreadyHasActiveConnectionError(this.name);
+            // throw new AlreadyHasActiveConnectionError(this.name);
             return this;
         }
 
