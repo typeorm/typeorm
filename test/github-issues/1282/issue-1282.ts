@@ -16,8 +16,8 @@ describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumn
         entities: [__dirname + "/entity/*{.js,.ts}"],
         namingStrategy
     }));
-    beforeEach(() => {
-        return reloadTestingDatabases(connections);
+    beforeEach(async () => {
+        return await reloadTestingDatabases(connections);
     });
     after(() => closeTestingConnections(connections));
 
