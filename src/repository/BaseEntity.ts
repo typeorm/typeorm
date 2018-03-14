@@ -51,6 +51,13 @@ export class BaseEntity {
         return (this.constructor as any).getRepository().remove(this);
     }
 
+    /**
+     * Reloads current entity into the latest state of the record from the database
+     */
+    reload(): Promise<void> {
+        return (this.constructor as any).getRepository().reload(this); 
+    }
+
     // -------------------------------------------------------------------------
     // Public Static Methods
     // -------------------------------------------------------------------------

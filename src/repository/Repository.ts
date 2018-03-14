@@ -345,5 +345,20 @@ export class Repository<Entity extends ObjectLiteral> {
     async clear(): Promise<void> {
         return this.manager.clear(this.metadata.target);
     }
-
+    
+    /**
+     * Reloads the supplied entity into the latest state of the record from the database
+     */
+    reload(entity: Entity): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            const newEntity = await this.findOneById(entity.id);
+            
+            if (!newEntity) {
+                reject("An error ocurred while reloading entity");
+            }
+            
+            Object.assign(entity, newEntity);
+            resolve();
+        });
+    }
 }
