@@ -187,13 +187,15 @@ describe("Connection", () => {
 
         let connections: Connection[];
         before(async () => connections = await createTestingConnections({
-            entities: [Post]
+            entities: [Post],
+            driverSpecific: {
+                logging: ["schema"]
+            }
         }));
         after(() => closeTestingConnections(connections));
 
         it("should return sql log properly", () => Promise.all(connections.map(async connection => {
             await connection.driver.createSchemaBuilder().log();
-            // console.log(sql);
         })));
 
     });
