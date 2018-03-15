@@ -165,13 +165,22 @@ export class OneToManySubjectBuilder {
                 const removedRelatedEntitySubject = new Subject({
                     metadata: relation.inverseEntityMetadata,
                     parentSubject: subject,
-                    canBeUpdated: true,
                     identifier: removedRelatedEntityRelationId,
-                    changeMaps: [{
+                });
+
+                // in case the inverse relation is primary we cannot remove the relation by setting the
+                // foreign key field to null. Instead remove the entity.
+                if (relation.inverseRelation
+                && (relation.inverseRelation.isPrimary)) {
+                    removedRelatedEntitySubject.mustBeRemoved = true;
+                } else {
+                    removedRelatedEntitySubject.canBeUpdated = true;
+                    removedRelatedEntitySubject.changeMaps =  [{
                         relation: relation.inverseRelation!,
                         value: null
-                    }]
-                });
+                    }];
+                }
+
                 this.subjects.push(removedRelatedEntitySubject);
             });
     }
