@@ -19,6 +19,7 @@ import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
+import {ObjectInstantiator} from "../util/ObjectInstantiator";
 
 /**
  * Contains all entity metadata.
@@ -442,7 +443,7 @@ export class EntityMetadata {
 
         // if target is set to a function (e.g. class) that can be created then create it
         if (this.target instanceof Function)
-            return new (<any> this.target)();
+            return ObjectInstantiator.createInstanceWithoutConstructor(<any> this.target);
 
         // otherwise simply return a new empty object
         const newObject = {};
