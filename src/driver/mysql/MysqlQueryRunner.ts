@@ -290,18 +290,18 @@ export class MysqlQueryRunner implements QueryRunner {
         if (hasLevel) {
             await this.query(
                 `INSERT INTO \`${this.escapeTablePath(tablePath)}\`(\`ancestor\`, \`descendant\`, \`level\`) ` +
-                `SELECT \`ancestor\`, ${newEntityId}, \`level\` + 1 FROM \`${this.escapeTablePath(tablePath)}\` WHERE \`descendant\` = ${parentId} ` +
-                `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`
+                `SELECT \`ancestor\`, '${newEntityId}', \`level\` + 1 FROM \`${this.escapeTablePath(tablePath)}\` WHERE \`descendant\` = '${parentId}' ` +
+                `UNION ALL SELECT '${newEntityId}', '${newEntityId}', 1`
             );
         } else {
             await this.query(
                 `INSERT INTO \`${this.escapeTablePath(tablePath)}\`(\`ancestor\`, \`descendant\`) ` +
-                `SELECT \`ancestor\`, ${newEntityId} FROM \`${this.escapeTablePath(tablePath)}\` WHERE \`descendant\` = ${parentId} ` +
-                `UNION ALL SELECT ${newEntityId}, ${newEntityId}`
+                `SELECT \`ancestor\`, '${newEntityId}' FROM \`${this.escapeTablePath(tablePath)}\` WHERE \`descendant\` = '${parentId}' ` +
+                `UNION ALL SELECT '${newEntityId}', '${newEntityId}'`
             );
         }
         if (hasLevel) {
-            const results: ObjectLiteral[] = await this.query(`SELECT MAX(\`level\`) as \`level\` FROM \`${this.escapeTablePath(tablePath)}\` WHERE \`descendant\` = ${parentId}`);
+            const results: ObjectLiteral[] = await this.query(`SELECT MAX(\`level\`) as \`level\` FROM \`${this.escapeTablePath(tablePath)}\` WHERE \`descendant\` = '${parentId}'`);
             return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
         } else {
             return -1;
