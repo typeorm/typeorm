@@ -263,7 +263,6 @@ export class AbstractSqliteDriver implements Driver {
             return DateUtils.stringToSimpleArray(value);
 
         } else if (columnMetadata.type === "simple-object") {
-            return DateUtils.stringToSimpleObject(value);
 
             value = DateUtils.stringToSimpleArray(value);
 
