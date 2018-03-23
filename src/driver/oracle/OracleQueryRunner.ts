@@ -311,7 +311,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
                 upQueries.push(this.createIndexSql(table, index));
                 downQueries.push(this.dropIndexSql(index));
             });
@@ -406,7 +406,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         // rename index constraints
         newTable.indices.forEach(index => {
             // build new constraint name
-            const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames);
+            const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
             // build queries
             upQueries.push(`ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`);
@@ -589,7 +589,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     // build new constraint name
                     index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
                     index.columnNames.push(newColumn.name);
-                    const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
+                    const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
                     // build queries
                     upQueries.push(`ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`);
@@ -969,7 +969,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // new index may be passed without name. In this case we generate index name manually.
         if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
 
         const up = this.createIndexSql(table, index);
         const down = this.dropIndexSql(index);

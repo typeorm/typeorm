@@ -225,13 +225,13 @@ describe("query builder > relational query builder > set operation > one-to-one 
         expect(error).to.be.an.instanceof(Error);
 
         let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["image"] });
-        expect(loadedPost1!.image).to.be.undefined;
+        expect(loadedPost1!.image).to.be.null;
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["image"] });
         expect(loadedPost2!.image).to.be.null;
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["image"] });
-        expect(loadedPost3!.image).to.be.undefined;
+        expect(loadedPost3!.image).to.be.null;
     })));
 
 });

@@ -15,8 +15,6 @@ describe("persistence > one-to-one", function() {
     before(() => {
         return createTestingConnections({
             entities: [User, AccessToken],
-            schemaCreate: true,
-            dropSchema: true,
         }).then(all => connections = all);
     });
     after(() => closeTestingConnections(connections));
@@ -52,7 +50,7 @@ describe("persistence > one-to-one", function() {
 
     });
 
-    describe("doesnt allow the same relation to be used twice", function() {
+    describe("doesn't allow the same relation to be used twice", function() {
 
         it("should reject the saving attempt", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository(User);

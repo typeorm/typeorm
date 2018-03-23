@@ -184,10 +184,7 @@ export class PostgresDriver implements Driver {
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
-    dataTypeDefaults: DataTypeDefaults = {
-        "character varying": { length: 255 },
-        "varchar": { length: 255 }
-    };
+    dataTypeDefaults: DataTypeDefaults = {};
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -334,7 +331,7 @@ export class PostgresDriver implements Driver {
             || columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
-            return DateUtils.mixedDateToDate(value, true);
+            return DateUtils.mixedDateToDate(value);
 
         } else if (columnMetadata.type === "json" || columnMetadata.type === "jsonb") {
             return JSON.stringify(value);
@@ -556,7 +553,6 @@ export class PostgresDriver implements Driver {
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-
         if (column.length)
             return column.length.toString();
 
@@ -793,7 +789,7 @@ export class PostgresDriver implements Driver {
 
             // if we found something to compare with then do it, else skip it
             // use use case insensitive comparison to catch "MAX" vs "Max" case
-            if (metadataLength)
+            if (metadataLength !== null && metadataLength !== undefined)
                 return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
         }
 

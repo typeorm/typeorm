@@ -243,7 +243,7 @@ export async function createTestingConnections(options?: TestingOptions): Promis
                 });
 
             const schema = connection.driver.options.schema;
-            if (schema)
+            if (schema && schemaPaths.indexOf(schema) === -1)
                 schemaPaths.push(schema);
 
             await PromiseUtils.runInSequence(schemaPaths, schemaPath => queryRunner.createSchema(schemaPath, true));

@@ -25,6 +25,11 @@ export class TableIndex {
      */
     isUnique?: boolean;
 
+    /**
+     * Index filter condition.
+     */
+    where?: string;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -33,6 +38,7 @@ export class TableIndex {
         this.name = options.name;
         this.columnNames = options.columnNames;
         this.isUnique = options.isUnique;
+        this.where = options.where;
     }
 
     // -------------------------------------------------------------------------
@@ -46,7 +52,8 @@ export class TableIndex {
         return new TableIndex(<TableIndexOptions>{
             name: this.name,
             columnNames: [...this.columnNames],
-            isUnique: this.isUnique
+            isUnique: this.isUnique,
+            where: this.where
         });
     }
 
@@ -61,7 +68,8 @@ export class TableIndex {
         return new TableIndex(<TableIndexOptions>{
             name: indexMetadata.name,
             columnNames: indexMetadata.columns.map(column => column.databaseName),
-            isUnique: indexMetadata.isUnique
+            isUnique: indexMetadata.isUnique,
+            where: indexMetadata.where
         });
     }
 

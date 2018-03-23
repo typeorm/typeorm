@@ -22,4 +22,9 @@ export interface TableIndexOptions {
      */
     isUnique?: boolean;
 
+    /**
+     * Index filter condition.
+     */
+    where?: string;
+
 }

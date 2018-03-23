@@ -68,6 +68,11 @@ export class IndexMetadata {
     name: string;
 
     /**
+     * Index filter condition.
+     */
+    where?: string;
+
+    /**
      * Map of column names with order set.
      * Used only by MongoDB driver.
      */
@@ -92,6 +97,7 @@ export class IndexMetadata {
             this.target = options.args.target;
             this.synchronize = options.args.synchronize;
             this.isUnique = options.args.unique;
+            this.where = options.args.where;
             this.isSparse = options.args.sparse;
             this.givenName = options.args.name;
             this.givenColumnNames = options.args.columns;
@@ -157,7 +163,7 @@ export class IndexMetadata {
                 updatedMap[column.databaseName] = map[key];
             return updatedMap;
         }, {} as { [key: string]: number });
-        this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName));
+        this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName), this.where);
         return this;
     }
 

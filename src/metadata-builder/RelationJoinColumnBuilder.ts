@@ -4,6 +4,7 @@ import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 
 /**
  * Builds join column for the many-to-one and one-to-one owner relations.
@@ -69,16 +70,21 @@ export class RelationJoinColumnBuilder {
             onDelete: relation.onDelete,
         });
 
-        if (referencedColumns.length > 1 && relation.isOneToOne) {
-          const uniqueConstraint = new UniqueMetadata({
-              entityMetadata: relation.entityMetadata,
-              columns: foreignKey.columns,
-              args: {
-                  name: foreignKey.name,
-                  target: relation.entityMetadata.target,
-              }
-          });
-          return { foreignKey, uniqueConstraint };
+        // Oracle does not allow both primary and unique constraints on the same column
+        if (this.connection.driver instanceof OracleDriver && columns.every(column => column.isPrimary))
+            return { foreignKey, uniqueConstraint: undefined };
+
+        if (referencedColumns.length > 0 && relation.isOneToOne) {
+            const uniqueConstraint = new UniqueMetadata({
+                entityMetadata: relation.entityMetadata,
+                columns: foreignKey.columns,
+                args: {
+                    name: this.connection.namingStrategy.relationConstraintName(relation.entityMetadata.tablePath, foreignKey.columns.map(c => c.databaseName)),
+                    target: relation.entityMetadata.target,
+                }
+            });
+            uniqueConstraint.build(this.connection.namingStrategy);
+            return {foreignKey, uniqueConstraint};
         }
 
         return { foreignKey, uniqueConstraint: undefined };
@@ -141,8 +147,7 @@ export class RelationJoinColumnBuilder {
                             scale: referencedColumn.scale,
                             comment: referencedColumn.comment,
                             primary: relation.isPrimary,
-                            nullable: relation.isNullable,
-                            unique: relation.isOneToOne && referencedColumns.length === 1 ? true : false,
+                            nullable: relation.isNullable
                         }
                     }
                 });

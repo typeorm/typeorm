@@ -24,6 +24,11 @@ export interface IndexMetadataArgs {
     unique: boolean;
 
     /**
+     * Index filter condition.
+     */
+    where?: string;
+
+    /**
      * Indicates if index must sync with database index.
      */
     synchronize?: boolean;

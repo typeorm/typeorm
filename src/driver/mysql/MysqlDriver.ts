@@ -316,8 +316,8 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "json") {
             return JSON.stringify(value);
 
-        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToDate(value, true);
+        } else if (columnMetadata.type === "timestamp" || columnMetadata.type === "datetime" || columnMetadata.type === Date) {
+            return DateUtils.mixedDateToDate(value);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
@@ -683,7 +683,7 @@ export class MysqlDriver implements Driver {
 
             // if we found something to compare with then do it, else skip it
             // use use case insensitive comparison to catch "MAX" vs "Max" case
-            if (metadataLength)
+            if (metadataLength !== null && metadataLength !== undefined)
                 return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
         }
 

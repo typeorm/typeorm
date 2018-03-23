@@ -17,6 +17,7 @@ import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {UniqueMetadata} from "../metadata/UniqueMetadata";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {CheckMetadata} from "../metadata/CheckMetadata";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -115,7 +116,28 @@ export class EntityMetadataBuilder {
                         entityMetadata.foreignKeys.push(foreignKey);
                     }
                     if (uniqueConstraint) {
-                        entityMetadata.uniques.push(uniqueConstraint);
+                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof SqlServerDriver) {
+                            const index = new IndexMetadata({
+                                entityMetadata: uniqueConstraint.entityMetadata,
+                                columns: uniqueConstraint.columns,
+                                args: {
+                                    target: uniqueConstraint.target!,
+                                    name: uniqueConstraint.name,
+                                    unique: true,
+                                    synchronize: true
+                                }
+                            });
+
+                            if (this.connection.driver instanceof SqlServerDriver) {
+                                index.where = index.columns.map(column => {
+                                    return `${this.connection.driver.escape(column.databaseName)} IS NOT NULL`;
+                                }).join(" AND ");
+                            }
+
+                            entityMetadata.indices.push(index);
+                        } else {
+                            entityMetadata.uniques.push(uniqueConstraint);
+                        }
                     }
                 });
 

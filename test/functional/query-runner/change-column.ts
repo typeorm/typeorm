@@ -71,10 +71,6 @@ describe("query runner > change column", () => {
         table!.findColumnByName("text")!.isPrimary.should.be.false;
         expect(table!.findColumnByName("text")!.default).to.be.undefined;
 
-        // SQLite does not impose any length restrictions
-        if (!(connection.driver instanceof AbstractSqliteDriver))
-            table!.findColumnByName("name")!.length!.should.be.equal("255");
-
         await queryRunner.release();
     })));
 

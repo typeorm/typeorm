@@ -321,11 +321,11 @@ export class SqlServerDriver implements Driver {
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === "smalldatetime"
             || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToDate(value, true, false);
+            return DateUtils.mixedDateToDate(value, false, false);
 
         } else if (columnMetadata.type === "datetime2"
             || columnMetadata.type === "datetimeoffset") {
-            return DateUtils.mixedDateToDate(value, true, true);
+            return DateUtils.mixedDateToDate(value, false, true);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
@@ -702,7 +702,7 @@ export class SqlServerDriver implements Driver {
 
             // if we found something to compare with then do it, else skip it
             // use use case insensitive comparison to catch "MAX" vs "Max" case
-            if (metadataLength)
+            if (metadataLength !== null && metadataLength !== undefined)
                 return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
         }
 

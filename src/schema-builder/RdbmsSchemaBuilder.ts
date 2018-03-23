@@ -15,6 +15,7 @@ import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {TableUnique} from "./table/TableUnique";
+import {TableCheck} from "./table/TableCheck";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -125,6 +126,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
         await this.dropOldForeignKeys();
         await this.dropOldIndices();
+        await this.dropOldChecks();
         await this.dropCompositeUniqueConstraints();
         // await this.renameTables();
         await this.renameColumns();
@@ -133,6 +135,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.addNewColumns();
         await this.updateExistColumns();
         await this.createNewIndices();
+        await this.createNewChecks();
         await this.createCompositeUniqueConstraints();
         await this.createForeignKeys();
     }
@@ -149,7 +152,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // find foreign keys that exist in the schemas but does not exist in the entity metadata
             const tableForeignKeysToDrop = table.foreignKeys.filter(tableForeignKey => {
-                return !metadata.foreignKeys.find(metadataForeignKey => metadataForeignKey.name === tableForeignKey.name);
+                const metadataFK = metadata.foreignKeys.find(metadataForeignKey => metadataForeignKey.name === tableForeignKey.name);
+                return !metadataFK || metadataFK.onDelete !== tableForeignKey.onDelete || metadataFK.onUpdate !== tableForeignKey.onUpdate;
             });
             if (tableForeignKeysToDrop.length === 0)
                 return;
@@ -250,6 +254,28 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         });
     }
 
+    protected async dropOldChecks(): Promise<void> {
+        // Mysql does not support check constraints
+        if (this.connection.driver instanceof MysqlDriver)
+            return;
+
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            if (!table)
+                return;
+
+            const oldChecks = table.checks.filter(tableCheck => {
+                return !metadata.checks.find(checkMetadata => checkMetadata.name === tableCheck.name);
+            });
+
+            if (oldChecks.length === 0)
+                return;
+
+            this.connection.logger.logSchemaBuild(`dropping old check constraint: ${oldChecks.map(check => `"${check.name}"`).join(", ")} from table "${table.name}"`);
+            await this.queryRunner.dropCheckConstraints(table, oldChecks);
+        });
+    }
+
     protected async dropCompositeUniqueConstraints(): Promise<void> {
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
@@ -299,8 +325,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Drops all columns that exist in the table, but does not exist in the metadata (left old).
      * We drop their keys too, since it should be safe.
      */
-    protected dropRemovedColumns() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+    protected async dropRemovedColumns(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table) return;
 
@@ -322,8 +348,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Adds columns from metadata which does not exist in the table.
      * Columns are created without keys.
      */
-    protected addNewColumns() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+    protected async addNewColumns(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;
@@ -351,8 +377,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Update all exist columns which metadata has changed.
      * Still don't create keys. Also we don't touch foreign keys of the changed columns.
      */
-    protected updateExistColumns() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+    protected async updateExistColumns(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;
@@ -396,8 +422,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Creates composite indices which are missing in db yet.
      */
-    protected createNewIndices() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+    protected async createNewIndices(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;
@@ -409,16 +435,38 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (newIndices.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`adding new index: ${newIndices.map(index => `"${index.name}"`).join(", ")} in table "${table.name}"`);
+            this.connection.logger.logSchemaBuild(`adding new indices ${newIndices.map(index => `"${index.name}"`).join(", ")} in table "${table.name}"`);
             await this.queryRunner.createIndices(table, newIndices);
+        });
+    }
+
+    protected async createNewChecks(): Promise<void> {
+        // Mysql does not support check constraints
+        if (this.connection.driver instanceof MysqlDriver)
+            return;
+
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            if (!table)
+                return;
+
+            const newChecks = metadata.checks
+                .filter(checkMetadata => !table.checks.find(tableCheck => tableCheck.name === checkMetadata.name))
+                .map(checkMetadata => TableCheck.create(checkMetadata));
+
+            if (newChecks.length === 0)
+                return;
+
+            this.connection.logger.logSchemaBuild(`adding new check constraints: ${newChecks.map(index => `"${index.name}"`).join(", ")} in table "${table.name}"`);
+            await this.queryRunner.createCheckConstraints(table, newChecks);
         });
     }
 
     /**
      * Creates composite uniques which are missing in db yet.
      */
-    protected createCompositeUniqueConstraints() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+    protected async createCompositeUniqueConstraints(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;
@@ -430,7 +478,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (compositeUniques.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`adding new unique constraint: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} in table "${table.name}"`);
+            this.connection.logger.logSchemaBuild(`adding new unique constraints: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} in table "${table.name}"`);
             await this.queryRunner.createUniqueConstraints(table, compositeUniques);
         });
     }
@@ -438,8 +486,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Creates foreign keys which does not exist in the table yet.
      */
-    protected createForeignKeys() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+    protected async createForeignKeys(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;

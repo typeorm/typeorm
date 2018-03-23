@@ -2,6 +2,8 @@ import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {BaseEntity} from "../../../src/repository/BaseEntity";
+import {Bar} from "./entity/Bar";
+import {PromiseUtils} from "../../../src";
 
 describe("github issues > #1261 onDelete property on foreign key is not modified on sync", () => {
 
@@ -11,20 +13,23 @@ describe("github issues > #1261 onDelete property on foreign key is not modified
     }));
     after(() => closeTestingConnections(connections));
 
-    it("should order by added selects when pagination is used", () => Promise.all(connections.map(async connection => {
+    it("should modify onDelete property on foreign key on sync", () => PromiseUtils.runInSequence(connections, async connection => {
         await connection.synchronize();
         BaseEntity.useConnection(connection);
 
-        // const foo = new Foo();
-        // const bar = new Bar();
-        // bar.foo = foo;
-        // await foo.save();
-        // await bar.save();
-        // await foo.remove();
-        // const relation = connection.getMetadata(Bar).relations.find(relation => relation.propertyName === "foo");
-        // relation.onDelete = "SET NULL";
-        // await connection.synchronize();
+        const queryRunner = connection.createQueryRunner();
+        let table = await queryRunner.getTable("bar");
+        table!.foreignKeys[0].onDelete!.should.be.equal("SET NULL");
 
-    })));
+        const metadata = connection.getMetadata(Bar);
+        metadata.foreignKeys[0].onDelete = "CASCADE";
+        await connection.synchronize();
+
+        table = await queryRunner.getTable("bar");
+        table!.foreignKeys[0].onDelete!.should.be.equal("CASCADE");
+
+        await queryRunner.release();
+
+    }));
 
 });

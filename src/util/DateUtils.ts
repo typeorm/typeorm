@@ -24,17 +24,8 @@ export class DateUtils {
          * https://www.w3.org/TR/NOTE-datetime
          */
         const date = typeof mixedDate === "string" ? (!isNaN(new Date(mixedDate).getTime()) ? new Date(mixedDate) : new Date(mixedDate.replace(" ", "T") + "Z")) : mixedDate as Date;
-        // if (!storedInLocal) {
 
-        // else if it was not stored in local timezone, means it was stored in UTC
-        // because driver hydrates it with timezone applied why we need to add timezone hours to match a local timezone
-
-        const correctedDate = new Date();
-        correctedDate.setUTCFullYear(date.getFullYear(), date.getMonth(), date.getDate());
-        correctedDate.setUTCHours(date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds());
-        return correctedDate;
-        // }
-        // return date;
+        return date;
     }
 
     /**
@@ -129,7 +120,7 @@ export class DateUtils {
                 this.formatZerolessValue(value.getHours()) + ":" +
                 this.formatZerolessValue(value.getMinutes()) + ":" +
                 this.formatZerolessValue(value.getSeconds()) + "." +
-                this.formatMilliseconds(value.getUTCMilliseconds());
+                this.formatMilliseconds(value.getMilliseconds());
         }
 
         return value;
@@ -209,10 +200,13 @@ export class DateUtils {
      * Formats given number to "0x" format, e.g. if it is 1 then it will return "01".
      */
     private static formatMilliseconds(value: number): string {
-        if (value < 100)
+        if (value < 10) {
+            return "00" + value;
+        } else if (value < 100) {
             return "0" + value;
-
-        return String(value);
+        } else {
+            return String(value);
+        }
     }
 
 }

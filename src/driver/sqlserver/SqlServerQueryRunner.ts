@@ -469,7 +469,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
                 upQueries.push(this.createIndexSql(table, index));
                 downQueries.push(this.dropIndexSql(table, index));
             });
@@ -581,7 +581,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         // rename index constraints
         newTable.indices.forEach(index => {
             // build new constraint name
-            const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames);
+            const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
             // build queries
             upQueries.push(`EXEC sp_rename "${this.escapeTableName(newTable, true)}.${index.name}", "${newIndexName}", "INDEX"`);
@@ -783,7 +783,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     // build new constraint name
                     index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
                     index.columnNames.push(newColumn.name);
-                    const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
+                    const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
                     // build queries
                     upQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${index.name}", "${newIndexName}", "INDEX"`);
@@ -1188,7 +1188,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         // new index may be passed without name. In this case we generate index name manually.
         if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
 
         const up = this.createIndexSql(table, index);
         const down = this.dropIndexSql(table, index);
@@ -1398,7 +1398,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         const indicesSql = dbNames.map(dbName => {
             return `SELECT '${dbName}' AS "TABLE_CATALOG", "s"."name" AS "TABLE_SCHEMA", "t"."name" AS "TABLE_NAME", ` +
-                `"ind"."name" AS "INDEX_NAME", "col"."name" AS "COLUMN_NAME", "ind"."is_unique" AS "IS_UNIQUE" ` +
+                `"ind"."name" AS "INDEX_NAME", "col"."name" AS "COLUMN_NAME", "ind"."is_unique" AS "IS_UNIQUE", "ind"."filter_definition" as "CONDITION" ` +
                 `FROM "${dbName}"."sys"."indexes" "ind" ` +
                 `INNER JOIN "${dbName}"."sys"."index_columns" "ic" ON "ic"."object_id" = "ind"."object_id" AND "ic"."index_id" = "ind"."index_id" ` +
                 `INNER JOIN "${dbName}"."sys"."columns" "col" ON "col"."object_id" = "ic"."object_id" AND "col"."column_id" = "ic"."column_id" ` +
@@ -1436,7 +1436,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             // We do not need to join schema and database names, when db or schema is by default.
             // In this case we need local variable `tableFullName` for below comparision.
             const db = dbTable["TABLE_CATALOG"] === currentDatabase ? undefined : dbTable["TABLE_CATALOG"];
-            const schema = dbTable["TABLE_SCHEMA"] === currentSchema ? undefined : dbTable["TABLE_SCHEMA"];
+            const schema = dbTable["TABLE_SCHEMA"] === currentSchema && !this.driver.options.schema ? undefined : dbTable["TABLE_SCHEMA"];
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema, db);
             const tableFullName = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLE_SCHEMA"], dbTable["TABLE_CATALOG"]);
             const defaultCollation = dbCollations.find(dbCollation => dbCollation["NAME"] === dbTable["TABLE_CATALOG"])!;
@@ -1567,7 +1567,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     table: table,
                     name: constraint["INDEX_NAME"],
                     columnNames: indices.map(i => i["COLUMN_NAME"]),
-                    isUnique: constraint["IS_UNIQUE"]
+                    isUnique: constraint["IS_UNIQUE"],
+                    where: constraint["CONDITION"]
                 });
             });
 
@@ -1655,7 +1656,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     protected createIndexSql(table: Table, index: TableIndex): string {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTableName(table)}(${columns})`;
+        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTableName(table)}(${columns}) ${index.where ? "WHERE " + index.where : ""}`;
     }
 
     /**

@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.2.0-alpha.28",
+  "version": "0.2.0-alpha.29",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, WebSQL, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -101,7 +101,6 @@
     ]
   },
   "scripts": {
-    "precommit": "lint-staged",
     "test-ci": "gulp ci-tests",
     "test": "tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail './build/compiled/test/**/*.js' --timeout 30000 --color",
     "compile": "tsc",

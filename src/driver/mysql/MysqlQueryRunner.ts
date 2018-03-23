@@ -373,7 +373,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         newTable.indices.forEach(index => {
             // build new constraint name
             const columnNames = index.columnNames.map(column => `\`${column}\``).join(", ");
-            const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames);
+            const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
             // build queries
             upQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${index.name}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${newIndexName}\` (${columnNames})`);
@@ -553,7 +553,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
                     index.columnNames.push(newColumn.name);
                     const columnNames = index.columnNames.map(column => `\`${column}\``).join(", ");
-                    const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
+                    const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
                     // build queries
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${index.name}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${newIndexName}\` (${columnNames})`);
@@ -924,7 +924,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // new index may be passed without name. In this case we generate index name manually.
         if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
 
         const up = this.createIndexSql(table, index);
         const down = this.dropIndexSql(table, index);
@@ -1247,7 +1247,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const indicesSql = table.indices.map(index => {
                 const columnNames = index.columnNames.map(columnName => `\`${columnName}\``).join(", ");
                 if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
 
                 return `${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` (${columnNames})`;
             }).join(", ");

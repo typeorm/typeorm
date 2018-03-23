@@ -73,6 +73,7 @@ export function Index(nameOrFieldsOrOptions?: string|string[]|((object: any) => 
             name: name,
             columns: propertyName ? [propertyName] : fields,
             synchronize: options && (options as { synchronize: false }).synchronize === false ? false : true,
+            where: options ? options.where : undefined,
             unique: options && options.unique ? true : false,
             sparse: options && options.sparse ? true : false
         } as IndexMetadataArgs);

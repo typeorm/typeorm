@@ -47,6 +47,12 @@ export interface NamingStrategyInterface {
     uniqueConstraintName(tableOrName: Table|string, columnNames: string[]): string;
 
     /**
+     * Gets the relation constraint (UNIQUE or UNIQUE INDEX) name from the given table name, column names
+     * and WHERE condition, if UNIQUE INDEX used.
+     */
+    relationConstraintName(tableOrName: Table|string, columnNames: string[], where?: string): string;
+
+    /**
      * Gets the table's default constraint name from the given table name and column name.
      */
     defaultConstraintName(tableOrName: Table|string, columnName: string): string;
@@ -59,7 +65,7 @@ export interface NamingStrategyInterface {
     /**
      * Gets the name of the index - simple and compose index.
      */
-    indexName(tableOrName: Table|string, columns: string[]): string;
+    indexName(tableOrName: Table|string, columns: string[], where?: string): string;
 
     /**
      * Gets the name of the check constraint.

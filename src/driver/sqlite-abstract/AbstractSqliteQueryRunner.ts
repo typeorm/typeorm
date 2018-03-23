@@ -221,7 +221,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
                 upQueries.push(this.createIndexSql(table, index));
                 downQueries.push(this.dropIndexSql(index));
             });
@@ -286,7 +286,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         // rename indices
         newTable.indices.forEach(index => {
-            index.name = this.connection.namingStrategy.indexName(newTable, index.columnNames);
+            index.name = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
         });
 
         // recreate table with new constraint names
@@ -367,7 +367,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 changedTable.findColumnIndices(changedColumnSet.oldColumn).forEach(index => {
                     index.columnNames.splice(index.columnNames.indexOf(changedColumnSet.oldColumn.name), 1);
                     index.columnNames.push(changedColumnSet.newColumn.name);
-                    index.name = this.connection.namingStrategy.indexName(changedTable, index.columnNames);
+                    index.name = this.connection.namingStrategy.indexName(changedTable, index.columnNames, index.where);
                 });
             }
             const originalColumn = changedTable.columns.find(column => column.name === changedColumnSet.oldColumn.name);
@@ -589,7 +589,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         // new index may be passed without name. In this case we generate index name manually.
         if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
 
         const up = this.createIndexSql(table, index);
         const down = this.dropIndexSql(index);
@@ -673,8 +673,11 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         const tableNamesString = tableNames.map(tableName => `'${tableName}'`).join(", ");
 
-        // load tables, columns, indices and foreign keys
+        // load tables
         const dbTables: ObjectLiteral[] = await this.query(`SELECT * FROM "sqlite_master" WHERE "type" = 'table' AND "name" IN (${tableNamesString})`);
+
+        // load indices
+        const dbIndicesDef: ObjectLiteral[] = await this.query(`SELECT * FROM "sqlite_master" WHERE "type" = 'index' AND "tbl_name" IN (${tableNamesString})`);
 
         // if tables were not found in the db, no need to proceed
         if (!dbTables || !dbTables.length)
@@ -803,6 +806,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
                 .map(async dbIndexName => {
 
+                    const indexDef = dbIndicesDef.find(dbIndexDef => dbIndexDef["name"] === dbIndexName);
+                    const condition = /WHERE (.*)/.exec(indexDef!["sql"]);
                     const dbIndex = dbIndices.find(dbIndex => dbIndex["name"] === dbIndexName);
                     const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${dbIndex!["name"]}")`);
                     const indexColumns = indexInfos
@@ -814,7 +819,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                         table: table,
                         name: dbIndex!["name"],
                         columnNames: indexColumns,
-                        isUnique: isUnique
+                        isUnique: isUnique,
+                        where: condition ? condition[1] : undefined
                     });
                 });
             const indices = await Promise.all(indicesPromises);
@@ -911,7 +917,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      */
     protected createIndexSql(table: Table, index: TableIndex): string {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table.name}" (${columns})`;
+        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table.name}" (${columns}) ${index.where ? "WHERE " + index.where : ""}`;
     }
 
     /**
@@ -996,7 +1002,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         newTable.indices.forEach(index => {
             // new index may be passed without name. In this case we generate index name manually.
             if (!index.name)
-                index.name = this.connection.namingStrategy.indexName(newTable.name, index.columnNames);
+                index.name = this.connection.namingStrategy.indexName(newTable.name, index.columnNames, index.where);
             upQueries.push(this.createIndexSql(newTable, index));
             downQueries.push(this.dropIndexSql(index));
         });
