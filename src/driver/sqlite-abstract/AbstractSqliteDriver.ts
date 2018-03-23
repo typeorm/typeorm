@@ -120,16 +120,16 @@ export class AbstractSqliteDriver implements Driver {
         "blob",
         "clob"
     ];
-    
+
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
      */
     mappedDataTypes: MappedColumnTypes = {
-        createDate: "datetime",
-        createDateDefault: "datetime('now')",
-        updateDate: "datetime",
-        updateDateDefault: "datetime('now')",
+        createDate: "integer",
+        createDateDefault: "0",
+        updateDate: "integer",
+        updateDateDefault: "0",
         version: "integer",
         treeLevel: "integer",
         migrationName: "varchar",
@@ -210,7 +210,7 @@ export class AbstractSqliteDriver implements Driver {
             value = columnMetadata.transformer.to(value);
 
         if (value === null || value === undefined)
-            return value;
+            return columnMetadata.default;
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
             return value === true ? 1 : 0;
@@ -230,6 +230,9 @@ export class AbstractSqliteDriver implements Driver {
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
 
+        } else if (columnMetadata.type === "simple-object") {
+            return DateUtils.simpleObjectToString(value);
+
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
         }
@@ -242,7 +245,7 @@ export class AbstractSqliteDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return value;
+            return columnMetadata.default;
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
             value = value ? true : false;
@@ -257,6 +260,10 @@ export class AbstractSqliteDriver implements Driver {
             value = DateUtils.mixedTimeToString(value);
 
         } else if (columnMetadata.type === "simple-array") {
+            return DateUtils.stringToSimpleArray(value);
+
+        } else if (columnMetadata.type === "simple-object") {
+
             value = DateUtils.stringToSimpleArray(value);
 
         } else if (columnMetadata.type === "simple-json") {
@@ -327,6 +334,12 @@ export class AbstractSqliteDriver implements Driver {
         } else if (column.type === "simple-array") {
             return "text";
 
+        } else if (column.type === "simple-object") {
+            return "text";
+
+        } else if (column.type === "simple-timestamp") {
+            return "integer";
+
         } else if (column.type === "simple-json") {
             return "text";
 
@@ -362,22 +375,22 @@ export class AbstractSqliteDriver implements Driver {
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.isUnique;
     }
-    
+
     /**
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-        
+
         if (column.length)
             return column.length;
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+            return this.dataTypeDefaults[normalizedType].length!.toString();
 
         return "";
     }
-    
+
     /**
      * Normalizes "default" value of the column.
      */

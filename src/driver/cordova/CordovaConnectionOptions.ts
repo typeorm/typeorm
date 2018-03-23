@@ -19,4 +19,9 @@ export interface CordovaConnectionOptions extends BaseConnectionOptions {
      * Storage Location
      */
     readonly location: string;
+
+    /**
+     * Password to open an encrypted DB
+     */
+    readonly password?: string;
 }

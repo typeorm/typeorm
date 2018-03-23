@@ -174,6 +174,28 @@ export class DateUtils {
         return value;
     }
 
+    /**
+     * Converts given object to json string.
+     */
+    static simpleObjectToString(value: any): string {
+        return JSON.stringify(value);
+    }
+
+    /**
+     * Converts given string to json object.
+     */
+    static stringToSimpleObject(value: string): any {
+        return JSON.parse(value);
+    }
+
+    static simpleTimestampToDate(value: number): Date {
+        return new Date(value);
+    }
+
+    static dateToSimpleTimestamp(value: Date): number {
+        return value.getTime();
+    }
+
     static simpleJsonToString(value: any): string {
         return JSON.stringify(value);
     }

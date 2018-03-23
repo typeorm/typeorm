@@ -66,6 +66,7 @@ export type SimpleColumnType =
     "simple-array" // typeorm-specific, automatically mapped to string
     // |"string" // typeorm-specific, automatically mapped to varchar depend on platform
 
+    |"simple-object"
     |"simple-json" // typeorm-specific, automatically mapped to string
 
     // numeric types

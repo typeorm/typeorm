@@ -15,7 +15,7 @@ declare var window: Window;
 
 export class CordovaDriver extends AbstractSqliteDriver {
     options: CordovaConnectionOptions;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -37,7 +37,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
         // load sqlite package
         this.loadDependencies();
     }
-    
+
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -52,7 +52,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
             this.databaseConnection.close(ok, fail);
         });
     }
-    
+
     /**
      * Creates a query runner used to execute database queries.
      */
@@ -62,7 +62,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
 
         return this.queryRunner;
     }
-    
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -72,10 +72,20 @@ export class CordovaDriver extends AbstractSqliteDriver {
      */
     protected createDatabaseConnection() {
         return new Promise<void>((ok, fail) => {
-            const options = Object.assign({}, {
+            const options = Object.assign(
+                {},
+                this.options.password === undefined ?
+                {
+                name: this.options.database,
+                location: this.options.location
+                } :
+                {
                 name: this.options.database,
                 location: this.options.location,
-            }, this.options.extra || {});
+                key: this.options.password
+                },
+                this.options.extra || {}
+            );
 
             this.sqlite.openDatabase(options, (db: any) => {
                 const databaseConnection = db;
