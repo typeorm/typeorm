@@ -69,7 +69,7 @@ export interface Driver {
     afterConnect(): Promise<void>;
 
     /**
-     * Closes connection with database and releases all resourc.
+     * Closes connection with database and releases all resources.
      */
     disconnect(): Promise<void>;
 

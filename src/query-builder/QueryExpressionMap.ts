@@ -62,6 +62,11 @@ export class QueryExpressionMap {
     returning: string = "";
 
     /**
+     * Optional on conflict statement used in insertion query in postgres.
+     */
+    onConflict: string = "";
+
+    /**
      * JOIN queries.
      */
     joinAttributes: JoinAttribute[] = [];
@@ -256,11 +261,11 @@ export class QueryExpressionMap {
     /**
      * Creates a new alias and adds it to the current expression map.
      */
-    createAlias(options: { type: "from"|"select"|"join"|"other", name?: string, target?: Function|string, tableName?: string, subQuery?: string, metadata?: EntityMetadata }): Alias {
+    createAlias(options: { type: "from"|"select"|"join"|"other", name?: string, target?: Function|string, tablePath?: string, subQuery?: string, metadata?: EntityMetadata }): Alias {
 
         let aliasName = options.name;
-        if (!aliasName && options.tableName)
-            aliasName = options.tableName;
+        if (!aliasName && options.tablePath)
+            aliasName = options.tablePath;
         if (!aliasName && options.target instanceof Function)
             aliasName = options.target.name;
         if (!aliasName && typeof options.target === "string")
@@ -274,8 +279,8 @@ export class QueryExpressionMap {
             alias.metadata = options.metadata;
         if (options.target && !alias.hasMetadata)
             alias.metadata = this.connection.getMetadata(options.target);
-        if (options.tableName)
-            alias.tableName = options.tableName;
+        if (options.tablePath)
+            alias.tablePath = options.tablePath;
         if (options.subQuery)
             alias.subQuery = options.subQuery;
 
@@ -328,6 +333,8 @@ export class QueryExpressionMap {
         this.aliases.forEach(alias => map.aliases.push(new Alias(alias)));
         map.mainAlias = this.mainAlias;
         map.valuesSet = this.valuesSet;
+        map.returning = this.returning;
+        map.onConflict = this.onConflict;
         map.joinAttributes = this.joinAttributes.map(join => new JoinAttribute(this.connection, this, join));
         map.relationIdAttributes = this.relationIdAttributes.map(relationId => new RelationIdAttribute(this, relationId));
         map.relationCountAttributes = this.relationCountAttributes.map(relationCount => new RelationCountAttribute(this, relationCount));

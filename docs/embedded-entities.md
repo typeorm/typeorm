@@ -176,7 +176,7 @@ All columns defined in the `Name` entity will be merged into `user`, `employee` 
 +-------------+--------------+----------------------------+
 ```
 
-This way code duplication in th entity classes is reduced.
+This way code duplication in the entity classes is reduced.
  You can use as many columns (or relations) in embedded classes as you need.
  You even can have nested embedded columns inside embedded classes.
  

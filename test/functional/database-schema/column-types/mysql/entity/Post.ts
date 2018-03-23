@@ -93,4 +93,6 @@ export class Post {
     @Column("simple-array")
     simpleArray: string[];
 
+    @Column("simple-json")
+    simpleJson: { param: string };
 }

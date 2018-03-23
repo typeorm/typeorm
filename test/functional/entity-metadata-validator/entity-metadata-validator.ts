@@ -2,6 +2,7 @@ import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {ConnectionMetadataBuilder} from "../../../src/connection/ConnectionMetadataBuilder";
 import {EntityMetadataValidator} from "../../../src/metadata-builder/EntityMetadataValidator";
+import {expect} from "chai";
 
 describe("entity-metadata-validator", () => {
 
@@ -17,7 +18,7 @@ describe("entity-metadata-validator", () => {
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
         const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"], []);
         const entityMetadataValidator = new EntityMetadataValidator();
-        return entityMetadataValidator.validateMany(entityMetadatas, connection.driver).should.be.rejected;
+        expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).to.throw(Error);
     });
 
 });

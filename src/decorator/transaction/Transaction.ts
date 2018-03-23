@@ -28,14 +28,16 @@ export function Transaction(connectionName: string = "default"): MethodDecorator
                         .filterTransactionEntityManagers(target.constructor)
                         .filter(transactionEntityManagerMetadata => {
                             return transactionEntityManagerMetadata.methodName === methodName;
-                        });
+                        })
+                        .reverse();
 
                     // gets all @TransactionRepository() decorator usages for this method
                     const transactionRepositoryMetadatas = getMetadataArgsStorage()
                         .filterTransactionRepository(target.constructor)
                         .filter(transactionRepositoryMetadata => {
                             return transactionRepositoryMetadata.methodName === methodName;
-                        });
+                        })
+                        .reverse();
                         
                     // if there are @TransactionEntityManager() decorator usages the inject them
                     if (transactionEntityManagerMetadatas.length > 0) { 

@@ -48,6 +48,7 @@ describe("database schema > column types > postgres", () => {
         post.varchar = "This is varchar";
         post.characterVarying = "This is character varying";
         post.text = "This is text";
+        post.citext = "This is text";
         post.bytea = new Buffer("This is bytea");
         post.date = "2017-06-21";
         post.interval = "1 year 2 months 3 days 4 hours 5 minutes 6 seconds";
@@ -80,6 +81,7 @@ describe("database schema > column types > postgres", () => {
         post.xml = "<book><title>Manual</title><chapter>...</chapter></book>";
         post.array = [1, 2, 3];
         post.simpleArray = ["A", "B", "C"];
+        post.simpleJson = { param: "VALUE" };
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOneById(1))!;
@@ -104,6 +106,7 @@ describe("database schema > column types > postgres", () => {
         loadedPost.varchar.should.be.equal(post.varchar);
         loadedPost.characterVarying.should.be.equal(post.characterVarying);
         loadedPost.text.should.be.equal(post.text);
+        loadedPost.citext.should.be.equal("This is text");
         loadedPost.bytea.toString().should.be.equal(post.bytea.toString());
         loadedPost.date.should.be.equal(post.date);
         loadedPost.interval.years.should.be.equal(1);
@@ -142,6 +145,7 @@ describe("database schema > column types > postgres", () => {
         loadedPost.simpleArray[0].should.be.equal(post.simpleArray[0]);
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
+        loadedPost.simpleJson.param.should.be.equal(post.simpleJson.param);
 
         table!.findColumnByName("id")!.type.should.be.equal("integer");
         table!.findColumnByName("name")!.type.should.be.equal("character varying");
@@ -165,6 +169,7 @@ describe("database schema > column types > postgres", () => {
         table!.findColumnByName("varchar")!.type.should.be.equal("character varying");
         table!.findColumnByName("characterVarying")!.type.should.be.equal("character varying");
         table!.findColumnByName("text")!.type.should.be.equal("text");
+        // table!.findColumnByName("citext")!.type.should.be.equal("citext"); // todo: find a solution
         table!.findColumnByName("bytea")!.type.should.be.equal("bytea");
         table!.findColumnByName("date")!.type.should.be.equal("date");
         table!.findColumnByName("interval")!.type.should.be.equal("interval");
@@ -196,6 +201,7 @@ describe("database schema > column types > postgres", () => {
         table!.findColumnByName("array")!.type.should.be.equal("integer");
         table!.findColumnByName("array")!.isArray!.should.be.true;
         table!.findColumnByName("simpleArray")!.type.should.be.equal("text");
+        table!.findColumnByName("simpleJson")!.type.should.be.equal("text");
 
     })));
 

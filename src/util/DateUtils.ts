@@ -196,6 +196,14 @@ export class DateUtils {
         return value.getTime();
     }
 
+    static simpleJsonToString(value: any): string {
+        return JSON.stringify(value);
+    }
+
+    static stringToSimpleJson(value: string) {
+        return JSON.parse(value);
+    }
+
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------

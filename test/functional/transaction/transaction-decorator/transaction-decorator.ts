@@ -128,7 +128,7 @@ describe("transaction > method wrapped into transaction decorator", () => {
         // call controller method
         const savedCategory = await controller.saveWithRepository.apply(controller, [post, category]);
         
-        // controller should sucessfully call custom repository method and return the finded entity
+        // controller should successfully call custom repository method and return the found entity
         expect(savedCategory).not.to.be.empty;
         savedCategory!.should.be.eql(category);
 

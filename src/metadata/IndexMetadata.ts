@@ -2,6 +2,7 @@ import {EntityMetadata} from "./EntityMetadata";
 import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "./ColumnMetadata";
+import {EmbeddedMetadata} from "./EmbeddedMetadata";
 
 /**
  * Index metadata contains all information about table's index.
@@ -16,6 +17,11 @@ export class IndexMetadata {
      * Entity metadata of the class to which this index is applied.
      */
     entityMetadata: EntityMetadata;
+
+    /**
+     * Embedded metadata if this index was applied on embedded.
+     */
+    embeddedMetadata?: EmbeddedMetadata;
 
     /**
      * Indicates if this index must be unique.
@@ -73,10 +79,12 @@ export class IndexMetadata {
 
     constructor(options: {
         entityMetadata: EntityMetadata,
+        embeddedMetadata?: EmbeddedMetadata,
         columns?: ColumnMetadata[],
         args?: IndexMetadataArgs
     }) {
         this.entityMetadata = options.entityMetadata;
+        this.embeddedMetadata = options.embeddedMetadata;
         if (options.columns)
             this.columns = options.columns;
 
@@ -104,32 +112,37 @@ export class IndexMetadata {
 
         // if columns already an array of string then simply return it
         if (this.givenColumnNames) {
-            let columnPropertyNames: string[] = [];
+            let columnPropertyPaths: string[] = [];
             if (this.givenColumnNames instanceof Array) {
-                columnPropertyNames = this.givenColumnNames;
-                columnPropertyNames.forEach(name => map[name] = 1);
-            } else {
+                columnPropertyPaths = this.givenColumnNames.map(columnName => {
+                    if (this.embeddedMetadata)
+                        return this.embeddedMetadata.propertyPath + "." + columnName;
+
+                    return columnName;
+                });
+                columnPropertyPaths.forEach(propertyPath => map[propertyPath] = 1);
+            } else { // todo: indices in embeds are not implemented in this syntax. deprecate this syntax?
                 // if columns is a function that returns array of field names then execute it and get columns names from it
                 const columnsFnResult = this.givenColumnNames(this.entityMetadata.propertiesMap);
                 if (columnsFnResult instanceof Array) {
-                    columnPropertyNames = columnsFnResult.map((i: any) => String(i));
-                    columnPropertyNames.forEach(name => map[name] = 1);
+                    columnPropertyPaths = columnsFnResult.map((i: any) => String(i));
+                    columnPropertyPaths.forEach(name => map[name] = 1);
                 } else {
-                    columnPropertyNames = Object.keys(columnsFnResult).map((i: any) => String(i));
+                    columnPropertyPaths = Object.keys(columnsFnResult).map((i: any) => String(i));
                     Object.keys(columnsFnResult).forEach(columnName => map[columnName] = columnsFnResult[columnName]);
                 }
             }
 
-            this.columns = columnPropertyNames.map(propertyName => {
-                const columnWithSameName = this.entityMetadata.columns.find(column => column.propertyPath === propertyName);
+            this.columns = columnPropertyPaths.map(propertyPath => {
+                const columnWithSameName = this.entityMetadata.columns.find(column => column.propertyPath === propertyPath);
                 if (columnWithSameName) {
                     return [columnWithSameName];
                 }
-                const relationWithSameName = this.entityMetadata.relations.find(relation => relation.isWithJoinColumn && relation.propertyName === propertyName);
+                const relationWithSameName = this.entityMetadata.relations.find(relation => relation.isWithJoinColumn && relation.propertyName === propertyPath);
                 if (relationWithSameName) {
                     return relationWithSameName.joinColumns;
                 }
-                throw new Error(`Index ${this.givenName ? "\"" + this.givenName + "\" " : ""}contains column that is missing in the entity: ` + propertyName);
+                throw new Error(`Index ${this.givenName ? "\"" + this.givenName + "\" " : ""}contains column that is missing in the entity: ` + propertyPath);
             })
             .reduce((a, b) => a.concat(b));
         }

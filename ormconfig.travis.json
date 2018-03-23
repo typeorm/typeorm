@@ -36,6 +36,11 @@
     "database": "test"
   },
   {
+    "skip": false,
+    "name": "sqljs",
+    "type": "sqljs"
+  },
+  {
     "skip": true,
     "name": "mssql",
     "type": "mssql",

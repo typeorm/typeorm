@@ -17,6 +17,8 @@ import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
 import {Driver} from "../driver/Driver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 
 /**
  * Contains all entity metadata.
@@ -152,6 +154,16 @@ export class EntityMetadata {
      * Entity's relation metadatas.
      */
     ownRelations: RelationMetadata[] = [];
+
+    /**
+     * Entity's own listener metadatas.
+     */
+    ownListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Entity's own indices.
+     */
+    ownIndices: IndexMetadata[] = [];
 
     /**
      * Relations of the entity, including relations that are coming from the embeddeds of this entity.
@@ -397,7 +409,7 @@ export class EntityMetadata {
         this.tableType = options.args.type;
         this.engine = options.args.engine;
         this.database = options.args.database;
-        this.schema = options.args.schema;
+        this.schema = options.args.schema || (options.connection.options as PostgresConnectionOptions|SqlServerConnectionOptions).schema;
         this.givenTableName = options.args.name;
         this.skipSync = options.args.skipSync || false;
         this.targetName = options.args.target instanceof Function ? (options.args.target as any).name : options.args.target;
@@ -520,6 +532,24 @@ export class EntityMetadata {
             return relation.joinColumns[0];
 
         return undefined;
+    }
+
+    /**
+     * Finds columns with a given property path.
+     * Property path can match a relation, and relations can contain multiple columns.
+     */
+    findColumnsWithPropertyPath(propertyPath: string): ColumnMetadata[] {
+        const column = this.columns.find(column => column.propertyPath === propertyPath);
+        if (column)
+            return [column];
+
+        // in the case if column with property path was not found, try to find a relation with such property path
+        // if we find relation and it has a single join column then its the column user was seeking
+        const relation = this.relations.find(relation => relation.propertyPath === propertyPath);
+        if (relation && relation.joinColumns)
+            return relation.joinColumns;
+
+        return [];
     }
 
     /**

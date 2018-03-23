@@ -300,11 +300,11 @@ export class EntityMetadataBuilder {
         entityMetadata.relationCounts = this.metadataArgsStorage.filterRelationCounts(inheritanceTree).map(args => {
             return new RelationCountMetadata({ entityMetadata, args });
         });
-        entityMetadata.indices = this.metadataArgsStorage.filterIndices(inheritanceTree).map(args => {
+        entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(inheritanceTree).map(args => {
             return new IndexMetadata({ entityMetadata, args });
         });
-        entityMetadata.listeners = this.metadataArgsStorage.filterListeners(inheritanceTree).map(args => {
-            return new EntityListenerMetadata(args);
+        entityMetadata.ownListeners = this.metadataArgsStorage.filterListeners(inheritanceTree).map(args => {
+            return new EntityListenerMetadata({ entityMetadata: entityMetadata, args: args });
         });
         return entityMetadata;
     }
@@ -323,6 +323,18 @@ export class EntityMetadataBuilder {
             });
             embeddedMetadata.relations = this.metadataArgsStorage.filterRelations(targets).map(args => {
                 return new RelationMetadata({ entityMetadata, embeddedMetadata, args });
+            });
+            embeddedMetadata.listeners = this.metadataArgsStorage.filterListeners(targets).map(args => {
+                return new EntityListenerMetadata({ entityMetadata, embeddedMetadata, args });
+            });
+            embeddedMetadata.indices = this.metadataArgsStorage.filterIndices(targets).map(args => {
+                return new IndexMetadata({ entityMetadata, embeddedMetadata, args });
+            });
+            embeddedMetadata.relationIds = this.metadataArgsStorage.filterRelationIds(targets).map(args => {
+                return new RelationIdMetadata({ entityMetadata, args });
+            });
+            embeddedMetadata.relationCounts = this.metadataArgsStorage.filterRelationCounts(targets).map(args => {
+                return new RelationCountMetadata({ entityMetadata, args });
             });
             embeddedMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(targets));
             embeddedMetadata.embeddeds.forEach(subEmbedded => subEmbedded.parentEmbeddedMetadata = embeddedMetadata);
@@ -353,6 +365,8 @@ export class EntityMetadataBuilder {
         entityMetadata.treeParentRelation = entityMetadata.relations.find(relation => relation.isTreeParent);
         entityMetadata.treeChildrenRelation = entityMetadata.relations.find(relation => relation.isTreeChildren);
         entityMetadata.columns = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), entityMetadata.ownColumns);
+        entityMetadata.listeners = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.listenersFromTree), entityMetadata.ownListeners);
+        entityMetadata.indices = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
         entityMetadata.hasMultiplePrimaryKeys = entityMetadata.primaryColumns.length > 1;
         entityMetadata.generatedColumns = entityMetadata.columns.filter(column => column.isGenerated || column.isObjectId);

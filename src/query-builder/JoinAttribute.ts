@@ -71,8 +71,8 @@ export class JoinAttribute {
     /**
      * Name of the table which we should join.
      */
-    get tableName(): string {
-        return this.metadata ? this.metadata.tableName : this.entityOrProperty as string;
+    get tablePath(): string {
+        return this.metadata ? this.metadata.tablePath : this.entityOrProperty as string;
     }
 
     /**

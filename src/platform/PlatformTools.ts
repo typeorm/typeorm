@@ -30,12 +30,86 @@ export class PlatformTools {
      */
     static load(name: string): any {
 
-        // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currenly in
+        // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currently in
         // this is useful when we are using typeorm package globally installed and it accesses drivers
         // that are not installed globally
 
         try {
-            return require(name);
+
+            // switch case to explicit require statements for webpack compatibility.
+
+            switch (name) {
+
+                /**
+                * mongodb
+                */
+                case "mongodb":
+                    return require("mongodb");
+
+                /**
+                * mysql
+                */
+                case "mysql":
+                    return require("mysql");
+
+                case "mysql2":
+                    return require("mysql2");
+
+                /**
+                * oracle
+                */
+                case "oracledb":
+                    return require("oracledb");
+
+                /**
+                * postgres
+                */
+                case "pg":
+                    return require("pg");
+
+                case "pg-native":
+                    return require("pg-native");
+
+                case "pg-query-stream":
+                    return require("pg-query-stream");
+
+                /**
+                * redis
+                */
+                case "redis":
+                    return require("redis");
+
+                /**
+                * sqlite
+                */
+                case "sqlite3":
+                    return require("sqlite3");
+
+                /**
+                * sqlserver
+                */
+                case "mssql":
+                    return require("mssql");
+
+                /**
+                * other modules
+                */
+                case "mkdirp":
+                    return require("mkdirp");
+
+                case "path":
+                    return require("path");
+
+                case "debug":
+                    return require("debug");
+
+                /**
+                * default
+                */
+                default:
+                    return require(name);
+
+            }
 
         } catch (err) {
             if (!path.isAbsolute(name) && name.substr(0, 2) !== "./" && name.substr(0, 3) !== "../") {
@@ -49,7 +123,7 @@ export class PlatformTools {
     /**
      * Normalizes given path. Does "path.normalize".
      */
-    static pathNormilize(pathStr: string): string {
+    static pathNormalize(pathStr: string): string {
         return path.normalize(pathStr);
     }
 
@@ -80,6 +154,15 @@ export class PlatformTools {
 
     static appendFileSync(filename: string, data: any): void {
         fs.appendFileSync(filename, data);
+    }
+
+    static async writeFile(path: string, data: any): Promise<void> {
+        return new Promise<void>((ok, fail) => {
+            fs.writeFile(path, data, (err) => {
+                if (err) fail(err);
+                ok();
+            });
+        });
     }
 
     /**

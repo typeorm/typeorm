@@ -1,6 +1,6 @@
 # One-to-one relations
 
-One-to-one is a relation where A contains only once instance of B, and B contains only one instance of A.
+One-to-one is a relation where A contains only one instance of B, and B contains only one instance of A.
 Let's take for example `User` and `Profile` entities.
 User can have only a single profile, and a single profile is owned by only a single user.
 

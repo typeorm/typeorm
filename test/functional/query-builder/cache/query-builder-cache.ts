@@ -117,6 +117,7 @@ describe("query builder > cache", () => {
             .where("user.isAdmin = :isAdmin", { isAdmin: false })
             .skip(1)
             .take(5)
+            .orderBy("user.id")
             .cache(true)
             .getMany();
         expect(users1.length).to.be.equal(1);
@@ -134,6 +135,7 @@ describe("query builder > cache", () => {
             .where("user.isAdmin = :isAdmin", { isAdmin: false })
             .skip(1)
             .take(5)
+            .orderBy("user.id")
             .getMany();
         expect(users2.length).to.be.equal(2);
 
@@ -144,6 +146,7 @@ describe("query builder > cache", () => {
             .skip(1)
             .take(5)
             .cache(true)
+            .orderBy("user.id")
             .getMany();
         expect(users3.length).to.be.equal(1);
 
@@ -157,6 +160,7 @@ describe("query builder > cache", () => {
             .skip(1)
             .take(5)
             .cache(true)
+            .orderBy("user.id")
             .getMany();
         expect(users4.length).to.be.equal(2);
 
@@ -190,6 +194,7 @@ describe("query builder > cache", () => {
             .skip(1)
             .take(5)
             .cache("user_admins", 2000)
+            .orderBy("user.id")
             .getMany();
         expect(users1.length).to.be.equal(1);
 
@@ -206,6 +211,7 @@ describe("query builder > cache", () => {
             .where("user.isAdmin = :isAdmin", { isAdmin: false })
             .skip(1)
             .take(5)
+            .orderBy("user.id")
             .getMany();
         expect(users2.length).to.be.equal(2);
 
@@ -218,6 +224,7 @@ describe("query builder > cache", () => {
             .where("user.isAdmin = :isAdmin", { isAdmin: false })
             .skip(1)
             .take(5)
+            .orderBy("user.id")
             .cache("user_admins", 2000)
             .getMany();
         expect(users3.length).to.be.equal(1);
@@ -231,6 +238,7 @@ describe("query builder > cache", () => {
             .where("user.isAdmin = :isAdmin", { isAdmin: false })
             .skip(1)
             .take(5)
+            .orderBy("user.id")
             .cache("user_admins", 2000)
             .getMany();
         expect(users4.length).to.be.equal(2);

@@ -67,6 +67,7 @@ export type SimpleColumnType =
     // |"string" // typeorm-specific, automatically mapped to varchar depend on platform
 
     |"simple-object"
+    |"simple-json" // typeorm-specific, automatically mapped to string
 
     // numeric types
     |"bit" // mssql
@@ -92,6 +93,7 @@ export type SimpleColumnType =
     |"blob" // mysql, oracle, sqlite
     |"text" // mysql, postgres, mssql, sqlite
     |"ntext" // mssql
+    |"citext" // postgres
     |"longblob" // mysql
     |"longtext" // mysql
     |"bytea" // postgres

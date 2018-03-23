@@ -39,6 +39,7 @@ describe("github issues > #479 orWhere breaks skip / take", () => {
             .createQueryBuilder("car")
             .where("car.name LIKE :filter1", { filter1: "Test%" })
             .orWhere("car.name LIKE :filter2", { filter2: "BM%" })
+            .orderBy("car.id")
             .skip(0)
             .take(1)
             .getMany();

@@ -347,14 +347,14 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!table)
                 return;
 
-            const metadataPrimaryColumns = metadata.columns.filter(column => column.isPrimary && !column.isGenerated);
+            const metadataPrimaryColumns = metadata.columns.filter(column => column.isPrimary);
             const addedKeys = metadataPrimaryColumns
                 .filter(primaryKey => {
-                    return !table.primaryKeysWithoutGenerated.find(dbPrimaryKey => dbPrimaryKey.columnName === primaryKey.databaseName);
+                    return !table.primaryKeys.find(dbPrimaryKey => dbPrimaryKey.columnName === primaryKey.databaseName);
                 })
                 .map(primaryKey => new TablePrimaryKey("", primaryKey.databaseName));
 
-            const droppedKeys = table.primaryKeysWithoutGenerated.filter(primaryKeySchema => {
+            const droppedKeys = table.primaryKeys.filter(primaryKeySchema => {
                 return !metadataPrimaryColumns.find(primaryKeyMetadata => primaryKeyMetadata.databaseName === primaryKeySchema.columnName);
             });
 

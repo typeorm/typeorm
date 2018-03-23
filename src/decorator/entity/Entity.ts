@@ -19,8 +19,8 @@ export function Entity(name?: string, options?: EntityOptions): Function;
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
  */
 export function Entity(nameOrOptions?: string|EntityOptions, maybeOptions?: EntityOptions): Function {
-    const name = typeof nameOrOptions === "string" ? nameOrOptions : undefined;
-    const options = typeof nameOrOptions === "object" ? nameOrOptions as EntityOptions : maybeOptions;
+    const options = (typeof nameOrOptions === "object" ? nameOrOptions as EntityOptions : maybeOptions) || {};
+    const name = typeof nameOrOptions === "string" ? nameOrOptions : options.name;
 
     return function (target: Function) {
         const args: TableMetadataArgs = {

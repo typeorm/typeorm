@@ -1,18 +1,16 @@
 import "reflect-metadata";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {PostgresConnectionOptions} from "../../../src/driver/postgres/PostgresConnectionOptions";
 
 describe.skip("github issues > #114 Can not be parsed correctly the URL of pg.", () => {
 
-    let driver: PostgresDriver, connection: Connection;
+    let connection: Connection;
     before(() => {
         connection = new Connection({
             type: "postgres",
             url: "postgres://test:test@localhost:5432/test",
         });
-        driver = new PostgresDriver(connection);
     });
 
     it("should not fail in url parser", () => {

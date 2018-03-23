@@ -3,6 +3,7 @@ import {LoggerOptions} from "./LoggerOptions";
 import {SimpleConsoleLogger} from "./SimpleConsoleLogger";
 import {AdvancedConsoleLogger} from "./AdvancedConsoleLogger";
 import {FileLogger} from "./FileLogger";
+import {DebugLogger} from "./DebugLogger";
 
 /**
  * Helps to create logger instances.
@@ -12,7 +13,7 @@ export class LoggerFactory {
     /**
      * Creates a new logger depend on a given connection's driver.
      */
-    create(logger?: "advanced-console"|"simple-console"|"file"|Logger, options?: LoggerOptions): Logger {
+    create(logger?: "advanced-console"|"simple-console"|"file"|"debug"|Logger, options?: LoggerOptions): Logger {
         if (logger instanceof Object)
             return logger as Logger;
 
@@ -26,6 +27,9 @@ export class LoggerFactory {
 
                 case "advanced-console":
                     return new AdvancedConsoleLogger(options);
+
+                case "debug":
+                    return new DebugLogger();
             }
         }
 

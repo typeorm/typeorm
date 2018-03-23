@@ -64,6 +64,10 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return camelCase(tableName + "_" + (columnName ? columnName : propertyName));
     }
 
+    joinTableInverseColumnName(tableName: string, propertyName: string, columnName?: string): string {
+        return this.joinTableColumnName(tableName, propertyName, columnName);
+    }
+
     foreignKeyName(tableName: string, columnNames: string[], referencedTableName: string, referencedColumnNames: string[]): string {
         const key = `${tableName}_${columnNames.join("_")}_${referencedTableName}_${referencedColumnNames.join("_")}`;
         return "fk_" + RandomGenerator.sha1(key).substr(0, 27); // todo: use crypto instead?

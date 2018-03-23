@@ -12,7 +12,7 @@ export class Alias {
      * Table on which this alias is applied.
      * Used only for aliases which select custom tables.
      */
-    tableName?: string;
+    tablePath?: string;
 
     /**
      * If this alias is for sub query.

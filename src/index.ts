@@ -14,6 +14,7 @@ import {MongoRepository} from "./repository/MongoRepository";
 import {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 import {PromiseUtils} from "./util/PromiseUtils";
 import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
+import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -22,6 +23,7 @@ import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 export * from "./container";
 export * from "./common/ObjectType";
 export * from "./common/ObjectLiteral";
+export * from "./common/DeepPartial";
 export * from "./error/QueryFailedError";
 export * from "./decorator/columns/Column";
 export * from "./decorator/columns/CreateDateColumn";
@@ -61,6 +63,7 @@ export * from "./decorator/entity/SingleEntityChild";
 export * from "./decorator/entity/TableInheritance";
 export * from "./decorator/transaction/Transaction";
 export * from "./decorator/transaction/TransactionManager";
+export * from "./decorator/transaction/TransactionRepository";
 export * from "./decorator/tree/TreeLevelColumn";
 export * from "./decorator/tree/TreeParent";
 export * from "./decorator/tree/TreeChildren";
@@ -172,15 +175,30 @@ export function getConnectionManager(): ConnectionManager {
 
 /**
  * Creates a new connection and registers it in the manager.
+ * Only one connection from ormconfig will be created (name "default" or connection without name).
+ */
+export async function createConnection(): Promise<Connection>;
+
+/**
+ * Creates a new connection from the ormconfig file with a given name.
+ */
+export async function createConnection(name: string): Promise<Connection>;
+
+/**
+ * Creates a new connection and registers it in the manager.
+ */
+export async function createConnection(options: ConnectionOptions): Promise<Connection>;
+
+/**
+ * Creates a new connection and registers it in the manager.
  *
  * If connection options were not specified, then it will try to create connection automatically,
  * based on content of ormconfig (json/js/yml/xml/env) file or environment variables.
  * Only one connection from ormconfig will be created (name "default" or connection without name).
  */
-export async function createConnection(options?: ConnectionOptions): Promise<Connection> {
-    if (!options)
-        options = await getConnectionOptions();
-
+export async function createConnection(optionsOrName?: any): Promise<Connection> {
+    const connectionName = typeof optionsOrName === "string" ? optionsOrName : "default";
+    const options = optionsOrName instanceof Object ? optionsOrName : await getConnectionOptions(connectionName);
     return getConnectionManager().create(options).connect();
 }
 
@@ -220,6 +238,10 @@ export function getManager(connectionName: string = "default"): EntityManager {
  */
 export function getMongoManager(connectionName: string = "default"): MongoEntityManager {
     return getConnectionManager().get(connectionName).manager as MongoEntityManager;
+}
+
+export function getSqljsManager(connectionName: string = "default"): SqljsEntityManager {
+    return getConnectionManager().get(connectionName).manager as SqljsEntityManager;
 }
 
 /**

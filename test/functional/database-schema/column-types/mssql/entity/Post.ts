@@ -114,10 +114,12 @@ export class Post {
     datetimeoffset: Date;
 
     // -------------------------------------------------------------------------
-    // TypeOrm Specific Type
+    // TypeOrm Specific Types
     // -------------------------------------------------------------------------
 
     @Column("simple-array")
     simpleArray: string[];
 
+    @Column("simple-json")
+    simpleJson: { param: string };
 }

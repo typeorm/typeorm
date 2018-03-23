@@ -8,10 +8,11 @@ All repository and manager `find` methods accept special options you can use to 
 userRepository.find({ select: ["firstName", "lastName"] });
 ```
 
-* `relations` - relations needs to be loaded with the main entity.
+* `relations` - relations needs to be loaded with the main entity. Sub-relations can also be loaded (shorthand for join and leftJoinAndSelect)
 
 ```typescript
 userRepository.find({ relations: ["profile", "photos", "videos"] });
+userRepository.find({ relations: ["profile", "photos", "videos", "videos.video_attributes"] });
 ```
 
 * `join` - joins needs to be performed for the entity. Extended version of "relations".
@@ -64,6 +65,14 @@ userRepository.find({
 });
 ```
 
+* `cache` - Enables or disables query result caching. See [caching](caching.md) for more information and options.
+
+```typescript
+userRepository.find({
+    cache: true
+})
+```
+
 Complete example of find options:
 
 ```typescript
@@ -79,6 +88,7 @@ userRepository.find({
         "id": "DESC"
     },
     skip: 5,
-    take: 10
+    take: 10,
+    cache: true
 });
 ```

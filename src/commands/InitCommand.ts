@@ -108,6 +108,7 @@ export class InitCommand {
                 break;
             case "sqlite":
                 Object.assign(options, {
+                    type: "sqlite",
                     "database": "database.db",
                 });
                 break;
@@ -203,13 +204,13 @@ temp/`;
      * Gets contents of the user entity.
      */
     protected static getUserEntityTemplate(database: string): string {
-        return `import {Entity, ${ database === "monogdb" ? "ObjectIdColumn" : "PrimaryGeneratedColumn" }, Column} from "typeorm";
+        return `import {Entity, ${ database === "mongodb" ? "ObjectIdColumn, ObjectID" : "PrimaryGeneratedColumn" }, Column} from "typeorm";
 
 @Entity()
 export class User {
 
-    ${ database === "monogdb" ? "@ObjectIdColumn()" : "@PrimaryGeneratedColumn()" }
-    id: number;
+    ${ database === "mongodb" ? "@ObjectIdColumn()" : "@PrimaryGeneratedColumn()" }
+    id: ${ database === "mongodb" ? "ObjectID" : "number" };
 
     @Column()
     firstName: string;
@@ -335,7 +336,7 @@ createConnection().then(async connection => {
     }));
 
     console.log("Express server has started on port 3000. Open http://localhost:3000/users to see results");
-    
+
 }).catch(error => console.log(error));
 `;
 

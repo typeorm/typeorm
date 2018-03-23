@@ -62,6 +62,7 @@ Before creating a new migration you need to setup your connection options proper
     "password": "test",
     "database": "test",
     "entities": ["entity/*.js"],
+    "migrationsTableName": "custom_migration_table",
     "migrations": ["migration/*.js"],
     "cli": {
         "migrationsDir": "migration"
@@ -69,10 +70,10 @@ Before creating a new migration you need to setup your connection options proper
 }
 ```
 
-Here we setup two options:
-
-* `"migrations": ["migration/*.js"]` - indicates that typeorm must load migrations from the given "migration" directory
-* `"cli": { "migrationsDir": "migration" }` - indicates that the CLI must create new migrations in the "migration" directory
+Here we setup three options:
+* `"migrationsTableName": "migrations"` - Specify this option only if you need migration table name to be different from `"migrations"`.
+* `"migrations": ["migration/*.js"]` - indicates that typeorm must load migrations from the given "migration" directory.
+* `"cli": { "migrationsDir": "migration" }` - indicates that the CLI must create new migrations in the "migration" directory.
 
 Once you setup connection options you can create a new migration using CLI:
 
@@ -80,12 +81,12 @@ Once you setup connection options you can create a new migration using CLI:
 typeorm migrations:create -n PostRefactoring
 ```
 
-To use CLI commands you need to install typeorm globally (`npm i typeorm -g`).
-Also make sure your locally typeorm version matches the global version.
+To use CLI commands, you need to install typeorm globally (`npm i typeorm -g`).
+Also, make sure your local typeorm version matches the global version.
 Learn more about the [TypeORM CLI](./using-cli.md).
 
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
-After you run the command you can see a new file generated in "migration" directory, 
+After you run the command you can see a new file generated in the "migration" directory 
 named `{TIMESTAMP}-PostRefactoring.ts` where `{TIMESTAMP}` is the current timestamp when the migration was generated.
 Now you can open the file and add your migration sql queries there.
 
@@ -114,7 +115,7 @@ There are two methods you must fill with your migration code: `up` and `down`.
 `down` method is used to revert the last migration.
 
 Inside both `up` and `down` you have a `QueryRunner` object.
-All database operations are executing using this object.
+All database operations are executed using this object.
 Learn more about [query runner](./query-runner.md).
 
 Let's see what the migration looks like with our `Post` changes:
@@ -138,7 +139,7 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 
 ## Running and reverting migrations
 
-Once you have a migration to run on production you can run them using a CLI command:
+Once you have a migration to run on production, you can run them using a CLI command:
 
 ```
 typeorm migrations:run
@@ -161,14 +162,14 @@ If you need to revert multiple migrations you must call this command multiple ti
 
 TypeORM is able to automatically generate migration files with schema changes you made.
 
-Let's say you have a `Post` entity with a `title` column. And you have changed the name `title` to `name`.
+Let's say you have a `Post` entity with a `title` column, and you have changed the name `title` to `name`.
 You can run following command:
 
 ```
 typeorm migrations:generate -n PostRefactoring
 ```
 
-And it will generate a new migration called `{TIMESTAMP}-PostRefactoring.ts` with following content:
+And it will generate a new migration called `{TIMESTAMP}-PostRefactoring.ts` with the following content:
 
 ```typescript
 import {MigrationInterface, QueryRunner} from "typeorm";

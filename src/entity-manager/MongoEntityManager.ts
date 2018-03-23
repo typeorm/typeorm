@@ -163,7 +163,10 @@ export class MongoEntityManager extends EntityManager {
      */
     async findOneById<Entity>(entityClassOrName: ObjectType<Entity>|string, id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
         const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
-        query["_id"] = id;
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        query["_id"] = (id instanceof objectIdInstance)
+            ? id
+            : new objectIdInstance(id);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindOneOptions(optionsOrConditions)) {
             if (optionsOrConditions.order)
@@ -514,7 +517,14 @@ export class MongoEntityManager extends EntityManager {
         if (!optionsOrConditions)
             return undefined;
 
-        return FindOptionsUtils.isFindManyOptions(optionsOrConditions) ? optionsOrConditions.where : optionsOrConditions;
+        if (FindOptionsUtils.isFindManyOptions(optionsOrConditions))
+            // If where condition is passed as a string which contains sql we have to ignore
+            // as mongo is not a sql database
+            return typeof optionsOrConditions.where === "string"
+                ? {}
+                : optionsOrConditions.where;
+
+        return optionsOrConditions;
     }
 
     /**
@@ -524,7 +534,14 @@ export class MongoEntityManager extends EntityManager {
         if (!optionsOrConditions)
             return undefined;
 
-        return FindOptionsUtils.isFindOneOptions(optionsOrConditions) ? optionsOrConditions.where : optionsOrConditions;
+        if (FindOptionsUtils.isFindOneOptions(optionsOrConditions))
+            // If where condition is passed as a string which contains sql we have to ignore
+            // as mongo is not a sql database
+            return typeof optionsOrConditions.where === "string"
+                ? {}
+                : optionsOrConditions.where;
+
+        return optionsOrConditions;
     }
 
     /**

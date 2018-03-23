@@ -677,7 +677,7 @@ export class SqlServerQueryRunner implements QueryRunner {
      */
     async hasTable(tablePath: string): Promise<boolean> {
         const parsedTablePath = this.parseTablePath(tablePath);
-        const sql = `SELECT * FROM ${parsedTablePath.database}.INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${parsedTablePath.schema}' AND TABLE_SCHEMA = '${parsedTablePath.tableName}'`;
+        const sql = `SELECT * FROM ${parsedTablePath.database}.INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${parsedTablePath.tableName}' AND TABLE_SCHEMA = ${parsedTablePath.schema === "SCHEMA_NAME()" ? parsedTablePath.schema : `'${parsedTablePath.schema}'`}`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -748,7 +748,7 @@ export class SqlServerQueryRunner implements QueryRunner {
      */
     async hasColumn(tablePath: string, columnName: string): Promise<boolean> {
         const parsedTablePath = this.parseTablePath(tablePath);
-        const sql = `SELECT * FROM ${parsedTablePath.database}.INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${parsedTablePath.tableName}' AND COLUMN_NAME = '${columnName}' AND TABLE_SCHEMA = '${parsedTablePath.schema}'`;
+        const sql = `SELECT * FROM ${parsedTablePath.database}.INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${parsedTablePath.tableName}' AND COLUMN_NAME = '${columnName}' AND TABLE_SCHEMA = ${parsedTablePath.schema === "SCHEMA_NAME()" ? parsedTablePath.schema : `'${parsedTablePath.schema}'`}`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -1068,28 +1068,28 @@ WHERE tableConstraints.TABLE_CATALOG = '${database}' AND columnUsages.TABLE_SCHE
         }).join(".");
     }
 
-    protected parseTablePath(tablePath: string): any {
-        if (tablePath.split(".").length === 3) {
+    protected parseTablePath(target: Table|string): any {
+        const tableName = target instanceof Table ? target.name : target;
+        if (tableName.split(".").length === 3) {
             return {
-                database:  "'" + tablePath.split(".")[0] + "'",
-                schema:  tablePath.split(".")[1] === "" ? "SCHEMA_NAME()" : "'" + tablePath.split(".")[1] + "'",
-                tableName: "'" + tablePath.split(".")[2] + "'"
+                database:  tableName.split(".")[0],
+                schema:  tableName.split(".")[1] === "" ? "SCHEMA_NAME()" : tableName.split(".")[1],
+                tableName: tableName.split(".")[2]
             };
-        } else if (tablePath.split(".").length === 2) {
+        } else if (tableName.split(".").length === 2) {
             return {
-                database:  this.driver.options.database,
-                schema: "'" + tablePath.split(".")[1] + "'",
-                tableName: "'" + tablePath.split(".")[2] + "'"
+                database:  this.driver.database,
+                schema: tableName.split(".")[0],
+                tableName: tableName.split(".")[1]
             };
         } else {
             return {
-                database:  this.driver.options.database,
-                schema: this.driver.options.schema ? "'" + this.driver.options.schema + "'" : "SCHEMA_NAME()",
-                tableName: tablePath
+                database:  this.driver.database,
+                schema: this.driver.options.schema ? this.driver.options.schema : "SCHEMA_NAME()",
+                tableName: tableName
             };
         }
     }
-
     /**
      * Parametrizes given object of values. Used to create column=value queries.
      */

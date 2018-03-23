@@ -94,15 +94,4 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
             });
         });
     }
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Parametrizes given object of values. Used to create column=value queries.
-     */
-    protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
-        return Object.keys(objectLiteral).map((key, index) => `"${key}"` + "=$" + (startIndex + index + 1));
-    }
 }

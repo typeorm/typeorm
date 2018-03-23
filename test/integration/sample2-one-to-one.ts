@@ -323,7 +323,7 @@ describe("one-to-one", function() {
     });
 
     describe("cascade updates should be executed when cascadeUpdate option is set", function() {
-        let newPost: Post, newImage: PostImage, savedImage: PostImage;
+        let newPost: Post, newImage: PostImage;
 
         before(reloadDatabase);
 
@@ -339,7 +339,6 @@ describe("one-to-one", function() {
             return postImageRepository
                 .save(newImage)
                 .then(image => {
-                    savedImage = image as PostImage;
                     newPost.image = image as PostImage;
                     return postRepository.save(newPost);
 
@@ -372,7 +371,7 @@ describe("one-to-one", function() {
     });
 
     describe("cascade remove should be executed when cascadeRemove option is set", function() {
-        let newPost: Post, newMetadata: PostMetadata, savedMetadata: PostMetadata;
+        let newPost: Post, newMetadata: PostMetadata;
 
         before(reloadDatabase);
 
@@ -388,7 +387,6 @@ describe("one-to-one", function() {
             return postMetadataRepository
                 .save(newMetadata)
                 .then(metadata => {
-                    savedMetadata = metadata as PostMetadata;
                     newPost.metadata = metadata as PostMetadata;
                     return postRepository.save(newPost);
 

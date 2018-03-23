@@ -298,6 +298,9 @@ export class SqlServerDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.simpleJsonToString(value);
         }
 
         return value;
@@ -307,31 +310,34 @@ export class SqlServerDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
-
         if (value === null || value === undefined)
             return value;
 
         if (columnMetadata.type === Boolean) {
-            return value ? true : false;
+            value = value ? true : false;
 
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === Date
             || columnMetadata.type === "datetime2"
             || columnMetadata.type === "smalldatetime"
             || columnMetadata.type === "datetimeoffset") {
-            return DateUtils.normalizeHydratedDate(value);
+            value = DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value);
+            value = DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedTimeToString(value);
+            value = DateUtils.mixedTimeToString(value);
 
         } else if (columnMetadata.type === "simple-array") {
-            return DateUtils.stringToSimpleArray(value);
+            value = DateUtils.stringToSimpleArray(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            value = DateUtils.stringToSimpleJson(value);
         }
+
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
 
         return value;
     }
@@ -359,6 +365,9 @@ export class SqlServerDriver implements Driver {
             return "uniqueidentifier";
 
         } else if (column.type === "simple-array") {
+            return "ntext";
+
+        } else if (column.type === "simple-json") {
             return "ntext";
 
         } else if (column.type === "integer") {
@@ -565,7 +574,16 @@ export class SqlServerDriver implements Driver {
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
         return new Promise<void>((ok, fail) => {
-            const connection = new this.mssql.ConnectionPool(connectionOptions).connect((err: any) => {
+            const pool = new this.mssql.ConnectionPool(connectionOptions);
+
+            const { logger } = this.connection;
+            /*
+              Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
+              cause the hosting app to crash.
+             */
+            pool.on("error", (error: any) => logger.log("warn", `MSSQL pool raised an error. ${error}`));
+
+            const connection = pool.connect((err: any) => {
                 if (err) return fail(err);
                 ok(connection);
             });

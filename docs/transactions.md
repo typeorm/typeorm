@@ -81,8 +81,8 @@ using the `@TransactionRepository() customRepository: CustomRepository`.
 
 `QueryRunner` provides a single database connection.
 Transactions are organized using query runners. 
-Single transaction can be established only on a single query runner.
-You can manally create a query runner instance and control transaction state manually using it.
+Single transactions can only be established on a single query runner.
+You can manually create a query runner instance and use it to manually control transaction state.
 Example:
 
 ```typescript
@@ -125,8 +125,8 @@ try {
 There are 3 methods to control transactions in `QueryRunner`:
 
 
-* `startTransaction` - starts a new transaction inside the query runner instance
-* `commitTransaction` - commits all changes made using the query runner instance
-* `rollbackTransaction` - rolls all changes made using the query runner instance back
+* `startTransaction` - starts a new transaction inside the query runner instance.
+* `commitTransaction` - commits all changes made using the query runner instance.
+* `rollbackTransaction` - rolls all changes made using the query runner instance back.
 
 Learn more about [Query Runner](./query-runner.md).

@@ -49,6 +49,12 @@ export interface BaseConnectionOptions {
     readonly migrations?: Function[]|string[];
 
     /**
+     * Migrations table name, in case of different name from "migrations".
+     * Accepts single string name.
+     */
+    readonly migrationsTableName?: string;
+
+    /**
      * Naming strategy to be used to name tables and columns in the database.
      */
     readonly namingStrategy?: NamingStrategyInterface;
@@ -61,7 +67,7 @@ export interface BaseConnectionOptions {
     /**
      * Logger instance used to log queries and events in the ORM.
      */
-    readonly logger?: "advanced-console"|"simple-console"|"file"|Logger;
+    readonly logger?: "advanced-console"|"simple-console"|"file"|"debug"|Logger;
 
     /**
      * Maximum number of milliseconds query should be executed before logger log a warning.
@@ -70,7 +76,7 @@ export interface BaseConnectionOptions {
 
     /**
      * Indicates if database schema should be auto created on every application launch.
-     * Be careful with this option and don't use this in production - otherwise you can loose production data.
+     * Be careful with this option and don't use this in production - otherwise you can lose production data.
      * This option is useful during debug and development.
      * Alternative to it, you can use CLI and run schema:sync command.
      *
@@ -87,7 +93,7 @@ export interface BaseConnectionOptions {
 
     /**
      * Drops the schema each time connection is being established.
-     * Be careful with this option and don't use this in production - otherwise you'll loose all production data.
+     * Be careful with this option and don't use this in production - otherwise you'll lose all production data.
      * This option is useful during debug and development.
      */
     readonly dropSchema?: boolean;

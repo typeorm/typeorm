@@ -33,4 +33,8 @@ export interface EntityOptions {
      */
     skipSync?: boolean;
 
+    /**
+     * Table name
+     */
+    name ?: string;
 }

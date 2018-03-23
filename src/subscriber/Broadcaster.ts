@@ -53,7 +53,7 @@ export class Broadcaster {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]()); // getValue() ?
+            .map(entityListener => entityListener.execute(subject.entity));
 
         const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeInsert)
@@ -75,7 +75,7 @@ export class Broadcaster {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+            .map(entityListener => entityListener.execute(subject.entity));
 
         const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeUpdate)
@@ -100,7 +100,7 @@ export class Broadcaster {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.databaseEntity[entityListener.propertyName]());
+            .map(entityListener => entityListener.execute(subject.databaseEntity));
 
         const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeRemove)
@@ -124,7 +124,7 @@ export class Broadcaster {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_INSERT && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+            .map(entityListener => entityListener.execute(subject.entity));
 
         const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterInsert)
@@ -146,7 +146,7 @@ export class Broadcaster {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+            .map(entityListener => entityListener.execute(subject.entity));
 
         const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterUpdate)
@@ -171,7 +171,7 @@ export class Broadcaster {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_REMOVE && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+            .map(entityListener => entityListener.execute(subject.entity));
 
         const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterRemove)
@@ -207,8 +207,15 @@ export class Broadcaster {
 
         // collect load events for all children entities that were loaded with the main entity
         const children = this.connection.getMetadata(target).relations.reduce((promises, relation) => {
-            if (!entity.hasOwnProperty(relation.propertyName))
-                return promises;
+
+            // in lazy relations we cannot simply access to entity property because it will cause a getter and a database query
+            if (relation.isLazy) {
+                if (!entity.hasOwnProperty(relation.propertyName))
+                    return promises;
+            } else {
+                if (entity[relation.propertyName] === null || entity[relation.propertyName] === undefined)
+                    return promises;
+            }
 
             const value = relation.getEntityValue(entity);
             if (value instanceof Array) {
@@ -243,7 +250,8 @@ export class Broadcaster {
         return  !subscriber.listenTo ||
                 !subscriber.listenTo() ||
                 subscriber.listenTo() === Object ||
-                subscriber.listenTo() === target;
+                subscriber.listenTo() === target ||
+                subscriber.listenTo().isPrototypeOf(target);
     }
 
 }

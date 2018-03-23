@@ -16,7 +16,16 @@ There are two ways how it can be used in browser:
 
 * **Webpack / ES2015 Module**
     
-    In the `browser` folder the package also includes a version compiled as a ES2015 module. If you want to use a different loader this is the point to start. The package is setup in a way that loaders like webpack will automatically use the `browser` folder.
+    In the `browser` folder the package also includes a version compiled as a ES2015 module. If you want to use a different loader this is the point to start. Prior to TypeORM 0.1.7, the package is setup in a way that loaders like webpack will automatically use the `browser` folder. With 0.1.7 this was dropped to support Webpack usage in Node.js projects. This means, that the `NormalModuleReplacementPlugin` has to be used to insure that the correct version is loaded for browser projects. The configuration in your webpack config file, for this plugin looks like this:
+
+    ```js
+    plugins: [
+        ..., // any existing plugins that you already have
+        new webpack.NormalModuleReplacementPlugin(/typeorm$/, function (result) {
+            result.request = result.request.replace(/typeorm/, "typeorm/browser");
+        })
+    ]
+    ```
 
 * **SystemJS**
     
@@ -49,7 +58,7 @@ createConnection({
 
 **Don't forget to include reflect-metadata**
     
-Don't forget to include reflect-metadata in your html:
+In your main html page, you need to include refllect-metadata:
 
 ```html
 <script src="./node_modules/reflect-metadata/Reflect.js"></script>
@@ -60,7 +69,7 @@ Don't forget to include reflect-metadata in your html:
 TypeORM is able to run on Cordova, PhoneGap, Ionic apps using the
 [cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage) plugin
 You have the option to choose between module loaders just like in browser package. 
-For an example how to use TypeORM in Cordova see [typeorm/cordova-example](https://github.com/typeorm/cordova-example) and for Ionic see [typeorm/ionic-example](https://github.com/typeorm/ionic-example).
+For an example how to use TypeORM in Cordova see [typeorm/cordova-example](https://github.com/typeorm/cordova-example) and for Ionic see [typeorm/ionic-example](https://github.com/typeorm/ionic-example). **Important**: For use with Ionic, a custom webpack config file is needed! Please checkout the example to see the needed changes.
 
 ## NativeScript
 

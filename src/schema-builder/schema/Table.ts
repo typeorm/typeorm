@@ -7,6 +7,9 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {Driver} from "../../driver/Driver";
 import {ColumnType} from "../../driver/types/ColumnTypes";
+import {AbstractSqliteDriver} from "../../driver/sqlite-abstract/AbstractSqliteDriver";
+import {MysqlDriver} from "../../driver/mysql/MysqlDriver";
+import {OracleDriver} from "../../driver/oracle/OracleDriver";
 
 /**
  * Table in the database represented in this class.
@@ -243,6 +246,7 @@ export class Table {
             // console.log(tableColumn.isUnique, "!==", columnMetadata.isUnique); //  ||
             // console.log(tableColumn.isGenerated, "!==", columnMetadata.isGenerated);
 
+            const skipGenerationCheck = columnMetadata.generationStrategy === "uuid" && (driver instanceof AbstractSqliteDriver || driver instanceof MysqlDriver || driver instanceof OracleDriver);
             return  tableColumn.name !== columnMetadata.databaseName ||
                     tableColumn.type !== driver.normalizeType(columnMetadata) ||
                     tableColumn.comment !== columnMetadata.comment ||
@@ -250,7 +254,7 @@ export class Table {
                     tableColumn.isNullable !== columnMetadata.isNullable ||
                     tableColumn.isUnique !== driver.normalizeIsUnique(columnMetadata) ||
                     // tableColumn.isPrimary !== columnMetadata.isPrimary ||
-                    tableColumn.isGenerated !== columnMetadata.isGenerated ||
+                    (skipGenerationCheck === false && tableColumn.isGenerated !== columnMetadata.isGenerated) ||
                     !this.compareColumnLengths(driver, tableColumn, columnMetadata);
         });
     }

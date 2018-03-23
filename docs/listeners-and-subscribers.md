@@ -71,7 +71,7 @@ export class Post {
 ### `@BeforeUpdate`
 
 You can define a method with any name in the entity and mark it with `@BeforeUpdate`
-and TypeORM will call it before an existing entity is updated using repository/manager `save`.
+and TypeORM will call it before an existing entity is updated using repository/manager `save`. Keep in mind, however, that this will occur only when information is changed in the model. If you run `save` without modifying anything from the model, `@BeforeUpdate` and `@AfterUpdate` will not run.
 Example:
 
 ```typescript

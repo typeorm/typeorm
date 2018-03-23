@@ -35,7 +35,7 @@ export class EntityMetadataValidator {
     /**
      * Validates all given entity metadatas.
      */
-    async validateMany(entityMetadatas: EntityMetadata[], driver: Driver) {
+    validateMany(entityMetadatas: EntityMetadata[], driver: Driver) {
         entityMetadatas.forEach(entityMetadata => this.validate(entityMetadata, entityMetadatas, driver));
         this.validateDependencies(entityMetadatas);
         this.validateEagerRelations(entityMetadatas);

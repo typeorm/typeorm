@@ -102,7 +102,7 @@ export class MetadataArgsStorage {
     filterListeners(target: Function|string): EntityListenerMetadataArgs[];
     filterListeners(target: (Function|string)[]): EntityListenerMetadataArgs[];
     filterListeners(target: (Function|string)|(Function|string)[]): EntityListenerMetadataArgs[] {
-        return this.filterByTargetAndWithoutDuplicateProperties(this.entityListeners, target);
+        return this.filterByTarget(this.entityListeners, target);
     }
 
     filterEmbeddeds(target: Function|string): EmbeddedMetadataArgs[];

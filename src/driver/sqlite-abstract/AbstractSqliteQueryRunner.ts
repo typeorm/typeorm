@@ -663,8 +663,11 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
             c += " NOT NULL";
         if (column.isUnique === true)
             c += " UNIQUE";
-        if (column.isGenerated === true && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
+        if (column.isGenerated === true && column.generationStrategy === "increment") { // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " PRIMARY KEY AUTOINCREMENT";
+        } else if (column.isPrimary === true && column.isGenerated === true) {
+            c += " PRIMARY KEY";
+        }
 
         if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
             c += " DEFAULT (" + column.default + ")";

@@ -27,6 +27,7 @@ describe("github issues > #493 pagination should work with string primary keys",
             .createQueryBuilder(Post, "post")
             .take(5)
             .skip(0)
+            .orderBy("post.id")
             .getMany();
 
         loadedPosts.length.should.be.equal(5);

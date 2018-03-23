@@ -27,6 +27,16 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
     readonly port?: number;
 
     /**
+     * Database username.
+     */
+    readonly username?: string;
+    
+    /**
+     * Database password.
+     */
+    readonly password?: string;
+
+    /**
      * Database name to connect to.
      */
     readonly database?: string;

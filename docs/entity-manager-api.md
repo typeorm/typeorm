@@ -57,7 +57,7 @@ const userId = manager.getId(user); // userId === 1
 ```
 
 * `create` - Creates a new instance of `User`. Optionally accepts an object literal with user properties
-which will be written into newly created user object
+which will be written into newly created user object.
 
 ```typescript
 const user = manager.create(User); // same as const user = new User();
@@ -68,15 +68,15 @@ const user = manager.create(User, {
 }); // same as const user = new User(); user.firstName = "Timber"; user.lastName = "Saw";
 ```
 
-* `merge` - Merges multiple entities into a single entity
+* `merge` - Merges multiple entities into a single entity.
 
 ```typescript
 const user = new User();
 manager.merge(User, user, { firstName: "Timber" }, { lastName: "Saw" }); // same as user.firstName = "Timber"; user.lastName = "Saw";
 ```
 
-* `preload` - Creates a new entity from the given plan javascript object. If entity already exist in the database, then
-it loads it (and everything related to it), replaces all values with the new ones from the given object
+* `preload` - Creates a new entity from the given plain javascript object. If the entity already exist in the database, then
+it loads it (and everything related to it), replaces all values with the new ones from the given object,
 and returns the new entity. The new entity is actually loaded from the database entity with all properties
 replaced from the new object.
 
@@ -94,10 +94,10 @@ const user = await manager.preload(User, partialUser);
 ```
 
 * `save` - Saves a given entity or array of entities.
-If the entity already exist in the database then it's updated.
-If the entity does not exist in the database yet it's inserted.
+If the entity already exists in the database, then it's updated.
+If the entity does not exist in the database yet, it's inserted.
 It saves all given entities in a single transaction (in the case of entity manager is not transactional).
-Also supports partial updating since all undefined properties are skipped.
+Also supports partial updating since all undefined properties are skipped. In order to make a value `NULL`, you must manually set the property to equal `null`.
 
 ```typescript
 await manager.save(user);
@@ -123,7 +123,7 @@ await manager.updateById(User, 1, { firstName: "Rizzrak" });
 ```
 
 * `remove` - Removes a given entity or array of entities.
-It removes all given entities in a single transaction (in the case of entity manager is not transactional).
+It removes all given entities in a single transaction (in the case of entity, manager is not transactional).
 
 ```typescript
 await manager.remove(user);
@@ -206,7 +206,7 @@ const categoryRepository = manager.getTreeRepository(Category);
 ```
 
 * `getMongoRepository` - Gets `MongoRepository` to perform operations on a specific entity.
- Learn more about [MongoDB](./mongodb.md) documentation.
+ Learn more about [MongoDB](./mongodb.md).
 
 ```typescript
 const userRepository = manager.getMongoRepository(User);
@@ -219,7 +219,7 @@ const userRepository = manager.getMongoRepository(User);
 const myUserRepository = manager.getCustomRepository(UserRepository);
 ```
 
-* `release` - Releases query runner of a entity manager. 
+* `release` - Releases query runner of an entity manager. 
 Used only when query runner was created and managed manually.
 
 ```typescript

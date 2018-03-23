@@ -6,6 +6,8 @@ import {RelationIdMetadata} from "./RelationIdMetadata";
 import {RelationCountMetadata} from "./RelationCountMetadata";
 import {Connection} from "../connection/Connection";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
+import {EntityListenerMetadata} from "./EntityListenerMetadata";
+import {IndexMetadata} from "./IndexMetadata";
 
 /**
  * Contains all information about entity's embedded property.
@@ -52,6 +54,26 @@ export class EmbeddedMetadata {
      * Relations inside this embed.
      */
     relations: RelationMetadata[] = [];
+
+    /**
+     * Entity listeners inside this embed.
+     */
+    listeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Indices applied to the embed columns.
+     */
+    indices: IndexMetadata[] = [];
+
+    /**
+     * Relation ids inside this embed.
+     */
+    relationIds: RelationIdMetadata[] = [];
+
+    /**
+     * Relation counts inside this embed.
+     */
+    relationCounts: RelationCountMetadata[] = [];
 
     /**
      * Nested embeddable in this embeddable (which has current embedded as parent embedded).
@@ -115,6 +137,16 @@ export class EmbeddedMetadata {
     relationsFromTree: RelationMetadata[] = [];
 
     /**
+     * Relations of this embed and all relations from its child embeds.
+     */
+    listenersFromTree: EntityListenerMetadata[] = [];
+
+    /**
+     * Indices of this embed and all indices from its child embeds.
+     */
+    indicesFromTree: IndexMetadata[] = [];
+
+    /**
      * Relation ids of this embed and all relation ids from its child embeds.
      */
     relationIdsFromTree: RelationIdMetadata[] = [];
@@ -159,10 +191,14 @@ export class EmbeddedMetadata {
         this.prefix = this.buildPrefix(connection);
         this.parentPropertyNames = this.buildParentPropertyNames();
         this.parentPrefixes = this.buildParentPrefixes();
-        this.propertyPath = this.parentPrefixes.join(".");
+        this.propertyPath = this.parentPropertyNames.join(".");
         this.embeddedMetadataTree = this.buildEmbeddedMetadataTree();
         this.columnsFromTree = this.buildColumnsFromTree();
         this.relationsFromTree = this.buildRelationsFromTree();
+        this.listenersFromTree = this.buildListenersFromTree();
+        this.indicesFromTree = this.buildIndicesFromTree();
+        this.relationIdsFromTree = this.buildRelationIdsFromTree();
+        this.relationCountsFromTree = this.buildRelationCountsFromTree();
         return this;
     }
 
@@ -205,6 +241,22 @@ export class EmbeddedMetadata {
 
     protected buildRelationsFromTree(): RelationMetadata[] {
         return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildRelationsFromTree()), this.relations);
+    }
+
+    protected buildListenersFromTree(): EntityListenerMetadata[] {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildListenersFromTree()), this.listeners);
+    }
+
+    protected buildIndicesFromTree(): IndexMetadata[] {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildIndicesFromTree()), this.indices);
+    }
+
+    protected buildRelationIdsFromTree(): RelationIdMetadata[] {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildRelationIdsFromTree()), this.relationIds);
+    }
+
+    protected buildRelationCountsFromTree(): RelationCountMetadata[] {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildRelationCountsFromTree()), this.relationCounts);
     }
 
 }

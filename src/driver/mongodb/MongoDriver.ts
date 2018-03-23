@@ -322,7 +322,11 @@ export class MongoDriver implements Driver {
         if (this.options.url)
             return this.options.url;
 
-        return `mongodb://${this.options.host || "127.0.0.1"}:${this.options.port || "27017"}/${this.options.database}`;
+        const credentialsUrlPart = (this.options.username && this.options.password)
+            ? `${this.options.username}:${this.options.password}@`
+            : "";
+
+        return `mongodb://${credentialsUrlPart}${this.options.host || "127.0.0.1"}:${this.options.port || "27017"}/${this.options.database}`;
     }
 
 }

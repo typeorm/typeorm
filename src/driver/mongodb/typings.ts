@@ -808,7 +808,7 @@ export declare class Db extends EventEmitter {
      * Create a new collection on a server with the specified options. Use this to create capped collections.
      *
      * @param name The collection name we wish to access.
-     * @param options Oprional.
+     * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createCollection
      */
     createCollection(name: string, options?: CollectionCreateOptions): Promise<Collection>;
@@ -4380,7 +4380,7 @@ export interface MongodbFindOneOptions {
     partial?: boolean;
 
     /**
-     * Number of miliseconds to wait before aborting the query.
+     * Number of milliseconds to wait before aborting the query.
      */
     maxTimeMs?: number;
 }
@@ -4991,7 +4991,7 @@ export declare class Cursor<T> extends Readable {
     /**
      * Returns an array of documents. The caller is responsible for making sure that there is enough
      * memory to store the results. Note that the array only contain partial results when this cursor had
-     * been previouly accessed. In that case, cursor.rewind() can be used to reset the cursor.
+     * been previously accessed. In that case, cursor.rewind() can be used to reset the cursor.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#toArray
      */
     toArray(): Promise<T[]>;
@@ -4999,7 +4999,7 @@ export declare class Cursor<T> extends Readable {
     /**
      * Returns an array of documents. The caller is responsible for making sure that there is enough
      * memory to store the results. Note that the array only contain partial results when this cursor had
-     * been previouly accessed. In that case, cursor.rewind() can be used to reset the cursor.
+     * been previously accessed. In that case, cursor.rewind() can be used to reset the cursor.
      * @param callback The result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#toArray
      */

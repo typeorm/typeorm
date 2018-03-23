@@ -33,8 +33,8 @@ It creates all files needed for a basic project with TypeORM:
 * src/index.ts
 
 Then you can run `npm install` to install all dependencies.
-Once all dependencies are installed you need to modify `ormconfig.json` and insert your own database settings.
-After that you can run your application by running `npm start`.
+Once all dependencies are installed, you need to modify `ormconfig.json` and insert your own database settings.
+After that, you can run your application by running `npm start`.
 
 All files are generated in the current directory.
 If you want to generate them in a special directory you can use `--name`: 
@@ -72,9 +72,9 @@ You can create a new entity using CLI:
 typeorm entity:create -n User
 ```
 
-where `User` is entity file and class name. 
+where `User` is an entity file and class name. 
 Running the command will create a new empty entity in `entitiesDir` of the project.
-To setup `entitiesDir` of the project you must add it in connection options:
+To setup the `entitiesDir` of the project you must add it in connection options:
 
 ```
 {
@@ -103,8 +103,8 @@ You can create a new subscriber using CLI:
 typeorm subscriber:create -n UserSubscriber
 ```
 
-where `UserSubscriber` is subscriber file and class name. 
-Running following command will create a new empty subscriber in the `subscribersDir` of the project.
+where `UserSubscriber` is a subscriber file and class name. 
+Running the following command will create a new empty subscriber in the `subscribersDir` of the project.
 To setup `subscribersDir` you must add it in connection options:
 
 ```
@@ -131,10 +131,10 @@ Learn more about [Subscribers](./listeners-and-subscribers.md).
 You can create a new migration using CLI:
 
 ```
-typeorm migration:create -n UserMigration
+typeorm migrations:create -n UserMigration
 ```
 
-where `UserMigration` is migration file and class name. 
+where `UserMigration` is a migration file and class name. 
 Running the command will create a new empty migration in the `migrationsDir` of the project.
 To setup `migrationsDir` you must add it in connection options:
 
@@ -151,7 +151,7 @@ If you have a multi-module project structure with multiple migrations in differe
 you can provide a path to the CLI command where you want to generate a migration:
 
 ```
-typeorm migration:create -n UserMigration -d src/user/migration
+typeorm migrations:create -n UserMigration -d src/user/migration
 ```
 
 Learn more about [Migrations](./migrations.md).
@@ -162,10 +162,10 @@ Automatic migration generation creates a new migration file
 and writes all sql queries that must be executed to update the database.
 
 ```
-typeorm migration:generate -n UserMigration
+typeorm migrations:generate -n UserMigration
 ```
 
-Rule of thumb is to generate a migration after each entity change.
+The rule of thumb is to generate a migration after each entity change.
 
 Learn more about [Migrations](./migrations.md).
 
@@ -181,7 +181,7 @@ Learn more about [Migrations](./migrations.md).
 
 ## Revert migrations
 
-To revert last executed migration use following command:
+To revert the last executed migration use the following command:
 
 ```
 typeorm migrations:revert
@@ -199,8 +199,8 @@ typeorm schema:sync
 ```
 
 Be careful running this command in production - 
-schema sync may bring you data loose if you don't use it wisely.
-Check sql queries it will run before running this query on production.
+schema sync may cause data loss if you don't use it wisely.
+Check which sql queries it will run before running on production.
 
 ## Log sync database schema queries without actual running them
 
@@ -212,13 +212,13 @@ typeorm schema:log
 
 ## Drop database schema
 
-To complete drop a database schema use:
+To completely drop a database schema use:
 
 ```
 typeorm schema:drop
 ```
 
-Be careful with this command on production since it completely remove data from your database.
+Be careful with this command on production since it completely removes data from your database.
 
 ## Run any sql query
 

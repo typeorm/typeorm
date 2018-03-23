@@ -4,7 +4,7 @@ import {ObjectType} from "../common/ObjectType";
 import {QueryPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
+import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -62,6 +62,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         } else throw new Error("OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL");
     }
 
+    /**
+     * Adds additional ON CONFLICT statement supported in postgres.
+     */
+    onConflict(statement: string): this {
+        this.expressionMap.onConflict = statement;
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -94,7 +102,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         return value();
 
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof SqliteDriver) {
+                        if (this.connection.driver instanceof AbstractSqliteDriver) {
                             return "NULL";
 
                         } else {
@@ -128,7 +136,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         return value();
 
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof SqliteDriver) {
+                        if (this.connection.driver instanceof AbstractSqliteDriver) {
                             return "NULL";
 
                         } else {
@@ -146,13 +154,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         // generate sql query
         if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
-            return `INSERT INTO ${this.getTableName(this.getMainTableName())}${columnNames ? "(" + columnNames + ")" : ""} VALUES ${values} RETURNING ${this.expressionMap.returning}`;
+            return `INSERT INTO ${this.getTableName(this.getMainTableName())}${columnNames ? "(" + columnNames + ")" : ""} VALUES ${values}${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""} RETURNING ${this.expressionMap.returning}`;
 
         } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
             return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) OUTPUT ${this.expressionMap.returning} VALUES ${values}`;
 
         } else {
-            return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) VALUES ${values}`;
+            return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) VALUES ${values}${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
         }
     }
 

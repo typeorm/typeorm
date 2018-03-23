@@ -98,6 +98,9 @@ export class Post {
     @Column("text")
     text: string;
 
+    @Column("citext")
+    citext: string;
+
     // -------------------------------------------------------------------------
     // Binary Data Types
     // -------------------------------------------------------------------------
@@ -230,10 +233,12 @@ export class Post {
     array: number[];
 
     // -------------------------------------------------------------------------
-    // TypeOrm Specific Type
+    // TypeOrm Specific Types
     // -------------------------------------------------------------------------
 
     @Column("simple-array")
     simpleArray: string[];
 
+    @Column("simple-json")
+    simpleJson: { param: string };
 }

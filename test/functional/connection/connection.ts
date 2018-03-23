@@ -83,10 +83,9 @@ describe("Connection", () => {
     });
 
     describe.skip("establishing connection", function() {
-        let connection: Connection;
         it("should throw DriverOptionNotSetError when extra.socketPath and host is missing", function() {
             expect(() => {
-                connection = getConnectionManager().create(<ConnectionOptions>{
+                getConnectionManager().create(<ConnectionOptions>{
                     type: "mysql",
                     username: "test",
                     password: "test",

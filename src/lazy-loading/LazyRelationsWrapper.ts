@@ -28,7 +28,7 @@ export class LazyRelationsWrapper {
         const relationLoader = new RelationLoader(this.connection);
         const dataIndex = "__" + relation.propertyName + "__"; // in what property of the entity loaded data will be stored
         const promiseIndex = "__promise_" + relation.propertyName + "__"; // in what property of the entity loading promise will be stored
-        const resolveIndex = "__has_" + relation.propertyName + "__"; // indicates if relation data already was loaded or not
+        const resolveIndex = "__has_" + relation.propertyName + "__"; // indicates if relation data already was loaded or not, we need this flag if loaded data is empty
 
         Object.defineProperty(object, relation.propertyName, {
             get: function() {

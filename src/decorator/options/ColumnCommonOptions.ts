@@ -6,6 +6,12 @@ import {ValueTransformer} from "./ValueTransformer";
 export interface ColumnCommonOptions {
 
     /**
+     * Indicates if column is always selected by QueryBuilder and find operations.
+     * Default value is "true".
+     */
+    select?: boolean;
+
+    /**
      * Column name in the database.
      */
     name?: string;

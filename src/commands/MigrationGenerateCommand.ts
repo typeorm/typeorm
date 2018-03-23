@@ -64,8 +64,8 @@ export class MigrationGenerateCommand {
             const sqlQueries = await connection.driver.createSchemaBuilder().log();
             const upSqls: string[] = [], downSqls: string[] = [];
 
-            // mysql is exceptional here because it uses ` character in to escape names in queries, thats why for mysql
-            // we are using simple quoted string instead of template string sytax
+            // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
+            // we are using simple quoted string instead of template string syntax
             if (connection.driver instanceof MysqlDriver) {
                 sqlQueries.forEach(query => {
                     const queryString = typeof query === "string" ? query : query.up;
