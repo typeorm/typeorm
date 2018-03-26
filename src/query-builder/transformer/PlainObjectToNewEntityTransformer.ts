@@ -28,12 +28,12 @@ export class PlainObjectToNewEntityTransformer {
 
         // copy regular column properties from the given object
         metadata.columns
-            .filter(column => object.hasOwnProperty(column.propertyName))
+            .filter(column => column.propertyName in object)
             .forEach(column => entity[column.propertyName] = object[column.propertyName]); // todo: also need to be sure that type is correct
 
         // if relation is loaded then go into it recursively and transform its values too
         metadata.relations
-            .filter(relation => object.hasOwnProperty(relation.propertyName))
+            .filter(relation => relation.propertyName in object)
             .forEach(relation => {
                 const relationMetadata = relation.inverseEntityMetadata;
                 if (!relationMetadata)
