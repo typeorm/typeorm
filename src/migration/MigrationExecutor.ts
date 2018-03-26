@@ -29,8 +29,8 @@ export class MigrationExecutor {
                 protected queryRunner?: QueryRunner) {
 
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
-        this.migrationsTable = this.connection.driver.buildTableName(this.migrationsTableName, options.schema, options.database);
         this.migrationsTableName = "migrations" || connection.options.migrationsTableName;
+        this.migrationsTable = this.connection.driver.buildTableName(this.migrationsTableName, options.schema, options.database);
     }
 
     // -------------------------------------------------------------------------
