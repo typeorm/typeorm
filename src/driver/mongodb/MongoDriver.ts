@@ -162,12 +162,20 @@ export class MongoDriver implements Driver {
                 maxStalenessSeconds: this.options.maxStalenessSeconds,
                 loggerLevel: this.options.loggerLevel,
                 logger: this.options.logger
-            }, (err: any, dbConnection: any) => {
+            }, (err: any, client: any) => {
+                if (err) return fail(err);
+
+                this.queryRunner = new MongoQueryRunner(this.connection, client.db(this.options.database));
+                ok();
+            });
+            /*
+            (err: any, dbConnection: any) => {
                 if (err) return fail(err);
 
                 this.queryRunner = new MongoQueryRunner(this.connection, dbConnection);
                 ok();
-            });
+            }
+            */
         });
     }
 
@@ -326,7 +334,7 @@ export class MongoDriver implements Driver {
             ? `${this.options.username}:${this.options.password}@`
             : "";
 
-        return `mongodb://${credentialsUrlPart}${this.options.host || "127.0.0.1"}:${this.options.port || "27017"}/${this.options.database}`;
+        return encodeURIComponent(`mongodb://${credentialsUrlPart}${this.options.host || "127.0.0.1"}:${this.options.port || "27017"}/${this.options.database}`);
     }
 
 }
