@@ -290,6 +290,10 @@ export class PostgresDriver implements Driver {
         if (value === null || value === undefined)
             return value;
 
+        // SQL expressions
+        if (value instanceof Function)
+            return value;
+
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0;
 
