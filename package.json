@@ -97,7 +97,7 @@
     "package": "gulp package"
   },
   "bin": {
-    "typeorm": "./cli.js"
+    "typeorm": "./src/cli.js"
   },
   "collective": {
     "type": "opencollective",
