@@ -1301,7 +1301,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 return this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
             });
-        const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
+        
+        const uniqSelects = (selects: string[]) => {
+            const uniq: any = {};
+
+            return selects.filter(select => {
+                return uniq.hasOwnProperty(select.toUpperCase()) ? false : (uniq[select.toUpperCase()] = true);
+            });
+        };
+
+        const selection = uniqSelects(allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : ""))).join(", ");
+        
         if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver)
             return "SELECT ROWNUM " + this.escape("RN") + "," + selection + " FROM " + froms.join(", ") + lock;
 
