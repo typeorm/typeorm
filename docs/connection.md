@@ -3,7 +3,7 @@
 * [What is `Connection`](#what-is-connection)
 * [Creating a new connection](#creating-a-new-connection)
 * [Using `ConnectionManager`](#using-connectionmanager)
-* [Working with connection](#working-with-connection-1)
+* [Working with connection](#working-with-connection)
     
 ## What is `Connection`
 

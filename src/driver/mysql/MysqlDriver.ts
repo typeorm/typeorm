@@ -161,7 +161,7 @@ export class MysqlDriver implements Driver {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    
+
     constructor(connection: Connection) {
         this.connection = connection;
         this.options = connection.options as MysqlConnectionOptions;
@@ -305,8 +305,8 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "json") {
             return JSON.stringify(value);
 
-        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToDate(value, true);
+        } else if (columnMetadata.type === "timestamp" || columnMetadata.type === "datetime" || columnMetadata.type === Date) {
+            return DateUtils.mixedDateToDate(value);
 
         } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
             return RandomGenerator.uuid4();
@@ -327,7 +327,7 @@ export class MysqlDriver implements Driver {
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return value;
-            
+
         if (columnMetadata.type === Boolean) {
             value = !!value;
 
@@ -345,7 +345,7 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value);
-            
+
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
         }
@@ -414,7 +414,7 @@ export class MysqlDriver implements Driver {
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
-        return column.isUnique || 
+        return column.isUnique ||
             !!column.entityMetadata.indices.find(index => index.isUnique && index.columns.length === 1 && index.columns[0] === column);
     }
 
@@ -422,17 +422,17 @@ export class MysqlDriver implements Driver {
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-        
+
         if (column.length)
             return column.length;
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+            return this.dataTypeDefaults[normalizedType].length!.toString();
 
         return "";
-    }    
-    
+    }
+
     createFullType(column: TableColumn): string {
         let type = column.type;
 
@@ -574,7 +574,9 @@ export class MysqlDriver implements Driver {
           Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
           cause the hosting app to crash.
          */
-        connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));
+        if (connection.listeners("error").length === 0) {
+            connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));
+        }
         return connection;
     }
 

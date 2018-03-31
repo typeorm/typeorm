@@ -86,7 +86,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 if (!this.expressionMap.insertColumns.length)
                     return !column.isGenerated;
 
-                return this.expressionMap.insertColumns.indexOf(column.propertyPath);
+                return this.expressionMap.insertColumns.indexOf(column.propertyPath) !== -1;
             });
 
             // get a table name and all column database names

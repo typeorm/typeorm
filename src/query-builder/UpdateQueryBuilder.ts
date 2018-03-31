@@ -268,7 +268,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Creates "ORDER BY" part of SQL query.
      */
     protected createOrderByExpression() {
-        const orderBys = this.expressionMap.allOrderBys;
+        const orderBys = this.expressionMap.orderBys;
         if (Object.keys(orderBys).length > 0)
             return " ORDER BY " + Object.keys(orderBys)
                     .map(columnName => {

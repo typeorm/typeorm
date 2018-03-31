@@ -444,6 +444,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `logger` - Specify a customer logger mechanism, can be used to log using your app level logger.
 
+* `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
+
 ## `sql.js` connection options
 
 * `database`: The raw UInt8Array database that should be imported.

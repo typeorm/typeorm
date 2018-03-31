@@ -109,7 +109,7 @@ export class SqlServerDriver implements Driver {
         "table",
         "timestamp",
         "uniqueidentifier",
-        "xml"        
+        "xml"
     ];
 
     /**
@@ -123,7 +123,7 @@ export class SqlServerDriver implements Driver {
         "binary",
         "varbinary"
     ];
-    
+
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
@@ -290,11 +290,11 @@ export class SqlServerDriver implements Driver {
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === "smalldatetime"
             || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToDate(value, true, false);
+            return DateUtils.mixedDateToDate(value, false, false);
 
         } else if (columnMetadata.type === "datetime2"
             || columnMetadata.type === "datetimeoffset") {
-            return DateUtils.mixedDateToDate(value, true, true);
+            return DateUtils.mixedDateToDate(value, false, true);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
@@ -419,13 +419,13 @@ export class SqlServerDriver implements Driver {
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-        
+
         if (column.length)
             return column.length;
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+            return this.dataTypeDefaults[normalizedType].length!.toString();
 
         return "";
     }

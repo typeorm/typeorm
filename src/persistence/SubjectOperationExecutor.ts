@@ -829,15 +829,15 @@ export class SubjectOperationExecutor {
             subject.metadata.primaryColumns.forEach(column => {
                 parentConditions[column.databaseName] = column.getEntityValue(subject.databaseEntity);
             });
-            await this.queryRunner.delete(subject.metadata.parentEntityMetadata.tableName, parentConditions);
+            await this.queryRunner.delete(subject.metadata.parentEntityMetadata.tablePath, parentConditions);
 
             const childConditions: ObjectLiteral = {};
             subject.metadata.primaryColumns.forEach(column => {
                 childConditions[column.databaseName] = column.getEntityValue(subject.databaseEntity);
             });
-            await this.queryRunner.delete(subject.metadata.tableName, childConditions);
+            await this.queryRunner.delete(subject.metadata.tablePath, childConditions);
         } else {
-            await this.queryRunner.delete(subject.metadata.tableName, subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity)!);
+            await this.queryRunner.delete(subject.metadata.tablePath, subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity)!);
         }
     }
 

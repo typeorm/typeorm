@@ -5,6 +5,7 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+
 ## 0.1.*
 
 * [ ] for PostgresSQL --> left join lateral (..)
@@ -155,6 +156,19 @@ feel free to ask us and community.
 * [ ] `@Select('...SQL...', { ...options })`
 * [ ] parallelizm & multithreading in code (for [].map|filter|reduce n other things)
 * [ ] use mocha-parallel for execution tests
+
+
+## 0.1.19
+
+* fixed bug in InsertQueryBuilder
+
+## 0.1.18
+
+* fixed timestamp issues
+
+## 0.1.17
+
+* fixed issue with entity order by applied to update query builder
 
 ## 0.1.16
 

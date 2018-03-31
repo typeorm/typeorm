@@ -15,17 +15,8 @@ export class DateUtils {
             return mixedDate;
 
         const date = typeof mixedDate === "string" ? new Date(mixedDate) : mixedDate as Date;
-        // if (!storedInLocal) {
 
-        // else if it was not stored in local timezone, means it was stored in UTC
-        // because driver hydrates it with timezone applied why we need to add timezone hours to match a local timezone
-
-        const correctedDate = new Date();
-        correctedDate.setUTCFullYear(date.getFullYear(), date.getMonth(), date.getDate());
-        correctedDate.setUTCHours(date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds());
-        return correctedDate;
-        // }
-        // return date;
+        return date;
     }
 
     /**

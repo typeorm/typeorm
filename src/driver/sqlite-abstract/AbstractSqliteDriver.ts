@@ -120,7 +120,7 @@ export class AbstractSqliteDriver implements Driver {
         "blob",
         "clob"
     ];
-    
+
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
@@ -222,7 +222,7 @@ export class AbstractSqliteDriver implements Driver {
             return DateUtils.mixedDateToTimeString(value);
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToUtcDatetimeString(value); // to string conversation needs because SQLite stores fate as integer number, when date came as Object
+            return DateUtils.mixedDateToDatetimeString(value); // to string conversation needs because SQLite stores fate as integer number, when date came as Object
 
         } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
             return RandomGenerator.uuid4();
@@ -362,22 +362,22 @@ export class AbstractSqliteDriver implements Driver {
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.isUnique;
     }
-    
+
     /**
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-        
+
         if (column.length)
             return column.length;
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+            return this.dataTypeDefaults[normalizedType].length!.toString();
 
         return "";
     }
-    
+
     /**
      * Normalizes "default" value of the column.
      */

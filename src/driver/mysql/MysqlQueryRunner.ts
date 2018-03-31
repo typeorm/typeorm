@@ -846,6 +846,8 @@ export class MysqlQueryRunner implements QueryRunner {
             c += " COLLATE " + column.collation;
         if (column.isNullable !== true)
             c += " NOT NULL";
+        if (column.isNullable === true)
+            c += " NULL";
         if (column.isUnique === true)
             c += " UNIQUE";
         if (column.isGenerated && column.isPrimary && !skipPrimary)
