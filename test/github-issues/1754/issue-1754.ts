@@ -3,6 +3,7 @@ import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src";
 import {TipoCliente} from "./entity/tipo-cliente";
+import { expect } from "chai";
 
 describe("github issue #1754 Repository.save() always updating ManyToOne relation", () => {
 
@@ -49,6 +50,22 @@ describe("github issue #1754 Repository.save() always updating ManyToOne relatio
         // Fail just to check the query log!
         // Query from log:  UPDATE `cliente` SET `nome`=?, `tipoCliente`=?  WHERE `id`=? -- PARAMETERS: ["Kirliam changed 2",1,1]
         // expect(false, "Verificar as queries!!!").is.true;
+    })));
+
+
+    it("should work as expected", () => Promise.all(connections.map(async connection => {
+        // A new scenario where the manytoone relation is null!
+        const cliente = new Cliente();
+        cliente.id = 1;
+        cliente.nome = "Kirliam";
+        await connection.manager.save(cliente);
+
+        let myReceivedJson1 = {id: 1, nome: "Kirliam", tipo: null} as any;
+        await connection.manager.getRepository(Cliente).save(myReceivedJson1);
+
+        // Fail just to check the query log!
+        // Query from log:  UPDATE `cliente` SET `tipoCliente` = ?  WHERE `id` = ? -- PARAMETERS: [null,1]
+        expect(false, "Verificar as queries!!!").is.true;
     })));
 
 });
