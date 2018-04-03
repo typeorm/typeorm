@@ -340,7 +340,7 @@ export class Gulpfile {
         chai.use(require("sinon-chai"));
         chai.use(require("chai-as-promised"));
 
-	    return gulp.src(["./build/compiled/test/**/*.js"])
+        return gulp.src(["./build/compiled/test/**/*.js"])
             .pipe(mocha({
                 bail: true,
                 grep: !!args.grep ? new RegExp(args.grep) : undefined,
@@ -406,3 +406,4 @@ export class Gulpfile {
     }
 
 }
+
