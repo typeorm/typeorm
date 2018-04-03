@@ -39,7 +39,7 @@ export class LazyRelationsWrapper {
                     return this[promiseIndex];
 
                 // nothing is loaded yet, load relation data and save it in the model once they are loaded
-                this[promiseIndex] = relationLoader.load(relation, this).then(result => {
+                this[promiseIndex] = relationLoader.load(relation, this, Reflect.getOwnMetadata("manager", this)).then(result => {
                     this[dataIndex] = result;
                     this[resolveIndex] = true;
                     delete this[promiseIndex];

@@ -735,7 +735,7 @@ export class EntityManager {
 
         this.joinEagerRelations(qb, qb.alias, metadata);
         FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
-        return qb.andWhereInIds([id]).getOne();
+        return qb.andWhereInIds([id]).getOne(this);
     }
 
     /**
