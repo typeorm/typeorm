@@ -3,14 +3,10 @@ import {Column} from "../../../../src/decorator/columns/Column";
 import {Post} from "./Post";
 import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
 import {Category} from "./Category";
-import { PrimaryGeneratedColumn } from "../../../../src";
 
 @Entity()
 export class PostCategory {
 
-    @PrimaryGeneratedColumn()
-    id: number;
-    
     @ManyToOne(type => Post, post => post.categories, {
         primary: true,
         cascadeInsert: true
