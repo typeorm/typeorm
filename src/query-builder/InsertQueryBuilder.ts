@@ -4,7 +4,11 @@ import {ObjectType} from "../common/ObjectType";
 import {QueryPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
+import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
+import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -20,7 +24,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     getQuery(): string {
         let sql = this.createInsertExpression();
-        return sql.trim();
+        // regexp converting multiline query string into single line
+        return sql.trim().replace(/(?:\n(?:\s*))+/g, " "); // todo?: it may be need to be a part of util/StringUtil.ts
     }
 
     /**
@@ -70,6 +75,27 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this;
     }
 
+    /**
+     * Adds additional ignore statement supported in databases.
+     */
+    orIgnore(statement: string | boolean = true): this {
+        this.expressionMap.onIgnore = statement;
+        return this;
+    }
+    /**
+     * Adds additional update statement supported in databases.
+     */
+    orUpdate(statement?: { columns?: string[], conflict_target?: string | string[] }): this {
+        this.expressionMap.onUpdate = {};
+        if (statement && statement.conflict_target instanceof Array)
+            this.expressionMap.onUpdate.conflict = ` ( ${statement.conflict_target.join(", ")} ) `;
+        if (statement && typeof statement.conflict_target === "string")
+            this.expressionMap.onUpdate.conflict = ` ON CONSTRAINT ${statement.conflict_target} `;
+        if (statement && statement.columns instanceof Array)
+            this.expressionMap.onUpdate.columns = statement.columns.map(column => `${column} = :${column}`).join(", ");
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -80,6 +106,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected createInsertExpression() { // todo: insertion into custom tables wont work because of binding to columns. fix it
         const valueSets = this.getValueSets();
         let values: string, columnNames: string;
+        let tableName: string = this.getTableName(this.getMainTableName());
 
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const columns = this.expressionMap.mainAlias!.metadata.columns.filter(column => {
@@ -152,15 +179,61 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             }).join(", ");
         }
 
-        // generate sql query
-        if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
-            return `INSERT INTO ${this.getTableName(this.getMainTableName())}${columnNames ? "(" + columnNames + ")" : ""} VALUES ${values}${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""} RETURNING ${this.expressionMap.returning}`;
+        if (this.connection.driver instanceof PostgresDriver) {
+            return `INSERT
+                    INTO ${tableName}${columnNames ? "(" + columnNames + ")" : ""}
+                    VALUES ${values}
+                    ${this.expressionMap.onIgnore ? 
+                        " ON CONFLICT DO NOTHING " : ""}
+                    ${this.expressionMap.onUpdate ? 
+                        " ON CONFLICT " + this.expressionMap.onUpdate.conflict + 
+                        " DO UPDATE SET " + this.expressionMap.onUpdate.columns : ""}
+                    ${this.expressionMap.onConflict ? 
+                        " ON CONFLICT " + this.expressionMap.onConflict : ""}
+                    ${this.expressionMap.returning ? 
+                        " RETURNING " + this.expressionMap.returning : ""}`;
 
-        } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
-            return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) OUTPUT ${this.expressionMap.returning} VALUES ${values}`;
+        } 
+        else if (this.connection.driver instanceof SqlServerDriver) {
+            return `INSERT
+                    INTO ${tableName}(${columnNames})
+                    ${this.expressionMap.onIgnore ? (() => { throw new Error("Ignore on duplicate error is not supported in Oracle Database"); })() : ""}
+                    ${this.expressionMap.onUpdate ? (() => { throw new Error("Update on duplicate error is not supported in Oracle Database"); })() : ""}
+                    ${this.expressionMap.returning ? " OUTPUT " + this.expressionMap.returning : ""}
+                    VALUES ${values}`;
 
-        } else {
-            return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) VALUES ${values}${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
+        } 
+        else if (this.connection.driver instanceof SqljsDriver || this.connection.driver instanceof SqliteDriver) {
+            return `INSERT
+                    ${this.expressionMap.onIgnore ? " OR IGNORE " : ""}
+                    ${this.expressionMap.onUpdate ? " OR REPLACE " : ""}
+                    ${this.expressionMap.onConflict ? this.expressionMap.onConflict : ""}
+                    INTO ${tableName}(${columnNames})
+                    VALUES ${values}`;
+        } 
+        else if (this.connection.driver instanceof OracleDriver) {
+            return `INSERT
+                    ${this.expressionMap.onIgnore ? " /*+ ignore_row_on_dupkey_index(${tableName}, ${this.expressionMap.onIgnore}) */ " : ""}
+                    ${this.expressionMap.onUpdate ? (() => { throw new Error("Update on duplicate error is not supported in Oracle Database"); })() : ""}
+                    INTO ${tableName}(${columnNames})
+                    ${this.expressionMap.returning ? " OUTPUT " + this.expressionMap.returning : ""}
+                    VALUES ${values}`;
+
+        }
+        else if (this.connection.driver instanceof MysqlDriver) {
+            return `INSERT
+                    ${this.expressionMap.onIgnore ? " IGNORE " : ""}
+                    INTO ${tableName}(${columnNames})
+                    ${this.expressionMap.returning ? " OUTPUT " + this.expressionMap.returning : ""}
+                    VALUES ${values}
+                    ${this.expressionMap.onUpdate ? " ON DUPLICATE KEY UPDATE " + this.expressionMap.onUpdate.columns : ""}`;
+
+        }
+        else {
+            return `INSERT
+                    INTO ${tableName}(${columnNames})
+                    VALUES ${values}
+                    ${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
         }
     }
 
