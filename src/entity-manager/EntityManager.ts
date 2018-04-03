@@ -619,7 +619,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         this.joinEagerRelations(qb, qb.alias, metadata);
-        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
+        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany(this);
     }
 
     /**
@@ -645,7 +645,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         this.joinEagerRelations(qb, qb.alias, metadata);
-        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
+        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount(this);
     }
 
     /**
@@ -681,7 +681,7 @@ export class EntityManager {
             return id;
         });
         this.joinEagerRelations(qb, qb.alias, metadata);
-        return qb.andWhereInIds(ids).getMany();
+        return qb.andWhereInIds(ids).getMany(this);
     }
 
     /**
@@ -701,7 +701,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || metadata.name);
         this.joinEagerRelations(qb, qb.alias, metadata);
-        return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getOne();
+        return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getOne(this);
     }
 
     /**

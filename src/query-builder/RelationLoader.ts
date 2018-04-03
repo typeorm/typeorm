@@ -24,6 +24,9 @@ export class RelationLoader {
      * Loads relation data for the given entity and its relation.
      */
     load(relation: RelationMetadata, entity: ObjectLiteral, manager?: EntityManager): Promise<any> {
+        if (!(manager && manager.queryRunner && manager.queryRunner.isTransactionActive)) {
+            manager = undefined;
+        }
         if (relation.isManyToOne || relation.isOneToOneOwner) {
             return this.loadManyToOneOrOneToOneOwner(relation, entity, manager);
 
