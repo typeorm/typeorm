@@ -10,6 +10,12 @@ export interface QueryResultCacheOptions {
     identifier: string;
 
     /**
+     * Prefix to be applied to the cache identifer
+     *
+     */
+    prefix?: string;
+
+    /**
      * Time, when cache was created.
      */
     time?: number;
@@ -28,5 +34,4 @@ export interface QueryResultCacheOptions {
      * Query result that will be cached.
      */
     result?: any;
-
 }
