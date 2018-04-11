@@ -10,8 +10,7 @@ export interface QueryResultCacheOptions {
     identifier: string;
 
     /**
-     * Prefix to be applied to the cache identifer
-     *
+     * Prefix to be applied to the cache identifer.
      */
     prefix?: string;
 
