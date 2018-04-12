@@ -134,6 +134,7 @@ export class OracleDriver implements Driver {
         migrationTimestamp: "timestamp",
         cacheId: "int",
         cacheIdentifier: "nvarchar",
+        cachePrefix: "nvarchar",
         cacheTime: "timestamp",
         cacheDuration: "int",
         cacheQuery: "text",
@@ -317,7 +318,7 @@ export class OracleDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value);
-            
+
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
         }

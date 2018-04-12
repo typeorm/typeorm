@@ -67,6 +67,11 @@ export interface MappedColumnTypes {
     cacheIdentifier: ColumnType;
 
     /**
+     * Column type for prefix column in query result cache table.
+     */
+    cachePrefix: ColumnType;
+
+    /**
      * Column type for time column in query result cache table.
      */
     cacheTime: ColumnType;

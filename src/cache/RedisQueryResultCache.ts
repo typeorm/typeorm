@@ -78,7 +78,7 @@ export class RedisQueryResultCache implements QueryResultCache {
                 ok(undefined);
             }
             if (options.prefix) {
-                key = `${options.prefix}~${key}`;
+                key = `${options.prefix}${key}`;
             }
 
             this.client.get(key, (err: any, result: any) => {
@@ -106,7 +106,7 @@ export class RedisQueryResultCache implements QueryResultCache {
                 ok(undefined);
             }
             if (options.prefix) {
-                key = `${options.prefix}~${key}`;
+                key = `${options.prefix}${key}`;
             }
 
             this.client.set(key, JSON.stringify(options), (err: any, result: any) => {
