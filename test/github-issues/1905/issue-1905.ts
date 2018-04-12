@@ -129,11 +129,11 @@ describe("github issues > #1905 Use prefix for caching key when provided in cach
                 cacheOptions = { query: "query", identifier: "identifier", prefix: "prefix", time: 0, duration: 0, result: "with identifer and prefix" };
                 await dbQueryResultCache.storeInCache(cacheOptions, undefined);
                 let resultWithCacheIdentifierAndPrefix: any = await dbQueryResultCache.getFromCache(cacheOptions);
-                expect(resultWithCacheIdentifierAndPrefix!.id).to.eq(3);
+                expect(resultWithCacheIdentifierAndPrefix!.id).to.eq(4);
                 expect(resultWithCacheIdentifierAndPrefix!.result).to.eq("with identifer and prefix");
                 await dbQueryResultCache.storeInCache({...cacheOptions, result: "update identifier and prefix"}, cacheOptions);
                 resultWithCacheIdentifierAndPrefix = await dbQueryResultCache.getFromCache(cacheOptions);
-                expect(resultWithCacheIdentifierAndPrefix!.id).to.eq(3);
+                expect(resultWithCacheIdentifierAndPrefix!.id).to.eq(4);
                 expect(resultWithCacheIdentifierAndPrefix!.result).to.eq("update identifier and prefix");
             })));
         });
