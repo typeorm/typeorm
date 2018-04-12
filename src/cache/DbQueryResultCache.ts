@@ -17,7 +17,7 @@ export class DbQueryResultCache implements QueryResultCache {
     // Constructor
     // -------------------------------------------------------------------------
 
-        constructor(protected connection: Connection) {
+    constructor(protected connection: Connection) {
     }
 
     // -------------------------------------------------------------------------
