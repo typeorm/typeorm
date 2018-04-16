@@ -31,6 +31,7 @@ import {Brackets} from "./Brackets";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
 import {OffsetWithoutLimitNotSupportedError} from "../error/OffsetWithoutLimitNotSupportedError";
+import {EntityManager} from "../entity-manager/EntityManager";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1012,9 +1013,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Gets single entity returned by execution of generated query builder sql.
      */
-    async getOne(): Promise<Entity|undefined> {
+    async getOne(manager?: EntityManager): Promise<Entity|undefined> {
         const results = await this.getRawAndEntities();
         const result = results.entities[0] as any;
+
+        if (result && manager) {
+            Reflect.defineMetadata("manager", manager, result);
+        }
 
         if (result && this.expressionMap.lockMode === "optimistic" && this.expressionMap.lockVersion) {
             const metadata = this.expressionMap.mainAlias!.metadata;
@@ -1037,11 +1042,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Gets entities returned by execution of generated query builder sql.
      */
-    async getMany(): Promise<Entity[]> {
+    async getMany(manager?: EntityManager): Promise<Entity[]> {
         if (this.expressionMap.lockMode === "optimistic")
             throw new OptimisticLockCanNotBeUsedError();
 
         const results = await this.getRawAndEntities();
+        if (results.entities && manager) {
+            results.entities.map(e => Reflect.defineMetadata("manager", manager, e));
+        }
         return results.entities;
     }
 
@@ -1067,7 +1075,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Executes built SQL query and returns entities and overall entities count (without limitation).
      * This method is useful to build pagination.
      */
-    async getManyAndCount(): Promise<[Entity[], number]> {
+    async getManyAndCount(manager?: EntityManager): Promise<[Entity[], number]> {
         if (this.expressionMap.lockMode === "optimistic")
             throw new OptimisticLockCanNotBeUsedError();
 
@@ -1075,6 +1083,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         try {
             const entitiesAndRaw = await this.executeEntitiesAndRawResults(queryRunner);
             const count = await this.executeCountQuery(queryRunner);
+            if (entitiesAndRaw.entities && manager) {
+                entitiesAndRaw.entities.map(e => Reflect.defineMetadata("manager", manager, e));
+            }
             return [entitiesAndRaw.entities, count];
 
         } finally {
