@@ -137,6 +137,7 @@ export class MysqlDriver implements Driver {
         migrationTimestamp: "bigint",
         cacheId: "int",
         cacheIdentifier: "varchar",
+        cachePrefix: "varchar",
         cacheTime: "bigint",
         cacheDuration: "int",
         cacheQuery: "text",

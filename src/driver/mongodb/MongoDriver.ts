@@ -77,6 +77,7 @@ export class MongoDriver implements Driver {
         migrationTimestamp: "int",
         cacheId: "int",
         cacheIdentifier: "int",
+        cachePrefix: "int",
         cacheTime: "int",
         cacheDuration: "int",
         cacheQuery: "int",
@@ -264,7 +265,7 @@ export class MongoDriver implements Driver {
     getColumnLength(column: ColumnMetadata): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
-    
+
     /**
      * Normalizes "default" value of the column.
      */

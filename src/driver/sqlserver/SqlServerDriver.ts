@@ -139,6 +139,7 @@ export class SqlServerDriver implements Driver {
         migrationTimestamp: "bigint",
         cacheId: "int",
         cacheIdentifier: "nvarchar",
+        cachePrefix: "nvarchar",
         cacheTime: "bigint",
         cacheDuration: "int",
         cacheQuery: "nvarchar(MAX)" as any,

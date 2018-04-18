@@ -49,7 +49,6 @@ export class DbQueryResultCache implements QueryResultCache {
         await queryRunner.createTable(new Table("query-result-cache", [ // createTableIfNotExist
             new TableColumn({
                 name: "id",
-                isNullable: true,
                 isPrimary: true,
                 type: driver.normalizeType({ type: driver.mappedDataTypes.cacheId }),
                 generationStrategy: "increment",
@@ -58,6 +57,11 @@ export class DbQueryResultCache implements QueryResultCache {
             new TableColumn({
                 name: "identifier",
                 type: driver.normalizeType({ type: driver.mappedDataTypes.cacheIdentifier }),
+                isNullable: true
+            }),
+            new TableColumn({
+                name: "prefix",
+                type: driver.normalizeType({ type: driver.mappedDataTypes.cachePrefix }),
                 isNullable: true
             }),
             new TableColumn({
@@ -92,26 +96,33 @@ export class DbQueryResultCache implements QueryResultCache {
      * Returns undefined if result is not cached.
      */
     getFromCache(options: QueryResultCacheOptions, queryRunner?: QueryRunner): Promise<QueryResultCacheOptions|undefined> {
+        const { identifier, query, prefix } = options;
+        if (!identifier && !query) {
+            return Promise.resolve(undefined);
+        }
         queryRunner = this.getQueryRunner(queryRunner);
         const qb = this.connection
             .createQueryBuilder(queryRunner)
             .select()
             .from("query-result-cache", "cache");
 
-        if (options.identifier) {
-            return qb
+        if (identifier) {
+            qb
                 .where(`${qb.escape("cache")}.${qb.escape("identifier")} = :identifier`)
-                .setParameters({ identifier: this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(options.identifier, "nvarchar") : options.identifier })
-                .getRawOne();
-
-        } else if (options.query) {
-            return qb
+                .setParameter("identifier", this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(identifier, "nvarchar") : identifier);
+        } else {
+            qb
                 .where(`${qb.escape("cache")}.${qb.escape("query")} = :query`)
-                .setParameters({ query: this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(options.query, "nvarchar") : options.query })
-                .getRawOne();
+                .setParameter("query", this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(query, "nvarchar") : query);
         }
 
-        return Promise.resolve(undefined);
+        if (prefix) {
+            qb
+               .andWhere(`${qb.escape("cache")}.${qb.escape("prefix")} = :prefix`)
+                .setParameter("prefix", this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(prefix, "nvarchar") : prefix);
+        }
+
+        return qb.getRawOne();
     }
 
     /**
@@ -131,6 +142,7 @@ export class DbQueryResultCache implements QueryResultCache {
         if (this.connection.driver instanceof SqlServerDriver) { // todo: bad abstraction, re-implement this part, probably better if we create an entity metadata for cache table
             insertedValues = {
                 identifier: new MssqlParameter(options.identifier, "nvarchar"),
+                prefix: new MssqlParameter(options.prefix, "nvarchar"),
                 time: new MssqlParameter(options.time, "bigint"),
                 duration: new MssqlParameter(options.duration, "int"),
                 query: new MssqlParameter(options.query, "nvarchar"),
@@ -138,11 +150,13 @@ export class DbQueryResultCache implements QueryResultCache {
             };
         }
 
+        const prefixCondition = options.prefix ? { prefix: insertedValues.prefix } : {};
+
         if (savedCache && savedCache.identifier) { // if exist then update
-            await queryRunner.update("query-result-cache", insertedValues, { identifier: insertedValues.identifier });
+            await queryRunner.update("query-result-cache", insertedValues, { identifier: insertedValues.identifier, ...prefixCondition });
 
         } else if (savedCache && savedCache.query) { // if exist then update
-            await queryRunner.update("query-result-cache", insertedValues, { query: insertedValues.query });
+            await queryRunner.update("query-result-cache", insertedValues, { query: insertedValues.query, ...prefixCondition });
 
         } else { // otherwise insert
             await queryRunner.insert("query-result-cache", insertedValues);

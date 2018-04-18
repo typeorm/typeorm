@@ -73,22 +73,18 @@ export class RedisQueryResultCache implements QueryResultCache {
      */
     getFromCache(options: QueryResultCacheOptions, queryRunner?: QueryRunner): Promise<QueryResultCacheOptions|undefined> {
         return new Promise((ok, fail) => {
-
-            if (options.identifier) {
-                this.client.get(options.identifier, (err: any, result: any) => {
-                    if (err) return fail(err);
-                    ok(JSON.parse(result));
-                });
-
-            } else if (options.query) {
-                this.client.get(options.query, (err: any, result: any) => {
-                    if (err) return fail(err);
-                    ok(JSON.parse(result));
-                });
-
-            } else {
+            let key = options.identifier || options.query;
+            if (!key) {
                 ok(undefined);
             }
+            if (options.prefix) {
+                key = `${options.prefix}${key}`;
+            }
+
+            this.client.get(key, (err: any, result: any) => {
+                if (err) return fail(err);
+                ok(JSON.parse(result));
+            });
         });
     }
 
@@ -104,18 +100,19 @@ export class RedisQueryResultCache implements QueryResultCache {
      */
     async storeInCache(options: QueryResultCacheOptions, savedCache: QueryResultCacheOptions, queryRunner?: QueryRunner): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            if (options.identifier) {
-                this.client.set(options.identifier, JSON.stringify(options), (err: any, result: any) => {
-                    if (err) return fail(err);
-                    ok();
-                });
+            let key = options.identifier || options.query;
 
-            } else if (options.query) {
-                this.client.set(options.query, JSON.stringify(options), (err: any, result: any) => {
-                    if (err) return fail(err);
-                    ok();
-                });
+            if (!key) {
+                ok(undefined);
             }
+            if (options.prefix) {
+                key = `${options.prefix}${key}`;
+            }
+
+            this.client.set(key, JSON.stringify(options), (err: any, result: any) => {
+                if (err) return fail(err);
+                ok();
+            });
         });
     }
 
