@@ -225,7 +225,7 @@ createConnection().then(connection => {
         res.json(created);
     });
 
-    app.put("/users/:id", function(req: Request, res: Response) {
+    app.put("/users/:id", async function(req: Request, res: Response) {
         await userRepository.update(req.params.id, req.body);
         res.json({
           message: 'Updated.'
