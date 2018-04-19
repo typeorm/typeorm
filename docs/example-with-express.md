@@ -197,7 +197,7 @@ import * as express from "express";
 import {Request, Response} from "express";
 import * as bodyParser from  "body-parser";
 import {createConnection} from "typeorm";
-import {User} from "./User";
+import {User} from "./entity/User";
 
 // create typeorm connection
 createConnection().then(connection => {
@@ -236,7 +236,7 @@ you can simply use `getConnection`:
 
 ```typescript
 import {getConnection} from "typeorm";
-import {User} from "./User";
+import {User} from "./entity/User";
 
 export function UsersListAction(req: Request, res: Response) {
     return getConnection().getRepository(User).find();
@@ -247,7 +247,7 @@ You don't even need `getConnection` in this example - you can directly use the `
 
 ```typescript
 import {getRepository} from "typeorm";
-import {User} from "./User";
+import {User} from "./entity/User";
 
 export function UsersListAction(req: Request, res: Response) {
     return getRepository(User).find();
