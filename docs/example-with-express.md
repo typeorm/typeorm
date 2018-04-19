@@ -210,20 +210,33 @@ createConnection().then(connection => {
     // register routes
 
     app.get("/users", async function(req: Request, res: Response) {
-        return userRepository.find();
+        const users = await userRepository.find();
+        res.json(users);
     });
 
     app.get("/users/:id", async function(req: Request, res: Response) {
-        return userRepository.findOne(req.params.id);
+        const user = await userRepository.findOne(req.params.id);
+        res.json(user);
     });
 
     app.post("/users", async function(req: Request, res: Response) {
         const user = userRepository.create(req.body);
-        return userRepository.save(user);
+        const created = await userRepository.save(user);
+        res.json(created);
+    });
+
+    app.put("/users/:id", function(req: Request, res: Response) {
+        await userRepository.update(req.params.id, req.body);
+        res.json({
+          message: 'Updated.'
+        });
     });
 
     app.delete("/users/:id", async function(req: Request, res: Response) {
-        return userRepository.remove(req.params.id);
+        await userRepository.delete(req.params.id);
+        res.json({
+          message: 'Deleted.'
+        });
     });
 
     // start express server
