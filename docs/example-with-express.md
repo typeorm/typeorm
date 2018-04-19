@@ -21,7 +21,7 @@ Then switch to the directory and create a new project:
 ```
 cd user
 npm init
-``` 
+```
 
 Finish the init process by filling in all required application information.
 
@@ -31,7 +31,7 @@ Now we need to install and setup a TypeScript compiler. Lets install it first:
 npm i typescript --save-dev
 ```
 
-Then let's create a `tsconfig.json` file which contains the configuration required for the application to 
+Then let's create a `tsconfig.json` file which contains the configuration required for the application to
 compile and run. Create it using your favorite editor and put the following configuration:
 
 ```json
@@ -45,7 +45,7 @@ compile and run. Create it using your favorite editor and put the following conf
     "experimentalDecorators": true
   }
 }
-``` 
+```
 
 Now let's create a main application endpoint - `app.ts` inside the `src` directory:
 
@@ -136,7 +136,7 @@ However, those routes do not return any content yet.
 
 ## Adding TypeORM to the application
 
-Finally, let's add TypeORM to the application. 
+Finally, let's add TypeORM to the application.
 In this example, we will use `mysql` driver.
 Setup process for other drivers is similar.
 
@@ -147,7 +147,7 @@ npm i typeorm mysql reflect-metadata --save
 ```
 
 * `typeorm` is the typeorm package itself
-* `mysql` is the underlying database driver. 
+* `mysql` is the underlying database driver.
 If you are using a diffrent database system,  you must install the appropriate package
 * `reflect-metadata` is required to make decorators to work properly
 
@@ -162,7 +162,8 @@ Now let's create `ormconfig.json` with the database connection configuration we 
     "password": "test",
     "database": "test",
     "entities": ["src/entity/*.js"],
-    "logging": true
+    "logging": true,
+    "synchronize": true
   }
 ```
 
@@ -185,7 +186,7 @@ export class User {
 
     @Column()
     lastName: string;
-    
+
 }
 ```
 
@@ -201,30 +202,30 @@ import {User} from "./User";
 // create typeorm connection
 createConnection().then(connection => {
     const userRepository = connection.getRepository(User);
-    
+
     // create and setup express app
     const app = express();
     app.use(bodyParser.json());
-    
+
     // register routes
-    
+
     app.get("/users", async function(req: Request, res: Response) {
         return userRepository.find();
     });
-    
+
     app.get("/users/:id", async function(req: Request, res: Response) {
         return userRepository.findOne(req.params.id);
     });
-    
+
     app.post("/users", async function(req: Request, res: Response) {
         const user = userRepository.create(req.body);
         return userRepository.save(user);
     });
-    
+
     app.delete("/users/:id", async function(req: Request, res: Response) {
         return userRepository.remove(req.params.id);
     });
-    
+
     // start express server
     app.listen(3000);
 });
