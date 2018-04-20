@@ -1725,7 +1725,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             enumName = enumName + "_old";
         return enumName.split(".").map(i => {
             return disableEscape ? i : `"${i}"`;
-        }).join(".");
+        }).join(".").toLocaleLowerCase();
     }
 
     /**
