@@ -148,7 +148,7 @@ export class EntityManager {
             return this.connection.createQueryBuilder(entityClass as Function|EntitySchema<Entity>|string, alias, queryRunner || this.queryRunner);
 
         } else {
-            return this.connection.createQueryBuilder(entityClass as QueryRunner|undefined || this.queryRunner);
+            return this.connection.createQueryBuilder(entityClass as QueryRunner|undefined || queryRunner || this.queryRunner);
         }
     }
 
@@ -217,12 +217,12 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
 
         if (!plainObjectOrObjects)
-            return metadata.create();
+            return metadata.create(this.queryRunner);
 
         if (plainObjectOrObjects instanceof Array)
             return plainObjectOrObjects.map(plainEntityLike => this.create(entityClass, plainEntityLike));
 
-        const mergeIntoEntity = metadata.create();
+        const mergeIntoEntity = metadata.create(this.queryRunner);
         this.plainObjectToEntityTransformer.transform(mergeIntoEntity, plainObjectOrObjects, metadata, true);
         return mergeIntoEntity;
     }

@@ -10,6 +10,7 @@ import {QueryExpressionMap} from "../QueryExpressionMap";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {abbreviate} from "../../util/StringUtils";
 import {OracleDriver} from "../../driver/oracle/OracleDriver";
+import {QueryRunner} from "../..";
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -24,7 +25,8 @@ export class RawSqlResultsToEntityTransformer {
     constructor(protected expressionMap: QueryExpressionMap,
                 protected driver: Driver,
                 protected rawRelationIdResults: RelationIdLoadResult[],
-                protected rawRelationCountResults: RelationCountLoadResult[]) {
+                protected rawRelationCountResults: RelationCountLoadResult[],
+                protected queryRunner?: QueryRunner) {
     }
 
     // -------------------------------------------------------------------------
@@ -85,7 +87,7 @@ export class RawSqlResultsToEntityTransformer {
             if (discriminatorMetadata)
                 metadata = discriminatorMetadata;
         }
-        let entity: any = metadata.create();
+        let entity: any = metadata.create(this.queryRunner);
 
         // get value from columns selections and put them into newly created entity
         const hasColumns = this.transformColumns(rawResults, alias, entity, metadata);

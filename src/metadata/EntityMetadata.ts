@@ -21,6 +21,7 @@ import {TreeType} from "./types/TreeTypes";
 import {TreeMetadataArgs} from "../metadata-args/TreeMetadataArgs";
 import {UniqueMetadata} from "./UniqueMetadata";
 import {CheckMetadata} from "./CheckMetadata";
+import {QueryRunner} from "..";
 
 /**
  * Contains all entity metadata.
@@ -485,14 +486,18 @@ export class EntityMetadata {
     /**
      * Creates a new entity.
      */
-    create(): any {
+    create(queryRunner?: QueryRunner): any {
         // if target is set to a function (e.g. class) that can be created then create it
-        if (this.target instanceof Function)
-            return new (<any> this.target)();
+        let ret: any;
+        if (this.target instanceof Function) {
+            ret = new (<any> this.target)();
+            this.lazyRelations.forEach(relation => this.connection.relationLoader.enableLazyLoad(relation, ret, queryRunner));
+            return ret;
+        }
 
         // otherwise simply return a new empty object
         const newObject = {};
-        this.lazyRelations.forEach(relation => this.connection.relationLoader.enableLazyLoad(relation, newObject));
+        this.lazyRelations.forEach(relation => this.connection.relationLoader.enableLazyLoad(relation, newObject, queryRunner));
         return newObject;
     }
 

@@ -25,4 +25,5 @@ getConnectionOptions().then(connectionOptions => {
 });
 ```
 
-TBD.
+Naming Strategy is a subject to change.
+Expect detailed documentation once its API gets stabilized.

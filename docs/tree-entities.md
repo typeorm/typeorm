@@ -259,3 +259,4 @@ const parents = await repository
 
 ```typescript
 const parentsCount = await repository.countAncestors(childCategory);
+```

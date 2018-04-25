@@ -112,7 +112,7 @@ You can change it by specifying your own name.
 * `length: string|number` - Column type's length. For example, if you want to create `varchar(150)` type 
 you specify column type and length options.
 * `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
-* `onUpdate: string` - `ON UPDATE` trigger. Works only for [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
+* `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 * `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. 
 By default column is `nullable: false`.
 * `readonly: boolean` - Indicates if column value is not updated by "save" operation. It means you'll be able to write this value only when you first time insert the object.
@@ -127,15 +127,15 @@ Default value is `false`.
 * `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), 
 which represents the number of digits to the right of the decimal point and must not be greater than precision. 
 Used in some column types.
-* `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Works only for MySQL. 
+* `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. 
 If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
-* `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Works only for MySQL.
+* `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
 * `charset: string` - Defines a column character set. Not supported by all database types.
 * `collation: string` - Defines a column collation.
 * `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
 You can specify array of values or specify a enum class.
-* `asExpression: string` - Generated column expression. Supports only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
-* `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Supports only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+* `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+* `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
 * `array: boolean` - Used for postgres column types which can be array (for example int[]).
 * `transformer: ValueTransformer` - Specifies a value transformer that is to be used to (un)marshal this column when reading or writing to the database.
@@ -713,8 +713,6 @@ Learn more about [indices](indices.md).
 This decorator allows you to create a database unique constraint for a specific column or columns.
 This decorator can be applied only to an entity itself.
 
-> Note: MySQL stores unique constraints as unique indices
-
 Examples:
 
 ```typescript
@@ -735,12 +733,12 @@ export class User {
 }
 ```
 
+> Note: MySQL stores unique constraints as unique indices
+
 #### `@Check`
 
 This decorator allows you to create a database check constraint for a specific column or columns.
 This decorator can be applied only to an entity itself. 
-
-> Note: MySQL does not support check constraints.
 
 Examples:
 
@@ -760,6 +758,8 @@ export class User {
     age: number;
 }
 ```
+
+> Note: MySQL does not support check constraints.
 
 #### `@Transaction`, `@TransactionManager` and `@TransactionRepository`
 

@@ -14,14 +14,14 @@
     
 ## What is `ConnectionOptions`
 
-Connection options is a connection configuration object you pass to `createConnection`
- or create in `ormconfig` file. Different drivers have their own specific connection options.
+Connection options is a connection configuration you pass to `createConnection`
+ or define in `ormconfig` file. Different databases have their own specific connection options.
 
 ## Common connection options
 
 * `type` - Database type. You must specify what database engine you use.
  Possible values are "mysql", "postgres", "mariadb", "sqlite", "cordova", "oracle", "mssql", "mongodb", "sqljs", "react-native". 
- This option is required.
+ This option is **required**.
 
 * `name` - Connection name. You'll use it to get connection you need using `getConnection(name: string)` 
 or `ConnectionManager.get(name: string)`. 
@@ -85,6 +85,12 @@ This option is useful during debug and development.
 
 * `migrationsRun` - Indicates if migrations should be auto run on every application launch.
 As an alternative, you can use CLI and run migrations:run command.
+
+* `migrationsTableName` - Name of the table in the database which is going to contain information about executed migrations.
+By default this table is called "migrations".
+
+* `cache` - Enables entity result caching. You can also configure cache type and other cache options here.
+Read more about caching [here](./caching.md).
 
 * `cli.entitiesDir` - Directory where entities should be created by default by CLI.
 

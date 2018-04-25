@@ -1,11 +1,12 @@
 # Using ormconfig.json
 
 * [Creating a new connection from the configuration file](#creating-a-new-connection-from-the-configuration-file)
-* [Loading from `ormconfig.json`](#loading-from-ormconfigjson)
-* [Loading from `ormconfig.js`](#loading-from-ormconfigjs)
-* [Loading from `ormconfig.env` or from environment variables](#loading-from-ormconfigenv-or-from-environment-variables)
-* [Loading from `ormconfig.yml`](#loading-from-ormconfigyml)
-* [Loading from `ormconfig.xml`](#loading-from-ormconfigxml)
+* [Using `ormconfig.json`](#loading-from-ormconfigjson)
+* [Using `ormconfig.js`](#loading-from-ormconfigjs)
+* [Using environment variables](#loading-from-ormconfigenv-or-from-environment-variables)
+* [Using `ormconfig.yml`](#loading-from-ormconfigyml)
+* [Using `ormconfig.xml`](#loading-from-ormconfigxml)
+* [Overriding options defined in ormconfig](#overriding-options-defined-in-ormconfig)
 
 ## Creating a new connection from the configuration file
 
@@ -16,13 +17,16 @@ You only need to create a `ormconfig.[format]` file in the root directory of you
 put your configuration there and in your app call `createConnection()` without any configuration passed:
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import {createConnection} from "typeorm";
 
-// createConnection method will automatically read connection options from your ormconfig file
-const connection: Connection = await createConnection();
+// createConnection method will automatically read connection options
+// from your ormconfig file or environment variables
+const connection = await createConnection();
 ```
+
+Supported ormconfig file formats are: `.json`, `.js`, `.env`, `.yml` and `.xml`.
  
-## Loading from `ormconfig.json`
+## Using `ormconfig.json`
 
 Create `ormconfig.json` in the project root (near `package.json`). It should have the following content:
 
@@ -37,8 +41,7 @@ Create `ormconfig.json` in the project root (near `package.json`). It should hav
 }
 ```
 
-You can specify any other options from `ConnectionOptions`.
-Learn more about [ConnectionOptions](./connection-options.md).
+You can specify any other options from [ConnectionOptions](./connection-options.md).
 
 If you want to create multiple connections then simply create multiple connections in a single array:
 
@@ -62,7 +65,7 @@ If you want to create multiple connections then simply create multiple connectio
 }]
 ```
 
-## Loading from `ormconfig.js`
+## Using `ormconfig.js`
 
 Create `ormconfig.js` in the project root (near `package.json`). It should have following content:
 
@@ -77,12 +80,12 @@ module.exports = {
 }
 ```
 
-You can specify any other options from `ConnectionOptions`.
+You can specify any other options from [ConnectionOptions](./connection-options.md).
 If you want to create multiple connections then simply create multiple connections in a single array and return it.
 
-## Loading from `ormconfig.env` or from environment variables
+## Using environment variables
 
-Create `ormconfig.env` in the project root (near `package.json`). It should have the following content:
+Create `.env` or `ormconfig.env` in the project root (near `package.json`). It should have the following content:
 
 ```ini
 TYPEORM_CONNECTION = mysql
@@ -129,7 +132,7 @@ On production you can set all these values in real ENVIRONMENT VARIABLES.
 You cannot define multiple connections using an `env` file or environment variables.
 If your app has multiple connections then use alternative configuration storage format.
 
-## Loading from `ormconfig.yml`
+## Using `ormconfig.yml`
 
 Create `ormconfig.yml` in the project root (near `package.json`). It should have the following content:
 
@@ -151,7 +154,7 @@ second-connection: # other connection
 
 You can use any connection options available.
 
-## Loading from `ormconfig.xml`
+## Using `ormconfig.xml`
 
 Create `ormconfig.xml` in the project root (near `package.json`). It should have the following content:
 
@@ -177,3 +180,24 @@ Create `ormconfig.xml` in the project root (near `package.json`). It should have
 ```
 
 You can use any connection options available.
+
+## Overriding options defined in ormconfig
+
+Sometimes you want to override values defined in your ormconfig file,
+or you might to append some TypeScript / JavaScript logic to your configuration.
+
+In such cases you can load options from ormconfig and get `ConnectionOptions` built,
+then you can do whatever you want with those options, before passing them to `createConnection` function:
+
+
+```typescript
+// read connection options from ormconfig file (or ENV variables)
+const connectionOptions = await getConnectionOptions();
+
+// do something with connectionOptions,
+// for example append a custom naming strategy or a custom logger
+Object.assign(connectionOptions, { namingStrategy: new MyNamingStrategy() });
+
+// create a connection using modified connection options
+const connection = await createConnection(connectionOptions);
+```
