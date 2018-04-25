@@ -8,7 +8,7 @@ import { File } from "./entity/File";
 import { Collection } from "./entity/Collection";
 import { CollectionFile } from "./entity/CollectionFile";
 
-describe("github issues > #1927 Update fails for entity with composite key with repository", () => {
+describe("github issues > #2027 Update fails for entity with composite key with repository", () => {
   let connections: Connection[];
   before(
     async () =>
