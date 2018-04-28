@@ -49,8 +49,10 @@ export const expectedResult = {
       "levelId": 2,
       "gradingId": 2,
       "roleId": 1,
+      "name": null,
     },
     {
+      "id": 3,
       "levelId": 3,
       "gradingId": 3,
       "roleId": 1,
