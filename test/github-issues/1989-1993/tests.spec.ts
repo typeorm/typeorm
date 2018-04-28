@@ -63,7 +63,7 @@ describe('Cascade update', () => {
     expect(result).to.equal(cascadeUpdate.expectedResult);
   });
 
-  it('(option 2) should only return the updated children', async () => {
+  it('(option 2) should not encounter error: null value in column "roleId" violates not-null constraint', async () => {
     const roleData = await roleRepository.create(cascadeUpdate.data);
     const result = await roleRepository.save(roleData);
     expect(result).to.equal(cascadeUpdate.expectedResult);
