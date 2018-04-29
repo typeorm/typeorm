@@ -26,9 +26,25 @@ describe('Cascade create', () => {
   it('should save all passed children', async () => {
     const roleData = roleRepository.create(cascadeCreate.data);
     const result = await roleRepository.save(roleData);
-    expect(result).to.equal(cascadeCreate.expectedResult);
+    expect(result).to.eql(cascadeCreate.expectedResult);
   });
 
+  it('(option 2) should save all passed children', async () => {
+    const queryRunner = connection.createQueryRunner();
+    await queryRunner.startTransaction();
+    let result;
+    try {
+      const role = await connection.manager.save(Role, { ...cascadeCreate.data, roleLevels: null });
+      const roleLevels = await connection.manager.insert(RoleLevel, cascadeCreate.data.roleLevels.map(data => {
+        return { ...data, roleId: role.id};
+      }));
+      await queryRunner.commitTransaction();
+      result = await connection.manager.findOne(Role, role.id);
+    } catch (err) {
+      queryRunner.rollbackTransaction();
+    }
+    expect(result).to.eql(cascadeCreate.expectedResult);
+  });
 });
 
 describe('Cascade update', () => {
@@ -60,13 +76,13 @@ describe('Cascade update', () => {
   it('(option 1) should only return the updated children', async () => {
     const roleData = await roleRepository.preload(cascadeUpdate.data);
     const result = await roleRepository.save(roleData);
-    expect(result).to.equal(cascadeUpdate.expectedResult);
+    expect(result).to.eql(cascadeUpdate.expectedResult);
   });
 
   it('(option 2) should not encounter error: null value in column "roleId" violates not-null constraint', async () => {
     const roleData = await roleRepository.create(cascadeUpdate.data);
     const result = await roleRepository.save(roleData);
-    expect(result).to.equal(cascadeUpdate.expectedResult);
+    expect(result).to.eql(cascadeUpdate.expectedResult);
   });
 
 });
