@@ -34,12 +34,12 @@ describe('Cascade create', () => {
     await queryRunner.startTransaction();
     let result;
     try {
-      const role = await connection.manager.save(Role, { ...cascadeCreate.data, roleLevels: null });
-      const roleLevels = await connection.manager.insert(RoleLevel, cascadeCreate.data.roleLevels.map(data => {
+      const role = await queryRunner.manager.save(Role, { ...cascadeCreate.data, roleLevels: null });
+      const roleLevels = await queryRunner.manager.insert(RoleLevel, cascadeCreate.data.roleLevels.map(data => {
         return { ...data, roleId: role.id};
       }));
       await queryRunner.commitTransaction();
-      result = await connection.manager.findOne(Role, role.id);
+      result = await queryRunner.manager.findOne(Role, role.id);
     } catch (err) {
       queryRunner.rollbackTransaction();
     }
