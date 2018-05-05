@@ -16,24 +16,24 @@ describe("github issues > #1993 Repository .create() with nested JSON, only one 
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should create all children during .create()", () => Promise.all(connections.map(async connection => {
+    const data = {
+      name: "UI Designer",
+      roleLevels: [
+        {
+          roleId: null,
+          name: "Junior"
+        },
+        {
+          roleId: null,
+          name: null
+        },
+        {
+          roleId: null,
+          name: "Senior"
+        }]
+    };
 
-      const data = {
-        name: "UI Designer",
-        roleLevels: [
-          {
-            roleId: null,
-            name: "Junior"
-          },
-          {
-            roleId: null,
-            name: null
-          },
-          {
-            roleId: null,
-            name: "Senior"
-          }]
-      };
+    it("should create all children during .create()", () => Promise.all(connections.map(async connection => {
 
       const roleRepository = connection.getRepository(Role);
       const result = roleRepository.create(data);

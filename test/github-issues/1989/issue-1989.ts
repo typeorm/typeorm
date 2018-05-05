@@ -5,7 +5,7 @@ import {expect} from "chai";
 
 import {Role} from "./entity/role.entity";
 
-describe("github issues > #1993 Repository .create() with nested JSON, only one child goes through", () => {
+describe("github issues > #1989 Save after preload with cascade & eager returns also old children", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -16,75 +16,69 @@ describe("github issues > #1993 Repository .create() with nested JSON, only one 
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should create all children during .create()", () => Promise.all(connections.map(async connection => {
-
-      const defaultData = {
-        "role": {
-          "name": "UI Designer"
+    const initialData = {
+      role: {
+        name: "UI Designer"
+      },
+      roleLevels: [
+        {
+          name: "Junior",
+          roleId: null
         },
-        "roleLevels": [
-          {
-            "levelId": 1,
-            "gradingId": 1,
-            "name": "Junior"
-          },
-          {
-            "levelId": 2,
-            "gradingId": 2,
-          }
-        ]
-      };
+        {
+          name: null,
+          roleId: null
+        }
+      ]
+    };
 
-      const data = {
-        "id": 1,
-        "name": "UI Designer (updated)",
-        "roleLevels": [
-          {
-            "id": 1,
-            "levelId": 1,
-            "gradingId": 2,
-            "name": "Junior (updated)"
-          },
-          {
-            "levelId": 3,
-            "gradingId": 3,
-            "name": "Senior (new)"
-          }
-        ]
-      };
+    const updateData = {
+      id: 1,
+      name: "UI Designer (updated)",
+      roleLevels: [
+        {
+          id: 1,
+          name: "Junior (updated)",
+          roleId: 1
+        },
+        {
+          name: "Senior (new)",
+          roleId: 1
+        }
+      ]
+    };
 
-      const expectedResult = {
-        "id": 1,
-        "name": "UI Designer (updated)",
-        "roleLevels": [
-          {
-            "id": 1,
-            "levelId": 1,
-            "gradingId": 2,
-            "roleId": 1,
-            "name": "Junior (updated)"
-          },
-          {
-            "id": 2,
-            "levelId": 2,
-            "gradingId": 2,
-            "roleId": 1,
-            "name": null,
-          },
-          {
-            "id": 3,
-            "levelId": 3,
-            "gradingId": 3,
-            "roleId": 1,
-            "name": "Senior (new)"
-          }
-        ]
-      };
+    const expectedResult = {
+      id: 1,
+      name: "UI Designer (updated)",
+      roleLevels: [
+        {
+          id: 1,
+          roleId: 1,
+          name: "Junior (updated)"
+        },
+        {
+          id: 2,
+          roleId: 1,
+          name: null,
+        },
+        {
+          id: 3,
+          roleId: 1,
+          name: "Senior (new)"
+        }
+      ]
+    };
 
-      /* const roleRepository = connection.getRepository(Role);
-      const result = roleRepository.create(data);
-      
-      expect(result).to.eql(data); */
+    it("should not return also the children before update (duplicate entries)", () => Promise.all(connections.map(async connection => {
+
+      const roleRepository = connection.getRepository(Role);
+      await roleRepository.save(roleRepository.create(initialData));
+      const updatedRole = await roleRepository.preload(updateData);
+      if (!!updatedRole) {
+        const result = await roleRepository.save(updatedRole);
+        expect(result).to.eql(expectedResult);
+      }
     })));
 
 });
