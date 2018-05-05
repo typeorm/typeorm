@@ -1,5 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
-import { RoleLevel } from './role-level.entity';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from "../../../../src/index";
+import { RoleLevel } from "./role-level.entity";
 
 @Entity()
 export class Role {
