@@ -92,7 +92,7 @@ export interface QueryRunner {
     /**
      * Executes a given SQL query and returns raw database results.
      */
-    query(query: string, parameters?: any[]): Promise<any>;
+    query(query: string, parameters?: ReadonlyArray<any>): Promise<any>;
 
     /**
      * Returns raw data stream.
