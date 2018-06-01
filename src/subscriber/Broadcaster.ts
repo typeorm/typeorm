@@ -6,6 +6,13 @@ import {BroadcasterResult} from "./BroadcasterResult";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 
+type EntitiesByMetadata = {
+    [target: string]: {
+        metadata: EntityMetadata,
+        entities: ObjectLiteral[],
+    },
+};
+
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
  */
@@ -273,6 +280,51 @@ export class Broadcaster {
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
     broadcastLoadEventsForAll(result: BroadcasterResult, metadata: EntityMetadata, entities: ObjectLiteral[]): void {
+        // Check if there are any subscribers to afterBulkLoad. If there aren't, we don't need to keep the entitiesByMetadata cache
+        const subscribersWithBulkLoad = this.queryRunner.connection.subscribers.filter(subscriber => !!subscriber.afterBulkLoad);
+        const entitiesByMetadata: EntitiesByMetadata | undefined = subscribersWithBulkLoad.length ? {} : undefined;
+
+        this.broadcastLoadEventsForAllInternal(result, metadata, entities, entitiesByMetadata);
+
+        if (entitiesByMetadata) {
+            const targets = Object.keys(entitiesByMetadata);
+            for (const target of targets) {
+                const {
+                    metadata,
+                    entities,
+                } = entitiesByMetadata[target];
+
+                subscribersWithBulkLoad.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target)) {
+                        const executionResult = subscriber.afterBulkLoad!({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entities,
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+        }
+    }
+
+    private broadcastLoadEventsForAllInternal(result: BroadcasterResult, metadata: EntityMetadata, entities: ObjectLiteral[], entitiesByMetadata?: EntitiesByMetadata): void {
+
+        if (entitiesByMetadata) {
+            const target = metadata.targetName;
+            if (!entitiesByMetadata[target]) {
+                entitiesByMetadata[target] = {
+                    metadata: metadata,
+                    entities,
+                };
+            } else {
+                entitiesByMetadata[target].entities = entitiesByMetadata[target].entities.concat(entities);
+            }
+        }
+
         entities.forEach(entity => {
             if (entity instanceof Promise) // todo: check why need this?
                 return;
@@ -287,7 +339,7 @@ export class Broadcaster {
 
                     const value = relation.getEntityValue(entity);
                     if (value instanceof Object)
-                        this.broadcastLoadEventsForAll(result, relation.inverseEntityMetadata, value instanceof Array ? value : [value]);
+                        this.broadcastLoadEventsForAllInternal(result, relation.inverseEntityMetadata, value instanceof Array ? value : [value], entitiesByMetadata);
                 });
             }
 

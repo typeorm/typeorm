@@ -1,6 +1,7 @@
 import {UpdateEvent} from "./event/UpdateEvent";
 import {RemoveEvent} from "./event/RemoveEvent";
 import {InsertEvent} from "./event/InsertEvent";
+import { BulkLoadEvent } from "./event/BulkLoadEvent";
 
 /**
  * Classes that implement this interface are subscribers that subscribe for the specific events in the ORM.
@@ -17,6 +18,11 @@ export interface EntitySubscriberInterface<Entity = any> {
      * Called after entity is loaded from the database.
      */
     afterLoad?(entity: Entity): Promise<any>|void;
+
+    /**
+     * Called after entities are loaded from the database.
+     */
+    afterBulkLoad?(event: BulkLoadEvent<Entity>): Promise<any>|void;
 
     /**
      * Called before entity is inserted to the database.
