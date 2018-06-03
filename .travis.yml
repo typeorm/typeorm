@@ -12,11 +12,16 @@ node_js:
 services:
   - docker
 
-before_script:
+before_install:
   - sudo service mysql stop
   - sudo service postgresql stop
+  - if [ -z "$DOCKER_USERNAME" ]; then echo "DOCKER_USERNAME is unset"; mv docker-compose-without-login.yml docker-compose.yml; else echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin; fi
   - docker-compose up -d
-  - cp ormconfig.travis.json ormconfig.json
+
+before_script:
+  - if [ -n "$DOCKER_USERNAME" ]; then npm i oracledb --no-save; mkdir /opt/oracle; cp ormconfig.travis.json ormconfig.json; docker cp typeorm-oracle-client:/usr/lib/oracle/12.2/client64 /opt/oracle/instantclient_12_2; export LD_LIBRARY_PATH=/opt/oracle/instantclient_12_2/lib:$LD_LIBRARY_PATH; else cp ormconfig.travis.no-login.json ormconfig.json; fi
+  - if [ -n "$DOCKER_USERNAME" ]; then docker exec -it typeorm-oracle bash -c 'echo WHENEVER SQLERROR EXIT FAILURE > /tmp/user.sql; echo CREATE USER typeorm IDENTIFIED BY Passw0rd\; >> /tmp/user.sql;  echo GRANT CONNECT TO typeorm\; >> /tmp/user.sql;  echo GRANT UNLIMITED TABLESPACE TO typeorm\; >> /tmp/user.sql;  echo exit >> /tmp/user.sql'; fi
+  - if [ -n "$DOCKER_USERNAME" ]; then docker exec -it typeorm-oracle bash -c 'until source /home/oracle/.bashrc; sqlplus -L -S sys/Oradoc_db1@localhost:1521/orclpdb1.localdomain as sysdba @/tmp/user.sql  ; do echo waiting for oracle; sleep 10; done;' ; fi
 
 script:
   - npm test

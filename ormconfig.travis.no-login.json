@@ -51,14 +51,14 @@
     "database": "tempdb"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "oracle",
     "type": "oracle",
     "host": "localhost",
-    "username": "typeorm",
-    "password": "Passw0rd",
+    "username": "system",
+    "password": "oracle",
     "port": 1521,
-    "sid": "orclpdb1.localdomain"
+    "sid": "xe.oracle.docker"
   },
   {
     "skip": false,
