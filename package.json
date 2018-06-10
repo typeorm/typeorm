@@ -99,7 +99,7 @@
   },
   "scripts": {
     "test-ci": "gulp ci-tests",
-    "test": "tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 30000  ./build/compiled/test",
+    "test": "tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --colors --recursive --timeout 30000  ./build/compiled/test",
     "compile": "tsc",
     "package": "gulp package"
   },
