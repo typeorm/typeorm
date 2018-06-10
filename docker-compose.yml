@@ -74,14 +74,7 @@ services:
 
   # oracle
   oracle:
-   image: "store/oracle/database-enterprise:12.2.0.1-slim"
+   image: "sath89/oracle-12c"
    container_name: "typeorm-oracle"
    ports:
      - "1521:1521"
-   environment:
-       DB_SID: "sys"
-       SYS_PASSWORD: "ORCLCDB"
-
-  oracle_client:
-   image: "store/oracle/database-instantclient:12.2.0.1"
-   container_name: "typeorm-oracle-client"

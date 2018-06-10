@@ -58,7 +58,7 @@
     "username": "typeorm",
     "password": "Passw0rd",
     "port": 1521,
-    "sid": "orclpdb1.localdomain"
+    "sid": "xe"
   },
   {
     "skip": false,
