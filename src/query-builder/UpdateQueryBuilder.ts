@@ -55,6 +55,11 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         try {
 
+            // do nothing if there are no values to update
+            if (Object.keys(this.getValueSet()).length === 0) {
+                return new UpdateResult();
+            }
+
             // start transaction if it was enabled
             if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
                 await queryRunner.startTransaction();
@@ -129,7 +134,10 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Values needs to be updated.
      */
     set(values: ObjectLiteral): this {
-        this.expressionMap.valuesSet = values;
+        const copiedValues = {...values};
+        // Remove undefined values, so as not to touch them in DB
+        Object.keys(copiedValues).forEach(key => copiedValues[key] === undefined && delete copiedValues[key]);
+        this.expressionMap.valuesSet = copiedValues;
         return this;
     }
 
