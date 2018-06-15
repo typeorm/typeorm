@@ -68,15 +68,15 @@ export class MigrationCreateCommand {
      * Gets contents of the migration file.
      */
     protected static getTemplate(name: string, timestamp: number): string {
-        return `import {MigrationInterface, QueryRunner} from "typeorm";
+        return `import { MigrationInterface, QueryRunner } from '@ftr/typeorm'
 
 export class ${name}${timestamp} implements MigrationInterface {
 
-    public async up(queryRunner: QueryRunner): Promise<any> {
-    }
+  public async up (queryRunner: QueryRunner): Promise<void> {
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<any> {
-    }
+  public async down (queryRunner: QueryRunner): Promise<void> {
+  }
 
 }
 `;
