@@ -55,11 +55,6 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         try {
 
-            // do nothing if there are no values to update
-            if (Object.keys(this.getValueSet()).length === 0) {
-                return new UpdateResult();
-            }
-
             // start transaction if it was enabled
             if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
                 await queryRunner.startTransaction();
@@ -134,10 +129,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Values needs to be updated.
      */
     set(values: ObjectLiteral): this {
-        const copiedValues = {...values};
-        // Remove undefined values, so as not to touch them in DB
-        Object.keys(copiedValues).forEach(key => copiedValues[key] === undefined && delete copiedValues[key]);
-        this.expressionMap.valuesSet = copiedValues;
+        this.expressionMap.valuesSet = values;
         return this;
     }
 
@@ -385,7 +377,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     // todo: duplication zone
                     if (value instanceof Function) { // support for SQL expressions in update query
                         updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
-                    } else {
+                    } else if (value !== undefined) {
                         if (this.connection.driver instanceof SqlServerDriver) {
                             value = this.connection.driver.parametrizeValue(column, value);
 
