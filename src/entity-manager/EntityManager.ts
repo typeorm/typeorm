@@ -810,7 +810,7 @@ export class EntityManager {
         return {
             items: results,
             total,
-            pages: Math.ceil(total/options.take),
+            pages: Math.ceil(total / options.take),
             count: results.length,
         };
     }
