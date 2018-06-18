@@ -6,13 +6,13 @@ import {FindOneOptions} from "./FindOneOptions";
 export interface PaginationOptions<Entity = any> extends FindOneOptions<Entity> {
 
   /**
-   * Offset (paginated) where from entities should be taken.
+   * Specify the offset starting from 0
    */
-  skip: number;
+  page: number;
 
   /**
    * Limit (paginated) - max number of entities should be taken.
    */
-  take: number;
+  limit: number;
 
 }

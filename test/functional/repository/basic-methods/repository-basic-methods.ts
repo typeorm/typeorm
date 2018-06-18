@@ -437,8 +437,8 @@ describe("repository > basic methods", () => {
               order: {
                 id: "ASC",
               },
-              skip: 2,
-              take: 10,
+              page: 2,
+              limit: 10,
             });
 
             result.items.length.should.be.equal(10);

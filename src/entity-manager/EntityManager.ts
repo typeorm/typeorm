@@ -801,9 +801,13 @@ export class EntityManager {
         return this.queryRunner.release();
     }
 
-    async paginate<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, options: PaginationOptions<Entity>): Promise<PaginationInterface> {
-        if (options.skip >= 1) options.skip--;
-        options.skip = options.skip * options.take;
+    async paginate<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, PaginationOptions: PaginationOptions<Entity>): Promise<PaginationInterface> {
+        if (PaginationOptions.page >= 1) PaginationOptions.page--;
+        
+        const options = {
+            skip: PaginationOptions.page * PaginationOptions.limit,
+            take: PaginationOptions.limit,
+        };
 
         const [results, total] = await this.findAndCount(entityClass, options);
 
