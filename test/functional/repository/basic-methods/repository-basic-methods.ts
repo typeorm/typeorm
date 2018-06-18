@@ -425,18 +425,23 @@ describe("repository > basic methods", () => {
         it("Should return a pagination object", () => Promise.all(connections.map(async connection => {
             const repository = connection.getRepository(Blog);
             const promises: Promise<Blog>[] = [];
-            for (let i =0; i <= 25; i++) {
+            for (let i = 0; i < 25; i++) {
                 promises.push(repository.save(repository.create({
-                  title: 'test',
-                  text: 'test',
+                  title: "test",
+                  text: "test",
                   counter: i,
                 })));
             }
             await Promise.all(promises);
             const result = await repository.paginate({
+              order: {
+                id: "ASC",
+              },
               skip: 2,
               take: 10,
             });
+
+            result.items.length.should.be.equal(10);
             result.items.should.not.be.empty;
             result.count.should.be.equal(10);
             result.pages.should.be.equal(3);
