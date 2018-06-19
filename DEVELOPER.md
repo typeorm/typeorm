@@ -25,8 +25,8 @@ following products on your development machine:
 * [Mysql](https://www.mysql.com/) is required to run tests on this platform (or docker)
 * [MariaDB](https://mariadb.com/) is required to run tests on this platform (or docker)
 * [Postgres](https://www.postgresql.org/) is required to run tests on this platform (or docker)
-* [Oracle](https://www.oracle.com/database/index.html) is required to run tests on this platform
-* [Microsoft SQL Server](https://www.microsoft.com/en-us/cloud-platform/sql-server) is required to run tests on this platform
+* [Oracle](https://www.oracle.com/database/index.html) is required to run tests on this platform (or docker)
+* [Microsoft SQL Server](https://www.microsoft.com/en-us/cloud-platform/sql-server) is required to run tests on this platform (or docker)
 * For MySQL, MariaDB and Postgres you can use [docker](https://www.docker.com/) instead (docker configuration is
  [here](https://github.com/typeorm/typeorm/blob/master/docker-compose.yml))
 
@@ -148,3 +148,16 @@ All the tests are executed on our Continuous Integration infrastructure and a PR
 To run your tests you need dbms installed on your machine. Alternatively, you can use docker
 with all dbms images inside it. To use dbms for your tests from docker simply run `docker-compose up`
 in the root of the project. Once all images are fetched and run you can run tests.
+
+### Setting up oracle
+
+To run tests on oracle there are few more steps necessary to setup environment properly
+* Install oracledb `npm i oracledb --no-save`
+* Install and configure [oracle instant client](http://www.oracle.com/technetwork/database/database-technologies/instant-client/overview/index.html) on your machine
+* create db user to run tests
+```sql
+CREATE USER typeorm IDENTIFIED BY Passw0rd;
+GRANT CONNECT TO typeorm;
+GRANT RESOURCE to typeorm;
+GRANT UNLIMITED TABLESPACE TO typeorm;
+```
