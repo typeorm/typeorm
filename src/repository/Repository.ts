@@ -14,6 +14,8 @@ import {InsertResult} from "../query-builder/result/InsertResult";
 import {QueryPartialEntity} from "../query-builder/QueryPartialEntity";
 import {ObjectID} from "../driver/mongodb/typings";
 import {FindConditions} from "../find-options/FindConditions";
+import PaginationInterface from './../entity-manager/PaginationInterface';
+import { PaginationOptions } from "../find-options/PaginationOptions";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -338,4 +340,7 @@ export class Repository<Entity extends ObjectLiteral> {
         return this.manager.decrement(this.metadata.target, conditions, propertyPath, value);
     }
 
+    paginate(options: PaginationOptions): Promise<PaginationInterface> {
+        return this.manager.paginate(this.metadata.target, options);
+    }
 }

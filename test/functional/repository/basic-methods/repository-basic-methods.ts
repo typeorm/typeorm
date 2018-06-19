@@ -43,7 +43,7 @@ describe("repository > basic methods", () => {
         }));
 
     });
-    
+
     describe("hasId", function() {
 
         it("should return true if entity has an id", () => connections.forEach(connection => {
@@ -221,7 +221,7 @@ describe("repository > basic methods", () => {
             blog.text = "Blog about good people";
             blog.categories = [category];
             await blogRepository.save(blog);
-            
+
             // and preload it
             const plainBlogWithId = { id: 1 };
             const preloadedBlog = await blogRepository.preload(plainBlogWithId);
@@ -246,7 +246,7 @@ describe("repository > basic methods", () => {
             blog.text = "Blog about good people";
             blog.categories = [category];
             await blogRepository.save(blog);
-            
+
             // and preload it
             const plainBlogWithId = { id: 1, categories: [{ id: 1 }] };
             const preloadedBlog = await blogRepository.preload(plainBlogWithId);
@@ -348,7 +348,7 @@ describe("repository > basic methods", () => {
             const saved = await postRepository.save(dbPost);
 
             saved.should.be.instanceOf(Post);
-            
+
             saved.id!.should.be.equal(1);
             saved.title.should.be.equal("New title");
             saved.dateAdded.should.be.instanceof(Date);
@@ -419,6 +419,34 @@ describe("repository > basic methods", () => {
             result[0].max.should.not.be.empty;
         })));
 
+    });
+
+    describe("paginate", function() {
+        it("Should return a pagination object", () => Promise.all(connections.map(async connection => {
+            const repository = connection.getRepository(Blog);
+            const promises: Promise<Blog>[] = [];
+            for (let i = 0; i < 25; i++) {
+                promises.push(repository.save(repository.create({
+                  title: "test",
+                  text: "test",
+                  counter: i,
+                })));
+            }
+            await Promise.all(promises);
+            const result = await repository.paginate({
+              order: {
+                id: "ASC",
+              },
+              page: 2,
+              limit: 10,
+            });
+
+            result.items.length.should.be.equal(10);
+            result.items.should.not.be.empty;
+            result.count.should.be.equal(10);
+            result.pages.should.be.equal(3);
+            result.total.should.be.equal(25);
+        })));
     });
 
     /*describe.skip("transaction", function() {
