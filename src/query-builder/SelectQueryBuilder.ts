@@ -1848,7 +1848,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (orderCriteria.indexOf(".") !== -1) {
                     const [aliasName, propertyPath] = orderCriteria.split(".");
                     const alias = this.expressionMap.findAliasByName(aliasName);
-                    const column = alias.metadata.findColumnWithPropertyName(propertyPath);
+                    let column = alias.metadata.findColumnWithPropertyName(propertyPath);
+                    if (!column) {
+                        column = alias.metadata.findColumnWithDatabaseName(propertyPath);
+                    }
                     return this.escape(parentAlias) + "." + this.escape(this.buildColumnAlias(aliasName, column!.databaseName));
                 } else {
                     if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria))
@@ -1864,7 +1867,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             if (orderCriteria.indexOf(".") !== -1) {
                 const [aliasName, propertyPath] = orderCriteria.split(".");
                 const alias = this.expressionMap.findAliasByName(aliasName);
-                const column = alias.metadata.findColumnWithPropertyName(propertyPath);
+                let column = alias.metadata.findColumnWithPropertyName(propertyPath);
+                if (!column) {
+                    column = alias.metadata.findColumnWithDatabaseName(propertyPath);
+                }
                 orderByObject[this.escape(parentAlias) + "." + this.escape(this.buildColumnAlias(aliasName, column!.databaseName))] = orderBys[orderCriteria];
             } else {
                 if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria)) {
