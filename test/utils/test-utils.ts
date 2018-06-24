@@ -152,14 +152,20 @@ export function setupSingleTestingConnection(driverType: DatabaseType, options: 
  */
 export function getTypeOrmConfig(): TestingConnectionOptions[] {
     try {
-
+        let ormconfig: TestingConnectionOptions[];
         try {
-            return require(__dirname + "/../../../../ormconfig.json");
+            ormconfig = require(__dirname + "/../../../../ormconfig.json");
 
         } catch (err) {
-            return require(__dirname + "/../../ormconfig.json");
+            ormconfig = require(__dirname + "/../../ormconfig.json");
         }
-
+        if (process.env.CI && !
+            process.env.DOCKER_USERNAME) {
+            ormconfig.filter(connectionOptions => connectionOptions.name === "oracle").forEach(oracleConfig => {
+                oracleConfig.skip = true;
+            });
+        }
+        return ormconfig;
     } catch (err) {
         throw new Error(`Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +
             ` in the root of the project (near ormconfig.json.dist, you need to copy ormconfig.json.dist into ormconfig.json` +
