@@ -33,7 +33,4 @@ describe("github issues > #2373 Deletion of a cascaded entity fails because inse
        settingsRepo.count().should.be.eql(0);
 
     })));
-
-    // you can add additional tests if needed
-
 });

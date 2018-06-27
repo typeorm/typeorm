@@ -8,8 +8,4 @@ export class Project {
     id?: number;
     @OneToOne(type => ProjectSettings, projectSettings => projectSettings.project, { cascade: true, eager: true })
     settings: ProjectSettings;
-
-    constructor() {
-        //this.settings = new ProjectSettings();
-    }
 }
