@@ -177,7 +177,9 @@ export class OrmUtils {
         if (x === y)
             return true;
 
-        if (x.equals instanceof Function && x.equals(y))
+        // Check if both argument is Buffer
+        // Buffer.equals Argument must be a Buffer
+        if (Buffer.isBuffer(x) && Buffer.isBuffer(y) && x.equals(y))
             return true;
 
         // Works in case when functions are created in constructor.
