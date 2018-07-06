@@ -179,7 +179,12 @@ export class OrmUtils {
 
         // Check if both argument is Buffer
         // Buffer.equals Argument must be a Buffer
-        if (Buffer.isBuffer(x) && Buffer.isBuffer(y) && x.equals(y))
+        if (Buffer.isBuffer(x) && Buffer.isBuffer(y))
+            return x.equals(y);
+        if (Buffer.isBuffer(x) || Buffer.isBuffer(y))
+            return false;
+
+        if (x.equals instanceof Function && x.equals(y))
             return true;
 
         // Works in case when functions are created in constructor.
