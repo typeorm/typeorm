@@ -370,7 +370,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     //
                     let value = column.getEntityValue(valuesSet);
                     if (column.referencedColumn && value instanceof Object) {
-                        value = column.referencedColumn.getEntityValue(value);
+                        value = column.referencedColumn.getEntityValue(valuesSet);
                     }
                     value = this.connection.driver.preparePersistentValue(value, column);
 

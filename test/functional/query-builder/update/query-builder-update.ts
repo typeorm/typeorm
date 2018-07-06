@@ -7,6 +7,8 @@ import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
 import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
 import {LimitOnUpdateNotSupportedError} from "../../../../src/error/LimitOnUpdateNotSupportedError";
 import {Photo} from "./entity/Photo";
+import {Post} from "./entity/Post";
+import {Student} from "./entity/Student";
 
 describe("query builder > update", () => {
     
@@ -183,6 +185,27 @@ describe("query builder > update", () => {
             .limit(limitNum)
             .execute().should.be.rejectedWith(LimitOnUpdateNotSupportedError); 
         }
+    })));
+
+    it("should update with binary id relations", () => Promise.all(connections.map(async connection => {
+
+        const student = new Student();
+        student.id = new Buffer([0]);
+        await connection.manager.save(student);
+
+        const post = new Post();
+        post.id = new Buffer([0]);
+        await connection.manager.save(post);
+
+        const loadedPost = await connection.getRepository(Post).findOne();
+        loadedPost!.student = student;
+        await connection.manager.save(loadedPost!);
+
+        const loadedPost1 = await connection.getRepository(Post).findOne({relations: ["student"]});
+        expect(loadedPost1).to.exist;
+        loadedPost1!.id.should.be.deep.equal(new Buffer([0]));
+        loadedPost1!.student!.id.should.be.deep.equal(new Buffer([0]));
+
     })));
 
 });
