@@ -5,6 +5,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 import {DateUtils} from "../../../../../src/util/DateUtils";
+import { Test } from "./entity/Test";
 
 describe("database schema > column types > mssql", () => { // https://github.com/tediousjs/tedious/issues/722
 
@@ -256,6 +257,21 @@ describe("database schema > column types > mssql", () => { // https://github.com
         table!.findColumnByName("binary")!.type.should.be.equal("binary");
         table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
 
+    })));
+
+    it("type datetime should return a js Date object", () => Promise.all(connections.map(async connection => {
+        const testRepository = connection.getRepository(Test);
+
+        const dateReceivedFromFormData: any = "2018-07-06T12:00:00.000Z";
+
+        let test = new Test();
+        test.id = 1;
+        test.testDate1 = dateReceivedFromFormData;
+        test.testDate2 = new Date(dateReceivedFromFormData);
+        test = await testRepository.save(test);
+
+        (typeof test.testDate1).should.be.equal(typeof test.testDate2);
+        
     })));
 
 });
