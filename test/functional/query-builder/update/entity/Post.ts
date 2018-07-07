@@ -7,7 +7,9 @@ import {Student} from "./Student";
 @Entity()
 export class Post {
 
-    @PrimaryColumn("binary")
+    @PrimaryColumn("binary", {
+        length: 1
+      })
     id: Buffer;
 
     @ManyToOne(type => Student)

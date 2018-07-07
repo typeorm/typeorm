@@ -4,6 +4,8 @@ import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn"
 @Entity()
 export class Student {
 
-    @PrimaryColumn("binary")
+    @PrimaryColumn("binary", {
+        length: 1
+      })
     id: Buffer;
 }
