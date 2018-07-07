@@ -592,7 +592,11 @@ export class ColumnMetadata {
                 value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
 
             } else {
-                value = entity[this.propertyName];
+                if (Buffer.isBuffer(entity)) {
+                    value = entity;
+                } else {
+                    value = entity[this.propertyName];
+                }
             }
         }
 
