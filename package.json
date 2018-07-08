@@ -87,6 +87,7 @@
     "js-yaml": "^3.11.0",
     "mkdirp": "^0.5.1",
     "reflect-metadata": "^0.1.12",
+    "sql-formatter": "^2.3.0",
     "xml2js": "^0.4.17",
     "yargonaut": "^1.1.2",
     "yargs": "^11.1.0"
