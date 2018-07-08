@@ -2,6 +2,7 @@ import {Logger} from "./Logger";
 import {LoggerOptions} from "./LoggerOptions";
 import {SimpleConsoleLogger} from "./SimpleConsoleLogger";
 import {AdvancedConsoleLogger} from "./AdvancedConsoleLogger";
+import {AdvancedConsoleFormattedLogger} from "./AdvancedConsoleFormattedLogger";
 import {FileLogger} from "./FileLogger";
 import {DebugLogger} from "./DebugLogger";
 
@@ -28,12 +29,15 @@ export class LoggerFactory {
                 case "advanced-console":
                     return new AdvancedConsoleLogger(options);
 
+                case "advanced-console-formatted":
+                    return new AdvancedConsoleFormattedLogger(options);
+
                 case "debug":
                     return new DebugLogger();
             }
         }
 
-        return new AdvancedConsoleLogger(options);
+        return new AdvancedConsoleFormattedLogger(options);
     }
 
 }

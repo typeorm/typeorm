@@ -90,6 +90,7 @@ export * from "./find-options/JoinOptions";
 export * from "./find-options/OrderByCondition";
 export * from "./logger/Logger";
 export * from "./logger/AdvancedConsoleLogger";
+export * from "./logger/AdvancedConsoleFormattedLogger";
 export * from "./logger/SimpleConsoleLogger";
 export * from "./logger/FileLogger";
 export * from "./metadata/EntityMetadata";
