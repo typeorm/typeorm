@@ -3,12 +3,12 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 /**
  * Result object returned by UpdateQueryBuilder execution.
  */
-export class UpdateResult {
+export class UpdateResult<T = any> {
 
     /**
      * Raw SQL result returned by executed query.
      */
-    raw: any;
+    raw: T[];
 
     /**
      * Contains inserted entity id.
