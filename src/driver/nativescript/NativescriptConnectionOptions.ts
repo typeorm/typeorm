@@ -15,4 +15,9 @@ export interface NativescriptConnectionOptions extends BaseConnectionOptions {
      */
     readonly database: string;
 
+    /**
+     * (optional) driver module package name
+     */
+    readonly driverModule?: string;
+
 }

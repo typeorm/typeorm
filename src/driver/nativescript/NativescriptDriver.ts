@@ -11,6 +11,7 @@ import {ColumnType} from "../types/ColumnTypes";
  * Organizes communication with sqlite DBMS within Nativescript.
  */
 export class NativescriptDriver extends AbstractSqliteDriver {
+    static readonly DRIVER_MODULE_NAME = "nativescript-sqlite";
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -19,6 +20,11 @@ export class NativescriptDriver extends AbstractSqliteDriver {
      * Connection options.
      */
     options: NativescriptConnectionOptions;
+
+    /**
+     * package name of the driver module
+     */
+    driverModuleName: string;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -34,6 +40,12 @@ export class NativescriptDriver extends AbstractSqliteDriver {
         // validate options to make sure everything is set
         if (!this.options.database)
             throw new DriverOptionNotSetError("database");
+
+        if (this.options.driverModule) {
+            this.driverModuleName = this.options.driverModule;
+        } else {
+            this.driverModuleName = NativescriptDriver.DRIVER_MODULE_NAME;
+        }
 
         // load sqlite package
         this.loadDependencies();
@@ -107,10 +119,10 @@ export class NativescriptDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         try {
-            this.sqlite = require("nativescript-sqlite");
+            this.sqlite = require(this.driverModuleName);
 
         } catch (e) {
-            throw new DriverPackageNotInstalledError("Nativescript", "nativescript-sqlite");
+            throw new DriverPackageNotInstalledError("Nativescript", this.driverModuleName);
         }
     }
 }
