@@ -3,7 +3,7 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 /**
  * Result object returned by InsertQueryBuilder execution.
  */
-export class InsertResult {
+export class InsertResult<Entity = any> {
 
     /**
      * Contains inserted entity id.
@@ -20,6 +20,6 @@ export class InsertResult {
     /**
      * Raw SQL result returned by executed query.
      */
-    raw: any;
+    raw: Entity | Entity[];
 
 }
