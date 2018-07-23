@@ -44,7 +44,7 @@ describe("github issues > #2512 - Insert returning type check", () => {
           .values(insertEntity)
           .execute();
 
-        const isResultArray = Array.isArray(insertResByEntity);
+        const isResultArray = Array.isArray(insertResByEntity.raw);
         expect(isResultArray).to.be.true;
 
         if (isResultArray && insertResByEntity.raw.length > 0) {
@@ -69,7 +69,7 @@ describe("github issues > #2512 - Insert returning type check", () => {
         const insertResUsingFunction: InsertResult<Test> = await saveTest(connection, insertEntity);
 
 
-        const isResultArray = Array.isArray(insertResUsingFunction);
+        const isResultArray = Array.isArray(insertResUsingFunction.raw);
         expect(isResultArray).to.be.true;
 
         if (isResultArray && insertResUsingFunction.raw.length > 0) {
