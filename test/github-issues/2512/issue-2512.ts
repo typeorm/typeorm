@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Test} from "./entity/Test";
@@ -23,10 +24,13 @@ describe("github issues > #2512 - Insert returning type check", () => {
           .values({description})
           .returning("*")
           .execute();
+        const isResultArray = Array.isArray(insertResByObj.raw);
+        expect(isResultArray).to.be.true;
 
-        const insertedEntity: Test = insertResByObj.raw[0];
-
-        insertedEntity.description.should.be.eql(description);
+        if (isResultArray && insertResByObj.raw.length > 0) {
+          const insertedEntity: Test = insertResByObj.raw[0];
+          expect(insertedEntity.description).to.equal(description);
+        }
     })));
 
     it("returning values after Insert by Object should be equal to Entity", () => Promise.all(connection.map(async connection => {
@@ -40,9 +44,13 @@ describe("github issues > #2512 - Insert returning type check", () => {
           .values(insertEntity)
           .execute();
 
-        const resultEntity: Test = insertResByEntity.raw[0];
+        const isResultArray = Array.isArray(insertResByEntity);
+        expect(isResultArray).to.be.true;
 
-        resultEntity.description.should.be.eql(description);
+        if (isResultArray && insertResByEntity.raw.length > 0) {
+          const resultEntity: Test = insertResByEntity.raw[0];
+          expect(resultEntity.description).to.equal(description);
+        }
     })));
 
     function saveTest(connection: Connection, value: any): Promise<InsertResult<Test>> {
@@ -60,9 +68,14 @@ describe("github issues > #2512 - Insert returning type check", () => {
 
         const insertResUsingFunction: InsertResult<Test> = await saveTest(connection, insertEntity);
 
-        const resultEntity: Test = insertResUsingFunction.raw[0];
 
-        resultEntity.description.should.be.eql(description);
+        const isResultArray = Array.isArray(insertResUsingFunction);
+        expect(isResultArray).to.be.true;
+
+        if (isResultArray && insertResUsingFunction.raw.length > 0) {
+          const resultEntity: Test = insertResUsingFunction.raw[0];
+          expect(resultEntity.description).to.equal(description);
+        }
     })));
 });
 
