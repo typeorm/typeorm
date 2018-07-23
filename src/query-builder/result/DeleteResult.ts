@@ -3,6 +3,6 @@
  */
 export class DeleteResult<Entity = any> {
 
-    raw: Entity | Entity[];
+    raw: Entity[] = [];
 
 }
