@@ -18,7 +18,7 @@ describe("github issues > #2512 - Insert returning type check", () => {
     it("returning values after Insert by Object should be equal to Entity & update", () => Promise.all(connection.map(async connection => {
         let description = "InsertTest-1";
 
-        const insertResByObj: InsertResult<Test> = await connection.getRepository<Test>(Test)
+        const insertResByObj: InsertResult<Test[]> = await connection.getRepository<Test>(Test)
           .createQueryBuilder()
           .insert()
           .values({description})
@@ -38,7 +38,7 @@ describe("github issues > #2512 - Insert returning type check", () => {
         const insertEntity = new Test();
         insertEntity.description = description;
 
-        const insertResByEntity: InsertResult<Test> = await connection.getRepository(Test)
+        const insertResByEntity: InsertResult<Test[]> = await connection.getRepository(Test)
           .createQueryBuilder()
           .insert()
           .values(insertEntity)
@@ -53,7 +53,7 @@ describe("github issues > #2512 - Insert returning type check", () => {
         }
     })));
 
-    function saveTest(connection: Connection, value: any): Promise<InsertResult<Test>> {
+    function saveTest(connection: Connection, value: any): Promise<InsertResult<Test[]>> {
         return connection.getRepository(Test)
           .createQueryBuilder()
           .insert()
@@ -66,7 +66,7 @@ describe("github issues > #2512 - Insert returning type check", () => {
         const insertEntity = new Test();
         insertEntity.description = description;
 
-        const insertResUsingFunction: InsertResult<Test> = await saveTest(connection, insertEntity);
+        const insertResUsingFunction: InsertResult<Test[]> = await saveTest(connection, insertEntity);
 
 
         const isResultArray = Array.isArray(insertResUsingFunction.raw);

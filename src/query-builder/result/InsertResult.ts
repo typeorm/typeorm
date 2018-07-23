@@ -20,6 +20,6 @@ export class InsertResult<Entity = any> {
     /**
      * Raw SQL result returned by executed query.
      */
-    raw: Entity[] = [];
+    raw: Entity;
 
 }

@@ -8,7 +8,7 @@ export class UpdateResult<Entity = any> {
     /**
      * Raw SQL result returned by executed query.
      */
-    raw: Entity[] = [];
+    raw: Entity;
 
     /**
      * Contains inserted entity id.
