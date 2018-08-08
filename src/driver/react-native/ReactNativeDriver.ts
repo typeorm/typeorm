@@ -7,7 +7,17 @@ import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 
 export class ReactNativeDriver extends AbstractSqliteDriver {
+    static readonly DRIVER_MODULE_NAME = "react-native-sqlite-storage";
+
+    /**
+     * Connection options.
+     */
     options: ReactNativeConnectionOptions;
+
+    /**
+     * package name of the driver module
+     */
+    driverModuleName: string;
     
     // -------------------------------------------------------------------------
     // Constructor
@@ -24,6 +34,12 @@ export class ReactNativeDriver extends AbstractSqliteDriver {
 
         if (!this.options.location)
             throw new DriverOptionNotSetError("location");
+
+        if (this.options.driverModule) {
+            this.driverModuleName = this.options.driverModule;
+        } else {
+            this.driverModuleName = ReactNativeDriver.DRIVER_MODULE_NAME;
+        }
 
         // load sqlite package
         this.loadDependencies();
@@ -89,10 +105,10 @@ export class ReactNativeDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         try {
-            this.sqlite = require("react-native-sqlite-storage");
+            this.sqlite = require(this.driverModuleName);
 
         } catch (e) {
-            throw new DriverPackageNotInstalledError("React-Native", "react-native-sqlite-storage");
+            throw new DriverPackageNotInstalledError("React-Native", this.driverModuleName);
         }
     }
 }
