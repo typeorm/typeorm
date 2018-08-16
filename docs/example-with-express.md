@@ -209,20 +209,20 @@ createConnection().then(connection => {
     // register routes
     
     app.get("/users", async function(req: Request, res: Response) {
-        return userRepository.find();
+        return res.json(userRepository.find());
     });
     
     app.get("/users/:id", async function(req: Request, res: Response) {
-        return userRepository.findOne(req.params.id);
+        return res.json(userRepository.findOne(req.params.id));
     });
     
     app.post("/users", async function(req: Request, res: Response) {
         const user = userRepository.create(req.body);
-        return userRepository.save(user);
+        return res.json(userRepository.save(user));
     });
     
     app.delete("/users/:id", async function(req: Request, res: Response) {
-        return userRepository.remove(req.params.id);
+        return res.json(userRepository.remove(req.params.id));
     });
     
     // start express server
