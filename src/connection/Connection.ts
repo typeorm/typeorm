@@ -111,6 +111,11 @@ export class Connection {
      */
     readonly relationIdLoader: RelationIdLoader;
 
+    /**
+     * Allow to set values from code for generated columns for this connection.
+     */
+    readonly allowGeneratedValuesFromCode: boolean;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -125,6 +130,7 @@ export class Connection {
         this.queryResultCache = options.cache ? new QueryResultCacheFactory(this).create() : undefined;
         this.relationLoader = new RelationLoader(this);
         this.relationIdLoader = new RelationIdLoader(this);
+        this.allowGeneratedValuesFromCode = options.allowGeneratedValuesFromCode || false;
     }
 
     // -------------------------------------------------------------------------

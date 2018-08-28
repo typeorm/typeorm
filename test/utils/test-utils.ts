@@ -121,6 +121,11 @@ export interface TestingOptions {
      * They are passed down to the enabled drivers.
      */
     driverSpecific?: Object;
+
+    /**
+     * Allow to set values from code for generated columns for this connection.
+     */
+    allowGeneratedValuesFromCode?: boolean;
 }
 
 /**
@@ -138,7 +143,8 @@ export function setupSingleTestingConnection(driverType: DatabaseType, options: 
         enabledDrivers: [driverType],
         cache: options.cache,
         schema: options.schema ? options.schema : undefined,
-        namingStrategy: options.namingStrategy ? options.namingStrategy : undefined
+        namingStrategy: options.namingStrategy ? options.namingStrategy : undefined,
+        allowGeneratedValuesFromCode: options.allowGeneratedValuesFromCode
     });
     if (!testingConnections.length)
         throw new Error(`Unable to run tests because connection options for "${driverType}" are not set.`);
@@ -210,6 +216,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"];
             if (options && options.namingStrategy)
                 newOptions.namingStrategy = options.namingStrategy;
+            if (options)
+                newOptions.allowGeneratedValuesFromCode = options.allowGeneratedValuesFromCode;
             return newOptions;
         });
 }

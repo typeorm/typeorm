@@ -294,7 +294,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             // if user did not specified such list then return all columns except auto-increment one
             // for Oracle we return auto-increment column as well because Oracle does not support DEFAULT VALUES expression
-            if (column.isGenerated && column.generationStrategy === "increment" && !(this.connection.driver instanceof OracleDriver) && !(this.connection.driver instanceof MysqlDriver))
+            if (
+                column.isGenerated && column.generationStrategy === "increment" && !this.connection.allowGeneratedValuesFromCode &&
+                !(this.connection.driver instanceof OracleDriver) && !(this.connection.driver instanceof MysqlDriver)
+            )
                 return false;
 
             return true;

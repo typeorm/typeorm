@@ -104,6 +104,13 @@ export interface BaseConnectionOptions {
     readonly extra?: any;
 
     /**
+     * Allow to set values from code for generated columns for this connection.
+     * Use this only if you know what your are doing (e.g. inserting legacy data with pre-defined ids),
+     * and make sure the generated values will never collide with such a value from code.
+     */
+    readonly allowGeneratedValuesFromCode?: boolean;
+
+    /**
      * Allows to setup cache options.
      */
     readonly cache?: boolean|{
