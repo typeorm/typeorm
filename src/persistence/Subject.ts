@@ -193,7 +193,7 @@ export class Subject {
             if (this.metadata.isJunction && changeMap.column) {
                 valueMap = changeMap.column.createValueMap(changeMap.column.referencedColumn!.getEntityValue(value));
 
-            } else if (changeMap.column) {
+            } else if (changeMap.column && (!changeMap.column.isReadonly || !this.databaseEntity)) {
                 valueMap = changeMap.column.createValueMap(value);
 
             } else if (changeMap.relation) {
