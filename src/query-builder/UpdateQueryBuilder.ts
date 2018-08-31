@@ -367,7 +367,10 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 columns.forEach(column => {
                     const paramName = "upd_" + column.databaseName;
 
-                    //
+                    if (column.isReadonly) {
+                        return;
+                    }
+
                     let value = column.getEntityValue(valuesSet);
                     if (column.referencedColumn && value instanceof Object) {
                         value = column.referencedColumn.getEntityValue(value);

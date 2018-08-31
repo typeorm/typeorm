@@ -36,7 +36,18 @@ describe("columns > readonly functionality", () => {
         expect(loadedPost!.text).to.be.equal("Some text about columns1");
         expect(loadedPost!.authorName).to.be.equal("Umed");
 
+
+        // then update all its properties and save again
+        post.title = "About columns1";
+        post.text = "Some text about columns1";
+        post.authorName = "Umed1";
+        await postRepository.update(post.id, post);
+
+        // check if all columns are updated except for readonly columns
+        const loadedPost2 = await postRepository.findOne(1);
+        expect(loadedPost2!.title).to.be.equal("About columns1");
+        expect(loadedPost2!.text).to.be.equal("Some text about columns1");
+        expect(loadedPost2!.authorName).to.be.equal("Umed");
+
     })));
-
-
 });
