@@ -292,7 +292,18 @@ export class EntityMetadataBuilder {
         const discriminatorValue = this.metadataArgsStorage.findDiscriminatorValue(entityMetadata.target);
         entityMetadata.discriminatorValue = discriminatorValue ? discriminatorValue.value : (entityMetadata.target as any).name; // todo: pass this to naming strategy to generate a name
 
-        entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(entityMetadata.inheritanceTree));
+        // if single table inheritance is used, we need to mark all embedded columns as nullable
+        entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(entityMetadata.inheritanceTree))
+            .map((embedded: EmbeddedMetadata): EmbeddedMetadata => {
+                 if (entityMetadata.inheritancePattern === "STI") {
+                     embedded.columns = embedded.columns.map((column: ColumnMetadata): ColumnMetadata => {
+                         column.isNullable = true;
+                         return column;
+                     });
+                 }
+                 return embedded;
+            });
+
         entityMetadata.ownColumns = this.metadataArgsStorage
             .filterColumns(entityMetadata.inheritanceTree)
             .map(args => {
