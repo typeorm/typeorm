@@ -959,8 +959,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     }
 
     protected async recreateTable(newTable: Table, oldTable: Table, migrateData = true): Promise<void> {
-        console.log(`recreateTable ${oldTable.name}`);
-
         let hasReferencingTables: boolean = false;
         await this.connection.entityMetadatas.forEach(async (emd) => {
             await emd.foreignKeys.forEach(async (fk) => {
@@ -989,8 +987,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * @param migrateData
      */
     protected async recreateSingleTable(newTable: Table, oldTable: Table, migrateData = true, createForeignKeys = true): Promise<void> {
-        console.log(`recreateSingleTable ${oldTable.name}`);
-
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
@@ -1061,7 +1057,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * @param migrateData
      */
     protected async recreateTableChain(newTable: Table, oldTable: Table, migrateData = true): Promise<void> {
-        console.log(`recreateTableChain ${oldTable.name}`);
         const refTables: Table[] = (await this.getForeignKeyTableChain(newTable));
 
         for (let refTable of refTables) {
@@ -1077,10 +1072,9 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         }
     }
 
-    protected async getForeignKeyTableChain(table: Table, processedTables: Table[] = []): Promise<Table[]> {
+    protected async getForeignKeyTableChain(table: Table, processedTables: string[] = []): Promise<Table[]> {
         const result: Table[] = [];
-        console.log(`getReferencingTables ${table.name}`);
-        processedTables.push(table);
+        processedTables.push(table.name);
 
         let fks: ForeignKeyMetadata[] = [];
         fks = this.connection.entityMetadatas.reduce((a, b) => {
@@ -1091,14 +1085,11 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             // only register tables referencing the given table and skip when its the given table or table has already been processed
 
             const fkTable: Table = (await this.getTable(fk.entityMetadata.tableName))!;
-            if (fk.entityMetadata.tableName !== table.name && fk.referencedTablePath === table.name && processedTables.indexOf(fkTable) < 0) {
-                console.log(`Adding ${fk.entityMetadata.tableName} as referencing table for ${table.name}`);
-
+            if (fkTable && fk.entityMetadata.tableName !== table.name && fk.referencedTablePath === table.name && processedTables.indexOf(fkTable.name) < 0) {
                 result.concat(await this.getForeignKeyTableChain(fkTable, processedTables));
                 result.push(fkTable);
             }
         }
-
         return result;
     }
 }
