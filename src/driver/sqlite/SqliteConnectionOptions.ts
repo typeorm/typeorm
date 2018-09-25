@@ -26,9 +26,18 @@ export interface SqliteConnectionOptions extends BaseConnectionOptions {
      * Since SQLite cannot handle parallel saves this error cannot be avoided.
      *
      * To simplify life's of those who have this error this particular option sets a timeout within which ORM will try
-     * to perform requested write operation again and again until it recieves SQLITE_BUSY error.
+     * to perform requested write operation again and again until it receives SQLITE_BUSY error.
      *
+     * Enabling WAL can improve your app performance and face less SQLITE_BUSY issues.
      * Time in milliseconds.
      */
     readonly busyErrorRetry?: number;
+
+    /**
+     * Enables WAL mode. By default its disabled.
+     *
+     * @see https://www.sqlite.org/wal.html
+     */
+    readonly enableWAL?: boolean;
+
 }
