@@ -12,6 +12,7 @@ import {PostgresDriver} from "./postgres/PostgresDriver";
 import {ExpoDriver} from "./expo/ExpoDriver";
 import {Driver} from "./Driver";
 import {Connection} from "../connection/Connection";
+import {FirebirdDriver} from "./firebird/FirebirdDriver";
 
 /**
  * Helps to create drivers.
@@ -48,6 +49,8 @@ export class DriverFactory {
                 return new MongoDriver(connection);
             case "expo":
                 return new ExpoDriver(connection);
+            case "firebird":
+                return new FirebirdDriver(connection);
             default:
                 throw new MissingDriverError(type);
         }
