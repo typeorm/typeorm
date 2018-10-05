@@ -242,5 +242,5 @@ typeorm cache:clear
 You can check what typeorm version you have installed (both local and global) by running:
 
 ```
-typeorm version
+typeorm --version
 ```
