@@ -359,7 +359,7 @@ export class Connection {
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    async query(query: string, parameters?: any[], queryRunner?: QueryRunner): Promise<any> {
+    async query(query: string, parameters?: ReadonlyArray<any>, queryRunner?: QueryRunner): Promise<any> {
         if (this instanceof MongoEntityManager)
             throw new Error(`Queries aren't supported by MongoDB.`);
 

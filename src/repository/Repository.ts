@@ -123,7 +123,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    save<T extends DeepPartial<Entity>>(entities: T[], options?: SaveOptions): Promise<T[]>;
+    save<T extends DeepPartial<Entity>>(entities: ReadonlyArray<T>, options?: SaveOptions): Promise<T[]>;
 
     /**
      * Saves a given entity in the database.
@@ -134,14 +134,14 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Saves one or many given entities.
      */
-    save<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
+    save<T extends DeepPartial<Entity>>(entityOrEntities: T|ReadonlyArray<T>, options?: SaveOptions): Promise<T|T[]> {
         return this.manager.save(this.metadata.target, entityOrEntities as any, options);
     }
 
     /**
      * Removes a given entities from the database.
      */
-    remove(entities: Entity[], options?: RemoveOptions): Promise<Entity[]>;
+    remove(entities: ReadonlyArray<Entity>, options?: RemoveOptions): Promise<Entity[]>;
 
     /**
      * Removes a given entity from the database.
@@ -151,7 +151,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Removes one or many given entities.
      */
-    remove(entityOrEntities: Entity|Entity[], options?: RemoveOptions): Promise<Entity|Entity[]> {
+    remove(entityOrEntities: Entity|ReadonlyArray<Entity>, options?: RemoveOptions): Promise<Entity|Entity[]> {
         return this.manager.remove(this.metadata.target, entityOrEntities as any, options);
     }
 
@@ -171,7 +171,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      */
-    update(criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
+    update(criteria: string|ReadonlyArray<string>|number|ReadonlyArray<number>|Date|ReadonlyArray<Date>|ObjectID|ReadonlyArray<ObjectID>|FindConditions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
         return this.manager.update(this.metadata.target, criteria as any, partialEntity, options);
     }
 
@@ -181,7 +181,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
      */
-    delete(criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
+    delete(criteria: string|ReadonlyArray<string>|number|ReadonlyArray<number>|Date|ReadonlyArray<Date>|ObjectID|ReadonlyArray<ObjectID>|FindConditions<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
         return this.manager.delete(this.metadata.target, criteria as any, options);
     }
 
@@ -246,19 +246,19 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entities by ids.
      * Optionally find options can be applied.
      */
-    findByIds(ids: any[], options?: FindManyOptions<Entity>): Promise<Entity[]>;
+    findByIds(ids: ReadonlyArray<any>, options?: FindManyOptions<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities by ids.
      * Optionally conditions can be applied.
      */
-    findByIds(ids: any[], conditions?: FindConditions<Entity>): Promise<Entity[]>;
+    findByIds(ids: ReadonlyArray<any>, conditions?: FindConditions<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities by ids.
      * Optionally find options can be applied.
      */
-    findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<Entity[]> {
+    findByIds(ids: ReadonlyArray<any>, optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<Entity[]> {
         return this.manager.findByIds(this.metadata.target, ids, optionsOrConditions as any);
     }
 
@@ -310,7 +310,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes a raw SQL query and returns a raw database results.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    query(query: string, parameters?: ReadonlyArray<any>): Promise<any> {
         return this.manager.query(query, parameters);
     }
 
