@@ -21,11 +21,11 @@ export class CascadesSubjectBuilder {
     /**
      * Builds a cascade subjects tree and pushes them in into the given array of subjects.
      */
-    build(subject: Subject) {
+    async build(subject: Subject) {
 
-        subject.metadata
-            .extractRelationValuesFromEntity(subject.entity!, subject.metadata.relations) // todo: we can create EntityMetadata.cascadeRelations
-            .forEach(([relation, relationEntity, relationEntityMetadata]) => {
+        const relationValues = await subject.metadata
+            .extractRelationValuesFromEntity(subject.entity!, subject.metadata.relations); // todo: we can create EntityMetadata.cascadeRelations
+        await Promise.all(relationValues.map(async ([relation, relationEntity, relationEntityMetadata]) => {
 
                 // we need only defined values and insert or update cascades of the relation should be set
                 if (relationEntity === undefined ||
@@ -60,8 +60,8 @@ export class CascadesSubjectBuilder {
                 this.allSubjects.push(relationEntitySubject);
 
                 // go recursively and find other entities we need to insert/update
-                this.build(relationEntitySubject);
-            });
+                await this.build(relationEntitySubject);
+            }));
     }
 
     // ---------------------------------------------------------------------

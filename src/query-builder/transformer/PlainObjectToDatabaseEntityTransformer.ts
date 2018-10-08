@@ -94,16 +94,17 @@ export class PlainObjectToDatabaseEntityTransformer {
 
         // create a special load map that will hold all metadata that will be used to operate with entities easily
         const loadMap = new LoadMap();
-        const fillLoadMap = (entity: ObjectLiteral, entityMetadata: EntityMetadata, parentLoadMapItem?: LoadMapItem, relation?: RelationMetadata) => {
+        const fillLoadMap = async (entity: ObjectLiteral, entityMetadata: EntityMetadata, parentLoadMapItem?: LoadMapItem, relation?: RelationMetadata) => {
             const item = new LoadMapItem(entity, entityMetadata, parentLoadMapItem, relation);
             loadMap.addLoadMap(item);
 
-            entityMetadata
-                .extractRelationValuesFromEntity(entity, metadata.relations)
+            const relationValues = await entityMetadata
+                .extractRelationValuesFromEntity(entity, metadata.relations);
+            await Promise.all(relationValues
                 .filter(value => value !== null && value !== undefined)
-                .forEach(([relation, value, inverseEntityMetadata]) => fillLoadMap(value, inverseEntityMetadata, item, relation));
+                .map(async ([relation, value, inverseEntityMetadata]) => await fillLoadMap(value, inverseEntityMetadata, item, relation)));
         };
-        fillLoadMap(plainObject, metadata);
+        await fillLoadMap(plainObject, metadata);
         // load all entities and store them in the load map
         await Promise.all(loadMap.groupByTargetIds().map(targetWithIds => { // todo: fix type hinting
             return this.manager

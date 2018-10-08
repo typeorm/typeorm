@@ -85,11 +85,11 @@ export class EntityPersistExecutor {
                     // console.time("building cascades...");
                     // go through each entity with metadata and create subjects and subjects by cascades for them
                     const cascadesSubjectBuilder = new CascadesSubjectBuilder(subjects);
-                    subjects.forEach(subject => {
+                    await Promise.all(subjects.map(async subject => {
                         // next step we build list of subjects we will operate with
                         // these subjects are subjects that we need to insert or update alongside with main persisted entity
-                        cascadesSubjectBuilder.build(subject);
-                    });
+                        await cascadesSubjectBuilder.build(subject);
+                    }));
                     // console.timeEnd("building cascades...");
 
                     // load database entities for all subjects we have

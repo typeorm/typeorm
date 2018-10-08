@@ -348,7 +348,7 @@ export class RelationMetadata {
                 if (embeddedObject["__" + this.propertyName + "__"] !== undefined)
                     return embeddedObject["__" + this.propertyName + "__"];
 
-                if (getLazyRelationsPromiseValue === true)
+                if (entity["__dirty_" + this.propertyName + "__"] || getLazyRelationsPromiseValue === true)
                     return embeddedObject[this.propertyName];
 
                 return undefined;
@@ -360,7 +360,7 @@ export class RelationMetadata {
                 if (entity["__" + this.propertyName + "__"] !== undefined)
                     return entity["__" + this.propertyName + "__"];
 
-                if (getLazyRelationsPromiseValue === true)
+                if (entity["__dirty_" + this.propertyName + "__"] || getLazyRelationsPromiseValue === true)
                     return entity[this.propertyName];
 
                 return undefined;

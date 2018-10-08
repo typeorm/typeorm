@@ -664,16 +664,20 @@ export class EntityMetadata {
      * Iterates through entity and finds and extracts all values from relations in the entity.
      * If relation value is an array its being flattened.
      */
-    extractRelationValuesFromEntity(entity: ObjectLiteral, relations: RelationMetadata[]): [RelationMetadata, any, EntityMetadata][] {
+    async extractRelationValuesFromEntity(entity: ObjectLiteral, relations: RelationMetadata[]): Promise<[RelationMetadata, any, EntityMetadata][]> {
         const relationsAndValues: [RelationMetadata, any, EntityMetadata][] = [];
-        relations.forEach(relation => {
-            const value = relation.getEntityValue(entity);
+        await Promise.all(relations.map(async relation => {
+            let value = relation.getEntityValue(entity);
+            if (value instanceof Promise) {
+                // Promise will only be returned if it is user-supplied (ie. value is dirty)
+                value = await value;
+            }
             if (value instanceof Array) {
                 value.forEach(subValue => relationsAndValues.push([relation, subValue, relation.inverseEntityMetadata]));
             } else if (value) {
                 relationsAndValues.push([relation, value, relation.inverseEntityMetadata]);
             }
-        });
+        }));
         return relationsAndValues;
     }
 
