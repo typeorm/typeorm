@@ -376,7 +376,7 @@ export class RelationMetadata {
      * If merge is set to true, it merges given value into currently
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
-        const propertyName = this.isLazy ? "__" + this.propertyName + "__" : this.propertyName;
+        const propertyName = (this.isLazy && !(value instanceof Promise)) ? "__" + this.propertyName + "__" : this.propertyName;
 
         if (this.embeddedMetadata) {
 
