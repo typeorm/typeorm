@@ -20,23 +20,23 @@ describe("query runner > create constraints with data", () => {
     it("should correctly create unique constraint", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
-        await queryRunner.query("INSERT INTO faculty (name) VALUES ('A')");
-        await queryRunner.query("INSERT INTO faculty (name) VALUES ('B')");
-        await queryRunner.query("INSERT INTO faculty (name) VALUES ('C')");
+        await queryRunner.query(`INSERT INTO faculty (name) VALUES ('A')`);
+        await queryRunner.query(`INSERT INTO faculty (name) VALUES ('B')`);
+        await queryRunner.query(`INSERT INTO faculty (name) VALUES ('C')`);
 
-        await queryRunner.query("INSERT INTO teacher (name) VALUES ('A')");
-        await queryRunner.query("INSERT INTO teacher (name) VALUES ('B')");
-        await queryRunner.query("INSERT INTO teacher (name) VALUES ('C')");
+        await queryRunner.query(`INSERT INTO teacher (name) VALUES ('A')`);
+        await queryRunner.query(`INSERT INTO teacher (name) VALUES ('B')`);
+        await queryRunner.query(`INSERT INTO teacher (name) VALUES ('C')`);
 
-        await queryRunner.query("INSERT INTO student (name, facultyId, teacherId) VALUES ('AA', 1, 1)");
-        await queryRunner.query("INSERT INTO student (name, facultyId, teacherId) VALUES ('AB', 1, 2)");
-        await queryRunner.query("INSERT INTO student (name, facultyId, teacherId) VALUES ('AC', 1, 3)");
-        await queryRunner.query("INSERT INTO student (name, facultyId, teacherId) VALUES ('BA', 2, 1)");
-        await queryRunner.query("INSERT INTO student (name, facultyId, teacherId) VALUES ('BB', 2, 2)");
-        await queryRunner.query("INSERT INTO student (name, facultyId, teacherId) VALUES ('BC', 2, 3)");
-        await queryRunner.query("INSERT INTO student (name, facultyId, teacherId) VALUES ('CA', 3, 1)");
-        await queryRunner.query("INSERT INTO student (name, facultyId, teacherId) VALUES ('CB', 3, 2)");
-        await queryRunner.query("INSERT INTO student (name, facultyId, teacherId) VALUES ('CC', 3, 3)");
+        await queryRunner.query(`INSERT INTO student (name, "facultyId", "teacherId") VALUES ('AA', 1, 1)`);
+        await queryRunner.query(`INSERT INTO student (name, "facultyId", "teacherId") VALUES ('AB', 1, 2)`);
+        await queryRunner.query(`INSERT INTO student (name, "facultyId", "teacherId") VALUES ('AC', 1, 3)`);
+        await queryRunner.query(`INSERT INTO student (name, "facultyId", "teacherId") VALUES ('BA', 2, 1)`);
+        await queryRunner.query(`INSERT INTO student (name, "facultyId", "teacherId") VALUES ('BB', 2, 2)`);
+        await queryRunner.query(`INSERT INTO student (name, "facultyId", "teacherId") VALUES ('BC', 2, 3)`);
+        await queryRunner.query(`INSERT INTO student (name, "facultyId", "teacherId") VALUES ('CA', 3, 1)`);
+        await queryRunner.query(`INSERT INTO student (name, "facultyId", "teacherId") VALUES ('CB', 3, 2)`);
+        await queryRunner.query(`INSERT INTO student (name, "facultyId", "teacherId") VALUES ('CC', 3, 3)`);
 
         // clear sqls in memory to avoid removing tables when down queries executed.
         await queryRunner.clearSqlMemory();
