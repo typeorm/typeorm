@@ -1,6 +1,6 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import { OneToMany, ManyToOne, Column } from "../../../../../src";
+import {Entity} from "../../../../src/decorator/entity/Entity";
+import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import { OneToMany, ManyToOne, Column } from "../../../../src";
 
 import { Blog } from "./Blog";
 import { Comment } from "./Comment";
@@ -17,7 +17,9 @@ export class Post {
     @Column()
     blogId: number;
     
-    @ManyToOne(type => Blog, blog => blog.posts)
+    @ManyToOne(type => Blog, blog => blog.posts, {
+        onDelete: "CASCADE",
+    })
     blog: Blog;
 
     @OneToMany(type => Comment, comment => comment.post, {

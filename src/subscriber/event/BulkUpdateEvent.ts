@@ -1,0 +1,63 @@
+import {EntityMetadata} from "../..";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {RelationMetadata} from "../../metadata/RelationMetadata";
+import {EntityManager} from "../../entity-manager/EntityManager";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {Connection} from "../../connection/Connection";
+
+/**
+ * UpdateEvent is an object that broadcaster sends to the entity subscriber when entity is being updated in the database.
+ */
+export interface BulkUpdateEvent<Entity> {
+
+    /**
+     * Connection used in the event.
+     */
+    connection: Connection;
+
+    /**
+     * QueryRunner used in the event transaction.
+     * All database operations in the subscribed event listener should be performed using this query runner instance.
+     */
+    queryRunner: QueryRunner;
+
+    /**
+     * EntityManager used in the event transaction.
+     * All database operations in the subscribed event listener should be performed using this entity manager instance.
+     */
+    manager: EntityManager;
+
+    /**
+     * Entity metadata of the updated entity.
+     */
+    metadata: EntityMetadata;
+
+    /**
+     * Update information for each entity
+     */
+    updates: {
+        /**
+         * Updating entity.
+         */
+        entity: Entity;
+
+        /**
+         * Updating entity in the database.
+         */
+        databaseEntity: Entity;
+
+        /**
+         * List of updated columns.
+         */
+        updatedColumns: ColumnMetadata[];
+
+        /**
+         * List of updated relations.
+         */
+        updatedRelations: RelationMetadata[];
+    }[];
+
+    // todo: send old and new update values
+    // todo: send updated relations?
+
+}

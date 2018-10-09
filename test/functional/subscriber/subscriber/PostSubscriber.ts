@@ -1,8 +1,8 @@
-import { EventSubscriber, EntitySubscriberInterface } from "../../../../../src";
+import { EventSubscriber, EntitySubscriberInterface } from "../../../../src";
 
 import {Post} from "../entity/Post";
 import {Comment} from "../entity/Comment";
-import { BulkLoadEvent } from "../../../../../src/subscriber/event/BulkLoadEvent";
+import { BulkLoadEvent } from "../../../../src/subscriber/event/BulkLoadEvent";
 
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface<Post> {
@@ -10,6 +10,7 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
         return Post;
     }
 
+    // Load
     async afterBulkLoad(event: BulkLoadEvent<Post>): Promise<void> {
         const posts = event.entities;
         if (!posts.length) {
@@ -30,5 +31,5 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
         results.forEach(result => resultMap[result.postId] = parseInt(result.count));
 
         event.entities.forEach(post => post.commentCount = resultMap[post.id] || 0);
-  }
+    }
 }

@@ -13,6 +13,30 @@ type EntitiesByMetadata = {
     },
 };
 
+export type SubjectsByMetadata<T extends BroadcasterSubject> = {
+    [target: string]: {
+        metadata: EntityMetadata,
+        subjects: T[],
+    },
+};
+
+export type BroadcasterSubject = {
+    metadata: EntityMetadata,
+    entity?: ObjectLiteral,
+};
+
+export type BroadcasterInsertSubject = BroadcasterSubject;
+
+export type BroadcasterUpdateSubject = BroadcasterSubject & {
+    databaseEntity?: ObjectLiteral;
+    diffColumns?: ColumnMetadata[];
+    diffRelations?: RelationMetadata[];
+};
+
+export type BroadcasterRemoveSubject = BroadcasterSubject & {
+    databaseEntity?: ObjectLiteral
+};
+
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
  */
@@ -37,34 +61,71 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastBeforeInsertEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral): void {
+    broadcastBeforeInsertEvent(result: BroadcasterResult, subjects: BroadcasterInsertSubject[]): void {
+        // Check if there are any subscribers to beforeBulkInsert. If there aren't, we don't need to keep the entitiesByMetadata cache
+        const bulkSubscribers = this.queryRunner.connection.subscribers.filter(subscriber => !!subscriber.beforeBulkInsert);
+        const subjectsByMetadata: SubjectsByMetadata<BroadcasterInsertSubject> | undefined = bulkSubscribers.length ? {} : undefined;
 
-        if (entity && metadata.beforeInsertListeners.length) {
-            metadata.beforeInsertListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
-            });
-        }
+        subjects.forEach((subject) => {
+            const {
+                metadata,
+                entity,
+            } = subject;
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeInsert) {
-                    const executionResult = subscriber.beforeInsert({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata
-                    });
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
-            });
+            this.addEntityToMetadataMap(subjectsByMetadata, subject);
+
+            if (entity && metadata.beforeInsertListeners.length) {
+                metadata.beforeInsertListeners.forEach(listener => {
+                    if (listener.isAllowed(entity)) {
+                        const executionResult = listener.execute(entity);
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+
+            if (this.queryRunner.connection.subscribers.length) {
+                this.queryRunner.connection.subscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeInsert) {
+                        const executionResult = subscriber.beforeInsert({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            metadata: metadata,
+                            entity: entity
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+        });
+
+        if (subjectsByMetadata) {
+            const targets = Object.keys(subjectsByMetadata);
+            for (const target of targets) {
+                const {
+                    metadata,
+                    subjects,
+                } = subjectsByMetadata[target];
+
+                bulkSubscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target)) {
+                        const executionResult = subscriber.beforeBulkInsert!({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            metadata,
+                            entities: subjects.map(subject => subject.entity),
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
         }
     }
 
@@ -76,36 +137,82 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastBeforeUpdateEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]): void { // todo: send relations too?
-        if (entity && metadata.beforeUpdateListeners.length) {
-            metadata.beforeUpdateListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
-            });
-        }
+    broadcastBeforeUpdateEvent(result: BroadcasterResult, subjects: BroadcasterUpdateSubject[]): void { // todo: send relations too?
+        // Check if there are any subscribers to beforeBulkUpdate. If there aren't, we don't need to keep the entitiesByMetadata cache
+        const bulkSubscribers = this.queryRunner.connection.subscribers.filter(subscriber => !!subscriber.beforeBulkUpdate);
+        const subjectsByMetadata: SubjectsByMetadata<BroadcasterUpdateSubject> | undefined = bulkSubscribers.length ? {} : undefined;
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeUpdate) {
-                    const executionResult = subscriber.beforeUpdate({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        metadata: metadata,
-                        entity: entity,
-                        databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || []
-                    });
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
-            });
+        subjects.forEach((subject) => {
+            const {
+                metadata,
+                entity,
+                databaseEntity,
+            } = subject;
+
+            this.addEntityToMetadataMap(subjectsByMetadata, subject);
+
+            if (entity && metadata.beforeUpdateListeners.length) {
+                metadata.beforeUpdateListeners.forEach(listener => {
+                    if (listener.isAllowed(entity)) {
+                        const executionResult = listener.execute(entity);
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+
+            if (this.queryRunner.connection.subscribers.length) {
+                this.queryRunner.connection.subscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeUpdate) {
+                        const executionResult = subscriber.beforeUpdate({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            metadata: metadata,
+                            entity: entity,
+                            databaseEntity: databaseEntity,
+                            updatedColumns: subject.diffColumns || [],
+                            updatedRelations: subject.diffRelations || [],
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+        });
+
+        if (subjectsByMetadata) {
+            const targets = Object.keys(subjectsByMetadata);
+            for (const target of targets) {
+                const {
+                    metadata,
+                    subjects,
+                } = subjectsByMetadata[target];
+
+                const updates = subjects.map(subject => ({
+                    entity: subject.entity,
+                    databaseEntity: subject.databaseEntity,
+                    updatedColumns: subject.diffColumns || [],
+                    updatedRelations: subject.diffRelations || [],
+                }));
+
+                bulkSubscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target)) {
+                        const executionResult = subscriber.beforeBulkUpdate!({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            metadata,
+                            updates,
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
         }
     }
 
@@ -117,35 +224,80 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastBeforeRemoveEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
-        if (entity && metadata.beforeRemoveListeners.length) {
-            metadata.beforeRemoveListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
-            });
-        }
+    broadcastBeforeRemoveEvent(result: BroadcasterResult, subjects: BroadcasterRemoveSubject[]): void {
+        // Check if there are any subscribers to beforeBulkRemove. If there aren't, we don't need to keep the entitiesByMetadata cache
+        const bulkSubscribers = this.queryRunner.connection.subscribers.filter(subscriber => !!subscriber.beforeBulkRemove);
+        const subjectsByMetadata: SubjectsByMetadata<BroadcasterRemoveSubject> | undefined = bulkSubscribers.length ? {} : undefined;
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeRemove) {
-                    const executionResult = subscriber.beforeRemove({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        metadata: metadata,
-                        entity: entity,
-                        databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
-                    });
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
-            });
+        subjects.forEach((subject) => {
+            const {
+                metadata,
+                entity,
+                databaseEntity,
+            } = subject;
+
+            this.addEntityToMetadataMap(subjectsByMetadata, subject);
+
+            if (entity && metadata.beforeRemoveListeners.length) {
+                metadata.beforeRemoveListeners.forEach(listener => {
+                    if (listener.isAllowed(entity)) {
+                        const executionResult = listener.execute(entity);
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+
+            if (this.queryRunner.connection.subscribers.length) {
+                this.queryRunner.connection.subscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeRemove) {
+                        const executionResult = subscriber.beforeRemove({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            metadata: metadata,
+                            entity: entity,
+                            databaseEntity: databaseEntity,
+                            entityId: metadata.getEntityIdMixedMap(databaseEntity)
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+        });
+
+        if (subjectsByMetadata) {
+            const targets = Object.keys(subjectsByMetadata);
+            for (const target of targets) {
+                const {
+                    metadata,
+                    subjects,
+                } = subjectsByMetadata[target];
+
+                const removals = subjects.map(subject => ({
+                    entity: subject.entity,
+                    databaseEntity: subject.databaseEntity,
+                    entityId: metadata.getEntityIdMixedMap(subject.databaseEntity),
+                }));
+
+                bulkSubscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target)) {
+                        const executionResult = subscriber.beforeBulkRemove!({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            metadata,
+                            removals,
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
         }
     }
 
@@ -157,34 +309,71 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastAfterInsertEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral): void {
+    broadcastAfterInsertEvent(result: BroadcasterResult, subjects: BroadcasterInsertSubject[]): void {
+        // Check if there are any subscribers to afterBulkInsert. If there aren't, we don't need to keep the entitiesByMetadata cache
+        const bulkSubscribers = this.queryRunner.connection.subscribers.filter(subscriber => !!subscriber.afterBulkInsert);
+        const subjectsByMetadata: SubjectsByMetadata<BroadcasterInsertSubject> | undefined = bulkSubscribers.length ? {} : undefined;
 
-        if (entity && metadata.afterInsertListeners.length) {
-            metadata.afterInsertListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
-            });
-        }
+        subjects.forEach((subject) => {
+            const {
+                metadata,
+                entity,
+            } = subject;
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterInsert) {
-                    const executionResult = subscriber.afterInsert({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata
-                    });
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
-            });
+            this.addEntityToMetadataMap(subjectsByMetadata, subject);
+
+            if (entity && metadata.afterInsertListeners.length) {
+                metadata.afterInsertListeners.forEach(listener => {
+                    if (listener.isAllowed(entity)) {
+                        const executionResult = listener.execute(entity);
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+
+            if (this.queryRunner.connection.subscribers.length) {
+                this.queryRunner.connection.subscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterInsert) {
+                        const executionResult = subscriber.afterInsert({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            metadata: metadata,
+                            entity: entity
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+        });
+
+        if (subjectsByMetadata) {
+            const targets = Object.keys(subjectsByMetadata);
+            for (const target of targets) {
+                const {
+                    metadata,
+                    subjects,
+                } = subjectsByMetadata[target];
+
+                bulkSubscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target)) {
+                        const executionResult = subscriber.afterBulkInsert!({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            metadata,
+                            entities: subjects.map(subject => subject.entity),
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
         }
     }
 
@@ -196,37 +385,82 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastAfterUpdateEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]): void {
+    broadcastAfterUpdateEvent(result: BroadcasterResult, subjects: BroadcasterUpdateSubject[]): void {
+        // Check if there are any subscribers to afterBulkUpdate. If there aren't, we don't need to keep the entitiesByMetadata cache
+        const bulkSubscribers = this.queryRunner.connection.subscribers.filter(subscriber => !!subscriber.afterBulkUpdate);
+        const subjectsByMetadata: SubjectsByMetadata<BroadcasterUpdateSubject> | undefined = bulkSubscribers.length ? {} : undefined;
 
-        if (entity && metadata.afterUpdateListeners.length) {
-            metadata.afterUpdateListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
-            });
-        }
+        subjects.forEach((subject) => {
+            const {
+                metadata,
+                entity,
+                databaseEntity,
+            } = subject;
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterUpdate) {
-                    const executionResult = subscriber.afterUpdate({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        metadata: metadata,
-                        entity: entity,
-                        databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || []
-                    });
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
-            });
+            this.addEntityToMetadataMap(subjectsByMetadata, subject);
+
+            if (entity && metadata.afterUpdateListeners.length) {
+                metadata.afterUpdateListeners.forEach(listener => {
+                    if (listener.isAllowed(entity)) {
+                        const executionResult = listener.execute(entity);
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+
+            if (this.queryRunner.connection.subscribers.length) {
+                this.queryRunner.connection.subscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterUpdate) {
+                        const executionResult = subscriber.afterUpdate({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            metadata: metadata,
+                            entity: entity,
+                            databaseEntity: databaseEntity,
+                            updatedColumns: subject.diffColumns || [],
+                            updatedRelations: subject.diffRelations || [],
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+        });
+
+        if (subjectsByMetadata) {
+            const targets = Object.keys(subjectsByMetadata);
+            for (const target of targets) {
+                const {
+                    metadata,
+                    subjects,
+                } = subjectsByMetadata[target];
+
+                const updates = subjects.map(subject => ({
+                    entity: subject.entity,
+                    databaseEntity: subject.databaseEntity,
+                    updatedColumns: subject.diffColumns || [],
+                    updatedRelations: subject.diffRelations || [],
+                }));
+
+                bulkSubscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target)) {
+                        const executionResult = subscriber.afterBulkUpdate!({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            metadata,
+                            updates,
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
         }
     }
 
@@ -238,36 +472,80 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastAfterRemoveEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
+    broadcastAfterRemoveEvent(result: BroadcasterResult, subjects: BroadcasterRemoveSubject[]): void {
+        // Check if there are any subscribers to afterBulkRemove. If there aren't, we don't need to keep the entitiesByMetadata cache
+        const bulkSubscribers = this.queryRunner.connection.subscribers.filter(subscriber => !!subscriber.afterBulkRemove);
+        const subjectsByMetadata: SubjectsByMetadata<BroadcasterRemoveSubject> | undefined = bulkSubscribers.length ? {} : undefined;
 
-        if (entity && metadata.afterRemoveListeners.length) {
-            metadata.afterRemoveListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
-            });
-        }
+        subjects.forEach((subject) => {
+            const {
+                metadata,
+                entity,
+                databaseEntity,
+            } = subject;
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterRemove) {
-                    const executionResult = subscriber.afterRemove({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        metadata: metadata,
-                        entity: entity,
-                        databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
-                    });
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
-            });
+            this.addEntityToMetadataMap(subjectsByMetadata, subject);
+
+            if (entity && metadata.afterRemoveListeners.length) {
+                metadata.afterRemoveListeners.forEach(listener => {
+                    if (listener.isAllowed(entity)) {
+                        const executionResult = listener.execute(entity);
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+
+            if (this.queryRunner.connection.subscribers.length) {
+                this.queryRunner.connection.subscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterRemove) {
+                        const executionResult = subscriber.afterRemove({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            metadata: metadata,
+                            entity: entity,
+                            databaseEntity: databaseEntity,
+                            entityId: metadata.getEntityIdMixedMap(databaseEntity)
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
+        });
+
+        if (subjectsByMetadata) {
+            const targets = Object.keys(subjectsByMetadata);
+            for (const target of targets) {
+                const {
+                    metadata,
+                    subjects,
+                } = subjectsByMetadata[target];
+
+                const removals = subjects.map(subject => ({
+                    entity: subject.entity,
+                    databaseEntity: subject.databaseEntity,
+                    entityId: metadata.getEntityIdMixedMap(subject.databaseEntity),
+                }));
+
+                bulkSubscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target)) {
+                        const executionResult = subscriber.afterBulkRemove!({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            metadata,
+                            removals,
+                        });
+                        if (executionResult instanceof Promise)
+                            result.promises.push(executionResult);
+                        result.count++;
+                    }
+                });
+            }
         }
     }
 
@@ -365,6 +643,20 @@ export class Broadcaster {
                 });
             }
         });
+    }
+
+    private addEntityToMetadataMap<T extends BroadcasterSubject>(subjectsByMetadata: SubjectsByMetadata<T> | undefined, subject: T) {
+        if (subjectsByMetadata) {
+            const target = subject.metadata.targetName;
+            if (!subjectsByMetadata[target]) {
+                subjectsByMetadata[target] = {
+                    metadata: subject.metadata,
+                    subjects: [subject],
+                };
+            } else {
+                subjectsByMetadata[target].subjects.push(subject);
+            }
+        }
     }
 
     // -------------------------------------------------------------------------

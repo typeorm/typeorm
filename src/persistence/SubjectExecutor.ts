@@ -183,11 +183,11 @@ export class SubjectExecutor {
     protected broadcastBeforeEventsForAll(): BroadcasterResult {
         const result = new BroadcasterResult();
         if (this.insertSubjects.length)
-            this.insertSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeInsertEvent(result, subject.metadata, subject.entity!));
+            this.queryRunner.broadcaster.broadcastBeforeInsertEvent(result, this.insertSubjects);
         if (this.updateSubjects.length)
-            this.updateSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
+            this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, this.updateSubjects);
         if (this.removeSubjects.length)
-            this.removeSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
+            this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(result, this.removeSubjects);
         return result;
     }
 
@@ -199,11 +199,11 @@ export class SubjectExecutor {
     protected broadcastAfterEventsForAll(): BroadcasterResult {
         const result = new BroadcasterResult();
         if (this.insertSubjects.length)
-            this.insertSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterInsertEvent(result, subject.metadata, subject.entity!));
+            this.queryRunner.broadcaster.broadcastAfterInsertEvent(result, this.insertSubjects);
         if (this.updateSubjects.length)
-            this.updateSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
+            this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, this.updateSubjects);
         if (this.removeSubjects.length)
-            this.removeSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterRemoveEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
+            this.queryRunner.broadcaster.broadcastAfterRemoveEvent(result, this.removeSubjects);
         return result;
     }
 

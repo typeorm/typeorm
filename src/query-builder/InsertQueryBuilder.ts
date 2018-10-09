@@ -62,9 +62,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             if (this.expressionMap.callObservers) {
                 if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
                     const broadcastResult = new BroadcasterResult();
-                    valueSets.forEach(valueSet => {
-                        queryRunner.broadcaster.broadcastBeforeInsertEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, valueSet);
-                    });
+                    queryRunner.broadcaster.broadcastBeforeInsertEvent(broadcastResult, valueSets.map(valueSet => ({
+                        metadata: this.expressionMap.mainAlias!.metadata,
+                        entity: valueSet,
+                    })));
                     if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
                 }
             }
@@ -96,9 +97,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // call after insertion methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
                 const broadcastResult = new BroadcasterResult();
-                valueSets.forEach(valueSet => {
-                    queryRunner.broadcaster.broadcastAfterInsertEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, valueSet);
-                });
+                queryRunner.broadcaster.broadcastAfterInsertEvent(broadcastResult, valueSets.map(valueSet => ({
+                    metadata: this.expressionMap.mainAlias!.metadata,
+                    entity: valueSet,
+                })));
                 if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
             }
 

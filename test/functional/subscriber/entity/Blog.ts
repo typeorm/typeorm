@@ -1,6 +1,6 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import { OneToMany, Column } from "../../../../../src";
+import {Entity} from "../../../../src/decorator/entity/Entity";
+import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import { OneToMany, Column } from "../../../../src";
 
 import { Post } from "./Post";
 
@@ -18,6 +18,12 @@ export class Blog {
         eager: true,
     })
     posts: Post[];
+
+    @Column()
+    createDate: Date;
+
+    @Column()
+    updateDate: Date;
 
     postCount: number;
 }
