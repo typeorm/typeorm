@@ -1776,7 +1776,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
     protected applyFindOptions() {
 
-        if (this.expressionMap.mainAlias!.metadata) {
+        if (this.expressionMap.mainAlias!.hasMetadata) {
 
             if (this.findOptions.select)
                 this.buildSelect(this.findOptions.select, this.expressionMap.mainAlias!.metadata, this.expressionMap.mainAlias!.name);
@@ -1885,29 +1885,33 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected async executeCountQuery(queryRunner: QueryRunner): Promise<number> {
 
         const mainAlias = this.expressionMap.mainAlias!.name; // todo: will this work with "fromTableName"?
-        const metadata = this.expressionMap.mainAlias!.metadata;
 
         const distinctAlias = this.escape(mainAlias);
         let countSql: string = "";
-        if (metadata.hasMultiplePrimaryKeys) {
-            if (this.connection.driver instanceof AbstractSqliteDriver) {
+        if (this.expressionMap.mainAlias!.hasMetadata) {
+            const metadata = this.expressionMap.mainAlias!.metadata;
+            if (metadata.hasMultiplePrimaryKeys) {
+                if (this.connection.driver instanceof AbstractSqliteDriver) {
+                    countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
+                        const propertyName = this.escape(primaryColumn.databaseName);
+                        return `${distinctAlias}.${propertyName}`;
+                    }).join(" || ") + ")) as \"cnt\"";
+
+                } else {
+                    countSql = `COUNT(DISTINCT(CONCAT(` + metadata.primaryColumns.map((primaryColumn, index) => {
+                        const propertyName = this.escape(primaryColumn.databaseName);
+                        return `${distinctAlias}.${propertyName}`;
+                    }).join(", ") + "))) as \"cnt\"";
+                }
+
+            } else {
                 countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
                     const propertyName = this.escape(primaryColumn.databaseName);
                     return `${distinctAlias}.${propertyName}`;
-                }).join(" || ") + ")) as \"cnt\"";
-
-            } else {
-                countSql = `COUNT(DISTINCT(CONCAT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                    const propertyName = this.escape(primaryColumn.databaseName);
-                    return `${distinctAlias}.${propertyName}`;
-                }).join(", ") + "))) as \"cnt\"";
+                }).join(", ") + ")) as \"cnt\"";
             }
-
         } else {
-            countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                const propertyName = this.escape(primaryColumn.databaseName);
-                return `${distinctAlias}.${propertyName}`;
-            }).join(", ") + ")) as \"cnt\"";
+            countSql = `COUNT(*) as "cnt"`;
         }
 
         const results = await this.clone()
