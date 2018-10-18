@@ -174,7 +174,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         this.driver.connection.logger.logQueryError(err, query, parameters, this);
                         fail(new QueryFailedError(query, parameters, err));
                     } else {
-                        ok(result.rows);
+                        const wholeResult = result.command === "DELETE" || result.command === "UPDATE";
+                        ok(wholeResult ? result : result.rows);
                     }
                 });
 

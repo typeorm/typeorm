@@ -40,7 +40,14 @@ export class ReturningResultsEntityUpdator {
                         return newRaw;
                     }, {} as ObjectLiteral);
                 }
-                const result = updateResult.raw instanceof Array ? updateResult.raw[entityIndex] : updateResult.raw;
+                let result;
+                if (updateResult.raw instanceof Array) {
+                    result = updateResult.raw[entityIndex];
+                } else if (updateResult.raw.rows) {
+                    result = updateResult.raw.rows[entityIndex];
+                } else {
+                    result = updateResult.raw;
+                }
                 const returningColumns = this.queryRunner.connection.driver.createGeneratedMap(metadata, result);
                 if (returningColumns) {
                     this.queryRunner.manager.merge(metadata.target, entity, returningColumns);
