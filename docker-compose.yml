@@ -68,6 +68,11 @@ services:
     ports:
       - "27017:27017"
 
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
   # redis
   # redis:
   #   image: "redis:3.0.3"
