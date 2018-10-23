@@ -57,19 +57,27 @@ export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|Pr
         // explicitly set a primary and generated to column options
         options.primary = true;
 
-        // register column metadata args
-        getMetadataArgsStorage().columns.push({
-            target: object.constructor,
-            propertyName: propertyName,
-            mode: "regular",
-            options: options
-        });
+        function finisher(name: string, target: Function) {
+            // register column metadata args
+            getMetadataArgsStorage().columns.push({
+                target,
+                propertyName: name,
+                mode: "regular",
+                options: options
+            });
 
-        // register generated metadata args
-        getMetadataArgsStorage().generations.push({
-            target: object.constructor,
-            propertyName: propertyName,
-            strategy: strategy
-        } as GeneratedMetadataArgs);
+            // register generated metadata args
+            getMetadataArgsStorage().generations.push({
+                target,
+                propertyName: name,
+                strategy: strategy
+            } as GeneratedMetadataArgs);
+        }
+        if (propertyName) {
+            finisher(propertyName, object.constructor);
+            return;
+        } else {
+            return {...object, finisher: finisher.bind(this, (object as any).key)};
+        }
     };
 }

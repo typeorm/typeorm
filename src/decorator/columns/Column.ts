@@ -84,7 +84,7 @@ export function Column(type: (type?: any) => Function, options?: ColumnEmbeddedO
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
 export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(ColumnOptions&ColumnEmbeddedOptions), options?: (ColumnOptions&ColumnEmbeddedOptions)): Function {
-    return function (object: Object, propertyName: string) {
+    return function (object: Object, propertyName?: string) {
 
         // normalize parameters
         let type: ColumnType|undefined;
@@ -110,6 +110,18 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
         if (options.type === "hstore" && !options.hstoreType)
             options.hstoreType = reflectMetadataType === Object ? "object" : "string";
 
+        function finisher(name: string, target: Function) {
+            // create unique
+            if (options && options.unique === true)
+                getMetadataArgsStorage().uniques.push({ target, columns: [name] });
+
+            getMetadataArgsStorage().columns.push({
+                target,
+                propertyName: name,
+                mode: "regular",
+                options: options
+            } as ColumnMetadataArgs);
+        }
         if (typeOrOptions instanceof Function) { // register an embedded
             getMetadataArgsStorage().embeddeds.push({
                 target: object.constructor,
@@ -118,23 +130,20 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
                 prefix: options.prefix !== undefined ? options.prefix : undefined,
                 type: typeOrOptions as (type?: any) => Function
             } as EmbeddedMetadataArgs);
+            return;
 
         } else { // register a regular column
 
             // if we still don't have a type then we need to give error to user that type is required
             if (!options.type)
-                throw new ColumnTypeUndefinedError(object, propertyName);
+                throw new ColumnTypeUndefinedError(object, propertyName || (object as any).key);
 
-            // create unique
-            if (options.unique === true)
-                getMetadataArgsStorage().uniques.push({ target: object.constructor, columns: [propertyName] });
-
-            getMetadataArgsStorage().columns.push({
-                target: object.constructor,
-                propertyName: propertyName,
-                mode: "regular",
-                options: options
-            } as ColumnMetadataArgs);
+            if (propertyName) {
+                finisher(propertyName, object.constructor);
+                return;
+            } else {
+                return {...object, finisher: finisher.bind(this, (object as any).key)};
+            }
         }
     };
 }

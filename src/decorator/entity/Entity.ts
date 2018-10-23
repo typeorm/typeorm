@@ -21,16 +21,24 @@ export function Entity(nameOrOptions?: string|EntityOptions, maybeOptions?: Enti
     const options = (typeof nameOrOptions === "object" ? nameOrOptions as EntityOptions : maybeOptions) || {};
     const name = typeof nameOrOptions === "string" ? nameOrOptions : options.name;
 
-    return function (target: Function) {
-        getMetadataArgsStorage().tables.push({
-            target: target,
-            name: name,
-            type: "regular",
-            orderBy: options.orderBy ? options.orderBy : undefined,
-            engine: options.engine ? options.engine : undefined,
-            database: options.database ? options.database : undefined,
-            schema: options.schema ? options.schema : undefined,
-            synchronize: options.synchronize
-        } as TableMetadataArgs);
+    return function (target: Function|Object): Object|undefined {
+        function finisher(klass: Function) {
+            getMetadataArgsStorage().tables.push({
+                target: klass,
+                name: name,
+                type: "regular",
+                orderBy: options.orderBy ? options.orderBy : undefined,
+                engine: options.engine ? options.engine : undefined,
+                database: options.database ? options.database : undefined,
+                schema: options.schema ? options.schema : undefined,
+                synchronize: options.synchronize
+            } as TableMetadataArgs);
+        }
+        if (typeof target === "function") {
+            finisher(target);
+            return;
+        } else {
+            return { ...target, finisher };
+        }
     };
 }
