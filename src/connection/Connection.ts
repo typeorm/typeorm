@@ -33,6 +33,7 @@ import {RelationIdLoader} from "../query-builder/RelationIdLoader";
 import {EntitySchema} from "../";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {ObjectUtils} from "../util/ObjectUtils";
 import {PromiseUtils} from "../";
 
 /**
@@ -178,7 +179,7 @@ export class Connection {
             await this.queryResultCache.connect();
 
         // set connected status for the current connection
-        Object.assign(this, { isConnected: true });
+        ObjectUtils.assign(this, { isConnected: true });
 
         try {
 
@@ -224,7 +225,7 @@ export class Connection {
         if (this.queryResultCache)
             await this.queryResultCache.disconnect();
 
-        Object.assign(this, { isConnected: false });
+        ObjectUtils.assign(this, { isConnected: false });
     }
 
     /**
@@ -479,15 +480,15 @@ export class Connection {
 
         // create subscribers instances if they are not disallowed from high-level (for example they can disallowed from migrations run process)
         const subscribers = connectionMetadataBuilder.buildSubscribers(this.options.subscribers || []);
-        Object.assign(this, { subscribers: subscribers });
+        ObjectUtils.assign(this, { subscribers: subscribers });
 
         // build entity metadatas
         const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas(this.options.entities || []);
-        Object.assign(this, { entityMetadatas: entityMetadatas });
+        ObjectUtils.assign(this, { entityMetadatas: entityMetadatas });
 
         // create migration instances
         const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
-        Object.assign(this, { migrations: migrations });
+        ObjectUtils.assign(this, { migrations: migrations });
 
         // validate all created entity metadatas to make sure user created entities are valid and correct
         entityMetadataValidator.validateMany(this.entityMetadatas, this.driver);

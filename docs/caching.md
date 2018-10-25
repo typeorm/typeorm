@@ -99,7 +99,7 @@ const users = await connection
         where: { isAdmin: true },
         cache: { 
             id: "users_admins",
-            milisseconds: 25000
+            milliseconds: 25000
         }
     });
 ```

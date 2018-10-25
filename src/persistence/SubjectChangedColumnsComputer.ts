@@ -21,7 +21,7 @@ export class SubjectChangedColumnsComputer {
             this.computeDiffRelationalColumns(subjects, subject);
         });
     }
-    
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -66,7 +66,7 @@ export class SubjectChangedColumnsComputer {
                 }
                 let normalizedValue = entityValue;
                 // normalize special values to make proper comparision
-                if (entityValue !== null && entityValue !== undefined) {
+                if (entityValue !== null) {
                     if (column.type === "date") {
                         normalizedValue = DateUtils.mixedDateToDateString(entityValue);
 

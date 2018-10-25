@@ -12,6 +12,7 @@ import {InsertResult} from "../query-builder/result/InsertResult";
 import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {ObjectID} from "../driver/mongodb/typings";
+import {ObjectUtils} from "../util/ObjectUtils";
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -62,7 +63,7 @@ export class BaseEntity {
         const base: any = this.constructor;
         const newestEntity: BaseEntity = await base.getRepository().findOneOrFail(base.getId(this));
 
-        Object.assign(this, newestEntity);
+        ObjectUtils.assign(this, newestEntity);
     }
 
     // -------------------------------------------------------------------------

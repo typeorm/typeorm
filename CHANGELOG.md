@@ -8,6 +8,11 @@ feel free to ask us and community.
 ## 0.2.8
 
 * added support for specifying isolation levels in transactions
+* added SQLCipher connection option for sqlite
+* added driver to support Expo platform for sqlite
+* added support for nativescript
+* bug fixes
+* documentation updates
 
 ## 0.2.7
 

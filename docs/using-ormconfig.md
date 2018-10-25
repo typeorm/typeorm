@@ -1,12 +1,12 @@
 # Using ormconfig.json
 
-* [Creating a new connection from the configuration file](#creating-a-new-connection-from-the-configuration-file)
-* [Using `ormconfig.json`](#loading-from-ormconfigjson)
-* [Using `ormconfig.js`](#loading-from-ormconfigjs)
-* [Using environment variables](#loading-from-ormconfigenv-or-from-environment-variables)
-* [Using `ormconfig.yml`](#loading-from-ormconfigyml)
-* [Using `ormconfig.xml`](#loading-from-ormconfigxml)
-* [Overriding options defined in ormconfig](#overriding-options-defined-in-ormconfig)
+  - * [Creating a new connection from the configuration file](#creating-a-new-connection-from-the-configuration-file)
+  - * [Using `ormconfig.json`](#using-ormconfigjson)
+  - * [Using `ormconfig.js`](#using-ormconfigjs)
+  - * [Using environment variables](#using-environment-variables)
+  - * [Using `ormconfig.yml`](#using-ormconfigyml)
+  - * [Using `ormconfig.xml`](#using-ormconfigxml)
+  - * [Overriding options defined in ormconfig](#overriding-options-defined-in-ormconfig)
 
 ## Creating a new connection from the configuration file
 

@@ -33,6 +33,7 @@ import {OffsetWithoutLimitNotSupportedError} from "../error/OffsetWithoutLimitNo
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {abbreviate} from "../util/StringUtils";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
+import {ObjectUtils} from "../util/ObjectUtils";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1931,7 +1932,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Merges into expression map given expression map properties.
      */
     protected mergeExpressionMap(expressionMap: Partial<QueryExpressionMap>): this {
-        Object.assign(this.expressionMap, expressionMap);
+        ObjectUtils.assign(this.expressionMap, expressionMap);
         return this;
     }
 

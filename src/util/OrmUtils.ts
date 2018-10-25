@@ -86,7 +86,7 @@ export class OrmUtils {
                     && !(source[propertyKey] instanceof Set)
                     && !(source[propertyKey] instanceof Date)
                     && !(source[propertyKey] instanceof Buffer)) {
-                    if (!target[key]) Object.assign(target, { [key]: {} });
+                    if (!target[key]) Object.assign(target, { [key]: Object.create(Object.getPrototypeOf(source[propertyKey])) });
                     this.mergeDeep(target[key], source[propertyKey]);
                 } else {
                     Object.assign(target, { [key]: source[propertyKey] });

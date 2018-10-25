@@ -7,7 +7,7 @@
 
 ## Creating and using transactions
 
-Transactions are creating using `Connection` or `EntityManager`. 
+Transactions are created using `Connection` or `EntityManager`. 
 Examples:
 
 ```typescript
@@ -153,6 +153,10 @@ try {
     // since we have errors lets rollback changes we made
     await queryRunner.rollbackTransaction();
     
+} finally {
+    
+    // you need to release query runner which is manually created:
+    await queryRunner.release();
 }
 ```
 

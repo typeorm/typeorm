@@ -582,6 +582,9 @@ export class SqlServerDriver implements Driver {
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
     isReturningSqlSupported(): boolean {
+        if (this.options.options && this.options.options.disableOutputReturning) {
+            return false;
+        }
         return true;
     }
 

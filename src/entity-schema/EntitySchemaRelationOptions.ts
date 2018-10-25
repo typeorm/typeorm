@@ -1,6 +1,6 @@
 import {JoinColumnOptions} from "../decorator/options/JoinColumnOptions";
 import {RelationType} from "../metadata/types/RelationTypes";
-import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
+import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMultipleColumnsOptions";
 import {OnDeleteType} from "../metadata/types/OnDeleteType";
 import {OnUpdateType} from "../metadata/types/OnUpdateType";
 import {JoinTableOptions} from "../index";

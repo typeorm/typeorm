@@ -283,7 +283,7 @@ For example:
 or
 
 ```typescript
-@Column({ type: "int", length: 200 })
+@Column({ type: "int", width: 200 })
 ```
 
 ### Column types for `mysql` / `mariadb`
@@ -432,9 +432,8 @@ List of available options in `ColumnOptions`:
 
 * `type: ColumnType` - Column type. One of the type listed [above](#column-types).
 * `name: string` - Column name in the database table.
-
 By default the column name is generated from the name of the property.
-You can change it by specifying your own name
+You can change it by specifying your own name.
 
 * `length: number` - Column type's length. For example if you want to create `varchar(150)` type you specify column type and length options.
 * `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
@@ -623,7 +622,7 @@ export class Category {
     description: string;
 
     @TreeChildren()
-    children: Category;
+    children: Category[];
 
     @TreeParent()
     parent: Category;

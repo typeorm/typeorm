@@ -670,6 +670,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             if (newColumn.type === "enum" && oldColumn.type === "enum" && !OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!)) {
                 const enumName = this.buildEnumName(table, newColumn);
                 const enumNameWithoutSchema = this.buildEnumName(table, newColumn, false);
+                const arraySuffix = newColumn.isArray ? "[]" : "";
                 const oldEnumName = this.buildEnumName(table, newColumn, true, false, true);
                 const oldEnumNameWithoutSchema = this.buildEnumName(table, newColumn, false, false, true);
 
@@ -688,8 +689,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
 
                 // build column types
-                const upType = `${enumNameWithoutSchema} USING "${newColumn.name}"::"text"::${enumNameWithoutSchema}`;
-                const downType = `${oldEnumNameWithoutSchema} USING "${newColumn.name}"::"text"::${oldEnumNameWithoutSchema}`;
+                const upType = `${enumNameWithoutSchema}${arraySuffix} USING "${newColumn.name}"::"text"::${enumNameWithoutSchema}${arraySuffix}`;
+                const downType = `${oldEnumNameWithoutSchema}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithoutSchema}${arraySuffix}`;
 
                 // update column to use new type
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`);

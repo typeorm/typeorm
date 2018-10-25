@@ -34,6 +34,7 @@ import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {FindConditions} from "../find-options/FindConditions";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
+import {ObjectUtils} from "../util/ObjectUtils";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -79,7 +80,7 @@ export class EntityManager {
         if (queryRunner) {
             this.queryRunner = queryRunner;
             // dynamic: this.queryRunner = manager;
-            Object.assign(this.queryRunner, { manager: this });
+            ObjectUtils.assign(this.queryRunner, { manager: this });
         }
     }
 
@@ -385,7 +386,7 @@ export class EntityManager {
      * Condition(s) cannot be empty.
      */
     update<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
-        
+
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (criteria === undefined ||
             criteria === null ||
@@ -394,7 +395,7 @@ export class EntityManager {
 
             return Promise.reject(new Error(`Empty criteria(s) are not allowed for the update method.`));
         }
-        
+
         if (typeof criteria === "string" ||
             typeof criteria === "number" ||
             criteria instanceof Date ||
@@ -423,7 +424,7 @@ export class EntityManager {
      * Condition(s) cannot be empty.
      */
     delete<Entity>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
-        
+
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (criteria === undefined ||
             criteria === null ||
@@ -432,7 +433,7 @@ export class EntityManager {
 
             return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
         }
-        
+
         if (typeof criteria === "string" ||
             typeof criteria === "number" ||
             criteria instanceof Date ||

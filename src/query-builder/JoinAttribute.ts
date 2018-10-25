@@ -4,6 +4,7 @@ import {RelationMetadata} from "../metadata/RelationMetadata";
 import {QueryBuilderUtils} from "./QueryBuilderUtils";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {Alias} from "./Alias";
+import {ObjectUtils} from "../util/ObjectUtils";
 
 /**
  * Stores all join attributes which will be used to build a JOIN query.
@@ -51,7 +52,7 @@ export class JoinAttribute {
     constructor(private connection: Connection,
                 private queryExpressionMap: QueryExpressionMap,
                 joinAttribute?: JoinAttribute) {
-        Object.assign(this, joinAttribute || {});
+        ObjectUtils.assign(this, joinAttribute || {});
     }
 
     // -------------------------------------------------------------------------
@@ -68,19 +69,30 @@ export class JoinAttribute {
         return false;
     }
 
+    
+    isSelectedCache: boolean;
+    isSelectedEvalueated: boolean = false;
     /**
      * Indicates if this join is selected.
      */
     get isSelected(): boolean {
-        for (const select of this.queryExpressionMap.selects) {
-            if (select.selection === this.alias.name)
-                return true;
+        if (!this.isSelectedEvalueated) {
+            let getValue = () => {
+                for (const select of this.queryExpressionMap.selects) {
+                    if (select.selection === this.alias.name)
+                        return true;
 
-            if (this.metadata && !!this.metadata.columns.find(column => select.selection === this.alias.name + "." + column.propertyPath))
-                return true;
+                    if (this.metadata && !!this.metadata.columns.find(column => select.selection === this.alias.name + "." + column.propertyPath))
+                        return true;
+                }
+
+                return false;
+            };
+            this.isSelectedCache = getValue();
+            this.isSelectedEvalueated = true;
         }
+        return this.isSelectedCache;
 
-        return false;
     }
 
     /**
@@ -117,31 +129,40 @@ export class JoinAttribute {
         return this.entityOrProperty.substr(this.entityOrProperty.indexOf(".") + 1);
     }
 
+    relationCache: RelationMetadata|undefined;
+    relationEvalueated: boolean = false;
     /**
      * Relation of the parent.
      * This is used to understand what is joined.
      * This is available when join was made using "post.category" syntax.
      * Relation can be undefined if entityOrProperty is regular entity or custom table.
      */
-    get relation(): RelationMetadata|undefined {
-        if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
-            return undefined;
+    get relation(): RelationMetadata | undefined {
+        if (!this.relationEvalueated) {
+            let getValue = () => {
+                if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
+                    return undefined;
 
-        const relationOwnerSelection = this.queryExpressionMap.findAliasByName(this.parentAlias!);
-        let relation = relationOwnerSelection.metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
-        
-        if (relation) {
-            return relation;
+                const relationOwnerSelection = this.queryExpressionMap.findAliasByName(this.parentAlias!);
+                let relation = relationOwnerSelection.metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
+
+                if (relation) {
+                    return relation;
+                }
+
+                if (relationOwnerSelection.metadata.parentEntityMetadata) {
+                    relation = relationOwnerSelection.metadata.parentEntityMetadata.findRelationWithPropertyPath(this.relationPropertyPath!);
+                    if (relation) {
+                        return relation;
+                    }
+                }
+
+                throw new Error(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);
+            };
+            this.relationCache = getValue.bind(this)();
+            this.relationEvalueated = true;
         }
-
-        if (relationOwnerSelection.metadata.parentEntityMetadata) {
-            relation = relationOwnerSelection.metadata.parentEntityMetadata.findRelationWithPropertyPath(this.relationPropertyPath!);
-            if (relation) {
-                return relation;
-            }
-        }
-
-        throw new Error(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);  
+        return this.relationCache;
     }
 
     /**

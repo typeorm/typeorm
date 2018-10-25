@@ -240,7 +240,7 @@ export class PostgresDriver implements Driver {
         // load postgres package
         this.loadDependencies();
 
-        // Object.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
+        // ObjectUtils.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
         // if (!this.options.host)
@@ -453,7 +453,7 @@ export class PostgresDriver implements Driver {
 
         // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
         if (columnMetadata.enum && columnMetadata.isArray)
-            value = (value as string).substr(1).substr(0, (value as string).length - 2).split(",");
+            value = value !== "{}" ? (value as string).substr(1, (value as string).length - 2).split(",") : [];
 
         if (columnMetadata.transformer)
             value = columnMetadata.transformer.from(value);

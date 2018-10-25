@@ -222,7 +222,7 @@ export class Table {
             if (index.columnNames.length === 1 && index.isUnique && isMysql) {
                 const column = this.columns.find(c => c.name === index.columnNames[0]);
                 if (column)
-                    column.isUnique = false;
+                    column.isUnique = this.indices.some(ind => ind.columnNames.length === 1 && ind.columnNames[0] === column.name && !!index.isUnique);
             }
         }
     }

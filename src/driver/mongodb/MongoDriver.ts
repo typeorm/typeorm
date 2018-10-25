@@ -14,6 +14,7 @@ import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ConnectionOptions} from "../../connection/ConnectionOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {ObjectUtils} from "../../util/ObjectUtils";
 
 /**
  * Organizes communication with MongoDB.
@@ -184,7 +185,7 @@ export class MongoDriver implements Driver {
                 if (err) return fail(err);
 
                 this.queryRunner = new MongoQueryRunner(this.connection, client);
-                Object.assign(this.queryRunner, { manager: this.connection.manager });
+                ObjectUtils.assign(this.queryRunner, { manager: this.connection.manager });
                 ok();
             });
         });
@@ -290,7 +291,7 @@ export class MongoDriver implements Driver {
     getColumnLength(column: ColumnMetadata): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
-    
+
     /**
      * Normalizes "default" value of the column.
      */

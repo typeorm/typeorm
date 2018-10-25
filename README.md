@@ -16,6 +16,9 @@
 	<a href="https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
 		<img src="https://badges.gitter.im/typeorm/typeorm.svg">
 	</a>
+	<a href="https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTFiNDEyOGUxZGQyYWIwOTA0NDQxODdkOGQ0OTUxNzFjYjUwY2E0ZmFlODc5OTYyYzAzNGM3MGZjYzhjYTBiZTY">
+		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg">
+	</a>
   <br>
   <br>
 </div>
@@ -29,7 +32,7 @@ small applications with a few tables to large scale enterprise applications
 with multiple databases.
 
 TypeORM supports both Active Record and Data Mapper patterns, 
-unlike all other JavaScript ORMs currently in existance, 
+unlike all other JavaScript ORMs currently in existence, 
 which means you can write high quality, loosely coupled, scalable,
 maintainable applications the most productive way.
 
@@ -579,7 +582,7 @@ If you are using `ts-node` then you need to specify paths to `.ts` files instead
 If you are using `outDir` then you'll need to specify paths to `.js` files inside outDir directory.
 If you are using `outDir` and when you remove or rename your entities make sure to clear `outDir` directory
 and re-compile your project again, because when you remove your source `.ts` files their compiled `.js` versions
-aren't removed from output directory and still are loaded by TypeORM because they present in outDir directory.
+aren't removed from output directory and still are loaded by TypeORM because they are present in the `outDir` directory.
 
 ### Running the application
 

@@ -23,7 +23,7 @@ export class DriverUtils {
                     port: parsedUrl.port,
                     sid: parsedUrl.database
                 };
-                return Object.assign(urlDriverOptions, options);
+                return Object.assign(options, urlDriverOptions);
 
             } else {
                 const urlDriverOptions: any = {
@@ -34,7 +34,7 @@ export class DriverUtils {
                     port: parsedUrl.port,
                     database: parsedUrl.database
                 };
-                return Object.assign(urlDriverOptions, options);
+                return Object.assign(options, urlDriverOptions);
             }
         }
         return Object.assign({}, options);
