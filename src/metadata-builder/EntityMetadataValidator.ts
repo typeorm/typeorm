@@ -58,7 +58,7 @@ export class EntityMetadataValidator {
 
         // validate if table is using inheritance it has a discriminator
         // also validate if discriminator values are not empty and not repeated
-        if (entityMetadata.inheritancePattern === "STI") {
+        if (entityMetadata.inheritancePattern === "STI" || entityMetadata.tableType === "entity-child") {
             if (!entityMetadata.discriminatorColumn)
                 throw new Error(`Entity ${entityMetadata.name} using single-table inheritance, it should also have a discriminator column. Did you forget to put discriminator column options?`);
 
@@ -66,7 +66,10 @@ export class EntityMetadataValidator {
                 throw new Error(`Entity ${entityMetadata.name} has empty discriminator value. Discriminator value should not be empty.`);
 
             const sameDiscriminatorValueEntityMetadata = allEntityMetadatas.find(metadata => {
-                return metadata !== entityMetadata && metadata.inheritancePattern === "STI" && metadata.discriminatorValue === entityMetadata.discriminatorValue;
+                return metadata !== entityMetadata
+                    && (metadata.inheritancePattern === "STI" || metadata.tableType === "entity-child")
+                    && metadata.discriminatorValue === entityMetadata.discriminatorValue
+                    && metadata.inheritanceTree.some(parent => entityMetadata.inheritanceTree.indexOf(parent) !== -1);
             });
             if (sameDiscriminatorValueEntityMetadata)
                 throw new Error(`Entities ${entityMetadata.name} and ${sameDiscriminatorValueEntityMetadata.name} have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.`);
