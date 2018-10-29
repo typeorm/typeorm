@@ -1,25 +1,21 @@
 import "reflect-metadata";
 
-import {closeTestingConnections, reloadTestingDatabases, setupSingleTestingConnection} from "../../utils/test-utils";
-import {createConnection, Connection} from "../../../src";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {Connection} from "../../../src";
 
 describe("github issues > #2984 Discriminator conflict reported even for non-inherited tables", () => {
-    let connection: Connection;
 
-    before(async () => connection = await createConnection(setupSingleTestingConnection("postgres", {
+    let connections: Connection[];
+    before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/**/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
-    })));
-    beforeEach(async () => {
-        await reloadTestingDatabases([connection]);
-    });
-    after(() => closeTestingConnections([connection]));
+    }));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
 
-    it("should load entities even with the same discriminator", async () => {
+    it("should load entities even with the same discriminator", () => Promise.all(connections.map(async connection => {
         connection.entityMetadatas.should.have.length(2);
         connection.entityMetadatas.forEach(metadata =>
             metadata.discriminatorValue!.should.be.equal("Note"));
-    });
+    })));
 
 });
