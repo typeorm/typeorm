@@ -32,8 +32,8 @@ describe("github issues > #2128 skip preparePersistentValue for value functions"
             .execute();
 
         const metaAddition = JSON.stringify({
-            author: 'John Doe'
-        })
+            author: "John Doe"
+        });
 
         await connection.createQueryBuilder()
             .update(Post)
@@ -45,17 +45,17 @@ describe("github issues > #2128 skip preparePersistentValue for value functions"
             .where("title = :title", {
                 title: "First Post"
             })
-            .execute()
+            .execute();
 
         const loadedPost = await connection.getRepository(Post).findOne({ title: "First Post" });
 
         expect(loadedPost!.meta).to.deep.equal({
-             author: 'John Doe',
+             author: "John Doe",
              keywords: [
-                 'important',
-                 'fresh'
+                 "important",
+                 "fresh"
             ]
-        })
+        });
 
     })));
 

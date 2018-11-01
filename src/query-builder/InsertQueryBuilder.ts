@@ -261,10 +261,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const valuesExpression = this.createValuesExpression(); // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
         const returningExpression = this.createReturningExpression();
         const columnsExpression = this.createColumnNamesExpression();
-        let query = "INSERT "
+        let query = "INSERT ";
 
-        if(this.connection.driver instanceof MysqlDriver) {
-          query+= `${this.expressionMap.onIgnore ? " IGNORE " : ""}`
+        if (this.connection.driver instanceof MysqlDriver) {
+          query += `${this.expressionMap.onIgnore ? " IGNORE " : ""}`;
         }
 
         query += `INTO ${tableName}`;
@@ -293,11 +293,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             }
         }
         if (this.connection.driver instanceof PostgresDriver) {
-            query += `${this.expressionMap.onIgnore ? " ON CONFLICT DO NOTHING " : ""}`
-            query += `${this.expressionMap.onUpdate ? " ON CONFLICT " + this.expressionMap.onUpdate.conflict + " DO UPDATE SET " + this.expressionMap.onUpdate.columns : ""}`
-            query += `${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`
+            query += `${this.expressionMap.onIgnore ? " ON CONFLICT DO NOTHING " : ""}`;
+            query += `${this.expressionMap.onUpdate ? " ON CONFLICT " + this.expressionMap.onUpdate.conflict + " DO UPDATE SET " + this.expressionMap.onUpdate.columns : ""}`;
+            query += `${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
         } else if (this.connection.driver instanceof MysqlDriver) {
-            query+= `${this.expressionMap.onUpdate ? " ON DUPLICATE KEY UPDATE " + this.expressionMap.onUpdate.columns : ""}`;
+            query += `${this.expressionMap.onUpdate ? " ON DUPLICATE KEY UPDATE " + this.expressionMap.onUpdate.columns : ""}`;
         }
 
         // add RETURNING expression

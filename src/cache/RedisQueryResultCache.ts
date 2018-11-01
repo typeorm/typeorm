@@ -105,13 +105,13 @@ export class RedisQueryResultCache implements QueryResultCache {
     async storeInCache(options: QueryResultCacheOptions, savedCache: QueryResultCacheOptions, queryRunner?: QueryRunner): Promise<void> {
         return new Promise<void>((ok, fail) => {
             if (options.identifier) {
-                this.client.set(options.identifier, JSON.stringify(options), 'PX', options.duration, (err: any, result: any) => {
+                this.client.set(options.identifier, JSON.stringify(options), "PX", options.duration, (err: any, result: any) => {
                     if (err) return fail(err);
                     ok();
                 });
 
             } else if (options.query) {
-                this.client.set(options.query, JSON.stringify(options), 'PX', options.duration, (err: any, result: any) => {
+                this.client.set(options.query, JSON.stringify(options), "PX", options.duration, (err: any, result: any) => {
                     if (err) return fail(err);
                     ok();
                 });
