@@ -314,6 +314,7 @@ export class Gulpfile {
     @SequenceTask()
     tests() {
         return [
+            "clean",
             "compile",
             "coveragePre",
             "runTests",
