@@ -150,7 +150,7 @@ describe("schema builder > change column", () => {
         const queryRunner = connection.createQueryRunner();
 
         if (connection.driver instanceof PostgresDriver)
-            await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+            await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
 
         const postMetadata = connection.getMetadata(Post);
         const idColumn = postMetadata.findColumnWithPropertyName("id")!;
