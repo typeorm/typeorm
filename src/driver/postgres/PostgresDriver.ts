@@ -299,9 +299,9 @@ export class PostgresDriver implements Driver {
                         if (err) return fail(err);
                         if (hasUuidColumns)
                             try {
-                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
                             } catch (_) {
-                                logger.log("warn", "At least one of the entities has uuid column, but the 'uuid-ossp' extension cannot be installed automatically. Please install it manually using superuser rights");
+                                logger.log("warn", "At least one of the entities has uuid column, but the 'pgcrypto' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         if (hasCitextColumns)
                             try {
