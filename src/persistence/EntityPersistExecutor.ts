@@ -94,9 +94,9 @@ export class EntityPersistExecutor {
 
                     // load database entities for all subjects we have
                     // next step is to load database entities for all operate subjects
-                    // console.time("loading...");
+                    console.time("loading...");
                     await new SubjectDatabaseEntityLoader(queryRunner, subjects).load(this.mode);
-                    // console.timeEnd("loading...");
+                    console.timeEnd("loading...");
 
                     // console.time("other subjects...");
                     // build all related subjects and change maps
