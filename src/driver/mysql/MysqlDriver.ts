@@ -509,13 +509,17 @@ export class MysqlDriver implements Driver {
         if (column.length)
             return column.length.toString();
 
+        /**
+         * fix https://github.com/typeorm/typeorm/issues/1139
+         */
+        if (column.generationStrategy === 'uuid')
+            return "36";
+
         switch (column.type) {
             case String:
             case "varchar":
             case "nvarchar":
                 return "255";
-            case "uuid":
-                return "36";
             case "varbinary":
                 return "255";
             default:

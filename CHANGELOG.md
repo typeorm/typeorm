@@ -12,6 +12,7 @@ feel free to ask us and community.
 * `primary` flag has been removed from relation decorators. Now if you want to make a relation primary you must define a primary column with the same name relation uses
 * added observer methods to repositories and entity manager
 * `findOne` now throws error if no (or wrong) criteria supplied
+* fixed issue with mysql primary generated uuid ER_TOO_LONG_KEY (#1953)
 
 ## 0.2.8
 
