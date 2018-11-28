@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Any, Between, Connection, Equal, In, IsNull, LessThan, Like, MoreThan, Not} from "../../../../src";
+import {Any, Between, Connection, Equal, In, IsNull, LessThan, Like, MoreThan, Not, Or, And} from "../../../../src";
 import {Post} from "./entity/Post";
 import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
 import {Raw} from "../../../../src/find-options/operator/Raw";
@@ -415,6 +415,92 @@ describe("repository > find options > operators", () => {
         });
         loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
 
+    })));
+
+    it("or", () => Promise.all(connections.map(async connection => {
+
+        // insert some fake data
+        const post1 = new Post();
+        post1.title = "About #1";
+        post1.likes = 12;
+        await connection.manager.save(post1);
+        const post2 = new Post();
+        post2.title = "About #2";
+        post2.likes = 3;
+        await connection.manager.save(post2);
+        const post3 = new Post();
+        post3.title = "About #3";
+        post3.likes = 20;
+        await connection.manager.save(post3);
+
+        let loadedPosts = await connection.getRepository(Post).find({
+            title: "About #1",
+            likes: LessThan(12),
+        });
+        loadedPosts.should.be.eql([]);
+
+
+        // check operator
+        loadedPosts = await connection.getRepository(Post).find({
+            title: "About #1",
+            likes: Or(LessThan(12)),
+        });
+        loadedPosts.should.be.eql([
+            { id: 1, likes: 12, title: "About #1" },
+            { id: 2, likes: 3, title: "About #2" },
+        ]);
+
+        // check difference of result based on query order
+        // title = 'About #1' OR
+        loadedPosts = await connection.getRepository(Post).find({
+            title: "About #1",
+            likes: Or(LessThan(3)),
+            id: 3,
+        });
+        loadedPosts.should.be.eql([
+            { id: 1, likes: 12, title: "About #1" },
+        ]);
+
+        loadedPosts = await connection.getRepository(Post).find({
+            title: "About #1",
+            id: 3,
+            likes: Or(LessThan(3)),
+        });
+        loadedPosts.should.be.eql([]);
+    })));
+
+    it("and", () => Promise.all(connections.map(async connection => {
+
+        // insert some fake data
+        const post1 = new Post();
+        post1.title = "About #1";
+        post1.likes = 12;
+        await connection.manager.save(post1);
+        const post2 = new Post();
+        post2.title = "About #2";
+        post2.likes = 3;
+        await connection.manager.save(post2);
+
+        let loadedPosts = await connection.getRepository(Post).find({
+            title: "About #1",
+            likes: MoreThan(11),
+        });
+        loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+
+
+        // check operator
+        // same as not specifying anything
+        loadedPosts = await connection.getRepository(Post).find({
+            title: "About #1",
+            likes: And(MoreThan(11)),
+        });
+        loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+
+        loadedPosts = await connection.getRepository(Post).find({
+            title: And("About #1"),
+            likes: And(MoreThan(11)),
+        });
+        loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
     })));
 
 });

@@ -18,6 +18,8 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {EntitySchema} from "../";
 import {FindOperator} from "../find-options/FindOperator";
+import {ConjunctiveOperator} from "../find-options/ConjunctiveOperator";
+import {And} from "../find-options/operator/And";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -753,8 +755,18 @@ export abstract class QueryBuilder<Entity> {
                             let parameterValue = column.getEntityValue(where, true);
                             const parameterName = "where_" + whereIndex + "_" + propertyIndex + "_" + columnIndex;
 
+                            if (!(parameterValue instanceof ConjunctiveOperator)) {
+                                // 'And' is the default conjunction
+                                parameterValue = And(parameterValue);
+                            }
+                            // Ignore the conjunction for the first condition so as not to have
+                            // leading conditions that are not valid sql
+                            // this is basically what 'join' was doing, but less elegantly :(
+                            const conjunction = propertyIndex !== 0 ? parameterValue.toSql() : "";
+                            parameterValue = parameterValue.value;
+
                             if (parameterValue === null) {
-                                return `${aliasPath} IS NULL`;
+                                return `${conjunction}${aliasPath} IS NULL`;
 
                             } else if (parameterValue instanceof FindOperator) {
                                 let parameters: any[] = [];
@@ -766,17 +778,17 @@ export abstract class QueryBuilder<Entity> {
                                         parameters.push(this.connection.driver.createParameter(parameterName + realParameterValueIndex, parameterIndex - 1));
                                     });
                                 }
-                                return parameterValue.toSql(this.connection, aliasPath, parameters);
+                                return conjunction + parameterValue.toSql(this.connection, aliasPath, parameters);
 
                             } else {
                                 this.expressionMap.nativeParameters[parameterName] = parameterValue;
                                 parameterIndex++;
                                 const parameter = this.connection.driver.createParameter(parameterName, parameterIndex - 1);
-                                return `${aliasPath} = ${parameter}`;
+                                return `${conjunction}${aliasPath} = ${parameter}`;
                             }
 
-                        }).filter(expression => !!expression).join(" AND ");
-                    }).filter(expression => !!expression).join(" AND ");
+                        }).filter(expression => !!expression).join("");
+                    }).filter(expression => !!expression).join("");
                 });
 
             } else {
