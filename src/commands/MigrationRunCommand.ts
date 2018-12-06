@@ -55,8 +55,24 @@ export class MigrationRunCommand implements yargs.CommandModule {
             connection = await createConnection(connectionOptions);
 
             const options = {
-                transaction: args["t"] === "false" ? false : true
+                transactionMode: "all" as "all" | "none" | "each",
             };
+
+            switch (argv["t"]) {
+                case "all":
+                    options.transactionMode = "all";
+                    break;
+                case "none":
+                case "false":
+                    options.transactionMode = "none";
+                    break;
+                case "each":
+                    options.transactionMode = "each";
+                    break;
+                default:
+                    // noop
+            }
+
             await connection.runMigrations(options);
             await connection.close();
             // exit process if no errors
