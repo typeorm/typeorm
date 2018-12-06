@@ -44,9 +44,26 @@ export class MigrationRevertCommand {
                 logging: ["query", "error", "schema"]
             });
             connection = await createConnection(connectionOptions);
+
             const options = {
-                transaction: argv["t"] === "false" ? false : true
+                transactionMode: "all" as "all" | "none" | "each",
             };
+
+            switch (argv["t"]) {
+                case "all":
+                    options.transactionMode = "all";
+                    break;
+                case "none":
+                case "false":
+                    options.transactionMode = "none";
+                    break;
+                case "each":
+                    options.transactionMode = "each";
+                    break;
+                default:
+                    // noop
+            }
+
             await connection.undoLastMigration(options);
             await connection.close();
 
