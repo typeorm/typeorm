@@ -85,7 +85,7 @@ export class EntityListenerMetadata {
         if (!propertyPath)
             return;
 
-        if (propertyPaths.length === 0) {
+        if (propertyPaths.length === 0 && entity[propertyPath][this.propertyName]) {
             entity[propertyPath][this.propertyName]();
         } else {
             if (entity[propertyPath])
