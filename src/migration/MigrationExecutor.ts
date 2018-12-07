@@ -26,7 +26,7 @@ export class MigrationExecutor {
      *   none: all migrations are run without a transaction
      *   each: each migration is run in a separate transaction
      */
-    transactionMode: 'all' | 'none' | 'each' = 'all';
+    transactionMode: "all" | "none" | "each" = "all";
 
     // -------------------------------------------------------------------------
     // Private Properties
@@ -135,11 +135,11 @@ export class MigrationExecutor {
         this.connection.logger.logSchemaBuild(`${pendingMigrations.length} migrations are new migrations that needs to be executed.`);
 
         switch (this.transactionMode) {
-            case 'each':
+            case "each":
                 return this.runEachMigrationInSeparateTransaction(queryRunner, pendingMigrations);
-            case 'all':
+            case "all":
                 return this.runAllMigrationsInSingleTransaction(queryRunner, pendingMigrations);
-            case 'none':
+            case "none":
                 return this.runAllMigrationsWithoutTransaction(queryRunner, pendingMigrations);
         }
     }
@@ -183,7 +183,7 @@ export class MigrationExecutor {
 
         // start transaction if its not started yet
         let transactionStartedByUs = false;
-        if ((this.transactionMode !== 'none') && !queryRunner.isTransactionActive) {
+        if ((this.transactionMode !== "none") && !queryRunner.isTransactionActive) {
             await queryRunner.startTransaction();
             transactionStartedByUs = true;
         }
@@ -367,7 +367,7 @@ export class MigrationExecutor {
         const successMigrations: Migration[] = [];
 
         if (queryRunner.isTransactionActive) {
-            throw new Error('Trying to run each migration in separate transaction, but already in one. Try changing this option and run migrations again.');
+            throw new Error("Trying to run each migration in separate transaction, but already in one. Try changing this option and run migrations again.");
         }
 
         // run all pending migrations in a sequence

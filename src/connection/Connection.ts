@@ -277,12 +277,12 @@ export class Connection {
      * Runs all pending migrations.
      * Can be used only after connection to the database is established.
      */
-    async runMigrations(options?: { transactionMode?: 'all' | 'none' | 'each' }): Promise<Migration[]> {
+    async runMigrations(options?: { transactionMode?: "all" | "none" | "each" }): Promise<Migration[]> {
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
-        migrationExecutor.transactionMode = (options && options.transactionMode) || 'all';
+        migrationExecutor.transactionMode = (options && options.transactionMode) || "all";
 
         const successMigrations = await migrationExecutor.executePendingMigrations();
         return successMigrations;
@@ -292,13 +292,13 @@ export class Connection {
      * Reverts last executed migration.
      * Can be used only after connection to the database is established.
      */
-    async undoLastMigration(options?: { transactionMode?: 'all' | 'none' | 'each' }): Promise<void> {
+    async undoLastMigration(options?: { transactionMode?: "all" | "none" | "each" }): Promise<void> {
 
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
-        migrationExecutor.transactionMode = (options && options.transactionMode) || 'all';
+        migrationExecutor.transactionMode = (options && options.transactionMode) || "all";
 
         await migrationExecutor.undoLastMigration();
     }
