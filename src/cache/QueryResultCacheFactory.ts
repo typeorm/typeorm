@@ -1,4 +1,5 @@
 import {RedisQueryResultCache} from "./RedisQueryResultCache";
+import {IORedisQueryResultCache} from "./IORedisQueryResultCache";
 import {DbQueryResultCache} from "./DbQueryResultCache";
 import {QueryResultCache} from "./QueryResultCache";
 import {Connection} from "../connection/Connection";
@@ -28,6 +29,9 @@ export class QueryResultCacheFactory {
 
         if ((this.connection.options.cache as any).type === "redis")
             return new RedisQueryResultCache(this.connection);
+
+        if ((this.connection.options.cache as any).type === "ioredis")
+            return new IORedisQueryResultCache(this.connection);
 
         return new DbQueryResultCache(this.connection);
     }
