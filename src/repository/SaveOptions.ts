@@ -37,5 +37,8 @@ export interface SaveOptions {
      * Enabled by default.
      */
     reload?: boolean;
-
+    /*
+     *   MongoDb sesstion
+      */
+    session?: any;
 }

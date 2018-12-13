@@ -1,20 +1,22 @@
-import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Repository} from "./Repository";
-import {FindManyOptions} from "../find-options/FindManyOptions";
-import {FindOneOptions} from "../find-options/FindOneOptions";
+import { ObjectLiteral } from "../common/ObjectLiteral";
+import { Repository } from "./Repository";
+import { FindManyOptions } from "../find-options/FindManyOptions";
+import { FindOneOptions } from "../find-options/FindOneOptions";
 import {
     AggregationCursor,
     BulkWriteOpResultObject,
     Code,
     Collection,
     CollectionAggregationOptions,
-    CollectionBluckWriteOptions,
+    CollectionBulkWriteOptions,
     CollectionInsertManyOptions,
     CollectionInsertOneOptions,
-    CollectionOptions,
+    CommonOptions,
+    IndexSpecification,
     CollStats,
     CommandCursor,
     Cursor,
+    ClientSession,
     DeleteWriteOpResultObject,
     FindAndModifyWriteOpResultObject,
     FindOneAndReplaceOption,
@@ -32,9 +34,9 @@ import {
     UnorderedBulkOperation,
     UpdateWriteOpResult
 } from "../driver/mongodb/typings";
-import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
-import {QueryRunner} from "../query-runner/QueryRunner";
-import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import { MongoEntityManager } from "../entity-manager/MongoEntityManager";
+import { QueryRunner } from "../query-runner/QueryRunner";
+import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder";
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
@@ -73,7 +75,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Finds entities that match given find options or conditions.
      */
-    find(optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    find(optionsOrConditions?: FindManyOptions<Entity> | Partial<Entity>): Promise<Entity[]> {
         return this.manager.find(this.metadata.target, optionsOrConditions);
     }
 
@@ -82,7 +84,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCount(optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[ Entity[], number ]> {
+    findAndCount(optionsOrConditions?: FindManyOptions<Entity> | Partial<Entity>): Promise<[Entity[], number]> {
         return this.manager.findAndCount(this.metadata.target, optionsOrConditions);
     }
 
@@ -90,14 +92,14 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      * Finds entities by ids.
      * Optionally find options can be applied.
      */
-    findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity> | Partial<Entity>): Promise<Entity[]> {
         return this.manager.findByIds(this.metadata.target, ids, optionsOrConditions);
     }
 
     /**
      * Finds first entity that matches given conditions and/or find options.
      */
-    findOne(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|Partial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+    findOne(optionsOrConditions?: string | number | Date | ObjectID | FindOneOptions<Entity> | Partial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity | undefined> {
         return this.manager.findOne(this.metadata.target, optionsOrConditions as any, maybeOptions as any);
     }
 
@@ -133,7 +135,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Perform a bulkWrite operation without a fluent API.
      */
-    bulkWrite(operations: ObjectLiteral[], options?: CollectionBluckWriteOptions): Promise<BulkWriteOpResultObject> {
+    bulkWrite(operations: ObjectLiteral[], options?: CollectionBulkWriteOptions): Promise<BulkWriteOpResultObject> {
         return this.manager.bulkWrite(this.metadata.target, operations, options);
     }
 
@@ -147,7 +149,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Creates an index on the db and collection.
      */
-    createCollectionIndex(fieldOrSpec: string|any, options?: MongodbIndexOptions): Promise<string> {
+    createCollectionIndex(fieldOrSpec: string | any, options?: MongodbIndexOptions): Promise<string> {
         return this.manager.createCollectionIndex(this.metadata.target, fieldOrSpec, options);
     }
 
@@ -156,35 +158,35 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      * Earlier version of MongoDB will throw a command not supported error.
      * Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
      */
-    createCollectionIndexes(indexSpecs: ObjectLiteral[]): Promise<void> {
+    createCollectionIndexes(indexSpecs: IndexSpecification[]): Promise<void> {
         return this.manager.createCollectionIndexes(this.metadata.target, indexSpecs);
     }
 
     /**
      * Delete multiple documents on MongoDB.
      */
-    deleteMany(query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
+    deleteMany(query: ObjectLiteral, options?: CommonOptions): Promise<DeleteWriteOpResultObject> {
         return this.manager.deleteMany(this.metadata.tableName, query, options);
     }
 
     /**
      * Delete a document on MongoDB.
      */
-    deleteOne(query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
+    deleteOne(query: ObjectLiteral, options?: CommonOptions): Promise<DeleteWriteOpResultObject> {
         return this.manager.deleteOne(this.metadata.tableName, query, options);
     }
 
     /**
      * The distinct command returns returns a list of distinct values for the given key across a collection.
      */
-    distinct(key: string, query: ObjectLiteral, options?: { readPreference?: ReadPreference|string }): Promise<any> {
+    distinct(key: string, query: ObjectLiteral, options?: { readPreference?: ReadPreference | string }): Promise<any> {
         return this.manager.distinct(this.metadata.tableName, key, query, options);
     }
 
     /**
      * Drops an index from this collection.
      */
-    dropCollectionIndex(indexName: string, options?: CollectionOptions): Promise<any> {
+    dropCollectionIndex(indexName: string, options?: CommonOptions): Promise<any> {
         return this.manager.dropCollectionIndex(this.metadata.tableName, indexName, options);
     }
 
@@ -233,7 +235,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Run a group command across a collection.
      */
-    group(keys: Object|Array<any>|Function|Code, condition: Object, initial: Object, reduce: Function|Code, finalize: Function|Code, command: boolean, options?: { readPreference?: ReadPreference | string }): Promise<any> {
+    group(keys: Object | Array<any> | Function | Code, condition: Object, initial: Object, reduce: Function | Code, finalize: Function | Code, command: boolean, options?: { readPreference?: ReadPreference | string }): Promise<any> {
         return this.manager.group(this.metadata.tableName, keys, condition, initial, reduce, finalize, command, options);
     }
 
@@ -247,28 +249,28 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Retrieve all the indexes on the collection.
      */
-    collectionIndexExists(indexes: string|string[]): Promise<boolean> {
+    collectionIndexExists(indexes: string | string[]): Promise<boolean> {
         return this.manager.collectionIndexExists(this.metadata.tableName, indexes);
     }
 
     /**
      * Retrieves this collections index info.
      */
-    collectionIndexInformation(options?: { full: boolean }): Promise<any> {
+    collectionIndexInformation(options?: { full: boolean, session: ClientSession }): Promise<any> {
         return this.manager.collectionIndexInformation(this.metadata.tableName, options);
     }
 
     /**
      * Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
      */
-    initializeOrderedBulkOp(options?: CollectionOptions): OrderedBulkOperation {
+    initializeOrderedBulkOp(options?: CommonOptions): OrderedBulkOperation {
         return this.manager.initializeOrderedBulkOp(this.metadata.tableName, options);
     }
 
     /**
      * Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
      */
-    initializeUnorderedBulkOp(options?: CollectionOptions): UnorderedBulkOperation {
+    initializeUnorderedBulkOp(options?: CommonOptions): UnorderedBulkOperation {
         return this.manager.initializeUnorderedBulkOp(this.metadata.tableName, options);
     }
 
@@ -296,14 +298,14 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Get the list of all indexes information for the collection.
      */
-    listCollectionIndexes(options?: { batchSize?: number, readPreference?: ReadPreference|string }): CommandCursor {
+    listCollectionIndexes(options?: { batchSize?: number, readPreference?: ReadPreference | string }): CommandCursor {
         return this.manager.listCollectionIndexes(this.metadata.tableName, options);
     }
 
     /**
      * Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
      */
-    mapReduce(map: Function|string, reduce: Function|string, options?: MapReduceOptions): Promise<any> {
+    mapReduce(map: Function | string, reduce: Function | string, options?: MapReduceOptions): Promise<any> {
         return this.manager.mapReduce(this.metadata.tableName, map, reduce, options);
     }
 

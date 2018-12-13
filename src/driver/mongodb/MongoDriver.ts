@@ -115,7 +115,7 @@ export class MongoDriver implements Driver {
      * Underlying mongodb library.
      */
     protected mongodb: any;
-
+    protected mongoClient: any;
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -184,7 +184,7 @@ export class MongoDriver implements Driver {
                 useNewUrlParser: this.options.useNewUrlParser
             }, (err: any, client: any) => {
                 if (err) return fail(err);
-
+                this.mongoClient = client;
                 this.queryRunner = new MongoQueryRunner(this.connection, client);
                 ObjectUtils.assign(this.queryRunner, { manager: this.connection.manager });
                 ok();
@@ -221,7 +221,9 @@ export class MongoDriver implements Driver {
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: "master" | "slave" = "master") {
-        return this.queryRunner!;
+        // return this.queryRunner!;
+        //error？？？
+        return new MongoQueryRunner(this.connection, this.mongoClient);
     }
 
     /**

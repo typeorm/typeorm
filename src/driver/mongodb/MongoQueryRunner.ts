@@ -616,6 +616,9 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async release(): Promise<void> {
         // releasing connection are not supported by mongodb driver, so simply don't do anything here
+        //added
+        //this.isReleased = true;
+        //return Promise.resolve();
     }
 
     /**

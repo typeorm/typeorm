@@ -94,7 +94,11 @@ export class MongoEntityManager extends EntityManager {
      */
     async find<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string, optionsOrConditions?: FindManyOptions<Entity> | Partial<Entity>): Promise<Entity[]> {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
-        const cursor = await this.createEntityCursor(entityClassOrName, query);
+        let options = undefined;
+        if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+            options = { session: optionsOrConditions.session };
+        }
+        const cursor = await this.createEntityCursor(entityClassOrName, query, options);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.select)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
@@ -115,7 +119,11 @@ export class MongoEntityManager extends EntityManager {
      */
     async findAndCount<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string, optionsOrConditions?: FindManyOptions<Entity> | Partial<Entity>): Promise<[Entity[], number]> {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
-        const cursor = await this.createEntityCursor(entityClassOrName, query);
+        let options = undefined;
+        if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+            options = { session: optionsOrConditions.session };
+        }
+        const cursor = await this.createEntityCursor(entityClassOrName, query, options);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.select)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
@@ -129,7 +137,7 @@ export class MongoEntityManager extends EntityManager {
         }
         const [results, count] = await Promise.all<any>([
             cursor.toArray(),
-            this.count(entityClassOrName, query),
+            this.count(entityClassOrName, query, options),
         ]);
         return [results, parseInt(count)];
     }
@@ -141,6 +149,11 @@ export class MongoEntityManager extends EntityManager {
     async findByIds<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string, ids: any[], optionsOrConditions?: FindManyOptions<Entity> | Partial<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
+
+        let options = undefined;
+        if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+            options = { session: optionsOrConditions.session };
+        }
         const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
         query["_id"] = {
             $in: ids.map(id => {
@@ -151,7 +164,7 @@ export class MongoEntityManager extends EntityManager {
             })
         };
 
-        const cursor = await this.createEntityCursor(entityClassOrName, query);
+        const cursor = await this.createEntityCursor(entityClassOrName, query, options);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.select)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
@@ -175,10 +188,15 @@ export class MongoEntityManager extends EntityManager {
         const id = (optionsOrConditions instanceof objectIdInstance) || typeof optionsOrConditions === "string" ? optionsOrConditions : undefined;
         const findOneOptionsOrConditions = (id ? maybeOptions : optionsOrConditions) as any;
         const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(findOneOptionsOrConditions) || {};
+
+        let options = undefined;
+        if (FindOptionsUtils.isFindOneOptions(findOneOptionsOrConditions)) {
+            options = { session: findOneOptionsOrConditions.session };
+        }
         if (id) {
             query["_id"] = (id instanceof objectIdInstance) ? id : new objectIdInstance(id);
         }
-        const cursor = await this.createEntityCursor(entityClassOrName, query);
+        const cursor = await this.createEntityCursor(entityClassOrName, query, options);
         if (FindOptionsUtils.isFindOneOptions(findOneOptionsOrConditions)) {
             if (findOneOptionsOrConditions.select)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(findOneOptionsOrConditions.select));
@@ -200,9 +218,10 @@ export class MongoEntityManager extends EntityManager {
      */
     async insert<Entity>(target: ObjectType<Entity> | EntitySchema<Entity> | string, entity: QueryPartialEntity<Entity> | QueryPartialEntity<Entity>[], options?: SaveOptions): Promise<InsertResult> {
         // todo: convert entity to its database name
+
         const result = new InsertResult();
         if (entity instanceof Array) {
-            result.raw = await this.insertMany(target, entity);
+            result.raw = await this.insertMany(target, entity, options);
             Object.keys(result.raw.insertedIds).forEach((key: any) => {
                 let insertedId = result.raw.insertedIds[key];
                 result.generatedMaps.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), insertedId)!);
@@ -210,7 +229,7 @@ export class MongoEntityManager extends EntityManager {
             });
 
         } else {
-            result.raw = await this.insertOne(target, entity);
+            result.raw = await this.insertOne(target, entity, options);
             result.generatedMaps.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), result.raw.insertedId)!);
             result.identifiers.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), result.raw.insertedId)!);
         }
@@ -227,12 +246,12 @@ export class MongoEntityManager extends EntityManager {
     async update<Entity>(target: ObjectType<Entity> | EntitySchema<Entity> | string, criteria: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | DeepPartial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
         if (criteria instanceof Array) {
             await Promise.all((criteria as any[]).map(criteriaItem => {
-                return this.update(target, criteriaItem, partialEntity);
+                return this.update(target, criteriaItem, partialEntity, options);
             }));
 
         } else {
             const metadata = this.connection.getMetadata(target);
-            await this.updateOne(target, this.convertMixedCriteria(metadata, criteria), { $set: partialEntity });
+            await this.updateOne(target, this.convertMixedCriteria(metadata, criteria), { $set: partialEntity }, options);
         }
 
         return new UpdateResult();
@@ -247,11 +266,11 @@ export class MongoEntityManager extends EntityManager {
     async delete<Entity>(target: ObjectType<Entity> | EntitySchema<Entity> | string, criteria: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | DeepPartial<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
         if (criteria instanceof Array) {
             await Promise.all((criteria as any[]).map(criteriaItem => {
-                return this.delete(target, criteriaItem);
+                return this.delete(target, criteriaItem, options);
             }));
 
         } else {
-            await this.deleteOne(target, this.convertMixedCriteria(this.connection.getMetadata(target), criteria));
+            await this.deleteOne(target, this.convertMixedCriteria(this.connection.getMetadata(target), criteria), options);
         }
 
         return new DeleteResult();
