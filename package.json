@@ -59,7 +59,7 @@
     "husky": "^0.14.3",
     "lint-staged": "^7.0.0",
     "mocha": "^5.0.5",
-    "mongodb": "^3.0.5",
+    "mongodb": "^3.1.10",
     "mssql": "^4.2.2",
     "mysql": "^2.15.0",
     "mysql2": "^1.5.3",
@@ -78,6 +78,7 @@
     "typescript": "^2.8.1"
   },
   "dependencies": {
+    "@types/mongodb": "^3.1.17",
     "app-root-path": "^2.0.1",
     "buffer": "^5.1.0",
     "chalk": "^2.3.2",

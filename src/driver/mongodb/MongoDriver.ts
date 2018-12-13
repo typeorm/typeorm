@@ -1,20 +1,20 @@
-import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
-import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {MongoQueryRunner} from "./MongoQueryRunner";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
-import {MongoConnectionOptions} from "./MongoConnectionOptions";
-import {MappedColumnTypes} from "../types/MappedColumnTypes";
-import {ColumnType} from "../types/ColumnTypes";
-import {MongoSchemaBuilder} from "../../schema-builder/MongoSchemaBuilder";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/table/TableColumn";
-import {ConnectionOptions} from "../../connection/ConnectionOptions";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {ObjectUtils} from "../../util/ObjectUtils";
+import { Driver } from "../Driver";
+import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError";
+import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
+import { MongoQueryRunner } from "./MongoQueryRunner";
+import { ObjectLiteral } from "../../common/ObjectLiteral";
+import { ColumnMetadata } from "../../metadata/ColumnMetadata";
+import { PlatformTools } from "../../platform/PlatformTools";
+import { Connection } from "../../connection/Connection";
+import { MongoConnectionOptions } from "./MongoConnectionOptions";
+import { MappedColumnTypes } from "../types/MappedColumnTypes";
+import { ColumnType } from "../types/ColumnTypes";
+import { MongoSchemaBuilder } from "../../schema-builder/MongoSchemaBuilder";
+import { DataTypeDefaults } from "../types/DataTypeDefaults";
+import { TableColumn } from "../../schema-builder/table/TableColumn";
+import { ConnectionOptions } from "../../connection/ConnectionOptions";
+import { EntityMetadata } from "../../metadata/EntityMetadata";
+import { ObjectUtils } from "../../util/ObjectUtils";
 
 /**
  * Organizes communication with MongoDB.
@@ -220,7 +220,7 @@ export class MongoDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: "master" | "slave" = "master") {
         return this.queryRunner!;
     }
 
@@ -268,7 +268,7 @@ export class MongoDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number | null, scale?: number }): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 

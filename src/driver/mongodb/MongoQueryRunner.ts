@@ -1,23 +1,28 @@
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {TableColumn} from "../../schema-builder/table/TableColumn";
-import {Table} from "../../schema-builder/table/Table";
-import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
-import {TableIndex} from "../../schema-builder/table/TableIndex";
+import { QueryRunner } from "../../query-runner/QueryRunner";
+import { ObjectLiteral } from "../../common/ObjectLiteral";
+import { TableColumn } from "../../schema-builder/table/TableColumn";
+import { Table } from "../../schema-builder/table/Table";
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
+import { TableIndex } from "../../schema-builder/table/TableIndex";
 import {
     AggregationCursor,
     BulkWriteOpResultObject,
     Code,
     Collection,
     CollectionAggregationOptions,
-    CollectionBluckWriteOptions,
+    CollectionBulkWriteOptions,
     CollectionInsertManyOptions,
     CollectionInsertOneOptions,
-    CollectionOptions,
+    CommonOptions,
+    IndexSpecification, ClientSession,
     CollStats,
     CommandCursor,
+    FindOneAndUpdateOption,
     Cursor,
-    Db,
+    //Db,
+    // UpdateQuery,
+    UpdateManyOptions,
+    //  FilterQuery,
     DeleteWriteOpResultObject,
     FindAndModifyWriteOpResultObject,
     FindOneAndReplaceOption,
@@ -28,21 +33,27 @@ import {
     MapReduceOptions,
     MongoCountPreferences,
     MongodbIndexOptions,
+    UpdateOneOptions,
     OrderedBulkOperation,
     ParallelCollectionScanOptions,
     ReadPreference,
     ReplaceOneOptions,
     UnorderedBulkOperation,
-    UpdateWriteOpResult
+    UpdateWriteOpResult,
+    MongoClient,
+    MongodbFindOneOptions
 } from "./typings";
-import {Connection} from "../../connection/Connection";
-import {ReadStream} from "../../platform/PlatformTools";
-import {MongoEntityManager} from "../../entity-manager/MongoEntityManager";
-import {SqlInMemory} from "../SqlInMemory";
-import {TableUnique} from "../../schema-builder/table/TableUnique";
-import {Broadcaster} from "../../subscriber/Broadcaster";
-import {TableCheck} from "../../schema-builder/table/TableCheck";
-import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import { Connection } from "../../connection/Connection";
+import { ReadStream } from "../../platform/PlatformTools";
+import { MongoEntityManager } from "../../entity-manager/MongoEntityManager";
+import { SqlInMemory } from "../SqlInMemory";
+import { TableUnique } from "../../schema-builder/table/TableUnique";
+import { Broadcaster } from "../../subscriber/Broadcaster";
+import { TableCheck } from "../../schema-builder/table/TableCheck";
+import { TableExclusion } from "../../schema-builder/table/TableExclusion";
+import { TransactionAlreadyStartedError } from "../../error/TransactionAlreadyStartedError";
+import { TransactionNotStartedError } from "../../error/TransactionNotStartedError";
+
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -80,7 +91,10 @@ export class MongoQueryRunner implements QueryRunner {
      * Always false for mongodb since mongodb does not support transactions.
      */
     isTransactionActive = false;
-
+    /**
+     * Transaction session
+     */
+    session: ClientSession;
     /**
      * Stores temporarily user data.
      * Useful for sharing data with subscribers.
@@ -95,15 +109,15 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Real database connection from a connection pool used to perform queries.
      */
-    databaseConnection: Db;
+    databaseConnection: MongoClient;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection, databaseConnection: Db) {
+    constructor(connection: Connection, databaseClient: MongoClient) {
         this.connection = connection;
-        this.databaseConnection = databaseConnection;
+        this.databaseConnection = databaseClient;
         this.broadcaster = new Broadcaster(this);
     }
 
@@ -114,35 +128,70 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      */
-    cursor(collectionName: string, query?: ObjectLiteral): Cursor<any> {
-        return this.getCollection(collectionName).find(query || {});
+    cursor(collectionName: string, query?: ObjectLiteral, options?: MongodbFindOneOptions): Cursor<any> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
+        return this.getCollection(collectionName).find(query || {}, options);
     }
 
     /**
      * Execute an aggregation framework pipeline against the collection.
      */
     aggregate(collectionName: string, pipeline: ObjectLiteral[], options?: CollectionAggregationOptions): AggregationCursor<any> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return this.getCollection(collectionName).aggregate(pipeline, options);
     }
 
     /**
      * Perform a bulkWrite operation without a fluent API.
      */
-    async bulkWrite(collectionName: string, operations: ObjectLiteral[], options?: CollectionBluckWriteOptions): Promise<BulkWriteOpResultObject> {
-        return await this.getCollection(collectionName).bulkWrite(operations, options);
+    async bulkWrite(collectionName: string, operations: ObjectLiteral[], options?: CollectionBulkWriteOptions): Promise<BulkWriteOpResultObject> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
+        return await (this.getCollection(collectionName)).bulkWrite(operations, options);
     }
 
     /**
      * Count number of matching documents in the db to a query.
      */
-    async count(collectionName: string, query?: ObjectLiteral, options?: MongoCountPreferences): Promise<any> {
+    async count(collectionName: string, query?: ObjectLiteral, options?: MongoCountPreferences): Promise<number> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).count(query || {}, options);
     }
 
     /**
      * Creates an index on the db and collection.
      */
-    async createCollectionIndex(collectionName: string, fieldOrSpec: string|any, options?: MongodbIndexOptions): Promise<string> {
+    async createCollectionIndex(collectionName: string, fieldOrSpec: string | any, options?: MongodbIndexOptions): Promise<string> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).createIndex(fieldOrSpec, options);
     }
 
@@ -150,49 +199,98 @@ export class MongoQueryRunner implements QueryRunner {
      * Creates multiple indexes in the collection, this method is only supported for MongoDB 2.6 or higher.
      * Earlier version of MongoDB will throw a command not supported error. Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
      */
-    async createCollectionIndexes(collectionName: string, indexSpecs: ObjectLiteral[]): Promise<void> {
-        return await this.getCollection(collectionName).createIndexes(indexSpecs);
+    async createCollectionIndexes(collectionName: string, indexSpecs: IndexSpecification[], options?: { session?: ClientSession }): Promise<void> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
+        return await this.getCollection(collectionName).createIndexes(indexSpecs, options);
     }
 
     /**
      * Delete multiple documents on MongoDB.
      */
-    async deleteMany(collectionName: string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
+    async deleteMany(collectionName: string, query: ObjectLiteral, options?: CommonOptions): Promise<DeleteWriteOpResultObject> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).deleteMany(query, options);
     }
 
     /**
      * Delete a document on MongoDB.
      */
-    async deleteOne(collectionName: string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
+    async deleteOne(collectionName: string, query: ObjectLiteral, options?: CommonOptions & { bypassDocumentValidation?: boolean }): Promise<DeleteWriteOpResultObject> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).deleteOne(query, options);
     }
 
     /**
      * The distinct command returns returns a list of distinct values for the given key across a collection.
      */
-    async distinct(collectionName: string, key: string, query: ObjectLiteral, options?: { readPreference?: ReadPreference|string }): Promise<any> {
+    async distinct(collectionName: string, key: string, query: ObjectLiteral, options?: { readPreference?: ReadPreference | string, maxTimeMS?: number, session?: ClientSession }): Promise<any> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).distinct(key, query, options);
     }
 
     /**
      * Drops an index from this collection.
      */
-    async dropCollectionIndex(collectionName: string, indexName: string, options?: CollectionOptions): Promise<any> {
+    async dropCollectionIndex(collectionName: string, indexName: string, options?: CommonOptions & { maxTimeMS?: number }): Promise<any> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).dropIndex(indexName, options);
     }
 
     /**
      * Drops all indexes from the collection.
      */
-    async dropCollectionIndexes(collectionName: string): Promise<any> {
-        return await this.getCollection(collectionName).dropIndexes();
+    async dropCollectionIndexes(collectionName: string, options?: { session?: ClientSession, maxTimeMS?: number }): Promise<any> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
+        return await this.getCollection(collectionName).dropIndexes(options);
     }
 
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    async findOneAndDelete(collectionName: string, query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
+    async findOneAndDelete(collectionName: string, query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number, session?: ClientSession }): Promise<FindAndModifyWriteOpResultObject> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).findOneAndDelete(query, options);
     }
 
@@ -200,13 +298,27 @@ export class MongoQueryRunner implements QueryRunner {
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
      */
     async findOneAndReplace(collectionName: string, query: ObjectLiteral, replacement: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).findOneAndReplace(query, replacement, options);
     }
 
     /**
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    async findOneAndUpdate(collectionName: string, query: ObjectLiteral, update: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
+    async findOneAndUpdate(collectionName: string, query: ObjectLiteral, update: Object, options?: FindOneAndUpdateOption): Promise<FindAndModifyWriteOpResultObject> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).findOneAndUpdate(query, update, options);
     }
 
@@ -214,6 +326,13 @@ export class MongoQueryRunner implements QueryRunner {
      * Execute a geo search using a geo haystack index on a collection.
      */
     async geoHaystackSearch(collectionName: string, x: number, y: number, options?: GeoHaystackSearchOptions): Promise<any> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).geoHaystackSearch(x, y, options);
     }
 
@@ -221,48 +340,85 @@ export class MongoQueryRunner implements QueryRunner {
      * Execute the geoNear command to search for items in the collection.
      */
     async geoNear(collectionName: string, x: number, y: number, options?: GeoNearOptions): Promise<any> {
+
         return await this.getCollection(collectionName).geoNear(x, y, options);
     }
 
     /**
      * Run a group command across a collection.
      */
-    async group(collectionName: string, keys: Object|Array<any>|Function|Code, condition: Object, initial: Object, reduce: Function|Code, finalize: Function|Code, command: boolean, options?: { readPreference?: ReadPreference | string }): Promise<any> {
+    async group(collectionName: string, keys: Object | Array<any> | Function | Code, condition: Object, initial: Object,
+        reduce: Function | Code, finalize: Function | Code, command: boolean, options?: { readPreference?: ReadPreference | string }): Promise<any> {
         return await this.getCollection(collectionName).group(keys, condition, initial, reduce, finalize, command, options);
     }
 
     /**
      * Retrieve all the indexes on the collection.
      */
-    async collectionIndexes(collectionName: string): Promise<any> {
-        return await this.getCollection(collectionName).indexes();
+    async collectionIndexes(collectionName: string, options?: { session: ClientSession }): Promise<any> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
+        return await this.getCollection(collectionName).indexes(options);
     }
 
     /**
      * Retrieve all the indexes on the collection.
      */
-    async collectionIndexExists(collectionName: string, indexes: string|string[]): Promise<boolean> {
-        return await this.getCollection(collectionName).indexExists(indexes);
+    async collectionIndexExists(collectionName: string, indexes: string | string[], options?: { session: ClientSession }): Promise<boolean> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
+        return await this.getCollection(collectionName).indexExists(indexes, options);
     }
 
     /**
      * Retrieves this collections index info.
      */
-    async collectionIndexInformation(collectionName: string, options?: { full: boolean }): Promise<any> {
+    async collectionIndexInformation(collectionName: string, options?: { full: boolean, session: ClientSession }): Promise<any> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session, full: false }
+            }
+        }
         return await this.getCollection(collectionName).indexInformation(options);
     }
 
     /**
      * Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
      */
-    initializeOrderedBulkOp(collectionName: string, options?: CollectionOptions): OrderedBulkOperation {
+    initializeOrderedBulkOp(collectionName: string, options?: CommonOptions): OrderedBulkOperation {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return this.getCollection(collectionName).initializeOrderedBulkOp(options);
     }
 
     /**
      * Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
      */
-    initializeUnorderedBulkOp(collectionName: string, options?: CollectionOptions): UnorderedBulkOperation {
+    initializeUnorderedBulkOp(collectionName: string, options?: CommonOptions): UnorderedBulkOperation {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return this.getCollection(collectionName).initializeUnorderedBulkOp(options);
     }
 
@@ -270,6 +426,13 @@ export class MongoQueryRunner implements QueryRunner {
      * Inserts an array of documents into MongoDB.
      */
     async insertMany(collectionName: string, docs: ObjectLiteral[], options?: CollectionInsertManyOptions): Promise<InsertWriteOpResult> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).insertMany(docs, options);
     }
 
@@ -277,27 +440,55 @@ export class MongoQueryRunner implements QueryRunner {
      * Inserts a single document into MongoDB.
      */
     async insertOne(collectionName: string, doc: ObjectLiteral, options?: CollectionInsertOneOptions): Promise<InsertOneWriteOpResult> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).insertOne(doc, options);
     }
 
     /**
      * Returns if the collection is a capped collection.
      */
-    async isCapped(collectionName: string): Promise<any> {
-        return await this.getCollection(collectionName).isCapped();
+    async isCapped(collectionName: string, options?: { session: ClientSession }): Promise<any> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
+        return await this.getCollection(collectionName).isCapped(options);
     }
 
     /**
      * Get the list of all indexes information for the collection.
      */
-    listCollectionIndexes(collectionName: string, options?: { batchSize?: number, readPreference?: ReadPreference|string }): CommandCursor {
+    listCollectionIndexes(collectionName: string, options?: { batchSize?: number, readPreference?: ReadPreference | string, session?: ClientSession }): CommandCursor {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return this.getCollection(collectionName).listIndexes(options);
     }
 
     /**
      * Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
      */
-    async mapReduce(collectionName: string, map: Function|string, reduce: Function|string, options?: MapReduceOptions): Promise<any> {
+    async mapReduce(collectionName: string, map: Function | string, reduce: Function | string, options?: MapReduceOptions): Promise<any> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).mapReduce(map, reduce, options);
     }
 
@@ -306,20 +497,42 @@ export class MongoQueryRunner implements QueryRunner {
      * There are no ordering guarantees for returned results.
      */
     async parallelCollectionScan(collectionName: string, options?: ParallelCollectionScanOptions): Promise<Cursor<any>[]> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).parallelCollectionScan(options);
     }
 
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
-    async reIndex(collectionName: string): Promise<any> {
-        return await this.getCollection(collectionName).reIndex();
+
+    async reIndex(collectionName: string, options?: { session: ClientSession }): Promise<any> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
+        return await this.getCollection(collectionName).reIndex(options);
     }
 
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
-    async rename(collectionName: string, newName: string, options?: { dropTarget?: boolean }): Promise<Collection> {
+    async rename(collectionName: string, newName: string, options?: { dropTarget?: boolean, session?: ClientSession }): Promise<Collection> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).rename(newName, options);
     }
 
@@ -327,27 +540,55 @@ export class MongoQueryRunner implements QueryRunner {
      * Replace a document on MongoDB.
      */
     async replaceOne(collectionName: string, query: ObjectLiteral, doc: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).replaceOne(query, doc, options);
     }
 
     /**
      * Get all the collection statistics.
      */
-    async stats(collectionName: string, options?: { scale: number }): Promise<CollStats> {
+    async stats(collectionName: string, options?: { scale: number, session?: ClientSession }): Promise<CollStats> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session, scale: 1024 }
+            }
+        }
         return await this.getCollection(collectionName).stats(options);
     }
 
     /**
      * Update multiple documents on MongoDB.
      */
-    async updateMany(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: { upsert?: boolean, w?: any, wtimeout?: number, j?: boolean }): Promise<UpdateWriteOpResult> {
+    async updateMany(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: UpdateManyOptions): Promise<UpdateWriteOpResult> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).updateMany(query, update, options);
     }
 
     /**
      * Update a single document on MongoDB.
      */
-    async updateOne(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
+    async updateOne(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: UpdateOneOptions): Promise<UpdateWriteOpResult> {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session
+            } else {
+                options = { session: this.session }
+            }
+        }
         return await this.getCollection(collectionName).updateOne(query, update, options);
     }
 
@@ -382,6 +623,14 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async startTransaction(): Promise<void> {
         // transactions are not supported by mongodb driver, so simply don't do anything here
+        if (this.isTransactionActive)
+            throw new TransactionAlreadyStartedError();
+        this.isTransactionActive = true;
+        this.session = this.databaseConnection.startSession();
+        this.session.startTransaction();
+        //startSession
+        //startTransaction
+
     }
 
     /**
@@ -389,6 +638,13 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async commitTransaction(): Promise<void> {
         // transactions are not supported by mongodb driver, so simply don't do anything here
+        //commitTransaction
+        //endSession
+        if (!this.isTransactionActive)
+            throw new TransactionNotStartedError();
+        await this.session.commitTransaction();
+        this.session.endSession();
+
     }
 
     /**
@@ -396,6 +652,12 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async rollbackTransaction(): Promise<void> {
         // transactions are not supported by mongodb driver, so simply don't do anything here
+        //abortTransaction
+        //endSession
+        if (!this.isTransactionActive)
+            throw new TransactionNotStartedError();
+        await this.session.abortTransaction();
+        this.session.endSession();
     }
 
     /**
@@ -466,7 +728,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Loads given table's data from the database.
      */
-    async getTable(collectionName: string): Promise<Table|undefined> {
+    async getTable(collectionName: string): Promise<Table | undefined> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -502,7 +764,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Checks if column with the given name exist in the given table.
      */
-    async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
+    async hasColumn(tableOrName: Table | string, columnName: string): Promise<boolean> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -544,210 +806,210 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops the table.
      */
-    async dropTable(tableName: Table|string): Promise<void> {
+    async dropTable(tableName: Table | string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Renames the given table.
      */
-    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
+    async renameTable(oldTableOrName: Table | string, newTableOrName: Table | string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new column from the column in the table.
      */
-    async addColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
+    async addColumn(tableOrName: Table | string, column: TableColumn): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new columns from the column in the table.
      */
-    async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+    async addColumns(tableOrName: Table | string, columns: TableColumn[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Renames column in the given table.
      */
-    async renameColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newTableColumnOrName: TableColumn|string): Promise<void> {
+    async renameColumn(tableOrName: Table | string, oldTableColumnOrName: TableColumn | string, newTableColumnOrName: TableColumn | string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Changes a column in the table.
      */
-    async changeColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newColumn: TableColumn): Promise<void> {
+    async changeColumn(tableOrName: Table | string, oldTableColumnOrName: TableColumn | string, newColumn: TableColumn): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Changes a column in the table.
      */
-    async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
+    async changeColumns(tableOrName: Table | string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops column in the table.
      */
-    async dropColumn(tableOrName: Table|string, columnOrName: TableColumn|string): Promise<void> {
+    async dropColumn(tableOrName: Table | string, columnOrName: TableColumn | string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+    async dropColumns(tableOrName: Table | string, columns: TableColumn[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new primary key.
      */
-    async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+    async createPrimaryKey(tableOrName: Table | string, columnNames: string[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Updates composite primary keys.
      */
-    async updatePrimaryKeys(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+    async updatePrimaryKeys(tableOrName: Table | string, columns: TableColumn[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops a primary key.
      */
-    async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
+    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new unique constraint.
      */
-    async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
+    async createUniqueConstraint(tableOrName: Table | string, uniqueConstraint: TableUnique): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new unique constraints.
      */
-    async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
+    async createUniqueConstraints(tableOrName: Table | string, uniqueConstraints: TableUnique[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops an unique constraint.
      */
-    async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
+    async dropUniqueConstraint(tableOrName: Table | string, uniqueOrName: TableUnique | string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops an unique constraints.
      */
-    async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
+    async dropUniqueConstraints(tableOrName: Table | string, uniqueConstraints: TableUnique[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new check constraint.
      */
-    async createCheckConstraint(tableOrName: Table|string, checkConstraint: TableCheck): Promise<void> {
+    async createCheckConstraint(tableOrName: Table | string, checkConstraint: TableCheck): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new check constraints.
      */
-    async createCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+    async createCheckConstraints(tableOrName: Table | string, checkConstraints: TableCheck[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops check constraint.
      */
-    async dropCheckConstraint(tableOrName: Table|string, checkOrName: TableCheck|string): Promise<void> {
+    async dropCheckConstraint(tableOrName: Table | string, checkOrName: TableCheck | string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops check constraints.
      */
-    async dropCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+    async dropCheckConstraints(tableOrName: Table | string, checkConstraints: TableCheck[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new exclusion constraint.
      */
-    async createExclusionConstraint(tableOrName: Table|string, exclusionConstraint: TableExclusion): Promise<void> {
+    async createExclusionConstraint(tableOrName: Table | string, exclusionConstraint: TableExclusion): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new exclusion constraints.
      */
-    async createExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
+    async createExclusionConstraints(tableOrName: Table | string, exclusionConstraints: TableExclusion[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops exclusion constraint.
      */
-    async dropExclusionConstraint(tableOrName: Table|string, exclusionOrName: TableExclusion|string): Promise<void> {
+    async dropExclusionConstraint(tableOrName: Table | string, exclusionOrName: TableExclusion | string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops exclusion constraints.
      */
-    async dropExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
+    async dropExclusionConstraints(tableOrName: Table | string, exclusionConstraints: TableExclusion[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new foreign key.
      */
-    async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
+    async createForeignKey(tableOrName: Table | string, foreignKey: TableForeignKey): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new foreign keys.
      */
-    async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
+    async createForeignKeys(tableOrName: Table | string, foreignKeys: TableForeignKey[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops a foreign key from the table.
      */
-    async dropForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
+    async dropForeignKey(tableOrName: Table | string, foreignKey: TableForeignKey): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops a foreign keys from the table.
      */
-    async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
+    async dropForeignKeys(tableOrName: Table | string, foreignKeys: TableForeignKey[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new index.
      */
-    async createIndex(tableOrName: Table|string, index: TableIndex): Promise<void> {
+    async createIndex(tableOrName: Table | string, index: TableIndex): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new indices
      */
-    async createIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
+    async createIndices(tableOrName: Table | string, indices: TableIndex[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -761,7 +1023,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops an indices from the table.
      */
-    async dropIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
+    async dropIndices(tableOrName: Table | string, indices: TableIndex[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -803,7 +1065,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql():  SqlInMemory {
+    getMemorySql(): SqlInMemory {
         throw new Error(`This operation is not supported by MongoDB driver.`);
     }
 
