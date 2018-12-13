@@ -17,7 +17,7 @@
   <br>
 </div>
 
-TypeORM是一个[ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)框架，它可以运行在NodeJS、浏览器、Cordova、PhoneGap、Ionic、React Native、Expo和Electron平台上，可以与TypeScript和JavaScript (ES5, ES6, ES7)一起使用。
+TypeORM是一个[ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)框架，它可以运行在NodeJS、浏览器、Cordova、PhoneGap、Ionic、React Native、Expo和Electron平台上，可以与TypeScript和JavaScript (ES5, ES6, ES7, ES8)一起使用。
 它的目标是始终支持最新的JavaScript特性并提供额外的特性以帮助你开发任何使用数据库的应用程序 —— 不管是只有几张表的小型应用还是拥有多数据库的大型企业应用。
 
 不同于现有的所有其他JavaScript ORM框架，TypeORM支持Active Record和Data Mapper模式，这意味着你用最有效的方法编写高质量的、松耦合的、可扩展的、可维护的应用程序。
@@ -41,8 +41,8 @@ TypeORM 的一些特性：
 - 迁移和自动迁移
 - 连接池
 - 复制
-- 使用多个数据库连接
-- 使用多个数据库类型
+- 同时使用多个数据库连接
+- 同时使用多种数据库类型
 - 跨数据库和跨模式查询
 - 优雅的语法，灵活而强大的QueryBuilder
 - 左联接和内联接
