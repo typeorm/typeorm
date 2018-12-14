@@ -1,7 +1,7 @@
 import { User } from "./User";
 import {
     Entity,
-    PrimaryColumn,
+    PrimaryGeneratedColumn,
     Column,
     OneToOne,
     JoinColumn
@@ -18,7 +18,7 @@ export class PostInfo {
 
 @Entity()
 export class Post {
-    @PrimaryColumn()
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column()
