@@ -13,7 +13,7 @@ export class PostInfo {
     author?: User;
 
     @Column({ nullable: true})
-    authorId?: string
+    authorId?: string;
 }
 
 @Entity()
@@ -25,8 +25,8 @@ export class Post {
     name: string;
 
     @Column({ nullable: true})
-    authorId?: string
+    authorId?: string;
 
     @Column(type => PostInfo)
-    info: PostInfo = new PostInfo()
+    info: PostInfo = new PostInfo();
 }
