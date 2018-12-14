@@ -41,8 +41,8 @@ import {
     UpdateWriteOpResult
 } from "../driver/mongodb/typings";
 import { ObjectLiteral } from "../common/ObjectLiteral";
+
 import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner";
-import { MongoDriver } from "../driver/mongodb/MongoDriver";
 import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer";
 import { FindManyOptions } from "../find-options/FindManyOptions";
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils";
@@ -57,7 +57,7 @@ import { RemoveOptions } from "../repository/RemoveOptions";
 import { DeleteResult } from "../query-builder/result/DeleteResult";
 import { EntityMetadata } from "../metadata/EntityMetadata";
 import { EntitySchema } from "../index";
-
+import { QueryRunner } from "../query-runner/QueryRunner";
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
  * whatever entity type are you passing.
@@ -70,20 +70,15 @@ export class MongoEntityManager extends EntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection) {
-        super(connection);
+    constructor(connection: Connection, queryRunner?: QueryRunner) {
+        super(connection, queryRunner ? queryRunner : connection.createQueryRunner("master"));
     }
 
     // -------------------------------------------------------------------------
     // Overridden Properties
     // -------------------------------------------------------------------------
+    readonly queryRunner: MongoQueryRunner;
 
-    /**
-     * Gets query runner used to execute queries.
-     */
-    get queryRunner(): MongoQueryRunner {
-        return (this.connection.driver as MongoDriver).queryRunner!;
-    }
 
     // -------------------------------------------------------------------------
     // Overridden Methods

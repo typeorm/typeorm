@@ -14,7 +14,7 @@ import { DataTypeDefaults } from "../types/DataTypeDefaults";
 import { TableColumn } from "../../schema-builder/table/TableColumn";
 import { ConnectionOptions } from "../../connection/ConnectionOptions";
 import { EntityMetadata } from "../../metadata/EntityMetadata";
-import { ObjectUtils } from "../../util/ObjectUtils";
+// import { ObjectUtils } from "../../util/ObjectUtils";
 
 /**
  * Organizes communication with MongoDB.
@@ -29,7 +29,7 @@ export class MongoDriver implements Driver {
      * Mongodb does not require to dynamically create query runner each time,
      * because it does not have a regular connection pool as RDBMS systems have.
      */
-    queryRunner?: MongoQueryRunner;
+    //queryRunner?: MongoQueryRunner;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -185,8 +185,8 @@ export class MongoDriver implements Driver {
             }, (err: any, client: any) => {
                 if (err) return fail(err);
                 this.mongoClient = client;
-                this.queryRunner = new MongoQueryRunner(this.connection, client);
-                ObjectUtils.assign(this.queryRunner, { manager: this.connection.manager });
+                //     this.queryRunner = new MongoQueryRunner(this.connection, client);
+                //  ObjectUtils.assign(this.queryRunner, { manager: this.connection.manager });
                 ok();
             });
         });
@@ -201,12 +201,15 @@ export class MongoDriver implements Driver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            if (!this.queryRunner)
+            // if (!this.queryRunner)
+            //     return fail(new ConnectionIsNotSetError("mongodb"));
+            if (!this.mongoClient)
                 return fail(new ConnectionIsNotSetError("mongodb"));
 
             const handler = (err: any) => err ? fail(err) : ok();
-            this.queryRunner.databaseConnection.close(handler);
-            this.queryRunner = undefined;
+            this.mongoClient.close(handler)
+            // this.queryRunner.databaseConnection.close(handler);
+            // this.queryRunner = undefined;
         });
     }
 
