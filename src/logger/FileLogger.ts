@@ -95,11 +95,11 @@ export class FileLogger implements Logger {
     /**
      * Writes given strings into the log file.
      */
-    protected async write(strings: string|string[]) {
+    protected write(strings: string|string[]) {
         strings = strings instanceof Array ? strings : [strings];
         const basePath = PlatformTools.load("app-root-path").path;
         strings = (strings as string[]).map(str => "[" + new Date().toISOString() + "]" + str);
-        PlatformTools.appendFileSync(basePath + "/ormlogs.log", strings.join("\r\n") + "\r\n"); // todo: use async or implement promises?
+        return PlatformTools.appendFile(basePath + "/ormlogs.log", strings.join("\r\n") + "\r\n");
     }
 
     /**

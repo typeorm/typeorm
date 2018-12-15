@@ -161,8 +161,16 @@ export class PlatformTools {
         return fs.readFileSync(filename);
     }
 
-    static appendFileSync(filename: string, data: any): void {
-        fs.appendFileSync(filename, data);
+    /**
+     * Asynchronously append data to a file, creating the file if it does not exist.
+     *
+     * @param path A path to a file.
+     * @param data The data to write. If something other than a Buffer or Uint8Array is provided, the value is coerced to a string.
+     */
+    static appendFile(path: string, data: any) {
+        return new Promise<void>((resolve, reject) => {
+            fs.appendFile(path, data, err => err ? reject(err) : resolve());
+        });
     }
 
     static async writeFile(path: string, data: any): Promise<void> {
