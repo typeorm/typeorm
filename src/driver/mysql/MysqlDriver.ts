@@ -775,7 +775,7 @@ export class MysqlDriver implements Driver {
           cause the hosting app to crash.
          */
         if (connection.listeners("error").length === 0) {
-            connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));
+            connection.on("error", async (error: any) => await logger.log("warn", `MySQL connection raised an error. ${error}`));
         }
         return connection;
     }

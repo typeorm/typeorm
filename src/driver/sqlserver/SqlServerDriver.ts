@@ -443,7 +443,7 @@ export class SqlServerDriver implements Driver {
             return "float";
 
         } else if (column.type === "rowversion") {
-            return "timestamp";  // the rowversion type's name in SQL server metadata is timestamp            
+            return "timestamp";  // the rowversion type's name in SQL server metadata is timestamp
 
         } else {
             return column.type as string || "";
@@ -710,7 +710,7 @@ export class SqlServerDriver implements Driver {
               Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
               cause the hosting app to crash.
              */
-            pool.on("error", (error: any) => logger.log("warn", `MSSQL pool raised an error. ${error}`));
+            pool.on("error", async (error: any) => await logger.log("warn", `MSSQL pool raised an error. ${error}`));
 
             const connection = pool.connect((err: any) => {
                 if (err) return fail(err);

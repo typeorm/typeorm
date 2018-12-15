@@ -86,7 +86,7 @@ export class MigrationExecutor {
 
         // if no migrations are pending then nothing to do here
         if (!pendingMigrations.length) {
-            this.connection.logger.logSchemaBuild(`No migrations are pending`);
+            await this.connection.logger.logSchemaBuild(`No migrations are pending`);
             // if query runner was created by us then release it
             if (!this.queryRunner)
                 await queryRunner.release();
@@ -94,11 +94,11 @@ export class MigrationExecutor {
         }
 
         // log information about migration execution
-        this.connection.logger.logSchemaBuild(`${executedMigrations.length} migrations are already loaded in the database.`);
-        this.connection.logger.logSchemaBuild(`${allMigrations.length} migrations were found in the source code.`);
+        await this.connection.logger.logSchemaBuild(`${executedMigrations.length} migrations are already loaded in the database.`);
+        await this.connection.logger.logSchemaBuild(`${allMigrations.length} migrations were found in the source code.`);
         if (lastTimeExecutedMigration)
-            this.connection.logger.logSchemaBuild(`${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp).toString()}.`);
-        this.connection.logger.logSchemaBuild(`${pendingMigrations.length} migrations are new migrations that needs to be executed.`);
+            await this.connection.logger.logSchemaBuild(`${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp).toString()}.`);
+        await this.connection.logger.logSchemaBuild(`${pendingMigrations.length} migrations are new migrations that needs to be executed.`);
 
         // start transaction if its not started yet
         let transactionStartedByUs = false;
@@ -116,7 +116,7 @@ export class MigrationExecutor {
                     })
                     .then(() => { // informative log about migration success
                         successMigrations.push(migration);
-                        this.connection.logger.logSchemaBuild(`Migration ${migration.name} has been executed successfully.`);
+                        return this.connection.logger.logSchemaBuild(`Migration ${migration.name} has been executed successfully.`);
                     });
             });
 
@@ -161,7 +161,7 @@ export class MigrationExecutor {
 
         // if no migrations found in the database then nothing to revert
         if (!lastTimeExecutedMigration) {
-            this.connection.logger.logSchemaBuild(`No migrations was found in the database. Nothing to revert!`);
+            await this.connection.logger.logSchemaBuild(`No migrations was found in the database. Nothing to revert!`);
             return;
         }
 
@@ -176,9 +176,9 @@ export class MigrationExecutor {
             throw new Error(`No migration ${lastTimeExecutedMigration.name} was found in the source code. Make sure you have this migration in your codebase and its included in the connection options.`);
 
         // log information about migration execution
-        this.connection.logger.logSchemaBuild(`${executedMigrations.length} migrations are already loaded in the database.`);
-        this.connection.logger.logSchemaBuild(`${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp).toString()}.`);
-        this.connection.logger.logSchemaBuild(`Now reverting it...`);
+        await this.connection.logger.logSchemaBuild(`${executedMigrations.length} migrations are already loaded in the database.`);
+        await this.connection.logger.logSchemaBuild(`${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp).toString()}.`);
+        await this.connection.logger.logSchemaBuild(`Now reverting it...`);
 
         // start transaction if its not started yet
         let transactionStartedByUs = false;
@@ -190,7 +190,7 @@ export class MigrationExecutor {
         try {
             await migrationToRevert.instance!.down(queryRunner);
             await this.deleteExecutedMigration(queryRunner, migrationToRevert);
-            this.connection.logger.logSchemaBuild(`Migration ${migrationToRevert.name} has been reverted successfully.`);
+            await this.connection.logger.logSchemaBuild(`Migration ${migrationToRevert.name} has been reverted successfully.`);
 
             // commit transaction if we started it
             if (transactionStartedByUs)

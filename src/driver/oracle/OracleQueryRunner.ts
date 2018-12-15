@@ -156,20 +156,20 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         return new Promise(async (ok, fail) => {
             try {
-                this.driver.connection.logger.logQuery(query, parameters, this);
+                await this.driver.connection.logger.logQuery(query, parameters, this);
                 const queryStartTime = +new Date();
 
-                const handler = (err: any, result: any) => {
+                const handler = async (err: any, result: any) => {
 
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
                     const queryEndTime = +new Date();
                     const queryExecutionTime = queryEndTime - queryStartTime;
                     if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                        await this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
                     if (err) {
-                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        await this.driver.connection.logger.logQueryError(err, query, parameters, this);
                         return fail(new QueryFailedError(query, parameters, err));
                     }
                     ok(result.rows || result.outBinds);

@@ -35,27 +35,27 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
 
         const connection = this.driver.connection;
 
-        return new Promise<any[]>( (ok, fail) => {
+        return new Promise<any[]>(async (ok, fail) => {
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
 
-            const handler = function (err: any, result: any) {
+            const handler = async function (err: any, result: any) {
 
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime = connection.options.maxQueryExecutionTime;
                 const queryEndTime = +new Date();
                 const queryExecutionTime = queryEndTime - queryStartTime;
                 if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                    connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                    await connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
                 if (err) {
-                    connection.logger.logQueryError(err, query, parameters, this);
+                    await connection.logger.logQueryError(err, query, parameters, this);
                     fail(new QueryFailedError(query, parameters, err));
                 } else {
                     // when isInsertQuery == true, result is the id
                     ok(result);
                 }
             };
-            this.driver.connection.logger.logQuery(query, parameters, this);
+            await this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
             this.connect().then(databaseConnection => {
                 if (isInsertQuery) {

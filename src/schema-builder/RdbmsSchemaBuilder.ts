@@ -164,7 +164,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (tableForeignKeysToDrop.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`dropping old foreign keys of ${table.name}: ${tableForeignKeysToDrop.map(dbForeignKey => dbForeignKey.name).join(", ")}`);
+            await this.connection.logger.logSchemaBuild(`dropping old foreign keys of ${table.name}: ${tableForeignKeysToDrop.map(dbForeignKey => dbForeignKey.name).join(", ")}`);
 
             // drop foreign keys from the database
             await this.queryRunner.dropForeignKeys(table, tableForeignKeysToDrop);
@@ -222,7 +222,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const renamedColumn = renamedTableColumns[0].clone();
             renamedColumn.name = renamedMetadataColumns[0].databaseName;
 
-            this.connection.logger.logSchemaBuild(`renaming column "${renamedTableColumns[0].name}" in to "${renamedColumn.name}"`);
+            await this.connection.logger.logSchemaBuild(`renaming column "${renamedTableColumns[0].name}" in to "${renamedColumn.name}"`);
             await this.queryRunner.renameColumn(table, renamedTableColumns[0], renamedColumn);
         });
     }
@@ -258,7 +258,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     return true;
                 })
                 .map(async tableIndex => {
-                    this.connection.logger.logSchemaBuild(`dropping an index: "${tableIndex.name}" from table ${table.name}`);
+                    await this.connection.logger.logSchemaBuild(`dropping an index: "${tableIndex.name}" from table ${table.name}`);
                     await this.queryRunner.dropIndex(table, tableIndex);
                 });
 
@@ -283,7 +283,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (oldChecks.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`dropping old check constraint: ${oldChecks.map(check => `"${check.name}"`).join(", ")} from table "${table.name}"`);
+            await this.connection.logger.logSchemaBuild(`dropping old check constraint: ${oldChecks.map(check => `"${check.name}"`).join(", ")} from table "${table.name}"`);
             await this.queryRunner.dropCheckConstraints(table, oldChecks);
         });
     }
@@ -301,7 +301,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (compositeUniques.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`dropping old unique constraint: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} from table "${table.name}"`);
+            await this.connection.logger.logSchemaBuild(`dropping old unique constraint: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} from table "${table.name}"`);
             await this.queryRunner.dropUniqueConstraints(table, compositeUniques);
         });
     }
@@ -323,7 +323,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (oldExclusions.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`dropping old exclusion constraint: ${oldExclusions.map(exclusion => `"${exclusion.name}"`).join(", ")} from table "${table.name}"`);
+            await this.connection.logger.logSchemaBuild(`dropping old exclusion constraint: ${oldExclusions.map(exclusion => `"${exclusion.name}"`).join(", ")} from table "${table.name}"`);
             await this.queryRunner.dropExclusionConstraints(table, oldExclusions);
         });
     }
@@ -346,7 +346,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (existTable)
                 return;
 
-            this.connection.logger.logSchemaBuild(`creating a new table: ${metadata.tablePath}`);
+            await this.connection.logger.logSchemaBuild(`creating a new table: ${metadata.tablePath}`);
 
             // create a new table and sync it in the database
             const table = Table.create(metadata, this.connection.driver);
@@ -371,7 +371,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (droppedTableColumns.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`columns dropped in ${table.name}: ` + droppedTableColumns.map(column => column.name).join(", "));
+            await this.connection.logger.logSchemaBuild(`columns dropped in ${table.name}: ` + droppedTableColumns.map(column => column.name).join(", "));
 
             // drop columns from the database
             await this.queryRunner.dropColumns(table, droppedTableColumns);
@@ -402,7 +402,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (newTableColumns.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`new columns added: ` + newColumnMetadatas.map(column => column.databaseName).join(", "));
+            await this.connection.logger.logSchemaBuild(`new columns added: ` + newColumnMetadatas.map(column => column.databaseName).join(", "));
             await this.queryRunner.addColumns(table, newTableColumns);
         });
     }
@@ -468,7 +468,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (newAndOldTableColumns.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`columns changed in "${table.name}". updating: ` + changedColumns.map(column => column.databaseName).join(", "));
+            await this.connection.logger.logSchemaBuild(`columns changed in "${table.name}". updating: ` + changedColumns.map(column => column.databaseName).join(", "));
             await this.queryRunner.changeColumns(table, newAndOldTableColumns);
         });
     }
@@ -489,7 +489,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (newIndices.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`adding new indices ${newIndices.map(index => `"${index.name}"`).join(", ")} in table "${table.name}"`);
+            await this.connection.logger.logSchemaBuild(`adding new indices ${newIndices.map(index => `"${index.name}"`).join(", ")} in table "${table.name}"`);
             await this.queryRunner.createIndices(table, newIndices);
         });
     }
@@ -511,7 +511,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (newChecks.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`adding new check constraints: ${newChecks.map(index => `"${index.name}"`).join(", ")} in table "${table.name}"`);
+            await this.connection.logger.logSchemaBuild(`adding new check constraints: ${newChecks.map(index => `"${index.name}"`).join(", ")} in table "${table.name}"`);
             await this.queryRunner.createCheckConstraints(table, newChecks);
         });
     }
@@ -532,7 +532,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (compositeUniques.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`adding new unique constraints: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} in table "${table.name}"`);
+            await this.connection.logger.logSchemaBuild(`adding new unique constraints: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} in table "${table.name}"`);
             await this.queryRunner.createUniqueConstraints(table, compositeUniques);
         });
     }
@@ -557,7 +557,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (newExclusions.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`adding new exclusion constraints: ${newExclusions.map(exclusion => `"${exclusion.name}"`).join(", ")} in table "${table.name}"`);
+            await this.connection.logger.logSchemaBuild(`adding new exclusion constraints: ${newExclusions.map(exclusion => `"${exclusion.name}"`).join(", ")} in table "${table.name}"`);
             await this.queryRunner.createExclusionConstraints(table, newExclusions);
         });
     }
@@ -578,7 +578,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 return;
 
             const dbForeignKeys = newKeys.map(foreignKeyMetadata => TableForeignKey.create(foreignKeyMetadata));
-            this.connection.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")} on table "${table.name}"`);
+            await this.connection.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")} on table "${table.name}"`);
             await this.queryRunner.createForeignKeys(table, dbForeignKeys);
         });
     }
@@ -614,8 +614,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         });
 
         if (tablesWithFK.length > 0) {
-            await PromiseUtils.runInSequence(tablesWithFK, tableWithFK => {
-                this.connection.logger.logSchemaBuild(`dropping related foreign keys of ${tableWithFK.name}: ${tableWithFK.foreignKeys.map(foreignKey => foreignKey.name).join(", ")}`);
+            await PromiseUtils.runInSequence(tablesWithFK, async tableWithFK => {
+                await this.connection.logger.logSchemaBuild(`dropping related foreign keys of ${tableWithFK.name}: ${tableWithFK.foreignKeys.map(foreignKey => foreignKey.name).join(", ")}`);
                 return this.queryRunner.dropForeignKeys(tableWithFK, tableWithFK.foreignKeys);
             });
         }
@@ -633,7 +633,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         if (relatedIndices.length === 0)
             return;
 
-        this.connection.logger.logSchemaBuild(`dropping related indices of "${tablePath}"."${columnName}": ${relatedIndices.map(index => index.name).join(", ")}`);
+        await this.connection.logger.logSchemaBuild(`dropping related indices of "${tablePath}"."${columnName}": ${relatedIndices.map(index => index.name).join(", ")}`);
         await this.queryRunner.dropIndices(table, relatedIndices);
     }
 
@@ -649,7 +649,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         if (relatedUniques.length === 0)
             return;
 
-        this.connection.logger.logSchemaBuild(`dropping related unique constraints of "${tablePath}"."${columnName}": ${relatedUniques.map(unique => unique.name).join(", ")}`);
+        await this.connection.logger.logSchemaBuild(`dropping related unique constraints of "${tablePath}"."${columnName}": ${relatedUniques.map(unique => unique.name).join(", ")}`);
         await this.queryRunner.dropUniqueConstraints(table, relatedUniques);
     }
 

@@ -74,7 +74,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
         return this.queryRunner;
     }
-    
+
     /**
      * Loads a database from a given file (Node.js), local storage key (browser) or array.
      * This will delete the current database!
@@ -98,12 +98,12 @@ export class SqljsDriver extends AbstractSqliteDriver {
                     // File will be written on first write operation.
                     return this.createDatabaseConnectionWithImport();
                 }
-            } 
+            }
             else {
                 // browser
                 // fileNameOrLocalStorageOrData should be a local storage key
                 const localStorageContent = PlatformTools.getGlobalVariable().localStorage.getItem(fileNameOrLocalStorageOrData);
-                
+
                 if (localStorageContent != null) {
                     // localStorage value exists.
                     return this.createDatabaseConnectionWithImport(JSON.parse(localStorageContent));
@@ -132,7 +132,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
         if (!location && !this.options.location) {
             throw new Error(`No location is set, specify a location parameter or add the location option to your configuration`);
         }
-        
+
         let path = "";
         if (location) {
             path = location;
@@ -173,7 +173,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
             }
         }
     }
-    
+
     /**
      * Returns the current database as Uint8Array.
      */
@@ -185,17 +185,17 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Creates generated map of values generated or returned by database after INSERT query.
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
-        const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
+        const generatedMap = metadata.generatedColumns.reduce(async (map, generatedColumn) => {
             // seems to be the only way to get the inserted id, see https://github.com/kripken/sql.js/issues/77
             if (generatedColumn.isPrimary && generatedColumn.generationStrategy === "increment") {
                 const query = "SELECT last_insert_rowid()";
                 try {
                     let result = this.databaseConnection.exec(query);
-                    this.connection.logger.logQuery(query);
+                    await this.connection.logger.logQuery(query);
                     return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(result[0].values[0][0]));
                 }
                 catch (e) {
-                    this.connection.logger.logQueryError(e, query, []);
+                    await this.connection.logger.logQueryError(e, query, []);
                 }
             }
 

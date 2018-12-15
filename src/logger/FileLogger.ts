@@ -23,20 +23,20 @@ export class FileLogger implements Logger {
     /**
      * Logs query and parameters used in it.
      */
-    logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
+    async logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("query") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-            this.write("[QUERY]: " + sql);
+            await this.write("[QUERY]: " + sql);
         }
     }
 
     /**
      * Logs query that is failed.
      */
-    logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
+    async logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("error") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-            this.write([
+            await this.write([
                 `[FAILED QUERY]: ${sql}`,
                 `[QUERY ERROR]: ${error}`
             ]);
@@ -46,44 +46,44 @@ export class FileLogger implements Logger {
     /**
      * Logs query that is slow.
      */
-    logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
+    async logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-        this.write(`[SLOW QUERY: ${time} ms]: ` + sql);
+        await this.write(`[SLOW QUERY: ${time} ms]: ` + sql);
     }
 
     /**
      * Logs events from the schema build process.
      */
-    logSchemaBuild(message: string, queryRunner?: QueryRunner) {
+    async logSchemaBuild(message: string, queryRunner?: QueryRunner) {
         if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("schema") !== -1)) {
-            this.write(message);
+            await this.write(message);
         }
     }
 
     /**
      * Logs events from the migrations run process.
      */
-    logMigration(message: string, queryRunner?: QueryRunner) {
-        this.write(message);
+    async logMigration(message: string, queryRunner?: QueryRunner) {
+        await this.write(message);
     }
 
     /**
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
      */
-    log(level: "log"|"info"|"warn", message: any, queryRunner?: QueryRunner) {
+    async log(level: "log"|"info"|"warn", message: any, queryRunner?: QueryRunner) {
         switch (level) {
             case "log":
                 if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("log") !== -1))
-                    this.write("[LOG]: " + message);
+                    await this.write("[LOG]: " + message);
                 break;
             case "info":
                 if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("info") !== -1))
-                    this.write("[INFO]: " + message);
+                    await this.write("[INFO]: " + message);
                 break;
             case "warn":
                 if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("warn") !== -1))
-                    this.write("[WARN]: " + message);
+                    await this.write("[WARN]: " + message);
                 break;
         }
     }
@@ -95,7 +95,7 @@ export class FileLogger implements Logger {
     /**
      * Writes given strings into the log file.
      */
-    protected write(strings: string|string[]) {
+    protected async write(strings: string|string[]) {
         strings = strings instanceof Array ? strings : [strings];
         const basePath = PlatformTools.load("app-root-path").path;
         strings = (strings as string[]).map(str => "[" + new Date().toISOString() + "]" + str);

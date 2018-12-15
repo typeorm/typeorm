@@ -97,15 +97,15 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
             this.databaseConnection = pool.transaction();
 
-            const transactionCallback = (err: any) => {
+            const transactionCallback = async (err: any) => {
                 if (err) {
                     this.isTransactionActive = false;
                     return fail(err);
                 }
                 ok();
-                this.connection.logger.logQuery("BEGIN TRANSACTION");
+                await this.connection.logger.logQuery("BEGIN TRANSACTION");
                 if (isolationLevel) {
-                    this.connection.logger.logQuery("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
+                    await this.connection.logger.logQuery("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
                 }
             };
 
@@ -129,12 +129,12 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             throw new TransactionNotStartedError();
 
         return new Promise<void>((ok, fail) => {
-            this.databaseConnection.commit((err: any) => {
+            this.databaseConnection.commit(async (err: any) => {
                 if (err) return fail(err);
                 this.isTransactionActive = false;
                 this.databaseConnection = null;
                 ok();
-                this.connection.logger.logQuery("COMMIT");
+                await this.connection.logger.logQuery("COMMIT");
             });
         });
     }
@@ -151,12 +151,12 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             throw new TransactionNotStartedError();
 
         return new Promise<void>((ok, fail) => {
-            this.databaseConnection.rollback((err: any) => {
+            this.databaseConnection.rollback(async (err: any) => {
                 if (err) return fail(err);
                 this.isTransactionActive = false;
                 this.databaseConnection = null;
                 ok();
-                this.connection.logger.logQuery("ROLLBACK");
+                await this.connection.logger.logQuery("ROLLBACK");
             });
         });
     }
@@ -178,7 +178,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         const promise = new Promise(async (ok, fail) => {
             try {
-                this.driver.connection.logger.logQuery(query, parameters, this);
+                await this.driver.connection.logger.logQuery(query, parameters, this);
                 const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
                 const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
                 if (parameters && parameters.length) {
@@ -196,14 +196,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     });
                 }
                 const queryStartTime = +new Date();
-                request.query(query, (err: any, result: any) => {
+                request.query(query, async (err: any, result: any) => {
 
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
                     const queryEndTime = +new Date();
                     const queryExecutionTime = queryEndTime - queryStartTime;
                     if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                        await this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
                     const resolveChain = () => {
                         if (promiseIndex !== -1)
@@ -216,7 +216,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
                     let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                     if (err) {
-                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        await this.driver.connection.logger.logQueryError(err, query, parameters, this);
                         resolveChain();
                         return fail(new QueryFailedError(query, parameters, err));
                     }
@@ -260,7 +260,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         const promise = new Promise<ReadStream>(async (ok, fail) => {
 
-            this.driver.connection.logger.logQuery(query, parameters, this);
+            await this.driver.connection.logger.logQuery(query, parameters, this);
             const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
             const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
             request.stream = true;
@@ -273,7 +273,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     }
                 });
             }
-            request.query(query, (err: any, result: any) => {
+            request.query(query, async (err: any, result: any) => {
 
                 const resolveChain = () => {
                     if (promiseIndex !== -1)
@@ -286,7 +286,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
                 let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                 if (err) {
-                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                    await this.driver.connection.logger.logQueryError(err, query, parameters, this);
                     resolveChain();
                     return fail(err);
                 }

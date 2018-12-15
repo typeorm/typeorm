@@ -304,32 +304,32 @@ export class PostgresDriver implements Driver {
                             try {
                                 await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
                             } catch (_) {
-                                logger.log("warn", "At least one of the entities has uuid column, but the 'uuid-ossp' extension cannot be installed automatically. Please install it manually using superuser rights");
+                                await logger.log("warn", "At least one of the entities has uuid column, but the 'uuid-ossp' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         if (hasCitextColumns)
                             try {
                                 await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "citext"`);
                             } catch (_) {
-                                logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please install it manually using superuser rights");
+                                await logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         if (hasHstoreColumns)
                             try {
                                 await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "hstore"`);
                             } catch (_) {
-                                logger.log("warn", "At least one of the entities has hstore column, but the 'hstore' extension cannot be installed automatically. Please install it manually using superuser rights");
+                                await logger.log("warn", "At least one of the entities has hstore column, but the 'hstore' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         if (hasGeometryColumns)
                             try {
                                 await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "postgis"`);
                             } catch (_) {
-                                logger.log("warn", "At least one of the entities has a geometry column, but the 'postgis' extension cannot be installed automatically. Please install it manually using superuser rights");
+                                await logger.log("warn", "At least one of the entities has a geometry column, but the 'postgis' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         if (hasExclusionConstraints)
                             try {
                                 // The btree_gist extension provides operator support in PostgreSQL exclusion constraints
                                 await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "btree_gist"`);
                             } catch (_) {
-                                logger.log("warn", "At least one of the entities has an exclusion constraint, but the 'btree_gist' extension cannot be installed automatically. Please install it manually using superuser rights");
+                                await logger.log("warn", "At least one of the entities has an exclusion constraint, but the 'btree_gist' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         release();
                         ok();
@@ -819,7 +819,7 @@ export class PostgresDriver implements Driver {
           Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
           cause the hosting app to crash.
          */
-        pool.on("error", (error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
+        pool.on("error", async (error: any) => await logger.log("warn", `Postgres pool raised an error. ${error}`));
 
         return new Promise((ok, fail) => {
             pool.connect((err: any, connection: any, release: Function) => {

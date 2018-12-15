@@ -22,7 +22,7 @@ export class SimpleConsoleLogger implements Logger {
     /**
      * Logs query and parameters used in it.
      */
-    logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
+    async logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("query") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             console.log("query" + ": " + sql);
@@ -32,7 +32,7 @@ export class SimpleConsoleLogger implements Logger {
     /**
      * Logs query that is failed.
      */
-    logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
+    async logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("error") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             console.log(`query failed: ` + sql);
@@ -43,7 +43,7 @@ export class SimpleConsoleLogger implements Logger {
     /**
      * Logs query that is slow.
      */
-    logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
+    async logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
         console.log(`query is slow: ` + sql);
         console.log(`execution time: ` + time);
@@ -52,7 +52,7 @@ export class SimpleConsoleLogger implements Logger {
     /**
      * Logs events from the schema build process.
      */
-    logSchemaBuild(message: string, queryRunner?: QueryRunner) {
+    async logSchemaBuild(message: string, queryRunner?: QueryRunner) {
         if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("schema") !== -1)) {
             console.log(message);
         }
@@ -61,7 +61,7 @@ export class SimpleConsoleLogger implements Logger {
     /**
      * Logs events from the migrations run process.
      */
-    logMigration(message: string, queryRunner?: QueryRunner) {
+    async logMigration(message: string, queryRunner?: QueryRunner) {
         console.log(message);
     }
 
@@ -69,7 +69,7 @@ export class SimpleConsoleLogger implements Logger {
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
      */
-    log(level: "log"|"info"|"warn", message: any, queryRunner?: QueryRunner) {
+    async log(level: "log"|"info"|"warn", message: any, queryRunner?: QueryRunner) {
         switch (level) {
             case "log":
                 if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("log") !== -1))

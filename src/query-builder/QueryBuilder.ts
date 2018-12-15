@@ -360,12 +360,11 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
-     * Prints sql to stdout using console.log.
+     * Logs the SQL query to the connection logger.
      */
-    printSql(): this { // TODO rename to logSql()
+    logSql() {
         const [query, parameters] = this.getQueryAndParameters();
-        this.connection.logger.logQuery(query, parameters);
-        return this;
+        return this.connection.logger.logQuery(query, parameters);
     }
 
     /**
