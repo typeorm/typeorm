@@ -6,26 +6,27 @@ import {PlatformTools} from "../platform/PlatformTools";
  * Performs logging of the events in TypeORM via debug library.
  */
 export class DebugLogger implements Logger {
-    private debug = PlatformTools.load("debug");
+    private debugPromise = import("debug");
 
-    private debugQueryLog = this.debug("typeorm:query:log");
-    private debugQueryError = this.debug("typeorm:query:error");
-    private debugQuerySlow = this.debug("typeorm:query:slow");
-    private debugSchemaBuild = this.debug("typeorm:schema");
-    private debugMigration = this.debug("typeorm:migration");
+    private debugQueryLogPromise = this.debugPromise.then(debug => debug("typeorm:query:log"));
+    private debugQueryErrorPromise = this.debugPromise.then(debug => debug("typeorm:query:error"));
+    private debugQuerySlowPromise = this.debugPromise.then(debug => debug("typeorm:query:slow"));
+    private debugSchemaBuildPromise = this.debugPromise.then(debug => debug("typeorm:schema"));
+    private debugMigrationPromise = this.debugPromise.then(debug => debug("typeorm:migration"));
 
-    private debugLog = this.debug("typeorm:log");
-    private debugInfo = this.debug("typeorm:info");
-    private debugWarn = this.debug("typeorm:warn");
+    private debugLogPromise = this.debugPromise.then(debug => debug("typeorm:log"));
+    private debugInfoPromise = this.debugPromise.then(debug => debug("typeorm:info"));
+    private debugWarnPromise = this.debugPromise.then(debug => debug("typeorm:warn"));
 
     /**
      * Logs query and parameters used in it.
      */
     async logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.debugQueryLog.enabled) {
-            this.debugQueryLog(PlatformTools.highlightSql(query) + ";");
+        const debugQueryLog = await this.debugQueryLogPromise;
+        if (debugQueryLog.enabled) {
+            debugQueryLog(PlatformTools.highlightSql(query) + ";");
             if (parameters && parameters.length) {
-                this.debugQueryLog("parameters:", parameters);
+                debugQueryLog("parameters:", parameters);
             }
         }
     }
@@ -34,12 +35,13 @@ export class DebugLogger implements Logger {
      * Logs query that failed.
      */
     async logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.debugQueryError.enabled) {
-            this.debugQueryError(PlatformTools.highlightSql(query) + ";");
+        const debugQueryError = await this.debugQueryErrorPromise;
+        if (debugQueryError.enabled) {
+            debugQueryError(PlatformTools.highlightSql(query) + ";");
             if (parameters && parameters.length) {
-                this.debugQueryError("parameters:", parameters);
+                debugQueryError("parameters:", parameters);
             }
-            this.debugQueryError("error: ", error);
+            debugQueryError("error: ", error);
         }
     }
 
@@ -47,12 +49,13 @@ export class DebugLogger implements Logger {
      * Logs query that is slow.
      */
     async logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.debugQuerySlow.enabled) {
-            this.debugQuerySlow(PlatformTools.highlightSql(query) + ";");
+        const debugQuerySlow = await this.debugQuerySlowPromise;
+        if (debugQuerySlow.enabled) {
+            debugQuerySlow(PlatformTools.highlightSql(query) + ";");
             if (parameters && parameters.length) {
-                this.debugQuerySlow("parameters:", parameters);
+                debugQuerySlow("parameters:", parameters);
             }
-            this.debugQuerySlow("execution time:", time);
+            debugQuerySlow("execution time:", time);
         }
     }
 
@@ -60,8 +63,9 @@ export class DebugLogger implements Logger {
      * Logs events from the schema build process.
      */
     async logSchemaBuild(message: string, queryRunner?: QueryRunner) {
-        if (this.debugSchemaBuild.enabled) {
-            this.debugSchemaBuild(message);
+        const debugSchemaBuild = await this.debugSchemaBuildPromise;
+        if (debugSchemaBuild.enabled) {
+            debugSchemaBuild(message);
         }
     }
 
@@ -69,8 +73,9 @@ export class DebugLogger implements Logger {
      * Logs events from the migration run process.
      */
     async logMigration(message: string, queryRunner?: QueryRunner) {
-        if (this.debugMigration.enabled) {
-            this.debugMigration(message);
+        const debugMigration = await this.debugMigrationPromise;
+        if (debugMigration.enabled) {
+            debugMigration(message);
         }
     }
 
@@ -81,18 +86,21 @@ export class DebugLogger implements Logger {
     async log(level: "log" | "info" | "warn", message: any, queryRunner?: QueryRunner) {
         switch (level) {
             case "log":
-                if (this.debugLog.enabled) {
-                    this.debugLog(message);
+                const debugLog = await this.debugLogPromise;
+                if (debugLog.enabled) {
+                    debugLog(message);
                 }
                 break;
             case "info":
-                if (this.debugInfo.enabled) {
-                    this.debugInfo(message);
+                const debugInfo = await this.debugInfoPromise;
+                if (debugInfo.enabled) {
+                    debugInfo(message);
                 }
                 break;
             case "warn":
-                if (this.debugWarn.enabled) {
-                    this.debugWarn(message);
+                const debugWarn = await this.debugWarnPromise;
+                if (debugWarn.enabled) {
+                    debugWarn(message);
                 }
                 break;
         }

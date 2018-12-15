@@ -106,9 +106,6 @@ export class PlatformTools {
                 case "path":
                     return require("path");
 
-                case "debug":
-                    return require("debug");
-
                 case "app-root-path":
                     return require("app-root-path");
 
