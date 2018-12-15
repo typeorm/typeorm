@@ -8,6 +8,7 @@ import {PlatformTools} from "../platform/PlatformTools";
  * This version of logger logs everything into ormlogs.log file.
  */
 export class FileLogger implements Logger {
+    private appRootPathPromise = import("app-root-path");
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -95,11 +96,11 @@ export class FileLogger implements Logger {
     /**
      * Writes given strings into the log file.
      */
-    protected write(strings: string|string[]) {
+    protected async write(strings: string|string[]) {
         strings = strings instanceof Array ? strings : [strings];
-        const basePath = PlatformTools.load("app-root-path").path;
+        const appRootPath = await this.appRootPathPromise;
         strings = (strings as string[]).map(str => "[" + new Date().toISOString() + "]" + str);
-        return PlatformTools.appendFile(basePath + "/ormlogs.log", strings.join("\r\n") + "\r\n");
+        return PlatformTools.appendFile(`${appRootPath.path}/ormlogs.log`, strings.join("\r\n") + "\r\n");
     }
 
     /**
