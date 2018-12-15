@@ -81,27 +81,28 @@ export class ConnectionOptionsReader {
         let connectionOptions: ConnectionOptions|ConnectionOptions[]|undefined = undefined;
 
         const fileFormats = ["env", "js", "ts", "json", "yml", "yaml", "xml"];
+        const baseFilePath = await this.getBaseFilePath();
 
         // Detect if baseFilePath contains file extension
-        const possibleExtension = this.baseFilePath.substr(this.baseFilePath.lastIndexOf("."));
+        const possibleExtension = baseFilePath.substr(baseFilePath.lastIndexOf("."));
         const fileExtension = fileFormats.find(extension => `.${extension}` === possibleExtension);
 
         // try to find any of following configuration formats
         const foundFileFormat = fileExtension || fileFormats.find(format => {
-            return PlatformTools.fileExist(this.baseFilePath + "." + format);
+            return PlatformTools.fileExist(`${baseFilePath}.${format}`);
         });
 
         // if .env file found then load all its variables into process.env using dotenv package
         if (foundFileFormat === "env") {
             const dotenv = PlatformTools.load("dotenv");
-            dotenv.config({ path: this.baseFilePath + ".env" });
+            dotenv.config({ path: `${baseFilePath}.env` });
         } else if (PlatformTools.fileExist(".env")) {
             const dotenv = PlatformTools.load("dotenv");
             dotenv.config({ path: ".env" });
         }
 
         // Determine config file name
-        const configFile = fileExtension ? this.baseFilePath : this.baseFilePath + "." + foundFileFormat;
+        const configFile = fileExtension ? baseFilePath : `${baseFilePath}.${foundFileFormat}`;
 
         // try to find connection options from any of available sources of configuration
         if (PlatformTools.getEnvVariable("TYPEORM_CONNECTION")) {
@@ -137,33 +138,35 @@ export class ConnectionOptionsReader {
     /**
      * Normalize connection options.
      */
-    protected normalizeConnectionOptions(connectionOptions: ConnectionOptions|ConnectionOptions[]): ConnectionOptions[] {
+    protected async normalizeConnectionOptions(connectionOptions: ConnectionOptions|ConnectionOptions[]): Promise<ConnectionOptions[]> {
         if (!(connectionOptions instanceof Array))
             connectionOptions = [connectionOptions];
 
-        connectionOptions.forEach(options => {
+        const baseDirectory = await this.getBaseDirectory();
+
+        for (const options of connectionOptions) {
             if (options.entities) {
-                const entities = (options.entities as any[]).map(entity => {
-                    if (typeof entity === "string" && entity.substr(0, 1) !== "/")
-                        return this.baseDirectory + "/" + entity;
+                const entities = options.entities.map(entity => {
+                    if (typeof entity === "string" && entity[0] !== "/")
+                        return `${baseDirectory}/${entity}`;
 
                     return entity;
                 });
                 Object.assign(connectionOptions, { entities: entities });
             }
             if (options.subscribers) {
-                const subscribers = (options.subscribers as any[]).map(subscriber => {
-                    if (typeof subscriber === "string" && subscriber.substr(0, 1) !== "/")
-                        return this.baseDirectory + "/" + subscriber;
+                const subscribers = options.subscribers.map(subscriber => {
+                    if (typeof subscriber === "string" && subscriber[0] !== "/")
+                        return `${baseDirectory}/${subscriber}`;
 
                     return subscriber;
                 });
                 Object.assign(connectionOptions, { subscribers: subscribers });
             }
             if (options.migrations) {
-                const migrations = (options.migrations as any[]).map(migration => {
-                    if (typeof migration === "string" && migration.substr(0, 1) !== "/")
-                        return this.baseDirectory + "/" + migration;
+                const migrations = options.migrations.map(migration => {
+                    if (typeof migration === "string" && migration[0] !== "/")
+                        return `${baseDirectory}/${migration}`;
 
                     return migration;
                 });
@@ -173,15 +176,15 @@ export class ConnectionOptionsReader {
             // make database path file in sqlite relative to package.json
             if (options.type === "sqlite") {
                 if (typeof options.database === "string" &&
-                    options.database.substr(0, 1) !== "/" &&  // unix absolute
+                    options.database[0] !== "/" &&  // unix absolute
                     options.database.substr(1, 2) !== ":\\" && // windows absolute
                     options.database !== ":memory:") {
                     Object.assign(options, {
-                        database: this.baseDirectory + "/" + options.database
+                        database: `${baseDirectory}/${options.database}`,
                     });
                 }
             }
-        });
+        }
 
         return connectionOptions;
     }
@@ -189,18 +192,19 @@ export class ConnectionOptionsReader {
     /**
      * Gets directory where configuration file should be located and configuration file name.
      */
-    protected get baseFilePath(): string {
-        return this.baseDirectory + "/" + this.baseConfigName;
+    protected async getBaseFilePath() {
+        return `${await this.getBaseDirectory()}/${this.baseConfigName}`;
     }
 
     /**
      * Gets directory where configuration file should be located.
      */
-    protected get baseDirectory(): string {
+    protected async getBaseDirectory() {
         if (this.options && this.options.root)
             return this.options.root;
 
-        return PlatformTools.load("app-root-path").path;
+        const appRootPath = await import("app-root-path");
+        return appRootPath.path;
     }
 
     /**
