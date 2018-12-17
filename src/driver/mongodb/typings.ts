@@ -30,6 +30,7 @@ export declare class MongoClient extends EventEmitter {
     withSession(operation: (session: ClientSession) => Promise<any>): Promise<void>;
     /** http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#withSession */
     withSession(options: SessionOptions, operation: (session: ClientSession) => Promise<any>): Promise<void>;
+    topology: { hasSessionSupport(): boolean }
 }
 /** http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html */
 export declare class ChangeStream extends Readable {

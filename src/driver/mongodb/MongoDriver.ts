@@ -114,8 +114,8 @@ export class MongoDriver implements Driver {
     /**
      * Underlying mongodb library.
      */
-    protected mongodb: any;
-    protected mongoClient: any;
+    mongodb: any;
+    mongoClient: any;
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

@@ -35,6 +35,8 @@ import { OracleDriver } from "../driver/oracle/OracleDriver";
 import { FindConditions } from "../find-options/FindConditions";
 import { IsolationLevel } from "../driver/types/IsolationLevel";
 import { ObjectUtils } from "../util/ObjectUtils";
+import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner";
+
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -118,6 +120,8 @@ export class EntityManager {
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection
         // if its not defined we create a new query runner - single connection where we'll execute all our operations
         const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+        if (queryRunner instanceof MongoQueryRunner)
+            queryRunner.forceTransation = true;
 
         try {
             if (isolation) {
@@ -127,15 +131,23 @@ export class EntityManager {
             }
             const result = await runInTransaction(queryRunner.manager);
             await queryRunner.commitTransaction();
+            if (queryRunner instanceof MongoQueryRunner)
+                queryRunner.forceTransation = false;
             return result;
 
         } catch (err) {
             try { // we throw original error even if rollback thrown an error
                 await queryRunner.rollbackTransaction();
-            } catch (rollbackError) { }
+            } catch (rollbackError) {
+
+            }
+            if (queryRunner instanceof MongoQueryRunner)
+                queryRunner.forceTransation = false;
             throw err;
 
         } finally {
+            if (queryRunner instanceof MongoQueryRunner)
+                queryRunner.forceTransation = false;
             if (!this.queryRunner) // if we used a new query runner provider then release it
                 await queryRunner.release();
         }

@@ -53,6 +53,8 @@ import { TableCheck } from "../../schema-builder/table/TableCheck";
 import { TableExclusion } from "../../schema-builder/table/TableExclusion";
 import { TransactionAlreadyStartedError } from "../../error/TransactionAlreadyStartedError";
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError";
+import { MongoDriver } from "./MongoDriver";
+import { IsolationLevel } from "../types/IsolationLevel";
 
 
 /**
@@ -109,15 +111,15 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Real database connection from a connection pool used to perform queries.
      */
-    databaseConnection: MongoClient;
-
+    //  databaseConnection: MongoClient;
+    forceTransation: boolean = false;
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(connection: Connection, databaseClient: MongoClient) {
         this.connection = connection;
-        this.databaseConnection = databaseClient;
+        //   this.databaseConnection = databaseClient;
         this.broadcaster = new Broadcaster(this);
     }
 
@@ -602,7 +604,7 @@ export class MongoQueryRunner implements QueryRunner {
      * (because it can clear all your database).
      */
     async clearDatabase(): Promise<void> {
-        await this.databaseConnection.db(this.connection.driver.database!).dropDatabase();
+        await (<MongoDriver>this.connection.driver).mongoClient.db(this.connection.driver.database!).dropDatabase();
     }
 
     /**
@@ -624,13 +626,17 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Starts transaction.
      */
-    async startTransaction(): Promise<void> {
+    async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         // transactions are not supported by mongodb driver, so simply don't do anything here
-        if (this.isTransactionActive)
-            throw new TransactionAlreadyStartedError();
-        this.isTransactionActive = true;
-        this.session = this.databaseConnection.startSession();
-        this.session.startTransaction();
+
+        if (this.forceTransation && (<MongoClient>((<MongoDriver>this.connection.driver).mongoClient)).topology.hasSessionSupport()) {
+            if (this.isTransactionActive)
+                throw new TransactionAlreadyStartedError();
+            this.isTransactionActive = true;
+            this.session = (<MongoDriver>this.connection.driver).mongoClient.startSession();
+            this.session.startTransaction();
+        }
+
         //startSession
         //startTransaction
 
@@ -643,10 +649,12 @@ export class MongoQueryRunner implements QueryRunner {
         // transactions are not supported by mongodb driver, so simply don't do anything here
         //commitTransaction
         //endSession
-        if (!this.isTransactionActive)
-            throw new TransactionNotStartedError();
-        await this.session.commitTransaction();
-        this.session.endSession();
+        if (this.forceTransation && (<MongoClient>((<MongoDriver>this.connection.driver).mongoClient)).topology.hasSessionSupport()) {
+            if (!this.isTransactionActive)
+                throw new TransactionNotStartedError();
+            await this.session.commitTransaction();
+            this.session.endSession();
+        }
 
     }
 
@@ -657,10 +665,12 @@ export class MongoQueryRunner implements QueryRunner {
         // transactions are not supported by mongodb driver, so simply don't do anything here
         //abortTransaction
         //endSession
-        if (!this.isTransactionActive)
-            throw new TransactionNotStartedError();
-        await this.session.abortTransaction();
-        this.session.endSession();
+        if (this.forceTransation && (<MongoClient>((<MongoDriver>this.connection.driver).mongoClient)).topology.hasSessionSupport()) {
+            if (!this.isTransactionActive)
+                throw new TransactionNotStartedError();
+            await this.session.abortTransaction();
+            this.session.endSession();
+        }
     }
 
     /**
@@ -1034,7 +1044,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops collection.
      */
     async clearTable(collectionName: string): Promise<void> {
-        await this.databaseConnection
+        await (<MongoDriver>this.connection.driver).mongoClient
             .db(this.connection.driver.database!)
             .dropCollection(collectionName);
     }
@@ -1094,7 +1104,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Gets collection from the database with a given name.
      */
     protected getCollection(collectionName: string): Collection {
-        return this.databaseConnection.db(this.connection.driver.database!).collection(collectionName);
+        return (<MongoDriver>this.connection.driver).mongoClient.db(this.connection.driver.database!).collection(collectionName);
     }
 
 }
