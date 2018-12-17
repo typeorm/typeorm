@@ -219,7 +219,7 @@ Learn more about [MongoDB](mongodb.md).
 #### `@CreateDateColumn`
 
 Special column that is automatically set to the entity's insertion time.
-You don't need to write a value into this column - it will be automatically set.
+You can not write a value into this column - it will be automatically set.
 Example:
 
 ```typescript
@@ -236,7 +236,7 @@ export class User {
 
 Special column that is automatically set to the entity's update time
 each time you call `save` from entity manager or repository.
-You don't need to write a value into this column - it will be automatically set.
+You can not write a value into this column - it will be automatically set.
 
 ```typescript
 @Entity()
