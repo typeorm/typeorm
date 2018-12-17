@@ -71,7 +71,7 @@ export class MongoEntityManager extends EntityManager {
     // -------------------------------------------------------------------------
 
     constructor(connection: Connection, queryRunner?: QueryRunner) {
-        super(connection, queryRunner ? queryRunner : connection.createQueryRunner("master"));
+        super(connection, queryRunner);
     }
 
     // -------------------------------------------------------------------------
