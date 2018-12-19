@@ -63,9 +63,9 @@ Before creating a new migration you need to setup your connection options proper
     "username": "test",
     "password": "test",
     "database": "test",
-    "entities": ["entity/*.js"],
+    "entities": ["entity/*.ts"],
     "migrationsTableName": "custom_migration_table",
-    "migrations": ["migration/*.js"],
+    "migrations": ["migration/*.ts"],
     "cli": {
         "migrationsDir": "migration"
     }
