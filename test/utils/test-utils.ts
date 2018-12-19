@@ -168,7 +168,7 @@ export function getTypeOrmConfig(): TestingConnectionOptions[] {
 
     } catch (err) {
         throw new Error(`Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +
-            ` in the root of the project (near ormconfig.json.dist, you need to copy ormconfig.json.dist into ormconfig.json` +
+            ` in the root of the project (near ormconfig.travis.json, you need to copy ormconfig.travis.json into ormconfig.json` +
             ` and change all database settings to match your local environment settings).`);
     }
 }

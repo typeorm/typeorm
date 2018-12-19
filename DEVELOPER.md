@@ -66,7 +66,7 @@ For example to proper install oracle driver you need to follow all instructions 
 To create an initial `ormconfig.json` file, run the following command:
 
 ```shell
-cp ormconfig.json.dist ormconfig.json
+cp ormconfig.travis.json ormconfig.json
 ```
 
 ## Building
@@ -122,7 +122,7 @@ describe("github issues > #<issue number> <issue title>", () => {
 If you place entities in `./entity/<entity-name>.ts` relative to your `issue-<num>.ts` file,
 they will automatically be loaded.
 
-To run the tests, setup your environment configuration by copying `ormconfig.json.dist` into `ormconfig.json` and
+To run the tests, setup your environment configuration by copying `ormconfig.travis.json` into `ormconfig.json` and
 replacing parameters with your own.
 
 Then run tests:
