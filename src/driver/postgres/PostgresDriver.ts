@@ -563,7 +563,7 @@ export class PostgresDriver implements Driver {
         } else if (column.type === "decimal") {
             return "numeric";
 
-        } else if (column.type === "float8") {
+        } else if (column.type === "float8" || column.type === "float") {
             return "double precision";
 
         } else if (column.type === "float4") {

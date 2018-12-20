@@ -94,7 +94,7 @@ export class ConnectionOptionsReader {
         // if .env file found then load all its variables into process.env using dotenv package
         if (foundFileFormat === "env") {
             const dotenv = PlatformTools.load("dotenv");
-            dotenv.config({ path: this.baseFilePath + ".env" });
+            dotenv.config({ path: this.baseFilePath });
         } else if (PlatformTools.fileExist(".env")) {
             const dotenv = PlatformTools.load("dotenv");
             dotenv.config({ path: ".env" });

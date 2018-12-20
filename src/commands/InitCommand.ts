@@ -531,7 +531,7 @@ Steps to run this project:
                 packageJson.dependencies["mssql"] = "^4.0.4";
                 break;
             case "mongodb":
-                packageJson.dependencies["mongodb"] = "^2.2.31";
+                packageJson.dependencies["mongodb"] = "^3.0.8";
                 break;
         }
 

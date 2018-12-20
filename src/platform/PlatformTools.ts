@@ -112,6 +112,9 @@ export class PlatformTools {
                 case "app-root-path":
                     return require("app-root-path");
 
+                case "glob":
+                    return require("glob");
+
                 /**
                 * default
                 */

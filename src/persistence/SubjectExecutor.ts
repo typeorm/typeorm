@@ -16,6 +16,7 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {NestedSetSubjectExecutor} from "./tree/NestedSetSubjectExecutor";
 import {ClosureSubjectExecutor} from "./tree/ClosureSubjectExecutor";
 import {MaterializedPathSubjectExecutor} from "./tree/MaterializedPathSubjectExecutor";
+import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -338,14 +339,19 @@ export class SubjectExecutor {
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject);
 
-            const updateMap: ObjectLiteral = this.queryRunner.connection.driver instanceof MongoDriver ? subject.entity! : subject.createValueSetAndPopChangeMap();
-
             // for mongodb we have a bit different updation logic
             if (this.queryRunner instanceof MongoQueryRunner) {
+                const partialEntity = OrmUtils.mergeDeep({}, subject.entity!);
+                if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
+                    delete partialEntity[subject.metadata.objectIdColumn.propertyName];
+                }
+
                 const manager = this.queryRunner.manager as MongoEntityManager;
-                await manager.update(subject.metadata.target, subject.identifier, updateMap);
+                await manager.update(subject.metadata.target, subject.identifier, partialEntity);
 
             } else {
+
+                const updateMap: ObjectLiteral = subject.createValueSetAndPopChangeMap();
 
                 // here we execute our updation query
                 // we need to enable entity updation because we update a subject identifier
@@ -466,6 +472,13 @@ export class SubjectExecutor {
             subject.metadata.relationIds.forEach(relationId => {
                 relationId.setValue(subject.entity!);
             });
+
+            // mongo _id remove
+            if (this.queryRunner instanceof MongoQueryRunner) {
+                if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.databaseName) {
+                    delete subject.entity[subject.metadata.objectIdColumn.databaseName];
+                }
+            }
         });
     }
 
