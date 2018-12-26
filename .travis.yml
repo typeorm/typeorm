@@ -17,7 +17,8 @@ services:
 jobs:
   include:
     - stage: lint
-      script: npm run lint
+      script:
+        - npm run lint
     - stage: test
       before_script:
         - sudo service mysql stop
