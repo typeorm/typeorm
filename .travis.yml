@@ -20,6 +20,16 @@ before_script:
   - cp ormconfig.travis.json ormconfig.json
   - npm install sqlite3 --build-from-source
 
+env:
+  - CONNECTIONS=mysql
+  - CONNECTIONS=mariadb
+  - CONNECTIONS=sqlite
+  - CONNECTIONS=postgres
+  - CONNECTIONS=sqljs
+  # - CONNECTIONS=mssql
+  # - CONNECTIONS=oracle
+  - CONNECTIONS=mongodb
+
 script:
   - npm run lint
   - npm test

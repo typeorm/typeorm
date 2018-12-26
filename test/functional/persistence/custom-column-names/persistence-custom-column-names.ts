@@ -1,244 +1,225 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../../src/connection/Connection";
-import {Repository} from "../../../../src/repository/Repository";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {CategoryMetadata} from "./entity/CategoryMetadata";
-import {setupConnection} from "../../../utils/test-utils";
+
+import { expect } from "chai";
+
+import { Connection } from "../../../../src/connection/Connection";
+import { Repository } from "../../../../src/repository/Repository";
+import {
+  closeTestingConnections,
+  createTestingConnections,
+  reloadTestingDatabases
+} from "../../../utils/test-utils";
+import { Category } from "./entity/Category";
+import { CategoryMetadata } from "./entity/CategoryMetadata";
+import { Post } from "./entity/Post";
 
 describe("persistence > custom-column-names", function() {
+  // -------------------------------------------------------------------------
+  // Configuration
+  // -------------------------------------------------------------------------
 
-    // -------------------------------------------------------------------------
-    // Configuration
-    // -------------------------------------------------------------------------
+  // connect to db
+  let connections: Connection[];
+  before(
+    async () =>
+      (connections = await createTestingConnections({
+        entities: [__dirname + "/entity/*{.js,.ts}"],
+        schemaCreate: true,
+        dropSchema: true,
+        enabledDrivers: ["mysql"]
+      }))
+  );
+  beforeEach(() => reloadTestingDatabases(connections));
+  after(() => closeTestingConnections(connections));
 
-    // connect to db
-    let connection: Connection;
-    before(setupConnection(con => connection = con, [Post, Category, CategoryMetadata]));
-    after(() => connection.close());
+  let postRepository: Repository<Post>;
+  let categoryRepository: Repository<Category>;
+  let metadataRepository: Repository<CategoryMetadata>;
+  // -------------------------------------------------------------------------
+  // Specifications
+  // -------------------------------------------------------------------------
 
-    // clean up database before each test
-    function reloadDatabase() {
-        return connection
-            .synchronize(true)
-            .catch(e => {
-                console.log("Error during schema re-creation: ", e);
-                throw e;
-            });
-    }
-
-    let postRepository: Repository<Post>;
-    let categoryRepository: Repository<Category>;
-    let metadataRepository: Repository<CategoryMetadata>;
-    before(function() {
+  it("attach exist entity to exist entity with many-to-one relation", () =>
+    Promise.all(
+      connections.map(async connection => {
         postRepository = connection.getRepository(Post);
         categoryRepository = connection.getRepository(Category);
         metadataRepository = connection.getRepository(CategoryMetadata);
-    });
-
-    // -------------------------------------------------------------------------
-    // Specifications
-    // -------------------------------------------------------------------------
-    
-    describe("attach exist entity to exist entity with many-to-one relation", function() {
-        let newPost: Post, newCategory: Category, loadedPost: Post;
-
-        before(reloadDatabase);
 
         // save a new category
-        before(function () {
-            newCategory = categoryRepository.create();
-            newCategory.name = "Animals";
-            return categoryRepository.save(newCategory);
-        });
+        const newCategory = await categoryRepository.create();
+        newCategory.name = "Animals";
+        await categoryRepository.save(newCategory);
 
         // save a new post
-        before(function() {
-            newPost = postRepository.create();
-            newPost.title = "All about animals";
-            return postRepository.save(newPost);
-        });
+        const newPost = await postRepository.create();
+        newPost.title = "All about animals";
+        await postRepository.save(newPost);
 
         // attach category to post and save it
-        before(function() {
-            newPost.category = newCategory;
-            return postRepository.save(newPost);
-        });
+        newPost.category = newCategory;
+        await postRepository.save(newPost);
 
         // load a post
-        before(function() {
-            return postRepository
-                .findOne(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category" } }})
-                .then(post => loadedPost = post!);
+        const loadedPost = await postRepository.findOne(1, {
+          join: {
+            alias: "post",
+            leftJoinAndSelect: { category: "post.category" }
+          }
         });
+        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).to.have.property("category");
+        expect(loadedPost).to.have.property("categoryId");
+      })
+    ));
 
-        it("should contain attached category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
-        });
-
-    });
-
-    describe("attach new entity to exist entity with many-to-one relation", function() {
-        let newPost: Post, newCategory: Category, loadedPost: Post;
-
-        before(reloadDatabase);
+  it("attach new entity to exist entity with many-to-one relation", () =>
+    Promise.all(
+      connections.map(async connection => {
+        postRepository = connection.getRepository(Post);
+        categoryRepository = connection.getRepository(Category);
+        metadataRepository = connection.getRepository(CategoryMetadata);
 
         // save a new category
-        before(function () {
-            newCategory = categoryRepository.create();
-            newCategory.name = "Animals";
-            return categoryRepository.save(newCategory);
-        });
+        const newCategory = await categoryRepository.create();
+        newCategory.name = "Animals";
+        await categoryRepository.save(newCategory);
 
         // save a new post and attach category
-        before(function() {
-            newPost = postRepository.create();
-            newPost.title = "All about animals";
-            newPost.category = newCategory;
-            return postRepository.save(newPost);
-        });
+        const newPost = await postRepository.create();
+        newPost.title = "All about animals";
+        newPost.category = newCategory;
+        await postRepository.save(newPost);
 
         // load a post
-        before(function() {
-            return postRepository
-                .findOne(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category" } } })
-                .then(post => loadedPost = post!);
+        const loadedPost = await postRepository.findOne(1, {
+          join: {
+            alias: "post",
+            leftJoinAndSelect: { category: "post.category" }
+          }
         });
 
-        it("should contain attached category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
-        });
+        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).to.have.property("category");
+        expect(loadedPost).to.have.property("categoryId");
+      })
+    ));
 
-    });
-
-    describe("attach new entity to new entity with many-to-one relation", function() {
-        let newPost: Post, newCategory: Category, loadedPost: Post;
-
-        before(reloadDatabase);
+  it("attach new entity to new entity with many-to-one relation", () =>
+    Promise.all(
+      connections.map(async connection => {
+        postRepository = connection.getRepository(Post);
+        categoryRepository = connection.getRepository(Category);
+        metadataRepository = connection.getRepository(CategoryMetadata);
 
         // save a new category, post and attach category to post
-        before(function () {
-            newCategory = categoryRepository.create();
-            newCategory.name = "Animals";
-            newPost = postRepository.create();
-            newPost.title = "All about animals";
-            newPost.category = newCategory;
-            return postRepository.save(newPost);
-        });
+        const newCategory = await categoryRepository.create();
+        newCategory.name = "Animals";
+        const newPost = await postRepository.create();
+        newPost.title = "All about animals";
+        newPost.category = newCategory;
+        await postRepository.save(newPost);
 
         // load a post
-        before(function() {
-            return postRepository
-                .findOne(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category" } }})
-                .then(post => loadedPost = post!);
+        const loadedPost = await postRepository.findOne(1, {
+          join: {
+            alias: "post",
+            leftJoinAndSelect: { category: "post.category" }
+          }
         });
 
-        it("should contain attached category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
-        });
+        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).to.have.property("category");
+        expect(loadedPost).to.have.property("categoryId");
+      })
+    ));
 
-    });
-
-    describe("attach exist entity to exist entity with one-to-one relation", function() {
-        let newPost: Post, newCategory: Category, newMetadata: CategoryMetadata, loadedPost: Post;
-
-        before(reloadDatabase);
+  it("attach exist entity to exist entity with one-to-one relation", () =>
+    Promise.all(
+      connections.map(async connection => {
+        postRepository = connection.getRepository(Post);
+        categoryRepository = connection.getRepository(Category);
+        metadataRepository = connection.getRepository(CategoryMetadata);
 
         // save a new post
-        before(function() {
-            newPost = postRepository.create();
-            newPost.title = "All about animals";
-            return postRepository.save(newPost);
-        });
+        const newPost = await postRepository.create();
+        newPost.title = "All about animals";
+        await postRepository.save(newPost);
 
         // save a new category
-        before(function () {
-            newCategory = categoryRepository.create();
-            newCategory.name = "Animals";
-            return categoryRepository.save(newCategory);
-        });
+        const newCategory = await categoryRepository.create();
+        newCategory.name = "Animals";
+        await categoryRepository.save(newCategory);
 
         // save a new metadata
-        before(function() {
-            newMetadata = metadataRepository.create();
-            newMetadata.keyword = "animals";
-            return metadataRepository.save(newMetadata);
-        });
+        const newMetadata = await metadataRepository.create();
+        newMetadata.keyword = "animals";
+        await metadataRepository.save(newMetadata);
 
         // attach metadata to category and category to post and save it
-        before(function() {
-            newCategory.metadata = newMetadata;
-            newPost.category = newCategory;
-            return postRepository.save(newPost);
-        });
+        newCategory.metadata = newMetadata;
+        newPost.category = newCategory;
+        await postRepository.save(newPost);
 
         // load a post
-        before(function() {
-            return postRepository
-                .findOne(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category", metadata: "category.metadata" } } })
-                .then(post => loadedPost = post!);
+        const loadedPost = await postRepository.findOne(1, {
+          join: {
+            alias: "post",
+            leftJoinAndSelect: {
+              category: "post.category",
+              metadata: "category.metadata"
+            }
+          }
         });
 
-        it("should contain attached category and metadata in the category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
-            expect(loadedPost.category.metadata).not.to.be.empty;
-            expect(loadedPost.category.metadataId).not.to.be.empty;
-        });
+        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).to.have.property("category");
+        expect(loadedPost).to.have.property("categoryId");
+        expect(loadedPost).to.have.deep.property("category.metadata");
+        expect(loadedPost).to.have.deep.property("category.metadataId");
+      })
+    ));
 
-    });
-
-    describe("attach new entity to exist entity with one-to-one relation", function() {
-        let newPost: Post, newCategory: Category, newMetadata: CategoryMetadata, loadedPost: Post;
-
-        before(reloadDatabase);
+  it("attach new entity to exist entity with one-to-one relation", () =>
+    Promise.all(
+      connections.map(async connection => {
+        postRepository = connection.getRepository(Post);
+        categoryRepository = connection.getRepository(Category);
+        metadataRepository = connection.getRepository(CategoryMetadata);
 
         // save a new post
-        before(function() {
-            newPost = postRepository.create();
-            newPost.title = "All about animals";
-            return postRepository.save(newPost);
-        });
+        const newPost = await postRepository.create();
+        newPost.title = "All about animals";
+        await postRepository.save(newPost);
 
         // save a new category and new metadata
-        before(function () {
-            newMetadata = metadataRepository.create();
-            newMetadata.keyword = "animals";
-            newCategory = categoryRepository.create();
-            newCategory.name = "Animals";
-            newCategory.metadata = newMetadata;
-            return categoryRepository.save(newCategory);
-        });
+        const newMetadata = await metadataRepository.create();
+        newMetadata.keyword = "animals";
+        const newCategory = await categoryRepository.create();
+        newCategory.name = "Animals";
+        newCategory.metadata = newMetadata;
+        await categoryRepository.save(newCategory);
 
         // attach metadata to category and category to post and save it
-        before(function() {
-            newPost.category = newCategory;
-            return postRepository.save(newPost);
-        });
+        newPost.category = newCategory;
+        await postRepository.save(newPost);
 
         // load a post
-        before(function() {
-            return postRepository
-                .findOne(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category", metadata: "category.metadata" } } })
-                .then(post => loadedPost = post!);
+        const loadedPost = await postRepository.findOne(1, {
+          join: {
+            alias: "post",
+            leftJoinAndSelect: {
+              category: "post.category",
+              metadata: "category.metadata"
+            }
+          }
         });
 
-        it("should contain attached category and metadata in the category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
-            expect(loadedPost.category.metadata).not.to.be.empty;
-            expect(loadedPost.category.metadataId).not.to.be.empty;
-        });
-
-    });
-
+        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).to.have.property("category");
+        expect(loadedPost).to.have.property("categoryId");
+        expect(loadedPost).to.have.deep.property("category.metadata");
+        expect(loadedPost).to.have.deep.property("category.metadataId");
+      })
+    ));
 });

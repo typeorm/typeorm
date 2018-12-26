@@ -1,5 +1,5 @@
 import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
-import {createConnection, createConnections} from "../../src/index";
+import {createConnections} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 import {DatabaseType} from "../../src/driver/types/DatabaseType";
@@ -158,13 +158,21 @@ export function setupSingleTestingConnection(driverType: DatabaseType, options: 
  */
 export function getTypeOrmConfig(): TestingConnectionOptions[] {
     try {
-
+        let config;
         try {
-            return require(__dirname + "/../../../../ormconfig.json");
-
+          config = require(__dirname + "/../../../../ormconfig.json");
         } catch (err) {
-            return require(__dirname + "/../../ormconfig.json");
+          config = require(__dirname + "/../../ormconfig.json");
         }
+        // environment var override
+        // if CONNECTIONS is present, its values will override ALL skip values
+        config = config.map((entry: TestingConnectionOptions) => {
+          if (process.env.CONNECTIONS) {
+            entry.skip = process.env.CONNECTIONS.split(",").indexOf(entry.type) === -1;
+          }
+          return entry;
+        });
+        return config;
 
     } catch (err) {
         throw new Error(`Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +
@@ -276,22 +284,6 @@ export function closeTestingConnections(connections: Connection[]) {
  */
 export function reloadTestingDatabases(connections: Connection[]) {
     return Promise.all(connections.map(connection => connection.synchronize(true)));
-}
-
-/**
- * Setups connection.
- *
- * @deprecated Old method of creating connection. Don't use it anymore. Use createTestingConnections instead.
- */
-export function setupConnection(callback: (connection: Connection) => any, entities: Function[]) {
-    return function() {
-        return createConnection(setupSingleTestingConnection("mysql", { entities: entities }))
-            .then(connection => {
-                if (callback)
-                    callback(connection);
-                return connection;
-            });
-    };
 }
 
 /**

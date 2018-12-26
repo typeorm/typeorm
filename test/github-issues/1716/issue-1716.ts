@@ -54,9 +54,9 @@ describe("github issues > #1716 send timestamp to database without converting it
         after(() => closeTestingConnections(connections));
 
 
-        it("should persist dates and times correctly", async () => {
+        it("should persist dates and times correctly", () => Promise.all(connections.map(async connection => {
 
-            const manager = connections[0].manager;
+            const manager = connection.manager;
 
 
             await manager.save(PgEntity, {
@@ -107,7 +107,7 @@ describe("github issues > #1716 send timestamp to database without converting it
                 fieldTimestampWithTZ: toISOString("2018-03-07 17:00:00"),
             });
 
-        });
+        })));
 
     });
 
@@ -136,9 +136,9 @@ describe("github issues > #1716 send timestamp to database without converting it
         after(() => closeTestingConnections(connections));
 
 
-        it("should persist dates and times correctly", async () => {
+        it("should persist dates and times correctly", () => Promise.all(connections.map(async connection => {
 
-            const manager = connections[0].manager;
+            const manager = connection.manager;
 
 
             await manager.save(MysqlEntity, {
@@ -177,7 +177,7 @@ describe("github issues > #1716 send timestamp to database without converting it
                 fieldDatetime: toISOString("2018-03-07 17:00:00"),
             });
 
-        });
+        })));
 
     });
 
@@ -206,9 +206,9 @@ describe("github issues > #1716 send timestamp to database without converting it
         after(() => closeTestingConnections(connections));
 
 
-        it("should persist dates and times correctly", async () => {
+        it("should persist dates and times correctly", () => Promise.all(connections.map(async connection => {
 
-            const manager = connections[0].manager;
+            const manager = connection.manager;
 
 
             await manager.save(MariadbEntity, {
@@ -247,7 +247,7 @@ describe("github issues > #1716 send timestamp to database without converting it
                 fieldDatetime: toISOString("2018-03-07 17:00:00"),
             });
 
-        });
+        })));
 
     });
 
@@ -276,9 +276,9 @@ describe("github issues > #1716 send timestamp to database without converting it
         after(() => closeTestingConnections(connections));
 
 
-        it("should persist dates and times correctly", async () => {
+        it("should persist dates and times correctly", () => Promise.all(connections.map(async connection => {
 
-            const manager = connections[0].manager;
+            const manager = connection.manager;
 
 
             await manager.save(MssqlEntity, {
@@ -321,7 +321,7 @@ describe("github issues > #1716 send timestamp to database without converting it
                 fieldDatetimeoffset: toISOString("2018-03-07 17:00:00"),
             });
 
-        });
+        })));
 
     });
 

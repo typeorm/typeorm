@@ -14,11 +14,12 @@ describe("github issues > #1656 Wrong repository order with multiple Transaction
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
         dropSchema: true,
+        enabledDrivers: ["mysql"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should set TransactionRepository arguments in order", () => Promise.all(connections.map(async connection => {
+    it("should set TransactionRepository arguments in order", () => Promise.all(connections.map(async () => {
         const [a, b, c] = await new Controller().t(new A(), new B(), new C());
         expect(a).to.be.eq("a");
         expect(b).to.be.eq("b");

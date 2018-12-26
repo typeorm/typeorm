@@ -7,7 +7,7 @@ import {Guest as GuestV2} from "./entity/v2/Guest";
 import {Comment as CommentV2} from "./entity/v2/Comment";
 import {View} from "./entity/View";
 import {Category} from "./entity/Category";
-import {closeTestingConnections, createTestingConnections, setupSingleTestingConnection} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, setupSingleTestingConnection, getTypeOrmConfig} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Repository} from "../../../src/repository/Repository";
 import {TreeRepository} from "../../../src/repository/TreeRepository";
@@ -22,7 +22,8 @@ import {PromiseUtils} from "../../../src/util/PromiseUtils";
 describe("Connection", () => {
     // const resourceDir = __dirname + "/../../../../../test/functional/connection/";
 
-    describe("before connection is established", function() {
+    if (getTypeOrmConfig().find(entry => entry.type === "mysql" && !entry.skip)) {
+      describe("before connection is established", function() {
 
         let connection: Connection;
         before(async () => {
@@ -80,7 +81,8 @@ describe("Connection", () => {
             return connection.connect().should.be.fulfilled;
         });
 
-    });
+      });
+    }
 
     describe.skip("establishing connection", function() {
         it("should throw DriverOptionNotSetError when extra.socketPath and host is missing", function() {
