@@ -166,13 +166,14 @@ export function getTypeOrmConfig(): TestingConnectionOptions[] {
         }
         // environment var override
         // if CONNECTIONS is present, its values will override ALL skip values
-        config = config.map((entry: TestingConnectionOptions) => {
-          if (process.env.CONNECTIONS) {
-            entry.skip = process.env.CONNECTIONS.split(",").indexOf(entry.type) === -1;
-          }
-          return entry;
-        });
-        return config;
+        if (process.env.CONNECTIONS) {
+          const connections = process.env.CONNECTIONS.split(",");
+          config = config.map((entry: TestingConnectionOptions) => {
+            entry.skip = connections.indexOf(entry.type) === -1;
+            return entry;
+          });
+        }
+      return config;
 
     } catch (err) {
         throw new Error(`Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +
