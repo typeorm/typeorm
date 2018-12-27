@@ -1,6 +1,9 @@
 sudo: required
 language: node_js
-cache: npm
+cache: 
+  directories:
+    - ~/docker-images
+  npm: true
 node_js:
 #  - stable
   - 10
@@ -11,18 +14,26 @@ node_js:
 #  - 0.12
 #  - 0.11
 
+env:
+  - CONNECTIONS=mysql
+  - CONNECTIONS=mariadb
+  - CONNECTIONS=postgres
+
 services:
   - docker
 
 before_script:
   - sudo service mysql stop
   - sudo service postgresql stop
-  - docker-compose up -d
+  - mkdir -p ~/docker-images
+  - [[ -f ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz ]] && docker load -i ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz
+  - docker-compose up -d $CONNECTIONS || true
   - cp ormconfig.travis.json ormconfig.json
+  - docker build -t typeorm-$TRAVIS_NODE_VERSION .
+  - docker save typeorm-$TRAVIS_NODE_VERSION | gzip -c > ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz
 
 script:	
-  - npm run lint	
-  - npm test
+  - docker run --rm -e "CONNECTIONS=mysql" --network="host" typeorm-$TRAVIS_NODE_VERSION npm t
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
