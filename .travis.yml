@@ -1,9 +1,9 @@
 sudo: required
 language: node_js
-cache: 
+cache:
   directories:
-    - $HOME/.npm
     - build
+  npm:
 node_js:
 #  - stable
   - 10
@@ -31,9 +31,6 @@ stages:
   - lint
   - build
   - test
-
-install:
-  - npm ci
 
 before_script:
   - sudo service mysql stop
