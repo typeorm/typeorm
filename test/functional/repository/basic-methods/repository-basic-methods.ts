@@ -43,7 +43,7 @@ describe("repository > basic methods", () => {
         }));
 
     });
-    
+
     describe("hasId", function() {
 
         it("should return true if entity has an id", () => connections.forEach(connection => {
@@ -68,7 +68,7 @@ describe("repository > basic methods", () => {
             userRepository.hasId(userWithId).should.be.equal(true);
 
             const userWithZeroId: User = {
-                id: 1,
+                id: 0,
                 firstName: "Jonh",
                 secondName: "Doe"
             };
@@ -221,7 +221,7 @@ describe("repository > basic methods", () => {
             blog.text = "Blog about good people";
             blog.categories = [category];
             await blogRepository.save(blog);
-            
+
             // and preload it
             const plainBlogWithId = { id: 1 };
             const preloadedBlog = await blogRepository.preload(plainBlogWithId);
@@ -246,7 +246,7 @@ describe("repository > basic methods", () => {
             blog.text = "Blog about good people";
             blog.categories = [category];
             await blogRepository.save(blog);
-            
+
             // and preload it
             const plainBlogWithId = { id: 1, categories: [{ id: 1 }] };
             const preloadedBlog = await blogRepository.preload(plainBlogWithId);
@@ -348,7 +348,7 @@ describe("repository > basic methods", () => {
             const saved = await postRepository.save(dbPost);
 
             saved.should.be.instanceOf(Post);
-            
+
             saved.id!.should.be.equal(1);
             saved.title.should.be.equal("New title");
             saved.dateAdded.should.be.instanceof(Date);
