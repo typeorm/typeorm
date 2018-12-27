@@ -26,7 +26,7 @@ before_script:
   - sudo service mysql stop
   - sudo service postgresql stop
   - mkdir -p ~/docker-images
-  - [[ -f ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz ]] && docker load -i ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz
+  - docker load -i ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz || true
   - docker-compose up -d $CONNECTIONS || true
   - cp ormconfig.travis.json ormconfig.json
   - docker build -t typeorm-$TRAVIS_NODE_VERSION .
