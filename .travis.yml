@@ -24,6 +24,10 @@ env:
   # - CONNECTIONS=oracle
   - CONNECTIONS=mongodb
 
+stages:
+  - lint
+  - test
+
 before_script:
   - sudo service mysql stop
   - sudo service postgresql stop
@@ -35,6 +39,10 @@ jobs:
     - stage: lint
       env:
         - CONNECTIONS=none
+      node_js:
+        - 10
+        - 9
+        - 8
       script:
         - npm run lint
 
