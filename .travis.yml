@@ -41,7 +41,19 @@ jobs:
         - CONNECTIONS=none
       node_js:
         - 10
+      script:
+        - npm run lint
+    - stage: lint
+      env:
+        - CONNECTIONS=none
+      node_js:
         - 9
+      script:
+        - npm run lint
+    - stage: lint
+      env:
+        - CONNECTIONS=none
+      node_js:
         - 8
       script:
         - npm run lint
