@@ -1,39 +1,56 @@
 sudo: required
-language: node_js
+language: go
 cache: 
   directories:
     - ~/docker-images
   npm: true
-node_js:
-#  - stable
-  - 10
-  - 9
-  - 8
-#  - 6
-#  - 4
-#  - 0.12
-#  - 0.11
+go:
+  - 1.7
 
 env:
-  - CONNECTIONS=mysql
-  - CONNECTIONS=mariadb
-  - CONNECTIONS=postgres
+  - CONNECTIONS=mysql NODE_VERSION=10
+  - CONNECTIONS=mysql NODE_VERSION=9
+  - CONNECTIONS=mysql NODE_VERSION=8
+  - CONNECTIONS=mariadb NODE_VERSION=10
+  - CONNECTIONS=mariadb NODE_VERSION=9
+  - CONNECTIONS=mariadb NODE_VERSION=8
+  - CONNECTIONS=postgres NODE_VERSION=10
+  - CONNECTIONS=postgres NODE_VERSION=9
+  - CONNECTIONS=postgres NODE_VERSION=8
 
 services:
   - docker
 
-before_script:
+before_install:
+  - go get github.com/tonistiigi/buildcache/cmd/buildcache
+
+install:
   - sudo service mysql stop
   - sudo service postgresql stop
   - mkdir -p ~/docker-images
-  - docker load -i ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz || true
-  - docker-compose up -d $CONNECTIONS || true
+  - if [ -e ~/docker-images/typeorm-$NODE_VERSION.tar.gz ]; then
+      docker load -i ~/docker-images/typeorm-$NODE_VERSION.tar.gz;
+    fi
+  - if [ -e ~/docker-images/latest_cache.tar.gz ]; then
+      docker load -i ~/docker-images/latest_cache.tar.gz;
+    fi
   - cp ormconfig.travis.json ormconfig.json
-  - docker build --build-arg NODE_VERSION=$TRAVIS_NODE_VERSION -t typeorm-$TRAVIS_NODE_VERSION .
-  - docker save typeorm-$TRAVIS_NODE_VERSION | gzip -c > ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz
+  - docker build --build-arg NODE_VERSION=$NODE_VERSION -t typeorm-$NODE_VERSION .
+  - docker save typeorm-$NODE_VERSION | gzip > ~/docker-images/typeorm-$NODE_VERSION.tar.gz
+  - `which buildcache` save -o ~/docker-images/latest_cache.tar.gz typeorm-$NODE_VERSION
+
+# before_script:
+#   - sudo service mysql stop
+#   - sudo service postgresql stop
+#   - mkdir -p ~/docker-images
+#   - docker load -i ~/docker-images/typeorm-$NODE_VERSION.tgz || true
+#   - docker-compose up -d $CONNECTIONS || true
+#   - cp ormconfig.travis.json ormconfig.json
+#   - docker build --build-arg NODE_VERSION=$NODE_VERSION -t typeorm-$NODE_VERSION .
+#   - docker save typeorm-$NODE_VERSION | gzip -c > ~/docker-images/typeorm-$NODE_VERSION.tgz
 
 script:	
-  - docker run --rm -e "CONNECTIONS=$CONNECTIONS" --network="host" typeorm-$TRAVIS_NODE_VERSION npm t
+  - docker run --rm -e "CONNECTIONS=$CONNECTIONS" --network="host" typeorm-$NODE_VERSION npm t
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
