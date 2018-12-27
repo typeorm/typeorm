@@ -99,8 +99,10 @@
     ]
   },
   "scripts": {
+    "build": "rimraf ./build && tsc",
     "test-ci": "gulp ci-tests",
-    "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
+    "test": "npm run build && npm run test-only",
+    "test-only": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
     "compile": "rimraf ./build && tsc",
     "package": "gulp package",
     "lint": "tslint -p ."

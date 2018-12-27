@@ -26,6 +26,7 @@ env:
 
 stages:
   - lint
+  - build
   - test
 
 before_script:
@@ -33,6 +34,9 @@ before_script:
   - sudo service postgresql stop
   - docker-compose up -d $CONNECTIONS || true
   - cp ormconfig.travis.json ormconfig.json
+
+script:
+  - npm run test-only
 
 jobs:
   include:
@@ -57,6 +61,27 @@ jobs:
         - 8
       script:
         - npm run lint
+    - stage: build
+      env:
+        - CONNECTIONS=none
+      node_js:
+        - 10
+      script:
+        - npm run build
+    - stage: build
+      env:
+        - CONNECTIONS=none
+      node_js:
+        - 9
+      script:
+        - npm run build
+    - stage: build
+      env:
+        - CONNECTIONS=none
+      node_js:
+        - 8
+      script:
+        - npm run build
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
