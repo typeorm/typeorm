@@ -14,8 +14,15 @@ node_js:
 services:
   - docker
 
-script:
-  - npm run lint
+env:
+  - CONNECTIONS=mysql
+  - CONNECTIONS=mariadb
+  - CONNECTIONS=sqlite
+  - CONNECTIONS=postgres
+  - CONNECTIONS=sqljs
+  # - CONNECTIONS=mssql
+  # - CONNECTIONS=oracle
+  - CONNECTIONS=mongodb
 
 before_script:
   - sudo service mysql stop
@@ -25,18 +32,11 @@ before_script:
 
 jobs:
   include:
-    - env:
-        - CONNECTIONS=mysql
-    - env:
-        - CONNECTIONS=mariadb
-    - env:
-        - CONNECTIONS=sqlite
-    - env:
-        - CONNECTIONS=postgres
-    - env:
-        - CONNECTIONS=sqljs
-    - env:
-        - CONNECTIONS=mongodb
+    - stage: lint
+      env:
+        - CONNECTIONS=none
+      script:
+        - npm run lint
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
