@@ -29,7 +29,7 @@ before_script:
   - docker load -i ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz || true
   - docker-compose up -d $CONNECTIONS || true
   - cp ormconfig.travis.json ormconfig.json
-  - docker build -t typeorm-$TRAVIS_NODE_VERSION .
+  - docker build --build-arg NODE_VERSION=$TRAVIS_NODE_VERSION -t typeorm-$TRAVIS_NODE_VERSION .
   - docker save typeorm-$TRAVIS_NODE_VERSION | gzip -c > ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz
 
 script:	
