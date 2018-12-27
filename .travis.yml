@@ -33,7 +33,7 @@ before_script:
   - docker save typeorm-$TRAVIS_NODE_VERSION | gzip -c > ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz
 
 script:	
-  - docker run --rm -e "CONNECTIONS=mysql" --network="host" typeorm-$TRAVIS_NODE_VERSION npm t
+  - docker run --rm -e "CONNECTIONS=$CONNECTIONS" --network="host" typeorm-$TRAVIS_NODE_VERSION npm t
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
