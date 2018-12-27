@@ -57,10 +57,14 @@ jobs:
         - CONNECTIONS=none
       node_js:
         - 9
+      script:
+        - npm run lint
     - env:
         - CONNECTIONS=none
       node_js:
         - 8
+      script:
+        - npm run lint
     - stage: build
       env:
         - CONNECTIONS=none
@@ -72,7 +76,11 @@ jobs:
         - CONNECTIONS=none
       node_js:
         - 9
+      script:
+        - npm run build
     - env:
         - CONNECTIONS=none
       node_js:
         - 8
+      script:
+        - npm run build
