@@ -32,7 +32,7 @@ install:
       docker load -i ~/docker-images/typeorm-$NODE_VERSION.tar.gz;
     fi
   - if [ -e ~/docker-images/latest_cache.tar.gz ]; then
-      sudo docker load -i ~/docker-images/latest_cache.tar.gz;
+      docker load -i ~/docker-images/latest_cache.tar.gz;
     fi
   - cp ormconfig.travis.json ormconfig.json
   - docker-compose up -d $CONNECTIONS || true
