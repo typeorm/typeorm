@@ -1,6 +1,9 @@
 sudo: required
 language: node_js
-cache: npm
+cache: 
+  directories:
+    - $HOME/.npm
+    - build
 node_js:
 #  - stable
   - 10
@@ -29,6 +32,9 @@ stages:
   - build
   - test
 
+install:
+  - npm ci
+
 before_script:
   - sudo service mysql stop
   - sudo service postgresql stop
@@ -37,6 +43,9 @@ before_script:
 
 script:
   - npm run test-only
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 
 jobs:
   include:
@@ -47,20 +56,10 @@ jobs:
         - 10
       script:
         - npm run lint
-    - stage: lint
-      env:
-        - CONNECTIONS=none
-      node_js:
+    - node_js:
         - 9
-      script:
-        - npm run lint
-    - stage: lint
-      env:
-        - CONNECTIONS=none
-      node_js:
+    - node_js:
         - 8
-      script:
-        - npm run lint
     - stage: build
       env:
         - CONNECTIONS=none
@@ -68,20 +67,7 @@ jobs:
         - 10
       script:
         - npm run build
-    - stage: build
-      env:
-        - CONNECTIONS=none
-      node_js:
+    - node_js:
         - 9
-      script:
-        - npm run build
-    - stage: build
-      env:
-        - CONNECTIONS=none
-      node_js:
+    - node_js:
         - 8
-      script:
-        - npm run build
-
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
