@@ -37,7 +37,7 @@ install:
   - cp ormconfig.travis.json ormconfig.json
   - docker build --build-arg NODE_VERSION=$NODE_VERSION -t typeorm-$NODE_VERSION .
   - docker save typeorm-$NODE_VERSION | gzip > ~/docker-images/typeorm-$NODE_VERSION.tar.gz
-  - `which buildcache` save -o ~/docker-images/latest_cache.tar.gz typeorm-$NODE_VERSION
+  - sudo `which buildcache` save -o ~/docker-images/latest_cache.tar.gz typeorm-$NODE_VERSION
 
 # before_script:
 #   - sudo service mysql stop
