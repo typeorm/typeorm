@@ -12,12 +12,14 @@ node_js:
 cache: 
   directories:
     - ~/docker-images
-  npm: true
 
 env:
   - CONNECTIONS=mysql
   - CONNECTIONS=mariadb
+  - CONNECTIONS=sqlite
   - CONNECTIONS=postgres
+  - CONNECTIONS=mongodb
+  - CONNECTIONS=sqljs
 
 services:
   - docker
