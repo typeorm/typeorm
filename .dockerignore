@@ -1,3 +1,4 @@
+.travis.yml
 build
 node_modules
 Dockerfile
