@@ -2,8 +2,9 @@ sudo: required
 language: node_js
 node_js:
 #  - stable
+  - 11
   - 10
-  - 9
+  # - 9
   - 8
 #  - 6
 #  - 4
