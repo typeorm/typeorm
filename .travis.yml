@@ -13,14 +13,6 @@ cache:
   directories:
     - ~/docker-images
 
-env:
-  - CONNECTIONS=mysql
-  - CONNECTIONS=mariadb
-  - CONNECTIONS=sqlite
-  - CONNECTIONS=postgres
-  - CONNECTIONS=mongodb
-  - CONNECTIONS=sqljs
-
 services:
   - docker
 
@@ -32,12 +24,12 @@ install:
       docker load -i ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz;
     fi
   - cp ormconfig.travis.json ormconfig.json
-  - docker-compose up -d $CONNECTIONS || true
+  - docker-compose up -d
   - docker build --build-arg NODE_VERSION=$TRAVIS_NODE_VERSION --cache-from=typeorm-$TRAVIS_NODE_VERSION -t typeorm-$TRAVIS_NODE_VERSION .
   - docker save typeorm-$TRAVIS_NODE_VERSION | gzip > ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz
 
 script:	
-  - docker run --rm -e "CONNECTIONS=$CONNECTIONS" --network="host" typeorm-$TRAVIS_NODE_VERSION npm t
+  - docker run --rm --network="host" typeorm-$TRAVIS_NODE_VERSION npm t
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
