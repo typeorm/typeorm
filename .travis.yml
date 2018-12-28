@@ -33,7 +33,6 @@ install:
   - docker-compose up -d $CONNECTIONS || true
   - docker build --build-arg NODE_VERSION=$TRAVIS_NODE_VERSION --cache-from=typeorm-$TRAVIS_NODE_VERSION -t typeorm-$TRAVIS_NODE_VERSION .
   - docker save typeorm-$TRAVIS_NODE_VERSION | gzip > ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz
-  - docker export 
 
 script:	
   - docker run --rm -e "CONNECTIONS=$CONNECTIONS" --network="host" typeorm-$TRAVIS_NODE_VERSION npm t
