@@ -13,7 +13,8 @@ const mocha = new Mocha({
   timeout: 60000
 });
 
-const connections = process.env.CONNECTIONS.split(",") || [
+const connections = (process.env.CONNECTIONS &&
+  process.env.CONNECTIONS.split(",")) || [
   "mysql",
   "mariadb",
   "sqlite",
