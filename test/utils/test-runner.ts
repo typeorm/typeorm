@@ -13,7 +13,7 @@ const mocha = new Mocha({
   timeout: 60000
 });
 
-const connections = [
+const connections = process.env.CONNECTIONS.split(",") || [
   "mysql",
   "mariadb",
   "sqlite",
@@ -40,7 +40,11 @@ glob("./build/compiled/test/**/*.js", (err, files) => {
     });
   } else {
     mocha.run(function(failures) {
-      console.log(`Completed test run for ${process.env.CONNECTIONS}: ${failures ? "FAILURE" : "SUCCESS"}`);
+      console.log(
+        `Completed test run for ${process.env.CONNECTIONS}: ${
+          failures ? "FAILURE" : "SUCCESS"
+        }`
+      );
       process.exit(failures ? 1 : 0);
     });
   }
