@@ -1,3 +1,4 @@
+import * as path from "path";
 import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
 import {createConnections} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
@@ -160,17 +161,16 @@ export function getTypeOrmConfig(): TestingConnectionOptions[] {
     try {
         let config;
         try {
-          config = require(__dirname + "/../../../../ormconfig.json");
+          config = require(path.join(__dirname, "/../../../../ormconfig.json"));
         } catch (err) {
-          config = require(__dirname + "/../../ormconfig.json");
+          config = require(path.join(__dirname, "/../../ormconfig.json"));
         }
         // environment var override
         // if CONNECTIONS is present, its values will override ALL skip values
         if (process.env.CONNECTIONS) {
           const connections = process.env.CONNECTIONS.split(",");
           config = config.map((entry: TestingConnectionOptions) => {
-            entry.skip = connections.indexOf(entry.type) === -1;
-            return entry;
+            return {...entry, skip: connections.indexOf(entry.type) === -1};
           });
         }
       return config;
