@@ -23,6 +23,7 @@
         "tmp",
         "temp",
         "build",
-        "node_modules"
+        "node_modules",
+        "test/utils/test-runner.ts"
     ]
 }

@@ -99,9 +99,8 @@
     ]
   },
   "scripts": {
-    "build": "rimraf ./build && tsc",
     "test-ci": "gulp ci-tests",
-    "test": "npm run build && node mocha.js",
+    "test": "npm run compile && ts-node test/utils/test-runner.ts",
     "compile": "rimraf ./build && tsc",
     "package": "gulp package",
     "lint": "tslint -p ."
