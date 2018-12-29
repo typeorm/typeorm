@@ -14,10 +14,7 @@ before_script:
   - sudo service postgresql stop
   - cp ormconfig.travis.json ormconfig.json
   - docker-compose up -d & npm install sqlite3 --build-from-source
-
-script:
   - npm run lint & npm run compile
-  - npm test
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
