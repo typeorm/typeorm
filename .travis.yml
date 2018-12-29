@@ -1,36 +1,24 @@
 sudo: required
 language: node_js
 node_js:
-#  - stable
   - 11
   - 10
-  # - 9
   - 8
-#  - 6
-#  - 4
-#  - 0.12
-#  - 0.11
-cache: 
-  directories:
-    - ~/docker-images
+cache: npm
 
 services:
   - docker
 
-install:
+before_script:
   - sudo service mysql stop
   - sudo service postgresql stop
-  - mkdir -p ~/docker-images
-  - if [ -e ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz ]; then
-      docker load -i ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz;
-    fi
   - cp ormconfig.travis.json ormconfig.json
   - docker-compose up -d
-  - docker build --build-arg NODE_VERSION=$TRAVIS_NODE_VERSION --cache-from=typeorm-$TRAVIS_NODE_VERSION -t typeorm-$TRAVIS_NODE_VERSION .
-  - docker save typeorm-$TRAVIS_NODE_VERSION | gzip > ~/docker-images/typeorm-$TRAVIS_NODE_VERSION.tgz
+  - npm install sqlite3 --build-from-source
 
-script:	
-  - docker run --rm --network="host" typeorm-$TRAVIS_NODE_VERSION npm t
+script:
+  - npm run lint
+  - npm test
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
