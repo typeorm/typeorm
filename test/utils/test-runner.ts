@@ -40,6 +40,7 @@ glob("./build/compiled/test/**/*.js", (err, files) => {
     });
   } else {
     mocha.run(function(failures) {
+      console.log(`Completed test run for ${process.env.CONNECTIONS}: ${failures ? "FAILURE" : "SUCCESS"}`);
       process.exit(failures ? 1 : 0);
     });
   }
