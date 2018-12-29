@@ -100,7 +100,7 @@
   },
   "scripts": {
     "test-ci": "gulp ci-tests",
-    "test": "ts-node test/utils/test-runner.ts",
+    "test": "npm run compile && ts-node test/utils/test-runner.ts",
     "compile": "rimraf ./build && tsc",
     "package": "gulp package",
     "lint": "tslint -p ."
