@@ -10,9 +10,9 @@ import {PostAuthor} from "../../sample/sample3-many-to-one/entity/PostAuthor";
 import {PostMetadata} from "../../sample/sample3-many-to-one/entity/PostMetadata";
 import {PostImage} from "../../sample/sample3-many-to-one/entity/PostImage";
 import {PostInformation} from "../../sample/sample3-many-to-one/entity/PostInformation";
-import {setupSingleTestingConnection, getTypeOrmConfig} from "../utils/test-utils";
+import {setupSingleTestingConnection, shouldRunTest} from "../utils/test-utils";
 
-if (getTypeOrmConfig().find(entry => entry.type === "mysql" && !entry.skip)) {
+if (shouldRunTest("mysql")) {
   describe("many-to-one", function() {
 
       // -------------------------------------------------------------------------

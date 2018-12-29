@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {expect} from "chai";
-import {setupSingleTestingConnection, getTypeOrmConfig} from "../../utils/test-utils";
+import {setupSingleTestingConnection, shouldRunTest} from "../../utils/test-utils";
 import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {ConnectionManager} from "../../../src/connection/ConnectionManager";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
@@ -8,7 +8,7 @@ import {PrimaryGeneratedColumn} from "../../../src/decorator/columns/PrimaryGene
 import {Column} from "../../../src/decorator/columns/Column";
 import {Entity} from "../../../src/decorator/entity/Entity";
 
-if (getTypeOrmConfig().find(entry => entry.type === "mysql" && !entry.skip)) {
+if (shouldRunTest("mysql")) {
   describe("ConnectionManager", () => {
 
       @Entity()

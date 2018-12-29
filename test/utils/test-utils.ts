@@ -183,6 +183,13 @@ export function getTypeOrmConfig(): TestingConnectionOptions[] {
 }
 
 /**
+ * Tests to see if the connection is enabled for that db.
+ */
+export function shouldRunTest(connection: string): boolean {
+  return !!getTypeOrmConfig().find(entry => entry.type === connection && !entry.skip);
+}
+
+/**
  * Creates a testing connections options based on the configuration in the ormconfig.json
  * and given options that can override some of its configuration for the test-specific use case.
  */

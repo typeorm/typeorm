@@ -8,9 +8,9 @@ import {Post} from "../../sample/sample4-many-to-many/entity/Post";
 import {PostCategory} from "../../sample/sample4-many-to-many/entity/PostCategory";
 import {PostMetadata} from "../../sample/sample4-many-to-many/entity/PostMetadata";
 import {PostImage} from "../../sample/sample4-many-to-many/entity/PostImage";
-import {setupSingleTestingConnection, getTypeOrmConfig} from "../utils/test-utils";
+import {setupSingleTestingConnection, shouldRunTest} from "../utils/test-utils";
 
-if (getTypeOrmConfig().find(entry => entry.type === "mysql" && !entry.skip)) {
+if (shouldRunTest("mysql")) {
   describe("many-to-many", function() {
 
       // -------------------------------------------------------------------------

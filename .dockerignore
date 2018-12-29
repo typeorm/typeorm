@@ -1,5 +1,0 @@
-.travis.yml
-build
-node_modules
-Dockerfile
-docker-compose.yml
