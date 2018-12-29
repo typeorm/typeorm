@@ -9,7 +9,7 @@ const Mocha = require('mocha');
 const mocha = new Mocha({
     bail: true,
     recursive: true,
-    reporter: 'dot',
+    reporter: 'min',
     timeout: 60000,
 });
 
