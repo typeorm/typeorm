@@ -39,6 +39,14 @@ glob("./build/compiled/test/**/*.js", (err, files) => {
     connections.forEach(connection => {
       cluster.fork({ CONNECTIONS: connection });
     });
+    cluster.on("exit", (worker, code) => {
+      if (code !== 0) {
+        for (let id in cluster.workers) {
+          process.kill(cluster.workers[id].process.pid);
+        }
+        process.exit(code);
+      }
+    });
   } else {
     mocha.run(function(failures) {
       console.log(
