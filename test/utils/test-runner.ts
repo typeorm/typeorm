@@ -1,3 +1,7 @@
+/**
+ * Execute mocha tests programmatically to take advantage of clustering to run tests in parallel.
+ */
+
 import "reflect-metadata";
 import "source-map-support/register";
 
@@ -6,13 +10,13 @@ import * as cluster from "cluster";
 import * as glob from "glob";
 import * as Mocha from "mocha";
 
-// Instantiate a Mocha instance.
 const mocha = new Mocha({
   bail: true,
   reporter: "min",
   timeout: 60000
 });
 
+// Take environment CONNECTIONS variable or just use them all.
 const connections = (process.env.CONNECTIONS &&
   process.env.CONNECTIONS.split(",")) || [
   "mysql",
@@ -27,6 +31,7 @@ chai.should();
 chai.use(require("sinon-chai"));
 chai.use(require("chai-as-promised"));
 
+// Depends on `npm run compile` having executed.
 glob("./build/compiled/test/**/*.js", (err, files) => {
   if (err) {
     console.error(err);
@@ -36,9 +41,11 @@ glob("./build/compiled/test/**/*.js", (err, files) => {
     mocha.addFile(file);
   });
   if (cluster.isMaster) {
+    // Create a fork for each connection.
     connections.forEach(connection => {
       cluster.fork({ CONNECTIONS: connection });
     });
+    // Fail fast - kill all workers and exit on error
     cluster.on("exit", (worker, code) => {
       if (code !== 0) {
         for (let id in cluster.workers) {
