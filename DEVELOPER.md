@@ -143,6 +143,10 @@ All the tests are executed on our Continuous Integration infrastructure and a PR
 >
 >This is useful when trying to get a specific test or subset of tests to pass.
 
+## CONNECTIONS environment variable
+
+Setting CONNECTIONS as an environment variable will override your ormconfig.json `skip` property. This is a quick and easy way to limit the scope of your test running. For example, if you wanted to run only postgres tests, you could run `CONNECTIONS=postgres npm test`. Separate by commas for multiple: `CONNECTIONS=mariadb,mongodb npm test`.
+
 ## Using Docker
 
 To run your tests you need dbms installed on your machine. Alternatively, you can use docker
