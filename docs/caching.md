@@ -97,7 +97,7 @@ const users = await connection
     .getRepository(User)
     .find({
         where: { isAdmin: true },
-        cache: { 
+        cache: {
             id: "users_admins",
             milliseconds: 25000
         }
@@ -113,8 +113,8 @@ await connection.queryResultCache.remove(["users_admins"]);
 
 
 By default, TypeORM uses a separate table called `query-result-cache` and stores all queries and results there.
-If storing cache in a single database table is not effective for you, 
-you can change the cache type to "redis" and TypeORM will store all cached records in redis instead.
+If storing cache in a single database table is not effective for you,
+you can change the cache type to "redis" or "ioredis" and TypeORM will store all cached records in redis instead.
 Example:
 
 ```typescript
@@ -133,6 +133,6 @@ Example:
 }
 ```
 
-"options" are [redis specific options](https://github.com/NodeRedis/node_redis#options-object-properties). 
+"options" can be [node_redis specific options](https://github.com/NodeRedis/node_redis#options-object-properties) or [ioredis specific options](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options) depending on what type you're using.
 
 You can use `typeorm cache:clear` to clear everything stored in the cache.

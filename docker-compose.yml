@@ -15,7 +15,7 @@ services:
 
   # mysql
   mysql:
-    image: "mysql:5.7.10"
+    image: "mysql:5.7.24"
     container_name: "typeorm-mysql"
     ports:
       - "3306:3306"
@@ -27,7 +27,7 @@ services:
 
   # mariadb
   mariadb:
-    image: "mariadb:10.1.16"
+    image: "mariadb:10.1.37"
     container_name: "typeorm-mariadb"
     ports:
       - "3307:3306"
@@ -63,7 +63,7 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:3.4.1"
+    image: "mongo:3.4.18"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"

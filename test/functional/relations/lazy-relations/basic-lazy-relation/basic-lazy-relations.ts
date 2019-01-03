@@ -361,4 +361,32 @@ describe("basic-lazy-relations", () => {
         const loadedPost = await loadedCategory!.onePost;
         loadedPost.title.should.be.equal("post with great category");
     })));
+
+    it("should not enumerate private resolved promises", () => Promise.all(connections.map(async connection => {
+        const postRepository = connection.getRepository(Post);
+        const categoryRepository = connection.getRepository(Category);
+
+        const savedCategory = new Category();
+        savedCategory.name = "animals";
+
+        await categoryRepository.save(savedCategory);
+
+        const savedPost = new Post();
+        savedPost.title = "Hello post";
+        savedPost.text = "This is post about post";
+        savedPost.categories = Promise.resolve([ savedCategory ]);
+
+        await postRepository.save(savedPost);
+
+        const post = (await postRepository.findOne(1))!;
+        post.title.should.be.equal("Hello post");
+
+        const categories = await post.categories;
+
+        post.propertyIsEnumerable("__categories__").should.be.equal(false);
+        post.propertyIsEnumerable("__promise_categories__").should.be.equal(false);
+        post.propertyIsEnumerable("__has_categories__").should.be.equal(false);
+
+        categories.length.should.be.equal(1);
+    })));
 });

@@ -80,6 +80,12 @@ export class PlatformTools {
                     return require("redis");
 
                 /**
+                 * ioredis
+                 */
+                case "ioredis":
+                    return require("ioredis");
+
+                /**
                 * sqlite
                 */
                 case "sqlite3":

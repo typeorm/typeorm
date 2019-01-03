@@ -1,0 +1,44 @@
+# Javascript Node CircleCI 2.0 configuration file
+# Check https://circleci.com/docs/2.0/language-javascript/ for more details
+version: 2
+jobs:
+  build:
+    docker:
+      # specify pre-built docker images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      - image: circleci/node:10.15.0
+      - image: circleci/mysql:5.7.24
+      # - image: circleci/mariadb:10.1.37
+      - image: circleci/postgres:9.6.11-postgis
+      - image: circleci/mongo:3.4.18
+
+    working_directory: ~/typeorm
+
+    steps:
+      - checkout
+      - run: sudo npm install -g npm@latest
+      - run: cp ormconfig.circleci.json ormconfig.json
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+
+      - run: npm install
+      - run: npm install sqlite3 --build-from-source
+
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+
+      # - run: docker-compose up -d
+        
+      # run tests
+      - run: npm run lint
+      - run: npm test
+
+      # run code coverage
+      - run: curl -s https://codecov.io/bash

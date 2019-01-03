@@ -23,11 +23,17 @@ export class RedisQueryResultCache implements QueryResultCache {
      */
     protected client: any;
 
+    /**
+     * Type of the Redis Client (redis or ioredis).
+     */
+    protected clientType: "redis" | "ioredis";
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection) {
+    constructor(protected connection: Connection, clientType: "redis" | "ioredis") {
+        this.clientType = clientType;
         this.redis = this.loadRedis();
     }
 
@@ -38,17 +44,28 @@ export class RedisQueryResultCache implements QueryResultCache {
     /**
      * Creates a connection with given cache provider.
      */
+
+
     async connect(): Promise<void> {
         const cacheOptions: any = this.connection.options.cache;
-        if (cacheOptions && cacheOptions.options) {
-            this.client = this.redis.createClient(cacheOptions.options);
-        } else {
-            this.client = this.redis.createClient();
+        if (this.clientType === "redis") {
+            if (cacheOptions && cacheOptions.options) {
+                this.client = this.redis.createClient(cacheOptions.options);
+            } else {
+                this.client = this.redis.createClient();
+            }
+        } else if (this.clientType === "ioredis") {
+            if (cacheOptions && cacheOptions.options) {
+                this.client = new this.redis(cacheOptions.options);
+            } else {
+                this.client = new this.redis();
+            }
+
         }
     }
 
     /**
-     * Creates a connection with given cache provider.
+     * Disconnects the connection
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
@@ -161,10 +178,10 @@ export class RedisQueryResultCache implements QueryResultCache {
      */
     protected loadRedis(): any {
         try {
-            return PlatformTools.load("redis");
+            return PlatformTools.load(this.clientType);
 
         } catch (e) {
-            throw new Error(`Cannot use cache because redis is not installed. Please run "npm i redis --save".`);
+            throw new Error(`Cannot use cache because ${this.clientType} is not installed. Please run "npm i ${this.clientType} --save".`);
         }
     }
 

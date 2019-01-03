@@ -1,10 +1,11 @@
 import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
+import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 
-describe("github issues > #3352 sync drops text column", () => {
+describe("github issues > #3350 ER_DUP_FIELDNAME with simple find", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -15,17 +16,19 @@ describe("github issues > #3352 sync drops text column", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should not drop text column", () => Promise.all(connections.map(async function(connection) {
+    it("should find without errors", () => Promise.all(connections.map(async function(connection) {
 
         const post = new Post();
-        post.id = 1;
-        post.text = "hello world";
+        post.category = new Category();
+        post.category.name = "new category";
+        await connection.manager.save(post.category);
         await connection.manager.save(post);
 
-        await connection.synchronize();
-
-        const loadedPost = await connection.manager.find(Post, { text: "hello world" });
+        const loadedPost = await connection
+            .getRepository(Post)
+            .findOne(1, { relations: ["category"] });
         expect(loadedPost).to.be.not.empty;
+        expect(loadedPost!.category).to.be.not.empty;
 
     })));
 
