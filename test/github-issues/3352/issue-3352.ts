@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 
-describe.only("github issues > #3352 ", () => {
+describe("github issues > #3352 ", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
