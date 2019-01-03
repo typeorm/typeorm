@@ -1,22 +1,22 @@
-import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
-import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {OracleQueryRunner} from "./OracleQueryRunner";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DateUtils} from "../../util/DateUtils";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
-import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
-import {OracleConnectionOptions} from "./OracleConnectionOptions";
-import {MappedColumnTypes} from "../types/MappedColumnTypes";
-import {ColumnType} from "../types/ColumnTypes";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/table/TableColumn";
-import {OracleConnectionCredentialsOptions} from "./OracleConnectionCredentialsOptions";
-import {DriverUtils} from "../DriverUtils";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {OrmUtils} from "../../util/OrmUtils";
+import { Driver } from "../Driver";
+import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError";
+import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
+import { OracleQueryRunner } from "./OracleQueryRunner";
+import { ObjectLiteral } from "../../common/ObjectLiteral";
+import { ColumnMetadata } from "../../metadata/ColumnMetadata";
+import { DateUtils } from "../../util/DateUtils";
+import { PlatformTools } from "../../platform/PlatformTools";
+import { Connection } from "../../connection/Connection";
+import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder";
+import { OracleConnectionOptions } from "./OracleConnectionOptions";
+import { MappedColumnTypes } from "../types/MappedColumnTypes";
+import { ColumnType } from "../types/ColumnTypes";
+import { DataTypeDefaults } from "../types/DataTypeDefaults";
+import { TableColumn } from "../../schema-builder/table/TableColumn";
+import { OracleConnectionCredentialsOptions } from "./OracleConnectionCredentialsOptions";
+import { DriverUtils } from "../DriverUtils";
+import { EntityMetadata } from "../../metadata/EntityMetadata";
+import { OrmUtils } from "../../util/OrmUtils";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -219,8 +219,8 @@ export class OracleDriver implements Driver {
      * either create a pool and create connection when needed.
      */
     async connect(): Promise<void> {
-        this.oracle.fetchAsString = [ this.oracle.CLOB ];
-        this.oracle.fetchAsBuffer = [ this.oracle.BLOB ];
+        this.oracle.fetchAsString = [this.oracle.CLOB];
+        this.oracle.fetchAsBuffer = [this.oracle.BLOB];
         if (this.options.replication) {
             this.slaves = await Promise.all(this.options.replication.slaves.map(slave => {
                 return this.createPool(this.options, slave);
@@ -264,7 +264,7 @@ export class OracleDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: "master" | "slave" = "master") {
         return new OracleQueryRunner(this, mode);
     }
 
@@ -402,7 +402,7 @@ export class OracleDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number|string, precision?: number|null, scale?: number, isArray?: boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number | null, scale?: number, isArray?: boolean }): string {
         if (column.type === Number || column.type === Boolean || column.type === "numeric"
             || column.type === "dec" || column.type === "decimal" || column.type === "int"
             || column.type === "integer" || column.type === "smallint") {
@@ -421,7 +421,7 @@ export class OracleDriver implements Driver {
             return "blob";
 
         } else if (column.type === "uuid") {
-            return "varchar2";
+            return "char";
 
         } else if (column.type === "simple-array") {
             return "clob";
@@ -467,7 +467,7 @@ export class OracleDriver implements Driver {
     /**
      * Calculates column length taking into account the default length values.
      */
-    getColumnLength(column: ColumnMetadata|TableColumn): string {
+    getColumnLength(column: ColumnMetadata | TableColumn): string {
         if (column.length)
             return column.length.toString();
 
@@ -659,7 +659,7 @@ export class OracleDriver implements Driver {
     protected async createPool(options: OracleConnectionOptions, credentials: OracleConnectionCredentialsOptions): Promise<any> {
 
         credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
-       
+
         // build connection options for the driver
         const connectionOptions = Object.assign({}, {
             user: credentials.username,
