@@ -14,7 +14,7 @@ import {argv} from "yargs";
 const mocha = new Mocha({
   bail: true,
   grep: new RegExp(argv.grep),
-  reporter: "min",
+  reporter: "list",
   timeout: 60000
 });
 
