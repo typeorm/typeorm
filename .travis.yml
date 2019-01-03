@@ -19,6 +19,7 @@ before_script:
 script:
   - npm run lint
   - npm test
+  - npm run compile
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

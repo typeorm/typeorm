@@ -12,7 +12,7 @@ export class Post {
     @Column()
     title: string;
 
-    @Column({ nullable: false })
+    @Column("int", { nullable: false })
     status: PostStatus;
 
 }

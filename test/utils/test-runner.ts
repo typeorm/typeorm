@@ -9,9 +9,11 @@ import * as chai from "chai";
 import * as cluster from "cluster";
 import * as glob from "glob";
 import * as Mocha from "mocha";
+import {argv} from "yargs";
 
 const mocha = new Mocha({
   bail: true,
+  grep: new RegExp(argv.grep),
   reporter: "min",
   timeout: 60000
 });
@@ -32,7 +34,7 @@ chai.use(require("sinon-chai"));
 chai.use(require("chai-as-promised"));
 
 // Depends on `npm run compile` having executed.
-glob("./build/compiled/test/**/*.js", (err, files) => {
+glob("./test/**/*.ts", (err, files) => {
   if (err) {
     console.error(err);
     throw err;

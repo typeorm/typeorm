@@ -7,7 +7,7 @@ describe("github issues > #2875 runMigrations() function is not returning a list
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        migrations: [__dirname + "/migration/*.js"],
+        migrations: [__dirname + "/migration/*{.js,.ts}"],
         enabledDrivers: ["postgres"],
         schemaCreate: true,
         dropSchema: true,

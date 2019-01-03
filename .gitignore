@@ -7,4 +7,5 @@ node_modules/
 ormconfig.json
 ormlogs.log
 npm-debug.log
+test/functional/sqljs/*.sqlite
 /test/github-issues/799/tmp/*
