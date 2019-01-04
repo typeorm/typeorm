@@ -237,7 +237,7 @@ export async function createConnections(options?: ConnectionOptions[]): Promise<
  * Gets connection from the connection manager.
  * If connection name wasn't specified, then "default" connection will be retrieved.
  */
-export function getConnection(connectionName: string = "default"): Connection {
+export function getConnection(connectionName?: string): Connection {
     return getConnectionManager().get(connectionName);
 }
 
@@ -245,7 +245,7 @@ export function getConnection(connectionName: string = "default"): Connection {
  * Gets entity manager from the connection.
  * If connection name wasn't specified, then "default" connection will be retrieved.
  */
-export function getManager(connectionName: string = "default"): EntityManager {
+export function getManager(connectionName?: string): EntityManager {
     return getConnectionManager().get(connectionName).manager;
 }
 
@@ -253,7 +253,7 @@ export function getManager(connectionName: string = "default"): EntityManager {
  * Gets MongoDB entity manager from the connection.
  * If connection name wasn't specified, then "default" connection will be retrieved.
  */
-export function getMongoManager(connectionName: string = "default"): MongoEntityManager {
+export function getMongoManager(connectionName?: string): MongoEntityManager {
     return getConnectionManager().get(connectionName).manager as MongoEntityManager;
 }
 
@@ -262,42 +262,42 @@ export function getMongoManager(connectionName: string = "default"): MongoEntity
  * "default" connection is used, when no name is specified.
  * Only works when Sqljs driver is used.
  */
-export function getSqljsManager(connectionName: string = "default"): SqljsEntityManager {
+export function getSqljsManager(connectionName?: string): SqljsEntityManager {
     return getConnectionManager().get(connectionName).manager as SqljsEntityManager;
 }
 
 /**
  * Gets repository for the given entity class.
  */
-export function getRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): Repository<Entity> {
+export function getRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName?: string): Repository<Entity> {
     return getConnectionManager().get(connectionName).getRepository<Entity>(entityClass);
 }
 
 /**
  * Gets tree repository for the given entity class.
  */
-export function getTreeRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): TreeRepository<Entity> {
+export function getTreeRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName?: string): TreeRepository<Entity> {
     return getConnectionManager().get(connectionName).getTreeRepository<Entity>(entityClass);
 }
 
 /**
  * Gets tree repository for the given entity class.
  */
-export function getCustomRepository<T>(customRepository: ObjectType<T>, connectionName: string = "default"): T {
+export function getCustomRepository<T>(customRepository: ObjectType<T>, connectionName?: string): T {
     return getConnectionManager().get(connectionName).getCustomRepository(customRepository);
 }
 
 /**
  * Gets mongodb repository for the given entity class or name.
  */
-export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): MongoRepository<Entity> {
+export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName?: string): MongoRepository<Entity> {
     return getConnectionManager().get(connectionName).getMongoRepository<Entity>(entityClass);
 }
 
 /**
  * Creates a new query builder.
  */
-export function createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|string, alias?: string, connectionName: string = "default"): SelectQueryBuilder<Entity> {
+export function createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|string, alias?: string, connectionName?: string): SelectQueryBuilder<Entity> {
     if (entityClass) {
         return getRepository(entityClass, connectionName).createQueryBuilder(alias);
     }
