@@ -213,16 +213,10 @@ await timber.remove();
 快速开始只有在NodeJS应用程序中使用TypeORM才可以使用。
 如果你正在使用其他平台，请看[分步指南](#分步指南)。
 
-首先全局安装TypeORM：
-
-```
-npm install typeorm -g
-```
-
 然后转到新项目的目录并运行该命令：
 
 ```
-typeorm init --name MyProject --database mysql
+npx typeorm init --name MyProject --database mysql
 ```
 
 `name`即项目的名称，`database`是你将使用的数据库。数据库可以是下列值之一：`mysql`、`mariadb`、`postgres`、`sqlite`、`mssql`、`oracle`、`mongodb`、`cordova`、`react-native`、`expo`。

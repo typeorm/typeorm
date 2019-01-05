@@ -233,16 +233,10 @@ The quickest way to get started with TypeORM is to use its CLI commands to gener
 Quick start works only if you are using TypeORM in a NodeJS application.
 If you are using other platforms, proceed to the [step-by-step guide](#step-by-step-guide).
 
-First, install TypeORM globally:
+Go to the directory where you want to create a new project and run the command:
 
 ```
-npm install typeorm -g
-```
-
-Then go to the directory where you want to create a new project and run the command:
-
-```
-typeorm init --name MyProject --database mysql
+npx typeorm init --name MyProject --database mysql
 ```
 
 Where `name` is the name of your project and `database` is the database you'll use.
