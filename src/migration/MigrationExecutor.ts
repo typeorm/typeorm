@@ -14,8 +14,11 @@ import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
 import {sha1} from "object-hash";
 
-export const COLUMN_CREATE_DATE = 'create_date';
+export const COLUMN_CREATE_DATE = "create_date";
 export const COLUMN_HASH = "hash";
+export const COLUMN_ID = "id";
+export const COLUMN_NAME = "name";
+export const COLUMN_TIMESTAMP = "timestamp";
 
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
@@ -249,7 +252,7 @@ export class MigrationExecutor {
                     name: this.migrationsTable,
                     columns: [
                         {
-                            name: "id",
+                            name: COLUMN_ID,
                             type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationId}),
                             isGenerated: true,
                             generationStrategy: "increment",
@@ -257,13 +260,13 @@ export class MigrationExecutor {
                             isNullable: false
                         },
                         {
-                            name: "timestamp",
+                            name: COLUMN_TIMESTAMP,
                             type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationTimestamp}),
                             isPrimary: false,
                             isNullable: false
                         },
                         {
-                            name: "name",
+                            name: COLUMN_NAME,
                             type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationName}),
                             isNullable: false
                         },
@@ -350,7 +353,7 @@ export class MigrationExecutor {
             .from(this.migrationsTable, this.migrationsTableName)
             .getRawMany();
             return migrationsRaw.map(migrationRaw => {
-                return new Migration(parseInt(migrationRaw["id"]), parseInt(migrationRaw["timestamp"]), migrationRaw["name"], migrationRaw[COLUMN_HASH]);
+                return new Migration(parseInt(migrationRaw[COLUMN_ID]), parseInt(migrationRaw[COLUMN_TIMESTAMP]), migrationRaw[COLUMN_NAME], migrationRaw[COLUMN_HASH]);
             });
         }
     }
@@ -398,12 +401,12 @@ export class MigrationExecutor {
     protected async insertExecutedMigration(queryRunner: QueryRunner, migration: Migration): Promise<void> {
         const values: ObjectLiteral = {};
         if (this.connection.driver instanceof SqlServerDriver) {
-            values["timestamp"] = new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any);
-            values["name"] = new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any);
+            values[COLUMN_TIMESTAMP] = new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any);
+            values[COLUMN_NAME] = new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any);
             values[COLUMN_HASH] = new MssqlParameter(migration.hash, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationHash }) as any);
         } else {
-            values["timestamp"] = migration.timestamp;
-            values["name"] = migration.name;
+            values[COLUMN_TIMESTAMP] = migration.timestamp;
+            values[COLUMN_NAME] = migration.name;
             values[COLUMN_HASH] = migration.hash;
         }
         if (this.connection.driver instanceof MongoDriver) {
@@ -426,11 +429,11 @@ export class MigrationExecutor {
 
         const conditions: ObjectLiteral = {};
         if (this.connection.driver instanceof SqlServerDriver) {
-            conditions["timestamp"] = new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any);
-            conditions["name"] = new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any);
+            conditions[COLUMN_TIMESTAMP] = new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any);
+            conditions[COLUMN_NAME] = new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any);
         } else {
-            conditions["timestamp"] = migration.timestamp;
-            conditions["name"] = migration.name;
+            conditions[COLUMN_TIMESTAMP] = migration.timestamp;
+            conditions[COLUMN_NAME] = migration.name;
         }
 
         if (this.connection.driver instanceof MongoDriver) {
@@ -440,8 +443,8 @@ export class MigrationExecutor {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.delete()
                 .from(this.migrationsTable)
-                .where(`${qb.escape("timestamp")} = :timestamp`)
-                .andWhere(`${qb.escape("name")} = :name`)
+                .where(`${qb.escape(COLUMN_TIMESTAMP)} = :timestamp`)
+                .andWhere(`${qb.escape(COLUMN_NAME)} = :name`)
                 .setParameters(conditions)
                 .execute();
         }
