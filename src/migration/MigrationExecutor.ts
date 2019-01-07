@@ -14,6 +14,9 @@ import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
 import {sha1} from "object-hash";
 
+export const COLUMN_CREATE_DATE = 'create_date';
+export const COLUMN_HASH = "hash";
+
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
  */
@@ -265,7 +268,7 @@ export class MigrationExecutor {
                             isNullable: false
                         },
                         {
-                            name: "hash",
+                            name: COLUMN_HASH,
                             type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationHash}),
                             isNullable: false,
                             length: "40"
@@ -274,10 +277,11 @@ export class MigrationExecutor {
                 },
             ));
         }
-        const hashColumnExist = await queryRunner.hasColumn(this.migrationsTable, "hash");
+        const table = await queryRunner.getTable(this.migrationsTable);
+        const hashColumnExist = table!.columns.some(c => c.name.toLowerCase() === COLUMN_HASH);
         if (!hashColumnExist) {
             await queryRunner.addColumn(this.migrationsTable, new TableColumn({
-                name: "hash",
+                name: COLUMN_HASH,
                 type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationHash}),
                 isNullable: true,
                 length: "40",
@@ -285,11 +289,22 @@ export class MigrationExecutor {
 
             await this.updateHashes(queryRunner);
 
-            await queryRunner.changeColumn(this.migrationsTable, "hash", new TableColumn({
-                name: "hash",
+            await queryRunner.changeColumn(this.migrationsTable, COLUMN_HASH, new TableColumn({
+                name: COLUMN_HASH,
                 type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationHash}),
                 isNullable: false,
                 length: "40",
+            }));
+        }
+
+        const createDateColumnExist = table!.columns.some(c => c.name.toLowerCase() === COLUMN_CREATE_DATE);
+        if (!createDateColumnExist) {
+            await queryRunner.addColumn(this.migrationsTable, new TableColumn({
+                name: COLUMN_CREATE_DATE,
+                type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.createDate}),
+                default: this.connection.driver.mappedDataTypes.createDateDefault,
+                precision: this.connection.driver.mappedDataTypes.createDatePrecision,
+                isNullable: true,
             }));
         }
     }
@@ -335,7 +350,7 @@ export class MigrationExecutor {
             .from(this.migrationsTable, this.migrationsTableName)
             .getRawMany();
             return migrationsRaw.map(migrationRaw => {
-                return new Migration(parseInt(migrationRaw["id"]), parseInt(migrationRaw["timestamp"]), migrationRaw["name"], migrationRaw["hash"]);
+                return new Migration(parseInt(migrationRaw["id"]), parseInt(migrationRaw["timestamp"]), migrationRaw["name"], migrationRaw[COLUMN_HASH]);
             });
         }
     }
@@ -385,13 +400,14 @@ export class MigrationExecutor {
         if (this.connection.driver instanceof SqlServerDriver) {
             values["timestamp"] = new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any);
             values["name"] = new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any);
-            values["hash"] = new MssqlParameter(migration.hash, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationHash }) as any);
+            values[COLUMN_HASH] = new MssqlParameter(migration.hash, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationHash }) as any);
         } else {
             values["timestamp"] = migration.timestamp;
             values["name"] = migration.name;
-            values["hash"] = migration.hash;
+            values[COLUMN_HASH] = migration.hash;
         }
         if (this.connection.driver instanceof MongoDriver) {
+            values[COLUMN_CREATE_DATE] = new Date();
             const mongoRunner = queryRunner as MongoQueryRunner;
             await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insertOne(values);
         } else {
