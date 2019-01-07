@@ -1314,7 +1314,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }), dbIndex => dbIndex["INDEX_NAME"]);
 
             table.indices = tableIndexConstraints.map(constraint => {
-                const indices = dbIndices.filter(index => index["INDEX_NAME"] === constraint["INDEX_NAME"]);
+                const indices = dbIndices.filter(index => index["INDEX_NAME"] === constraint["INDEX_NAME"] && table.name === index.TABLE_NAME);
                 return new TableIndex(<TableIndexOptions>{
                     table: table,
                     name: constraint["INDEX_NAME"],
