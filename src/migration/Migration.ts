@@ -44,6 +44,7 @@ export class Migration {
         this.timestamp = timestamp;
         this.name = name;
         this.instance = instance;
+        this.hash = hash;
     }
 
 }

@@ -10,10 +10,9 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
-import { MongoDriver } from "../driver/mongodb/MongoDriver";
-import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner";
-
-import sha1 = require("sha1");
+import {MongoDriver} from "../driver/mongodb/MongoDriver";
+import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
+import {sha1} from "object-hash";
 
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
@@ -279,7 +278,7 @@ export class MigrationExecutor {
                 length: "40",
             }));
 
-            await this.insertHashCodes(queryRunner);
+            await this.updateHashes(queryRunner);
 
             await queryRunner.changeColumn(this.migrationsTable, "hash", new TableColumn({
                 name: "hash",
@@ -290,20 +289,27 @@ export class MigrationExecutor {
         }
     }
 
-    protected async insertHashCodes(queryRunner: QueryRunner): Promise<void> {
+    protected async updateHashes(queryRunner: QueryRunner): Promise<void> {
         const executedMigrations = await this.loadExecutedMigrations(queryRunner);
-        const migrations = this.getMigrations().filter(migration => executedMigrations.find(executedMigration => executedMigration.name === migration.name));
+        const migrations = this.getMigrations().filter(migration => {
+            const executedMigration = executedMigrations.find(executedMigration => executedMigration.name === migration.name)
+            if (executedMigration) {
+                migration.id = executedMigration.id
+                return true
+            }
+            return false
+        })
         await PromiseUtils.runInSequence(migrations, migration => {
-            return this.insertHashCode(migration, queryRunner);
+            return this.updateHash(migration, queryRunner);
         });
     }
 
-    protected async insertHashCode(migration: Migration, queryRunner: QueryRunner): Promise<void> {
+    protected async updateHash(migration: Migration, queryRunner: QueryRunner): Promise<void> {
         const hash = this.calculateHash(migration.instance!);
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
             await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).findOneAndUpdate({
-                name: migration.name
+                id: migration.id,
             }, {
                 hash
             });
@@ -312,7 +318,8 @@ export class MigrationExecutor {
             .createQueryBuilder()
             .update(this.migrationsTable)
             .set({ hash })
-            .where({ name: migration.name });
+            .where({ id: migration.id })
+            .execute();
         }
     }
 
@@ -353,7 +360,7 @@ export class MigrationExecutor {
     }
 
     protected calculateHash(migration: MigrationInterface): string {
-        return sha1(migration.toString(), { asString: true }) as string;
+        return sha1(migration);
     }
 
     /**
@@ -380,13 +387,15 @@ export class MigrationExecutor {
         if (this.connection.driver instanceof SqlServerDriver) {
             values["timestamp"] = new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any);
             values["name"] = new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any);
+            values["hash"] = new MssqlParameter(migration.hash, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationHash }) as any);
         } else {
             values["timestamp"] = migration.timestamp;
             values["name"] = migration.name;
+            values["hash"] = migration.hash;
         }
-        if (this.connection.driver instanceof MongoDriver) {  
+        if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);               
+            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.insert()
@@ -412,7 +421,7 @@ export class MigrationExecutor {
 
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).deleteOne(conditions);               
+            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).deleteOne(conditions);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.delete()

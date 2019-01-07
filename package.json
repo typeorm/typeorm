@@ -39,6 +39,7 @@
     "@types/debug": "0.0.30",
     "@types/mocha": "^5.0.0",
     "@types/node": "^9.6.0",
+    "@types/object-hash": "^1.2.0",
     "@types/rimraf": "^2.0.2",
     "@types/sha1": "^1.1.1",
     "@types/sinon": "^4.3.0",
@@ -88,8 +89,8 @@
     "glob": "^7.1.2",
     "js-yaml": "^3.11.0",
     "mkdirp": "^0.5.1",
+    "object-hash": "^1.3.1",
     "reflect-metadata": "^0.1.12",
-    "sha1": "^1.1.1",
     "xml2js": "^0.4.17",
     "yargonaut": "^1.1.2",
     "yargs": "^12.0.5"
