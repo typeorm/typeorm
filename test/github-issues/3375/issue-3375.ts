@@ -16,7 +16,7 @@ export class MigrationExecutor2 extends MigrationExecutor {
 describe("github issues > #3375 add metadata to migrations table", () => {
     let connections: Connection[];
 
-    async function createConnections(migrationsPath = __dirname + '/migration/*.js', dropSchema = true) {
+    async function createConnections(migrationsPath = __dirname + "/migration/*.js", dropSchema = true) {
         return createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [migrationsPath],
@@ -28,7 +28,7 @@ describe("github issues > #3375 add metadata to migrations table", () => {
         });
     }
 
-    function setup(migrationsPath = __dirname + '/migration/*.js', dropSchema = true) {
+    function setup(migrationsPath = __dirname + "/migration/*.js", dropSchema = true) {
         beforeEach(async () => connections = await createConnections(migrationsPath, dropSchema));
         afterEach(() => closeTestingConnections(connections));
     }
@@ -67,11 +67,11 @@ describe("github issues > #3375 add metadata to migrations table", () => {
 
         beforeEach(async () => {
             connections = await createConnections();
-            console.log('executing migrations...')
+            console.log("executing migrations...");
             await Promise.all(connections.map(connection => connection.runMigrations()));
-            console.log('executed migrations...')
+            console.log("executed migrations...");
             await closeTestingConnections(connections);
-        })
+        });
 
         setup(__dirname + "/migration-invalid-hash/*.js", false);
 
@@ -83,7 +83,7 @@ describe("github issues > #3375 add metadata to migrations table", () => {
             (connection.options as any).migrationsIgnoreHash = undefined;
             let error: Error|undefined = undefined;
             try {
-                console.log('executing migrations AGAIN')
+                console.log("executing migrations AGAIN");
                 await connection.runMigrations();
             } catch (err) {
                 error = err;

@@ -292,13 +292,13 @@ export class MigrationExecutor {
     protected async updateHashes(queryRunner: QueryRunner): Promise<void> {
         const executedMigrations = await this.loadExecutedMigrations(queryRunner);
         const migrations = this.getMigrations().filter(migration => {
-            const executedMigration = executedMigrations.find(executedMigration => executedMigration.name === migration.name)
+            const executedMigration = executedMigrations.find(executedMigration => executedMigration.name === migration.name);
             if (executedMigration) {
-                migration.id = executedMigration.id
-                return true
+                migration.id = executedMigration.id;
+                return true;
             }
-            return false
-        })
+            return false;
+        });
         await PromiseUtils.runInSequence(migrations, migration => {
             return this.updateHash(migration, queryRunner);
         });
