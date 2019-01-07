@@ -157,6 +157,7 @@ export class OracleDriver implements Driver {
         version: "number",
         treeLevel: "number",
         migrationId: "number",
+        migrationHash: "char",
         migrationName: "varchar2",
         migrationTimestamp: "number",
         cacheId: "number",

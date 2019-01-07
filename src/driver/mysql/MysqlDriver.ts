@@ -237,6 +237,7 @@ export class MysqlDriver implements Driver {
         version: "int",
         treeLevel: "int",
         migrationId: "int",
+        migrationHash: "char",
         migrationName: "varchar",
         migrationTimestamp: "bigint",
         cacheId: "int",

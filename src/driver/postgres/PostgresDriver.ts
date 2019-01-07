@@ -204,6 +204,7 @@ export class PostgresDriver implements Driver {
         version: "int4",
         treeLevel: "int4",
         migrationId: "int4",
+        migrationHash: "char",
         migrationName: "varchar",
         migrationTimestamp: "int8",
         cacheId: "int4",

@@ -1,6 +1,8 @@
 import {Table} from "../schema-builder/table/Table";
+import {TableColumn} from "../schema-builder/table/TableColumn";
 import {Connection} from "../connection/Connection";
 import {Migration} from "./Migration";
+import {MigrationInterface} from "./MigrationInterface";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {QueryRunner} from "../query-runner/QueryRunner";
@@ -10,6 +12,8 @@ import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectio
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import { MongoDriver } from "../driver/mongodb/MongoDriver";
 import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner";
+
+import sha1 = require("sha1");
 
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
@@ -31,6 +35,7 @@ export class MigrationExecutor {
 
     private readonly migrationsTable: string;
     private readonly migrationsTableName: string;
+    private readonly migrationsIgnoreHash: boolean;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -41,6 +46,7 @@ export class MigrationExecutor {
 
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
         this.migrationsTableName = connection.options.migrationsTableName || "migrations";
+        this.migrationsIgnoreHash = !!connection.options.migrationsIgnoreHash;
         this.migrationsTable = this.connection.driver.buildTableName(this.migrationsTableName, options.schema, options.database);
     }
 
@@ -73,8 +79,12 @@ export class MigrationExecutor {
         const pendingMigrations = allMigrations.filter(migration => {
             // check if we already have executed migration
             const executedMigration = executedMigrations.find(executedMigration => executedMigration.name === migration.name);
-            if (executedMigration)
+            if (executedMigration) {
+                if (!this.migrationsIgnoreHash && executedMigration.hash !== migration.hash) {
+                    throw new Error(`Migration hash for ${executedMigration.name} does not match!`);
+                }
                 return false;
+            }
 
             // migration is new and not executed. now check if its timestamp is correct
             // if (lastTimeExecutedMigration && migration.timestamp < lastTimeExecutedMigration.timestamp)
@@ -250,9 +260,59 @@ export class MigrationExecutor {
                             type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationName}),
                             isNullable: false
                         },
+                        {
+                            name: "hash",
+                            type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationHash}),
+                            isNullable: false,
+                            length: "40"
+                        }
                     ]
                 },
             ));
+        }
+        const hashColumnExist = await queryRunner.hasColumn(this.migrationsTable, "hash");
+        if (!hashColumnExist) {
+            await queryRunner.addColumn(this.migrationsTable, new TableColumn({
+                name: "hash",
+                type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationHash}),
+                isNullable: true,
+                length: "40",
+            }));
+
+            await this.insertHashCodes(queryRunner);
+
+            await queryRunner.changeColumn(this.migrationsTable, "hash", new TableColumn({
+                name: "hash",
+                type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationHash}),
+                isNullable: false,
+                length: "40",
+            }));
+        }
+    }
+
+    protected async insertHashCodes(queryRunner: QueryRunner): Promise<void> {
+        const executedMigrations = await this.loadExecutedMigrations(queryRunner);
+        const migrations = this.getMigrations().filter(migration => executedMigrations.find(executedMigration => executedMigration.name === migration.name));
+        await PromiseUtils.runInSequence(migrations, migration => {
+            return this.insertHashCode(migration, queryRunner);
+        });
+    }
+
+    protected async insertHashCode(migration: Migration, queryRunner: QueryRunner): Promise<void> {
+        const hash = this.calculateHash(migration.instance!);
+        if (this.connection.driver instanceof MongoDriver) {
+            const mongoRunner = queryRunner as MongoQueryRunner;
+            await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).findOneAndUpdate({
+                name: migration.name
+            }, {
+                hash
+            });
+        } else {
+            await this.connection.manager
+            .createQueryBuilder()
+            .update(this.migrationsTable)
+            .set({ hash })
+            .where({ name: migration.name });
         }
     }
 
@@ -270,7 +330,7 @@ export class MigrationExecutor {
             .from(this.migrationsTable, this.migrationsTableName)
             .getRawMany();
             return migrationsRaw.map(migrationRaw => {
-                return new Migration(parseInt(migrationRaw["id"]), parseInt(migrationRaw["timestamp"]), migrationRaw["name"]);
+                return new Migration(parseInt(migrationRaw["id"]), parseInt(migrationRaw["timestamp"]), migrationRaw["name"], migrationRaw["hash"]);
             });
         }
     }
@@ -284,12 +344,16 @@ export class MigrationExecutor {
             const migrationTimestamp = parseInt(migrationClassName.substr(-13));
             if (!migrationTimestamp)
                 throw new Error(`${migrationClassName} migration name is wrong. Migration class name should have a JavaScript timestamp appended.`);
-
-            return new Migration(undefined, migrationTimestamp, migrationClassName, migration);
+            const hash = this.calculateHash(migration);
+            return new Migration(undefined, migrationTimestamp, migrationClassName, hash, migration);
         });
 
         // sort them by timestamp
         return migrations.sort((a, b) => a.timestamp - b.timestamp);
+    }
+
+    protected calculateHash(migration: MigrationInterface): string {
+        return sha1(migration.toString(), { asString: true }) as string;
     }
 
     /**

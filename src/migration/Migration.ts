@@ -26,6 +26,11 @@ export class Migration {
     name: string;
 
     /**
+     * Hash code of the migration
+     */
+    hash: string;
+
+    /**
      * Migration instance that needs to be run.
      */
     instance?: MigrationInterface;
@@ -34,7 +39,7 @@ export class Migration {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(id: number|undefined, timestamp: number, name: string, instance?: MigrationInterface) {
+    constructor(id: number|undefined, timestamp: number, name: string, hash: string, instance?: MigrationInterface) {
         this.id = id;
         this.timestamp = timestamp;
         this.name = name;

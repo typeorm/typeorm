@@ -62,6 +62,11 @@ export interface MappedColumnTypes {
     migrationName: ColumnType;
 
     /**
+     * Column type for migration has column used for migrations table.
+     */
+    migrationHash: ColumnType;
+
+    /**
      * Column type for identifier column in query result cache table.
      */
     cacheId: ColumnType;

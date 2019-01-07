@@ -48,6 +48,12 @@ export interface BaseConnectionOptions {
     readonly migrationsTableName?: string;
 
     /**
+     * When set to false (default), migrate:run will fail if migration.hash has
+     * changed. When set to true, the hash will not be checked.
+     */
+    readonly migrationsIgnoreHash?: boolean;
+
+    /**
      * Naming strategy to be used to name tables and columns in the database.
      */
     readonly namingStrategy?: NamingStrategyInterface;

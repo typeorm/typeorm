@@ -91,6 +91,7 @@ export class MongoDriver implements Driver {
         version: "int",
         treeLevel: "int",
         migrationId: "int",
+        migrationHash: "int",
         migrationName: "int",
         migrationTimestamp: "int",
         cacheId: "int",
