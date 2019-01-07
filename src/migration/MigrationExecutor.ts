@@ -80,7 +80,7 @@ export class MigrationExecutor {
             const executedMigration = executedMigrations.find(executedMigration => executedMigration.name === migration.name);
             if (executedMigration) {
                 if (!this.migrationsIgnoreHash && executedMigration.hash !== migration.hash) {
-                    throw new Error(`Migration hash for ${executedMigration.name} does not match!`);
+                    throw new Error(`Migration hash for ${executedMigration.name} does not match: ${executedMigration.hash} !== ${migration.hash}`);
                 }
                 return false;
             }
@@ -232,6 +232,11 @@ export class MigrationExecutor {
     protected async createMigrationsTableIfNotExist(queryRunner: QueryRunner): Promise<void> {
         // If driver is mongo no need to create
         if (this.connection.driver instanceof MongoDriver) {
+            const mongoRunner = queryRunner as MongoQueryRunner;
+            const anyMigrationWithoutHash = await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).countDocuments({ hash: { $exists: false } });
+            if (anyMigrationWithoutHash) {
+                await this.updateHashes(queryRunner);
+            }
             return;
         }
         const tableExist = await queryRunner.hasTable(this.migrationsTable); // todo: table name should be configurable
@@ -291,14 +296,7 @@ export class MigrationExecutor {
 
     protected async updateHashes(queryRunner: QueryRunner): Promise<void> {
         const executedMigrations = await this.loadExecutedMigrations(queryRunner);
-        const migrations = this.getMigrations().filter(migration => {
-            const executedMigration = executedMigrations.find(executedMigration => executedMigration.name === migration.name);
-            if (executedMigration) {
-                migration.id = executedMigration.id;
-                return true;
-            }
-            return false;
-        });
+        const migrations = this.getMigrations().filter(migration => executedMigrations.find(executedMigration => executedMigration.name === migration.name));
         await PromiseUtils.runInSequence(migrations, migration => {
             return this.updateHash(migration, queryRunner);
         });
@@ -308,17 +306,17 @@ export class MigrationExecutor {
         const hash = this.calculateHash(migration.instance!);
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).findOneAndUpdate({
-                id: migration.id,
+            await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).updateOne({
+                name: migration.name,
             }, {
-                hash
+                $set: { hash }
             });
         } else {
             await this.connection.manager
             .createQueryBuilder()
             .update(this.migrationsTable)
             .set({ hash })
-            .where({ id: migration.id })
+            .where({ name: migration.name })
             .execute();
         }
     }
@@ -395,7 +393,7 @@ export class MigrationExecutor {
         }
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);
+            await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insertOne(values);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.insert()

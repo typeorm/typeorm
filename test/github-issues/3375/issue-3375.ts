@@ -2,6 +2,8 @@ import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {MigrationExecutor} from "../../../src/migration/MigrationExecutor";
 import {Migration} from "../../../src/migration/Migration";
+import {MongoDriver} from "../../../src/driver/mongodb/MongoDriver";
+import {MongoQueryRunner} from "../../../src/driver/mongodb/MongoQueryRunner";
 import {QueryRunner} from "../../../src/query-runner/QueryRunner";
 import {createTestingConnections, closeTestingConnections} from "../../utils/test-utils";
 import {expect} from "chai";
@@ -20,11 +22,9 @@ describe("github issues > #3375 add metadata to migrations table", () => {
         return createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [migrationsPath],
-            // enabledDrivers: ["postgres", "mssql", "mysql", "mariadb", "sqlite"],
-            enabledDrivers: ["postgres"],
+            enabledDrivers: ["postgres", "mssql", "mysql", "mariadb", "sqlite", "mongodb"],
             schemaCreate: true,
-            dropSchema,
-            logging: true,
+            dropSchema
         });
     }
 
@@ -38,8 +38,14 @@ describe("github issues > #3375 add metadata to migrations table", () => {
 
         it("should create migrations table w/ hash column", () => Promise.all(connections.map(async connection => {
             await connection.runMigrations();
-            const result = await connection.createQueryRunner().hasColumn("migrations", "hash");
-            expect(result).to.equal(true);
+            const queryRunner = connection.createQueryRunner();
+            const migrationExecutor = new MigrationExecutor2(connection, queryRunner);
+            const executedMigrations = await migrationExecutor.loadExecutedMigrations(queryRunner);
+            expect(executedMigrations.length).to.equal(1);
+            executedMigrations.forEach(executedMigration => {
+                expect(executedMigration.name.length).to.be.greaterThan(0);
+                expect(executedMigration.hash.length).to.be.greaterThan(0);
+            });
         })));
     });
 
@@ -48,8 +54,13 @@ describe("github issues > #3375 add metadata to migrations table", () => {
 
         it("should add hash column when it does not exist and calculate hashes of executed migrations", () => Promise.all(connections.map(async connection => {
             await connection.runMigrations();
-            const queryRunner = await connection.createQueryRunner();
-            await queryRunner.dropColumn("migrations", "hash");
+            const queryRunner = connection.createQueryRunner();
+            if (connection.driver instanceof MongoDriver) {
+                const mongoRunner = queryRunner as MongoQueryRunner;
+                await mongoRunner.databaseConnection.db(connection.driver.database!).collection("migrations").updateMany({}, {$unset: {hash: 1}});
+            } else {
+                await queryRunner.dropColumn("migrations", "hash");
+            }
 
             await connection.runMigrations();
             const migrationExecutor = new MigrationExecutor2(connection, queryRunner);
@@ -67,9 +78,7 @@ describe("github issues > #3375 add metadata to migrations table", () => {
 
         beforeEach(async () => {
             connections = await createConnections();
-            console.log("executing migrations...");
             await Promise.all(connections.map(connection => connection.runMigrations()));
-            console.log("executed migrations...");
             await closeTestingConnections(connections);
         });
 
@@ -83,7 +92,6 @@ describe("github issues > #3375 add metadata to migrations table", () => {
             (connection.options as any).migrationsIgnoreHash = undefined;
             let error: Error|undefined = undefined;
             try {
-                console.log("executing migrations AGAIN");
                 await connection.runMigrations();
             } catch (err) {
                 error = err;
