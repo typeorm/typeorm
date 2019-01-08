@@ -41,7 +41,6 @@
     "@types/node": "^9.6.0",
     "@types/object-hash": "^1.2.0",
     "@types/rimraf": "^2.0.2",
-    "@types/sha1": "^1.1.1",
     "@types/sinon": "^4.3.0",
     "@types/source-map-support": "^0.4.0",
     "@types/yargs": "^12.0.1",
