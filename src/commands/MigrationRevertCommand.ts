@@ -29,6 +29,10 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
+            })
+            .option("force", {
+                default: false,
+                describe: "Force migration to execute, even when the hash check fails"
             });
     }
 
@@ -45,6 +49,7 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                 subscribers: [],
                 synchronize: false,
                 migrationsRun: false,
+                migrationsIgnoreHash: args["force"] ? true : connectionOptions.migrationsIgnoreHash,
                 dropSchema: false,
                 logging: ["query", "error", "schema"]
             });
