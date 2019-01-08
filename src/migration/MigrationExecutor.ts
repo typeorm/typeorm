@@ -4,6 +4,7 @@ import {Connection} from "../connection/Connection";
 import {Migration} from "./Migration";
 import {MigrationInterface} from "./MigrationInterface";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {CollectionUtils} from "../util/CollectionUtils";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -70,6 +71,7 @@ export class MigrationExecutor {
         await this.createMigrationsTableIfNotExist(queryRunner);
         // get all migrations that are executed and saved in the database
         const executedMigrations = await this.loadExecutedMigrations(queryRunner);
+        const executedMigrationsByName = CollectionUtils.indexBy(executedMigrations, "name");
 
         // get the time when last migration was executed
         let lastTimeExecutedMigration = this.getLatestTimestampMigration(executedMigrations);
@@ -83,8 +85,9 @@ export class MigrationExecutor {
         // find all migrations that needs to be executed
         const pendingMigrations = allMigrations.filter(migration => {
             // check if we already have executed migration
-            const executedMigration = executedMigrations.find(executedMigration => executedMigration.name === migration.name);
+            const executedMigration = executedMigrationsByName[migration.name];
             if (executedMigration) {
+                delete executedMigrationsByName[migration.name];
                 if (!this.migrationsIgnoreHash && executedMigration.hash !== migration.hash) {
                     throw new Error(`Migration hash for ${executedMigration.name} does not match: ${executedMigration.hash} !== ${migration.hash}`);
                 }
@@ -98,6 +101,12 @@ export class MigrationExecutor {
             // every check is passed means that migration was not run yet and we need to run it
             return true;
         });
+
+        const nonExistingMigrations = Object.keys(executedMigrationsByName);
+        if (!this.migrationsIgnoreHash && nonExistingMigrations.length) {
+            // if a migration was executed, but the source file deleted, we abort because this means the enviornment won't be reproducible
+            throw new Error(`No source migration(s) found for the following executed migration(s): ${nonExistingMigrations}`);
+        }
 
         // if no migrations are pending then nothing to do here
         if (!pendingMigrations.length) {

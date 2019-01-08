@@ -106,4 +106,36 @@ describe("github issues > #3375 add metadata to migrations table", () => {
         })));
     });
 
+    describe("missing migration", () => {
+
+        beforeEach(async () => {
+            connections = await createConnections();
+            await Promise.all(connections.map(connection => connection.runMigrations()));
+            await closeTestingConnections(connections);
+        });
+
+        setup(__dirname + "/migration-empty/*.js", false);
+
+        afterEach(() => Promise.all(connections.map(async connection => {
+            delete (connection.options as any).migrationsIgnoreHash;
+        })));
+
+        it("should fail when an executed migration is missing", () => Promise.all(connections.map(async connection => {
+            (connection.options as any).migrationsIgnoreHash = undefined;
+            let error: Error|undefined = undefined;
+            try {
+                await connection.runMigrations();
+            } catch (err) {
+                error = err;
+            }
+            expect(error).to.be.ok;
+            expect(error!.message).to.match(/no source migration/i);
+        })));
+
+        it("should succeed when migrationsIgnoreHash is truthy", () => Promise.all(connections.map(async connection => {
+            (connection.options as any).migrationsIgnoreHash = true;
+            await connection.runMigrations();
+        })));
+    });
+
  });
