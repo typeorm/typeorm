@@ -41,7 +41,7 @@ export class MigrationExecutor {
 
     private readonly migrationsTable: string;
     private readonly migrationsTableName: string;
-    private readonly migrationsIgnoreHash: boolean;
+    private readonly migrationsForce: boolean;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -52,7 +52,7 @@ export class MigrationExecutor {
 
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
         this.migrationsTableName = connection.options.migrationsTableName || "migrations";
-        this.migrationsIgnoreHash = !!connection.options.migrationsIgnoreHash;
+        this.migrationsForce = !!connection.options.migrationsForce;
         this.migrationsTable = this.connection.driver.buildTableName(this.migrationsTableName, options.schema, options.database);
     }
 
@@ -88,7 +88,7 @@ export class MigrationExecutor {
             const executedMigration = executedMigrationsByName[migration.name];
             if (executedMigration) {
                 delete executedMigrationsByName[migration.name];
-                if (!this.migrationsIgnoreHash && executedMigration.hash !== migration.hash) {
+                if (!this.migrationsForce && executedMigration.hash !== migration.hash) {
                     throw new Error(`Migration hash for ${executedMigration.name} does not match: ${executedMigration.hash} !== ${migration.hash}`);
                 }
                 return false;
@@ -103,7 +103,7 @@ export class MigrationExecutor {
         });
 
         const nonExistingMigrations = Object.keys(executedMigrationsByName);
-        if (!this.migrationsIgnoreHash && nonExistingMigrations.length) {
+        if (!this.migrationsForce && nonExistingMigrations.length) {
             // if a migration was executed, but the source file deleted, we abort because this means the enviornment won't be reproducible
             throw new Error(`No source migration(s) found for the following executed migration(s): ${nonExistingMigrations}`);
         }

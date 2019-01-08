@@ -50,7 +50,7 @@ export class MigrationRunCommand implements yargs.CommandModule {
                 subscribers: [],
                 synchronize: false,
                 migrationsRun: false,
-                migrationsIgnoreHash: args["force"] ? true : connectionOptions.migrationsIgnoreHash,
+                migrationsForce: args["force"] ? true : connectionOptions.migrationsForce,
                 dropSchema: false,
                 logging: ["query", "error", "schema"]
             });

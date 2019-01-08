@@ -85,11 +85,11 @@ describe("github issues > #3375 add metadata to migrations table", () => {
         setup(__dirname + "/migration-invalid-hash/*.js", false);
 
         afterEach(() => Promise.all(connections.map(async connection => {
-            delete (connection.options as any).migrationsIgnoreHash;
+            delete (connection.options as any).migrationsForce;
         })));
 
         it("should fail when migration hash differs", () => Promise.all(connections.map(async connection => {
-            (connection.options as any).migrationsIgnoreHash = undefined;
+            (connection.options as any).migrationsForce = undefined;
             let error: Error|undefined = undefined;
             try {
                 await connection.runMigrations();
@@ -101,7 +101,7 @@ describe("github issues > #3375 add metadata to migrations table", () => {
         })));
 
         it("should succeed when migrationIgnoreHash is truthy", () => Promise.all(connections.map(async connection => {
-            (connection.options as any).migrationsIgnoreHash = true;
+            (connection.options as any).migrationsForce = true;
             await connection.runMigrations();
         })));
     });
@@ -117,11 +117,11 @@ describe("github issues > #3375 add metadata to migrations table", () => {
         setup(__dirname + "/migration-empty/*.js", false);
 
         afterEach(() => Promise.all(connections.map(async connection => {
-            delete (connection.options as any).migrationsIgnoreHash;
+            delete (connection.options as any).migrationsForce;
         })));
 
         it("should fail when an executed migration is missing", () => Promise.all(connections.map(async connection => {
-            (connection.options as any).migrationsIgnoreHash = undefined;
+            (connection.options as any).migrationsForce = undefined;
             let error: Error|undefined = undefined;
             try {
                 await connection.runMigrations();
@@ -132,8 +132,8 @@ describe("github issues > #3375 add metadata to migrations table", () => {
             expect(error!.message).to.match(/no source migration/i);
         })));
 
-        it("should succeed when migrationsIgnoreHash is truthy", () => Promise.all(connections.map(async connection => {
-            (connection.options as any).migrationsIgnoreHash = true;
+        it("should succeed when migrationsForce is truthy", () => Promise.all(connections.map(async connection => {
+            (connection.options as any).migrationsForce = true;
             await connection.runMigrations();
         })));
     });
