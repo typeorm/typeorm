@@ -15,7 +15,7 @@ describe("github issues > #2708 Bug in queryBuildier when summing", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should not drop text column", () => Promise.all(connections.map(async function(connection) {
+    it("SUM should return a number", () => Promise.all(connections.map(async function(connection) {
         const user = new User();
         await connection.manager.save(user);
 
