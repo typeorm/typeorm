@@ -114,7 +114,7 @@ export interface BaseConnectionOptions {
          * - "database" means cached values will be stored in the separate table in database. This is default value.
          * - "redis" means cached values will be stored inside redis. You must provide redis connection options.
          */
-        readonly type?: "database"|"redis"; // todo: add mongodb and other cache providers as well in the future
+        readonly type?: "database" | "redis" | "ioredis" | "ioredis/cluster"; // todo: add mongodb and other cache providers as well in the future
 
         /**
          * Used to provide redis connection options.

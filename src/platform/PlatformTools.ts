@@ -83,6 +83,7 @@ export class PlatformTools {
                  * ioredis
                  */
                 case "ioredis":
+                case "ioredis/cluster":
                     return require("ioredis");
 
                 /**

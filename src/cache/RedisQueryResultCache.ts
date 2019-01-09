@@ -26,13 +26,13 @@ export class RedisQueryResultCache implements QueryResultCache {
     /**
      * Type of the Redis Client (redis or ioredis).
      */
-    protected clientType: "redis" | "ioredis";
+    protected clientType: "redis" | "ioredis" | "ioredis/cluster";
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection, clientType: "redis" | "ioredis") {
+    constructor(protected connection: Connection, clientType: "redis" | "ioredis" | "ioredis/cluster") {
         this.clientType = clientType;
         this.redis = this.loadRedis();
     }
@@ -59,6 +59,13 @@ export class RedisQueryResultCache implements QueryResultCache {
                 this.client = new this.redis(cacheOptions.options);
             } else {
                 this.client = new this.redis();
+            }
+
+        } else if (this.clientType === "ioredis/cluster") {
+            if (cacheOptions && cacheOptions.options) {
+                this.client = new this.redis.Cluster(cacheOptions.options);
+            } else {
+                throw new Error(`Options required for ${this.clientType}.`);
             }
 
         }

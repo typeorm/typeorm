@@ -116,6 +116,72 @@ export class MongoDriver implements Driver {
      */
     protected mongodb: any;
 
+    /**
+     * Valid mongo connection options
+     * NOTE: Keep sync with MongoConnectionOptions
+     * Sync with http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html
+     */
+    protected validOptionNames: string[] = [
+        "poolSize",
+        "ssl",
+        "sslValidate",
+        "sslCA",
+        "sslCert",
+        "sslKey",
+        "sslPass",
+        "sslCRL",
+        "autoReconnect",
+        "noDelay",
+        "keepAlive",
+        "keepAliveInitialDelay",
+        "connectTimeoutMS",
+        "family",
+        "socketTimeoutMS",
+        "reconnectTries",
+        "reconnectInterval",
+        "ha",
+        "haInterval",
+        "replicaSet",
+        "secondaryAcceptableLatencyMS",
+        "acceptableLatencyMS",
+        "connectWithNoPrimary",
+        "authSource",
+        "w",
+        "wtimeout",
+        "j",
+        "forceServerObjectId",
+        "serializeFunctions",
+        "ignoreUndefined",
+        "raw",
+        "bufferMaxEntries",
+        "readPreference",
+        "pkFactory",
+        "promiseLibrary",
+        "readConcern",
+        "maxStalenessSeconds",
+        "loggerLevel",
+        // Do not overwrite BaseConnectionOptions.logger
+        // "logger",
+        "promoteValues",
+        "promoteBuffers",
+        "promoteLongs",
+        "domainsEnabled",
+        "checkServerIdentity",
+        "validateOptions",
+        "appname",
+        // omit auth - we are building url from username and password
+        // "auth"
+        "authMechanism",
+        "compression",
+        "fsync",
+        "readPreferenceTags",
+        "numberOfRetries",
+        "auto_reconnect",
+        "minSize",
+        "monitorCommands",
+        "useNewUrlParser"
+    ];
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -139,56 +205,16 @@ export class MongoDriver implements Driver {
      */
     connect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.mongodb.MongoClient.connect(this.buildConnectionUrl(), {
-                poolSize: this.options.poolSize,
-                ssl: this.options.ssl,
-                sslValidate: this.options.sslValidate,
-                sslCA: this.options.sslCA,
-                sslCert: this.options.sslCert,
-                sslKey: this.options.sslKey,
-                sslPass: this.options.sslPass,
-                autoReconnect: this.options.autoReconnect,
-                noDelay: this.options.noDelay,
-                keepAlive: this.options.keepAlive,
-                connectTimeoutMS: this.options.connectTimeoutMS,
-                socketTimeoutMS: this.options.socketTimeoutMS,
-                reconnectTries: this.options.reconnectTries,
-                reconnectInterval: this.options.reconnectInterval,
-                ha: this.options.ha,
-                haInterval: this.options.haInterval,
-                replicaSet: this.options.replicaSet,
-                acceptableLatencyMS: this.options.acceptableLatencyMS,
-                secondaryAcceptableLatencyMS: this.options.secondaryAcceptableLatencyMS,
-                connectWithNoPrimary: this.options.connectWithNoPrimary,
-                authSource: this.options.authSource,
-                w: this.options.w,
-                wtimeout: this.options.wtimeout,
-                j: this.options.j,
-                forceServerObjectId: this.options.forceServerObjectId,
-                serializeFunctions: this.options.serializeFunctions,
-                ignoreUndefined: this.options.ignoreUndefined,
-                raw: this.options.raw,
-                promoteLongs: this.options.promoteLongs,
-                promoteBuffers: this.options.promoteBuffers,
-                promoteValues: this.options.promoteValues,
-                domainsEnabled: this.options.domainsEnabled,
-                bufferMaxEntries: this.options.bufferMaxEntries,
-                readPreference: this.options.readPreference,
-                pkFactory: this.options.pkFactory,
-                promiseLibrary: this.options.promiseLibrary,
-                readConcern: this.options.readConcern,
-                maxStalenessSeconds: this.options.maxStalenessSeconds,
-                loggerLevel: this.options.loggerLevel,
-                logger: this.options.logger,
-                authMechanism: this.options.authMechanism,
-                useNewUrlParser: this.options.useNewUrlParser
-            }, (err: any, client: any) => {
-                if (err) return fail(err);
+            this.mongodb.MongoClient.connect(
+                this.buildConnectionUrl(),
+                this.buildConnectionOptions(),
+                (err: any, client: any) => {
+                    if (err) return fail(err);
 
-                this.queryRunner = new MongoQueryRunner(this.connection, client);
-                ObjectUtils.assign(this.queryRunner, { manager: this.connection.manager });
-                ok();
-            });
+                    this.queryRunner = new MongoQueryRunner(this.connection, client);
+                    ObjectUtils.assign(this.queryRunner, { manager: this.connection.manager });
+                    ok();
+                });
         });
     }
 
@@ -392,6 +418,23 @@ export class MongoDriver implements Driver {
             : "";
 
         return `mongodb://${credentialsUrlPart}${this.options.host || "127.0.0.1"}:${this.options.port || "27017"}/${this.options.database}`;
+    }
+
+    /**
+     * Build connection options from MongoConnectionOptions
+     */
+    protected buildConnectionOptions(): any {
+        const mongoOptions: any = {};
+
+        for (let index = 0; index < this.validOptionNames.length; index++) {
+            const optionName = this.validOptionNames[index];
+
+            if (optionName in this.options) {
+                mongoOptions[optionName] = (this.options as any)[optionName];
+            }
+        }
+
+        return mongoOptions;
     }
 
 }

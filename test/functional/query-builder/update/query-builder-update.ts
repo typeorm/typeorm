@@ -7,9 +7,11 @@ import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
 import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
 import {LimitOnUpdateNotSupportedError} from "../../../../src/error/LimitOnUpdateNotSupportedError";
 import {Photo} from "./entity/Photo";
+import {EntityColumnNotFound} from "../../../../src/error/EntityColumnNotFound";
+import {UpdateValuesMissingError} from "../../../../src/error/UpdateValuesMissingError";
 
 describe("query builder > update", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -60,7 +62,7 @@ describe("query builder > update", () => {
             .where("name = :name", { name: () => connection.driver instanceof SqlServerDriver ? "SUBSTRING('Alex Messer Dimovich', 1, 11)" : "SUBSTR('Alex Messer Dimovich', 1, 11)" })
             .execute();
 
-        
+
 
         const loadedUser1 = await connection.getRepository(User).findOne({ name: "Dima" });
         expect(loadedUser1).to.exist;
@@ -159,7 +161,7 @@ describe("query builder > update", () => {
         const user2 = new User();
         user2.name = "Muhammad Mirzoev";
         const user3 = new User();
-        user3.name = "Brad Porter";        
+        user3.name = "Brad Porter";
 
         await connection.manager.save([user1, user2, user3]);
 
@@ -171,7 +173,7 @@ describe("query builder > update", () => {
             .update(User)
             .set({ name: nameToFind })
             .limit(limitNum)
-            .execute(); 
+            .execute();
 
             const loadedUsers = await connection.getRepository(User).find({ name: nameToFind });
             expect(loadedUsers).to.exist;
@@ -181,8 +183,69 @@ describe("query builder > update", () => {
             .update(User)
             .set({ name: nameToFind })
             .limit(limitNum)
-            .execute().should.be.rejectedWith(LimitOnUpdateNotSupportedError); 
+            .execute().should.be.rejectedWith(LimitOnUpdateNotSupportedError);
         }
+    })));
+
+    it("should throw error when update value is missing", () => Promise.all(connections.map(async connection => {
+
+        const user = new User();
+        user.name = "Alex Messer";
+
+        await connection.manager.save(user);
+
+        let error: Error | undefined;
+        try {
+            await connection.createQueryBuilder()
+                .update(User)
+                .where("name = :name", { name: "Alex Messer" })
+                .execute();
+        } catch (err) {
+            error = err;
+        }
+        expect(error).to.be.an.instanceof(UpdateValuesMissingError);
+
+    })));
+
+    it("should throw error when update value is missing 2", () => Promise.all(connections.map(async connection => {
+
+        const user = new User();
+        user.name = "Alex Messer";
+
+        await connection.manager.save(user);
+
+        let error: Error | undefined;
+        try {
+            await connection.createQueryBuilder(User, "user")
+                .update()
+                .where("name = :name", { name: "Alex Messer" })
+                .execute();
+        } catch (err) {
+            error = err;
+        }
+        expect(error).to.be.an.instanceof(UpdateValuesMissingError);
+
+    })));
+
+    it("should throw error when update property in set method is unknown", () => Promise.all(connections.map(async connection => {
+
+        const user = new User();
+        user.name = "Alex Messer";
+
+        await connection.manager.save(user);
+
+        let error: Error | undefined;
+        try {
+            await connection.createQueryBuilder()
+                .update(User)
+                .set({ unknownProp: true })
+                .where("name = :name", { name: "Alex Messer" })
+                .execute();
+        } catch (err) {
+            error = err;
+        }
+        expect(error).to.be.an.instanceof(EntityColumnNotFound);
+
     })));
 
 });

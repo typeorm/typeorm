@@ -46,6 +46,23 @@ Querying a column from an embedded entity should be done with respect to the hie
 userRepository.find({ where: { name: { first: "Timber", last: "Saw" } } });
 ```
 
+Querying with OR operator:
+
+```typescript
+userRepository.find({
+  where: [
+    { firstName: "Timber", lastName: "Saw" },
+    { firstName: "Stan", lastName: "Lee" }
+  ]
+});
+```
+
+will execute following query: 
+
+```sql
+SELECT * FROM "user" WHERE ("firstName" = 'Timber' AND "lastName" = 'Saw') OR ("firstName" = 'Stan' AND "lastName" = 'Lee')
+```
+
 * `order` - selection order.
 
 ```typescript
@@ -154,6 +171,22 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" < 10
 ```
 
+* `LessThanOrEqual`
+
+```ts
+import {LessThanOrEqual} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    likes: LessThanOrEqual(10)
+});
+```
+
+will execute following query: 
+
+```sql
+SELECT * FROM "post" WHERE "likes" <= 10
+```
+
 * `MoreThan`
 
 ```ts
@@ -168,6 +201,22 @@ will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "likes" > 10
+```
+
+* `MoreThanOrEqual`
+
+```ts
+import {MoreThanOrEqual} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    likes: MoreThanOrEqual(10)
+});
+```
+
+will execute following query: 
+
+```sql
+SELECT * FROM "post" WHERE "likes" >= 10
 ```
 
 * `Equal`
