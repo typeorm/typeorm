@@ -434,7 +434,8 @@ export class SqlServerDriver implements Driver {
             return "uniqueidentifier";
 
         } else if (column.type === "simple-array" || column.type === "simple-json") {
-            return "ntext";
+            column.length = "MAX";
+            return "nvarchar";
 
         } else if (column.type === "dec") {
             return "decimal";
