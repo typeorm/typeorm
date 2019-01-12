@@ -19,6 +19,7 @@ export class ConnectionOptionsEnvReader {
     read(): ConnectionOptions {
         return {
             type: PlatformTools.getEnvVariable("TYPEORM_CONNECTION") || (PlatformTools.getEnvVariable("TYPEORM_URL") ? PlatformTools.getEnvVariable("TYPEORM_URL").split("://")[0] : undefined),
+            ssl: PlatformTools.getEnvVariable("TYPEORM_SSL") === "true",
             url: PlatformTools.getEnvVariable("TYPEORM_URL"),
             host: PlatformTools.getEnvVariable("TYPEORM_HOST"),
             port: PlatformTools.getEnvVariable("TYPEORM_PORT"),
