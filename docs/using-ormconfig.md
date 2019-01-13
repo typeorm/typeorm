@@ -124,7 +124,9 @@ List of available env variables you can set:
 * TYPEORM_ENTITIES_DIR
 * TYPEORM_MIGRATIONS_DIR
 * TYPEORM_SUBSCRIBERS_DIR
-* TYPEORM_DRIVER_EXTRA
+* TYPEORM_DRIVER_EXTRA: expects a JSON-parseable string with the variables you want to include.
+  * For example, to enable the `ssl` property, define this variable in your `.env` file like so:
+  * `TYPEORM_DRIVER_EXTRA='{ "ssl": true }'`
 
 `ormconfig.env` should be used only during development.
 On production you can set all these values in real ENVIRONMENT VARIABLES.
