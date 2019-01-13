@@ -125,7 +125,7 @@ List of available env variables you can set:
 * TYPEORM_MIGRATIONS_DIR
 * TYPEORM_SUBSCRIBERS_DIR
 * TYPEORM_DRIVER_EXTRA: expects a JSON-parseable string with the variables you want to include.
-  * For example, to enable the `ssl` property, define this variable in your `.env` file like so:
+  * For example, to enable the `ssl` property (useful for a few database drivers, including [the `postgres` one](https://github.com/typeorm/typeorm/blob/ed107361320417d43f00765da69e7e0d848d3b38/docs/connection-options.md#postgres-connection-options)), define this variable in your `.env` file like so:
   * `TYPEORM_DRIVER_EXTRA='{ "ssl": true }'`
 
 `ormconfig.env` should be used only during development.
