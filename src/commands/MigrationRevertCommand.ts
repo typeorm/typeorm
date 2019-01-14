@@ -32,7 +32,8 @@ export class MigrationRevertCommand implements yargs.CommandModule {
             })
             .option("force", {
                 default: false,
-                describe: "Force migration to execute, even when the hash check fails"
+                describe: "Force migration to execute, even when the hash check fails",
+                type: "boolean"
             });
     }
 
