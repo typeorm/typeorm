@@ -170,7 +170,7 @@ If you need to revert multiple migrations you must call this command multiple ti
 
 ## Migration hash
 
-A hash checksum will be calculated for every executed migration and stored in the `migrations` table. If there is a hash mismatch, the migration will not be executed and the migration process aborted. Alternatively, a `--force` flag can be used to ignore the hash check. The `object-hash.sha1()` function is used to generate a checksum. Additionally, a migration process will be aborted if a source migration cannot be found for an already executed migration. This is to help ensure a reproducible database environent by preventing developers from making changes in the past migrations, which might have already been executed in a production environment. More details about this functionality is available in issue #3375.
+A hash checksum will be calculated for every executed migration and stored in the `migrations` table. If there is a hash mismatch, the migration will not be executed and the migration process aborted. Alternatively, a `--force` flag can be used to ignore the hash check. The `object-hash.sha1()` function is used to generate a checksum. Additionally, a migration process will be aborted if a source migration cannot be found for an already executed migration. This is to help ensure a reproducible database environent by preventing developers from making changes in the past migrations, which might have already been executed in a production environment. More details about this functionality is available [here](https://github.com/typeorm/typeorm/issues/3375).
 
 ## Generating migrations
 
