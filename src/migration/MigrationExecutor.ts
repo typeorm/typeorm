@@ -301,12 +301,20 @@ export class MigrationExecutor {
 
             await this.updateHashes(queryRunner);
 
-            await queryRunner.changeColumn(this.migrationsTable, COLUMN_HASH, new TableColumn({
-                name: COLUMN_HASH,
-                type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationHash}),
-                isNullable: false,
-                length: "40",
-            }));
+            const {count} = await this.connection.manager.createQueryBuilder(queryRunner)
+            .select("count(*)", "count")
+            .from(this.migrationsTable, this.migrationsTableName)
+            .where("hash is null")
+            .getRawOne();
+
+            if (count === 0) {
+                await queryRunner.changeColumn(this.migrationsTable, COLUMN_HASH, new TableColumn({
+                    name: COLUMN_HASH,
+                    type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationHash}),
+                    isNullable: false,
+                    length: "40",
+                }));
+            }
         }
 
         const createDateColumnExist = table!.columns.some(c => c.name.toLowerCase() === COLUMN_CREATE_DATE);
