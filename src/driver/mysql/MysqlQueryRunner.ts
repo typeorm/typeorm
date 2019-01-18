@@ -1218,8 +1218,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase();
 
                     if (dbColumn["COLUMN_DEFAULT"] === null
-                    || dbColumn["COLUMN_DEFAULT"] === undefined
-                    || (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")) {
+                        || dbColumn["COLUMN_DEFAULT"] === undefined
+                        || (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")) {
                         tableColumn.default = undefined;
 
                     } else {
