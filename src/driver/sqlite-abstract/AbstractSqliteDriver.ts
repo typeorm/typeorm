@@ -516,7 +516,8 @@ export abstract class AbstractSqliteDriver implements Driver {
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 //  || tableColumn.comment !== columnMetadata.comment || // todo
-                || this.normalizeDefault(columnMetadata) !== tableColumn.default
+                || (this.normalizeDefault(columnMetadata) !== tableColumn.default
+                    && !(this.normalizeDefault(columnMetadata) === null && typeof tableColumn.default === "undefined"))
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)

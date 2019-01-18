@@ -578,7 +578,8 @@ export class OracleDriver implements Driver {
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
-                || this.normalizeDefault(columnMetadata) !== tableColumn.default
+                || (this.normalizeDefault(columnMetadata) !== tableColumn.default
+                     && !(this.normalizeDefault(columnMetadata) === null && typeof tableColumn.default === "undefined"))
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
@@ -659,7 +660,7 @@ export class OracleDriver implements Driver {
     protected async createPool(options: OracleConnectionOptions, credentials: OracleConnectionCredentialsOptions): Promise<any> {
 
         credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
-       
+
         // build connection options for the driver
         const connectionOptions = Object.assign({}, {
             user: credentials.username,

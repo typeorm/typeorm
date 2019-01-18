@@ -279,6 +279,9 @@ export abstract class BaseQueryRunner {
         if (this.connection.driver.dataTypeDefaults
             && this.connection.driver.dataTypeDefaults[column.type]
             && this.connection.driver.dataTypeDefaults[column.type].width) {
+            if (column.unsigned && column.type !== "bigint") {
+                return this.connection.driver.dataTypeDefaults[column.type].width === width + 1;
+            }
             return this.connection.driver.dataTypeDefaults[column.type].width === width;
         }
 

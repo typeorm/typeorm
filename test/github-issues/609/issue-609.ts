@@ -10,6 +10,7 @@ describe("github issues > #609 Custom precision on CreateDateColumn and UpdateDa
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
             schemaCreate: true,
+            dropSchema: true
         });
     });
     after(() => closeTestingConnections(connections));

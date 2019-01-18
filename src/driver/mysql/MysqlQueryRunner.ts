@@ -1217,14 +1217,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     tableColumn.name = dbColumn["COLUMN_NAME"];
                     tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase();
 
-                    if (this.driver.withWidthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
-                        const width = dbColumn["COLUMN_TYPE"].substring(dbColumn["COLUMN_TYPE"].indexOf("(") + 1, dbColumn["COLUMN_TYPE"].indexOf(")"));
-                        tableColumn.width = width && !this.isDefaultColumnWidth(table, tableColumn, parseInt(width)) ? parseInt(width) : undefined;
-                    }
-
                     if (dbColumn["COLUMN_DEFAULT"] === null
-                        || dbColumn["COLUMN_DEFAULT"] === undefined
-                        || (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")) {
+                    || dbColumn["COLUMN_DEFAULT"] === undefined
+                    || (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")) {
                         tableColumn.default = undefined;
 
                     } else {
@@ -1247,6 +1242,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     });
                     tableColumn.zerofill = dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1;
                     tableColumn.unsigned = tableColumn.zerofill ? true : dbColumn["COLUMN_TYPE"].indexOf("unsigned") !== -1;
+                    if (this.driver.withWidthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
+                        const width = dbColumn["COLUMN_TYPE"].substring(dbColumn["COLUMN_TYPE"].indexOf("(") + 1, dbColumn["COLUMN_TYPE"].indexOf(")"));
+                        tableColumn.width = width && !this.isDefaultColumnWidth(table, tableColumn, parseInt(width)) ? parseInt(width) : undefined;
+                    }
+
                     tableColumn.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
                     if (tableColumn.isGenerated)
                         tableColumn.generationStrategy = "increment";
@@ -1279,7 +1279,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.length = "";
                     }
 
-                    if ((tableColumn.type === "datetime" || tableColumn.type === "time" || tableColumn.type === "timestamp") && dbColumn["DATETIME_PRECISION"]) {
+                    if ((tableColumn.type === "datetime" || tableColumn.type === "time" || tableColumn.type === "timestamp") && parseInt(dbColumn["DATETIME_PRECISION"])) {
                         tableColumn.precision = parseInt(dbColumn["DATETIME_PRECISION"]);
                     }
 

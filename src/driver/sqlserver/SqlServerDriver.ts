@@ -570,7 +570,9 @@ export class SqlServerDriver implements Driver {
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
-                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNessesary(this.normalizeDefault(columnMetadata)) !== this.lowerDefaultValueIfNessesary(tableColumn.default)) // we included check for generated here, because generated columns already can have default values
+                || (!tableColumn.isGenerated  // we included check for generated here, because generated columns already can have default values
+                    && this.lowerDefaultValueIfNessesary(this.normalizeDefault(columnMetadata)) !== this.lowerDefaultValueIfNessesary(tableColumn.default)
+                    && !(this.normalizeDefault(columnMetadata) === null && typeof tableColumn.default === "undefined"))
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)

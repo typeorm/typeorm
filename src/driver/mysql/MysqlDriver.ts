@@ -868,7 +868,7 @@ export class MysqlDriver implements Driver {
             databaseValue = databaseValue.replace(/^'+|'+$/g, "");
         }
 
-        return columnMetadataValue === databaseValue;
+        return columnMetadataValue === databaseValue || (columnMetadataValue === null && typeof databaseValue === "undefined");
     }
 
 }
