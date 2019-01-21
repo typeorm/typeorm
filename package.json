@@ -63,9 +63,10 @@
     "mssql": "^4.2.2",
     "mysql": "^2.15.0",
     "mysql2": "^1.5.3",
+    "nyc": "^13.1.0",
     "pg": "^7.4.0",
     "redis": "^2.8.0",
-    "remap-istanbul": "^0.11.0",
+    "remap-istanbul": "^0.13.0",
     "rimraf": "^2.6.2",
     "sinon": "^2.4.1",
     "sinon-chai": "^2.13.0",
@@ -100,8 +101,8 @@
     ]
   },
   "scripts": {
-    "test-ci": "gulp ci-tests",
-    "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
+    "test": "rimraf ./build && tsc && nyc --reporter none _mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov",
     "compile": "rimraf ./build && tsc",
     "package": "gulp package",
     "lint": "tslint -p ."
@@ -113,5 +114,17 @@
     "type": "opencollective",
     "url": "https://opencollective.com/typeorm",
     "logo": "https://opencollective.com/opencollective/logo.txt"
+  },
+  "nyc": {
+    "all": true,
+    "cache": false,
+    "include": [
+      "build/compiled/src/**",
+      "src/**"
+    ],
+    "extension": [
+      ".js",
+      ".ts"
+    ]
   }
 }

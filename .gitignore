@@ -1,9 +1,11 @@
 .DS_Store
 .vscode/
 .idea/
+.nyc_output/
 build/
 coverage/
 node_modules/
+coverage.lcov
 ormconfig.json
 ormlogs.log
 npm-debug.log

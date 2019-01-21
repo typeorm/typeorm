@@ -1,14 +1,12 @@
 sudo: required
 language: node_js
 node_js:
-#  - stable
+  - 11
   - 10
   - 9
   - 8
-#  - 6
-#  - 4
-#  - 0.12
-#  - 0.11
+
+cache: npm
 
 services:
   - docker
@@ -22,7 +20,8 @@ before_script:
 
 script:
   - npm run lint
-  - npm test
+  - npm t
 
 after_success:
+  - npm run coverage
   - bash <(curl -s https://codecov.io/bash)
