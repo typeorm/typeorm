@@ -1,4 +1,4 @@
-import {Driver} from "../../driver/Driver";
+import { Connection } from "../../connection/Connection";
 import {RelationIdLoadResult} from "../relation-id/RelationIdLoadResult";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
@@ -23,7 +23,7 @@ export class RawSqlResultsToEntityTransformer {
     // -------------------------------------------------------------------------
 
     constructor(protected expressionMap: QueryExpressionMap,
-                protected driver: Driver,
+                protected connection: Connection,
                 protected rawRelationIdResults: RelationIdLoadResult[],
                 protected rawRelationCountResults: RelationCountLoadResult[],
                 protected queryRunner?: QueryRunner) {
@@ -128,7 +128,7 @@ export class RawSqlResultsToEntityTransformer {
             if (!this.expressionMap.selects.find(select => select.selection === alias.name || select.selection === alias.name + "." + column.propertyPath))
                 return;
 
-            column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
+            column.setEntityValue(entity, this.connection.driver.prepareHydratedValue(value, column));
             if (value !== null) // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
                 hasData = true;
         });
@@ -309,8 +309,8 @@ export class RawSqlResultsToEntityTransformer {
      * If alias length is more than 29, abbreviates column name.
      */
     protected buildColumnAlias(aliasName: string, columnName: string): string {
-        const columnAliasName = aliasName + "_" + columnName;
-        if (columnAliasName.length > 29 && this.driver instanceof OracleDriver)
+        const columnAliasName = this.connection.namingStrategy.columnAliasName(aliasName, columnName);
+        if (columnAliasName.length > 29 && this.connection.driver instanceof OracleDriver)
             return aliasName  + "_" + abbreviate(columnName, 2);
 
         return columnAliasName;

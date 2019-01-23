@@ -1836,7 +1836,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             // transform raw results into entities
             const rawRelationIdResults = await relationIdLoader.load(rawResults);
             const rawRelationCountResults = await relationCountLoader.load(rawResults);
-            const transformer = new RawSqlResultsToEntityTransformer(this.expressionMap, this.connection.driver, rawRelationIdResults, rawRelationCountResults, this.queryRunner);
+            const transformer = new RawSqlResultsToEntityTransformer(this.expressionMap, this.connection, rawRelationIdResults, rawRelationCountResults, this.queryRunner);
             entities = transformer.transform(rawResults, this.expressionMap.mainAlias!);
 
             // broadcast all "after load" events
@@ -1930,7 +1930,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * If alias length is more than 29, abbreviates column name.
      */
     protected buildColumnAlias(aliasName: string, columnName: string): string {
-        const columnAliasName = aliasName + "_" + columnName;
+        const columnAliasName = this.connection.namingStrategy.columnAliasName(aliasName, columnName);
         if (columnAliasName.length > 29 && this.connection.driver instanceof OracleDriver)
             return aliasName  + "_" + abbreviate(columnName, 2);
 

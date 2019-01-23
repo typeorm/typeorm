@@ -34,6 +34,10 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return customName ? customName : propertyName;
     }
 
+    columnAliasName(aliasName: string, columnName: string): string {
+      return aliasName + "_" + columnName;
+    }
+
     relationName(propertyName: string): string {
         return propertyName;
     }

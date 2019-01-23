@@ -185,7 +185,7 @@ export class RelationIdLoader {
      * If alias length is more than 29, abbreviates column name.
      */
     protected buildColumnAlias(aliasName: string, columnName: string): string {
-        const columnAliasName = aliasName + "_" + columnName;
+        const columnAliasName = this.connection.namingStrategy.columnAliasName(aliasName, columnName);
         if (columnAliasName.length > 29 && this.connection.driver instanceof OracleDriver)
             return aliasName  + "_" + abbreviate(columnName, 2);
 

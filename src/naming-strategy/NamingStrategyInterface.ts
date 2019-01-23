@@ -32,6 +32,11 @@ export interface NamingStrategyInterface {
     columnName(propertyName: string, customName: string|undefined, embeddedPrefixes: string[]): string;
 
     /**
+     * Builds column alias from given alias name and column name.
+     */
+    columnAliasName(aliasName: string, columnName: string): string;
+
+    /**
      * Gets the table's relation name from the given property name.
      */
     relationName(propertyName: string): string;
