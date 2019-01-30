@@ -80,6 +80,9 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     deleteResult.affected = typeof result[1] === "number" ? result[1] : null;
                     break;
                 }
+                case "oracle":
+                    deleteResult.raw = result.rowsAffected;
+                    break;
                 // sqlite & sqljs doesn't return anything
                 case "sqlite":
                 case "sqljs":
