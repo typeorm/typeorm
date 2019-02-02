@@ -53,10 +53,11 @@ export class MaterializedPathSubjectExecutor {
             .execute();
     }
 
+    /**
+     * Executes operations when subject is being updated.
+     */
     async update(subject: Subject): Promise<void> {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(subject.entity!); // if entity was attached via parent
-        if (!parent && subject.parentSubject && subject.parentSubject.entity) // if entity was attached via children
-            parent = subject.parentSubject.insertedValueSet ? subject.parentSubject.insertedValueSet : subject.parentSubject.entity;
 
         const parentId = subject.metadata.getEntityIdMap(parent);
 
@@ -71,9 +72,8 @@ export class MaterializedPathSubjectExecutor {
                 .then(result => result ? result["path"] : undefined);
         }
 
-        const updatedEntityId = subject.metadata.treeParentRelation!.joinColumns.map(joinColumn => {
-            return joinColumn.referencedColumn!.getEntityValue(subject.entity!);
-        }).join("_");
+        const updatedEntityId = subject.metadata.treeParentRelation!.joinColumns.map(joinColumn =>
+            joinColumn.referencedColumn!.getEntityValue(subject.entity!)).join("_");
 
         const materializedPathColumn = subject.metadata.materializedPathColumn!.propertyPath;
         const oldPath = await this.queryRunner.manager
