@@ -401,6 +401,11 @@ export class SubjectExecutor {
                     });
                 }
 
+                // for tree tables we execute additional queries
+                if (subject.metadata.treeType === "materialized-path") {
+                    await new MaterializedPathSubjectExecutor(this.queryRunner).update(subject);
+                }
+
                 // experiments, remove probably, need to implement tree tables children removal
                 // if (subject.updatedRelationMaps.length > 0) {
                 //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {

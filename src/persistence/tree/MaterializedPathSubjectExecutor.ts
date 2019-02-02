@@ -53,4 +53,46 @@ export class MaterializedPathSubjectExecutor {
             .execute();
     }
 
+    async update(subject: Subject): Promise<void> {
+        let parent = subject.metadata.treeParentRelation!.getEntityValue(subject.entity!); // if entity was attached via parent
+        if (!parent && subject.parentSubject && subject.parentSubject.entity) // if entity was attached via children
+            parent = subject.parentSubject.insertedValueSet ? subject.parentSubject.insertedValueSet : subject.parentSubject.entity;
+
+        const parentId = subject.metadata.getEntityIdMap(parent);
+
+        let parentPath: string = "";
+        if (parentId) {
+            parentPath = await this.queryRunner.manager
+                .createQueryBuilder()
+                .select(subject.metadata.targetName + "." + subject.metadata.materializedPathColumn!.propertyPath, "path")
+                .from(subject.metadata.target, subject.metadata.targetName)
+                .whereInIds(parentId)
+                .getRawOne()
+                .then(result => result ? result["path"] : undefined);
+        }
+
+        const updatedEntityId = subject.metadata.treeParentRelation!.joinColumns.map(joinColumn => {
+            return joinColumn.referencedColumn!.getEntityValue(subject.entity!);
+        }).join("_");
+
+        const materializedPathColumn = subject.metadata.materializedPathColumn!.propertyPath;
+        const oldPath = await this.queryRunner.manager
+            .createQueryBuilder()
+            .select(materializedPathColumn, "path")
+            .from(subject.metadata.target, subject.metadata.targetName)
+            .where(subject.identifier!)
+            .getRawOne()
+            .then(result => result ? result["path"] : undefined);
+
+        const newPath = parentPath + updatedEntityId + ".";
+        await this.queryRunner.manager
+            .createQueryBuilder()
+            .update(subject.metadata.target)
+            .set({ [materializedPathColumn]: () => `REPLACE(${materializedPathColumn}, :oldPath, :newPath)` } as any)
+            .where(`${materializedPathColumn} LIKE CONCAT(:oldPath, '%')`)
+            .setParameter("oldPath", oldPath)
+            .setParameter("newPath", newPath)
+            .execute();
+    }
+
 }
