@@ -10,6 +10,7 @@ feel free to ask us and community.
 ### Bug Fixes
 
 * fixed signatures of `update`/`insert` methods, some `find*` methods in repositories, entity managers, BaseEntity and QueryBuilders
+* fixed materialized path of target or its descendants not updating when a parent is updated ([#2418](https://github.com/typeorm/typeorm/issues/2418))
 
 ### Features
 
