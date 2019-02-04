@@ -10,6 +10,7 @@ feel free to ask us and community.
 ### Bug Fixes
 
 * fixed signatures of `update`/`insert` methods, some `find*` methods in repositories, entity managers, BaseEntity and QueryBuilders
+* handle embedded documents through multiple levels in mongodb ([#3551](https://github.com/typeorm/typeorm/issues/3551))
 * fixed materialized path of target or its descendants not updating when a parent is updated ([#2418](https://github.com/typeorm/typeorm/issues/2418))
 
 ### Features

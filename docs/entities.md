@@ -1,3 +1,5 @@
+
+
 # Entities
 
 * [What is Entity?](#what-is-entity)
@@ -108,7 +110,7 @@ Each entity class property you marked with `@Column` will be mapped to a databas
 Each entity must have at least one primary column.
 There are several types of primary columns:
 
-* `@PrimaryColumn()` creates a primary column which take any value of any type. You can specify the column type. If you don't specify a column type it will be inferred from the property type. Example below will create id with `int` as type which you must manually assign before save.
+* `@PrimaryColumn()` creates a primary column which takes any value of any type. You can specify the column type. If you don't specify a column type it will be inferred from the property type. The example below will create id with `int` as type which you must manually assign before save.
 
 ```typescript
 import {Entity, PrimaryColumn} from "typeorm";
@@ -170,11 +172,11 @@ export class User {
 }
 ```
 
-When you save entities using `save` it always tries to find a entity in the database with the given entity id (or ids).
+When you save entities using `save` it always tries to find an entity in the database with the given entity id (or ids).
 If id/ids are found then it will update this row in the database.
 If there is no row with the id/ids, a new row will be inserted.
 
-To find a entity by id you can use `manager.findOne` or `repository.findOne`. Example:
+To find an entity by id you can use `manager.findOne` or `repository.findOne`. Example:
 
 ```typescript
 // find one by id with single primary key

@@ -276,6 +276,19 @@ is a shortcut for:
 
 Note: do not use the same parameter name for different values across the query builder. Values will be overriden if you set them multiple times.
 
+You can also supply an array of values, and have them transformed into a list of values in the SQL
+statement, by using the special expansion syntax:
+
+```typescript
+.where("user.name IN (:...names)", { names: [ "Timber", "Cristal", "Lina" ] })
+```
+
+Which becomes:
+
+```sql
+WHERE user.name IN ('Timber', 'Cristal', 'Lina')
+```
+
 ## Adding `WHERE` expression
 
 Adding a `WHERE` expression is as easy as:

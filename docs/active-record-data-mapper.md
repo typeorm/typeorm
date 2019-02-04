@@ -111,7 +111,7 @@ You can read more about data mapper on [Wikipedia](https://en.wikipedia.org/wiki
 Example:
 
 ```typescript
-import {BaseEntity, Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
 
 @Entity()
 export class User {

@@ -114,7 +114,7 @@ export class MongoDriver implements Driver {
     /**
      * Underlying mongodb library.
      */
-    protected mongodb: any;
+    public mongodb: any;
 
     /**
      * Valid mongo connection options
