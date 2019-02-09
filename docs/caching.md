@@ -145,6 +145,39 @@ In case you want to connect to a redis-cluster using IORedis's cluster functiona
     username: "test",
     cache: {
         type: "ioredis/cluster",
+        options: {
+            startupNodes: [
+                {
+                    host: 'localhost',
+                    port: 7000,
+                },
+                {
+                    host: 'localhost',
+                    port: 7001,
+                },
+                {
+                    host: 'localhost',
+                    port: 7002,
+                }
+            ],
+            options: {
+                scaleReads: 'all',
+                clusterRetryStrategy: function (times) { return null },
+                redisOptions: {
+                    maxRetriesPerRequest: 1
+                }
+            }
+        }
+    }
+}
+```
+
+Note that, you can still use options as first argument of IORedis's cluster constructor.
+```typescript
+{
+    ...
+    cache: {
+        type: "ioredis/cluster",
         options: [
             {
                 host: 'localhost',
@@ -158,10 +191,10 @@ In case you want to connect to a redis-cluster using IORedis's cluster functiona
                 host: 'localhost',
                 port: 7002,
             }
-        ],
-    }
+        ]
+    },
+    ...
 }
 ```
-Just specify all the nodes in the cluster inside an array with their hosts  and ports.
 
 You can use `typeorm cache:clear` to clear everything stored in the cache.

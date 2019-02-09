@@ -681,12 +681,18 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new Error(`Value "${value}" is not a number.`);
 
+        // convert possible embeded path "social.likes" into object { social: { like: () => value } }
+        const values: QueryDeepPartialEntity<Entity> = propertyPath
+            .split(".")
+            .reduceRight(
+                (value, key) => ({ [key]: value }) as any,
+                () => this.connection.driver.escape(column.databaseName) + " + " + value
+            );
+
         return this
             .createQueryBuilder(entityClass, "entity")
             .update(entityClass)
-            .set({
-                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " + " + value
-            } as QueryDeepPartialEntity<Entity>)
+            .set(values)
             .where(conditions)
             .execute();
     }
@@ -707,12 +713,18 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new Error(`Value "${value}" is not a number.`);
 
+        // convert possible embeded path "social.likes" into object { social: { like: () => value } }
+        const values: QueryDeepPartialEntity<Entity> = propertyPath
+            .split(".")
+            .reduceRight(
+                (value, key) => ({ [key]: value }) as any,
+                () => this.connection.driver.escape(column.databaseName) + " - " + value
+            );
+
         return this
             .createQueryBuilder(entityClass, "entity")
             .update(entityClass)
-            .set({
-                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " - " + value
-            } as QueryDeepPartialEntity<Entity>)
+            .set(values)
             .where(conditions)
             .execute();
     }

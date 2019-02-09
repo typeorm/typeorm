@@ -366,7 +366,7 @@ export class OracleDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return value;
+            return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
 
         if (columnMetadata.type === Boolean) {
             value = value === 1 ? true : false;

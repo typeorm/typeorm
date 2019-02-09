@@ -256,7 +256,7 @@ export abstract class AbstractSqliteDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return value;
+            return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
             value = value ? true : false;

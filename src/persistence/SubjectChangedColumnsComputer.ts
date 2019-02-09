@@ -2,6 +2,7 @@ import {Subject} from "./Subject";
 import {DateUtils} from "../util/DateUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * Finds what columns are changed in the subject entities.
@@ -78,9 +79,10 @@ export class SubjectChangedColumnsComputer {
                         databaseValue = DateUtils.mixedDateToUtcDatetimeString(databaseValue);
 
                     } else if (column.type === "json" || column.type === "jsonb") {
-                        normalizedValue = JSON.stringify(entityValue);
-                        if (databaseValue !== null && databaseValue !== undefined)
-                            databaseValue = JSON.stringify(databaseValue);
+                        // JSON.stringify doesn't work because postgresql sorts jsonb before save.
+                        // If you try to save json '[{"messages": "", "attribute Key": "", "level":""}] ' as jsonb,
+                        // then postgresql will save it as '[{"level": "", "message":"", "attributeKey": ""}]'
+                        if (OrmUtils.deepCompare(entityValue, databaseValue)) return;
 
                     } else if (column.type === "simple-array") {
                         normalizedValue = DateUtils.simpleArrayToString(entityValue);

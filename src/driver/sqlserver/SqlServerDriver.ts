@@ -254,11 +254,22 @@ export class SqlServerDriver implements Driver {
         if (!this.master)
             return Promise.reject(new ConnectionIsNotSetError("mssql"));
 
-        this.master.close();
-        this.slaves.forEach(slave => slave.close());
+        await this.closePool(this.master);
+        await Promise.all(this.slaves.map(slave => this.closePool(slave)));
         this.master = undefined;
         this.slaves = [];
     }
+
+
+    /**
+     * Closes connection pool.
+     */
+    protected async closePool(pool: any): Promise<void> {
+        return new Promise<void>((ok, fail) => {
+            pool.close((err: any) => err ? fail(err) : ok());
+        });
+    }
+
 
     /**
      * Creates a schema builder used to build and sync a schema.
@@ -380,7 +391,7 @@ export class SqlServerDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return value;
+            return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
 
         if (columnMetadata.type === Boolean) {
             value = value ? true : false;

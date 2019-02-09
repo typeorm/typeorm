@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { Connection } from "../../../../../src/connection/Connection";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../../utils/test-utils";
 import { Post } from "./entity/Post";
+import { PostWithUnderscoreId } from "./entity/PostWithUnderscoreId";
 import { expect } from "chai";
 
 
@@ -9,7 +10,7 @@ describe("mongodb > object id columns", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Post],
+        entities: [Post, PostWithUnderscoreId],
         enabledDrivers: ["mongodb"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
@@ -41,6 +42,21 @@ describe("mongodb > object id columns", () => {
 
         expect(post.nonIdNameOfObjectId).to.be.not.undefined;
         expect((post as any)._id).to.be.undefined;
+    })));
+
+
+    it("should save and load properly if objectId property has name _id", () => Promise.all(connections.map(async connection => {
+        const postMongoRepository = connection.getMongoRepository(PostWithUnderscoreId);
+
+        // save a post
+        const post = new PostWithUnderscoreId();
+        post.title = "Post";
+        await postMongoRepository.save(post);
+
+        expect(post._id).to.be.not.undefined;
+
+        const loadedPost = await postMongoRepository.findOne(post._id);
+        expect(loadedPost!._id).to.be.not.undefined;
     })));
 
 
