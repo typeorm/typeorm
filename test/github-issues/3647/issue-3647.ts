@@ -18,4 +18,6 @@ describe("github issues > #3647 Invalid inferred column type on composite foreig
     );
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
+
+    it("should infer int type for user foreign key");
 });
