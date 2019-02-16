@@ -96,13 +96,14 @@
     "cli-highlight": "^1.2.3",
     "debug": "^3.1.0",
     "dotenv": "^5.0.1",
+    "dotenv-expand": "^4.2.0",
     "glob": "^7.1.2",
     "js-yaml": "^3.11.0",
     "mkdirp": "^0.5.1",
     "reflect-metadata": "^0.1.12",
+    "tslib": "^1.9.0",
     "xml2js": "^0.4.17",
     "yargonaut": "^1.1.2",
-    "tslib": "^1.9.0",
     "yargs": "^12.0.5"
   },
   "lint-staged": {

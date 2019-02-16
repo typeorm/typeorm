@@ -195,7 +195,7 @@ Sometimes, you may want to use multiple configurations using different formats. 
 or attempting to use `createConnection()` without the connection options, Typeorm will attempt to load the configurations,
 in this order:
 
-1. From the environment variables. Typeorm will attempt to load the `.env` file using dotEnv if it exists. If the environment
+1. From the environment variables. Typeorm will attempt to load the `.env.[NODE_ENV].local`, `.env.[NODE_ENV]`, `.env.local` and `.env` files using dotEnv if it exists. If the environment
 variables `TYPEORM_CONNECTION` or `TYPEORM_URL` are set, Typeorm will use this method.
 2. From the `ormconfig.env`.
 3. From the other `ormconfig.[format]` files, in this order: `[js, ts, json, yml, yaml, xml]`.

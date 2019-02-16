@@ -80,6 +80,8 @@ export class ConnectionOptionsReader {
     protected async load(): Promise<ConnectionOptions[]|undefined> {
         let connectionOptions: ConnectionOptions|ConnectionOptions[]|undefined = undefined;
 
+        const env = process.env.NODE_ENV as string;
+
         const fileFormats = ["env", "js", "ts", "json", "yml", "yaml", "xml"];
 
         // Detect if baseFilePath contains file extension
@@ -91,13 +93,28 @@ export class ConnectionOptionsReader {
             return PlatformTools.fileExist(this.baseFilePath + "." + format);
         });
 
+        // https://github.com/bkeepers/dotenv#what-other-env-files-can-i-use
+        const getDotEnvFileNames = (dotEnvFileName: string, env: string): string[] => [
+            `${dotEnvFileName}.${env}.local`,
+            `${dotEnvFileName}.${env}`,
+            env !== "test" ? `${dotEnvFileName}.local` : "",
+            dotEnvFileName,
+        ].filter(Boolean);
+
         // if .env file found then load all its variables into process.env using dotenv package
         if (foundFileFormat === "env") {
             const dotenv = PlatformTools.load("dotenv");
             dotenv.config({ path: this.baseFilePath });
-        } else if (PlatformTools.fileExist(".env")) {
-            const dotenv = PlatformTools.load("dotenv");
-            dotenv.config({ path: ".env" });
+        } else {
+            const dotEnvFiles: string[] = getDotEnvFileNames(".env", env);
+            const dotenv = PlatformTools.load("dotenv-expand");
+            const dotenvExpand = PlatformTools.load("dotenv-expand");
+
+            dotEnvFiles
+                .filter((dotEnvFile: string) => PlatformTools.fileExist(dotEnvFile))
+                .forEach((dotEnvFile: string) => {
+                    dotenvExpand(dotenv.config({ path: dotEnvFile }));
+                });
         }
 
         // Determine config file name
