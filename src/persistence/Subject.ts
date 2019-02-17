@@ -144,7 +144,7 @@ export class Subject {
             this.changeMaps.push(...options.changeMaps);
 
         if (this.entity) {
-            this.entityWithFulfilledIds = this.entity;
+            this.entityWithFulfilledIds = Object.assign({}, this.entity);
             if (this.parentSubject) {
                 this.metadata.primaryColumns.forEach(primaryColumn => {
                     if (primaryColumn.relationMetadata && primaryColumn.relationMetadata.inverseEntityMetadata === this.parentSubject!.metadata) {

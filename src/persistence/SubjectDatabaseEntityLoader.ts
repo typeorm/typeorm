@@ -64,7 +64,7 @@ export class SubjectDatabaseEntityLoader {
 
                     // gets all relation property paths that exist in the persisted entity.
                     subject.metadata.relations.forEach(relation => {
-                        const value = relation.getEntityValue(subject.entityWithFulfilledIds!);
+                        const value = relation.getEntityValue(subject.entity!);
                         if (value === undefined)
                             return;
 
