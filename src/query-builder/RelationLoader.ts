@@ -207,6 +207,7 @@ export class RelationLoader {
                         Object.defineProperty(this, dataIndex, {
                             value: result,
                             writable: true,
+                            enumerable: true,
                         });
 
                         Object.defineProperty(this, resolveIndex, {
