@@ -81,7 +81,7 @@ describe("query builder > update", () => {
         const qb = connection.createQueryBuilder();
         await qb
             .update(User)
-            .set({ likesCount: () => qb.escape(`likesCount`) + " + 1" })
+            .set({ likesCount: name => `${name} + 1` })
             // .set({ likesCount: 2 })
             .where("likesCount = 1")
             .execute();
