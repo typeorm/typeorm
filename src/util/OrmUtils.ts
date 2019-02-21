@@ -63,6 +63,24 @@ export class OrmUtils {
     }
 
     /**
+     * Iterates over an object's own property names and ensures that all
+     * configurable properties are also enumerable.
+     */
+    static makeEnumerable(object: any) {
+        if (this.isObject(object)) {
+            Object.getOwnPropertyNames(object).forEach(property => {
+                const descriptor = Object.getOwnPropertyDescriptor(object, property);
+                if (descriptor && descriptor.configurable && !descriptor.enumerable) {
+                    descriptor.enumerable = true;
+                    Object.defineProperty(object, property, descriptor);
+                }
+            });
+        }
+
+        return object;
+    }
+
+    /**
      * Deep Object.assign.
      *
      * @see http://stackoverflow.com/a/34749873

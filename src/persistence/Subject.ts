@@ -130,7 +130,7 @@ export class Subject {
         changeMaps?: SubjectChangeMap[]
     }) {
         this.metadata = options.metadata;
-        this.entity = options.entity;
+        this.entity = OrmUtils.makeEnumerable(options.entity);
         this.parentSubject = options.parentSubject;
         if (options.canBeInserted !== undefined)
             this.canBeInserted = options.canBeInserted;

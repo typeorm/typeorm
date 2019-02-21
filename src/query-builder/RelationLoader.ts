@@ -207,11 +207,13 @@ export class RelationLoader {
                         Object.defineProperty(this, dataIndex, {
                             value: result,
                             writable: true,
+                            configurable: true,
                         });
 
                         Object.defineProperty(this, resolveIndex, {
                             value: true,
                             writable: true,
+                            configurable: true,
                         });
 
                         delete this[promiseIndex];
@@ -228,11 +230,13 @@ export class RelationLoader {
                         Object.defineProperty(this, dataIndex, {
                             value: result,
                             writable: true,
+                            configurable: true,
                         });
 
                         Object.defineProperty(this, resolveIndex, {
                             value: true,
                             writable: true,
+                            configurable: true,
                         });
                     });
                 } else {
@@ -240,11 +244,13 @@ export class RelationLoader {
                     Object.defineProperty(this, dataIndex, {
                         value,
                         writable: true,
+                        configurable: true,
                     });
 
                     Object.defineProperty(this, resolveIndex, {
                         value: true,
                         writable: true,
+                        configurable: true,
                     });
                 }
             },

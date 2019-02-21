@@ -11,6 +11,7 @@ feel free to ask us and community.
 
 * fixed mongodb entity listeners in optional embeddeds ([#3450](https://github.com/typeorm/typeorm/issues/3450))
 * fixes returning invalid delete result
+* fixed entities failing to save after lazy-loading their relations ([#3576](https://github.com/typeorm/typeorm/issues/3576))
 
 ### Features
 
