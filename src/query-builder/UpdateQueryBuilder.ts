@@ -387,7 +387,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     // todo: duplication zone
                     if (value instanceof Function) { // support for SQL expressions in update query
                         updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value(
-                            this.escape('`' + column.databaseName + '`')
+                            this.escape("`" + column.databaseName + "`")
                         ));
                     } else {
                         if (this.connection.driver instanceof SqlServerDriver) {
