@@ -107,15 +107,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     select(selection?: string|string[]|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), selectionAliasName?: string): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select";
         if (selection instanceof Array) {
-            this.expressionMap.selects = selection.map(selection => ({ selection: selection }));
+            this.expressionMap.selects = selection.map(this.getSelectionWithColumnPath);
 
         } else if (selection instanceof Function) {
             const subQueryBuilder = selection(this.subQuery());
             this.setParameters(subQueryBuilder.getParameters());
-            this.expressionMap.selects.push({ selection: subQueryBuilder.getQuery(), aliasName: selectionAliasName });
+            this.expressionMap.selects.push({ ...this.getSelectionWithColumnPath(subQueryBuilder.getQuery()), aliasName: selectionAliasName });
 
         } else if (selection) {
-            this.expressionMap.selects = [{ selection: selection, aliasName: selectionAliasName }];
+            this.expressionMap.selects = [{ ...this.getSelectionWithColumnPath(selection), aliasName: selectionAliasName }];
         }
 
         return this;
@@ -144,15 +144,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             return this;
 
         if (selection instanceof Array) {
-            this.expressionMap.selects = this.expressionMap.selects.concat(selection.map(selection => ({ selection: selection })));
+            this.expressionMap.selects = this.expressionMap.selects.concat(selection.map(this.getSelectionWithColumnPath));
 
         } else if (selection instanceof Function) {
             const subQueryBuilder = selection(this.subQuery());
             this.setParameters(subQueryBuilder.getParameters());
-            this.expressionMap.selects.push({ selection: subQueryBuilder.getQuery(), aliasName: selectionAliasName });
+            this.expressionMap.selects.push({ ...this.getSelectionWithColumnPath(subQueryBuilder.getQuery()), aliasName: selectionAliasName });
 
         } else if (selection) {
-            this.expressionMap.selects.push({ selection: selection, aliasName: selectionAliasName });
+            this.expressionMap.selects.push({ ...this.getSelectionWithColumnPath(selection), aliasName: selectionAliasName });
         }
 
         return this;
@@ -1645,15 +1645,16 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
-        const hasMainAlias = this.expressionMap.selects.some(select => select.selection === aliasName);
+        const hasMainAlias = this.expressionMap.selects.some(select => select.columnPath === aliasName);
 
         const columns: ColumnMetadata[] = [];
         if (hasMainAlias) {
             columns.push(...metadata.columns.filter(column => column.isSelect === true));
         }
-        columns.push(...metadata.columns.filter(column => {
-            return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyPath);
-        }));
+
+        columns.push(...metadata.columns.filter(column =>
+            this.expressionMap.selects.some(select => select.columnPath === aliasName + "." + column.propertyPath)
+        ));
 
         // if user used partial selection and did not select some primary columns which are required to be selected
         // we select those primary columns and mark them as "virtual". Later virtual column values will be removed from final entity
@@ -1665,8 +1666,18 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const allColumns = [...columns, ...nonSelectedPrimaryColumns];
 
         return allColumns.map(column => {
-            const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
+            const selection = this.expressionMap.selects.find(select => select.columnPath === aliasName + "." + column.propertyPath);
             let selectionPath = this.escape(aliasName) + "." + this.escape(column.databaseName);
+
+            if (this.connection.driver instanceof PostgresDriver
+                && selection
+                && selection.columnPath
+                && selection.selection !== selection.columnPath
+            ) {
+                // Escape table and column inside the selection, e.g. DISTINCT ON ("foo".".bar") "foo".".bar"
+                selectionPath = selection.selection.replace(new RegExp(selection.columnPath, "g"), selectionPath);
+            }
+
             if (this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                 if (this.connection.driver instanceof MysqlDriver)
                     selectionPath = `AsText(${selectionPath})`;
@@ -1688,12 +1699,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     protected findEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
-        const mainSelect = this.expressionMap.selects.find(select => select.selection === aliasName);
+        const mainSelect = this.expressionMap.selects.find(select => select.columnPath === aliasName);
         if (mainSelect)
             return [mainSelect];
 
         return this.expressionMap.selects.filter(select => {
-            return metadata.columns.some(column => select.selection === aliasName + "." + column.propertyPath);
+            return metadata.columns.some(column => select.columnPath === aliasName + "." + column.propertyPath);
         });
     }
 
@@ -1960,6 +1971,22 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     protected obtainQueryRunner() {
         return this.queryRunner || this.connection.createQueryRunner("slave");
+    }
+
+    /**
+     * Gets the selected column from the selection. Is not always the same as the selection itself:
+     * 'DISTINCT ON (foo.bar) foo.bar' has the columnPath of 'foo.bar'
+     */
+    protected getSelectionWithColumnPath(selection: string) {
+        let columnPath: string = selection;
+
+        if (/(distinct)/i.test(selection) && this.connection.driver instanceof PostgresDriver) {
+            // Remove whitespace, then remove 'distinct on (*)' and 'distinct' with in-case-sensitive regexp
+            columnPath = selection.replace(/\s/g, "")
+                                  .replace(/(distincton\([a-z\.]*\)|distinct\(|[^a-z|.])/gi, "");
+        }
+
+        return { selection, columnPath };
     }
 
 }
