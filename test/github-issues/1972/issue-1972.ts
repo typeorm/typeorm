@@ -30,7 +30,7 @@ describe("github issues > #1972 STI problem - empty columns", () => {
         await connection.manager.save(tournamentUserParticipant);
 
         // find user participant in the DB
-        const result = await connection.manager.findOne(TournamentUserParticipant);
+        const result = await connection.manager.findOne(TournamentUserParticipant, tournamentUserParticipant.id);
         if (result) {
             assert(result.user instanceof User);
         }
@@ -51,7 +51,7 @@ describe("github issues > #1972 STI problem - empty columns", () => {
         await connection.manager.save(tournamentSquadParticipant);
 
         // find squad participant in the DB
-        const result = await connection.manager.findOne(TournamentSquadParticipant);
+        const result = await connection.manager.findOne(TournamentSquadParticipant, tournamentSquadParticipant.id);
 
         if (result) {
             assert(result.owner instanceof User);

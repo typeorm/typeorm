@@ -28,7 +28,7 @@ describe("persistence > entity updation", () => {
         const post = new PostUuid();
         post.text = "Hello Post";
         await connection.manager.save(post);
-        const loadedPost = await connection.manager.findOne(PostUuid);
+        const loadedPost = await connection.manager.findOne(PostUuid, post.id);
         post.id.should.be.equal(loadedPost!.id);
     })));
 
