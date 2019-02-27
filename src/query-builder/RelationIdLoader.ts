@@ -190,7 +190,7 @@ export class RelationIdLoader {
             const areAllNumbers = values.every(value => typeof value === "number");
 
             if (areAllNumbers) {
-                qb.where(`${mainAlias}.${columns[0].propertyPath} IN (${values.join(", ")})`);
+                condition1 = `${mainAlias}.${columns[0].propertyPath} IN (${values.join(", ")})`;
             } else {
                 qb.setParameter("values1", values);
                 condition1 = mainAlias + "." + columns[0].propertyPath + " IN (:...values1)"; // todo: use ANY for postgres
@@ -214,7 +214,7 @@ export class RelationIdLoader {
                 const areAllNumbers = values.every(value => typeof value === "number");
 
                 if (areAllNumbers) {
-                    qb.where(`${mainAlias}.${columns[0].propertyPath} IN (${values.join(", ")})`);
+                    condition2 = `${mainAlias}.${columns[0].propertyPath} IN (${values.join(", ")})`;
                 } else {
                     qb.setParameter("values2", values);
                     condition2 = mainAlias + "." + inverseColumns[0].propertyPath + " IN (:...values2)"; // todo: use ANY for postgres

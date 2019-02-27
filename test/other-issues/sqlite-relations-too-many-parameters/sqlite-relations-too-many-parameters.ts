@@ -23,19 +23,19 @@ describe("other issues > sqlite relations too many parameters", () => {
         // insert few posts first
         const categories1: Category[] = [];
         for (let i = 1; i <= 400; i++) {
-            categories1.push(new Category(String(i), "category #" + i));
+            categories1.push(new Category(i, "category #" + i));
         }
         await connection.manager.save(categories1);
 
         const categories2: Category[] = [];
         for (let i = 401; i <= 800; i++) {
-            categories2.push(new Category(String(i), "category #" + i));
+            categories2.push(new Category(i, "category #" + i));
         }
         await connection.manager.save(categories2);
 
         const categories3: Category[] = [];
         for (let i = 801; i <= 1200; i++) {
-            categories3.push(new Category(String(i), "category #" + i));
+            categories3.push(new Category(i, "category #" + i));
         }
         await connection.manager.save(categories3);
 
@@ -53,7 +53,7 @@ describe("other issues > sqlite relations too many parameters", () => {
         });
         console.log(postWithCategory);
 
-        postWithCategory!.categories.length.should.be.equal(2000);
+        postWithCategory!.categories.length.should.be.equal(1200);
 
     })));
 

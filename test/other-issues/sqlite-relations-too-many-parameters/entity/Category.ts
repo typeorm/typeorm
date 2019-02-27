@@ -5,12 +5,12 @@ import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
 export class Category {
 
     @PrimaryColumn()
-    id: string;
+    id: number;
 
     @Column()
     name: string;
 
-    constructor(id?: string, name?: string) {
+    constructor(id?: number, name?: string) {
         if (id) this.id = id;
         if (name) this.name = name;
     }
