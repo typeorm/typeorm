@@ -554,6 +554,7 @@ export class EntityManager {
         }
 
         if (findOptions.where || metadata.primaryColumns.length > 1) {
+            qb.setFindOptions(findOptions);
             return qb.andWhereInIds(ids).getMany();
         }
 
