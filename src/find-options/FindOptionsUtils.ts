@@ -90,6 +90,10 @@ export function normalizeFindOptions<T>(options: FindOptions<T>): FindOptions<T>
         if (where instanceof Array)
             return where.map((where: any) => recursivelyWhere(where));
 
+        if (Object.keys(where).every(key => !(where[key] instanceof Object && !(where[key] instanceof FindOperator)))) {
+            return where;
+        }
+
         return Object.keys(where).reduce((newWhere, key) => {
             if (where[key] instanceof Object && !(where[key] instanceof FindOperator)) {
                 newWhere[key] = recursively$FindOption(where[key]);

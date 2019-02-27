@@ -2318,6 +2318,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         }
     }
 
+    protected transformParameter(value: any, column: ColumnMetadata) {
+        return column.transformer && column.transformer.to ? column.transformer.to(value) : value;
+    }
+
     protected buildWhere(where: any, metadata: EntityMetadata, alias: string, embedPrefix?: string): string {
         let condition: string = "";
         let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
@@ -2344,17 +2348,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                     const aliasPath = `${alias}.${propertyPath}`;
                     const parameterName = alias + "_" + propertyPath.replace(".", "_") + "_" + parameterIndex;
-                    const parameterValue = column.transformer && column.transformer.to ? column.transformer.to(where[key]) : where[key];
+                    let parameterValue = where[key]; // column.transformer && column.transformer.to ? column.transformer.to(where[key]) : where[key];
 
-                    if (parameterValue === null) {
-                        andConditions.push(`${aliasPath} IS NULL`);
-
-                    } else if (parameterValue instanceof FindOperator) {
+                    if (parameterValue instanceof FindOperator) {
                         let parameters: any[] = [];
                         if (parameterValue.useParameter) {
                             const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
                             realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
-
+                                realParameterValue = this.transformParameter(realParameterValue, column);
                                 // don't create parameters for number to prevent max number of variables issues as much as possible
                                 if (typeof realParameterValue === "number") {
                                     parameters.push(realParameterValue);
@@ -2368,11 +2369,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }
                         andConditions.push(parameterValue.toSql(this.connection, aliasPath, parameters));
 
-                    } else {
-                        this.expressionMap.nativeParameters[parameterName] = parameterValue;
-                        parameterIndex++;
-                        const parameter = this.connection.driver.createParameter(parameterName, parameterIndex - 1);
-                        andConditions.push(`${aliasPath} = ${parameter}`);
+                    } else  {
+                        parameterValue = this.transformParameter(where[key], column);
+                        if (parameterValue === null) {
+                            andConditions.push(`${aliasPath} IS NULL`);
+
+                        } else {
+                            this.expressionMap.nativeParameters[parameterName] = parameterValue;
+                            parameterIndex++;
+                            const parameter = this.connection.driver.createParameter(parameterName, parameterIndex - 1);
+                            andConditions.push(`${aliasPath} = ${parameter}`);
+                        }
                     }
 
                     // this.conditions.push(`${alias}.${propertyPath} = :${paramName}`);
