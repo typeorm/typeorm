@@ -14,7 +14,7 @@ export class Post {
             try {
                 return summary(type, names.body, 10);
             } catch {
-                return "'not implement!'";
+                return "'not implemented!'";
             }
         }
     })

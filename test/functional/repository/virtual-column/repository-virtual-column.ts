@@ -31,12 +31,6 @@ describe("repository > virtual-column", function() {
 
         await Promise.all([
             userRepository.save(newUser),
-            /*
-            userRepository.insert({
-                firstName: "chen",
-                lastName: "fei"
-            })
-            */
         ]);
 
         const loadedUsers = await userRepository.find();
@@ -52,11 +46,6 @@ describe("repository > virtual-column", function() {
         newPost.body = "ORM for TypeScript and JavaScript (ES7, ES6, ES5). ";
         await Promise.all([
             postRepository.save(newPost),
-            /*
-            postRepository.insert({
-                body :"ORM for TypeScript and JavaScript (ES7, ES6, ES5). "
-            })
-            */
         ]);
 
         const loadedPosts = await postRepository.find();
@@ -65,5 +54,4 @@ describe("repository > virtual-column", function() {
             .oneOf(["not implemented!", newPost.body.substr(0, 9) + "..."]);
 
     })));
-
 });
