@@ -9,7 +9,6 @@ export class User {
     id: number;
 
     @Column({
-        nullable: true,
         asVirtual: (names: ColumnName<User>, type) => {
             try {
                 return concat(type, names.firstName, "'-'", names.lastName);

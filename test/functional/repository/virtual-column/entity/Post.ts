@@ -9,7 +9,6 @@ export class Post {
     id: number;
 
     @Column({
-        nullable: true,
         asVirtual: (names: ColumnName<Post>, type) => {
             try {
                 return summary(type, names.body, 10);
