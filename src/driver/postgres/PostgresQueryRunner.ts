@@ -1577,7 +1577,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds create table sql.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): string {
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(table, column)).join(", ");
+        const columnDefinitions = table.columns.filter( c => !c.asVirtual)
+            .map(column => this.buildCreateColumnSql(table, column)).join(", ");
         let sql = `CREATE TABLE ${this.escapeTableName(table)} (${columnDefinitions}`;
 
         table.columns

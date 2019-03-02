@@ -1259,7 +1259,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds and returns SQL for create table.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): string {
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
+        const columnDefinitions = table.columns.filter(c => !c.asVirtual)
+            .map(column => this.buildCreateColumnSql(column)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
 
         table.columns

@@ -10,6 +10,7 @@ import {ValueTransformer} from "../decorator/options/ValueTransformer";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {FindOperator} from "../find-options/FindOperator";
+import { DatabaseType } from "..";
 
 /**
  * This metadata contains all information about entity's column.
@@ -155,8 +156,14 @@ export class ColumnMetadata {
     asExpression?: string;
 
     /**
+     * Like asExpression, but support all database in typeorm.
+     */
+    asVirtual?: (names: {[col: string]: string }, type: DatabaseType) => string;
+
+    /**
      * Generated column type. Supports only in MySQL.
      */
+
     generatedType?: "VIRTUAL"|"STORED";
 
     /**
@@ -361,6 +368,9 @@ export class ColumnMetadata {
         if (options.args.options.asExpression) {
             this.asExpression = options.args.options.asExpression;
             this.generatedType = options.args.options.generatedType ? options.args.options.generatedType : "VIRTUAL";
+        }
+        if (options.args.options.asVirtual) {
+            this.asVirtual = options.args.options.asVirtual;
         }
         if (options.args.options.hstoreType)
             this.hstoreType = options.args.options.hstoreType;

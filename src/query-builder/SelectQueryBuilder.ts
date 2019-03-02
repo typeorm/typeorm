@@ -1664,9 +1664,30 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const nonSelectedPrimaryColumns = this.expressionMap.queryEntity ? metadata.primaryColumns.filter(primaryColumn => columns.indexOf(primaryColumn) === -1) : [];
         const allColumns = [...columns, ...nonSelectedPrimaryColumns];
 
+
+        const column_name_map = new Proxy(Object.create(null), {
+            get: (target, p: string) => {
+
+                if (target[p]) {
+                    return target[p];
+                } else {
+                    const column = metadata.columns.find(c => c.propertyPath === p);
+                    if (!column) {
+                        throw new Error("column `" + p + "` not in Entity `" + metadata.tableName + "`");
+                    }
+                    target[p] = this.escape(aliasName) + "." + this.escape(column.databaseName);
+                    return target[p];
+                }
+            }
+        });
+
         return allColumns.map(column => {
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
-            let selectionPath = this.escape(aliasName) + "." + this.escape(column.databaseName);
+            const type = metadata.connection.options.type;
+            let selectionPath = column.asVirtual
+                ? column.asVirtual(column_name_map, type)
+                : this.escape(aliasName) + "." + this.escape(column.databaseName);
+
             if (this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                 if (this.connection.driver instanceof MysqlDriver)
                     selectionPath = `AsText(${selectionPath})`;

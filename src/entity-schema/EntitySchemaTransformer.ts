@@ -87,6 +87,7 @@ export class EntitySchemaTransformer {
                         collation: column.collation,
                         enum: column.enum,
                         asExpression: column.asExpression,
+                        asVirtual: column.asVirtual,
                         generatedType: column.generatedType,
                         hstoreType: column.hstoreType,
                         array: column.array,

@@ -874,7 +874,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (skipPrimary && hasAutoIncrement)
             throw new Error(`Sqlite does not support AUTOINCREMENT on composite primary key`);
 
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, skipPrimary)).join(", ");
+        const columnDefinitions = table.columns.filter(c => !c.asVirtual)
+            .map(column => this.buildCreateColumnSql(column, skipPrimary)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
 
         // need for `addColumn()` method, because it recreates table.

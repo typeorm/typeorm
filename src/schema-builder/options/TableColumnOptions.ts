@@ -1,3 +1,4 @@
+import { DatabaseType } from "../..";
 
 /**
  * Table's column options.
@@ -117,6 +118,11 @@ export interface TableColumnOptions {
      * Generated column expression. Supports only in MySQL.
      */
     asExpression?: string;
+
+    /**
+     * Like asExpression, but support all database in typeorm.
+     */
+    asVirtual?: (names: {[col: string]: string }, type: DatabaseType) => string;
 
     /**
      * Generated column type. Supports only in MySQL.

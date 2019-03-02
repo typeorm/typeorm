@@ -1,5 +1,6 @@
 import {ColumnType} from "../driver/types/ColumnTypes";
 import {ValueTransformer} from "../decorator/options/ValueTransformer";
+import { DatabaseType } from "..";
 
 export interface EntitySchemaColumnOptions {
 
@@ -152,6 +153,11 @@ export interface EntitySchemaColumnOptions {
      * Generated column expression. Supports only in MySQL.
      */
     asExpression?: string;
+
+    /**
+     * Like asExpression, but support all database in typeorm.
+     */
+    asVirtual?: (names: {[col: string]: string }, type: DatabaseType) => string;
 
     /**
      * Generated column type. Supports only in MySQL.

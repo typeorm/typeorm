@@ -336,6 +336,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             if (this.expressionMap.insertColumns.length)
                 return this.expressionMap.insertColumns.indexOf(column.propertyPath) !== -1;
 
+            if (column.asVirtual) {
+                return false;
+            }
+
             // if user did not specified such list then return all columns except auto-increment one
             // for Oracle we return auto-increment column as well because Oracle does not support DEFAULT VALUES expression
             if (column.isGenerated && column.generationStrategy === "increment" && !(this.connection.driver instanceof OracleDriver) && !(this.connection.driver instanceof MysqlDriver))

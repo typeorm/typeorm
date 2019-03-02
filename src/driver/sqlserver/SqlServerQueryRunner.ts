@@ -1655,7 +1655,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Builds and returns SQL for create table.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): string {
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(table, column, false, true)).join(", ");
+        const columnDefinitions = table.columns.filter( c => c.asVirtual)
+            .map(column => this.buildCreateColumnSql(table, column, false, true)).join(", ");
         let sql = `CREATE TABLE ${this.escapeTableName(table)} (${columnDefinitions}`;
 
         table.columns

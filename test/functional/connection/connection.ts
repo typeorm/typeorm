@@ -23,7 +23,6 @@ describe("Connection", () => {
     // const resourceDir = __dirname + "/../../../../../test/functional/connection/";
 
     describe("before connection is established", function() {
-
         let connection: Connection;
         before(async () => {
             connection = getConnectionManager().create(setupSingleTestingConnection("mysql", {

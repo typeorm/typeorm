@@ -1,4 +1,5 @@
 import {TableColumnOptions} from "../options/TableColumnOptions";
+import { DatabaseType } from "../..";
 
 /**
  * Table's columns in the database represented in this class.
@@ -120,6 +121,11 @@ export class TableColumn {
     asExpression?: string;
 
     /**
+     * Like asExpression, but support all database in typeorm.
+     */
+    asVirtual?: (names: {[col: string]: string }, type: DatabaseType) => string;
+
+    /**
      * Generated column type. Supports only in MySQL.
      */
     generatedType?: "VIRTUAL"|"STORED";
@@ -161,6 +167,7 @@ export class TableColumn {
             this.comment = options.comment;
             this.enum = options.enum;
             this.asExpression = options.asExpression;
+            this.asVirtual = options.asVirtual;
             this.generatedType = options.generatedType;
             this.spatialFeatureType = options.spatialFeatureType;
             this.srid = options.srid;
@@ -188,6 +195,7 @@ export class TableColumn {
             unsigned: this.unsigned,
             enum: this.enum,
             asExpression: this.asExpression,
+            asVirtual: this.asVirtual,
             generatedType: this.generatedType,
             default: this.default,
             onUpdate: this.onUpdate,

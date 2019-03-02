@@ -1,6 +1,7 @@
 import {ColumnType} from "../../driver/types/ColumnTypes";
 import {ValueTransformer} from "./ValueTransformer";
 import { ColumnCommonOptions } from "./ColumnCommonOptions";
+import { DatabaseType } from "../..";
 
 /**
  * Describes all column's options.
@@ -118,6 +119,11 @@ export interface ColumnOptions extends ColumnCommonOptions {
     asExpression?: string;
 
     /**
+     * Like asExpression, but support all database in typeorm.
+     */
+    asVirtual?: (names: {[col: string]: string }, type: DatabaseType) => string;
+
+    /**
      * Generated column type. Supports only in MySQL.
      */
     generatedType?: "VIRTUAL"|"STORED";
@@ -150,4 +156,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * SRID (Spatial Reference ID (EPSG code))
      */
     srid?: number;
+
 }
+
+

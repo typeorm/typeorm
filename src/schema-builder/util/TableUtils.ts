@@ -16,6 +16,7 @@ export class TableUtils {
             zerofill: columnMetadata.zerofill,
             unsigned: columnMetadata.unsigned,
             asExpression: columnMetadata.asExpression,
+            asVirtual: columnMetadata.asVirtual,
             generatedType: columnMetadata.generatedType,
             default: driver.normalizeDefault(columnMetadata),
             onUpdate: columnMetadata.onUpdate,

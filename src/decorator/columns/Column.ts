@@ -147,3 +147,7 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
         }
     };
 }
+
+export type ColumnName<M> = {
+    [P in keyof M]: string
+};
