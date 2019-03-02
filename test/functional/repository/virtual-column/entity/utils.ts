@@ -16,13 +16,13 @@ export function concat(type: DatabaseType, ...strings: string[]) {
 
 export function summary(type: DatabaseType, body: string, max_length: number) {
     switch (type) {
-        //case "oracle":
+        // case "oracle":
         case "sqlite":
-        //case "mysql":
-        //case "mariadb":
+        // case "mysql":
+        // case "mariadb":
             return concat(type, `substr(${body}, 0, ${max_length})`, "'...'");
         case "postgres":
-            //return concat(type, `substring(${body}, 0, ${max_length})`, "'...'");
+            return concat(type, `substring(${body}, 0, ${max_length})`, "'...'");
         default:
             throw new Error(`dialect '${type}' still not implement 'summary()'`);
     }
