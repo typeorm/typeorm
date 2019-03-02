@@ -42,6 +42,10 @@ export class MongoSchemaBuilder implements SchemaBuilder {
                 const options = <MongodbIndexOptions>{ name: index.name, unique: index.isUnique, sparse: index.isSparse, background: index.isBackground, expireAfterSeconds: index.expireAfterSeconds };
                 promises.push(queryRunner.createCollectionIndex(metadata.tableName, index.columnNamesWithOrderingMap, options));
             });
+            metadata.uniques.forEach(unique => {
+                const options = <MongodbIndexOptions>{ name: unique.name, unique: true };
+                promises.push(queryRunner.createCollectionIndex(metadata.tableName, unique.givenColumnNames, options));
+            });
         });
         await Promise.all(promises);
     }

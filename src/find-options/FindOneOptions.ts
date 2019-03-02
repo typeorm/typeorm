@@ -49,4 +49,5 @@ export interface FindOneOptions<Entity = any> {
      */
     loadEagerRelations?: boolean;
 
+    projection?: object;
 }

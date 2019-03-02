@@ -31,7 +31,8 @@ export class FindOptionsUtils {
                     typeof possibleOptions.cache === "number" ||
                     possibleOptions.loadRelationIds instanceof Object ||
                     typeof possibleOptions.loadRelationIds === "boolean" ||
-                    typeof possibleOptions.loadEagerRelations === "boolean"
+                    typeof possibleOptions.loadEagerRelations === "boolean" ||
+                    possibleOptions.projection instanceof Object // for mongo
                 );
     }
 

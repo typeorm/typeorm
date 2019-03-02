@@ -178,10 +178,24 @@ export class MongoEntityManager extends EntityManager {
         }
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindOneOptions(findOneOptionsOrConditions)) {
-            if (findOneOptionsOrConditions.select)
+            if (findOneOptionsOrConditions.projection) {
+                cursor.project(findOneOptionsOrConditions.projection);
+            } else if (findOneOptionsOrConditions.select) {
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(findOneOptionsOrConditions.select));
-            if (findOneOptionsOrConditions.order)
+            }
+            if (findOneOptionsOrConditions.order) {
                 cursor.sort(this.convertFindOptionsOrderToOrderCriteria(findOneOptionsOrConditions.order));
+            }
+        } else if (maybeOptions && FindOptionsUtils.isFindOneOptions(maybeOptions)) {
+            if (maybeOptions.projection) {
+                cursor.project(maybeOptions.projection);
+            } else if (maybeOptions.select) {
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(maybeOptions.select));
+            }
+            if (maybeOptions.order) {
+                cursor.sort(this.convertFindOptionsOrderToOrderCriteria(maybeOptions.order));
+            }
+
         }
 
         // const result = await cursor.limit(1).next();
