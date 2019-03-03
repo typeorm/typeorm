@@ -35,7 +35,6 @@ describe("repository > virtual-column", function() {
 
         const loadedUsers = await userRepository.find();
 
-
         expect(loadedUsers.map(v => v.fullName)[0])
             .oneOf(["not implemented!", "chen-fei"]);
     })));
