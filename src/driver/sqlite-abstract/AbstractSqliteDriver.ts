@@ -164,6 +164,12 @@ export abstract class AbstractSqliteDriver implements Driver {
      */
     dataTypeDefaults: DataTypeDefaults;
 
+    /**
+     * No documentation specifying a maximum length for identifiers could be found
+     * for SQLite.
+     */
+    maxAliasLength?: number;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

@@ -12,7 +12,6 @@ const rename = require("gulp-rename");
 const mocha = require("gulp-mocha");
 const chai = require("chai");
 const tslint = require("gulp-tslint");
-const stylish = require("tslint-stylish");
 const sourcemaps = require("gulp-sourcemaps");
 const istanbul = require("gulp-istanbul");
 const remapIstanbul = require("remap-istanbul/lib/gulpRemapIstanbul");
@@ -267,8 +266,12 @@ export class Gulpfile {
     @Task()
     tslint() {
         return gulp.src(["./src/**/*.ts", "./test/**/*.ts", "./sample/**/*.ts"])
-            .pipe(tslint())
-            .pipe(tslint.report(stylish, {
+            .pipe(
+                tslint({
+                    formatter: "stylish"
+                })
+            )
+            .pipe(tslint.report({
                 emitError: true,
                 sort: true,
                 bell: true

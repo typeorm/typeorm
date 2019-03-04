@@ -3,7 +3,7 @@
 * [What is `ConnectionOptions`](#what-is-connectionoptions)
 * [Common connection options](#common-connection-options)
 * [`mysql` / `mariadb` connection options](#mysql--mariadb-connection-options)
-* [`postgres` / `cockroachdb` connection options](#postgres-connection-options)
+* [`postgres` / `cockroachdb` connection options](#postgres--cockroachdb-connection-options)
 * [`sqlite` connection options](#sqlite-connection-options)
 * [`cordova` connection options](#cordova-connection-options)
 * [`react-native` connection options](#react-native-connection-options)
@@ -50,7 +50,7 @@ Learn more about [Subscribers](listeners-and-subscribers.md).
 Accepts both entity schema classes and directories to load from.
 Directories support glob patterns.
 Example: `entitySchemas: [PostSchema, CategorySchema, "entity-schema/*.json", "modules/**/entity-schema/*.json"]`.
-Learn more about [Entity Schemas](./schema-in-files.md).
+Learn more about [Entity Schemas](separating-entity-definition.md).
 
 * `migrations` - Migrations to be loaded and used for this connection.
 Accepts both migration classes and directories to load from.

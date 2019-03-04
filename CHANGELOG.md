@@ -9,6 +9,8 @@ feel free to ask us and community.
 
 ### Bug fixes
 
+* fixed "deep relations" not loaded/mapped due to the built-in max length of Postgres ([#3118](https://github.com/typeorm/typeorm/issues/3118))
+
 ### Features
 
 * added `uuidExtension` option to Postgres connection options, which allows TypeORM to use the newer `pgcrypto` extension to generate UUIDs

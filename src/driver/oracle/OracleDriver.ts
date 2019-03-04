@@ -184,6 +184,20 @@ export class OracleDriver implements Driver {
         "timestamp with local time zone": { precision: 6 }
     };
 
+    /**
+     * Max length allowed by Oracle for aliases.
+     * @see https://docs.oracle.com/database/121/SQLRF/sql_elements008.htm#SQLRF51129
+     * > The following list of rules applies to both quoted and nonquoted identifiers unless otherwise indicated
+     * > Names must be from 1 to 30 bytes long with these exceptions:
+     * > [...]
+     *
+     * Since Oracle 12.2 (with a compatible driver/client), the limit has been set to 128.
+     * @see https://docs.oracle.com/en/database/oracle/oracle-database/12.2/sqlrf/Database-Object-Names-and-Qualifiers.html
+     *
+     * > If COMPATIBLE is set to a value of 12.2 or higher, then names must be from 1 to 128 bytes long with these exceptions
+     */
+    maxAliasLength = 30;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -659,7 +673,7 @@ export class OracleDriver implements Driver {
     protected async createPool(options: OracleConnectionOptions, credentials: OracleConnectionCredentialsOptions): Promise<any> {
 
         credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
-       
+
         // build connection options for the driver
         const connectionOptions = Object.assign({}, {
             user: credentials.username,

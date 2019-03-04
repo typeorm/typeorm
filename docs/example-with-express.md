@@ -148,7 +148,7 @@ npm i typeorm mysql reflect-metadata --save
 
 * `typeorm` is the typeorm package itself
 * `mysql` is the underlying database driver.
-If you are using a diffrent database system,  you must install the appropriate package
+If you are using a different database system,  you must install the appropriate package
 * `reflect-metadata` is required to make decorators to work properly
 
 Now let's create `ormconfig.json` with the database connection configuration we will use.

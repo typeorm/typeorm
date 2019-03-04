@@ -256,17 +256,20 @@ export class Connection {
     // TODO rename
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.createQueryRunner("master");
-        if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
-            const databases: string[] = this.driver.database ? [this.driver.database] : [];
-            this.entityMetadatas.forEach(metadata => {
-                if (metadata.database && databases.indexOf(metadata.database) === -1)
-                    databases.push(metadata.database);
-            });
-            await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(database));
-        } else {
-            await queryRunner.clearDatabase();
+        try {
+            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
+                const databases: string[] = this.driver.database ? [this.driver.database] : [];
+                this.entityMetadatas.forEach(metadata => {
+                    if (metadata.database && databases.indexOf(metadata.database) === -1)
+                        databases.push(metadata.database);
+                });
+                await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(database));
+            } else {
+                await queryRunner.clearDatabase();
+            }
+        } finally {
+            await queryRunner.release();
         }
-        await queryRunner.release();
     }
 
     /**

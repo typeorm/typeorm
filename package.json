@@ -85,8 +85,7 @@
     "sql.js": "^0.5.0",
     "sqlite3": "^4.0.3",
     "ts-node": "^5.0.0",
-    "tslint": "^5.9.1",
-    "tslint-stylish": "^2.1.0",
+    "tslint": "^5.13.0",
     "typescript": "^2.8.1"
   },
   "dependencies": {

@@ -39,3 +39,52 @@ export function abbreviate(str: string, abbrLettersCount: number = 1): string {
         return res;
     }, "");
 }
+
+export interface IShortenOptions {
+    /** String used to split "segments" of the alias/column name */
+    separator?: string;
+    /** Maximum length of any "segment" */
+    segmentLength?: number;
+    /** Length of any "term" in a "segment"; "OrderItem" is a segment, "Order" and "Items" are terms */
+    termLength?: number;
+  }
+
+  /**
+   * Shorten a given `input`. Useful for RDBMS imposing a limit on the
+   * maximum length of aliases and column names in SQL queries.
+   *
+   * @param input String to be shortened.
+   * @param options Default to `4` for segments length, `2` for terms length, `'__'` as a separator.
+   *
+   * @return Shortened `input`.
+   *
+   * @example
+   * // returns: "UsShCa__orde__mark__dire"
+   * shorten('UserShoppingCart__order__market__director')
+   *
+   * // returns: "cat_wit_ver_lon_nam_pos_wit_ver_lon_nam_pos_wit_ver_lon_nam"
+   * shorten(
+   *   'category_with_very_long_name_posts_with_very_long_name_post_with_very_long_name',
+   *   { separator: '_', segmentLength: 3 }
+   * )
+   *
+   * // equals: UsShCa__orde__mark_market_id
+   * `${shorten('UserShoppingCart__order__market')}_market_id`
+   */
+  export function shorten(input: string, options: IShortenOptions = {}): string {
+    const { segmentLength = 4, separator = "__", termLength = 2 } = options;
+
+    const segments = input.split(separator);
+    const shortSegments = segments.reduce((acc: string[], val: string) => {
+        // split the given segment into many terms based on an eventual camel cased name
+        const segmentTerms = val.replace(/([a-z\xE0-\xFF])([A-Z\xC0-\xDF])/g, "$1 $2").split(" ");
+        // "OrderItemList" becomes "OrItLi", while "company" becomes "comp"
+        const length = segmentTerms.length > 1 ? termLength : segmentLength;
+        const shortSegment = segmentTerms.map(term => term.substr(0, length)).join("");
+
+        acc.push(shortSegment);
+        return acc;
+    }, []);
+
+    return shortSegments.join(separator);
+  }

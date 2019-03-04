@@ -228,6 +228,12 @@ export class PostgresDriver implements Driver {
         "timestamp with time zone": { precision: 6 },
     };
 
+    /**
+     * Max length allowed by Postgres for aliases.
+     * @see https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
+     */
+    maxAliasLength = 63;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

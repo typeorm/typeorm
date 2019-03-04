@@ -191,6 +191,12 @@ export class CockroachDriver implements Driver {
         "char": { length: 1 },
     };
 
+    /**
+     * No documentation specifying a maximum length for identifiers could be found
+     * for CockroarchDb.
+     */
+    maxAliasLength?: number;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

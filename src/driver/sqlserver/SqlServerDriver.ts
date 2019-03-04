@@ -194,6 +194,12 @@ export class SqlServerDriver implements Driver {
         "datetimeoffset": { precision: 7 }
     };
 
+    /**
+     * Max length allowed by MSSQL Server for aliases (identifiers).
+     * @see https://docs.microsoft.com/en-us/sql/sql-server/maximum-capacity-specifications-for-sql-server
+     */
+    maxAliasLength = 128;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
