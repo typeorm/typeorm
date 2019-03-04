@@ -94,7 +94,9 @@ export class MongoEntityManager extends EntityManager {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-            if (optionsOrConditions.select)
+            if (optionsOrConditions.projection)
+                cursor.project(optionsOrConditions.projection);
+            if (optionsOrConditions.select && !optionsOrConditions.projection)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
@@ -115,7 +117,9 @@ export class MongoEntityManager extends EntityManager {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-            if (optionsOrConditions.select)
+            if (optionsOrConditions.projection)
+                cursor.project(optionsOrConditions.projection);
+            if (optionsOrConditions.select && !optionsOrConditions.projection)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
@@ -151,7 +155,9 @@ export class MongoEntityManager extends EntityManager {
 
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-            if (optionsOrConditions.select)
+            if (optionsOrConditions.projection)
+                cursor.project(optionsOrConditions.projection);
+            if (optionsOrConditions.select && !optionsOrConditions.projection)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
@@ -178,23 +184,20 @@ export class MongoEntityManager extends EntityManager {
         }
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindOneOptions(findOneOptionsOrConditions)) {
-            if (findOneOptionsOrConditions.projection) {
+            if (findOneOptionsOrConditions.projection)
                 cursor.project(findOneOptionsOrConditions.projection);
-            } else if (findOneOptionsOrConditions.select) {
+            if (findOneOptionsOrConditions.select && !findOneOptionsOrConditions.projection)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(findOneOptionsOrConditions.select));
-            }
-            if (findOneOptionsOrConditions.order) {
+            if (findOneOptionsOrConditions.order)
                 cursor.sort(this.convertFindOptionsOrderToOrderCriteria(findOneOptionsOrConditions.order));
-            }
+
         } else if (maybeOptions && FindOptionsUtils.isFindOneOptions(maybeOptions)) {
-            if (maybeOptions.projection) {
+            if (maybeOptions.projection)
                 cursor.project(maybeOptions.projection);
-            } else if (maybeOptions.select) {
+            if (maybeOptions.select && !findOneOptionsOrConditions.projection)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(maybeOptions.select));
-            }
-            if (maybeOptions.order) {
+            if (maybeOptions.order)
                 cursor.sort(this.convertFindOptionsOrderToOrderCriteria(maybeOptions.order));
-            }
 
         }
 

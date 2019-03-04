@@ -26,37 +26,15 @@ describe("mongodb > projection", () => {
         post.counters.comments = 1;
         await postRepository.save(post);
 
-        const loadedPost = await postRepository.findOne({ title: "Post" }, {projection: {"counters.likes": 0}});
+        const loadedPost1 = await postRepository.findOne({ title: "Post" }, {projection: {"counters.likes": 0}});
+        const loadedPost2 = await postRepository.findByIds([post.id], {projection: {"title": 1}});
 
-        expect(loadedPost).to.be.not.empty;
-        console.log(loadedPost);
-        /*expect(loadedPost!.counters).to.be.not.empty;
-        loadedPost!.should.be.instanceOf(Post);
-        loadedPost!.title.should.be.equal("Post");
-        loadedPost!.counters.should.be.instanceOf(Counters);
-        loadedPost!.counters.likes.should.be.equal(5);
-        loadedPost!.counters.comments.should.be.equal(1);
-
-        post.title = "Updated post";
-        post.counters.comments = 2;
-        await postRepository.save(post);
-
-        const loadedUpdatedPost = await postRepository.findOne({ title: "Updated post" });
-
-        expect(loadedUpdatedPost).to.be.not.empty;
-        expect(loadedUpdatedPost!.counters).to.be.not.empty;
-        loadedUpdatedPost!.should.be.instanceOf(Post);
-        loadedUpdatedPost!.title.should.be.equal("Updated post");
-        loadedUpdatedPost!.counters.should.be.instanceOf(Counters);
-        loadedUpdatedPost!.counters.likes.should.be.equal(5);
-        loadedUpdatedPost!.counters.comments.should.be.equal(2);
-
-        await postRepository.remove(post);
-
-        const removedPost = await postRepository.findOne({ title: "Post" });
-        const removedUpdatedPost = await postRepository.findOne({ title: "Updated post" });
-        expect(removedPost).to.be.empty;
-        expect(removedUpdatedPost).to.be.empty;*/
+        expect(loadedPost1).to.be.not.empty;
+        expect(loadedPost1!.counters.likes!).to.be.undefined;
+        loadedPost1!.counters.comments.should.be.equal(1);
+        expect(loadedPost2[0]).to.be.not.empty;
+        expect(loadedPost2[0].title).to.be.not.empty;
+        expect(loadedPost2[0]!.counters!).to.be.undefined;
 
     })));
 
