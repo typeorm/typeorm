@@ -49,5 +49,9 @@ export interface FindOneOptions<Entity = any> {
      */
     loadEagerRelations?: boolean;
 
+    /**
+     * Specifies what fields should be retrieved.
+     * Used only by MongoDB driver.
+     */
     projection?: object;
 }
