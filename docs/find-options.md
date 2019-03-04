@@ -7,10 +7,17 @@
 
 All repository and manager `find` methods accept special options you can use to query data you need without using `QueryBuilder`:
 
-* `select` - indicates which properties of the main object must be selected
+* `select` - indicates which properties of the main object must be selected. For MongoDB queries use `projection` instead
 
 ```typescript
 userRepository.find({ select: ["firstName", "lastName"] });
+```
+
+* `projection` - the fields to return in the query. Object of fields to include or exclude (not both). Used only by MongoDB driver
+
+```typescript
+userRepository.find({ projection: {firstName: 1, lastName: 1, "profile.followers": 1} });
+userRepository.find({ projection: {"profile.followers": 0} });
 ```
 
 * `relations` - relations needs to be loaded with the main entity. Sub-relations can also be loaded (shorthand for join and leftJoinAndSelect)
