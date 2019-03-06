@@ -353,7 +353,7 @@ export class MigrationExecutor {
             await this.connection.manager
             .createQueryBuilder()
             .update(this.migrationsTable)
-            .set({ hash })
+            .set({ hash } as any)
             .where({ name: migration.name })
             .execute();
         }

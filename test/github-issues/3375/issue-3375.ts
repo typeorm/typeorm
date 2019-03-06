@@ -56,7 +56,7 @@ describe("github issues > #3375 add metadata to migrations table", () => {
             const queryRunner = connection.createQueryRunner();
             if (connection.driver instanceof MongoDriver) {
                 const mongoRunner = queryRunner as MongoQueryRunner;
-                await mongoRunner.databaseConnection.db(connection.driver.database!).collection("migrations").updateMany({}, {$unset: {hash: 1}});
+                await mongoRunner.databaseConnection.db(connection.driver.database!).collection("migrations").updateMany({}, {$unset: {hash: 1}} as any);
             } else {
                 await queryRunner.dropColumn("migrations", "hash");
             }

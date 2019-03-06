@@ -174,6 +174,7 @@ export class CockroachDriver implements Driver {
         treeLevel: Number,
         migrationId: Number,
         migrationName: "varchar",
+        migrationHash: "char",
         migrationTimestamp: "int8",
         cacheId: Number,
         cacheIdentifier: "varchar",
