@@ -5,6 +5,7 @@ import {Migration} from "./Migration";
 import {MigrationInterface} from "./MigrationInterface";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {CollectionUtils} from "../util/CollectionUtils";
+import {PlatformTools} from "../platform/PlatformTools";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -13,7 +14,8 @@ import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectio
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
-import {sha1} from "object-hash";
+
+const sha1 = PlatformTools.load("object-hash");
 
 export const COLUMN_CREATE_DATE = "create_date";
 export const COLUMN_HASH = "hash";
