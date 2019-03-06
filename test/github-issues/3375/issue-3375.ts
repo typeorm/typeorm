@@ -99,7 +99,7 @@ describe("github issues > #3375 add metadata to migrations table", () => {
             expect(error!.message).to.match(/migration hash/i);
         })));
 
-        it("should succeed when migrationIgnoreHash is truthy", () => Promise.all(connections.map(async connection => {
+        it("should succeed when migrationForce is truthy", () => Promise.all(connections.map(async connection => {
             (connection.options as any).migrationsForce = true;
             await connection.runMigrations();
         })));
