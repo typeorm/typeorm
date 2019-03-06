@@ -310,6 +310,7 @@ export class MigrationExecutor {
             .getRawOne();
 
             if (count === 0) {
+                // All migrations now have a hash, the hash column will be changed as not null
                 await queryRunner.changeColumn(this.migrationsTable, COLUMN_HASH, new TableColumn({
                     name: COLUMN_HASH,
                     type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationHash}),
