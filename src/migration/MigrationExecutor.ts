@@ -91,7 +91,7 @@ export class MigrationExecutor {
             if (executedMigration) {
                 delete executedMigrationsByName[migration.name];
                 if (!this.migrationsForce && executedMigration.hash !== migration.hash) {
-                    throw new Error(`Migration hash for ${executedMigration.name} does not match: ${executedMigration.hash} !== ${migration.hash}`);
+                    throw new Error(`Migration hash for ${executedMigration.name} does not match: ${executedMigration.hash} !== ${migration.hash}. This check is here to prevent changing the code of already executed migrations, and thus having a different environment in development and production. You can use the --force option to skip this check.`);
                 }
                 return false;
             }
