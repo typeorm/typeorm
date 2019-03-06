@@ -8,17 +8,17 @@ export interface Logger {
     /**
      * Logs query and parameters used in it.
      */
-    logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner): any;
+    logQuery(query: string, parameters?: any, queryRunner?: QueryRunner): any;
 
     /**
      * Logs query that is failed.
      */
-    logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner): any;
+    logQueryError(error: string, query: string, parameters?: any, queryRunner?: QueryRunner): any;
 
     /**
      * Logs query that is slow.
      */
-    logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner): any;
+    logQuerySlow(time: number, query: string, parameters?: any, queryRunner?: QueryRunner): any;
 
     /**
      * Logs events from the schema build process.

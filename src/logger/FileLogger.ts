@@ -23,9 +23,9 @@ export class FileLogger implements Logger {
     /**
      * Logs query and parameters used in it.
      */
-    logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
+    logQuery(query: string, parameters?: any, queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("query") !== -1)) {
-            const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+            const sql = query + (parameters && (parameters.length > 0 || parameters.length === undefined) ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             this.write("[QUERY]: " + sql);
         }
     }
@@ -33,9 +33,9 @@ export class FileLogger implements Logger {
     /**
      * Logs query that is failed.
      */
-    logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
+    logQueryError(error: string, query: string, parameters?: any, queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("error") !== -1)) {
-            const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+            const sql = query + (parameters && (parameters.length > 0 || parameters.length === undefined) ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             this.write([
                 `[FAILED QUERY]: ${sql}`,
                 `[QUERY ERROR]: ${error}`
@@ -47,7 +47,7 @@ export class FileLogger implements Logger {
      * Logs query that is slow.
      */
     logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+        const sql = query + (parameters && (parameters.length > 0 || parameters.length === undefined) ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
         this.write(`[SLOW QUERY: ${time} ms]: ` + sql);
     }
 

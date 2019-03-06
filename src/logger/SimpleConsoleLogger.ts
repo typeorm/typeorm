@@ -24,7 +24,7 @@ export class SimpleConsoleLogger implements Logger {
      */
     logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("query") !== -1)) {
-            const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+            const sql = query + (parameters && (parameters.length > 0 || parameters.length === undefined) ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             console.log("query" + ": " + sql);
         }
     }
@@ -34,7 +34,7 @@ export class SimpleConsoleLogger implements Logger {
      */
     logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("error") !== -1)) {
-            const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+            const sql = query + (parameters && (parameters.length > 0 || parameters.length === undefined) ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             console.log(`query failed: ` + sql);
             console.log(`error:`, error);
         }
@@ -44,7 +44,7 @@ export class SimpleConsoleLogger implements Logger {
      * Logs query that is slow.
      */
     logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+        const sql = query + (parameters && (parameters.length > 0 || parameters.length === undefined) ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
         console.log(`query is slow: ` + sql);
         console.log(`execution time: ` + time);
     }

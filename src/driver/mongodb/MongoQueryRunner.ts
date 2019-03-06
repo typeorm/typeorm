@@ -117,6 +117,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      */
     cursor(collectionName: string, query?: ObjectLiteral): Cursor<any> {
+        this.logQuery("cursor", collectionName, query);
         return this.getCollection(collectionName).find(query || {});
     }
 
@@ -138,6 +139,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Count number of matching documents in the db to a query.
      */
     async count(collectionName: string, query?: ObjectLiteral, options?: MongoCountPreferences): Promise<any> {
+        this.logQuery("count", collectionName, query);
         return await this.getCollection(collectionName).countDocuments(query || {}, options);
     }
 
@@ -160,6 +162,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Delete multiple documents on MongoDB.
      */
     async deleteMany(collectionName: string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
+        this.logQuery("deleteMany", collectionName, query);
         return await this.getCollection(collectionName).deleteMany(query, options);
     }
 
@@ -167,6 +170,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Delete a document on MongoDB.
      */
     async deleteOne(collectionName: string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
+        this.logQuery("deleteOne", collectionName, query);
         return await this.getCollection(collectionName).deleteOne(query, options);
     }
 
@@ -174,6 +178,7 @@ export class MongoQueryRunner implements QueryRunner {
      * The distinct command returns returns a list of distinct values for the given key across a collection.
      */
     async distinct(collectionName: string, key: string, query: ObjectLiteral, options?: { readPreference?: ReadPreference | string }): Promise<any> {
+        this.logQuery("distinct", collectionName, query);
         return await this.getCollection(collectionName).distinct(key, query, options);
     }
 
@@ -195,6 +200,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
      */
     async findOneAndDelete(collectionName: string, query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
+        this.logQuery("findOneAndDelete", collectionName, query);
         return await this.getCollection(collectionName).findOneAndDelete(query, options);
     }
 
@@ -202,6 +208,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
      */
     async findOneAndReplace(collectionName: string, query: ObjectLiteral, replacement: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
+        this.logQuery("findOneAndReplace", collectionName, { query, replacement });
         return await this.getCollection(collectionName).findOneAndReplace(query, replacement, options);
     }
 
@@ -209,6 +216,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
      */
     async findOneAndUpdate(collectionName: string, query: ObjectLiteral, update: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
+        this.logQuery("findOneAndUpdate", collectionName, { query, update });
         return await this.getCollection(collectionName).findOneAndUpdate(query, update, options);
     }
 
@@ -272,6 +280,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Inserts an array of documents into MongoDB.
      */
     async insertMany(collectionName: string, docs: ObjectLiteral[], options?: CollectionInsertManyOptions): Promise<InsertWriteOpResult> {
+        this.logQuery("insertMany", collectionName, docs);
         return await this.getCollection(collectionName).insertMany(docs, options);
     }
 
@@ -279,6 +288,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Inserts a single document into MongoDB.
      */
     async insertOne(collectionName: string, doc: ObjectLiteral, options?: CollectionInsertOneOptions): Promise<InsertOneWriteOpResult> {
+        this.logQuery("insertOne", collectionName, doc);
         return await this.getCollection(collectionName).insertOne(doc, options);
     }
 
@@ -329,6 +339,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Replace a document on MongoDB.
      */
     async replaceOne(collectionName: string, query: ObjectLiteral, doc: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
+        this.logQuery("replaceOne", collectionName, { query, doc });
         return await this.getCollection(collectionName).replaceOne(query, doc, options);
     }
 
@@ -350,6 +361,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Update multiple documents on MongoDB.
      */
     async updateMany(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: { upsert?: boolean, w?: any, wtimeout?: number, j?: boolean }): Promise<UpdateWriteOpResult> {
+        this.logQuery("updateMany", collectionName, { query, update });
         return await this.getCollection(collectionName).updateMany(query, update, options);
     }
 
@@ -357,6 +369,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Update a single document on MongoDB.
      */
     async updateOne(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
+        this.logQuery("updateOne", collectionName, { query, update });
         return await this.getCollection(collectionName).updateOne(query, update, options);
     }
 
@@ -841,4 +854,14 @@ export class MongoQueryRunner implements QueryRunner {
         return this.databaseConnection.db(this.connection.driver.database!).collection(collectionName);
     }
 
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Logs a query on collectionName with given method name and parameters
+     */
+    private logQuery (method: string, collectionName: string, parameters: any) {
+        this.connection.logger.logQuery(`Performing ${method} on ${collectionName}`, parameters);
+    }
 }

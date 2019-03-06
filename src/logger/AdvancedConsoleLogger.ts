@@ -25,7 +25,7 @@ export class AdvancedConsoleLogger implements Logger {
      */
     logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("query") !== -1)) {
-            const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+            const sql = query + (parameters && (parameters.length > 0 || parameters.length === undefined) ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             PlatformTools.logInfo("query:", PlatformTools.highlightSql(sql));
         }
     }
@@ -35,7 +35,7 @@ export class AdvancedConsoleLogger implements Logger {
      */
     logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("error") !== -1)) {
-            const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+            const sql = query + (parameters && (parameters.length > 0 || parameters.length === undefined) ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             PlatformTools.logError(`query failed:`, PlatformTools.highlightSql(sql));
             PlatformTools.logError(`error:`, error);
         }
@@ -45,7 +45,7 @@ export class AdvancedConsoleLogger implements Logger {
      * Logs query that is slow.
      */
     logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+        const sql = query + (parameters && (parameters.length > 0 || parameters.length === undefined) ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
         PlatformTools.logWarn(`query is slow:`, PlatformTools.highlightSql(sql));
         PlatformTools.logWarn(`execution time:`, time);
     }
