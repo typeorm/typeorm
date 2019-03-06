@@ -123,6 +123,16 @@ export class InitCommand implements yargs.CommandModule {
                     "database": "test",
                 });
                 break;
+            case "cockroachdb":
+                Object.assign(options, {
+                    "type": "cockroachdb",
+                    "host": "localhost",
+                    "port": 26257,
+                    "username": "root",
+                    "password": "",
+                    "database": "defaultdb",
+                });
+                break;
             case "mssql":
                 Object.assign(options, {
                     "type": "mssql",
@@ -249,7 +259,7 @@ export const Routes = [{
     action: "save"
 }, {
     method: "delete",
-    route: "/users",
+    route: "/users/:id",
     controller: UserController,
     action: "remove"
 }];`;
@@ -435,6 +445,17 @@ services:
       POSTGRES_DB: "test"
 
 `;
+            case "cockroachdb":
+                return `version: '3'
+services:
+
+  cockroachdb:
+    image: "cockroachdb/cockroach:v2.1.4"
+    command: start --insecure
+    ports:
+      - "26257:26257"
+
+`;
             case "sqlite":
                 return `version: '3'
 services:
@@ -460,7 +481,7 @@ services:
 services:
 
   mongodb:
-    image: "mongo:3.4.1"
+    image: "mongo:4.0.6"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
@@ -519,10 +540,11 @@ Steps to run this project:
                 packageJson.dependencies["mysql"] = "^2.14.1";
                 break;
             case "postgres":
+            case "cockroachdb":
                 packageJson.dependencies["pg"] = "^7.3.0";
                 break;
             case "sqlite":
-                packageJson.dependencies["sqlite3"] = "^3.1.10";
+                packageJson.dependencies["sqlite3"] = "^4.0.3";
                 break;
             case "oracle":
                 packageJson.dependencies["oracledb"] = "^1.13.1";

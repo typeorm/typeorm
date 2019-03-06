@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {BaseEntity} from "../../../src/repository/BaseEntity";
@@ -14,6 +15,11 @@ describe("github issues > #1261 onDelete property on foreign key is not modified
     after(() => closeTestingConnections(connections));
 
     it("should modify onDelete property on foreign key on sync", () => PromiseUtils.runInSequence(connections, async connection => {
+
+        // TODO: issue in CRDB
+        if (connection.driver instanceof CockroachDriver)
+            return;
+
         await connection.synchronize();
         BaseEntity.useConnection(connection);
 

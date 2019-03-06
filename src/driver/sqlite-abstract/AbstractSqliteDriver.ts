@@ -165,6 +165,12 @@ export abstract class AbstractSqliteDriver implements Driver {
      */
     dataTypeDefaults: DataTypeDefaults;
 
+    /**
+     * No documentation specifying a maximum length for identifiers could be found
+     * for SQLite.
+     */
+    maxAliasLength?: number;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -247,6 +253,8 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
+        } else if (columnMetadata.type === "simple-enum") {
+            return DateUtils.simpleEnumToString(value);
         }
 
         return value;
@@ -257,7 +265,7 @@ export abstract class AbstractSqliteDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return value;
+            return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
             value = value ? true : false;
@@ -289,6 +297,10 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
+
+        } else if ( columnMetadata.type === "simple-enum" ) {
+            value = DateUtils.stringToSimpleEnum(value, columnMetadata);
+
         }
 
         if (columnMetadata.transformer)
@@ -385,6 +397,9 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         } else if (column.type === "simple-json") {
             return "text";
+
+        } else if (column.type === "simple-enum") {
+            return "varchar";
 
         } else {
             return column.type as string || "";

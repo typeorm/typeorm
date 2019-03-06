@@ -1,7 +1,8 @@
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
-import {QueryPartialEntity} from "./QueryPartialEntity";
+import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
@@ -16,7 +17,6 @@ import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -150,7 +150,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Values needs to be inserted into table.
      */
-    values(values: QueryPartialEntity<Entity>|QueryPartialEntity<Entity>[]): this {
+    values(values: QueryDeepPartialEntity<Entity>|QueryDeepPartialEntity<Entity>[]): this {
         this.expressionMap.valuesSet = values;
         return this;
     }
@@ -300,7 +300,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 query += ` DEFAULT VALUES`;
             }
         }
-        if (this.connection.driver instanceof PostgresDriver || (this.connection.driver instanceof SqliteDriver)) {
+        if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver) {
           query += `${this.expressionMap.onIgnore ? " ON CONFLICT DO NOTHING " : ""}`;
           query += `${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
           if (this.expressionMap.onUpdate) {
@@ -317,7 +317,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         // add RETURNING expression
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver)) {
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
             query += ` RETURNING ${returningExpression}`;
         }
 

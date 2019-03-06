@@ -66,7 +66,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
      ```
 
 * Create your patch, **including appropriate test cases**. Without tests your PR will not be accepted.
-* Follow our [Coding Rules](#rules).
+* Add changelog record (short description, link to PR or issues) to the **Unreleased** section of `CHANGELOG.md`.
 * Run the full TypeORM test suite, as described in the [developer documentation](DEVELOPER.md), and ensure that all tests pass.
 * Commit your changes using a descriptive commit message
 

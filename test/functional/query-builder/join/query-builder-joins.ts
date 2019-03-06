@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import {expect} from "chai";
+import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Tag} from "./entity/Tag";
@@ -177,7 +178,12 @@ describe("query builder > joins", () => {
                 .where("post.id = :id", { id: post.id })
                 .getRawOne();
 
-            expect(loadedRawPost!["categories_id"]).to.be.equal(1);
+            if (connection.driver instanceof CockroachDriver) {
+                expect(loadedRawPost!["categories_id"]).to.be.equal("1");
+
+            } else {
+                expect(loadedRawPost!["categories_id"]).to.be.equal(1);
+            }
 
         })));
 

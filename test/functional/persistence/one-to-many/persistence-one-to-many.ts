@@ -40,7 +40,7 @@ describe("persistence > one-to-many", function() {
         newPost.categories = [newCategory];
         await postRepository.save(newPost);
 
-        const loadedPost = await postRepository.findOne(1, { relations: ["categories"] });
+        const loadedPost = await postRepository.findOne(newPost.id, { relations: ["categories"] });
         expect(loadedPost!).not.to.be.empty;
         expect(loadedPost!.categories).not.to.be.empty;
         expect(loadedPost!.categories![0]).not.to.be.empty;
@@ -60,7 +60,7 @@ describe("persistence > one-to-many", function() {
         newPost.categories = [newCategory];
         await postRepository.save(newPost);
 
-        const loadedPost = await postRepository.findOne(1, { relations: ["categories"] });
+        const loadedPost = await postRepository.findOne(newPost.id, { relations: ["categories"] });
         expect(loadedPost).not.to.be.empty;
         expect(loadedPost!.categories).not.to.be.empty;
         expect(loadedPost!.categories![0]).not.to.be.empty;
@@ -88,7 +88,7 @@ describe("persistence > one-to-many", function() {
         newPost.categories = [firstNewCategory];
         await postRepository.save(newPost);
 
-        const loadedPost = await postRepository.findOne(1, {
+        const loadedPost = await postRepository.findOne(newPost.id, {
             join: {
                 alias: "post",
                 innerJoinAndSelect: {
@@ -124,7 +124,7 @@ describe("persistence > one-to-many", function() {
         newPost.categories = [];
         await postRepository.save(newPost);
 
-        const loadedPost = await postRepository.findOne(1, {
+        const loadedPost = await postRepository.findOne(newPost.id, {
             join: {
                 alias: "post",
                 leftJoinAndSelect: {
@@ -158,7 +158,7 @@ describe("persistence > one-to-many", function() {
         newPost.categories = null;
         await postRepository.save(newPost);
 
-        const loadedPost = (await postRepository.findOne(1, {
+        const loadedPost = (await postRepository.findOne(newPost.id, {
             join: {
                 alias: "post",
                 leftJoinAndSelect: {

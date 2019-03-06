@@ -21,14 +21,17 @@ describe("embedded > embedded-many-to-many-case3", () => {
         it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation with multiple primary keys (one PK in each embed)", () => Promise.all(connections.map(async connection => {
 
             const user1 = new User();
+            user1.id = 1;
             user1.name = "Alice";
             await connection.getRepository(User).save(user1);
 
             const user2 = new User();
+            user2.id = 2;
             user2.name = "Bob";
             await connection.getRepository(User).save(user2);
 
             const user3 = new User();
+            user3.id = 3;
             user3.name = "Clara";
             await connection.getRepository(User).save(user3);
 
@@ -224,16 +227,19 @@ describe("embedded > embedded-many-to-many-case3", () => {
             await connection.getRepository(Post).save(post2);
 
             const user1 = new User();
+            user1.id = 1;
             user1.name = "Alice";
             user1.likedPosts = [post1, post2];
             await connection.getRepository(User).save(user1);
 
             const user2 = new User();
+            user2.id = 2;
             user2.name = "Bob";
             user2.likedPosts = [post1];
             await connection.getRepository(User).save(user2);
 
             const user3 = new User();
+            user3.id = 3;
             user3.name = "Clara";
             user3.likedPosts = [post2];
             await connection.getRepository(User).save(user3);

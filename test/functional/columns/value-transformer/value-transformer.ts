@@ -32,7 +32,7 @@ describe("columns > value-transformer functionality", () => {
         await postRepository.save(post);
 
         // check if all columns are updated except for readonly columns
-        const loadedPost = await postRepository.findOne(1);
+        const loadedPost = await postRepository.findOne(post.id);
         expect(loadedPost!.title).to.be.equal("About columns1");
         expect(loadedPost!.tags).to.deep.eq(["very", "simple"]);
 
@@ -45,7 +45,7 @@ describe("columns > value-transformer functionality", () => {
         phoneBook.phones.set("mobile", 1234567);
         await phoneBookRepository.save(phoneBook);
 
-        const loadedPhoneBook = await phoneBookRepository.findOne(1);
+        const loadedPhoneBook = await phoneBookRepository.findOne(phoneBook.id);
         expect(loadedPhoneBook!.name).to.be.equal("George");
         expect(loadedPhoneBook!.phones).not.to.be.undefined;
         expect(loadedPhoneBook!.phones.get("work")).to.equal(123456);

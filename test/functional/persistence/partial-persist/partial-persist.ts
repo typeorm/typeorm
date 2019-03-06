@@ -30,12 +30,14 @@ describe("persistence > partial persist", () => {
 
         // save a new category
         const newCategory = new Category();
+        newCategory.id = 1;
         newCategory.name = "Animals";
         newCategory.position = 999;
         await categoryRepository.save(newCategory);
 
         // save a new post
         const newPost = new Post();
+        newPost.id = 1;
         newPost.title = "All about animals";
         newPost.description = "Description of the post about animals";
         newPost.categories = [newCategory];
@@ -46,7 +48,7 @@ describe("persistence > partial persist", () => {
         await postRepository.save(newPost);
 
         // load a post
-        const loadedPost = await postRepository.findOne(1, {
+        const loadedPost = await postRepository.findOne(newPost.id, {
             join: {
                 alias: "post",
                 leftJoinAndSelect: {

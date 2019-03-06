@@ -75,6 +75,7 @@ export class RelationJoinColumnBuilder {
         if (this.connection.driver instanceof OracleDriver && columns.every(column => column.isPrimary))
             return { foreignKey, uniqueConstraint: undefined };
 
+        // CockroachDB requires UNIQUE constraints on referenced columns
         if (referencedColumns.length > 0 && relation.isOneToOne) {
             const uniqueConstraint = new UniqueMetadata({
                 entityMetadata: relation.entityMetadata,

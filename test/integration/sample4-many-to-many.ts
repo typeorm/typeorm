@@ -19,15 +19,21 @@ describe("many-to-many", function() {
     // connect to db
     let connection: Connection;
     before(async function() {
-        connection = await createConnection(setupSingleTestingConnection("mysql", {
+        const options = setupSingleTestingConnection("mysql", {
             entities: [__dirname + "/../../sample/sample4-many-to-many/entity/*"],
-        }));
+        });
+
+        if (!options)
+            return;
+        connection = await createConnection(options);
     });
 
     after(() => connection.close());
 
     // clean up database before each test
     function reloadDatabase() {
+        if (!connection)
+            return;
         return connection.synchronize(true);
     }
 
@@ -37,6 +43,8 @@ describe("many-to-many", function() {
         postImageRepository: Repository<PostImage>,
         postMetadataRepository: Repository<PostMetadata>;
     before(function() {
+        if (!connection)
+            return;
         postRepository = connection.getRepository(Post);
         postDetailsRepository = connection.getRepository(PostDetails);
         postCategoryRepository = connection.getRepository(PostCategory);
@@ -49,6 +57,8 @@ describe("many-to-many", function() {
     // -------------------------------------------------------------------------
 
     describe("insert post and details (has inverse relation + full cascade options)", function() {
+        if (!connection)
+            return;
         let newPost: Post, details: PostDetails, savedPost: Post;
         
         before(reloadDatabase);
@@ -176,6 +186,8 @@ describe("many-to-many", function() {
     });
 
     describe("insert post and category (one-side relation)", function() {
+        if (!connection)
+            return;
         let newPost: Post, category: PostCategory, savedPost: Post;
 
         before(reloadDatabase);
@@ -252,7 +264,9 @@ describe("many-to-many", function() {
     });
 
     describe("cascade updates should not be executed when cascadeUpdate option is not set", function() {
-        let newPost: Post, details: PostDetails, savedPost: Post;
+        if (!connection)
+            return;
+        let newPost: Post, details: PostDetails;
 
         before(reloadDatabase);
 
@@ -270,8 +284,7 @@ describe("many-to-many", function() {
             newPost.details.push(details);
 
             return postRepository
-                .save(newPost)
-                .then(post => savedPost = post as Post);
+                .save(newPost);
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
@@ -291,7 +304,9 @@ describe("many-to-many", function() {
     });
 
     describe("cascade remove should not be executed when cascadeRemove option is not set", function() {
-        let newPost: Post, details: PostDetails, savedPost: Post;
+        if (!connection)
+            return;
+        let newPost: Post, details: PostDetails;
 
         before(reloadDatabase);
 
@@ -309,8 +324,7 @@ describe("many-to-many", function() {
             newPost.details.push(details);
 
             return postRepository
-                .save(newPost)
-                .then(post => savedPost = post as Post);
+                .save(newPost);
         });
 
         it("should remove relation however should not remove details itself", function () {
@@ -339,6 +353,8 @@ describe("many-to-many", function() {
     });
 
     describe("cascade updates should be executed when cascadeUpdate option is set", function() {
+        if (!connection)
+            return;
         let newPost: Post, newImage: PostImage;
 
         before(reloadDatabase);
@@ -388,6 +404,8 @@ describe("many-to-many", function() {
     });
 
     describe("cascade remove should be executed when cascadeRemove option is set", function() {
+        if (!connection)
+            return;
         let newPost: Post, newMetadata: PostMetadata;
 
         before(reloadDatabase);
@@ -437,6 +455,8 @@ describe("many-to-many", function() {
     });
 
     describe("insert post details from reverse side", function() {
+        if (!connection)
+            return;
         let newPost: Post, details: PostDetails, savedDetails: PostDetails;
 
         before(reloadDatabase);

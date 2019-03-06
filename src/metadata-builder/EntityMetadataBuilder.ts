@@ -1,3 +1,4 @@
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
@@ -145,10 +146,39 @@ export class EntityMetadataBuilder {
                                 }).join(" AND ");
                             }
 
-                            entityMetadata.indices.push(index);
+                            if (relation.embeddedMetadata) {
+                                relation.embeddedMetadata.indices.push(index);
+                            } else {
+                                relation.entityMetadata.ownIndices.push(index);
+                            }
+                            this.computeEntityMetadataStep2(entityMetadata);
+
                         } else {
-                            entityMetadata.uniques.push(uniqueConstraint);
+                            // todo: fix missing uniques in embedded metadata
+                            // if (relation.embeddedMetadata) {
+                            //     relation.embeddedMetadata.uniques.push(index);
+                            // } else {
+                            relation.entityMetadata.uniques.push(uniqueConstraint); // todo: ownUniques is missing
+                            // }
+                            this.computeEntityMetadataStep2(entityMetadata);
                         }
+                    }
+
+                    if (foreignKey && this.connection.driver instanceof CockroachDriver) {
+                        const index = new IndexMetadata({
+                            entityMetadata: relation.entityMetadata,
+                            columns: foreignKey.columns,
+                            args: {
+                                target: relation.entityMetadata.target!,
+                                synchronize: true
+                            }
+                        });
+                        if (relation.embeddedMetadata) {
+                            relation.embeddedMetadata.indices.push(index);
+                        } else {
+                            relation.entityMetadata.ownIndices.push(index);
+                        }
+                        this.computeEntityMetadataStep2(entityMetadata);
                     }
                 });
 
@@ -231,7 +261,13 @@ export class EntityMetadataBuilder {
                 if (generated) {
                     column.isGenerated = true;
                     column.generationStrategy = generated.strategy;
-                    column.type = generated.strategy === "increment" ? (column.type || Number) : "uuid";
+                    if (generated.strategy === "uuid") {
+                        column.type = "uuid";
+                    } else if (generated.strategy === "rowid") {
+                        column.type = "int";
+                    } else {
+                        column.type = column.type || Number;
+                    }
                     column.build(this.connection);
                     this.computeEntityMetadataStep2(entityMetadata);
                 }
@@ -443,9 +479,6 @@ export class EntityMetadataBuilder {
 
             return new RelationCountMetadata({ entityMetadata, args });
         });
-        entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree).map(args => {
-            return new IndexMetadata({ entityMetadata, args });
-        });
         entityMetadata.ownListeners = this.metadataArgsStorage.filterListeners(entityMetadata.inheritanceTree).map(args => {
             return new EntityListenerMetadata({ entityMetadata: entityMetadata, args: args });
         });
@@ -457,6 +490,33 @@ export class EntityMetadataBuilder {
         if (this.connection.driver instanceof PostgresDriver) {
             entityMetadata.exclusions = this.metadataArgsStorage.filterExclusions(entityMetadata.inheritanceTree).map(args => {
                 return new ExclusionMetadata({ entityMetadata, args });
+            });
+        }
+
+        if (this.connection.driver instanceof CockroachDriver) {
+            entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree)
+                .filter(args => !args.unique)
+                .map(args => {
+                    return new IndexMetadata({entityMetadata, args});
+                });
+
+            const uniques = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree)
+                .filter(args => args.unique)
+                .map(args => {
+                    return new UniqueMetadata({
+                        entityMetadata: entityMetadata,
+                        args: {
+                            target: args.target,
+                            name: args.name,
+                            columns: args.columns,
+                        }
+                    });
+                });
+            entityMetadata.uniques.push(...uniques);
+
+        } else {
+            entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree).map(args => {
+                return new IndexMetadata({entityMetadata, args});
             });
         }
 
@@ -477,9 +537,10 @@ export class EntityMetadataBuilder {
             entityMetadata.ownIndices.push(...indices);
 
         } else {
-            entityMetadata.uniques = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
+            const uniques = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
                 return new UniqueMetadata({ entityMetadata, args });
             });
+            entityMetadata.uniques.push(...uniques);
         }
     }
 

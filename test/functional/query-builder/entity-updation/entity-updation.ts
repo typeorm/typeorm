@@ -23,7 +23,6 @@ describe("query builder > entity updation", () => {
             .updateEntity(true)
             .execute();
 
-        post.id.should.be.equal(1);
         post.title.should.be.equal("about entity updation in query builder");
         post.order.should.be.equal(100);
         post.createDate.should.be.instanceof(Date);
@@ -62,7 +61,6 @@ describe("query builder > entity updation", () => {
             .updateEntity(true)
             .execute();
 
-        post.id.should.be.equal(1);
         post.title.should.be.equal("about entity updation in query builder");
         post.order.should.be.equal(101);
         post.createDate.should.be.instanceof(Date);
@@ -74,7 +72,6 @@ describe("query builder > entity updation", () => {
         const post = new Post();
         post.title = "about entity updation in query builder";
         await connection.manager.save(post);
-        post.id.should.be.equal(1);
         post.version.should.be.equal(1);
 
         await connection.manager.save(post);
@@ -90,7 +87,6 @@ describe("query builder > entity updation", () => {
         const post = new Post();
         post.title = "about entity updation in query builder";
         await connection.manager.save(post);
-        post.id.should.be.equal(1);
         post.version.should.be.equal(1);
 
         await connection.createQueryBuilder()
@@ -108,7 +104,6 @@ describe("query builder > entity updation", () => {
         const post = new Post();
         post.title = "about entity updation in query builder";
         await connection.manager.save(post);
-        post.id.should.be.equal(1);
         post.version.should.be.equal(1);
 
         await connection.createQueryBuilder()

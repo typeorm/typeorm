@@ -229,6 +229,12 @@ export class PostgresDriver implements Driver {
         "timestamp with time zone": { precision: 6 },
     };
 
+    /**
+     * Max length allowed by Postgres for aliases.
+     * @see https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
+     */
+    maxAliasLength = 63;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -303,9 +309,9 @@ export class PostgresDriver implements Driver {
                         if (err) return fail(err);
                         if (hasUuidColumns)
                             try {
-                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "${this.options.uuidExtension || "uuid-ossp"}"`);
                             } catch (_) {
-                                logger.log("warn", "At least one of the entities has uuid column, but the 'uuid-ossp' extension cannot be installed automatically. Please install it manually using superuser rights");
+                                logger.log("warn", `At least one of the entities has uuid column, but the '${this.options.uuidExtension || "uuid-ossp"}' extension cannot be installed automatically. Please install it manually using superuser rights, or select another uuid extension.`);
                             }
                         if (hasCitextColumns)
                             try {
@@ -412,6 +418,15 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
+
+        } else if (
+            (
+                columnMetadata.type === "enum"
+                || columnMetadata.type === "simple-enum"
+            )
+            && !columnMetadata.isArray
+        ) {
+            return "" + value;
         }
 
         return value;
@@ -422,7 +437,7 @@ export class PostgresDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return value;
+            return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
 
         if (columnMetadata.type === Boolean) {
             value = value ? true : false;
@@ -460,11 +475,20 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
-        }
 
-        // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
-        if (columnMetadata.enum && columnMetadata.isArray)
-            value = value !== "{}" ? (value as string).substr(1, (value as string).length - 2).split(",") : [];
+        } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum" ) {
+            if (columnMetadata.isArray) {
+                // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
+                value = value !== "{}" ? (value as string).substr(1, (value as string).length - 2).split(",") : [];
+                // convert to number if that exists in poosible enum options
+                value = value.map((val: string) => {
+                    return !isNaN(+val) && columnMetadata.enum!.indexOf(parseInt(val)) >= 0 ? parseInt(val) : val;
+                });
+            } else {
+                // convert to number if that exists in poosible enum options
+                value = !isNaN(+value) && columnMetadata.enum!.indexOf(parseInt(value)) >= 0 ? parseInt(value) : value;
+            }
+        }
 
         if (columnMetadata.transformer)
             value = columnMetadata.transformer.from(value);
@@ -555,6 +579,9 @@ export class PostgresDriver implements Driver {
         } else if (column.type === "simple-json") {
             return "text";
 
+        } else if (column.type === "simple-enum") {
+            return "enum";
+
         } else if (column.type === "int2") {
             return "smallint";
 
@@ -587,6 +614,18 @@ export class PostgresDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string {
         const defaultValue = columnMetadata.default;
         const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
+
+        if (
+            (
+                columnMetadata.type === "enum"
+                || columnMetadata.type === "simple-enum"
+            ) && defaultValue !== undefined
+        ) {
+            if (columnMetadata.isArray && Array.isArray(defaultValue)) {
+                return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
+            }
+            return `'${defaultValue}'`;
+        }
 
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
@@ -709,6 +748,7 @@ export class PostgresDriver implements Driver {
             const column = metadata.findColumnWithDatabaseName(key);
             if (column) {
                 OrmUtils.mergeDeep(map, column.createValueMap(insertResult[key]));
+                // OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column))); // TODO: probably should be like there, but fails on enums, fix later
             }
             return map;
         }, {} as ObjectLiteral);
@@ -724,23 +764,32 @@ export class PostgresDriver implements Driver {
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            return  tableColumn.name !== columnMetadata.databaseName
+            return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment // todo
-                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNessesary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
+                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum))
+                || (
+                    tableColumn.enum
+                    && columnMetadata.enum
+                    // enums in postgres are always strings
+                    && !OrmUtils.isArraysEqual(
+                        tableColumn.enum,
+                        columnMetadata.enum.map(val => val + "")
+                    )
+                )
                 || tableColumn.isGenerated !== columnMetadata.isGenerated
                 || (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase()
                 || tableColumn.srid !== columnMetadata.srid;
         });
     }
-    private lowerDefaultValueIfNessesary(value: string | undefined) {
+
+    private lowerDefaultValueIfNecessary(value: string | undefined) {
         // Postgres saves function calls in default value as lowercase #2733
         if (!value) {
             return value;
@@ -761,6 +810,10 @@ export class PostgresDriver implements Driver {
      */
     isUUIDGenerationSupported(): boolean {
         return true;
+    }
+
+    get uuidGenerator(): string {
+        return this.options.uuidExtension === "pgcrypto" ? "gen_random_uuid()" : "uuid_generate_v4()";
     }
 
     /**

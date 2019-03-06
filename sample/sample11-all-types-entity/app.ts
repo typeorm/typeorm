@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {ConnectionOptions, createConnection} from "../../src/index";
-import {EverythingEntity} from "./entity/EverythingEntity";
+import {EverythingEntity, SampleEnum} from "./entity/EverythingEntity";
 
 const options: ConnectionOptions = {
     type: "mysql",
@@ -36,6 +36,7 @@ createConnection(options).then(connection => {
     entity.simpleArrayColumn = ["hello", "world", "of", "typescript"];
     entity.jsonColumn = [{ hello: "olleh" }, { world: "dlrow" }];
     entity.alsoJson = { hello: "olleh", world: "dlrow" };
+    entity.enum = SampleEnum.ONE;
 
     let postRepository = connection.getRepository(EverythingEntity);
 
@@ -67,6 +68,7 @@ createConnection(options).then(connection => {
             entity.simpleArrayColumn = ["hello!", "world!", "of!", "typescript!"];
             entity.jsonColumn = [{ olleh: "hello" }, { dlrow: "world" }];
             entity.alsoJson = { olleh: "hello", dlrow: "world" };
+            entity.enum = SampleEnum.TWO;
 
             return postRepository.save(entity);
         })

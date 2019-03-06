@@ -1,12 +1,12 @@
-# Using ormconfig.json
+# ormconfig.json
 
-  - * [Creating a new connection from the configuration file](#creating-a-new-connection-from-the-configuration-file)
-  - * [Using `ormconfig.json`](#using-ormconfigjson)
-  - * [Using `ormconfig.js`](#using-ormconfigjs)
-  - * [Using environment variables](#using-environment-variables)
-  - * [Using `ormconfig.yml`](#using-ormconfigyml)
-  - * [Using `ormconfig.xml`](#using-ormconfigxml)
-  - * [Overriding options defined in ormconfig](#overriding-options-defined-in-ormconfig)
+  - [Creating a new connection from the configuration file](#creating-a-new-connection-from-the-configuration-file)
+  - [Using `ormconfig.json`](#using-ormconfigjson)
+  - [Using `ormconfig.js`](#using-ormconfigjs)
+  - [Using environment variables](#using-environment-variables)
+  - [Using `ormconfig.yml`](#using-ormconfigyml)
+  - [Using `ormconfig.xml`](#using-ormconfigxml)
+  - [Overriding options defined in ormconfig](#overriding-options-defined-in-ormconfig)
 
 ## Creating a new connection from the configuration file
 
@@ -188,6 +188,20 @@ Create `ormconfig.xml` in the project root (near `package.json`). It should have
 ```
 
 You can use any connection options available.
+
+## Which configuration file is used by Typeorm
+
+Sometimes, you may want to use multiple configurations using different formats. When calling `getConnectionOptions()`
+or attempting to use `createConnection()` without the connection options, Typeorm will attempt to load the configurations,
+in this order:
+
+1. From the environment variables. Typeorm will attempt to load the `.env` file using dotEnv if it exists. If the environment
+variables `TYPEORM_CONNECTION` or `TYPEORM_URL` are set, Typeorm will use this method.
+2. From the `ormconfig.env`.
+3. From the other `ormconfig.[format]` files, in this order: `[js, ts, json, yml, yaml, xml]`.
+
+Note that Typeorm will use the first valid method found and will not load the others. For example, Typeorm will not load the
+`ormconfig.[format]` files if the configuration was found in the environment.
 
 ## Overriding options defined in ormconfig
 

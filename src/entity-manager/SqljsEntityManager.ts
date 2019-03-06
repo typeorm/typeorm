@@ -27,8 +27,8 @@ export class SqljsEntityManager extends EntityManager {
      * Loads either the definition from a file (Node.js) or localstorage (browser)
      * or uses the given definition to open a new database.
      */
-    loadDatabase(fileNameOrLocalStorageOrData: string | Uint8Array) {
-        this.driver.load(fileNameOrLocalStorageOrData);
+    async loadDatabase(fileNameOrLocalStorageOrData: string | Uint8Array): Promise<void> {
+        await this.driver.load(fileNameOrLocalStorageOrData);
     }
     
     /**

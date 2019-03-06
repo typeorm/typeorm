@@ -8,7 +8,7 @@ import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
 @Entity()
 export class Category {
 
-    @PrimaryColumn("int")
+    @PrimaryColumn()
     categoryId: number;
 
     @Column()

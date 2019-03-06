@@ -38,7 +38,7 @@ describe("sqljs driver > save", () => {
 
     it("should load a file that was saved", () => Promise.all(connections.map(async connection => {
         const manager = getSqljsManager("sqljs");
-        manager.loadDatabase(pathToSqlite);
+        await manager.loadDatabase(pathToSqlite);
 
         const repository = connection.getRepository(Post);
         const post = await repository.findOne({title: "The second title"});

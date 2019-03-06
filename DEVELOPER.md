@@ -134,6 +134,12 @@ npm test
 You should execute test suites before submitting a PR to github.
 All the tests are executed on our Continuous Integration infrastructure and a PR could only be merged once the tests pass.
 
+**Executing only some tests**: When you are creating tests to some specific code, you may want only execute the tests that you're creating, so you waste less time to verify your code. To do this, you can temporarily modify your tests definitions adding `.only` *mocha* commands **(describe, it)**. Example: 
+
+```
+describe.only('your describe test', ....)
+```
+
 >**Hint:** you can use the `--grep` flag to pass a Regex to `gulp-mocha`. Only the tests have have `describe`/`it`
 >statements that match the Regex will be run. For example:
 >

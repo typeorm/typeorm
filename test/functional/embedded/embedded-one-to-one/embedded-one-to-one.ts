@@ -21,20 +21,24 @@ describe("embedded > embedded-one-to-one", () => {
         it("should insert, load, update and remove entities with embeddeds when embedded entity having OneToOne relation", () => Promise.all(connections.map(async connection => {
 
             const user1 = new User();
+            user1.id = 1;
             user1.name = "Alice";
             await connection.getRepository(User).save(user1);
 
             const user2 = new User();
+            user2.id = 2;
             user2.name = "Bob";
             await connection.getRepository(User).save(user2);
 
             const user3 = new User();
+            user3.id = 3;
             user3.name = "Clara";
             await connection.getRepository(User).save(user3);
 
             const postRepository = connection.getRepository(Post);
 
             const post1 = new Post();
+            post1.id = 1;
             post1.title = "About cars";
             post1.counters = new Counters();
             post1.counters.code = 1;
@@ -48,6 +52,7 @@ describe("embedded > embedded-one-to-one", () => {
             await postRepository.save(post1);
 
             const post2 = new Post();
+            post2.id = 2;
             post2.title = "About airplanes";
             post2.counters = new Counters();
             post2.counters.code = 2;
@@ -168,6 +173,7 @@ describe("embedded > embedded-one-to-one", () => {
         it("should insert, load, update and remove entities with embeddeds when embedded entity having OneToOne relation", () => Promise.all(connections.map(async connection => {
 
             const post1 = new Post();
+            post1.id = 1;
             post1.title = "About cars";
             post1.counters = new Counters();
             post1.counters.code = 1;
@@ -180,6 +186,7 @@ describe("embedded > embedded-one-to-one", () => {
             await connection.getRepository(Post).save(post1);
 
             const post2 = new Post();
+            post2.id = 2;
             post2.title = "About airplanes";
             post2.counters = new Counters();
             post2.counters.code = 2;
@@ -192,6 +199,7 @@ describe("embedded > embedded-one-to-one", () => {
             await connection.getRepository(Post).save(post2);
 
             const post3 = new Post();
+            post3.id = 3;
             post3.title = "About horses";
             post3.counters = new Counters();
             post3.counters.code = 3;
@@ -204,11 +212,13 @@ describe("embedded > embedded-one-to-one", () => {
             await connection.getRepository(Post).save(post3);
 
             const user1 = new User();
+            user1.id = 1;
             user1.name = "Alice";
             user1.likedPost = post1;
             await connection.getRepository(User).save(user1);
 
             const user2 = new User();
+            user2.id = 2;
             user2.name = "Bob";
             user2.likedPost = post2;
             await connection.getRepository(User).save(user2);

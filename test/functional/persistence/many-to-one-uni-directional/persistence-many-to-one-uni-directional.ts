@@ -17,10 +17,10 @@ describe("persistence > many-to-one uni-directional relation", function() {
     after(() => closeTestingConnections(connections));
 
     it("should save a category with a post attached", () => Promise.all(connections.map(async connection => {
-        const post = new Post("Hello Post");
+        const post = new Post(1, "Hello Post");
         await connection.manager.save(post);
 
-        const category = new Category("Hello Category");
+        const category = new Category(1, "Hello Category");
         category.post = post;
         await connection.manager.save(category);
 
@@ -30,8 +30,8 @@ describe("persistence > many-to-one uni-directional relation", function() {
     })));
 
     it("should save a category and a new post by cascades", () => Promise.all(connections.map(async connection => {
-        const post = new Post("Hello Post");
-        const category = new Category("Hello Category");
+        const post = new Post(1, "Hello Post");
+        const category = new Category(1, "Hello Category");
         category.post = post;
         await connection.manager.save(category);
 
@@ -41,11 +41,11 @@ describe("persistence > many-to-one uni-directional relation", function() {
     })));
 
     it("should update exist post by cascades when category is saved", () => Promise.all(connections.map(async connection => {
-        const post = new Post("Hello Post");
+        const post = new Post(1, "Hello Post");
         await connection.manager.save(post);
 
         // update exist post from newly created category
-        const category = new Category("Hello Category");
+        const category = new Category(1, "Hello Category");
         category.post = post;
         post.title = "Updated post";
         await connection.manager.save(category);
@@ -67,11 +67,11 @@ describe("persistence > many-to-one uni-directional relation", function() {
     })));
 
     it("should NOT remove exist post by cascades when category is saved without a post (post is set to undefined)", () => Promise.all(connections.map(async connection => {
-        const post = new Post("Hello Post");
+        const post = new Post(1, "Hello Post");
         await connection.manager.save(post);
 
         // update exist post from newly created category
-        const category = new Category("Hello Category");
+        const category = new Category(1, "Hello Category");
         category.post = post;
         await connection.manager.save(category);
 
@@ -94,11 +94,11 @@ describe("persistence > many-to-one uni-directional relation", function() {
     })));
 
     it("should unset exist post when its set to null", () => Promise.all(connections.map(async connection => {
-        const post = new Post("Hello Post");
+        const post = new Post(1, "Hello Post");
         await connection.manager.save(post);
 
         // update exist post from newly created category
-        const category = new Category("Hello Category");
+        const category = new Category(1, "Hello Category");
         category.post = post;
         await connection.manager.save(category);
 
@@ -116,11 +116,11 @@ describe("persistence > many-to-one uni-directional relation", function() {
     })));
 
     it("should set category's post to NULL when post is removed from the database (database ON DELETE)", () => Promise.all(connections.map(async connection => {
-        const post = new Post("Hello Post");
+        const post = new Post(1, "Hello Post");
         await connection.manager.save(post);
 
         // update exist post from newly created category
-        const category = new Category("Hello Category");
+        const category = new Category(1, "Hello Category");
         category.post = post;
         await connection.manager.save(category);
 
@@ -140,14 +140,14 @@ describe("persistence > many-to-one uni-directional relation", function() {
 
     it("should work when relation id is directly set into relation (without related object)", () => Promise.all(connections.map(async connection => {
 
-        const post1 = new Post("Hello Post #1");
+        const post1 = new Post(1, "Hello Post #1");
         await connection.manager.save(post1);
 
-        const post2 = new Post("Hello Post #2");
+        const post2 = new Post(2, "Hello Post #2");
         await connection.manager.save(post2);
 
         // update exist post from newly created category
-        const category = new Category("Hello Category");
+        const category = new Category(1, "Hello Category");
         category.post = 1;
         await connection.manager.save(category);
 

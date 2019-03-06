@@ -86,11 +86,12 @@ export class DocumentToEntityTransformer {
                     return;
 
                 if (embedded.isArray) {
-                    entity[embedded.propertyName] = (document[embedded.prefix] as any[]).map(subValue => {
+                    entity[embedded.propertyName] = (document[embedded.prefix] as any[]).map((subValue: any, index: number) => {
                         const newItem = embedded.create();
                         embedded.columns.forEach(column => {
                             newItem[column.propertyName] = subValue[column.databaseNameWithoutPrefixes];
                         });
+                        addEmbeddedValuesRecursively(newItem, document[embedded.prefix][index], embedded.embeddeds);
                         return newItem;
                     });
 

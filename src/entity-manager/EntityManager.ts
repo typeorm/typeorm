@@ -1,7 +1,7 @@
 import {Connection} from "../connection/Connection";
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {ObjectType} from "../common/ObjectType";
-import { EntityNotFoundError } from "../error/EntityNotFoundError";
+import {EntityNotFoundError} from "../error/EntityNotFoundError";
 import {QueryRunnerProviderAlreadyReleasedError} from "../error/QueryRunnerProviderAlreadyReleasedError";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {DeepPartial} from "../common/DeepPartial";
@@ -25,7 +25,7 @@ import {RepositoryNotFoundError} from "../error/RepositoryNotFoundError";
 import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupportedError";
-import {QueryPartialEntity} from "../query-builder/QueryPartialEntity";
+import {QueryDeepPartialEntity} from "../query-builder/QueryPartialEntity";
 import {EntityPersistExecutor} from "../persistence/EntityPersistExecutor";
 import {ObjectID} from "../driver/mongodb/typings";
 import {InsertResult} from "../query-builder/result/InsertResult";
@@ -364,7 +364,7 @@ export class EntityManager {
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
      * You can execute bulk inserts using this method.
      */
-    async insert<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, entity: QueryPartialEntity<Entity>|(QueryPartialEntity<Entity>[]), options?: SaveOptions): Promise<InsertResult> {
+    async insert<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, entity: QueryDeepPartialEntity<Entity>|(QueryDeepPartialEntity<Entity>[]), options?: SaveOptions): Promise<InsertResult> {
 
         // TODO: Oracle does not support multiple values. Need to create another nice solution.
         if (this.connection.driver instanceof OracleDriver && entity instanceof Array) {
@@ -385,7 +385,7 @@ export class EntityManager {
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
-    update<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
+    update<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>, partialEntity: QueryDeepPartialEntity<Entity>, options?: SaveOptions): Promise<UpdateResult> {
 
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (criteria === undefined ||
@@ -681,12 +681,18 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new Error(`Value "${value}" is not a number.`);
 
+        // convert possible embeded path "social.likes" into object { social: { like: () => value } }
+        const values: QueryDeepPartialEntity<Entity> = propertyPath
+            .split(".")
+            .reduceRight(
+                (value, key) => ({ [key]: value }) as any,
+                () => this.connection.driver.escape(column.databaseName) + " + " + value
+            );
+
         return this
             .createQueryBuilder(entityClass, "entity")
             .update(entityClass)
-            .set({
-                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " + " + value
-            })
+            .set(values)
             .where(conditions)
             .execute();
     }
@@ -707,12 +713,18 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new Error(`Value "${value}" is not a number.`);
 
+        // convert possible embeded path "social.likes" into object { social: { like: () => value } }
+        const values: QueryDeepPartialEntity<Entity> = propertyPath
+            .split(".")
+            .reduceRight(
+                (value, key) => ({ [key]: value }) as any,
+                () => this.connection.driver.escape(column.databaseName) + " - " + value
+            );
+
         return this
             .createQueryBuilder(entityClass, "entity")
             .update(entityClass)
-            .set({
-                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " - " + value
-            })
+            .set(values)
             .where(conditions)
             .execute();
     }

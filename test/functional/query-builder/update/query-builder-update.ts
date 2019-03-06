@@ -238,7 +238,7 @@ describe("query builder > update", () => {
         try {
             await connection.createQueryBuilder()
                 .update(User)
-                .set({ unknownProp: true })
+                .set({ unknownProp: true } as any)
                 .where("name = :name", { name: "Alex Messer" })
                 .execute();
         } catch (err) {

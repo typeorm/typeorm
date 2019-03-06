@@ -30,7 +30,8 @@ export class FindOptionsUtils {
                     typeof possibleOptions.cache === "boolean" ||
                     typeof possibleOptions.cache === "number" ||
                     possibleOptions.loadRelationIds instanceof Object ||
-                    typeof possibleOptions.loadRelationIds === "boolean"
+                    typeof possibleOptions.loadRelationIds === "boolean" ||
+                    typeof possibleOptions.loadEagerRelations === "boolean"
                 );
     }
 

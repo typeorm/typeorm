@@ -26,6 +26,11 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
+     * Underlying mongodb library.
+     */
+    mongodb: any;
+
+    /**
      * Mongodb does not require to dynamically create query runner each time,
      * because it does not have a regular connection pool as RDBMS systems have.
      */
@@ -108,14 +113,15 @@ export class MongoDriver implements Driver {
      */
     dataTypeDefaults: DataTypeDefaults;
 
+    /**
+     * No documentation specifying a maximum length for identifiers could be found
+     * for MongoDB.
+     */
+    maxAliasLength?: number;
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Underlying mongodb library.
-     */
-    protected mongodb: any;
 
     /**
      * Valid mongo connection options
@@ -430,7 +436,9 @@ export class MongoDriver implements Driver {
         for (let index = 0; index < this.validOptionNames.length; index++) {
             const optionName = this.validOptionNames[index];
 
-            if (optionName in this.options) {
+            if (this.options.extra && optionName in this.options.extra) {
+                mongoOptions[optionName] = this.options.extra[optionName];
+            } else if (optionName in this.options) {
                 mongoOptions[optionName] = (this.options as any)[optionName];
             }
         }

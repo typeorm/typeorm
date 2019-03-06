@@ -313,7 +313,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         // if table have column with ENUM type, we must create this type in postgres.
         await Promise.all(table.columns
-            .filter(column => column.type === "enum")
+            .filter(column => column.type === "enum" || column.type === "simple-enum")
             .map(async column => {
                 const hasEnum = await this.hasEnumType(table, column);
                 if (!hasEnum) {
@@ -449,7 +449,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         // rename ENUM types
         newTable.columns
-            .filter(column => column.type === "enum")
+            .filter(column => column.type === "enum" || column.type === "simple-enum")
             .forEach(column => {
                 upQueries.push(`ALTER TYPE ${this.buildEnumName(oldTable, column)} RENAME TO ${this.buildEnumName(newTable, column, false)}`);
                 downQueries.push(`ALTER TYPE ${this.buildEnumName(newTable, column)} RENAME TO ${this.buildEnumName(oldTable, column, false)}`);
@@ -467,7 +467,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
-        if (column.type === "enum") {
+        if (column.type === "enum" || column.type === "simple-enum") {
             const hasEnum = await this.hasEnumType(table, column);
             if (!hasEnum) {
                 upQueries.push(this.createEnumTypeSql(table, column));
@@ -577,7 +577,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME COLUMN "${newColumn.name}" TO "${oldColumn.name}"`);
 
                 // rename ENUM type
-                if (oldColumn.type === "enum") {
+                if (oldColumn.type === "enum" || oldColumn.type === "simple-enum") {
                     upQueries.push(`ALTER TYPE ${this.buildEnumName(table, oldColumn)} RENAME TO ${this.buildEnumName(table, newColumn, false)}`);
                     downQueries.push(`ALTER TYPE ${this.buildEnumName(table, newColumn)} RENAME TO ${this.buildEnumName(table, oldColumn, false)}`);
                 }
@@ -675,7 +675,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`);
             }
 
-            if (newColumn.type === "enum" && oldColumn.type === "enum" && !OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!)) {
+            if (
+                (newColumn.type === "enum" || newColumn.type === "simple-enum")
+                && (oldColumn.type === "enum" || newColumn.type === "simple-enum")
+                && !OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!)
+            ) {
                 const enumName = this.buildEnumName(table, newColumn);
                 const enumNameWithoutSchema = this.buildEnumName(table, newColumn, false);
                 const arraySuffix = newColumn.isArray ? "[]" : "";
@@ -901,7 +905,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(table, column)}`);
 
         // drop enum type
-        if (column.type === "enum") {
+        if (column.type === "enum" || column.type === "simple-enum") {
             const hasEnum = await this.hasEnumType(table, column);
             if (hasEnum) {
                 upQueries.push(this.dropEnumTypeSql(table, column));
@@ -1418,14 +1422,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     if (tableColumn.type === "geometry") {
                       const geometryColumnSql = `SELECT * FROM (
                         SELECT
-                          f_table_schema table_schema,
-                          f_table_name table_name,
-                          f_geometry_column column_name,
-                          srid,
-                          type
-                        FROM geometry_columns
+                          "f_table_schema" "table_schema",
+                          "f_table_name" "table_name",
+                          "f_geometry_column" "column_name",
+                          "srid",
+                          "type"
+                        FROM "geometry_columns"
                       ) AS _
-                      WHERE ${tablesCondition} AND column_name = '${tableColumn.name}'`;
+                      WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
 
                       const results: ObjectLiteral[] = await this.query(geometryColumnSql);
                       tableColumn.spatialFeatureType = results[0].type;
@@ -1435,14 +1439,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     if (tableColumn.type === "geography") {
                       const geographyColumnSql = `SELECT * FROM (
                         SELECT
-                          f_table_schema table_schema,
-                          f_table_name table_name,
-                          f_geography_column column_name,
-                          srid,
-                          type
-                        FROM geography_columns
+                          "f_table_schema" "table_schema",
+                          "f_table_name" "table_name",
+                          "f_geography_column" "column_name",
+                          "srid",
+                          "type"
+                        FROM "geography_columns"
                       ) AS _
-                      WHERE ${tablesCondition} AND column_name = '${tableColumn.name}'`;
+                      WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
 
                       const results: ObjectLiteral[] = await this.query(geographyColumnSql);
                       tableColumn.spatialFeatureType = results[0].type;
@@ -1469,11 +1473,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         if (dbColumn["column_default"].replace(/"/gi, "") === `nextval('${this.buildSequenceName(table, dbColumn["column_name"], currentSchema, true)}'::regclass)`) {
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "increment";
-
-                        } else if (/^uuid_generate_v\d\(\)/.test(dbColumn["column_default"])) {
+                        } else if (dbColumn["column_default"] === "gen_random_uuid()" || /^uuid_generate_v\d\(\)/.test(dbColumn["column_default"])) {
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "uuid";
-
                         } else {
                             tableColumn.default = dbColumn["column_default"].replace(/::.*/, "");
                         }
@@ -1895,7 +1897,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             if (column.type === "bigint" || column.type === "int8")
                 c += " BIGSERIAL";
         }
-        if (column.type === "enum") {
+        if (column.type === "enum" || column.type === "simple-enum") {
             c += " " + this.buildEnumName(table, column);
             if (column.isArray)
                 c += " array";
@@ -1912,7 +1914,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (column.default !== undefined && column.default !== null)
             c += " DEFAULT " + column.default;
         if (column.isGenerated && column.generationStrategy === "uuid" && !column.default)
-            c += " DEFAULT uuid_generate_v4()";
+            c += ` DEFAULT ${this.driver.uuidGenerator}`;
 
         return c;
     }

@@ -61,6 +61,14 @@ services:
       SA_PASSWORD: "Admin12345"
       ACCEPT_EULA: "Y"
 
+  # cockroachdb
+  cockroachdb:
+    image: "cockroachdb/cockroach:v2.1.5"
+    container_name: "typeorm-cockroachdb"
+    command: start --insecure
+    ports:
+      - "26257:26257"
+
   # mongodb
   mongodb:
     image: "mongo:3.4.18"

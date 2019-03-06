@@ -5,19 +5,9 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {User} from "./model/User";
 import {EntityNotFoundError} from "../../../../src/error/EntityNotFoundError";
-import {EntitySchema} from "../../../../src";
+import {UserEntity} from "./schema/UserEntity";
 
 describe("repository > find methods", () => {
-
-    let userSchema: any;
-    try {
-        const resourceDir = __dirname + "/../../../../../../test/functional/repository/find-methods/";
-        userSchema = require(resourceDir + "schema/user.json");
-    } catch (err) {
-        const resourceDir = __dirname + "/";
-        userSchema = require(resourceDir + "schema/user.json");
-    }
-    const UserEntity = new EntitySchema<any>(userSchema);
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -499,6 +489,30 @@ describe("repository > find methods", () => {
                 }
             });
             expect(loadedUser).to.be.undefined;
+        })));
+
+    });
+
+    describe("findByIds", function() {
+
+        it("should return entities by given ids", () => Promise.all(connections.map(async connection => {
+            const userRepository = connection.getRepository<User>("User");
+
+            const users = [1, 2, 3, 4, 5].map(id => {
+                return {
+                    id,
+                    firstName: `name #${id}`,
+                    secondName: "Doe"
+                };
+            });
+
+            const savedUsers = await userRepository.save(users);
+            savedUsers.length.should.be.equal(users.length); // check if they all are saved
+
+            const loadIds = [1, 2, 4];
+            const loadedUsers = (await userRepository.findByIds(loadIds))!;
+
+            loadedUsers.map(user => user.id).should.be.eql(loadIds);
         })));
 
     });

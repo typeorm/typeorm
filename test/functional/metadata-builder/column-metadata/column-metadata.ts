@@ -17,6 +17,7 @@ describe("metadata-builder > ColumnMetadata", () => {
 
     it("getValue", () => Promise.all(connections.map(async connection => {
         const post = new Post();
+        post.id = 1;
         post.title = "Post #1";
         post.counters = new Counters();
         post.counters.code = 123;
@@ -43,6 +44,7 @@ describe("metadata-builder > ColumnMetadata", () => {
 
     it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ("getValueMap", () => Promise.all(connections.map(async connection => {
         const post = new Post();
+        post.id = 1;
         post.title = "Post #1";
         post.counters = new Counters();
         post.counters.code = 123;

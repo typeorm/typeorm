@@ -274,6 +274,13 @@ export class MysqlDriver implements Driver {
         "bigint": { width: 20 }
     };
 
+
+    /**
+     * Max length allowed by MySQL for aliases.
+     * @see https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
+     */
+    maxAliasLength = 63;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -440,6 +447,9 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
+
+        } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") {
+            return "" + value;
         }
 
         return value;
@@ -450,7 +460,7 @@ export class MysqlDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return value;
+            return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "bool" || columnMetadata.type === "boolean") {
             value = value ? true : false;
@@ -472,6 +482,18 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
+
+        } else if (
+            (
+                columnMetadata.type === "enum"
+                || columnMetadata.type === "simple-enum"
+            )
+            && columnMetadata.enum
+            && !isNaN(value)
+            && columnMetadata.enum.indexOf(parseInt(value)) >= 0
+        ) {
+            // convert to number if that exists in poosible enum options
+            value = parseInt(value);
         }
 
         if (columnMetadata.transformer)
@@ -505,6 +527,9 @@ export class MysqlDriver implements Driver {
         } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "text";
 
+        } else if (column.type === "simple-enum") {
+            return "enum";
+
         } else if (column.type === "double precision" || column.type === "real") {
             return "double";
 
@@ -530,6 +555,16 @@ export class MysqlDriver implements Driver {
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string {
         const defaultValue = columnMetadata.default;
+
+        if (
+            (
+                columnMetadata.type === "enum" ||
+                columnMetadata.type === "simple-enum"
+            ) &&
+            defaultValue !== undefined
+        ) {
+            return `'${defaultValue}'`;
+        }
 
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
@@ -696,11 +731,17 @@ export class MysqlDriver implements Driver {
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
             // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
             // console.log("==========================================");
+
+            let columnMetadataLength = columnMetadata.length;
+            if (!columnMetadataLength && columnMetadata.generationStrategy === "uuid") { // fixing #3374
+                columnMetadataLength = this.getColumnLength(columnMetadata);
+            }
 
             return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadata.length
+                || tableColumn.length !== columnMetadataLength
                 || tableColumn.width !== columnMetadata.width
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale

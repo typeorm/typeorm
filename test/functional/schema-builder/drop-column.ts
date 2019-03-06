@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {expect} from "chai";
 
@@ -16,6 +17,10 @@ describe("schema builder > drop column", () => {
     after(() => closeTestingConnections(connections));
 
     it("should correctly drop column", () => Promise.all(connections.map(async connection => {
+
+        // TODO: https://github.com/cockroachdb/cockroach/issues/34710
+        if (connection.driver instanceof CockroachDriver)
+            return;
 
         const studentMetadata = connection.getMetadata("student");
         const removedColumns = studentMetadata.columns.filter(column => ["name", "faculty"].indexOf(column.propertyName) !== -1);

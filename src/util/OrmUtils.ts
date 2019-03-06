@@ -177,7 +177,9 @@ export class OrmUtils {
         if (x === y)
             return true;
 
-        if (x.equals instanceof Function && x.equals(y))
+        // Fix the buffer compare bug.
+        // See: https://github.com/typeorm/typeorm/issues/3654
+        if ((typeof x.equals === "function" || x.equals instanceof Function) && x.equals(y))
             return true;
 
         // Works in case when functions are created in constructor.

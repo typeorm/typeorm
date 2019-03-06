@@ -1,15 +1,31 @@
 import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Any, Between, Connection, Equal, In, IsNull, LessThan, LessThanOrEqual, Like, MoreThan, MoreThanOrEqual, Not} from "../../../../src";
+import {
+    Any,
+    Between,
+    Connection,
+    Equal,
+    In,
+    IsNull,
+    LessThan,
+    LessThanOrEqual,
+    Like,
+    MoreThan,
+    MoreThanOrEqual,
+    Not,
+    PromiseUtils
+} from "../../../../src";
 import {Post} from "./entity/Post";
 import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
 import {Raw} from "../../../../src/find-options/operator/Raw";
+import {PersonAR} from "./entity/PersonAR";
+import {expect} from "chai";
 
 describe("repository > find options > operators", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"]
+        entities: [__dirname + "/entity/*{.js,.ts}"],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -518,5 +534,19 @@ describe("repository > find options > operators", () => {
         loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
 
     })));
+
+    it("should work with ActiveRecord model", () => PromiseUtils.runInSequence(connections, async connection => {
+        PersonAR.useConnection(connection);
+
+        const person = new PersonAR();
+        person.name = "Timber";
+        await connection.manager.save(person);
+
+        const loadedPeople = await PersonAR.find({
+            name: In(["Timber"])
+        });
+        expect(loadedPeople[0].name).to.be.equal("Timber");
+
+    }));
 
 });

@@ -17,6 +17,7 @@ import {PromiseUtils} from "./util/PromiseUtils";
 import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
 import {SelectQueryBuilder} from "./query-builder/SelectQueryBuilder";
+import {EntitySchema} from "./entity-schema/EntitySchema";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -70,6 +71,7 @@ export * from "./decorator/tree/Tree";
 export * from "./decorator/Index";
 export * from "./decorator/Unique";
 export * from "./decorator/Check";
+export * from "./decorator/Exclusion";
 export * from "./decorator/Generated";
 export * from "./decorator/EntityRepository";
 export * from "./find-options/operator/Any";
@@ -271,7 +273,7 @@ export function getSqljsManager(connectionName: string = "default"): SqljsEntity
 /**
  * Gets repository for the given entity class.
  */
-export function getRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): Repository<Entity> {
+export function getRepository<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, connectionName: string = "default"): Repository<Entity> {
     return getConnectionManager().get(connectionName).getRepository<Entity>(entityClass);
 }
 

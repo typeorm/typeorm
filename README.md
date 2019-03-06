@@ -13,6 +13,9 @@
 	<a href="https://david-dm.org/typeorm/typeorm">
 		<img src="https://david-dm.org/typeorm/typeorm.svg">
 	</a>
+    <a href="https://codecov.io/gh/typeorm/typeorm">
+        <img alt="Codecov" src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg">
+    </a>
 	<a href="https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTFiNDEyOGUxZGQyYWIwOTA0NDQxODdkOGQ0OTUxNzFjYjUwY2E0ZmFlODc5OTYyYzAzNGM3MGZjYzhjYTBiZTY">
 		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg">
 	</a>
@@ -67,7 +70,7 @@ Some TypeORM features:
 * supports closure table pattern
 * schema declaration in models or separate configuration files
 * connection configuration in json / xml / yml / env formats
-* supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / sql.js
+* supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / sql.js
 * supports MongoDB NoSQL database
 * works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms
 * TypeScript and JavaScript support
@@ -180,7 +183,7 @@ await timber.remove();
 
         `npm install mysql --save` (you can install `mysql2` instead as well)
 
-    * for **PostgreSQL**
+    * for **PostgreSQL** or **CockroachDB**
 
         `npm install pg --save`
 
@@ -246,7 +249,7 @@ typeorm init --name MyProject --database mysql
 ```
 
 Where `name` is the name of your project and `database` is the database you'll use.
-Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`, `mongodb`,
+Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `mongodb`,
 `cordova`, `react-native`, `expo`, `nativescript`.
 
 This command will generate a new project in the `MyProject` directory with the following files:
@@ -338,6 +341,7 @@ export class Photo {
     description: string;
     filename: string;
     views: number;
+    isPublished: boolean;
 }
 ```
 
@@ -542,7 +546,8 @@ createConnection({
 
 We are using MySQL in this example, but you can use any other supported database.
 To use another database, simply change the `type` in the options to the database type you are using:
-mysql, mariadb, postgres, sqlite, mssql, oracle, cordova, nativescript, react-native, expo, or mongodb.
+`mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `cordova`, `nativescript`, `react-native`,
+`expo`, or `mongodb`.
 Also make sure to use your own host, port, username, password and database settings.
 
 We added our Photo entity to the list of entities for this connection.
@@ -591,7 +596,7 @@ Now if you run your `index.ts`, a connection with database will be initialized a
 |                         photo                           |
 +-------------+--------------+----------------------------+
 | id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| name        | varchar(500) |                            |
+| name        | varchar(100) |                            |
 | description | text         |                            |
 | filename    | varchar(255) |                            |
 | views       | int(11)      |                            |
@@ -1267,6 +1272,7 @@ There are several extensions that simplify working with TypeORM and integrating 
 * [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 * [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 * Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
+* Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
 
 ## Contributing
 

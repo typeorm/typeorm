@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../../src/connection/Connection";
+import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {PostIncrement} from "./entity/PostIncrement";
 import {PostUuid} from "./entity/PostUuid";
@@ -21,7 +22,9 @@ describe("persistence > entity updation", () => {
         const post = new PostIncrement();
         post.text = "Hello Post";
         await connection.manager.save(post);
-        post.id.should.be.equal(1);
+        // CockroachDB does not use incremental ids
+        if (!(connection.driver instanceof CockroachDriver))
+            post.id.should.be.equal(1);
     })));
 
     it("should update generated uuid after saving", () => Promise.all(connections.map(async connection => {
@@ -36,7 +39,6 @@ describe("persistence > entity updation", () => {
         const post = new PostDefaultValues();
         post.title = "Post #1";
         await connection.manager.save(post);
-        post.id.should.be.equal(1);
         post.title.should.be.equal("Post #1");
         post.text.should.be.equal("hello post");
         post.isActive.should.be.equal(true);
@@ -49,7 +51,6 @@ describe("persistence > entity updation", () => {
         const post = new PostSpecialColumns();
         post.title = "Post #1";
         await connection.manager.save(post);
-        post.id.should.be.equal(1);
         post.title.should.be.equal("Post #1");
         post.createDate.should.be.instanceof(Date);
         post.updateDate.should.be.instanceof(Date);

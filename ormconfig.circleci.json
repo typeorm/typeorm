@@ -65,6 +65,7 @@
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
-    "database": "test"
+    "database": "test",
+    "useNewUrlParser": true
   }
 ]

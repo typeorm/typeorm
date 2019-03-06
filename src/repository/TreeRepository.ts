@@ -251,9 +251,12 @@ export class TreeRepository<Entity> extends Repository<Entity> {
             const joinColumn = this.metadata.treeParentRelation!.joinColumns[0];
             // fixes issue #2518, default to databaseName property when givenDatabaseName is not set
             const joinColumnName = joinColumn.givenDatabaseName || joinColumn.databaseName;
+            const id = rawResult[alias + "_" + this.metadata.primaryColumns[0].databaseName];
+            const parentId = rawResult[alias + "_" + joinColumnName];
+            // CockroachDB returns numeric types as string
             return {
-                id: rawResult[alias + "_" + this.metadata.primaryColumns[0].databaseName],
-                parentId: rawResult[alias + "_" + joinColumnName]
+                id: typeof id === "string" ? parseInt(id) : id,
+                parentId: typeof parentId === "string" ? parseInt(parentId) : parentId
             };
         });
     }

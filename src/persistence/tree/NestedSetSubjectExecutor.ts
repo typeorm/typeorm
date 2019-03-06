@@ -23,7 +23,7 @@ export class NestedSetSubjectExecutor {
      */
     async insert(subject: Subject): Promise<void> {
         const escape = (alias: string) => this.queryRunner.connection.driver.escape(alias);
-        const tableName = escape(subject.metadata.tablePath);
+        const tableName = this.getTableName(subject.metadata.tablePath);
         const leftColumnName = escape(subject.metadata.nestedSetLeftColumn!.databaseName);
         const rightColumnName = escape(subject.metadata.nestedSetRightColumn!.databaseName);
 
@@ -40,7 +40,11 @@ export class NestedSetSubjectExecutor {
                 .from(subject.metadata.target, subject.metadata.targetName)
                 .whereInIds(parentId)
                 .getRawOne()
-                .then(result => result ? result["right"] : undefined);
+                .then(result => {
+                    const value: any = result ? result["right"] : undefined;
+                    // CockroachDB returns numeric types as string
+                    return typeof value === "string" ? parseInt(value) : value;
+                });
         }
 
         if (parentNsRight !== undefined) {
@@ -61,6 +65,20 @@ export class NestedSetSubjectExecutor {
                 subject.metadata.nestedSetRightColumn!.createValueMap(2),
             );
         }
+    }
+
+    /**
+     * Gets escaped table name with schema name if SqlServer or Postgres driver used with custom
+     * schema name, otherwise returns escaped table name.
+     */
+    protected getTableName(tablePath: string): string {
+        return tablePath.split(".")
+            .map(i => {
+                // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
+                if (i === "")
+                    return i;
+                return this.queryRunner.connection.driver.escape(i);
+            }).join(".");
     }
 
 }

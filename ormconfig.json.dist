@@ -66,6 +66,7 @@
     "name": "mongodb",
     "type": "mongodb",
     "database": "test",
-    "logging": false
+    "logging": false,
+    "useNewUrlParser": true
   }
 ]

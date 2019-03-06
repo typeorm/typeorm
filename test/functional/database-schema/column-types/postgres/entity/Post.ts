@@ -251,4 +251,7 @@ export class Post {
 
     @Column("simple-json")
     simpleJson: { param: string };
+
+    @Column("simple-enum", { enum: ["A", "B", "C"] })
+    simpleEnum: string;
 }

@@ -81,7 +81,7 @@ export interface EntitySchemaColumnOptions {
     /**
      * Specifies if this column will use AUTO_INCREMENT or not (e.g. generated number).
      */
-    generated?: true|"increment"|"uuid";
+    generated?: true|"increment"|"uuid"|"rowid";
 
     /**
      * Specifies if column's value must be unique or not.

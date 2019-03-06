@@ -17,6 +17,7 @@ describe("embedded > prefix functionality", () => {
         const postRepository = connection.getRepository(Post);
 
         const post = new Post();
+        post.id = 1;
         post.title = "Hello post";
         post.text = "This is text about the post";
         post.counters = new Counters();

@@ -83,7 +83,7 @@ export class EmbeddedMetadata {
     /**
      * Indicates if this embedded is in array mode.
      *
-     * This option works only in monogodb.
+     * This option works only in mongodb.
      */
     isArray: boolean = false;
 

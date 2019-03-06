@@ -29,8 +29,8 @@ describe("decorators > embedded", () => {
             await postRepository.save(post);
 
             // now load it
-            const loadedPost = (await postRepository.findOne(1))!;
-            loadedPost.id.should.be.equal(1);
+            const loadedPost = (await postRepository.findOne(post.id))!;
+            loadedPost.id.should.be.equal(post.id);
             loadedPost.title.should.be.equal("Hello post");
             loadedPost.text.should.be.equal("This is text about the post");
             loadedPost.counters.should.be.eql({
@@ -71,7 +71,7 @@ describe("decorators > embedded", () => {
                 .getMany();
 
             sortedPosts1.should.be.eql([{
-                id: 2,
+                id: post2.id,
                 title: "Hello post #2",
                 text: "This is text about the post",
                 counters: {
@@ -80,7 +80,7 @@ describe("decorators > embedded", () => {
                     likes: 2
                 }
             }, {
-                id: 1,
+                id: post1.id,
                 title: "Hello post #1",
                 text: "This is text about the post",
                 counters: {
@@ -97,7 +97,7 @@ describe("decorators > embedded", () => {
                 .getMany();
 
             sortedPosts2.should.be.eql([{
-                id: 1,
+                id: post1.id,
                 title: "Hello post #1",
                 text: "This is text about the post",
                 counters: {
@@ -106,7 +106,7 @@ describe("decorators > embedded", () => {
                     likes: 1
                 }
             }, {
-                id: 2,
+                id: post2.id,
                 title: "Hello post #2",
                 text: "This is text about the post",
                 counters: {

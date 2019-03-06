@@ -17,6 +17,7 @@ describe.skip("persistence > cascades > remove", () => {
         await connection.manager.save(new Photo("Photo #1"));
 
         const user = new User();
+        user.id = 1;
         user.name = "Mr. Cascade Danger";
         user.manyPhotos = [new Photo("one-to-many #1"), new Photo("one-to-many #2")];
         user.manyToManyPhotos = [new Photo("many-to-many #1"), new Photo("many-to-many #2"), new Photo("many-to-many #3")];
@@ -45,7 +46,8 @@ describe.skip("persistence > cascades > remove", () => {
         await connection.manager.remove(user);
 
         const allPhotos = await connection.manager.find(Photo);
-        allPhotos.should.be.eql([{ id: 1, name: "Photo #1" }]);
+        allPhotos.length.should.be.equal(1);
+        allPhotos[0].name.should.be.equal("Photo #1");
     })));
 
 });
