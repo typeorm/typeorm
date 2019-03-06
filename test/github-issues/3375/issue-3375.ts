@@ -22,7 +22,7 @@ describe("github issues > #3375 add metadata to migrations table", () => {
         return createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [migrationsPath],
-            enabledDrivers: ["postgres", "mssql", "mysql", "mariadb", "sqlite", "mongodb"],
+            enabledDrivers: ["postgres", "mssql", "mysql", "mariadb", "sqlite", "mongodb",  "cockroachdb"],
             schemaCreate: true,
             dropSchema
         });
