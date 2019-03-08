@@ -121,7 +121,7 @@ export class MongoEntityManager extends EntityManager {
             if (optionsOrConditions.select)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select, 1));
             if (optionsOrConditions.exclude)
-                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.exclude, 0))
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.exclude, 0));
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
@@ -159,7 +159,7 @@ export class MongoEntityManager extends EntityManager {
             if (optionsOrConditions.select)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select, 1));
             if (optionsOrConditions.exclude)
-                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.exclude, 0))
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.exclude, 0));
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
@@ -188,7 +188,7 @@ export class MongoEntityManager extends EntityManager {
             if (findOneOptionsOrConditions.select)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(findOneOptionsOrConditions.select, 1));
             if (findOneOptionsOrConditions.exclude)
-                cursor.project(this.convertFindOptionsSelectToProjectCriteria(findOneOptionsOrConditions.exclude, 0))
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(findOneOptionsOrConditions.exclude, 0));
             if (findOneOptionsOrConditions.order)
                 cursor.sort(this.convertFindOptionsOrderToOrderCriteria(findOneOptionsOrConditions.order));
         }
