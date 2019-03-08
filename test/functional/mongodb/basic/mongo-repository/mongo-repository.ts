@@ -86,6 +86,29 @@ describe("mongodb > MongoRepository", () => {
 
     })));
 
-    // todo: cover other methods as well
+    it.only("should include and exclude fields properly based on projection options", () => Promise.all(connections.map(async connection => {
+        const postRepository = connection.getMongoRepository(Post);
 
-});
+        const post = new Post();
+        post.title = "Post #1";
+        post.text = "Everything about post #1";
+        await postRepository.save(post);
+
+        // Use find and findOne to demostrate that works with different find methods
+
+        const postLoadedWithInclude = await postRepository.find({
+            select: ['title']
+        });
+        const postLoadedWithExclude = await postRepository.findOne({
+            exclude: ['id', 'text']
+        });
+
+        postLoadedWithInclude[0].should.be.instanceOf(Post);
+        postLoadedWithExclude!.should.be.instanceOf(Post);
+
+        postLoadedWithInclude[0].title.should.be.equal('Post #1');
+        postLoadedWithExclude!.title.should.be.equal('Post #1');
+
+        postLoadedWithInclude[0].should.be.eql(postLoadedWithExclude);
+    })));
+})

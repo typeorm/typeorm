@@ -35,7 +35,8 @@ import {
     ReadPreference,
     ReplaceOneOptions,
     UnorderedBulkOperation,
-    UpdateWriteOpResult
+    UpdateWriteOpResult,
+    MongoProjection
 } from "../driver/mongodb/typings";
 import { ObjectLiteral } from "../common/ObjectLiteral";
 import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner";
@@ -95,7 +96,9 @@ export class MongoEntityManager extends EntityManager {
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.select)
-                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select, 1));
+            if (optionsOrConditions.exclude)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.exclude, 0));
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
@@ -116,7 +119,9 @@ export class MongoEntityManager extends EntityManager {
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.select)
-                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select, 1));
+            if (optionsOrConditions.exclude)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.exclude, 0))
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
@@ -152,7 +157,9 @@ export class MongoEntityManager extends EntityManager {
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.select)
-                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select, 1));
+            if (optionsOrConditions.exclude)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.exclude, 0))
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
@@ -179,7 +186,9 @@ export class MongoEntityManager extends EntityManager {
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindOneOptions(findOneOptionsOrConditions)) {
             if (findOneOptionsOrConditions.select)
-                cursor.project(this.convertFindOptionsSelectToProjectCriteria(findOneOptionsOrConditions.select));
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(findOneOptionsOrConditions.select, 1));
+            if (findOneOptionsOrConditions.exclude)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(findOneOptionsOrConditions.exclude, 0))
             if (findOneOptionsOrConditions.order)
                 cursor.sort(this.convertFindOptionsOrderToOrderCriteria(findOneOptionsOrConditions.order));
         }
@@ -619,13 +628,13 @@ export class MongoEntityManager extends EntityManager {
     }
 
     /**
-     * Converts FindOptions into mongodb select by criteria.
+     * Converts FindOptions into mongodb select and exclude by criteria.
      */
-    protected convertFindOptionsSelectToProjectCriteria(selects: (keyof any)[]) {
-        return selects.reduce((projectCriteria, key) => {
-            projectCriteria[key] = 1;
+    protected convertFindOptionsSelectToProjectCriteria(selects: (keyof any)[], projectionValue: 0 | 1) {
+        return selects.reduce((projectCriteria, key: string) => {
+            projectCriteria[key] = projectionValue;
             return projectCriteria;
-        }, {} as any);
+        }, {} as MongoProjection);
     }
 
     /**

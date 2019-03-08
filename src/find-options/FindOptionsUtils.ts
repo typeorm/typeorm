@@ -21,6 +21,7 @@ export class FindOptionsUtils {
         return possibleOptions &&
                 (
                     possibleOptions.select instanceof Array ||
+                    possibleOptions.exclude instanceof Array ||
                     possibleOptions.where instanceof Object ||
                     typeof possibleOptions.where === "string" ||
                     possibleOptions.relations instanceof Array ||

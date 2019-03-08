@@ -1858,12 +1858,16 @@ export interface FSyncOptions {
     fsync?: boolean;
 }
 
+export interface MongoProjection {
+    [key: string]: 0 | 1;
+}
+
 export interface FindOneAndDeleteOptions {
 
     /**
      * Limits the fields to return for all matching documents.
      */
-    projection?: Object;
+    projection?: MongoProjection;
 
     /**
      * Determines which document the operation modifies if the query selects multiple documents.
@@ -4011,7 +4015,7 @@ export interface FindOneAndReplaceOption {
     /**
      * Limits the fields to return for all matching documents.
      */
-    projection?: Object;
+    projection?: MongoProjection;
 
     /**
      * Determines which document the operation modifies if the query selects multiple documents.
@@ -5112,7 +5116,7 @@ export declare class Cursor<T> extends Readable {
      * @param value The field projection object.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#project
      */
-    project(value: Object): Cursor<T>;
+    project(value: MongoProjection): Cursor<T>;
 
     /**
      * The read() method pulls some data out of the internal buffer and returns it.
@@ -5680,7 +5684,7 @@ export interface AggregationCursor<T> extends Readable {
      * @param document The project stage document.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#project
      */
-    project(document: Object): AggregationCursor<T>;
+    project(document: MongoProjection): AggregationCursor<T>;
 
     /**
      * The read() method pulls some data out of the internal buffer and returns it.
