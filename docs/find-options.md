@@ -13,6 +13,12 @@ All repository and manager `find` methods accept special options you can use to 
 userRepository.find({ select: ["firstName", "lastName"] });
 ```
 
+* `exclude` - indicates which properties of the main object must be excluded
+
+```typescript
+userRepository.find({ exclude: ["lastName"] });
+```
+
 * `relations` - relations needs to be loaded with the main entity. Sub-relations can also be loaded (shorthand for join and leftJoinAndSelect)
 
 ```typescript
