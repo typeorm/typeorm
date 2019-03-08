@@ -383,7 +383,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    findOneAndDelete<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string, query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
+    findOneAndDelete<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string, query: ObjectLiteral, options?: { projection?: MongoProjection, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.findOneAndDelete(metadata.tableName, query, options);
     }

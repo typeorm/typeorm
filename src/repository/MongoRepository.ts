@@ -30,7 +30,8 @@ import {
     ReadPreference,
     ReplaceOneOptions,
     UnorderedBulkOperation,
-    UpdateWriteOpResult
+    UpdateWriteOpResult,
+    MongoProjection
 } from "../driver/mongodb/typings";
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 import {QueryRunner} from "../query-runner/QueryRunner";
@@ -198,7 +199,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    findOneAndDelete(query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
+    findOneAndDelete(query: ObjectLiteral, options?: { projection?: MongoProjection, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
         return this.manager.findOneAndDelete(this.metadata.tableName, query, options);
     }
 

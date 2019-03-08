@@ -35,7 +35,8 @@ import {
     ReadPreference,
     ReplaceOneOptions,
     UnorderedBulkOperation,
-    UpdateWriteOpResult
+    UpdateWriteOpResult,
+    MongoProjection
 } from "./typings";
 import { Connection } from "../../connection/Connection";
 import { ReadStream } from "../../platform/PlatformTools";
@@ -194,7 +195,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    async findOneAndDelete(collectionName: string, query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
+    async findOneAndDelete(collectionName: string, query: ObjectLiteral, options?: { projection?: MongoProjection, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
         return await this.getCollection(collectionName).findOneAndDelete(query, options);
     }
 
