@@ -143,12 +143,12 @@ export class RelationIdLoader {
                     return Object.keys(mappedColumn).map(key => {
                         const parameterName = key + index;
                         parameters[parameterName] = mappedColumn[key];
-                        return junctionAlias + "." + key + " = :" + parameterName;
+                        return "\"" + junctionAlias + "\"." + key + " = :" + parameterName;
                     }).join(" AND ");
                 });
 
                 const inverseJoinColumnCondition = inverseJoinColumns.map(joinColumn => {
-                    return junctionAlias + "." + joinColumn.propertyPath + " = " + inverseSideTableAlias + "." + joinColumn.referencedColumn!.propertyPath;
+                    return "\"" + junctionAlias + "\"." + joinColumn.propertyPath + " = " + inverseSideTableAlias + "." + joinColumn.referencedColumn!.propertyPath;
                 }).join(" AND ");
 
                 const condition = joinColumnConditions.map(condition => {
@@ -158,13 +158,13 @@ export class RelationIdLoader {
                 const qb = this.connection.createQueryBuilder(this.queryRunner);
 
                 inverseJoinColumns.forEach(joinColumn => {
-                    qb.addSelect(junctionAlias + "." + joinColumn.propertyPath, joinColumn.databaseName)
-                    .addOrderBy(junctionAlias + "." + joinColumn.propertyPath);
+                    qb.addSelect("\"" + junctionAlias + "\"." + joinColumn.propertyPath, joinColumn.databaseName)
+                    .addOrderBy("\"" + junctionAlias + "\"." + joinColumn.propertyPath);
                 });
 
                 joinColumns.forEach(joinColumn => {
-                    qb.addSelect(junctionAlias + "." + joinColumn.propertyPath, joinColumn.databaseName)
-                    .addOrderBy(junctionAlias + "." + joinColumn.propertyPath);
+                    qb.addSelect("\"" + junctionAlias + "\"." + joinColumn.propertyPath, joinColumn.databaseName)
+                    .addOrderBy("\"" + junctionAlias + "\"." + joinColumn.propertyPath);
                 });
 
                 qb.from(inverseSideTableName, inverseSideTableAlias)
