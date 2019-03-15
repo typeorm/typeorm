@@ -56,13 +56,13 @@ describe("query builder > relation-id > many-to-one > basic-functionality", () =
             .loadRelationIdAndMap("post.categoryName", "post.categoryByName")
             .getMany();
 
-        expect(loadedPosts![0].categoryId).to.not.be.empty;
+        expect(loadedPosts![0].categoryId).to.not.be.undefined;
         expect(loadedPosts![0].categoryId).to.be.equal(1);
-        expect(loadedPosts![0].categoryName).to.not.be.empty;
+        expect(loadedPosts![0].categoryName).to.not.be.undefined;
         expect(loadedPosts![0].categoryName).to.be.equal("BMW");
-        expect(loadedPosts![1].categoryId).to.not.be.empty;
+        expect(loadedPosts![1].categoryId).to.not.be.undefined;
         expect(loadedPosts![1].categoryId).to.be.equal(2);
-        expect(loadedPosts![1].categoryName).to.not.be.empty;
+        expect(loadedPosts![1].categoryName).to.not.be.undefined;
         expect(loadedPosts![1].categoryName).to.be.equal("Boeing");
 
         let loadedPost = await connection.manager
@@ -72,9 +72,9 @@ describe("query builder > relation-id > many-to-one > basic-functionality", () =
             .where("post.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedPost!.categoryId).to.not.be.empty;
+        expect(loadedPost!.categoryId).to.not.be.undefined;
         expect(loadedPost!.categoryId).to.be.equal(1);
-        expect(loadedPost!.categoryName).to.not.be.empty;
+        expect(loadedPost!.categoryName).to.not.be.undefined;
         expect(loadedPost!.categoryName).to.be.equal("BMW");
     })));
 
@@ -99,9 +99,9 @@ describe("query builder > relation-id > many-to-one > basic-functionality", () =
             .loadRelationIdAndMap("postCategory.categoryId", "postCategory.category")
             .getOne();
 
-        expect(loadedPostCategory!.categoryId).to.not.be.empty;
+        expect(loadedPostCategory!.categoryId).to.not.be.undefined;
         expect(loadedPostCategory!.categoryId).to.be.equal(1);
-        expect(loadedPostCategory!.postId).to.not.be.empty;
+        expect(loadedPostCategory!.postId).to.not.be.undefined;
         expect(loadedPostCategory!.postId).to.be.equal(1);
     })));
 
@@ -129,7 +129,7 @@ describe("query builder > relation-id > many-to-one > basic-functionality", () =
             .createQueryBuilder(PostCategory, "postCategory")
             .loadRelationIdAndMap("postCategory.imageId", "postCategory.image")
             .getOne();
-        expect(loadedPostCategory!.imageId).to.not.be.empty;
+        expect(loadedPostCategory!.imageId).to.not.be.undefined;
         expect(loadedPostCategory!.imageId).to.be.equal(1);
     })));
 

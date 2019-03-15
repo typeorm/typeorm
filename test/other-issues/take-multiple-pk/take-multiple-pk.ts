@@ -55,7 +55,7 @@ describe("other issues > using take with multiple primary keys", () => {
           .orderBy("user.id", "DESC")
           .getMany();
 
-        expect(loadedUsers1).not.to.be.empty;
+        expect(loadedUsers1).not.to.be.undefined;
         loadedUsers1.length.should.be.equal(10);
         loadedUsers1[0].id.should.be.equal(100);
         loadedUsers1[1].id.should.be.equal(99);
@@ -76,7 +76,7 @@ describe("other issues > using take with multiple primary keys", () => {
           .orderBy("user.id", "DESC")
           .getMany();
 
-        expect(lefties).not.to.be.empty;
+        expect(lefties).not.to.be.undefined;
         lefties.length.should.be.equal(5);
         lefties[0].id.should.be.equal(100);
         lefties[1].id.should.be.equal(90);

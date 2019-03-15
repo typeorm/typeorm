@@ -75,6 +75,12 @@ export class RelationMetadata {
     propertyPath: string;
 
     /**
+     * Same as property path, but dots are replaced with '_'.
+     * Used in query builder statements.
+     */
+    propertyAliasName: string;
+
+    /**
      * Indicates if this is a parent (can be only many-to-one relation) relation in the tree tables.
      */
     isTreeParent: boolean = false;
@@ -83,12 +89,6 @@ export class RelationMetadata {
      * Indicates if this is a children (can be only one-to-many relation) relation in the tree tables.
      */
     isTreeChildren: boolean = false;
-
-    /**
-     * Indicates if this relation's column is a primary key.
-     * Can be used only for many-to-one and owner one-to-one relations.
-     */
-    isPrimary: boolean = false;
 
     /**
      * Indicates if this relation is lazily loaded.
@@ -268,8 +268,7 @@ export class RelationMetadata {
         this.isCascadeInsert = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("insert") !== -1);
         this.isCascadeUpdate = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("update") !== -1);
         this.isCascadeRemove = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("remove") !== -1);
-        this.isPrimary = args.options.primary || false;
-        this.isNullable = args.options.nullable === false || this.isPrimary ? false : true;
+        this.isNullable = args.options.nullable === false ? false : true;
         this.onDelete = args.options.onDelete;
         this.onUpdate = args.options.onUpdate;
         this.isEager = args.options.eager || false;
@@ -457,6 +456,7 @@ export class RelationMetadata {
      */
     build() {
         this.propertyPath = this.buildPropertyPath();
+        this.propertyAliasName = this.propertyPath.replace(".", "_");
     }
 
     /**

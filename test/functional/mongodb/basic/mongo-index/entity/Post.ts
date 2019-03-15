@@ -9,6 +9,7 @@ import {ObjectID} from "../../../../../../src/driver/mongodb/typings";
 @Index(() => ({ title: -1, name: -1, count: 1 }))
 @Index("title_name_count", () => ({ title: 1, name: 1, count: 1 }))
 @Index("title_name_count_reversed", () => ({ title: -1, name: -1, count: -1 }))
+@Index("count_in_background", () => ({ count: -1 }), {background: true})
 export class Post {
 
     @ObjectIdColumn()

@@ -1,7 +1,7 @@
-# Connection API
+# Connection APIs
 
 * [Main API](#main-api)
-* [`Connection` API](#connection-api-1)
+* [`Connection` API](#connection-api)
 * [`ConnectionManager` API](#connectionmanager-api)
 
 ## Main API
@@ -183,7 +183,7 @@ await connection.close();
 ```
 
 * `synchronize` - Synchronizes database schema. When `synchronize: true` is set in connection options it calls this method. 
-Usually, you call this method when your application is shuting down.
+Usually, you call this method when your application is shutting down.
 
 ```typescript
 await connection.synchronize();
@@ -228,7 +228,7 @@ const userMetadata = connection.getMetadata(User);
 
 * `getRepository` - Gets `Repository` of the given entity.
 You can also specify a table name and if repository for given table is found it will be returned.
-Learn more about [Repositories](working-with-entity-manager.md).
+Learn more about [Repositories](working-with-repository.md).
 
 ```typescript
 const repository = connection.getRepository(User);
@@ -238,7 +238,7 @@ const users = await repository.findOne(1);
 
 * `getTreeRepository` - Gets `TreeRepository` of the given entity.
 You can also specify a table name and if repository for given table is found it will be returned.
-Learn more about [Repositories](working-with-entity-manager.md).
+Learn more about [Repositories](working-with-repository.md).
 
 ```typescript
 const repository = connection.getTreeRepository(Category);
@@ -258,8 +258,8 @@ const category1 = await categoryCursor.next();
 const category2 = await categoryCursor.next();
 ```
 
-* `getCustomRepository` - Gets customly defined repository.
-Learn more about [custom repositories](working-with-entity-manager.md).
+* `getCustomRepository` - Gets custom defined repository.
+Learn more about [custom repositories](custom-repository.md).
 
 ```typescript
 const userRepository = connection.getCustomRepository(UserRepository);

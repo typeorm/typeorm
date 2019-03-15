@@ -10,7 +10,7 @@ import {RelationQueryBuilder} from "./RelationQueryBuilder";
 import {ObjectType} from "../common/ObjectType";
 import {Alias} from "./Alias";
 import {Brackets} from "./Brackets";
-import {QueryPartialEntity} from "./QueryPartialEntity";
+import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
@@ -180,27 +180,27 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query and applies given update values.
      */
-    update(updateSet: QueryPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
+    update(updateSet: QueryDeepPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update<T>(entity: ObjectType<T>, updateSet?: QueryPartialEntity<T>): UpdateQueryBuilder<T>;
+    update<T>(entity: ObjectType<T>, updateSet?: QueryDeepPartialEntity<T>): UpdateQueryBuilder<T>;
 
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update<T>(entity: EntitySchema<T>, updateSet?: QueryPartialEntity<T>): UpdateQueryBuilder<T>;
+    update<T>(entity: EntitySchema<T>, updateSet?: QueryDeepPartialEntity<T>): UpdateQueryBuilder<T>;
 
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update(entity: Function|EntitySchema<Entity>|string, updateSet?: QueryPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
+    update(entity: Function|EntitySchema<Entity>|string, updateSet?: QueryDeepPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query for the given table name and applies given update values.
      */
-    update(tableName: string, updateSet?: QueryPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
+    update(tableName: string, updateSet?: QueryDeepPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query and applies given update values.
@@ -315,6 +315,13 @@ export abstract class QueryBuilder<Entity> {
      * Adds all parameters from the given object.
      */
     setParameters(parameters: ObjectLiteral): this {
+
+        // remove function parameters
+        Object.keys(parameters).forEach(key => {
+            if (parameters[key] instanceof Function) {
+                throw new Error(`Function parameter isn't supported in the parameters. Please check "${key}" parameter.`);
+            }
+        });
 
         // set parent query builder parameters as well in sub-query mode
         if (this.expressionMap.parentQueryBuilder)
@@ -459,6 +466,15 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
+     * Indicates if observers must be called before and after query execution.
+     * Enabled by default.
+     */
+    callObservers(enabled: boolean): this {
+        this.expressionMap.callObservers = enabled;
+        return this;
+    }
+
+    /**
      * If set to true the query will be wrapped into a transaction.
      */
     useTransaction(enabled: boolean): this {
@@ -475,31 +491,6 @@ export abstract class QueryBuilder<Entity> {
      * schema name, otherwise returns escaped table name.
      */
     protected getTableName(tablePath: string): string {
-        // let tablePath = tableName;
-        // const driver = this.connection.driver;
-        // const schema = (driver.options as SqlServerConnectionOptions|PostgresConnectionOptions).schema;
-        // const metadata = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName) : undefined;
-
-        /*if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof MysqlDriver) {
-            if (metadata) {
-                if (metadata.schema) {
-                    tablePath = `${metadata.schema}.${tableName}`;
-                } else if (schema) {
-                    tablePath = `${schema}.${tableName}`;
-                }
-
-                if (metadata.database && !(driver instanceof PostgresDriver)) {
-                    if (!schema && !metadata.schema && driver instanceof SqlServerDriver) {
-                        tablePath = `${metadata.database}..${tablePath}`;
-                    } else {
-                        tablePath = `${metadata.database}.${tablePath}`;
-                    }
-                }
-
-            } else if (schema) {
-                tablePath = `${schema!}.${tableName}`;
-            }
-        }*/
         return tablePath.split(".")
             .map(i => {
                 // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
@@ -721,19 +712,33 @@ export abstract class QueryBuilder<Entity> {
         // create shortcuts for better readability
         const alias = this.expressionMap.aliasNamePrefixingEnabled ? this.escape(this.expressionMap.mainAlias!.name) + "." : "";
         let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
-        const whereStrings = normalized.map((id, index) => {
-            const whereSubStrings: string[] = [];
-            metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
-                const parameterName = "id_" + index + "_" + secondIndex;
-                // whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
-                whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + " = " + this.connection.driver.createParameter(parameterName, parameterIndex));
-                this.expressionMap.nativeParameters[parameterName] = primaryColumn.getEntityValue(id, true);
-                parameterIndex++;
-            });
-            return whereSubStrings.join(" AND ");
-        });
 
-        return whereStrings.length > 1 ? whereStrings.map(whereString => "(" + whereString + ")").join(" OR ") : whereStrings[0];
+        if (metadata.primaryColumns.length > 1) {
+            const whereStrings = normalized.map((id, index) => {
+
+                const whereSubStrings: string[] = [];
+                metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
+                    const parameterName = "id_" + index + "_" + secondIndex;
+                    // whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
+                    whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + " = " + this.connection.driver.createParameter(parameterName, parameterIndex));
+                    this.expressionMap.nativeParameters[parameterName] = primaryColumn.getEntityValue(id, true);
+                    parameterIndex++;
+                });
+                return whereSubStrings.join(" AND ");
+            });
+            return whereStrings.length > 1 ? "(" + whereStrings.map(whereString => "(" + whereString + ")").join(" OR ") + ")" : whereStrings[0];
+
+        } else {
+            const [primaryColumn] = metadata.primaryColumns;
+            const areAllNumbers = normalized.every((id: any) => typeof id === "number");
+            if (areAllNumbers) {
+                return `${alias + this.escape(primaryColumn.databaseName)} IN (${normalized.join(", ")})`;
+
+            } else {
+                this.expressionMap.parameters["qb_ids"] = normalized.map(val => primaryColumn.getEntityValue(val, true));
+                return alias + this.escape(primaryColumn.databaseName) + " IN (:...qb_ids)";
+            }
+        }
     }
 
     /**
@@ -768,6 +773,8 @@ export abstract class QueryBuilder<Entity> {
 
                             const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
                             let parameterValue = column.getEntityValue(where, true);
+                            if (parameterValue === undefined)
+                                return;
                             const parameterName = "where_" + whereIndex + "_" + propertyIndex + "_" + columnIndex;
 
                             if (parameterValue === null) {
@@ -778,9 +785,16 @@ export abstract class QueryBuilder<Entity> {
                                 if (parameterValue.useParameter) {
                                     const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
                                     realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
-                                        this.expressionMap.nativeParameters[parameterName + realParameterValueIndex] = realParameterValue;
-                                        parameterIndex++;
-                                        parameters.push(this.connection.driver.createParameter(parameterName + realParameterValueIndex, parameterIndex - 1));
+
+                                        // don't create parameters for number to prevent max number of variables issues as much as possible
+                                        if (typeof realParameterValue === "number") {
+                                            parameters.push(realParameterValue);
+
+                                        } else {
+                                            this.expressionMap.nativeParameters[parameterName + realParameterValueIndex] = realParameterValue;
+                                            parameterIndex++;
+                                            parameters.push(this.connection.driver.createParameter(parameterName + realParameterValueIndex, parameterIndex - 1));
+                                        }
                                     });
                                 }
                                 return parameterValue.toSql(this.connection, aliasPath, parameters);

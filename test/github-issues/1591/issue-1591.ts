@@ -40,7 +40,6 @@ describe.skip("github issues > #1591 Define order of relation data when querying
             .skip(0)
             .take(5)
             .getMany();
-
     })));
 
 });

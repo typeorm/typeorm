@@ -39,6 +39,7 @@ describe("embedded > embedded-many-to-many-case4", () => {
             await connection.getRepository(User).save(user3);
 
             const post1 = new Post();
+            post1.id = 1;
             post1.title = "About cars";
             post1.counters = new Counters();
             post1.counters.code = 1;
@@ -52,6 +53,7 @@ describe("embedded > embedded-many-to-many-case4", () => {
             await connection.getRepository(Post).save(post1);
 
             const post2 = new Post();
+            post2.id = 2;
             post2.title = "About airplanes";
             post2.counters = new Counters();
             post2.counters.code = 2;
@@ -208,6 +210,7 @@ describe("embedded > embedded-many-to-many-case4", () => {
         it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation with multiple primary keys (multiple keys in related entity)", () => Promise.all(connections.map(async connection => {
 
             const post1 = new Post();
+            post1.id = 1;
             post1.title = "About cars";
             post1.counters = new Counters();
             post1.counters.code = 1;
@@ -220,6 +223,7 @@ describe("embedded > embedded-many-to-many-case4", () => {
             await connection.getRepository(Post).save(post1);
 
             const post2 = new Post();
+            post2.id = 2;
             post2.title = "About airplanes";
             post2.counters = new Counters();
             post2.counters.code = 2;

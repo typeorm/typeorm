@@ -2,6 +2,7 @@ import {Alias} from "./Alias";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {JoinAttribute} from "./JoinAttribute";
+import {QueryBuilderUtils} from "./QueryBuilderUtils";
 import {RelationIdAttribute} from "./relation-id/RelationIdAttribute";
 import {RelationCountAttribute} from "./relation-count/RelationCountAttribute";
 import {Connection} from "../connection/Connection";
@@ -245,6 +246,16 @@ export class QueryExpressionMap {
     callListeners: boolean = true;
 
     /**
+     * Indicates if observers must be called before and after query execution.
+     */
+    callObservers: boolean = true;
+
+    /**
+     * Indicates if eager relations are loaded (they are by default).
+     */
+    eagerRelations: boolean = true;
+
+    /**
      * Indicates if query must be wrapped into transaction.
      */
     useTransaction: boolean = false;
@@ -344,9 +355,9 @@ export class QueryExpressionMap {
     }
 
     findColumnByAliasExpression(aliasExpression: string): ColumnMetadata|undefined {
-        const [aliasName, propertyPath] = aliasExpression.split(".");
+        const [aliasName, propertyPath] = QueryBuilderUtils.extractAliasAndPropertyPath(aliasExpression);
         const alias = this.findAliasByName(aliasName);
-        return alias.metadata.findColumnWithPropertyName(propertyPath);
+        return alias.metadata.findColumnWithPropertyPath(propertyPath);
     }
 
     /**
@@ -408,6 +419,7 @@ export class QueryExpressionMap {
         map.whereEntities = this.whereEntities;
         map.updateEntity = this.updateEntity;
         map.callListeners = this.callListeners;
+        map.callObservers = this.callObservers;
         map.useTransaction = this.useTransaction;
         map.nativeParameters = this.nativeParameters;
         return map;

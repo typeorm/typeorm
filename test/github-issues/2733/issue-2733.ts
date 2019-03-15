@@ -18,8 +18,8 @@ describe("github issues > #2733 should correctly handle function calls with uper
         await Promise.all(connections.map(async connection => {
             const schemaBuilder = connection.driver.createSchemaBuilder();
             const syncQueries = await schemaBuilder.log();
-            expect(syncQueries.downQueries).to.be.empty;
-            expect(syncQueries.upQueries).to.be.empty;
+            expect(syncQueries.downQueries).to.be.eql([]);
+            expect(syncQueries.upQueries).to.be.eql([]);
         }));
         await closeTestingConnections(connections);
     });
@@ -34,8 +34,8 @@ describe("github issues > #2733 should correctly handle function calls with uper
         await Promise.all(connections.map(async connection => {
             const schemaBuilder = connection.driver.createSchemaBuilder();
             const syncQueries = await schemaBuilder.log();
-            expect(syncQueries.downQueries).to.be.empty;
-            expect(syncQueries.upQueries).to.be.empty;
+            expect(syncQueries.downQueries).to.be.eql([]);
+            expect(syncQueries.upQueries).to.be.eql([]);
         }));
         await closeTestingConnections(connections);
     });

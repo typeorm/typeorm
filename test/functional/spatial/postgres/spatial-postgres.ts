@@ -39,12 +39,12 @@ describe("spatial-postgres", () => {
         const queryRunner = connection.createQueryRunner();
         const schema = await queryRunner.getTable("post");
         await queryRunner.release();
-        expect(schema).not.to.be.empty;
+        expect(schema).not.to.be.undefined;
         const pointColumn = schema!.columns.find(
             tableColumn =>
               tableColumn.name === "point" && tableColumn.type === "geometry"
           );
-        expect(pointColumn).to.not.be.empty;
+        expect(pointColumn).to.not.be.undefined;
         expect(pointColumn!.spatialFeatureType!.toLowerCase()).to.equal("point");
         expect(pointColumn!.srid).to.equal(4326);
       })
@@ -56,13 +56,13 @@ describe("spatial-postgres", () => {
         const queryRunner = connection.createQueryRunner();
         const schema = await queryRunner.getTable("post");
         await queryRunner.release();
-        expect(schema).not.to.be.empty;
+        expect(schema).not.to.be.undefined;
         expect(
           schema!.columns.find(
             tableColumn =>
               tableColumn.name === "geog" && tableColumn.type === "geography"
           )
-        ).to.not.be.empty;
+        ).to.not.be.undefined;
       })
     ));
 
@@ -72,7 +72,7 @@ describe("spatial-postgres", () => {
         const queryRunner = connection.createQueryRunner();
         const schema = await queryRunner.getTable("post");
         await queryRunner.release();
-        expect(schema).not.to.be.empty;
+        expect(schema).not.to.be.undefined;
         expect(
           schema!.indices.find(
             tableIndex =>
@@ -80,7 +80,7 @@ describe("spatial-postgres", () => {
               tableIndex.columnNames.length === 1 &&
               tableIndex.columnNames[0] === "geom"
           )
-        ).to.not.be.empty;
+        ).to.not.be.undefined;
       })
     ));
 

@@ -23,6 +23,7 @@ describe("embedded > embedded-with-special-columns", () => {
     it("should insert, load, update and remove entities with embeddeds when embeds contains special columns (e.g. CreateDateColumn, UpdateDateColumn, VersionColumn", () => Promise.all(connections.map(async connection => {
 
         const post1 = new Post();
+        post1.id = 1;
         post1.title = "About cars";
         post1.counters = new Counters();
         post1.counters.comments = 1;
@@ -33,6 +34,7 @@ describe("embedded > embedded-with-special-columns", () => {
         await connection.getRepository(Post).save(post1);
 
         const post2 = new Post();
+        post2.id = 2;
         post2.title = "About airplanes";
         post2.counters = new Counters();
         post2.counters.comments = 2;

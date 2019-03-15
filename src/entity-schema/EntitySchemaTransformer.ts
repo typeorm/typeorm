@@ -124,7 +124,6 @@ export class EntitySchemaTransformer {
                             nullable: relationSchema.nullable,
                             onDelete: relationSchema.onDelete,
                             onUpdate: relationSchema.onUpdate,
-                            primary: relationSchema.primary,
                             persistence: relationSchema.persistence
                         }
                     };

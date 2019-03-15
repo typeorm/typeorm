@@ -15,7 +15,7 @@ describe("persistence > multi primary keys", () => {
 
     describe("insert", function () {
 
-        it("should insert entity when when there are multi column primary keys", () => Promise.all(connections.map(async connection => {
+        it("should insert entity when there are multi column primary keys", () => Promise.all(connections.map(async connection => {
             const post1 = new Post();
             post1.title = "Hello Post #1";
             post1.firstId = 1;
@@ -33,12 +33,7 @@ describe("persistence > multi primary keys", () => {
 
             // now check
             const posts = await connection.manager.find(Post, {
-                join: {
-                    alias: "post",
-                    innerJoinAndSelect: {
-                        category: "post.category"
-                    }
-                },
+                relations: ["category"],
                 order: {
                     firstId: "ASC"
                 }

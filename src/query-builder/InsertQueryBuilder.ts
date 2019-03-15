@@ -1,7 +1,9 @@
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
+import {ObserverExecutor} from "../observer/ObserverExecutor";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
-import {QueryPartialEntity} from "./QueryPartialEntity";
+import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
@@ -16,7 +18,6 @@ import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -58,12 +59,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // console.timeEnd(".value sets");
 
             // call before insertion methods in listeners and subscribers
-            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
-                const broadcastResult = new BroadcasterResult();
-                valueSets.forEach(valueSet => {
-                    queryRunner.broadcaster.broadcastBeforeInsertEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, valueSet);
-                });
-                if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
+            if (this.expressionMap.callObservers) {
+                if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
+                    const broadcastResult = new BroadcasterResult();
+                    valueSets.forEach(valueSet => {
+                        queryRunner.broadcaster.broadcastBeforeInsertEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, valueSet);
+                    });
+                    if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
+                }
             }
 
             // if update entity mode is enabled we may need extra columns for the returning statement
@@ -101,8 +104,15 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             // close transaction if we started it
             // console.time(".commit");
-            if (transactionStartedByUs) {
+            if (transactionStartedByUs)
                 await queryRunner.commitTransaction();
+
+            // second case is when operation is executed without transaction and at the same time
+            // nobody started transaction from the above
+            if (this.expressionMap.callObservers) {
+                if (transactionStartedByUs || (this.expressionMap.useTransaction === false && queryRunner.isTransactionActive === false)) {
+                    await new ObserverExecutor(this.connection.observers).execute();
+                }
             }
             // console.timeEnd(".commit");
 
@@ -150,7 +160,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Values needs to be inserted into table.
      */
-    values(values: QueryPartialEntity<Entity>|QueryPartialEntity<Entity>[]): this {
+    values(values: QueryDeepPartialEntity<Entity>|QueryDeepPartialEntity<Entity>[]): this {
         this.expressionMap.valuesSet = values;
         return this;
     }
@@ -300,7 +310,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 query += ` DEFAULT VALUES`;
             }
         }
-        if (this.connection.driver instanceof PostgresDriver || (this.connection.driver instanceof SqliteDriver)) {
+        if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver) {
           query += `${this.expressionMap.onIgnore ? " ON CONFLICT DO NOTHING " : ""}`;
           query += `${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
           if (this.expressionMap.onUpdate) {
@@ -317,7 +327,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         // add RETURNING expression
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver)) {
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
             query += ` RETURNING ${returningExpression}`;
         }
 

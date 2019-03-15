@@ -4,12 +4,12 @@ import {Column, PrimaryGeneratedColumn, Entity} from "../../../../src";
 export class Category {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number|null;
 
     @Column()
     name: string;
 
     @Column()
-    name2: string;
+    name2: string|null;
 
 }

@@ -42,14 +42,14 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
             .orderBy("category.id")
             .getMany();
 
-        expect(loadedPost!).not.to.be.empty;
-        loadedPost!.should.include({
+        expect(loadedPost!).not.to.be.undefined;
+        loadedPost!.should.deep.include({
             id: 1,
             title: "Hello Post #1"
         });
         loadedPost!.categories.length.should.be.equal(2);
 
-        expect(loadedCategories).not.to.be.empty;
+        expect(loadedCategories).not.to.be.undefined;
         loadedCategories[0].id.should.be.equal(1);
         loadedCategories[1].id.should.be.equal(2);
 
@@ -65,8 +65,8 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
             .createQueryBuilder(Category, "category")
             .getMany();
 
-        expect(loadedPosts2).to.be.empty;
-        expect(loadedCategories2).to.be.empty;
+        expect(loadedPosts2).to.be.eql([]);
+        expect(loadedCategories2).to.be.eql([]);
 
     })));
 

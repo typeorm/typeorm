@@ -5,7 +5,6 @@ import {RelationMetadata} from "./RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
-import {OrmUtils} from "../util/OrmUtils";
 import {ValueTransformer} from "../decorator/options/ValueTransformer";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {PromiseUtils} from "../util/PromiseUtils";
@@ -103,7 +102,7 @@ export class ColumnMetadata {
     /**
      * Specifies generation strategy if this column will use auto increment.
      */
-    generationStrategy?: "uuid"|"increment";
+    generationStrategy?: "uuid"|"increment"|"rowid";
 
     /**
      * Column comment.
@@ -146,8 +145,11 @@ export class ColumnMetadata {
 
     /**
      * Array of possible enumerated values.
+     *
+     * `postgres` and `mysql` store enum values as strings but we want to keep support
+     * for numeric and heterogeneous based typescript enums, so we need (string|number)[]
      */
-    enum?: any[];
+    enum?: (string|number)[];
 
     /**
      * Generated column expression. Supports only in MySQL.
@@ -443,7 +445,7 @@ export class ColumnMetadata {
                 }
 
                 // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-                if (this.generationStrategy === "increment" && this.type === "bigint")
+                if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
                     value = String(value);
 
                 map[useDatabaseName ? this.databaseName : this.propertyName] = value;
@@ -454,7 +456,7 @@ export class ColumnMetadata {
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
 
             // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-            if (this.generationStrategy === "increment" && this.type === "bigint")
+            if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
                 value = String(value);
 
             return { [useDatabaseName ? this.databaseName : this.propertyName]: value };
@@ -508,7 +510,7 @@ export class ColumnMetadata {
             return Object.keys(map).length > 0 ? map : undefined;
 
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
-            if (this.relationMetadata && entity[this.propertyName] && entity[this.propertyName] instanceof Object) {
+            /*if (this.relationMetadata && entity[this.propertyName] && entity[this.propertyName] instanceof Object) { // commented since functionality is suspicious no failing test was found
                 const map = this.relationMetadata.joinColumns.reduce((map, joinColumn) => {
                     const value = joinColumn.referencedColumn!.getEntityValueMap(entity[this.propertyName]);
                     if (value === undefined) return map;
@@ -518,12 +520,12 @@ export class ColumnMetadata {
                     return { [this.propertyName]: map };
 
                 return undefined;
-            } else {
-                if (entity[this.propertyName] !== undefined && (returnNulls === false || entity[this.propertyName] !== null))
-                    return { [this.propertyName]: entity[this.propertyName] };
+            } else {*/
+            if (entity[this.propertyName] !== undefined && (returnNulls === false || entity[this.propertyName] !== null))
+                return { [this.propertyName]: entity[this.propertyName] };
 
-                return undefined;
-            }
+            return undefined;
+            // }
         }
     }
 
@@ -630,6 +632,17 @@ export class ColumnMetadata {
         } else {
             entity[this.propertyName] = value;
         }
+    }
+
+    /**
+     * Compares given entity's column value with a given value.
+     */
+    compareEntityValue(entity: any, valueToCompareWith: any) {
+        const columnValue = this.getEntityValue(entity);
+        if (columnValue instanceof Object) {
+            return columnValue.equals(valueToCompareWith);
+        }
+        return columnValue === valueToCompareWith;
     }
 
     // ---------------------------------------------------------------------

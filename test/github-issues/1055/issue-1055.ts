@@ -4,7 +4,6 @@ import {Connection} from "../../../src/connection/Connection";
 import {Parent} from "./entity/Parent";
 import {Child} from "./entity/Child";
 import {expect} from "chai";
-import {PromiseUtils} from "../../../src/util/PromiseUtils";
 
 describe("github issues > #1055 ind with relations not working, correct syntax causes type error", () => {
 
@@ -24,7 +23,7 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
         await manager.save(parent);
 
         const loadedParent = await manager.findOne(Parent, 1);
-        expect(loadedParent).not.to.be.empty;
+        expect(loadedParent).not.to.be.undefined;
 
         if (!loadedParent) return;
 
@@ -34,8 +33,12 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
         });
         await manager.save(child);
 
-        const foundChild = await manager.findOne(Child, { parent: loadedParent });
-        expect(foundChild).not.to.be.empty;
+        const foundChild = await manager.findOne(Child, {
+            parent: {
+                id: loadedParent.id
+            }
+        });
+        expect(foundChild).not.to.be.undefined;
     })));
 
 
@@ -47,7 +50,7 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
         await manager.save(parent);
 
         const loadedParent = await manager.findOne(Parent, 1);
-        expect(loadedParent).not.to.be.empty;
+        expect(loadedParent).not.to.be.undefined;
 
         if (!loadedParent) return;
 
@@ -56,8 +59,12 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
         child.parent = Promise.resolve(loadedParent);
         await manager.save(child);
 
-        const foundChild = await manager.findOne(Child, { parent: PromiseUtils.create(loadedParent) });
-        expect(foundChild).not.to.be.empty;
+        const foundChild = await manager.findOne(Child, {
+            parent: {
+                id: loadedParent.id
+            }
+        });
+        expect(foundChild).not.to.be.undefined;
     })));
 
     it("should not have type errors with the primary key type", () => Promise.all(connections.map(async connection => {
@@ -68,7 +75,7 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
         await manager.save(parent);
 
         const loadedParent = await manager.findOne(Parent, 1);
-        expect(loadedParent).not.to.be.empty;
+        expect(loadedParent).not.to.be.undefined;
 
         if (!loadedParent) return;
 
@@ -78,6 +85,6 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
         await manager.save(child);
 
         const foundChild = await manager.findOne(Child, { parent: loadedParent.id });
-        expect(foundChild).not.to.be.empty;
+        expect(foundChild).not.to.be.undefined;
     })));
 });

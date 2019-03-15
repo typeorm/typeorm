@@ -41,7 +41,7 @@ describe("mongodb > array columns", () => {
         expect(loadedPost!.booleans).to.be.not.empty;
         expect(loadedPost!.counters).to.be.not.empty;
         loadedPost!.other1.length.should.be.equal(0);
-        expect(loadedPost!.other2).to.be.empty;
+        expect(loadedPost!.other2).to.be.undefined;
 
         loadedPost!.names[0].should.be.equal("umed");
         loadedPost!.names[1].should.be.equal("dima");
@@ -89,7 +89,7 @@ describe("mongodb > array columns", () => {
         expect(loadedUpdatedPost!.booleans).to.be.not.empty;
         expect(loadedUpdatedPost!.counters).to.be.not.empty;
         expect(loadedUpdatedPost!.other1).to.be.not.empty;
-        expect(loadedUpdatedPost!.other2).to.be.empty;
+        expect(loadedUpdatedPost!.other2).to.be.undefined;
 
         loadedUpdatedPost!.names[0].should.be.equal("umed!");
         loadedUpdatedPost!.names[1].should.be.equal("dima!");

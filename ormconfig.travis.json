@@ -42,7 +42,7 @@
     "type": "sqljs"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",
@@ -59,6 +59,16 @@
     "password": "oracle",
     "port": 1521,
     "sid": "xe.oracle.docker"
+  },
+  {
+    "skip": false,
+    "name": "cockroachdb",
+    "type": "cockroachdb",
+    "host": "localhost",
+    "port": 26257,
+    "username": "root",
+    "password": "",
+    "database": "defaultdb"
   },
   {
     "skip": false,

@@ -3,16 +3,20 @@
 version: 2
 jobs:
   build:
+    working_directory: ~/typeorm
     docker:
       # specify pre-built docker images
       # documented at https://circleci.com/docs/2.0/circleci-images/
       - image: circleci/node:10.15.0
-      - image: circleci/mysql:5.7.24
-      # - image: circleci/mariadb:10.1.37
+      - image: mysql:5.7.24
+        environment:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "root"
+          MYSQL_PASSWORD: "admin"
+          MYSQL_DATABASE: "test"
+      - image: circleci/mariadb:10.1.37
       - image: circleci/postgres:9.6.11-postgis
       - image: circleci/mongo:3.4.18
-
-    working_directory: ~/typeorm
 
     steps:
       - checkout

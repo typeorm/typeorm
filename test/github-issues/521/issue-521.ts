@@ -23,7 +23,8 @@ describe("github issues > #521 Attributes in UPDATE in QB arent getting replaced
                 name: "Toyota",
             })
             .getQueryAndParameters();
-        query.should.not.be.empty;
+        query.should.not.be.undefined;
+        query.should.not.be.eql("");
         return parameters.length.should.eql(2);
     })));
 

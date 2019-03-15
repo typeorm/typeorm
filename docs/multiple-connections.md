@@ -277,13 +277,21 @@ Example of replication connection settings:
 All schema update and write operations are performed using `master` server.
 All simple queries performed by find methods or select query builder are using a random `slave` instance. 
 
-If you want to explicitly use master in SELECT created by query builder, you can use following code:
+If you want to explicitly use master in SELECT created by query builder, you can use the following code:
 
 ```typescript
-const postsFromMaster = await connection.createQueryBuilder(Post, "post")
-    .setQueryRunner(connection.createQueryRunner("master"))
-    .getMany();
+const masterQueryRunner = connection.createQueryRunner("master");
+try {
+    const postsFromMaster = await connection.createQueryBuilder(Post, "post")
+        .setQueryRunner(masterQueryRunner)
+        .getMany();
+} finally {
+      await masterQueryRunner.release();
+}
+        
 ```
+
+Note that connection created by a `QueryRunner` need to be explicitly released.
 
 Replication is supported by mysql, postgres and sql server databases.
 

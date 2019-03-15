@@ -86,8 +86,8 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
             loadedStudent!.id.should.equal(1);
             loadedStudent!.name.should.equal("Alice");
             loadedStudent!.faculties.length.should.equal(2);
-            loadedStudent!.faculties.map(f => f.name).should.contain("Economics");
-            loadedStudent!.faculties.map(f => f.name).should.contain("Programming");
+            loadedStudent!.faculties.map(f => f.name).should.deep.include("Economics");
+            loadedStudent!.faculties.map(f => f.name).should.deep.include("Programming");
 
             let loadedTeacher = await connection.manager
                 .createQueryBuilder(Teacher, "teacher")
@@ -99,8 +99,8 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
             loadedTeacher!.id.should.equal(2);
             loadedTeacher!.name.should.equal("Mr. Garrison");
             loadedTeacher!.specializations.length.should.equal(2);
-            loadedTeacher!.specializations.map(f => f.name).should.contain("Geography");
-            loadedTeacher!.specializations.map(f => f.name).should.contain("Economist");
+            loadedTeacher!.specializations.map(f => f.name).should.deep.include("Geography");
+            loadedTeacher!.specializations.map(f => f.name).should.deep.include("Economist");
             loadedTeacher!.salary.should.equal(2000);
 
             let loadedAccountant = await connection.manager
@@ -113,8 +113,8 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
             loadedAccountant!.id.should.equal(3);
             loadedAccountant!.name.should.equal("Mr. Burns");
             loadedAccountant!.departments.length.should.equal(2);
-            loadedAccountant!.departments.map(f => f.name).should.contain("Bookkeeping");
-            loadedAccountant!.departments.map(f => f.name).should.contain("HR");
+            loadedAccountant!.departments.map(f => f.name).should.deep.include("Bookkeeping");
+            loadedAccountant!.departments.map(f => f.name).should.deep.include("HR");
             loadedAccountant!.salary.should.equal(3000);
 
             const loadedEmployees = await connection.manager
@@ -129,16 +129,16 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
             loadedEmployees[0].id.should.equal(2);
             loadedEmployees[0].name.should.equal("Mr. Garrison");
             (loadedEmployees[0] as Teacher).specializations.length.should.equal(2);
-            (loadedEmployees[0] as Teacher)!.specializations.map(f => f.name).should.contain("Geography");
-            (loadedEmployees[0] as Teacher)!.specializations.map(f => f.name).should.contain("Economist");
+            (loadedEmployees[0] as Teacher)!.specializations.map(f => f.name).should.deep.include("Geography");
+            (loadedEmployees[0] as Teacher)!.specializations.map(f => f.name).should.deep.include("Economist");
             loadedEmployees[0].salary.should.equal(2000);
             loadedEmployees[1].should.have.all.keys("id", "name", "salary", "departments");
             loadedEmployees[1].should.be.instanceof(Accountant);
             loadedEmployees[1].id.should.equal(3);
             loadedEmployees[1].name.should.equal("Mr. Burns");
             (loadedEmployees[1] as Accountant).departments.length.should.equal(2);
-            (loadedEmployees[1] as Accountant)!.departments.map(f => f.name).should.contain("Bookkeeping");
-            (loadedEmployees[1] as Accountant)!.departments.map(f => f.name).should.contain("HR");
+            (loadedEmployees[1] as Accountant)!.departments.map(f => f.name).should.deep.include("Bookkeeping");
+            (loadedEmployees[1] as Accountant)!.departments.map(f => f.name).should.deep.include("HR");
             loadedEmployees[1].salary.should.equal(3000);
 
             const loadedPersons = await connection.manager
@@ -154,23 +154,23 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
             loadedPersons[0].id.should.equal(1);
             loadedPersons[0].name.should.equal("Alice");
             (loadedPersons[0] as Student).faculties.length.should.equal(2);
-            (loadedPersons[0] as Student)!.faculties.map(f => f.name).should.contain("Economics");
-            (loadedPersons[0] as Student)!.faculties.map(f => f.name).should.contain("Programming");
+            (loadedPersons[0] as Student)!.faculties.map(f => f.name).should.deep.include("Economics");
+            (loadedPersons[0] as Student)!.faculties.map(f => f.name).should.deep.include("Programming");
             loadedPersons[1].should.have.all.keys("id", "name", "salary", "specializations");
             loadedPersons[1].should.be.instanceof(Teacher);
             loadedPersons[1].id.should.equal(2);
             loadedPersons[1].name.should.equal("Mr. Garrison");
             (loadedPersons[1] as Teacher).specializations.length.should.equal(2);
-            (loadedPersons[1] as Teacher)!.specializations.map(f => f.name).should.contain("Geography");
-            (loadedPersons[1] as Teacher)!.specializations.map(f => f.name).should.contain("Economist");
+            (loadedPersons[1] as Teacher)!.specializations.map(f => f.name).should.deep.include("Geography");
+            (loadedPersons[1] as Teacher)!.specializations.map(f => f.name).should.deep.include("Economist");
             (loadedPersons[1] as Teacher).salary.should.equal(2000);
             loadedPersons[2].should.have.all.keys("id", "name", "salary", "departments");
             loadedPersons[2].should.be.instanceof(Accountant);
             loadedPersons[2].id.should.equal(3);
             loadedPersons[2].name.should.equal("Mr. Burns");
             (loadedPersons[2] as Accountant).departments.length.should.equal(2);
-            (loadedPersons[2] as Accountant)!.departments.map(f => f.name).should.contain("Bookkeeping");
-            (loadedPersons[2] as Accountant)!.departments.map(f => f.name).should.contain("HR");
+            (loadedPersons[2] as Accountant)!.departments.map(f => f.name).should.deep.include("Bookkeeping");
+            (loadedPersons[2] as Accountant)!.departments.map(f => f.name).should.deep.include("HR");
             (loadedPersons[2] as Accountant).salary.should.equal(3000);
 
         })));

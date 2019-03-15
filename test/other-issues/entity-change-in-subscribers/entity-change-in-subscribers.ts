@@ -27,7 +27,7 @@ describe("other issues > entity change in subscribers should affect persistence"
 
         // check if it was inserted correctly
         const loadedPost = await connection.manager.findOne(Post);
-        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).not.to.be.undefined;
         loadedPost!.active.should.be.equal(false);
 
         // now update some property and let update subscriber trigger
@@ -41,7 +41,7 @@ describe("other issues > entity change in subscribers should affect persistence"
         // check if subscriber was triggered and entity was really taken changed columns in the subscriber
         const loadedUpdatedPost = await connection.manager.findOne(Post);
 
-        expect(loadedUpdatedPost).not.to.be.empty;
+        expect(loadedUpdatedPost).not.to.be.undefined;
         expect(loadedUpdatedPost!.updatedColumns).to.equals(2);
         expect(loadedUpdatedPost!.updatedRelations).to.equals(1);
 

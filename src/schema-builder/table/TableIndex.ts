@@ -23,24 +23,24 @@ export class TableIndex {
     /**
      * Indicates if this index is unique.
      */
-    isUnique?: boolean;
+    isUnique: boolean;
 
     /**
      * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
      * Works only in MySQL.
      */
-    isSpatial?: boolean;
+    isSpatial: boolean;
 
     /**
      * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
      * Works only in MySQL.
      */
-    isFulltext?: boolean;
+    isFulltext: boolean;
 
     /**
      * Index filter condition.
      */
-    where?: string;
+    where: string;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -49,10 +49,10 @@ export class TableIndex {
     constructor(options: TableIndexOptions) {
         this.name = options.name;
         this.columnNames = options.columnNames;
-        this.isUnique = options.isUnique;
-        this.isSpatial = options.isSpatial;
-        this.isFulltext = options.isFulltext;
-        this.where = options.where;
+        this.isUnique = !!options.isUnique;
+        this.isSpatial = !!options.isSpatial;
+        this.isFulltext = !!options.isFulltext;
+        this.where = options.where ? options.where : "";
     }
 
     // -------------------------------------------------------------------------

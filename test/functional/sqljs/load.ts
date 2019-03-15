@@ -20,7 +20,7 @@ describe("sqljs driver > load", () => {
 
     it("should load from a file", () => Promise.all(connections.map(async connection => {
         const manager = getSqljsManager("sqljs");
-        manager.loadDatabase("test/functional/sqljs/sqlite/test.sqlite");
+        await manager.loadDatabase("test/functional/sqljs/sqlite/test.sqlite");
 
         const repository = connection.getRepository(Post);
         const post = await repository.findOne({title: "A post"});
@@ -38,10 +38,11 @@ describe("sqljs driver > load", () => {
 
     it("should throw an error if the file doesn't exist", () => Promise.all(connections.map(async connection => {
         const manager = getSqljsManager("sqljs");
-        const functionWithException = () => {
-            manager.loadDatabase("test/functional/sqljs/sqlite/test2.sqlite");
-        };
-
-        expect(functionWithException).to.throw(/File .* does not exist/);
+        try {
+            await manager.loadDatabase("test/functional/sqljs/sqlite/test2.sqlite");
+            expect(true).to.be.false;
+        } catch (error) {
+            expect(error.message.match(/File .* does not exist/) !== null).to.equal(true, "Should throw: File does not exist");
+        }
     })));
 });

@@ -103,6 +103,9 @@ export class SubjectExecutor {
         // recompute only in the case if any listener or subscriber was really executed
         if (broadcasterResult && broadcasterResult.count > 0) {
             // console.time(".recompute");
+            this.insertSubjects.forEach(subject => subject.recompute());
+            this.updateSubjects.forEach(subject => subject.recompute());
+            this.removeSubjects.forEach(subject => subject.recompute());
             this.recompute();
             // console.timeEnd(".recompute");
         }
@@ -127,8 +130,10 @@ export class SubjectExecutor {
         // console.timeEnd(".updation");
 
         // make sure our remove subjects are sorted (using topological sorting) when multiple entities are passed for the removal
-        // console.time(".removal");
+        // console.time(".SubjectTopoligicalSorter");
         this.removeSubjects = new SubjectTopoligicalSorter(this.removeSubjects).sort("delete");
+        // console.timeEnd(".SubjectTopoligicalSorter");
+        // console.time(".removal");
         await this.executeRemoveOperations();
         // console.timeEnd(".removal");
 
@@ -281,6 +286,7 @@ export class SubjectExecutor {
                         .values(bulkInsertMaps)
                         .updateEntity(this.options && this.options.reload === false ? false : true)
                         .callListeners(false)
+                        .callObservers(false)
                         .execute();
 
                     bulkInsertSubjects.forEach((subject, index) => {
@@ -307,6 +313,7 @@ export class SubjectExecutor {
                             .values(subject.insertedValueSet)
                             .updateEntity(this.options && this.options.reload === false ? false : true)
                             .callListeners(false)
+                            .callObservers(false)
                             .execute()
                             .then(insertResult => {
                                 subject.identifier = insertResult.identifiers[0];
@@ -380,7 +387,8 @@ export class SubjectExecutor {
                     .update(subject.metadata.target)
                     .set(updateMap)
                     .updateEntity(this.options && this.options.reload === false ? false : true)
-                    .callListeners(false);
+                    .callListeners(false)
+                    .callObservers(false);
 
                 if (subject.entity) {
                     updateQueryBuilder.whereEntity(subject.identifier);
@@ -452,6 +460,7 @@ export class SubjectExecutor {
                     .from(subjects[0].metadata.target)
                     .where(deleteMaps)
                     .callListeners(false)
+                    .callObservers(false)
                     .execute();
             }
         });
@@ -492,7 +501,10 @@ export class SubjectExecutor {
 
             // mongo _id remove
             if (this.queryRunner instanceof MongoQueryRunner) {
-                if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.databaseName) {
+                if (subject.metadata.objectIdColumn
+                    && subject.metadata.objectIdColumn.databaseName
+                    && subject.metadata.objectIdColumn.databaseName !== subject.metadata.objectIdColumn.propertyName
+                ) {
                     delete subject.entity[subject.metadata.objectIdColumn.databaseName];
                 }
             }
@@ -540,7 +552,7 @@ export class SubjectExecutor {
 
             // merge into entity all generated values returned by a database
             if (subject.generatedMap)
-                this.queryRunner.manager.merge(subject.metadata.target, subject.entity, subject.generatedMap);
+                this.queryRunner.manager.merge(subject.metadata.target as any, subject.entity, subject.generatedMap);
         });
     }
 

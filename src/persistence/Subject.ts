@@ -123,6 +123,7 @@ export class Subject {
         metadata: EntityMetadata,
         parentSubject?: Subject,
         entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
         canBeInserted?: boolean,
         canBeUpdated?: boolean,
         mustBeRemoved?: boolean,
@@ -131,6 +132,7 @@ export class Subject {
     }) {
         this.metadata = options.metadata;
         this.entity = options.entity;
+        this.databaseEntity = options.databaseEntity;
         this.parentSubject = options.parentSubject;
         if (options.canBeInserted !== undefined)
             this.canBeInserted = options.canBeInserted;
@@ -143,20 +145,7 @@ export class Subject {
         if (options.changeMaps !== undefined)
             this.changeMaps.push(...options.changeMaps);
 
-        if (this.entity) {
-            this.entityWithFulfilledIds = Object.assign({}, this.entity);
-            if (this.parentSubject) {
-                this.metadata.primaryColumns.forEach(primaryColumn => {
-                    if (primaryColumn.relationMetadata && primaryColumn.relationMetadata.inverseEntityMetadata === this.parentSubject!.metadata) {
-                        primaryColumn.setEntityValue(this.entityWithFulfilledIds!, this.parentSubject!.entity);
-                    }
-                });
-            }
-            this.identifier = this.metadata.getEntityIdMap(this.entityWithFulfilledIds);
-
-        } else if (this.databaseEntity) {
-            this.identifier = this.metadata.getEntityIdMap(this.databaseEntity);
-        }
+        this.recompute();
     }
 
     // -------------------------------------------------------------------------
@@ -250,6 +239,28 @@ export class Subject {
         }, {} as ObjectLiteral);
         this.changeMaps = changeMapsWithoutValues;
         return changeSet;
+    }
+
+    /**
+     * Recomputes entityWithFulfilledIds and identifier when entity changes.
+     */
+    recompute(): void {
+        if (this.entity) {
+            this.entityWithFulfilledIds = Object.assign({}, this.entity);
+            // if (this.parentSubject) {
+            //     this.metadata.primaryColumns.forEach(primaryColumn => {
+            // if (primaryColumn.relationMetadata && primaryColumn.relationMetadata.inverseEntityMetadata === this.parentSubject!.metadata) {
+            //     primaryColumn.setEntityValue(this.entityWithFulfilledIds!, this.parentSubject!.entity);
+            // }
+            // });
+            // }
+            // console.log("this.entityWithFulfilledIds", this.entityWithFulfilledIds);
+            this.identifier = this.metadata.getEntityIdMap(this.entityWithFulfilledIds);
+            // console.log("this.identifier", this.identifier);
+
+        } else if (this.databaseEntity) {
+            this.identifier = this.metadata.getEntityIdMap(this.databaseEntity);
+        }
     }
 
 }

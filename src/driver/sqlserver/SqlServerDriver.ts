@@ -194,6 +194,12 @@ export class SqlServerDriver implements Driver {
         "datetimeoffset": { precision: 7 }
     };
 
+    /**
+     * Max length allowed by MSSQL Server for aliases (identifiers).
+     * @see https://docs.microsoft.com/en-us/sql/sql-server/maximum-capacity-specifications-for-sql-server
+     */
+    maxAliasLength = 128;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -254,11 +260,22 @@ export class SqlServerDriver implements Driver {
         if (!this.master)
             return Promise.reject(new ConnectionIsNotSetError("mssql"));
 
-        this.master.close();
-        this.slaves.forEach(slave => slave.close());
+        await this.closePool(this.master);
+        await Promise.all(this.slaves.map(slave => this.closePool(slave)));
         this.master = undefined;
         this.slaves = [];
     }
+
+
+    /**
+     * Closes connection pool.
+     */
+    protected async closePool(pool: any): Promise<void> {
+        return new Promise<void>((ok, fail) => {
+            pool.close((err: any) => err ? fail(err) : ok());
+        });
+    }
+
 
     /**
      * Creates a schema builder used to build and sync a schema.
@@ -370,6 +387,10 @@ export class SqlServerDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
+
+        } else if (columnMetadata.type === "simple-enum") {
+            return DateUtils.simpleEnumToString(value);
+
         }
 
         return value;
@@ -380,7 +401,7 @@ export class SqlServerDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return value;
+            return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
 
         if (columnMetadata.type === Boolean) {
             value = value ? true : false;
@@ -403,6 +424,10 @@ export class SqlServerDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
+
+        } else if (columnMetadata.type === "simple-enum") {
+            value = DateUtils.stringToSimpleEnum(value, columnMetadata);
+
         }
 
         if (columnMetadata.transformer)
@@ -435,6 +460,9 @@ export class SqlServerDriver implements Driver {
 
         } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "ntext";
+
+        } else if (column.type === "simple-enum") {
+            return "nvarchar";
 
         } else if (column.type === "dec") {
             return "decimal";
@@ -548,7 +576,7 @@ export class SqlServerDriver implements Driver {
         return Object.keys(insertResult).reduce((map, key) => {
             const column = metadata.findColumnWithDatabaseName(key);
             if (column) {
-                OrmUtils.mergeDeep(map, column.createValueMap(insertResult[key]));
+                OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column)));
             }
             return map;
         }, {} as ObjectLiteral);

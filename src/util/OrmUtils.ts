@@ -159,6 +159,17 @@ export class OrmUtils {
         });
     }
 
+    /**
+     * Gets deeper value of object.
+     */
+    static deepValue(obj: ObjectLiteral, path: string) {
+        const segments = path.split(".");
+        for (let i = 0, len = segments.length; i < len; i++) {
+            obj = obj[segments[i]];
+        }
+        return obj;
+    }
+
     // -------------------------------------------------------------------------
     // Private methods
     // -------------------------------------------------------------------------
@@ -177,7 +188,14 @@ export class OrmUtils {
         if (x === y)
             return true;
 
-        if (x.equals instanceof Function && x.equals(y))
+        // Unequal, but either is null or undefined (use case: jsonb comparasion)
+        // PR #3776, todo: add tests
+        if (x === null || y === null || x === undefined || y === undefined)
+          return false;
+
+        // Fix the buffer compare bug.
+        // See: https://github.com/typeorm/typeorm/issues/3654
+        if ((typeof x.equals === "function" || x.equals instanceof Function) && x.equals(y))
             return true;
 
         // Works in case when functions are created in constructor.

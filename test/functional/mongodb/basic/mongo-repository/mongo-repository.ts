@@ -65,18 +65,12 @@ describe("mongodb > MongoRepository", () => {
         secondPost.text = "Everything about post #2";
         await postRepository.save(secondPost);
 
-        const loadedPosts = await postRepository.find({
-            where: {
-                $or: [
-                    {
-                        title: "Post #1",
-                    },
-                    {
-                        text: "Everything about post #1"
-                    }
-                ]
-            }
-        });
+        const loadedPosts = await postRepository.createEntityCursor({
+            $or: [
+                { title: "Post #1", },
+                { text: "Everything about post #1" }
+            ]
+        }).toArray();
 
         loadedPosts.length.should.be.equal(1);
         loadedPosts[0].should.be.instanceOf(Post);

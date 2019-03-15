@@ -17,7 +17,7 @@ export const PostSchema: EntitySchemaOptions<Post> = {
     columns: {
         id: {
             primary: true,
-            type: "int"
+            type: Number
         },
 
         title: {

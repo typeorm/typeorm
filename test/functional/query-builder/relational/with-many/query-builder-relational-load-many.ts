@@ -50,8 +50,8 @@ describe("query builder > relational with many > load many", () => {
             .of(post1)
             .loadMany();
 
-        expect(loadedPost1!.images).to.contain({ id: 1, url: "image #1" });
-        expect(loadedPost1!.images).to.contain({ id: 2, url: "image #2" });
+        expect(loadedPost1!.images).to.deep.include({ id: 1, url: "image #1" });
+        expect(loadedPost1!.images).to.deep.include({ id: 2, url: "image #2" });
         expect(loadedPost1!.images).to.not.contain({ id: 3, url: "image #3" });
     })));
 
@@ -91,8 +91,8 @@ describe("query builder > relational with many > load many", () => {
             .of({ id: 1 })
             .loadMany();
 
-        expect(loadedPost1!.images).to.contain({ id: 1, url: "image #1" });
-        expect(loadedPost1!.images).to.contain({ id: 2, url: "image #2" });
+        expect(loadedPost1!.images).to.deep.include({ id: 1, url: "image #1" });
+        expect(loadedPost1!.images).to.deep.include({ id: 2, url: "image #2" });
         expect(loadedPost1!.images).to.not.contain({ id: 3, url: "image #3" });
     })));
 
@@ -132,8 +132,8 @@ describe("query builder > relational with many > load many", () => {
             .of(1)
             .loadMany();
 
-        expect(loadedPost1!.images).to.contain({ id: 1, url: "image #1" });
-        expect(loadedPost1!.images).to.contain({ id: 2, url: "image #2" });
+        expect(loadedPost1!.images).to.deep.include({ id: 1, url: "image #1" });
+        expect(loadedPost1!.images).to.deep.include({ id: 2, url: "image #2" });
         expect(loadedPost1!.images).to.not.contain({ id: 3, url: "image #3" });
     })));
 

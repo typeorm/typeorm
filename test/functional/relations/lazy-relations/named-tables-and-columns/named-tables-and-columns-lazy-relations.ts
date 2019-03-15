@@ -57,9 +57,9 @@ describe("named-tables-and-columns-lazy-relations", () => {
 
         const categories = await post.categories;
         categories.length.should.be.equal(3);
-        categories.should.contain(savedCategory1);
-        categories.should.contain(savedCategory2);
-        categories.should.contain(savedCategory3);
+        categories.should.deep.include(savedCategory1);
+        categories.should.deep.include(savedCategory2);
+        categories.should.deep.include(savedCategory3);
     })));
 
 
@@ -95,9 +95,9 @@ describe("named-tables-and-columns-lazy-relations", () => {
 
         const categories = await post.twoSideCategories;
         categories.length.should.be.equal(3);
-        categories.should.contain(savedCategory1);
-        categories.should.contain(savedCategory2);
-        categories.should.contain(savedCategory3);
+        categories.should.deep.include(savedCategory1);
+        categories.should.deep.include(savedCategory2);
+        categories.should.deep.include(savedCategory3);
 
         const category = (await categoryRepository.findOne(1))!;
         category.name.should.be.equal("kids");
@@ -108,7 +108,7 @@ describe("named-tables-and-columns-lazy-relations", () => {
         likePost.id = 1;
         likePost.title = "Hello post";
         likePost.text = "This is post about post";
-        twoSidePosts.should.contain(likePost);
+        twoSidePosts.should.deep.include(likePost);
     })));
 
     it("should persist and hydrate successfully on a many-to-one relation without inverse side", () => Promise.all(connections.map(async connection => {

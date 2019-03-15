@@ -110,7 +110,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
     /**
      * Array of possible enumerated values.
      */
-    enum?: any[]|Object;
+    enum?: (string|number)[]|Object;
 
     /**
      * Generated column expression. Supports only in MySQL.

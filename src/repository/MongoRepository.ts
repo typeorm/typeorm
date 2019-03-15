@@ -1,14 +1,12 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Repository} from "./Repository";
-import {FindManyOptions} from "../find-options/FindManyOptions";
-import {FindOneOptions} from "../find-options/FindOneOptions";
 import {
     AggregationCursor,
     BulkWriteOpResultObject,
     Code,
     Collection,
     CollectionAggregationOptions,
-    CollectionBluckWriteOptions,
+    CollectionBulkWriteOptions,
     CollectionInsertManyOptions,
     CollectionInsertOneOptions,
     CollectionOptions,
@@ -35,6 +33,7 @@ import {
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {FindExtraOptions, FindOptions, FindOptionsWhere} from "../find-options/FindOptions";
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
@@ -73,7 +72,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Finds entities that match given find options or conditions.
      */
-    find(optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    find(optionsOrConditions?: FindOptions<Entity>|FindOptionsWhere<Entity>): Promise<Entity[]> {
         return this.manager.find(this.metadata.target, optionsOrConditions);
     }
 
@@ -82,7 +81,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCount(optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[ Entity[], number ]> {
+    findAndCount(optionsOrConditions?: FindOptions<Entity>|FindOptionsWhere<Entity>): Promise<[ Entity[], number ]> {
         return this.manager.findAndCount(this.metadata.target, optionsOrConditions);
     }
 
@@ -90,14 +89,14 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      * Finds entities by ids.
      * Optionally find options can be applied.
      */
-    findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    findByIds(ids: any[], optionsOrConditions?: FindOptions<Entity>|FindOptionsWhere<Entity>): Promise<Entity[]> {
         return this.manager.findByIds(this.metadata.target, ids, optionsOrConditions);
     }
 
     /**
      * Finds first entity that matches given conditions and/or find options.
      */
-    findOne(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|Partial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+    findOne(optionsOrConditions?: string|number|Date|ObjectID|FindOptions<Entity>|FindOptionsWhere<Entity>, maybeOptions?: FindOptions<Entity>): Promise<Entity|undefined> {
         return this.manager.findOne(this.metadata.target, optionsOrConditions as any, maybeOptions as any);
     }
 
@@ -133,15 +132,15 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Perform a bulkWrite operation without a fluent API.
      */
-    bulkWrite(operations: ObjectLiteral[], options?: CollectionBluckWriteOptions): Promise<BulkWriteOpResultObject> {
+    bulkWrite(operations: ObjectLiteral[], options?: CollectionBulkWriteOptions): Promise<BulkWriteOpResultObject> {
         return this.manager.bulkWrite(this.metadata.target, operations, options);
     }
 
     /**
      * Count number of matching documents in the db to a query.
      */
-    count(query?: ObjectLiteral, options?: MongoCountPreferences): Promise<number> {
-        return this.manager.count(this.metadata.target, query || {}, options);
+    count(query?: ObjectLiteral, options?: FindExtraOptions, mongoOptions?: MongoCountPreferences): Promise<number> {
+        return this.manager.count(this.metadata.target, query || {}, options, mongoOptions);
     }
 
     /**
@@ -325,7 +324,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
-    rename(newName: string, options?: { dropTarget?: boolean }): Promise<Collection> {
+    rename(newName: string, options?: { dropTarget?: boolean }): Promise<Collection<any>> {
         return this.manager.rename(this.metadata.tableName, newName, options);
     }
 

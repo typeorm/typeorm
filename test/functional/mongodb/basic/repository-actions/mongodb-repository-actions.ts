@@ -48,7 +48,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("target should be valid", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
-        expect(postRepository.target).not.to.be.empty;
+        expect(postRepository.target).not.to.be.undefined;
         postRepository.target.should.be.eql(Post);
     })));
 
@@ -59,7 +59,7 @@ describe("mongodb > basic repository actions", () => {
         post.text = "Everything about post!";
         await postRepository.save(post);
 
-        expect(post.id).not.to.be.empty;
+        expect(post.id).not.to.be.undefined;
     })));
 
     it("hasId should return true if id really has an id", () => Promise.all(connections.map(async connection => {
@@ -69,7 +69,7 @@ describe("mongodb > basic repository actions", () => {
         post.text = "Everything about post!";
         await postRepository.save(post);
 
-        expect(post.id).not.to.be.empty;
+        expect(post.id).not.to.be.undefined;
         postRepository.hasId(post).should.be.true;
     })));
 
@@ -132,12 +132,12 @@ describe("mongodb > basic repository actions", () => {
             take: 10
         });
         loadedPosts1.length.should.be.equal(10);
-        expect(loadedPosts1[0]!.id).not.to.be.empty;
-        expect(loadedPosts1[0]!.title).not.to.be.empty;
-        expect(loadedPosts1[0]!.text).not.to.be.empty;
-        expect(loadedPosts1[9]!.id).not.to.be.empty;
-        expect(loadedPosts1[9]!.title).not.to.be.empty;
-        expect(loadedPosts1[9]!.text).not.to.be.empty;
+        expect(loadedPosts1[0]!.id).not.to.be.undefined;
+        expect(loadedPosts1[0]!.title).not.to.be.undefined;
+        expect(loadedPosts1[0]!.text).not.to.be.undefined;
+        expect(loadedPosts1[9]!.id).not.to.be.undefined;
+        expect(loadedPosts1[9]!.title).not.to.be.undefined;
+        expect(loadedPosts1[9]!.text).not.to.be.undefined;
 
         // assert find method
         const [loadedPosts2, loadedPosts2Count] = await postRepository.findAndCount({
@@ -146,12 +146,12 @@ describe("mongodb > basic repository actions", () => {
         });
         loadedPosts2.length.should.be.equal(5);
         loadedPosts2Count.should.be.equal(52);
-        expect(loadedPosts2[0]!.id).not.to.be.empty;
-        expect(loadedPosts2[0]!.title).not.to.be.empty;
-        expect(loadedPosts2[0]!.text).not.to.be.empty;
-        expect(loadedPosts2[4]!.id).not.to.be.empty;
-        expect(loadedPosts2[4]!.title).not.to.be.empty;
-        expect(loadedPosts2[4]!.text).not.to.be.empty;
+        expect(loadedPosts2[0]!.id).not.to.be.undefined;
+        expect(loadedPosts2[0]!.title).not.to.be.undefined;
+        expect(loadedPosts2[0]!.text).not.to.be.undefined;
+        expect(loadedPosts2[4]!.id).not.to.be.undefined;
+        expect(loadedPosts2[4]!.title).not.to.be.undefined;
+        expect(loadedPosts2[4]!.text).not.to.be.undefined;
 
     })));
 

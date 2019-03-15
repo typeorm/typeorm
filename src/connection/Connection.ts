@@ -1,4 +1,5 @@
 import {Driver} from "../driver/Driver";
+import {QueryObserver} from "../observer/QueryObserver";
 import {Repository} from "../repository/Repository";
 import {EntitySubscriberInterface} from "../subscriber/EntitySubscriberInterface";
 import {ObjectType} from "../common/ObjectType";
@@ -93,6 +94,11 @@ export class Connection {
      * Entity subscriber instances that are registered for this connection.
      */
     readonly subscribers: EntitySubscriberInterface<any>[] = [];
+
+    /**
+     * Observers observing queries.
+     */
+    readonly observers: QueryObserver[] = [];
 
     /**
      * All entity metadatas that are registered for this connection.
@@ -194,13 +200,13 @@ export class Connection {
             if (this.options.dropSchema)
                 await this.dropDatabase();
 
+            // if option is set - run migrations
+            if (this.options.migrationsRun)
+                await this.runMigrations();
+
             // if option is set - automatically synchronize a schema
             if (this.options.synchronize)
                 await this.synchronize();
-
-            // if option is set - automatically synchronize a schema
-            if (this.options.migrationsRun)
-                await this.runMigrations();
 
         } catch (error) {
 
@@ -256,17 +262,20 @@ export class Connection {
     // TODO rename
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.createQueryRunner("master");
-        if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
-            const databases: string[] = this.driver.database ? [this.driver.database] : [];
-            this.entityMetadatas.forEach(metadata => {
-                if (metadata.database && databases.indexOf(metadata.database) === -1)
-                    databases.push(metadata.database);
-            });
-            await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(database));
-        } else {
-            await queryRunner.clearDatabase();
+        try {
+            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
+                const databases: string[] = this.driver.database ? [this.driver.database] : [];
+                this.entityMetadatas.forEach(metadata => {
+                    if (metadata.database && databases.indexOf(metadata.database) === -1)
+                        databases.push(metadata.database);
+                });
+                await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(database));
+            } else {
+                await queryRunner.clearDatabase();
+            }
+        } finally {
+            await queryRunner.release();
         }
-        await queryRunner.release();
     }
 
     /**

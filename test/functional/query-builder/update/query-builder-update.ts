@@ -59,9 +59,10 @@ describe("query builder > update", () => {
         await connection.createQueryBuilder()
             .update(User)
             .set({ name: () => connection.driver instanceof SqlServerDriver ? "SUBSTRING('Dima Zotov', 1, 4)" : "SUBSTR('Dima Zotov', 1, 4)" })
-            .where("name = :name", { name: () => connection.driver instanceof SqlServerDriver ? "SUBSTRING('Alex Messer Dimovich', 1, 11)" : "SUBSTR('Alex Messer Dimovich', 1, 11)" })
+            .where("name = :name", {
+                name: "Alex Messer"
+            })
             .execute();
-
 
 
         const loadedUser1 = await connection.getRepository(User).findOne({ name: "Dima" });
@@ -238,7 +239,7 @@ describe("query builder > update", () => {
         try {
             await connection.createQueryBuilder()
                 .update(User)
-                .set({ unknownProp: true })
+                .set({ unknownProp: true } as any)
                 .where("name = :name", { name: "Alex Messer" })
                 .execute();
         } catch (err) {

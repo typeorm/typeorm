@@ -80,6 +80,8 @@ describe("database schema > column types > mysql", () => {
         post.json = { id: 1, name: "Post" };
         post.simpleArray = ["A", "B", "C"];
         post.simpleJson = { param: "VALUE" };
+        post.simpleEnum = "A";
+        post.simpleClassEnum1 = FruitEnum.Apple;
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;
@@ -136,6 +138,8 @@ describe("database schema > column types > mysql", () => {
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
         loadedPost.simpleJson.param.should.be.equal(post.simpleJson.param);
+        loadedPost.simpleEnum.should.be.equal(post.simpleEnum);
+        loadedPost.simpleClassEnum1.should.be.equal(post.simpleClassEnum1);
 
         table!.findColumnByName("id")!.type.should.be.equal("int");
         table!.findColumnByName("bit")!.type.should.be.equal("bit");
@@ -195,6 +199,14 @@ describe("database schema > column types > mysql", () => {
         table!.findColumnByName("json")!.type.should.be.equal("json");
         table!.findColumnByName("simpleArray")!.type.should.be.equal("text");
         table!.findColumnByName("simpleJson")!.type.should.be.equal("text");
+        table!.findColumnByName("simpleEnum")!.type.should.be.equal("enum");
+        table!.findColumnByName("simpleEnum")!.enum![0].should.be.equal("A");
+        table!.findColumnByName("simpleEnum")!.enum![1].should.be.equal("B");
+        table!.findColumnByName("simpleEnum")!.enum![2].should.be.equal("C");
+        table!.findColumnByName("simpleClassEnum1")!.type.should.be.equal("enum");
+        table!.findColumnByName("simpleClassEnum1")!.enum![0].should.be.equal("apple");
+        table!.findColumnByName("simpleClassEnum1")!.enum![1].should.be.equal("pineapple");
+        table!.findColumnByName("simpleClassEnum1")!.enum![2].should.be.equal("banana");
 
     })));
 

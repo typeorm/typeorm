@@ -35,7 +35,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
             .where("post.title = :title", { title: "post with categories" })
             .getOne();
 
-        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).not.to.be.undefined;
         loadedPost!.should.be.eql({
             id: 1,
             title: "post with categories",
@@ -73,7 +73,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
             .where("post.title = :title", { title: "post without categories" })
             .getOne();
 
-        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).not.to.be.undefined;
         loadedPost!.should.be.eql({
             id: 1,
             title: "post without categories",
@@ -101,7 +101,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
             .where("post.title = :title", { title: "just post" })
             .getOne();
 
-        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).not.to.be.undefined;
         loadedPost!.should.be.eql({
             id: 1,
             title: "just post",

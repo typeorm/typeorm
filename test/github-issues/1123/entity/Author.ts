@@ -17,7 +17,7 @@ export const AuthorSchema: EntitySchemaOptions<Author> = {
     columns: {
         id: {
             primary: true,
-            type: "int"
+            type: Number
         },
 
         name: {

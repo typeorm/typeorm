@@ -19,7 +19,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
     it("should create datetime column type for datetime in sqlite", () => Promise.all(connections.map(async connection => {
       const dbColumns: ObjectLiteral[] = await connection.manager.query("PRAGMA table_info(Post)");
       expect(dbColumns).not.to.be.null;
-      expect(dbColumns).not.to.be.empty;
+      expect(dbColumns).not.to.be.undefined;
 
       let columnType: string = "";
       dbColumns.map((dbColumn) => {
@@ -49,7 +49,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
     it("should create datetime column type for time in sqlite", () => Promise.all(connections.map(async connection => {
       const dbColumns: ObjectLiteral[] = await connection.manager.query("PRAGMA table_info(Post)");
       expect(dbColumns).not.to.be.null;
-      expect(dbColumns).not.to.be.empty;
+      expect(dbColumns).not.to.be.undefined;
 
       let columnType: string = "";
       dbColumns.map((dbColumn) => {

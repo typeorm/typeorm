@@ -1227,7 +1227,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     }
 
                     if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
-                        tableColumn.onUpdate = dbColumn["EXTRA"].substring(10);
+                        tableColumn.onUpdate = dbColumn["EXTRA"].substring(dbColumn["EXTRA"].indexOf("on update") + 10);
                     }
 
                     if (dbColumn["GENERATION_EXPRESSION"]) {
@@ -1270,7 +1270,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                             tableColumn.scale = parseInt(dbColumn["NUMERIC_SCALE"]);
                     }
 
-                    if (tableColumn.type === "enum") {
+                    if (tableColumn.type === "enum" || tableColumn.type === "simple-enum") {
                         const colType = dbColumn["COLUMN_TYPE"];
                         const items = colType.substring(colType.indexOf("(") + 1, colType.indexOf(")")).split(",");
                         tableColumn.enum = (items as string[]).map(item => {
@@ -1279,7 +1279,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.length = "";
                     }
 
-                    if ((tableColumn.type === "datetime" || tableColumn.type === "time" || tableColumn.type === "timestamp") && parseInt(dbColumn["DATETIME_PRECISION"])) {
+                    if ((tableColumn.type === "datetime" || tableColumn.type === "time" || tableColumn.type === "timestamp")
+                        && dbColumn["DATETIME_PRECISION"] !== null && dbColumn["DATETIME_PRECISION"] !== undefined
+                        && !this.isDefaultColumnPrecision(table, tableColumn, parseInt(dbColumn["DATETIME_PRECISION"]))) {
                         tableColumn.precision = parseInt(dbColumn["DATETIME_PRECISION"]);
                     }
 

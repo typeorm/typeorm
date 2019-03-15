@@ -73,7 +73,7 @@ describe("github issues > #2251 - Unexpected behavior when passing duplicate ent
         
         const bar = await barRepo.findOne(1);
 
-        expect(bar).not.to.be.empty;
+        expect(bar).not.to.be.undefined;
 
         // Did not observe the same behavior with unwanted inserts. Current behavior is
         // that the first duplicate goes through and the rest are ignored.

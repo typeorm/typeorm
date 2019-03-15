@@ -1,3 +1,5 @@
+
+
 # Entities
 
 * [What is Entity?](#what-is-entity)
@@ -7,7 +9,7 @@
   * [Spatial columns](#spatial-columns)
 * [Column types](#column-types)
   * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
-  * [Column types for `postgres`](#column-types-for-postgres)
+  * [Column types for `postgres` / `cockroachdb`](#column-types-for-postgres)
   * [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
   * [Column types for `mssql`](#column-types-for-mssql)
   * [`enum` column type](#enum-column-type)
@@ -108,7 +110,7 @@ Each entity class property you marked with `@Column` will be mapped to a databas
 Each entity must have at least one primary column.
 There are several types of primary columns:
 
-* `@PrimaryColumn()` creates a primary column which take any value of any type. You can specify the column type. If you don't specify a column type it will be inferred from the property type. Example below will create id with `int` as type which you must manually assign before save.
+* `@PrimaryColumn()` creates a primary column which takes any value of any type. You can specify the column type. If you don't specify a column type it will be inferred from the property type. The example below will create id with `int` as type which you must manually assign before save.
 
 ```typescript
 import {Entity, PrimaryColumn} from "typeorm";
@@ -170,11 +172,11 @@ export class User {
 }
 ```
 
-When you save entities using `save` it always tries to find a entity in the database with the given entity id (or ids).
+When you save entities using `save` it always tries to find an entity in the database with the given entity id (or ids).
 If id/ids are found then it will update this row in the database.
 If there is no row with the id/ids, a new row will be inserted.
 
-To find a entity by id you can use `manager.findOne` or `repository.findOne`. Example:
+To find an entity by id you can use `manager.findOne` or `repository.findOne`. Example:
 
 ```typescript
 // find one by id with single primary key
@@ -307,6 +309,18 @@ or
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
 `tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`
 
+### Column types for `cockroachdb`
+
+`array`, `bool`, `boolean`, `bytes`, `bytea`, `blob`, `date`, `numeric`, `decimal`, `dec`, `float`,
+`float4`, `float8`, `double precision`, `real`, `inet`, `int`, `integer`, `int2`, `int8`, `int64`,
+`smallint`, `bigint`, `interval`, `string`, `character varying`, `character`, `char`, `char varying`,
+`varchar`, `text`, `time`, `time without time zone`, `timestamp`, `timestamptz`, `timestamp without time zone`,
+`timestamp with time zone`, `json`, `jsonb`, `uuid`
+
+> Note: CockroachDB returns all numeric data types as `string`. However if you omit column type and define your property as
+ `number` ORM will `parseInt` string into number.
+
+
 ### Column types for `sqlite` / `cordova` / `react-native` / `expo`
 
 `int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
@@ -336,7 +350,7 @@ Using typescript enums:
 ```typescript
 export enum UserRole {
     ADMIN = "admin",
-    EDITOR = "editor"
+    EDITOR = "editor",
     GHOST = "ghost"
 }
 
@@ -460,7 +474,7 @@ export class User {
 
 `uuid` value will be automatically generated and stored into the database.
 
-Besides "uuid" there is also "increment" generated type, however there are some limitations
+Besides "uuid" there is also "increment" and "rowid" (CockroachDB only) generated types, however there are some limitations
 on some database platforms with this type of generation (for example some databases can only have one increment column,
 or some of them require increment to be a primary key).
 
@@ -507,7 +521,7 @@ You can change it by specifying your own name.
 * `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
-* `array: boolean` - Used for postgres column types which can be array (for example int[])
+* `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[])
 * `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database.
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.

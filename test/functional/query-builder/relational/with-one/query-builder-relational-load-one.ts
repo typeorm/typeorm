@@ -44,7 +44,7 @@ describe("query builder > relational query builder > load operation > many-to-on
         await connection.manager.save(post3);
 
         const loadedPost1 = await connection.manager.findOne(Post, 1);
-        const loadedCategory1: Category = await connection
+        const loadedCategory1 = await connection
             .createQueryBuilder()
             .relation(Post, "category")
             .of(loadedPost1)
@@ -54,7 +54,7 @@ describe("query builder > relational query builder > load operation > many-to-on
         expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
 
         const loadedPost2 = await connection.manager.findOne(Post, 2);
-        const loadedCategory2: Category = await connection
+        const loadedCategory2 = await connection
             .createQueryBuilder()
             .relation(Post, "category")
             .of(loadedPost2)
@@ -64,7 +64,7 @@ describe("query builder > relational query builder > load operation > many-to-on
         expect(loadedPost2!.category).to.be.eql({ id: 2, name: "category #2" });
 
         const loadedPost3 = await connection.manager.findOne(Post, 3);
-        const loadedCategory3: Category = await connection
+        const loadedCategory3 = await connection
             .createQueryBuilder()
             .relation(Post, "category")
             .of(loadedPost3)
@@ -104,7 +104,7 @@ describe("query builder > relational query builder > load operation > many-to-on
         await connection.manager.save(post3);
 
         const loadedPost1 = await connection.manager.findOne(Post, 1);
-        const loadedCategory1: Category = await connection
+        const loadedCategory1 = await connection
             .createQueryBuilder()
             .relation(Post, "category")
             .of({ id: 1 })
@@ -114,7 +114,7 @@ describe("query builder > relational query builder > load operation > many-to-on
         expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
 
         const loadedPost2 = await connection.manager.findOne(Post, 2);
-        const loadedCategory2: Category = await connection
+        const loadedCategory2 = await connection
             .createQueryBuilder()
             .relation(Post, "category")
             .of({ id: 2 })
@@ -124,7 +124,7 @@ describe("query builder > relational query builder > load operation > many-to-on
         expect(loadedPost2!.category).to.be.eql({ id: 2, name: "category #2" });
 
         const loadedPost3 = await connection.manager.findOne(Post, 3);
-        const loadedCategory3: Category = await connection
+        const loadedCategory3 = await connection
             .createQueryBuilder()
             .relation(Post, "category")
             .of({ id: 3 })
@@ -164,7 +164,7 @@ describe("query builder > relational query builder > load operation > many-to-on
         await connection.manager.save(post3);
 
         const loadedPost1 = await connection.manager.findOne(Post, 1);
-        const loadedCategory1: Category = await connection
+        const loadedCategory1 = await connection
             .createQueryBuilder()
             .relation(Post, "category")
             .of(1)
@@ -174,7 +174,7 @@ describe("query builder > relational query builder > load operation > many-to-on
         expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
 
         const loadedPost2 = await connection.manager.findOne(Post, 2);
-        const loadedCategory2: Category = await connection
+        const loadedCategory2 = await connection
             .createQueryBuilder()
             .relation(Post, "category")
             .of(2)
@@ -184,7 +184,7 @@ describe("query builder > relational query builder > load operation > many-to-on
         expect(loadedPost2!.category).to.be.eql({ id: 2, name: "category #2" });
 
         const loadedPost3 = await connection.manager.findOne(Post, 3);
-        const loadedCategory3: Category = await connection
+        const loadedCategory3 = await connection
             .createQueryBuilder()
             .relation(Post, "category")
             .of(3)

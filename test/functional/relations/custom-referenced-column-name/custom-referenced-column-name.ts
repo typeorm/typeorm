@@ -41,9 +41,9 @@ describe("relations > custom-referenced-column-name", () => {
                 .createQueryBuilder(Post, "post")
                 .getMany();
 
-            expect(loadedPosts![0].categoryName).to.not.be.empty;
+            expect(loadedPosts![0].categoryName).to.not.be.undefined;
             expect(loadedPosts![0].categoryName).to.be.equal("cars");
-            expect(loadedPosts![1].categoryName).to.not.be.empty;
+            expect(loadedPosts![1].categoryName).to.not.be.undefined;
             expect(loadedPosts![1].categoryName).to.be.equal("airplanes");
 
             const loadedPost = await connection.manager
@@ -51,7 +51,7 @@ describe("relations > custom-referenced-column-name", () => {
                 .where("post.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedPost!.categoryName).to.not.be.empty;
+            expect(loadedPost!.categoryName).to.not.be.undefined;
             expect(loadedPost!.categoryName).to.be.equal("cars");
 
         })));
@@ -193,9 +193,9 @@ describe("relations > custom-referenced-column-name", () => {
                 .leftJoinAndSelect("post.categoryWithoutRefColName2", "categoryWithoutRefColName2")
                 .getMany();
 
-            expect(loadedPosts![0].categoryWithoutRefColName2).to.not.be.empty;
+            expect(loadedPosts![0].categoryWithoutRefColName2).to.not.be.undefined;
             expect(loadedPosts![0].categoryWithoutRefColName2.id).to.be.equal(1);
-            expect(loadedPosts![1].categoryWithoutRefColName2).to.not.be.empty;
+            expect(loadedPosts![1].categoryWithoutRefColName2).to.not.be.undefined;
             expect(loadedPosts![1].categoryWithoutRefColName2.id).to.be.equal(2);
 
             const loadedPost = await connection.manager
@@ -204,7 +204,7 @@ describe("relations > custom-referenced-column-name", () => {
                 .where("post.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedPost!.categoryWithoutRefColName2).to.not.be.empty;
+            expect(loadedPost!.categoryWithoutRefColName2).to.not.be.undefined;
             expect(loadedPost!.categoryWithoutRefColName2.id).to.be.equal(1);
 
         })));
@@ -234,9 +234,9 @@ describe("relations > custom-referenced-column-name", () => {
                 .leftJoinAndSelect("post.category", "category")
                 .getMany();
 
-            expect(loadedPosts![0].category).to.not.be.empty;
+            expect(loadedPosts![0].category).to.not.be.undefined;
             expect(loadedPosts![0].category.id).to.be.equal(1);
-            expect(loadedPosts![1].category).to.not.be.empty;
+            expect(loadedPosts![1].category).to.not.be.undefined;
             expect(loadedPosts![1].category.id).to.be.equal(2);
 
             const loadedPost = await connection.manager
@@ -245,7 +245,7 @@ describe("relations > custom-referenced-column-name", () => {
                 .where("post.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedPost!.category).to.not.be.empty;
+            expect(loadedPost!.category).to.not.be.undefined;
             expect(loadedPost!.category.id).to.be.equal(1);
 
         })));
@@ -277,9 +277,9 @@ describe("relations > custom-referenced-column-name", () => {
                 .createQueryBuilder(Post, "post")
                 .getMany();
 
-            expect(loadedPosts![0].tagName).to.not.be.empty;
+            expect(loadedPosts![0].tagName).to.not.be.undefined;
             expect(loadedPosts![0].tagName).to.be.equal("tag #1");
-            expect(loadedPosts![1].tagName).to.not.be.empty;
+            expect(loadedPosts![1].tagName).to.not.be.undefined;
             expect(loadedPosts![1].tagName).to.be.equal("tag #2");
 
             const loadedPost = await connection.manager
@@ -287,7 +287,7 @@ describe("relations > custom-referenced-column-name", () => {
                 .where("post.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedPost!.tagName).to.not.be.empty;
+            expect(loadedPost!.tagName).to.not.be.undefined;
             expect(loadedPost!.tagName).to.be.equal("tag #1");
 
         })));
@@ -429,9 +429,9 @@ describe("relations > custom-referenced-column-name", () => {
                 .leftJoinAndSelect("post.tagWithoutRefColName2", "tagWithoutRefColName2")
                 .getMany();
 
-            expect(loadedPosts![0].tagWithoutRefColName2).to.not.be.empty;
+            expect(loadedPosts![0].tagWithoutRefColName2).to.not.be.undefined;
             expect(loadedPosts![0].tagWithoutRefColName2.id).to.be.equal(1);
-            expect(loadedPosts![1].tagWithoutRefColName2).to.not.be.empty;
+            expect(loadedPosts![1].tagWithoutRefColName2).to.not.be.undefined;
             expect(loadedPosts![1].tagWithoutRefColName2.id).to.be.equal(2);
 
             const loadedPost = await connection.manager
@@ -440,7 +440,7 @@ describe("relations > custom-referenced-column-name", () => {
                 .where("post.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedPost!.tagWithoutRefColName2).to.not.be.empty;
+            expect(loadedPost!.tagWithoutRefColName2).to.not.be.undefined;
             expect(loadedPost!.tagWithoutRefColName2.id).to.be.equal(1);
 
         })));
@@ -470,9 +470,9 @@ describe("relations > custom-referenced-column-name", () => {
                 .leftJoinAndSelect("post.tag", "tag")
                 .getMany();
 
-            expect(loadedPosts![0].tag).to.not.be.empty;
+            expect(loadedPosts![0].tag).to.not.be.undefined;
             expect(loadedPosts![0].tag.id).to.be.equal(1);
-            expect(loadedPosts![1].tag).to.not.be.empty;
+            expect(loadedPosts![1].tag).to.not.be.undefined;
             expect(loadedPosts![1].tag.id).to.be.equal(2);
 
             const loadedPost = await connection.manager
@@ -481,7 +481,7 @@ describe("relations > custom-referenced-column-name", () => {
                 .where("post.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedPost!.tag).to.not.be.empty;
+            expect(loadedPost!.tag).to.not.be.undefined;
             expect(loadedPost!.tag.id).to.be.equal(1);
 
         })));

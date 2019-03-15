@@ -22,10 +22,10 @@ describe("entity-model", () => {
         post.text = "Huge discussion how good or bad ActiveRecord is.";
         await post.save();
 
-        const loadedPost = await Post.findOne(1);
+        const loadedPost = await Post.findOne(post.id);
 
         loadedPost!.should.be.instanceOf(Post);
-        loadedPost!.id.should.be.eql(1);
+        loadedPost!.id.should.be.eql(post.id);
         loadedPost!.title.should.be.eql("About ActiveRecord");
         loadedPost!.text.should.be.eql("Huge discussion how good or bad ActiveRecord is.");
     }));
@@ -36,6 +36,7 @@ describe("entity-model", () => {
         Category.useConnection(connection);
 
         const category = Category.create();
+        category.id = 1;
         category.name = "Persistence";
         await category.save();
 
@@ -48,7 +49,7 @@ describe("entity-model", () => {
 
         const assertCategory = Object.assign({}, post.categories[0]);
         post!.should.be.instanceOf(Post);
-        post!.id.should.be.eql(1);
+        post!.id.should.be.eql(post.id);
         post!.title.should.be.eql("About ActiveRecord");
         post!.text.should.be.eql("This is default text.");
         assertCategory.should.be.eql({
