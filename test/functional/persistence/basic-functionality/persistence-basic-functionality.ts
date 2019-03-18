@@ -17,11 +17,11 @@ describe("persistence > basic functionality", function() {
     after(() => closeTestingConnections(connections));
 
     it("should save an entity", () => Promise.all(connections.map(async connection => {
-        await connection.manager.save(new Post("Hello Post"));
+        await connection.manager.save(new Post(1, "Hello Post"));
     })));
 
     it("should remove an entity", () => Promise.all(connections.map(async connection => {
-        const post = new Post("Hello Post");
+        const post = new Post(1, "Hello Post");
         await connection.manager.save(post);
         await connection.manager.remove(post);
     })));
@@ -41,16 +41,16 @@ describe("persistence > basic functionality", function() {
     it("should throw an exception if object literal is given instead of constructed entity because it cannot determine what to save", () => Promise.all(connections.map(async connection => {
         await connection.manager.save({}).should.be.rejectedWith(`Cannot save, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`);
         await connection.manager.save([{}, {}]).should.be.rejectedWith(`Cannot save, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`);
-        await connection.manager.save([new Post("Hello Post"), {}]).should.be.rejectedWith(`Cannot save, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`);
+        await connection.manager.save([new Post(1, "Hello Post"), {}]).should.be.rejectedWith(`Cannot save, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`);
         await connection.manager.remove({}).should.be.rejectedWith(`Cannot remove, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`);
         await connection.manager.remove([{}, {}]).should.be.rejectedWith(`Cannot remove, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`);
-        await connection.manager.remove([new Post("Hello Post"), {}]).should.be.rejectedWith(`Cannot remove, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`);
+        await connection.manager.remove([new Post(1, "Hello Post"), {}]).should.be.rejectedWith(`Cannot remove, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`);
     })));
 
     it("should be able to save and remove entities of different types", () => Promise.all(connections.map(async connection => {
-        const post = new Post("Hello Post");
-        const category = new Category("Hello Category");
-        const user = new User("Hello User");
+        const post = new Post(1, "Hello Post");
+        const category = new Category(1, "Hello Category");
+        const user = new User(1, "Hello User");
 
         await connection.manager.save([post, category, user]);
         await connection.manager.findOne(Post, 1).should.eventually.eql({ id: 1, title: "Hello Post" });

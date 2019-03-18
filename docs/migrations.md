@@ -777,7 +777,7 @@ Disables special query runner mode in which sql queries won't be executed. Previ
 clearSqlMemory(): void
 ```
 
-Flushes all memorized sqls.
+Flushes all memorized sql statements.
 
 ---
 
@@ -785,7 +785,7 @@ Flushes all memorized sqls.
 getMemorySql(): SqlInMemory
 ```
 
-- returns `SqlInMemory` object with array of `upQueries` and `downQueries` sqls
+- returns `SqlInMemory` object with array of `upQueries` and `downQueries` sql statements
 
 Gets sql stored in the memory. Parameters in the sql are already replaced.
 

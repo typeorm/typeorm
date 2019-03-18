@@ -48,16 +48,16 @@ describe("persistence > many-to-many", function() {
         await userRepository.save(newUser);
 
         // load a post
-        const loadedUser = await userRepository.findOne(1, {
+        const loadedUser = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
                 leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
             }
         });
 
-        expect(loadedUser!).not.to.be.empty;
-        expect(loadedUser!.post).not.to.be.empty;
-        expect(loadedUser!.post.categories).not.to.be.empty;
+        expect(loadedUser!).not.to.be.undefined;
+        expect(loadedUser!.post).not.to.be.undefined;
+        expect(loadedUser!.post.categories).not.to.be.undefined;
 
     })));
 
@@ -93,16 +93,16 @@ describe("persistence > many-to-many", function() {
         await userRepository.save(newUser);
 
         // load a post
-        const loadedUser1 = await userRepository.findOne(1, {
+        const loadedUser1 = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
                 leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
             }
         });
 
-        expect(loadedUser1!).not.to.be.empty;
-        expect(loadedUser1!.post).not.to.be.empty;
-        expect(loadedUser1!.post.categories).not.to.be.empty;
+        expect(loadedUser1!).not.to.be.undefined;
+        expect(loadedUser1!.post).not.to.be.undefined;
+        expect(loadedUser1!.post.categories).not.to.be.undefined;
         expect(loadedUser1!.post.categories!.length).to.be.equal(2);
 
         // now remove added categories
@@ -111,16 +111,16 @@ describe("persistence > many-to-many", function() {
         await userRepository.save(newUser);
 
         // load a post
-        const loadedUser2 = await userRepository.findOne(1, {
+        const loadedUser2 = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
                 leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
             }
         });
 
-        expect(loadedUser2!).not.to.be.empty;
-        expect(loadedUser2!.post).not.to.be.empty;
-        expect(loadedUser2!.post.categories).not.to.be.empty;
+        expect(loadedUser2!).not.to.be.undefined;
+        expect(loadedUser2!.post).not.to.be.undefined;
+        expect(loadedUser2!.post.categories).not.to.be.undefined;
         expect(loadedUser2!.post.categories!.length).to.be.equal(1);
 
     })));
@@ -157,16 +157,16 @@ describe("persistence > many-to-many", function() {
         await userRepository.save(newUser);
 
         // load a post
-        const loadedUser1 = await userRepository.findOne(1, {
+        const loadedUser1 = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
                 leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
             }
         });
 
-        expect(loadedUser1!).not.to.be.empty;
-        expect(loadedUser1!.post).not.to.be.empty;
-        expect(loadedUser1!.post.categories).not.to.be.empty;
+        expect(loadedUser1!).not.to.be.undefined;
+        expect(loadedUser1!.post).not.to.be.undefined;
+        expect(loadedUser1!.post.categories).not.to.be.undefined;
         expect(loadedUser1!.post.categories!.length).to.be.equal(2);
 
         // now remove added categories
@@ -175,15 +175,15 @@ describe("persistence > many-to-many", function() {
         await userRepository.save(newUser);
 
         // load a post
-        const loadedUser2 = await userRepository.findOne(1, {
+        const loadedUser2 = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
                 leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
             }
         });
 
-        expect(loadedUser2!).not.to.be.empty;
-        expect(loadedUser2!.post).not.to.be.empty;
+        expect(loadedUser2!).not.to.be.undefined;
+        expect(loadedUser2!.post).not.to.be.undefined;
         expect(loadedUser2!.post.categories!.length).to.be.equal(0);
 
     })));
@@ -220,16 +220,16 @@ describe("persistence > many-to-many", function() {
         await userRepository.save(newUser);
 
         // load a post
-        const loadedUser1 = await userRepository.findOne(1, {
+        const loadedUser1 = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
                 leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
             }
         });
 
-        expect(loadedUser1!).not.to.be.empty;
-        expect(loadedUser1!.post).not.to.be.empty;
-        expect(loadedUser1!.post.categories).not.to.be.empty;
+        expect(loadedUser1!).not.to.be.undefined;
+        expect(loadedUser1!.post).not.to.be.undefined;
+        expect(loadedUser1!.post.categories).not.to.be.undefined;
         expect(loadedUser1!.post.categories!.length).to.be.equal(2);
 
         // now remove added categories
@@ -238,15 +238,15 @@ describe("persistence > many-to-many", function() {
         await userRepository.save(newUser);
 
         // load a post
-        const loadedUser2 = await userRepository.findOne(1, {
+        const loadedUser2 = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
                 leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
             }
         });
 
-        expect(loadedUser2!).not.to.be.empty;
-        expect(loadedUser2!.post).not.to.be.empty;
+        expect(loadedUser2!).not.to.be.undefined;
+        expect(loadedUser2!.post).not.to.be.undefined;
         expect(loadedUser2!.post.categories!.length).to.be.equal(0);
     })));
 

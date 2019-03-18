@@ -325,7 +325,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
-    rename(newName: string, options?: { dropTarget?: boolean }): Promise<Collection> {
+    rename(newName: string, options?: { dropTarget?: boolean }): Promise<Collection<any>> {
         return this.manager.rename(this.metadata.tableName, newName, options);
     }
 

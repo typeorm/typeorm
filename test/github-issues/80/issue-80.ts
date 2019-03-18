@@ -18,7 +18,7 @@ describe("github issues > #80 repository.save fails when empty array is sent to 
         post.title = "Hello Post #1";
         const returnedPost = await connection.manager.save(post);
 
-        expect(returnedPost).not.to.be.empty;
+        expect(returnedPost).not.to.be.undefined;
         returnedPost.should.be.equal(post);
     })));
 

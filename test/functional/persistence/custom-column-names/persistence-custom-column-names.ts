@@ -1,11 +1,12 @@
-import "reflect-metadata";
 import {expect} from "chai";
+import "reflect-metadata";
+import {getConnectionManager} from "../../../../src";
 import {Connection} from "../../../../src/connection/Connection";
 import {Repository} from "../../../../src/repository/Repository";
-import {Post} from "./entity/Post";
+import {setupSingleTestingConnection} from "../../../utils/test-utils";
 import {Category} from "./entity/Category";
 import {CategoryMetadata} from "./entity/CategoryMetadata";
-import {setupConnection} from "../../../utils/test-utils";
+import {Post} from "./entity/Post";
 
 describe("persistence > custom-column-names", function() {
 
@@ -15,11 +16,21 @@ describe("persistence > custom-column-names", function() {
 
     // connect to db
     let connection: Connection;
-    before(setupConnection(con => connection = con, [Post, Category, CategoryMetadata]));
+    before(async () => {
+        const options = setupSingleTestingConnection("mysql", {
+            entities: [Post, Category, CategoryMetadata]
+        });
+        if (!options)
+            return;
+
+        connection = getConnectionManager().create(options);
+    });
     after(() => connection.close());
 
     // clean up database before each test
     function reloadDatabase() {
+        if (!connection)
+            return;
         return connection
             .synchronize(true)
             .catch(e => {
@@ -32,6 +43,8 @@ describe("persistence > custom-column-names", function() {
     let categoryRepository: Repository<Category>;
     let metadataRepository: Repository<CategoryMetadata>;
     before(function() {
+        if (!connection)
+            return;
         postRepository = connection.getRepository(Post);
         categoryRepository = connection.getRepository(Category);
         metadataRepository = connection.getRepository(CategoryMetadata);
@@ -42,6 +55,8 @@ describe("persistence > custom-column-names", function() {
     // -------------------------------------------------------------------------
     
     describe("attach exist entity to exist entity with many-to-one relation", function() {
+        if (!connection)
+            return;
         let newPost: Post, newCategory: Category, loadedPost: Post;
 
         before(reloadDatabase);
@@ -74,14 +89,16 @@ describe("persistence > custom-column-names", function() {
         });
 
         it("should contain attached category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
+            expect(loadedPost).not.to.be.undefined;
+            expect(loadedPost.category).not.to.be.undefined;
+            expect(loadedPost.categoryId).not.to.be.undefined;
         });
 
     });
 
     describe("attach new entity to exist entity with many-to-one relation", function() {
+        if (!connection)
+            return;
         let newPost: Post, newCategory: Category, loadedPost: Post;
 
         before(reloadDatabase);
@@ -109,14 +126,16 @@ describe("persistence > custom-column-names", function() {
         });
 
         it("should contain attached category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
+            expect(loadedPost).not.to.be.undefined;
+            expect(loadedPost.category).not.to.be.undefined;
+            expect(loadedPost.categoryId).not.to.be.undefined;
         });
 
     });
 
     describe("attach new entity to new entity with many-to-one relation", function() {
+        if (!connection)
+            return;
         let newPost: Post, newCategory: Category, loadedPost: Post;
 
         before(reloadDatabase);
@@ -139,14 +158,16 @@ describe("persistence > custom-column-names", function() {
         });
 
         it("should contain attached category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
+            expect(loadedPost).not.to.be.undefined;
+            expect(loadedPost.category).not.to.be.undefined;
+            expect(loadedPost.categoryId).not.to.be.undefined;
         });
 
     });
 
     describe("attach exist entity to exist entity with one-to-one relation", function() {
+        if (!connection)
+            return;
         let newPost: Post, newCategory: Category, newMetadata: CategoryMetadata, loadedPost: Post;
 
         before(reloadDatabase);
@@ -187,16 +208,18 @@ describe("persistence > custom-column-names", function() {
         });
 
         it("should contain attached category and metadata in the category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
-            expect(loadedPost.category.metadata).not.to.be.empty;
-            expect(loadedPost.category.metadataId).not.to.be.empty;
+            expect(loadedPost).not.to.be.undefined;
+            expect(loadedPost.category).not.to.be.undefined;
+            expect(loadedPost.categoryId).not.to.be.undefined;
+            expect(loadedPost.category.metadata).not.to.be.undefined;
+            expect(loadedPost.category.metadataId).not.to.be.undefined;
         });
 
     });
 
     describe("attach new entity to exist entity with one-to-one relation", function() {
+        if (!connection)
+            return;
         let newPost: Post, newCategory: Category, newMetadata: CategoryMetadata, loadedPost: Post;
 
         before(reloadDatabase);
@@ -232,11 +255,11 @@ describe("persistence > custom-column-names", function() {
         });
 
         it("should contain attached category and metadata in the category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
-            expect(loadedPost.category.metadata).not.to.be.empty;
-            expect(loadedPost.category.metadataId).not.to.be.empty;
+            expect(loadedPost).not.to.be.undefined;
+            expect(loadedPost.category).not.to.be.undefined;
+            expect(loadedPost.categoryId).not.to.be.undefined;
+            expect(loadedPost.category.metadata).not.to.be.undefined;
+            expect(loadedPost.category.metadataId).not.to.be.undefined;
         });
 
     });

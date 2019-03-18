@@ -1,12 +1,12 @@
-import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
-import {createConnection, createConnections} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
-import {EntitySchema} from "../../src/entity-schema/EntitySchema";
-import {DatabaseType} from "../../src/driver/types/DatabaseType";
-import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
-import {PromiseUtils} from "../../src/util/PromiseUtils";
+import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
 import {PostgresDriver} from "../../src/driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../../src/driver/sqlserver/SqlServerDriver";
+import {DatabaseType} from "../../src/driver/types/DatabaseType";
+import {EntitySchema} from "../../src/entity-schema/EntitySchema";
+import {createConnections} from "../../src/index";
+import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
+import {PromiseUtils} from "../../src/util/PromiseUtils";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -133,7 +133,7 @@ export interface TestingOptions {
  * Creates a testing connection options for the given driver type based on the configuration in the ormconfig.json
  * and given options that can override some of its configuration for the test-specific use case.
  */
-export function setupSingleTestingConnection(driverType: DatabaseType, options: TestingOptions): ConnectionOptions {
+export function setupSingleTestingConnection(driverType: DatabaseType, options: TestingOptions): ConnectionOptions|undefined {
 
     const testingConnections = setupTestingConnections({
         name: options.name ? options.name : undefined,
@@ -147,7 +147,7 @@ export function setupSingleTestingConnection(driverType: DatabaseType, options: 
         namingStrategy: options.namingStrategy ? options.namingStrategy : undefined
     });
     if (!testingConnections.length)
-        throw new Error(`Unable to run tests because connection options for "${driverType}" are not set.`);
+        return undefined;
 
     return testingConnections[0];
 }
@@ -268,7 +268,7 @@ export async function createTestingConnections(options?: TestingOptions): Promis
  * Closes testing connections if they are connected.
  */
 export function closeTestingConnections(connections: Connection[]) {
-    return Promise.all(connections.map(connection => connection.isConnected ? connection.close() : undefined));
+    return Promise.all(connections.map(connection => connection && connection.isConnected ? connection.close() : undefined));
 }
 
 /**
@@ -276,22 +276,6 @@ export function closeTestingConnections(connections: Connection[]) {
  */
 export function reloadTestingDatabases(connections: Connection[]) {
     return Promise.all(connections.map(connection => connection.synchronize(true)));
-}
-
-/**
- * Setups connection.
- *
- * @deprecated Old method of creating connection. Don't use it anymore. Use createTestingConnections instead.
- */
-export function setupConnection(callback: (connection: Connection) => any, entities: Function[]) {
-    return function() {
-        return createConnection(setupSingleTestingConnection("mysql", { entities: entities }))
-            .then(connection => {
-                if (callback)
-                    callback(connection);
-                return connection;
-            });
-    };
 }
 
 /**

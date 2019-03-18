@@ -19,7 +19,7 @@ describe("jsonb type", () => {
         const queryRunner = connection.createQueryRunner();
         let schema = await queryRunner.getTable("record");
         await queryRunner.release();
-        expect(schema).not.to.be.empty;
+        expect(schema).not.to.be.undefined;
         expect(schema!.columns.find(tableColumn => tableColumn.name === "config" && tableColumn.type === "json")).to.be.not.empty;
         expect(schema!.columns.find(tableColumn => tableColumn.name === "data" && tableColumn.type === "jsonb")).to.be.not.empty;
     })));

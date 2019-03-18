@@ -40,7 +40,7 @@ describe("other issues > using limit in conjunction with order by", () => {
             .orderBy("post.id", "DESC")
             .getMany();
 
-        expect(loadedPosts1).not.to.be.empty;
+        expect(loadedPosts1).not.to.be.undefined;
         loadedPosts1.length.should.be.equal(10);
         loadedPosts1[0].id.should.be.equal(100);
         loadedPosts1[1].id.should.be.equal(99);

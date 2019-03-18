@@ -26,13 +26,16 @@ describe("database schema > column types > postgres-enum", () => {
 
         const post = new Post();
         post.enum = "A";
+        post.simpleEnum = "A";
         post.name = "Post #1";
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.enum.should.be.equal(post.enum);
+        loadedPost.simpleEnum.should.be.equal(post.simpleEnum);
 
         table!.findColumnByName("enum")!.type.should.be.equal("enum");
+        table!.findColumnByName("simpleEnum")!.type.should.be.equal("enum");
     })));
 
     it("should create ENUM column and revert creation", () => Promise.all(connections.map(async connection => {

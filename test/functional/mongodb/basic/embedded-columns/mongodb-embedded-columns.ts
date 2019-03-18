@@ -70,8 +70,8 @@ describe("mongodb > embedded columns", () => {
 
         const removedPost = await postRepository.findOne({ title: "Post" });
         const removedUpdatedPost = await postRepository.findOne({ title: "Updated post" });
-        expect(removedPost).to.be.empty;
-        expect(removedUpdatedPost).to.be.empty;
+        expect(removedPost).to.be.undefined;
+        expect(removedUpdatedPost).to.be.undefined;
 
     })));
 

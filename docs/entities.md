@@ -9,7 +9,7 @@
   * [Spatial columns](#spatial-columns)
 * [Column types](#column-types)
   * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
-  * [Column types for `postgres`](#column-types-for-postgres)
+  * [Column types for `postgres` / `cockroachdb`](#column-types-for-postgres)
   * [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
   * [Column types for `mssql`](#column-types-for-mssql)
   * [`enum` column type](#enum-column-type)
@@ -309,6 +309,18 @@ or
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
 `tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`
 
+### Column types for `cockroachdb`
+
+`array`, `bool`, `boolean`, `bytes`, `bytea`, `blob`, `date`, `numeric`, `decimal`, `dec`, `float`,
+`float4`, `float8`, `double precision`, `real`, `inet`, `int`, `integer`, `int2`, `int8`, `int64`,
+`smallint`, `bigint`, `interval`, `string`, `character varying`, `character`, `char`, `char varying`,
+`varchar`, `text`, `time`, `time without time zone`, `timestamp`, `timestamptz`, `timestamp without time zone`,
+`timestamp with time zone`, `json`, `jsonb`, `uuid`
+
+> Note: CockroachDB returns all numeric data types as `string`. However if you omit column type and define your property as
+ `number` ORM will `parseInt` string into number.
+
+
 ### Column types for `sqlite` / `cordova` / `react-native` / `expo`
 
 `int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
@@ -462,7 +474,7 @@ export class User {
 
 `uuid` value will be automatically generated and stored into the database.
 
-Besides "uuid" there is also "increment" generated type, however there are some limitations
+Besides "uuid" there is also "increment" and "rowid" (CockroachDB only) generated types, however there are some limitations
 on some database platforms with this type of generation (for example some databases can only have one increment column,
 or some of them require increment to be a primary key).
 
@@ -509,7 +521,7 @@ You can change it by specifying your own name.
 * `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
-* `array: boolean` - Used for postgres column types which can be array (for example int[])
+* `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[])
 * `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database.
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.

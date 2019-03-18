@@ -26,9 +26,9 @@ describe("table inheritance > regular inheritance using extends keyword", () => 
             .where("post.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedPost).not.to.be.empty;
-        expect(loadedPost!.name).not.to.be.empty;
-        expect(loadedPost!.text).not.to.be.empty;
+        expect(loadedPost).not.to.be.undefined;
+        expect(loadedPost!.name).not.to.be.undefined;
+        expect(loadedPost!.text).not.to.be.undefined;
         loadedPost!.name.should.be.equal("Super title");
         loadedPost!.text.should.be.equal("About this post");
 

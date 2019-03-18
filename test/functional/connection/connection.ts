@@ -26,19 +26,26 @@ describe("Connection", () => {
 
         let connection: Connection;
         before(async () => {
-            connection = getConnectionManager().create(setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "default",
                 entities: []
-            }));
+            });
+            if (!options)
+                return;
+
+            connection = getConnectionManager().create(options);
         });
         after(() => {
-            if (connection.isConnected)
+            if (connection && connection.isConnected)
                 return connection.close();
 
             return Promise.resolve();
         });
 
         it("connection.isConnected should be false", () => {
+            if (!connection)
+                return;
+
             connection.isConnected.should.be.false;
         });
 
@@ -62,14 +69,21 @@ describe("Connection", () => {
          });*/
 
         it("should not be able to close", () => {
+            if (!connection)
+                return;
             return connection.close().should.be.rejected; // CannotCloseNotConnectedError
         });
 
         it("should not be able to sync a schema", () => {
+            if (!connection)
+                return;
             return connection.synchronize().should.be.rejected; // CannotCloseNotConnectedError
         });
 
         it.skip("should not be able to use repositories", () => {
+            if (!connection)
+                return;
+
             expect(() => connection.getRepository(Post)).to.throw(NoConnectionForRepositoryError);
             expect(() => connection.getTreeRepository(Category)).to.throw(NoConnectionForRepositoryError);
             // expect(() => connection.getReactiveRepository(Post)).to.throw(NoConnectionForRepositoryError);
@@ -77,6 +91,8 @@ describe("Connection", () => {
         });
 
         it("should be able to connect", () => {
+            if (!connection)
+                return;
             return connection.connect().should.be.fulfilled;
         });
 
@@ -181,7 +197,7 @@ describe("Connection", () => {
             expect(loadedPost).to.be.eql(post);
             await connection.synchronize(true);
             const againLoadedPost = await postRepository.findOne(post.id);
-            expect(againLoadedPost).to.be.empty;
+            expect(againLoadedPost).to.be.undefined;
         })));
 
     });

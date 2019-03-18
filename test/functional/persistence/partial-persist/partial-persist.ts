@@ -30,12 +30,14 @@ describe("persistence > partial persist", () => {
 
         // save a new category
         const newCategory = new Category();
+        newCategory.id = 1;
         newCategory.name = "Animals";
         newCategory.position = 999;
         await categoryRepository.save(newCategory);
 
         // save a new post
         const newPost = new Post();
+        newPost.id = 1;
         newPost.title = "All about animals";
         newPost.description = "Description of the post about animals";
         newPost.categories = [newCategory];
@@ -46,7 +48,7 @@ describe("persistence > partial persist", () => {
         await postRepository.save(newPost);
 
         // load a post
-        const loadedPost = await postRepository.findOne(1, {
+        const loadedPost = await postRepository.findOne(newPost.id, {
             join: {
                 alias: "post",
                 leftJoinAndSelect: {
@@ -55,8 +57,8 @@ describe("persistence > partial persist", () => {
             }
         });
 
-        expect(loadedPost!).not.to.be.empty;
-        expect(loadedPost!.categories).not.to.be.empty;
+        expect(loadedPost!).not.to.be.undefined;
+        expect(loadedPost!.categories).not.to.be.undefined;
         loadedPost!.title.should.be.equal("All about animals");
         loadedPost!.description.should.be.equal("Description of the post about animals");
         loadedPost!.categories[0].name.should.be.equal("Animals");
@@ -78,8 +80,8 @@ describe("persistence > partial persist", () => {
             }
         });
 
-        expect(loadedPostAfterTitleUpdate!).not.to.be.empty;
-        expect(loadedPostAfterTitleUpdate!.categories).not.to.be.empty;
+        expect(loadedPostAfterTitleUpdate!).not.to.be.undefined;
+        expect(loadedPostAfterTitleUpdate!.categories).not.to.be.undefined;
         loadedPostAfterTitleUpdate!.title.should.be.equal("All about bears");
         loadedPostAfterTitleUpdate!.description.should.be.equal("Description of the post about animals");
         loadedPostAfterTitleUpdate!.categories[0].name.should.be.equal("Animals");
@@ -101,8 +103,8 @@ describe("persistence > partial persist", () => {
             }
         });
 
-        expect(loadedPostAfterStarsUpdate!).not.to.be.empty;
-        expect(loadedPostAfterStarsUpdate!.categories).not.to.be.empty;
+        expect(loadedPostAfterStarsUpdate!).not.to.be.undefined;
+        expect(loadedPostAfterStarsUpdate!.categories).not.to.be.undefined;
         loadedPostAfterStarsUpdate!.title.should.be.equal("All about bears");
         loadedPostAfterStarsUpdate!.description.should.be.equal("Description of the post about animals");
         loadedPostAfterStarsUpdate!.categories[0].name.should.be.equal("Animals");
@@ -124,8 +126,8 @@ describe("persistence > partial persist", () => {
             }
         });
 
-        expect(loadedPostAfterCategoryUpdate!).not.to.be.empty;
-        expect(loadedPostAfterCategoryUpdate!.categories).not.to.be.empty;
+        expect(loadedPostAfterCategoryUpdate!).not.to.be.undefined;
+        expect(loadedPostAfterCategoryUpdate!.categories).not.to.be.undefined;
         loadedPostAfterCategoryUpdate!.title.should.be.equal("All about bears");
         loadedPostAfterCategoryUpdate!.description.should.be.equal("Description of the post about animals");
         loadedPostAfterCategoryUpdate!.categories[0].name.should.be.equal("Bears");

@@ -140,7 +140,8 @@ export class DbQueryResultCache implements QueryResultCache {
      * Checks if cache is expired or not.
      */
     isExpired(savedCache: QueryResultCacheOptions): boolean {
-        return ((typeof savedCache.time === "string" ? parseInt(savedCache.time as any) : savedCache.time)! + savedCache.duration) < new Date().getTime();
+        const duration = typeof savedCache.duration === "string" ? parseInt(savedCache.duration) : savedCache.duration;
+        return ((typeof savedCache.time === "string" ? parseInt(savedCache.time as any) : savedCache.time)! + duration) < new Date().getTime();
     }
 
     /**

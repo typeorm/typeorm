@@ -5,17 +5,37 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version,
 feel free to ask us and community.
 
-## 0.2.14 (unreleased)
+## 0.2.15
 
 ### Bug fixes
 
-* fixed mongodb entity listeners in optional embeddeds ([#3450](https://github.com/typeorm/typeorm/issues/3450))
+* fixed bug in `connection.dropDatabase` method ([#1414](https://github.com/typeorm/typeorm/pull/3727))
+* fixed "deep relations" not loaded/mapped due to the built-in max length of Postgres ([#3118](https://github.com/typeorm/typeorm/issues/3118))
+* updated all dependencies
+* fixed types issue from [#3725](https://github.com/typeorm/typeorm/issues/3725)
+* removed sql-function-support (`() => ` syntax) in parameters to prevent security considerations
+* fix sync schema issue with postgres enum in case capital letters in entity name ([#3536](https://github.com/typeorm/typeorm/issues/3536))
 
 ### Features
 
+* added `uuidExtension` option to Postgres connection options, which allows TypeORM to use the newer `pgcrypto` extension to generate UUIDs
+
+## 0.2.14 (2019-02-25)
+
+### Bug fixes
+
+* fixed migration issue with postgres numeric enum type - change queries are not generated if enum is not modified ([#3587](https://github.com/typeorm/typeorm/issues/3587))
+* fixed mongodb entity listeners in optional embeddeds ([#3450](https://github.com/typeorm/typeorm/issues/3450))
+* fixes returning invalid delete result
+* reverted lazy loading properties not enumerable feature to fix related bugs
+
+### Features
+
+* added CockroachDB support
 * added browser entry point to `package.json` ([3583](https://github.com/typeorm/typeorm/issues/3583))
 * replaced backend-only drivers by dummy driver in browser builds
 * added `useLocalForage` option to Sql.js connection options, which enables asynchronous load and save operations of the datatbase from the indexedDB ([#3554](https://github.com/typeorm/typeorm/issues/3554))
+* added simple-enum column type ([#1414](https://github.com/typeorm/typeorm/issues/1414))
 
 ## 0.2.13 (2019-02-10)
 

@@ -103,6 +103,9 @@ export class EntitySchemaTransformer {
                     };
                     metadataArgsStorage.generations.push(generationArgs);
                 }
+
+                if (column.unique)
+                    metadataArgsStorage.uniques.push({ target: options.target || options.name, columns: [columnName] });
             });
 
             // add relation metadata args from the schema

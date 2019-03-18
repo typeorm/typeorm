@@ -145,13 +145,13 @@ export class JunctionEntityMetadataBuilder {
         ];
 
         // create junction table indices
-        entityMetadata.indices = [
+        entityMetadata.ownIndices = [
             new IndexMetadata({
                 entityMetadata: entityMetadata,
                 columns: junctionColumns,
                 args: {
-                    target: "",
-                    unique: false
+                    target: entityMetadata.target,
+                    synchronize: true
                 }
             }),
 
@@ -159,8 +159,8 @@ export class JunctionEntityMetadataBuilder {
                 entityMetadata: entityMetadata,
                 columns: inverseJunctionColumns,
                 args: {
-                    target: "",
-                    unique: false
+                    target: entityMetadata.target,
+                    synchronize: true
                 }
             })
         ];

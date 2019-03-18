@@ -1,4 +1,4 @@
-# Repository API
+# Repository APIs
 
 * [Repository API](#repository-api)
 * [TreeRepository API](#treerepository-api)

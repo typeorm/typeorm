@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {TableColumn} from "../../../src/schema-builder/table/TableColumn";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
@@ -26,13 +27,16 @@ describe("query runner > add column", () => {
         let column1 = new TableColumn({
             name: "secondId",
             type: "int",
-            isPrimary: true,
             isUnique: true,
             isNullable: false
         });
 
+        // CockroachDB does not support altering primary key constraint
+        if (!(connection.driver instanceof CockroachDriver))
+            column1.isPrimary = true;
+
         // MySql and Sqlite does not supports autoincrement composite primary keys.
-        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver)) {
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver) && !(connection.driver instanceof CockroachDriver)) {
             column1.isGenerated = true;
             column1.generationStrategy = "increment";
         }
@@ -50,12 +54,15 @@ describe("query runner > add column", () => {
         table = await queryRunner.getTable("post");
         column1 = table!.findColumnByName("secondId")!;
         column1!.should.be.exist;
-        column1!.isPrimary.should.be.true;
         column1!.isUnique.should.be.true;
         column1!.isNullable.should.be.false;
 
+        // CockroachDB does not support altering primary key constraint
+        if (!(connection.driver instanceof CockroachDriver))
+            column1!.isPrimary.should.be.true;
+
         // MySql and Sqlite does not supports autoincrement composite primary keys.
-        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver)) {
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver) && !(connection.driver instanceof CockroachDriver)) {
             column1!.isGenerated.should.be.true;
             column1!.generationStrategy!.should.be.equal("increment");
         }

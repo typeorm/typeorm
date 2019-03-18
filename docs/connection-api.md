@@ -1,7 +1,7 @@
-# Connection API
+# Connection APIs
 
 * [Main API](#main-api)
-* [`Connection` API](#connection-api-1)
+* [`Connection` API](#connection-api)
 * [`ConnectionManager` API](#connectionmanager-api)
 
 ## Main API
@@ -183,7 +183,7 @@ await connection.close();
 ```
 
 * `synchronize` - Synchronizes database schema. When `synchronize: true` is set in connection options it calls this method. 
-Usually, you call this method when your application is shuting down.
+Usually, you call this method when your application is shutting down.
 
 ```typescript
 await connection.synchronize();
@@ -258,7 +258,7 @@ const category1 = await categoryCursor.next();
 const category2 = await categoryCursor.next();
 ```
 
-* `getCustomRepository` - Gets customly defined repository.
+* `getCustomRepository` - Gets custom defined repository.
 Learn more about [custom repositories](custom-repository.md).
 
 ```typescript

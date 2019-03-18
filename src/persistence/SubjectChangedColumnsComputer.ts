@@ -46,6 +46,11 @@ export class SubjectChangedColumnsComputer {
                 column.isCreateDate)
                 return;
 
+            const changeMap = subject.changeMaps.find(changeMap => changeMap.column === column);
+            if (changeMap) {
+                subject.changeMaps.splice(subject.changeMaps.indexOf(changeMap), 1);
+            }
+
             // get user provided value - column value from the user provided persisted entity
             const entityValue = column.getEntityValue(subject.entity!);
 
@@ -87,6 +92,9 @@ export class SubjectChangedColumnsComputer {
                     } else if (column.type === "simple-array") {
                         normalizedValue = DateUtils.simpleArrayToString(entityValue);
                         databaseValue = DateUtils.simpleArrayToString(databaseValue);
+                    } else if (column.type === "simple-enum") {
+                        normalizedValue = DateUtils.simpleEnumToString(entityValue);
+                        databaseValue = DateUtils.simpleEnumToString(databaseValue);
                     }
                 }
 
@@ -95,17 +103,10 @@ export class SubjectChangedColumnsComputer {
                     return;
             }
             subject.diffColumns.push(column);
-            // find if there is already a column to be changed
-            const changeMap = subject.changeMaps.find(changeMap => changeMap.column === column);
-            if (changeMap) { // and update its value if it was found
-                changeMap.value = entityValue;
-
-            } else { // if it wasn't found add a new column for change
-                subject.changeMaps.push({
-                    column: column,
-                    value: entityValue
-                });
-            }
+            subject.changeMaps.push({
+                column: column,
+                value: entityValue
+            });
         });
     }
 

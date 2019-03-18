@@ -56,10 +56,10 @@ describe.skip("repository > set/add/remove relation methods", function() {
             }
         });
 
-        expect(loadedPost!).not.to.be.empty;
-        expect(loadedPost!.manyCategories).not.to.be.empty;
-        expect(loadedPost!.manyCategories![0]).not.to.be.empty;
-        expect(loadedPost!.manyCategories![1]).not.to.be.empty;
+        expect(loadedPost!).not.to.be.undefined;
+        expect(loadedPost!.manyCategories).not.to.be.undefined;
+        expect(loadedPost!.manyCategories![0]).not.to.be.undefined;
+        expect(loadedPost!.manyCategories![1]).not.to.be.undefined;
 
     })));
 
@@ -94,10 +94,10 @@ describe.skip("repository > set/add/remove relation methods", function() {
             }
         );
 
-        expect(loadedCategory).not.to.be.empty;
-        expect(loadedCategory!.manyPosts).not.to.be.empty;
-        expect(loadedCategory!.manyPosts![0]).not.to.be.empty;
-        expect(loadedCategory!.manyPosts![1]).not.to.be.empty;
+        expect(loadedCategory).not.to.be.undefined;
+        expect(loadedCategory!.manyPosts).not.to.be.undefined;
+        expect(loadedCategory!.manyPosts![0]).not.to.be.undefined;
+        expect(loadedCategory!.manyPosts![1]).not.to.be.undefined;
     })));
 
     it("remove elements to many-to-many from owner side", () => Promise.all(connections.map(async connection => {
@@ -137,8 +137,8 @@ describe.skip("repository > set/add/remove relation methods", function() {
             }
         });
 
-        expect(loadedPost!).not.to.be.empty;
-        expect(loadedPost!.manyCategories).not.to.be.empty;
+        expect(loadedPost!).not.to.be.undefined;
+        expect(loadedPost!.manyCategories).not.to.be.undefined;
         loadedPost!.manyCategories.length.should.be.equal(1);
         loadedPost!.manyCategories![0].name.should.be.equal("Kids");
 
@@ -181,8 +181,8 @@ describe.skip("repository > set/add/remove relation methods", function() {
             }
         });
 
-        expect(loadedCategory!).not.to.be.empty;
-        expect(loadedCategory!.manyPosts).not.to.be.empty;
+        expect(loadedCategory!).not.to.be.undefined;
+        expect(loadedCategory!.manyPosts).not.to.be.undefined;
         loadedCategory!.manyPosts.length.should.be.equal(1);
         loadedCategory!.manyPosts[0].title.should.be.equal("post #2");
     })));
@@ -214,9 +214,9 @@ describe.skip("repository > set/add/remove relation methods", function() {
             }
         });
 
-        expect(loadedPost!).not.to.be.empty;
-        expect(loadedPost!.categories).not.to.be.empty;
-        expect(loadedPost!.categories![0]).not.to.be.empty;
+        expect(loadedPost!).not.to.be.undefined;
+        expect(loadedPost!.categories).not.to.be.undefined;
+        expect(loadedPost!.categories![0]).not.to.be.undefined;
 
     })));
 
@@ -246,8 +246,8 @@ describe.skip("repository > set/add/remove relation methods", function() {
             }
         });
 
-        expect(loadedCategory!).not.to.be.empty;
-        expect(loadedCategory!.post).not.to.be.empty;
+        expect(loadedCategory!).not.to.be.undefined;
+        expect(loadedCategory!.post).not.to.be.undefined;
     })));
 
     it("set element to NULL in one-to-many relation", () => Promise.all(connections.map(async connection => {
@@ -277,8 +277,8 @@ describe.skip("repository > set/add/remove relation methods", function() {
             }
         });
 
-        expect(loadedPost!).not.to.be.empty;
-        expect(loadedPost!.categories).to.be.empty;
+        expect(loadedPost!).not.to.be.undefined;
+        expect(loadedPost!.categories).to.be.eql([]);
     })));
 
     it("set element to NULL in many-to-one relation", () => Promise.all(connections.map(async connection => {
@@ -308,8 +308,8 @@ describe.skip("repository > set/add/remove relation methods", function() {
             }
         });
 
-        expect(loadedCategory).not.to.be.empty;
-        expect(loadedCategory!.post).to.be.empty;
+        expect(loadedCategory).not.to.be.undefined;
+        expect(loadedCategory!.post).to.be.undefined;
 
     })));
 

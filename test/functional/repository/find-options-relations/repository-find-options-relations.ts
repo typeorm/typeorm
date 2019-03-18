@@ -103,7 +103,7 @@ describe("repository > find options > relations", () => {
         loadedPost!.title.should.be.equal("About Timber");
         loadedPost!.counters.commentCount.should.be.equal(1);
         loadedPost!.counters.stars.should.be.equal(101);
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 1,
             filename: "photo1.jpg",
             counters: {
@@ -111,7 +111,7 @@ describe("repository > find options > relations", () => {
                 commentCount: 19
             }
         });
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 2,
             filename: "photo2.jpg",
             counters: {
@@ -119,7 +119,7 @@ describe("repository > find options > relations", () => {
                 commentCount: 20
             }
         });
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 3,
             filename: "photo3.jpg",
             counters: {
@@ -135,7 +135,7 @@ describe("repository > find options > relations", () => {
         loadedPost!.title.should.be.equal("About Timber");
         loadedPost!.counters.commentCount.should.be.equal(1);
         loadedPost!.counters.stars.should.be.equal(101);
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 1,
             filename: "photo1.jpg",
             counters: {
@@ -143,7 +143,7 @@ describe("repository > find options > relations", () => {
                 commentCount: 19
             }
         });
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 2,
             filename: "photo2.jpg",
             counters: {
@@ -151,7 +151,7 @@ describe("repository > find options > relations", () => {
                 commentCount: 20
             }
         });
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 3,
             filename: "photo3.jpg",
             counters: {
@@ -163,11 +163,11 @@ describe("repository > find options > relations", () => {
             id: 1,
             name: "Timber"
         });
-        loadedPost!.categories.should.include({
+        loadedPost!.categories.should.deep.include({
             id: 1,
             name: "category1"
         });
-        loadedPost!.categories.should.include({
+        loadedPost!.categories.should.deep.include({
             id: 2,
             name: "category2"
         });
@@ -179,7 +179,7 @@ describe("repository > find options > relations", () => {
         loadedPost!.title.should.be.equal("About Timber");
         loadedPost!.counters.commentCount.should.be.equal(1);
         loadedPost!.counters.stars.should.be.equal(101);
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 1,
             filename: "photo1.jpg",
             counters: {
@@ -191,7 +191,7 @@ describe("repository > find options > relations", () => {
                 name: "Photo Timber"
             }
         });
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 2,
             filename: "photo2.jpg",
             counters: {
@@ -200,7 +200,7 @@ describe("repository > find options > relations", () => {
             },
             user: null
         });
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 3,
             filename: "photo3.jpg",
             counters: {
@@ -213,11 +213,11 @@ describe("repository > find options > relations", () => {
             id: 1,
             name: "Timber"
         });
-        loadedPost!.categories.should.include({
+        loadedPost!.categories.should.deep.include({
             id: 1,
             name: "category1"
         });
-        loadedPost!.categories.should.include({
+        loadedPost!.categories.should.deep.include({
             id: 2,
             name: "category2"
         });
@@ -229,7 +229,7 @@ describe("repository > find options > relations", () => {
         loadedPost!.title.should.be.equal("About Timber");
         loadedPost!.counters.commentCount.should.be.equal(1);
         loadedPost!.counters.stars.should.be.equal(101);
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 1,
             filename: "photo1.jpg",
             counters: {
@@ -241,7 +241,7 @@ describe("repository > find options > relations", () => {
                 name: "Photo Timber"
             }
         });
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 2,
             filename: "photo2.jpg",
             counters: {
@@ -250,7 +250,7 @@ describe("repository > find options > relations", () => {
             },
             user: null
         });
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 3,
             filename: "photo3.jpg",
             counters: {
@@ -275,7 +275,7 @@ describe("repository > find options > relations", () => {
         loadedPost!.title.should.be.equal("About Timber");
         loadedPost!.counters.commentCount.should.be.equal(1);
         loadedPost!.counters.stars.should.be.equal(101);
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 1,
             filename: "photo1.jpg",
             counters: {
@@ -291,7 +291,7 @@ describe("repository > find options > relations", () => {
                 name: "Photo Timber"
             }
         });
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 2,
             filename: "photo2.jpg",
             counters: {
@@ -301,7 +301,7 @@ describe("repository > find options > relations", () => {
             },
             user: null
         });
-        loadedPost!.photos.should.include({
+        loadedPost!.photos.should.deep.include({
             id: 3,
             filename: "photo3.jpg",
             counters: {

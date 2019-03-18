@@ -30,8 +30,8 @@ describe("github issues > OneToOne relation with referencedColumnName does not w
             .leftJoinAndSelect("post.category", "category")
             .getOne();
 
-        expect(loadedPost).not.to.be.empty;
-        expect(loadedPost!.category).not.to.be.empty;
+        expect(loadedPost).not.to.be.undefined;
+        expect(loadedPost!.category).not.to.be.undefined;
 
     })));
 

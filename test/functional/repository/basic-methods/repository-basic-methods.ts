@@ -158,7 +158,8 @@ describe("repository > basic methods", () => {
 
         it("should create a new empty object if entity schema with a target is used", () => connections.forEach(connection => {
             const repository = connection.getRepository<Question>("Question");
-            repository.create().should.not.be.empty;
+            repository.create().should.not.be.undefined;
+            repository.create().should.not.be.null;
             repository.create().type.should.be.equal("question"); // make sure this is our Question function
         }));
 
@@ -415,8 +416,8 @@ describe("repository > basic methods", () => {
             const query = `SELECT MAX(${connection.driver.escape("blog")}.${connection.driver.escape("counter")}) as ${connection.driver.escape("max")} ` +
                 ` FROM ${connection.driver.escape("blog")} ${connection.driver.escape("blog")}`;
             const result = await repository.query(query);
-            result[0].should.not.be.empty;
-            result[0].max.should.not.be.empty;
+            result[0].should.not.be.undefined;
+            result[0].max.should.not.be.undefined;
         })));
 
     });

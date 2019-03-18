@@ -9,13 +9,13 @@ import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
 
 @Entity()
 export class Category {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
 }
 ```
 
@@ -25,20 +25,20 @@ import {Category} from "./Category";
 
 @Entity()
 export class Question {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     title: string;
-    
+
     @Column()
     text: string;
-    
+
     @ManyToMany(type => Category)
     @JoinTable()
     categories: Category[];
-    
+
 }
 ```
 
@@ -63,7 +63,7 @@ This example will produce following tables:
 +-------------+--------------+----------------------------+
 
 +-------------+--------------+----------------------------+
-|                   question_categories                   |
+|              question_categories_category               |
 +-------------+--------------+----------------------------+
 | questionId  | int(11)      | PRIMARY KEY FOREIGN KEY    |
 | categoryId  | int(11)      | PRIMARY KEY FOREIGN KEY    |
@@ -89,7 +89,7 @@ await connection.manager.save(question);
 With cascades enabled you can save this relation with only one `save` call.
 
 To load question with categories inside you must specify relation in `FindOptions`:
- 
+
 ```typescript
 const questionRepository = connection.getRepository(Question);
 const questions = await questionRepository.find({ relations: ["categories"] });
@@ -107,7 +107,7 @@ const questions = await connection
 
 With eager loading enabled on a relation you don't have to specify relation or join it - it will ALWAYS be loaded automatically.
 
-Relations can be uni-directional and bi-directional. 
+Relations can be uni-directional and bi-directional.
 Uni-directional are relations with a relation decorator only on one side.
 Bi-directional are relations with decorators on both sides of a relation.
 
@@ -119,16 +119,16 @@ import {Question} from "./Question";
 
 @Entity()
 export class Category {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
     @ManyToMany(type => Question, question => question.categories)
     questions: Question[];
-    
+
 }
 ```
 
@@ -138,27 +138,27 @@ import {Category} from "./Category";
 
 @Entity()
 export class Question {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     title: string;
-    
+
     @Column()
     text: string;
-    
+
     @ManyToMany(type => Category, category => category.questions)
     @JoinTable()
     categories: Category[];
-    
+
 }
 ```
 
 We just made our relation bi-directional. Note, the inverse relation does not have a `@JoinTable`.
 `@JoinTable` must be only on one side of the relation.
 
-Bi-directional relations allow you to join relations from both sides using `QueryBuilder`: 
+Bi-directional relations allow you to join relations from both sides using `QueryBuilder`:
 
 ```typescript
 const categoriesWithQuestions = await connection

@@ -3,7 +3,6 @@ import {Connection} from "../../../src";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Table} from "../../../src";
 import {TableExclusion} from "../../../src/schema-builder/table/TableExclusion";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 
 describe("query runner > create exclusion constraint", () => {
 
@@ -11,6 +10,7 @@ describe("query runner > create exclusion constraint", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"], // Only PostgreSQL supports exclusion constraints.
             schemaCreate: true,
             dropSchema: true,
         });
@@ -19,10 +19,6 @@ describe("query runner > create exclusion constraint", () => {
     after(() => closeTestingConnections(connections));
 
     it("should correctly create exclusion constraint and revert creation", () => Promise.all(connections.map(async connection => {
-
-        // Only PostgreSQL supports exclusion constraints.
-        if (!(connection.driver instanceof PostgresDriver))
-            return;
 
         const queryRunner = connection.createQueryRunner();
         await queryRunner.createTable(new Table({

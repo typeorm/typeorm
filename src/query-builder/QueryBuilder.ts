@@ -316,6 +316,13 @@ export abstract class QueryBuilder<Entity> {
      */
     setParameters(parameters: ObjectLiteral): this {
 
+        // remove function parameters
+        Object.keys(parameters).forEach(key => {
+            if (parameters[key] instanceof Function) {
+                throw new Error(`Function parameter isn't supported in the parameters. Please check "${key}" parameter.`);
+            }
+        });
+
         // set parent query builder parameters as well in sub-query mode
         if (this.expressionMap.parentQueryBuilder)
             this.expressionMap.parentQueryBuilder.setParameters(parameters);
@@ -475,31 +482,6 @@ export abstract class QueryBuilder<Entity> {
      * schema name, otherwise returns escaped table name.
      */
     protected getTableName(tablePath: string): string {
-        // let tablePath = tableName;
-        // const driver = this.connection.driver;
-        // const schema = (driver.options as SqlServerConnectionOptions|PostgresConnectionOptions).schema;
-        // const metadata = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName) : undefined;
-
-        /*if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof MysqlDriver) {
-            if (metadata) {
-                if (metadata.schema) {
-                    tablePath = `${metadata.schema}.${tableName}`;
-                } else if (schema) {
-                    tablePath = `${schema}.${tableName}`;
-                }
-
-                if (metadata.database && !(driver instanceof PostgresDriver)) {
-                    if (!schema && !metadata.schema && driver instanceof SqlServerDriver) {
-                        tablePath = `${metadata.database}..${tablePath}`;
-                    } else {
-                        tablePath = `${metadata.database}.${tablePath}`;
-                    }
-                }
-
-            } else if (schema) {
-                tablePath = `${schema!}.${tableName}`;
-            }
-        }*/
         return tablePath.split(".")
             .map(i => {
                 // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string

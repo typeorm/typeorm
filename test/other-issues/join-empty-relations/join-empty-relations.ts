@@ -26,7 +26,7 @@ describe("other issues > joining empty relations", () => {
             .leftJoinAndSelect("post.categories", "categories")
             .getMany();
 
-        expect(loadedPosts1).not.to.be.empty;
+        expect(loadedPosts1).not.to.be.undefined;
         loadedPosts1.should.be.eql([{
             id: 1,
             title: "Hello Post",
@@ -49,7 +49,7 @@ describe("other issues > joining empty relations", () => {
             .leftJoinAndSelect("categories.authors", "authors")
             .getMany();
 
-        expect(loadedPosts1).not.to.be.empty;
+        expect(loadedPosts1).not.to.be.undefined;
         loadedPosts1.should.be.eql([{
             id: 1,
             title: "Hello Post",

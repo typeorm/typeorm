@@ -304,7 +304,7 @@ TypeORM 支持所有最常用的数据库支持的列类型。
 ```typescript
 export enum UserRole {
     ADMIN = "admin",
-    EDITOR = "editor"
+    EDITOR = "editor",
     GHOST = "ghost"
 }
 

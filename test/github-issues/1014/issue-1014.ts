@@ -33,7 +33,7 @@ describe("github issues > #1014 Transaction doesn't rollback", () => {
 
         expect(error).to.be.instanceof(Error);
         const loadedTestEntity = await connection.manager.findOne(TestEntity, 1);
-        expect(loadedTestEntity).not.to.be.empty;
+        expect(loadedTestEntity).not.to.be.undefined;
         loadedTestEntity!.should.be.eql({ id: 1, name: "Hello Test" });
     })));
 

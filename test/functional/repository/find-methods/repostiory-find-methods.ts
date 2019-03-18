@@ -5,19 +5,9 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {User} from "./model/User";
 import {EntityNotFoundError} from "../../../../src/error/EntityNotFoundError";
-import {EntitySchema} from "../../../../src";
+import {UserEntity} from "./schema/UserEntity";
 
 describe("repository > find methods", () => {
-
-    let userSchema: any;
-    try {
-        const resourceDir = __dirname + "/../../../../../../test/functional/repository/find-methods/";
-        userSchema = require(resourceDir + "schema/user.json");
-    } catch (err) {
-        const resourceDir = __dirname + "/";
-        userSchema = require(resourceDir + "schema/user.json");
-    }
-    const UserEntity = new EntitySchema<any>(userSchema);
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

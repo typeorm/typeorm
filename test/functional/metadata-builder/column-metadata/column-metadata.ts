@@ -17,6 +17,7 @@ describe("metadata-builder > ColumnMetadata", () => {
 
     it("getValue", () => Promise.all(connections.map(async connection => {
         const post = new Post();
+        post.id = 1;
         post.title = "Post #1";
         post.counters = new Counters();
         post.counters.code = 123;
@@ -28,21 +29,22 @@ describe("metadata-builder > ColumnMetadata", () => {
         post.counters.subcounters.watches = 10;
 
         const titleColumnMetadata = connection.getMetadata(Post).columns.find(column => column.propertyName === "title");
-        expect(titleColumnMetadata).not.to.be.empty;
+        expect(titleColumnMetadata).not.to.be.undefined;
         expect(titleColumnMetadata!.getEntityValue(post)).to.be.equal("Post #1");
 
         const codeColumnMetadata = connection.getMetadata(Post).columns.find(column => column.propertyName === "code");
-        expect(codeColumnMetadata).not.to.be.empty;
+        expect(codeColumnMetadata).not.to.be.undefined;
         expect(codeColumnMetadata!.getEntityValue(post)).to.be.equal(123);
 
         const watchesColumnMetadata = connection.getMetadata(Post).columns.find(column => column.propertyName === "watches");
-        expect(watchesColumnMetadata).not.to.be.empty;
+        expect(watchesColumnMetadata).not.to.be.undefined;
         expect(watchesColumnMetadata!.getEntityValue(post)).to.be.equal(10);
 
     })));
 
     it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ("getValueMap", () => Promise.all(connections.map(async connection => {
         const post = new Post();
+        post.id = 1;
         post.title = "Post #1";
         post.counters = new Counters();
         post.counters.code = 123;
@@ -54,12 +56,12 @@ describe("metadata-builder > ColumnMetadata", () => {
         post.counters.subcounters.watches = 10;
 
         const titleColumnMetadata = connection.getMetadata(Post).columns.find(column => column.propertyName === "title");
-        expect(titleColumnMetadata).not.to.be.empty;
+        expect(titleColumnMetadata).not.to.be.undefined;
         expect(titleColumnMetadata!.getEntityValueMap(post)).to.be.eql({ title: "Post #1" });
         expect(titleColumnMetadata!.getEntityValueMap({ id: 1 })).to.be.undefined;
 
         const codeColumnMetadata = connection.getMetadata(Post).columns.find(column => column.propertyName === "code");
-        expect(codeColumnMetadata).not.to.be.empty;
+        expect(codeColumnMetadata).not.to.be.undefined;
         expect(codeColumnMetadata!.getEntityValueMap(post)).to.be.eql({ counters: { code: 123 } });
         expect(codeColumnMetadata!.getEntityValueMap({ id: 1 })).to.be.undefined;
         expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: undefined })).to.be.undefined;
@@ -70,7 +72,7 @@ describe("metadata-builder > ColumnMetadata", () => {
         expect(codeColumnMetadata!.getEntityValueMap({ id: 1, counters: { likes: 123 } })).to.be.undefined;
 
         const watchesColumnMetadata = connection.getMetadata(Post).columns.find(column => column.propertyName === "watches");
-        expect(watchesColumnMetadata).not.to.be.empty;
+        expect(watchesColumnMetadata).not.to.be.undefined;
         expect(watchesColumnMetadata!.getEntityValueMap(post)).to.be.eql({ counters: { subcounters: { watches: 10 } } });
         expect(watchesColumnMetadata!.getEntityValueMap({ id: 1 })).to.be.eql(undefined);
         expect(watchesColumnMetadata!.getEntityValueMap({ id: 1, counters: undefined })).to.be.undefined;

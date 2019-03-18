@@ -118,7 +118,7 @@ describe("repository > find options", () => {
         // })));
     })));
 
-    it.only("should select by given conditions", () => Promise.all(connections.map(async connection => {
+    it("should select by given conditions", () => Promise.all(connections.map(async connection => {
 
         const category1 = new Category();
         category1.name = "Bears";
@@ -174,7 +174,7 @@ describe("repository > find options > cache", () => {
     after(() => closeTestingConnections(connections));
 
     it("repository should cache results properly", () => Promise.all(connections.map(async connection => {
-        
+
         // first prepare data - insert users
         const user1 = new User();
         user1.name = "Harry";

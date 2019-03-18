@@ -103,6 +103,9 @@ export class SubjectExecutor {
         // recompute only in the case if any listener or subscriber was really executed
         if (broadcasterResult && broadcasterResult.count > 0) {
             // console.time(".recompute");
+            this.insertSubjects.forEach(subject => subject.recompute());
+            this.updateSubjects.forEach(subject => subject.recompute());
+            this.removeSubjects.forEach(subject => subject.recompute());
             this.recompute();
             // console.timeEnd(".recompute");
         }
@@ -543,7 +546,7 @@ export class SubjectExecutor {
 
             // merge into entity all generated values returned by a database
             if (subject.generatedMap)
-                this.queryRunner.manager.merge(subject.metadata.target, subject.entity, subject.generatedMap);
+                this.queryRunner.manager.merge(subject.metadata.target as any, subject.entity, subject.generatedMap);
         });
     }
 

@@ -13,6 +13,7 @@
 [ ] `mysql` / `mariadb`
 [ ] `oracle`
 [ ] `postgres`
+[ ] `cockroachdb`
 [ ] `sqlite`
 [ ] `sqljs`
 [ ] `react-native`

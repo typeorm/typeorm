@@ -25,9 +25,9 @@ export class Post {
     @JoinColumn()
     category: PostCategory;
 
-    @Column("integer")
+    @Column()
     updatedColumns: number = 0;
 
-    @Column("integer")
+    @Column()
     updatedRelations: number = 0;
 }
