@@ -641,7 +641,7 @@ export class MysqlDriver implements Driver {
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    obtainMasterConnection(): Promise<any> {
+    async obtainMasterConnection(): Promise<any> {
         return new Promise<any>((ok, fail) => {
             if (this.poolCluster) {
                 this.poolCluster.getConnection("MASTER", (err: any, dbConnection: any) => {

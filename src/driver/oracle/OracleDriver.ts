@@ -532,7 +532,7 @@ export class OracleDriver implements Driver {
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    obtainMasterConnection(): Promise<any> {
+    async obtainMasterConnection(): Promise<any> {
         return new Promise<any>((ok, fail) => {
             this.master.getConnection((err: any, connection: any, release: Function) => {
                 if (err) return fail(err);
