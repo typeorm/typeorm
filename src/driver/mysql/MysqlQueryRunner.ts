@@ -187,6 +187,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const stream = databaseConnection.query(query, parameters);
                 if (onEnd) stream.on("end", onEnd);
                 if (onError) stream.on("error", onError);
+                
+                stream.pause = databaseConnection.pause.bind(databaseConnection);
+                stream.resume = databaseConnection.resume.bind(databaseConnection);
+
                 ok(stream);
 
             } catch (err) {
