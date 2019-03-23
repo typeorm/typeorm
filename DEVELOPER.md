@@ -140,6 +140,18 @@ All the tests are executed on our Continuous Integration infrastructure and a PR
 describe.only('your describe test', ....)
 ```
 
+>**Hint:** you can use the `test-fast-single` npm script to only execute tests contained within a specific file or directory tree.
+>
+> Example: to only execute tests related to github issue #363:
+>```shell
+>npm run test-fast-single build/compiled/test/github-issues/363
+>```
+>
+> Example: To only execute tests related to schema-builder:
+>```shell
+>npm run test-fast-single build/compiled/test/functional/schema-builder
+>```
+
 >**Hint:** you can use the `--grep` flag to pass a Regex to `gulp-mocha`. Only the tests have have `describe`/`it`
 >statements that match the Regex will be run. For example:
 >
