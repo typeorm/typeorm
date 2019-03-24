@@ -738,6 +738,8 @@ const stream = await getRepository(User)
   .stream();
 ```
 
+当查询返回数据量很大的结果集时可以使用 `stream.pause()` 或 `stream.resume()` 方法来暂停或恢复流。
+
 ## 使用分页
 
 大多数情况下，在开发应用程序时，你可能需要分页功能。

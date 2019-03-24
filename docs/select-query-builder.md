@@ -762,6 +762,8 @@ const stream = await getRepository(User)
     .stream();
 ```
 
+You can use `stream.pause()` or `stream.resume()` method to stop/resume stream when retrieving a large result set.
+
 ## Using pagination
 
 Most of the time when you develop an application, you need pagination functionality.
