@@ -681,7 +681,7 @@ Add `profilePhoto` to `User` entity and you can map any data into that property 
 ```typescript
 export class User {    
     /// ...
-    profilePhoto: Photo;
+    profilePhoto: Photo | undefined;
     
 }
 ```
