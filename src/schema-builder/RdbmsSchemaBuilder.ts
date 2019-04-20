@@ -364,8 +364,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
                 const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
                 const fullTableName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
-
-                return table.name === fullTableName;
+                const fullExistingTableName = this.connection.driver.buildTableName(table.name, schema, database);
+                
+                return fullExistingTableName === fullTableName;
             });
             if (existTable)
                 return;
