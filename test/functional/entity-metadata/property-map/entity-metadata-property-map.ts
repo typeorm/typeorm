@@ -1,9 +1,9 @@
 import "reflect-metadata";
 import {Post} from "./entity/Post";
 import {Counters} from "./entity/Counters";
-import {Connection} from "../../../src/connection/Connection";
+import {Connection} from "../../../../src/connection/Connection";
 import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Subcounters} from "./entity/Subcounters";
 import {User} from "./entity/User";
 

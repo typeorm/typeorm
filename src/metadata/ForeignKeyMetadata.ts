@@ -87,8 +87,14 @@ export class ForeignKeyMetadata {
         this.referencedEntityMetadata = options.referencedEntityMetadata;
         this.columns = options.columns;
         this.referencedColumns = options.referencedColumns;
-        this.onDelete = options.onDelete || "NO ACTION";
-        this.onUpdate = options.onUpdate || "NO ACTION";
+    
+        /**
+         * "For an ON DELETE or ON UPDATE that is not specified, the default action is always RESTRICT."
+         * https://dev.mysql.com/doc/refman/8.0/en/create-table-foreign-keys.html
+         */
+        this.onDelete = options.onDelete || "RESTRICT";
+        this.onUpdate = options.onUpdate || "RESTRICT";
+        
         this.deferrable = options.deferrable;
         if (options.namingStrategy)
             this.build(options.namingStrategy);
