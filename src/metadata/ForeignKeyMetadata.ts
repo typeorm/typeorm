@@ -4,6 +4,7 @@ import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterfac
 import {DeferrableType} from "./types/DeferrableType";
 import {OnDeleteType} from "./types/OnDeleteType";
 import {OnUpdateType} from "./types/OnUpdateType";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 
 /**
  * Contains all information about entity's foreign key.
@@ -92,8 +93,8 @@ export class ForeignKeyMetadata {
          * "For an ON DELETE or ON UPDATE that is not specified, the default action is always RESTRICT."
          * https://dev.mysql.com/doc/refman/8.0/en/create-table-foreign-keys.html
          */
-        this.onDelete = options.onDelete || "RESTRICT";
-        this.onUpdate = options.onUpdate || "RESTRICT";
+        this.onDelete = options.onDelete || (this.entityMetadata.connection.driver instanceof MysqlDriver) ? "RESTRICT" : "NO ACTION";
+        this.onUpdate = options.onUpdate || (this.entityMetadata.connection.driver instanceof MysqlDriver) ? "RESTRICT" : "NO ACTION";
         
         this.deferrable = options.deferrable;
         if (options.namingStrategy)
