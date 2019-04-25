@@ -152,8 +152,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const databaseConnection = await this.connect();
                 this.driver.connection.logger.logQuery(query, parameters, this);
                 const queryStartTime = +new Date();
-                databaseConnection.query(query, parameters, (err: any, result: any) => {
-
+                const dbConnectionQuery = databaseConnection.query(query, parameters, (err: any, result: any) => {
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
                     const queryEndTime = +new Date();
@@ -168,6 +167,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     ok(result);
                 });
+                if (dbConnectionQuery instanceof Promise) {
+                    dbConnectionQuery.then(result => {
+                        const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+                        const queryEndTime = +new Date();
+                        const queryExecutionTime = queryEndTime - queryStartTime;
+                        if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+                            this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                        ok(result);
+                    }).catch(err => {
+                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        return fail(new QueryFailedError(query, parameters, err));
+                    });
+                }
 
             } catch (err) {
                 fail(err);
