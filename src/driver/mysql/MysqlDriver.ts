@@ -355,7 +355,6 @@ export class MysqlDriver implements Driver {
                 const end = this.poolCluster.end((err: any) => err ? fail(err) : ok());
                 if (end instanceof Promise) {
                     end.then(() => {
-                        this.poolCluster.end();
                         ok();
                     }).catch(err => {
                         fail(err);
