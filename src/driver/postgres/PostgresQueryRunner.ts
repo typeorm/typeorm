@@ -175,10 +175,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                     if (err) {
                         this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                        console.log("[ERROR]", query);
                         fail(new QueryFailedError(query, parameters, err));
                     } else {
-                        // console.log("[OK]", query);
                         switch (result.command) {
                             case "DELETE":
                                 // for DELETE query additionally return number of affected rows
