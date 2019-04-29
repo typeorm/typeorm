@@ -175,8 +175,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                     if (err) {
                         this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        console.log("[ERROR]", query);
                         fail(new QueryFailedError(query, parameters, err));
                     } else {
+                        // console.log("[OK]", query);
                         switch (result.command) {
                             case "DELETE":
                                 // for DELETE query additionally return number of affected rows
@@ -429,8 +431,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (newTable.primaryColumns.length > 0) {
             const columnNames = newTable.primaryColumns.map(column => column.name);
 
-            const oldPkName = this.connection.namingStrategy.primaryKeyName(oldTable, columnNames);
-            const newPkName = this.connection.namingStrategy.primaryKeyName(newTable, columnNames);
+            const oldPkName = this.connection.namingStrategy.primaryKeyName(this.escapePath(oldTable), columnNames);
+            const newPkName = this.connection.namingStrategy.primaryKeyName(this.escapePath(newTable), columnNames);
 
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`));
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`));
@@ -512,19 +514,19 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         // create or update primary key constraint
         if (column.isPrimary) {
             const primaryColumns = clonedTable.primaryColumns;
+            let columnNames = primaryColumns.map(c => c.name);
+
             // if table already have primary key, me must drop it and recreate again
             if (primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
-                const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
+                upQueries.push(this.dropPrimaryKeySql(clonedTable, columnNames));
+                downQueries.push(this.createPrimaryKeySql(clonedTable, columnNames));
             }
 
             primaryColumns.push(column);
-            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
-            const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
+            columnNames.push(column.name);
+
+            upQueries.push(this.createPrimaryKeySql(table, columnNames));
+            downQueries.push(this.dropPrimaryKeySql(table, columnNames));
         }
 
         // create column index
@@ -619,14 +621,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                     // build old primary constraint name
                     const columnNames = primaryColumns.map(column => column.name);
-                    const oldPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
+                    const oldPkName = this.connection.namingStrategy.primaryKeyName(this.escapePath(clonedTable), columnNames);
 
                     // replace old column name with new column name
                     columnNames.splice(columnNames.indexOf(oldColumn.name), 1);
                     columnNames.push(newColumn.name);
 
                     // build new primary constraint name
-                    const newPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
+                    const newPkName = this.connection.namingStrategy.primaryKeyName(this.escapePath(clonedTable), columnNames);
 
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`));
@@ -767,28 +769,29 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
                 const primaryColumns = clonedTable.primaryColumns;
+                let columnNames = primaryColumns.map(c => c.name);
 
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
-                    const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
-                    const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
+                    upQueries.push(this.dropPrimaryKeySql(table, columnNames));
+                    downQueries.push(this.createPrimaryKeySql(table, columnNames));
                 }
 
                 if (newColumn.isPrimary === true) {
                     primaryColumns.push(newColumn);
+                    columnNames.push(newColumn.name);
+
                     // update column in table
                     const column = clonedTable.columns.find(column => column.name === newColumn.name);
                     column!.isPrimary = true;
-                    const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
-                    const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
+
+                    upQueries.push(this.createPrimaryKeySql(table, columnNames));
+                    downQueries.push(this.dropPrimaryKeySql(table, columnNames));
 
                 } else {
                     const primaryColumn = primaryColumns.find(c => c.name === newColumn.name);
                     primaryColumns.splice(primaryColumns.indexOf(primaryColumn!), 1);
+                    columnNames = primaryColumns.map(c => c.name);
 
                     // update column in table
                     const column = clonedTable.columns.find(column => column.name === newColumn.name);
@@ -796,10 +799,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
-                        const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
-                        const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
-                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
+                        upQueries.push(this.createPrimaryKeySql(clonedTable, columnNames));
+                        downQueries.push(this.dropPrimaryKeySql(table, columnNames));
                     }
                 }
             }
@@ -890,10 +891,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         // drop primary key constraint
         if (column.isPrimary) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, clonedTable.primaryColumns.map(column => column.name));
-            const columnNames = clonedTable.primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} DROP CONSTRAINT "${pkName}"`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
+            let columnNames = clonedTable.primaryColumns.map(column => column.name);
+            upQueries.push(this.dropPrimaryKeySql(clonedTable, columnNames));
+            downQueries.push(this.createPrimaryKeySql(clonedTable, columnNames));
 
             // update column in table
             const tableColumn = clonedTable.findColumnByName(column.name);
@@ -901,10 +901,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, clonedTable.primaryColumns.map(column => column.name));
-                const columnNames = clonedTable.primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
-                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} DROP CONSTRAINT "${pkName}"`));
+                columnNames = clonedTable.primaryColumns.map(column => column.name);
+                upQueries.push(this.dropPrimaryKeySql(clonedTable, columnNames));
+                downQueries.push(this.createPrimaryKeySql(clonedTable, columnNames));
             }
         }
 
@@ -965,13 +964,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const clonedTable = table.clone();
 
         const up = this.createPrimaryKeySql(table, columnNames);
-
-        // mark columns as primary, because dropPrimaryKeySql build constraint name from table primary column names.
-        clonedTable.columns.forEach(column => {
-            if (columnNames.find(columnName => columnName === column.name))
-                column.isPrimary = true;
-        });
-        const down = this.dropPrimaryKeySql(clonedTable);
+        const down = this.dropPrimaryKeySql(clonedTable, columnNames);
 
         await this.executeQueries(up, down);
         this.replaceCachedTable(table, clonedTable);
@@ -1015,8 +1008,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const up = this.dropPrimaryKeySql(table);
-        const down = this.createPrimaryKeySql(table, table.primaryColumns.map(column => column.name));
+        const columnNames = table.primaryColumns.map(c => c.name);
+        const up = this.dropPrimaryKeySql(table, columnNames);
+        const down = this.createPrimaryKeySql(table, columnNames);
         await this.executeQueries(up, down);
         table.primaryColumns.forEach(column => {
             column.isPrimary = false;
@@ -1399,8 +1393,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             `"ns"."nspname" AS "referenced_table_schema", "cl"."relname" AS "referenced_table_name", "att"."attname" AS "referenced_column_name", "con"."confdeltype" AS "on_delete", ` +
             `"con"."confupdtype" AS "on_update", "con"."condeferrable" AS "deferrable", "con"."condeferred" AS "deferred" ` +
             `FROM ( ` +
-            `SELECT UNNEST ("con1"."conkey") AS "parent", UNNEST ("con1"."confkey") AS "child", "con1"."confrelid", "con1"."conrelid", "con1"."conname", "con1"."contype", "ns"."nspname", ` + 
-            `"cl"."relname", "con1"."condeferrable", ` + 
+            `SELECT UNNEST ("con1"."conkey") AS "parent", UNNEST ("con1"."confkey") AS "child", "con1"."confrelid", "con1"."conrelid", "con1"."conname", "con1"."contype", "ns"."nspname", ` +
+            `"cl"."relname", "con1"."condeferrable", ` +
             `CASE WHEN "con1"."condeferred" THEN 'INITIALLY DEFERRED' ELSE 'INITIALLY IMMEDIATE' END as condeferred, ` +
             `CASE "con1"."confdeltype" WHEN 'a' THEN 'NO ACTION' WHEN 'r' THEN 'RESTRICT' WHEN 'c' THEN 'CASCADE' WHEN 'n' THEN 'SET NULL' WHEN 'd' THEN 'SET DEFAULT' END as "confdeltype", ` +
             `CASE "con1"."confupdtype" WHEN 'a' THEN 'NO ACTION' WHEN 'r' THEN 'RESTRICT' WHEN 'c' THEN 'CASCADE' WHEN 'n' THEN 'SET NULL' WHEN 'd' THEN 'SET DEFAULT' END as "confupdtype" ` +
@@ -1717,7 +1711,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         const primaryColumns = table.columns.filter(column => column.isPrimary);
         if (primaryColumns.length > 0) {
-            const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, primaryColumns.map(column => column.name));
+            const primaryKeyName = this.connection.namingStrategy.primaryKeyName(this.escapePath(table), primaryColumns.map(column => column.name));
             const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
             sql += `, CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNames})`;
         }
@@ -1869,18 +1863,18 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds create primary key sql.
      */
     protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
+        const tableName = this.escapePath(table);
+        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(tableName, columnNames);
         const columnNamesString = columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNamesString})`);
+        return new Query(`ALTER TABLE ${tableName} ADD CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNamesString})`);
     }
 
     /**
      * Builds drop primary key sql.
      */
-    protected dropPrimaryKeySql(table: Table): Query {
-        const columnNames = table.primaryColumns.map(column => column.name);
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
-        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${primaryKeyName}"`);
+    protected dropPrimaryKeySql(table: Table, columnNames: string[]): Query {
+        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(this.escapePath(table), columnNames);
+        return this.dropConstraintSql(table, primaryKeyName);
     }
 
     /**
@@ -1895,8 +1889,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds drop unique constraint sql.
      */
     protected dropUniqueConstraintSql(table: Table, uniqueOrName: TableUnique|string): Query {
-        const uniqueName = uniqueOrName instanceof TableUnique ? uniqueOrName.name : uniqueOrName;
-        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueName}"`);
+        const uniqueName = uniqueOrName instanceof TableUnique ? uniqueOrName.name! : uniqueOrName;
+        return this.dropConstraintSql(table, uniqueName);
     }
 
     /**
@@ -1910,8 +1904,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds drop check constraint sql.
      */
     protected dropCheckConstraintSql(table: Table, checkOrName: TableCheck|string): Query {
-        const checkName = checkOrName instanceof TableCheck ? checkOrName.name : checkOrName;
-        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${checkName}"`);
+        const checkName = checkOrName instanceof TableCheck ? checkOrName.name! : checkOrName;
+        return this.dropConstraintSql(table, checkName);
     }
 
     /**
@@ -1925,8 +1919,15 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds drop exclusion constraint sql.
      */
     protected dropExclusionConstraintSql(table: Table, exclusionOrName: TableExclusion|string): Query {
-        const exclusionName = exclusionOrName instanceof TableExclusion ? exclusionOrName.name : exclusionOrName;
-        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${exclusionName}"`);
+        const exclusionName = exclusionOrName instanceof TableExclusion ? exclusionOrName.name! : exclusionOrName;
+        return this.dropConstraintSql(table, exclusionName);
+    }
+
+    /**
+     * Builds drop constraint sql.
+     */
+    protected dropConstraintSql(table: Table, name: string): Query {
+        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${name}"`);
     }
 
     /**
