@@ -131,6 +131,7 @@ List of available env variables you can set:
 * TYPEORM_CACHE_OPTIONS
 * TYPEORM_CACHE_ALWAYS_ENABLED
 * TYPEORM_CACHE_DURATION
+* TYPEORM_MSSQL_ENCRYPT
 
 `TYPEORM_CACHE` should be boolean or string of cache type
 

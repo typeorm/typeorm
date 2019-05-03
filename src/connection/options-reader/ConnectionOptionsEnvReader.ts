@@ -46,7 +46,10 @@ export class ConnectionOptionsEnvReader {
                 subscribersDir: PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS_DIR"),
             },
             cache: this.transformCaching(),
-            uuidExtension: PlatformTools.getEnvVariable("TYPEORM_UUID_EXTENSION")
+            uuidExtension: PlatformTools.getEnvVariable("TYPEORM_UUID_EXTENSION"),
+            options: {
+                encrypt: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_MSSQL_ENCRYPT"))
+            }
         };
     }
 
