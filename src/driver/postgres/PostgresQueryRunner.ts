@@ -182,6 +182,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                                 // for DELETE query additionally return number of affected rows
                                 ok([result.rows, result.rowCount]);
                                 break;
+                            case "UPDATE":
+                            case "INSERT":
+                                // result.rows is always an empty array for some reason
+                                ok(result.rowCount);
+                                break;
                             default:
                                 ok(result.rows);
                         }
