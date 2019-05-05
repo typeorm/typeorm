@@ -571,7 +571,7 @@ createConnection({
     password: "admin",
     database: "test",
     entities: [
-        __dirname + "/entity/*.js"
+        __dirname + "/entity/*.ts"
     ],
     synchronize: true,
 }).then(connection => {
