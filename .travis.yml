@@ -18,7 +18,6 @@ before_script:
   - sudo service postgresql stop
   - docker-compose up -d
   - cp ormconfig.travis.json ormconfig.json
-  - npm install sqlite3 --build-from-source
 
 script:
   - npm run lint

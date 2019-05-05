@@ -23,12 +23,12 @@ jobs:
           POSTGRES_PASSWORD: "test"
           POSTGRES_DB: "test"
       - image: circleci/mongo:3.4.18
-      - image: mcr.microsoft.com/mssql/server:2017-GA-ubuntu
-        environment:
-          SA_PASSWORD: "Admin12345"
-          ACCEPT_EULA: "Y"
-      - image: cockroachdb/cockroach-unstable:latest
-        command: start --insecure
+      # - image: mcr.microsoft.com/mssql/server:2017-GA-ubuntu
+      #   environment:
+      #     SA_PASSWORD: "Admin12345"
+      #     ACCEPT_EULA: "Y"
+      # - image: cockroachdb/cockroach-unstable:latest
+      #   command: start --insecure
 
     steps:
       - checkout
@@ -43,7 +43,6 @@ jobs:
           - v1-dependencies-
 
       - run: npm install
-      - run: npm install sqlite3 --build-from-source
 
       - save_cache:
           paths:
@@ -51,7 +50,7 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
 
       # - run: docker-compose up -d
-        
+
       # run tests
       - run: npm run lint
       - run: npm test
