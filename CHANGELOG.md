@@ -10,6 +10,7 @@ feel free to ask us and community.
 ### Features
 
 * deprecate column `readonly` option in favor of `update` and `insert` options ([#4035](https://github.com/typeorm/typeorm/pull/4035))
+* added `WhereFactory` which can be passed to `Repository#find` to facilitate constructing more complex queries.
 
 ## 0.2.17 (2019-05-01)
 

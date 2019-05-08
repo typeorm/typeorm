@@ -1,6 +1,7 @@
 import {JoinOptions} from "./JoinOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindConditions} from "./FindConditions";
+import {WhereFactory} from "../query-builder/WhereFactory";
 
 /**
  * Defines a special criteria to find specific entity.
@@ -13,9 +14,9 @@ export interface FindOneOptions<Entity = any> {
     select?: (keyof Entity)[];
 
     /**
-     * Simple condition that should be applied to match entities.
+     * Where condition that should be applied to match entities.
      */
-    where?: FindConditions<Entity>[]|FindConditions<Entity>|ObjectLiteral|string;
+    where?: FindConditions<Entity>[]|FindConditions<Entity>|ObjectLiteral|string|WhereFactory;
 
     /**
      * Indicates what relations of entity should be loaded (simplified left join form).

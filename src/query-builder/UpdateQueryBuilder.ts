@@ -6,7 +6,6 @@ import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {WhereExpression} from "./WhereExpression";
-import {Brackets} from "./Brackets";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {UpdateResult} from "./result/UpdateResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
@@ -21,6 +20,7 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
+import {WhereFactory} from "./WhereFactory";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -143,7 +143,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
-    where(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
+    where(where: string|((qb: this) => string)|WhereFactory|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
         this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
         const condition = this.computeWhereParameter(where);
         if (condition)
@@ -157,7 +157,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(where: string|((qb: this) => string)|Brackets, parameters?: ObjectLiteral): this {
+    andWhere(where: string|((qb: this) => string)|WhereFactory, parameters?: ObjectLiteral): this {
         this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
         if (parameters) this.setParameters(parameters);
         return this;
@@ -167,7 +167,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    orWhere(where: string|((qb: this) => string)|Brackets, parameters?: ObjectLiteral): this {
+    orWhere(where: string|((qb: this) => string)|WhereFactory, parameters?: ObjectLiteral): this {
         this.expressionMap.wheres.push({ type: "or", condition: this.computeWhereParameter(where) });
         if (parameters) this.setParameters(parameters);
         return this;

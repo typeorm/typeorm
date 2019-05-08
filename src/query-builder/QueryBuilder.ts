@@ -19,6 +19,7 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {EntitySchema} from "../";
 import {FindOperator} from "../find-options/FindOperator";
 import {In} from "../find-options/operator/In";
+import {WhereFactory} from "./WhereFactory";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -723,16 +724,16 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Computes given where argument - transforms to a where string all forms it can take.
      */
-    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[]) {
+    protected computeWhereParameter(where: string|((qb: this) => string)|WhereFactory|ObjectLiteral|ObjectLiteral[]) {
         if (typeof where === "string")
             return where;
 
-        if (where instanceof Brackets) {
+        if (where instanceof WhereFactory) {
             const whereQueryBuilder = this.createQueryBuilder();
             where.whereFactory(whereQueryBuilder as any);
             const whereString = whereQueryBuilder.createWhereExpressionString();
             this.setParameters(whereQueryBuilder.getParameters());
-            return whereString ? "(" + whereString + ")" : "";
+            return whereString ? (where instanceof Brackets ? "(" + whereString + ")" : whereString) : "";
 
         } else if (where instanceof Function) {
             return where(this);
