@@ -4,7 +4,7 @@ import {createTestingConnections, closeTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../src/connection/Connection";
 import { Snow } from "./entity/Snow";
 
-describe.only("github issues > #2660 adding affected rows to insert and update result", () => {
+describe("github issues > #2660 adding affected rows to insert and update result", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
