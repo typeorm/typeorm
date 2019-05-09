@@ -1,8 +1,9 @@
 import "reflect-metadata";
-import {Post} from "./entity/Post";
 import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {Post} from "./entity/Post";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
+import {PostWithDateOnly} from "./entity/PostWithDateOnly";
 import {FruitEnum} from "./enum/FruitEnum";
 
 describe("database schema > column types > sqlite", () => {
@@ -171,7 +172,7 @@ describe("database schema > column types > sqlite", () => {
     })));
 
     it("unconventional datetime formats should be hydrated correctly", () => Promise.all(connections.map(async connection => {
-        const postRepository = connection.getRepository(Post);
+        const postRepository = connection.getRepository(PostWithDateOnly);
         const queryRunner = connection.createQueryRunner();
         const expectedDatetime = new Date("2001-02-03T04:45:56Z");
 
