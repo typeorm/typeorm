@@ -289,10 +289,15 @@ export abstract class AbstractSqliteDriver implements Driver {
             if (value && typeof value === "string") {
                 // There are various valid time string formats a sqlite time string might have:
                 // https://www.sqlite.org/lang_datefunc.html
-                // There are two separate fixes we may need to do:
-                //   1) Add 'T' separator if space is used instead
-                //   2) Add 'Z' UTC suffix if no timezone or offset specified
-
+                // There are three separate fixes we may need to do:
+                //   1) Remove spaces between the time and the timezone if any
+                //      (Sequelize serializes dates this way)
+                //   2) Add 'T' separator if space is used instead so that Safari
+                //      (and iOS WKWebView) is able to parse it
+                //   3) Add 'Z' UTC suffix if no timezone or offset specified
+                if (/ (Z|[+-]\d\d:\d\d)$/.test(value)) {
+                    value = value.replace(/ +(Z|[+-]\d\d:\d\d)$/, "$1");
+                }
                 if (/^\d\d\d\d-\d\d-\d\d \d\d:\d\d/.test(value)) {
                     value = value.replace(" ", "T");
                 }

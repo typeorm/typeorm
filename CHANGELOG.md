@@ -7,6 +7,10 @@ feel free to ask us and community.
 
 ## 0.2.18 (UNRELEASED)
 
+### Bug fixes
+
+* fixed Sqlite hydration of uncommon datetime formats ([#4114](https://github.com/typeorm/typeorm/pull/4114))
+
 ### Features
 
 * deprecate column `readonly` option in favor of `update` and `insert` options ([#4035](https://github.com/typeorm/typeorm/pull/4035))
