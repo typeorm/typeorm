@@ -186,5 +186,5 @@ describe("database schema > column types > sqlite", () => {
 
         loadedPost1.datetime.should.be.equal(expectedDatetime);
         loadedPost2.datetime.should.be.equal(expectedDatetime);
-    });
+    })));
 });
