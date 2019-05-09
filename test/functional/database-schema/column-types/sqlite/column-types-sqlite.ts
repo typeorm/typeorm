@@ -1,6 +1,5 @@
 import "reflect-metadata";
 import {Post} from "./entity/Post";
-import {getManager} from "../../../../../src";
 import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
@@ -172,11 +171,11 @@ describe("database schema > column types > sqlite", () => {
     })));
 
     it("unconventional datetime formats should be hydrated correctly", () => Promise.all(connections.map(async connection => {
-        const manager = getManager();
         const postRepository = connection.getRepository(Post);
+        const queryRunner = connection.createQueryRunner();
         const expectedDatetime = new Date("2001-02-03T04:45:56Z");
 
-        await manager.query(
+        await queryRunner.query(
             "INSERT INTO post(id, datetime) VALUES(?, ?), (?, ?)",
             [1, "2001-02-03 04:45:56", 2, "2001-02-03T05:45:56 +01:00"]
         );
