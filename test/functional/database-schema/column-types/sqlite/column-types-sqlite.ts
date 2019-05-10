@@ -174,7 +174,7 @@ describe("database schema > column types > sqlite", () => {
     it("unconventional datetime formats should be hydrated correctly", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(PostWithDateOnly);
         const queryRunner = connection.createQueryRunner();
-        const expectedDatetime = new Date("2001-02-03T04:45:56Z");
+        const expectedDatetimeValue = new Date("2001-02-03T04:45:56Z").valueOf();
 
         await queryRunner.query(
             "INSERT INTO post_with_date_only(id, datetime) VALUES(?, ?), (?, ?)",
@@ -184,7 +184,7 @@ describe("database schema > column types > sqlite", () => {
         const loadedPost1 = (await postRepository.findOne(1))!;
         const loadedPost2 = (await postRepository.findOne(2))!;
 
-        loadedPost1.datetime.should.be.equal(expectedDatetime);
-        loadedPost2.datetime.should.be.equal(expectedDatetime);
+        loadedPost1.datetime.valueOf().should.be.equal(expectedDatetimeValue);
+        loadedPost2.datetime.valueOf().should.be.equal(expectedDatetimeValue);
     })));
 });
