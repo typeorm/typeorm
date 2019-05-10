@@ -177,7 +177,7 @@ describe("database schema > column types > sqlite", () => {
         const expectedDatetime = new Date("2001-02-03T04:45:56Z");
 
         await queryRunner.query(
-            "INSERT INTO post(id, datetime) VALUES(?, ?), (?, ?)",
+            "INSERT INTO post_with_date_only(id, datetime) VALUES(?, ?), (?, ?)",
             [1, "2001-02-03 04:45:56", 2, "2001-02-03T05:45:56 +01:00"]
         );
 
