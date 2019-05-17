@@ -1,29 +1,33 @@
+<!--
+    Place an "x" inside to check the option. E.g. [x]
+-->
+
 **Issue type:**
 
-[ ] question
-[ ] bug report
-[ ] feature request
-[ ] documentation issue
+- [ ] question
+- [ ] bug report
+- [ ] feature request
+- [ ] documentation issue
 
 **Database system/driver:**
 
-[ ] `cordova`
-[ ] `mongodb`
-[ ] `mssql`
-[ ] `mysql` / `mariadb`
-[ ] `oracle`
-[ ] `postgres`
-[ ] `cockroachdb`
-[ ] `sqlite`
-[ ] `sqljs`
-[ ] `react-native`
-[ ] `expo`
+- [ ] `cordova`
+- [ ] `mongodb`
+- [ ] `mssql`
+- [ ] `mysql` / `mariadb`
+- [ ] `oracle`
+- [ ] `postgres`
+- [ ] `cockroachdb`
+- [ ] `sqlite`
+- [ ] `sqljs`
+- [ ] `react-native`
+- [ ] `expo`
 
 **TypeORM version:**
 
-[ ] `latest`
-[ ] `@next`
-[ ] `0.x.x` (or put your version here)
+- [ ] `latest`
+- [ ] `@next`
+- [ ] `0.x.x` (or put your version here)
 
 **Steps to reproduce or a small repository showing the problem:**
 
