@@ -38,6 +38,8 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {PromiseUtils} from "../";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
+import { EntityFactoryInterface } from "../entity-factory/EntityFactoryInterface";
+import { DefaultEntityFactory } from "../entity-factory/DefaultEntityFactory";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -96,6 +98,11 @@ export class Connection {
     readonly subscribers: EntitySubscriberInterface<any>[] = [];
 
     /**
+     * Entity factory used to instantiate entities objects
+     */
+    readonly entityFactory: EntityFactoryInterface;
+
+    /**
      * Observers observing queries.
      */
     readonly observers: QueryObserver[] = [];
@@ -131,6 +138,7 @@ export class Connection {
         this.driver = new DriverFactory().create(this);
         this.manager = this.createEntityManager();
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
+        this.entityFactory = options.entityFactory || new DefaultEntityFactory();
         this.queryResultCache = options.cache ? new QueryResultCacheFactory(this).create() : undefined;
         this.relationLoader = new RelationLoader(this);
         this.relationIdLoader = new RelationIdLoader(this);

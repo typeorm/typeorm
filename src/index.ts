@@ -135,6 +135,8 @@ export {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 export {MigrationInterface} from "./migration/MigrationInterface";
 export {DefaultNamingStrategy} from "./naming-strategy/DefaultNamingStrategy";
 export {NamingStrategyInterface} from "./naming-strategy/NamingStrategyInterface";
+export {OldEntityFactory} from "./entity-factory/OldEntityFactory";
+export {EntityFactoryInterface} from "./entity-factory/EntityFactoryInterface";
 export {Repository} from "./repository/Repository";
 export {TreeRepository} from "./repository/TreeRepository";
 export {MongoRepository} from "./repository/MongoRepository";

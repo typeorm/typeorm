@@ -56,11 +56,11 @@ export class RelationLoader {
         const mainAlias = qb.expressionMap.mainAlias!.name;
         const columns = relation.entityMetadata.primaryColumns;
         const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation!.joinColumns;
+        const joinAliasName = relation.entityMetadata.name + (relation.entityMetadata.name === mainAlias ? "_2" : "");
         const conditions = joinColumns.map(joinColumn => {
-            return `${relation.entityMetadata.name}.${joinColumn.propertyName} = ${mainAlias}.${joinColumn.referencedColumn!.propertyName}`;
+            return `${joinAliasName}.${joinColumn.propertyName} = ${mainAlias}.${joinColumn.referencedColumn!.propertyName}`;
         }).join(" AND ");
 
-        const joinAliasName = relation.entityMetadata.name;
         qb.innerJoin(relation.entityMetadata.target as Function, joinAliasName, conditions);
 
         if (columns.length === 1) {

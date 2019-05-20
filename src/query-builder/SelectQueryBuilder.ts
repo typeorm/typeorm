@@ -1868,7 +1868,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                                                         .map(join => join.parentAlias + "." + join.relationPropertyPath);
                     const joinEagerRelations = (alias: string, metadata: EntityMetadata) => {
                         metadata.eagerRelations.forEach(relation => {
-                            const relationAlias = alias + "_" + relation.propertyPath.replace(".", "_");
+                            const relationAlias = this.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath);
                             const path = alias + "." + relation.propertyPath;
                             if (manuallyJoinedRelations.indexOf(path) === -1) {
                                 // This alias+propertyPath was already joined manually

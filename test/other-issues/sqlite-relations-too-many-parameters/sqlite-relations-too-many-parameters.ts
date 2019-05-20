@@ -14,7 +14,7 @@ describe("other issues > sqlite relations too many parameters", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should load 10.000 relations without errors", () => Promise.all(connections.map(async function(connection) {
+    it("should load 1200 relations without errors", () => Promise.all(connections.map(async function(connection) {
 
         // insert a post
         const post = new Post("hello post");
@@ -51,9 +51,8 @@ describe("other issues > sqlite relations too many parameters", () => {
         const postWithCategory = await connection.manager.findOne(Post, 1, {
             relations: ["categories"]
         });
-        console.log(postWithCategory);
 
-        postWithCategory!.categories.length.should.be.equal(2000);
+        postWithCategory!.categories.length.should.be.equal(1200);
 
     })));
 

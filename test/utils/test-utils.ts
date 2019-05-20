@@ -7,6 +7,7 @@ import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 import {createConnections} from "../../src/index";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
 import {PromiseUtils} from "../../src/util/PromiseUtils";
+import { EntityFactoryInterface } from "../../src/entity-factory/EntityFactoryInterface";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -62,6 +63,11 @@ export interface TestingOptions {
      * Subscribers needs to be included in the connection for the given test suite.
      */
     subscribers?: string[]|Function[];
+
+    /**
+     * Entity factory needs to be included in the connection for the given test suite.
+     */
+    entityFactory?: EntityFactoryInterface;
 
     /**
      * Indicates if schema sync should be performed or not.
@@ -219,6 +225,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.migrations = [options.__dirname + "/migration/*{.js,.ts}"];
             if (options && options.namingStrategy)
                 newOptions.namingStrategy = options.namingStrategy;
+            if (options && options.entityFactory)
+                newOptions.entityFactory = options.entityFactory;
             return newOptions;
         });
 }

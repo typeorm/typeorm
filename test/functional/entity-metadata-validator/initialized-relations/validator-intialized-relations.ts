@@ -9,6 +9,7 @@ import {Post} from "./entity/Post";
 import {Image} from "./entity/Image";
 import {ImageInfo} from "./entity/ImageInfo";
 import {Question} from "./entity/Question";
+import { OldEntityFactory } from "../../../../src";
 
 describe("entity-metadata-validator > initialized relations", () => {
 
@@ -19,7 +20,8 @@ describe("entity-metadata-validator > initialized relations", () => {
             username: "test",
             password: "test",
             database: "test",
-            entities: [Post, Category]
+            entities: [Post, Category],
+            entityFactory: new OldEntityFactory()
         });
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
         const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Post, Category]);
@@ -34,7 +36,8 @@ describe("entity-metadata-validator > initialized relations", () => {
             username: "test",
             password: "test",
             database: "test",
-            entities: [Image, ImageInfo]
+            entities: [Image, ImageInfo],
+            entityFactory: new OldEntityFactory()
         });
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
         const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Image, ImageInfo]);
@@ -49,7 +52,8 @@ describe("entity-metadata-validator > initialized relations", () => {
             username: "test",
             password: "test",
             database: "test",
-            entities: [Category]
+            entities: [Category],
+            entityFactory: new OldEntityFactory()
         });
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
         const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Category]);
@@ -64,7 +68,8 @@ describe("entity-metadata-validator > initialized relations", () => {
             username: "test",
             password: "test",
             database: "test",
-            entities: [Question, Category]
+            entities: [Question, Category],
+            entityFactory: new OldEntityFactory()
         });
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
         const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Question, Category]);
