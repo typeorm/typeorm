@@ -832,6 +832,7 @@ const users = await getRepository(User)
     .createQueryBuilder("user")
     .setLock("dirty_read")
     .getMany();
+```
 
 To use optimistic locking use the following method:
 
