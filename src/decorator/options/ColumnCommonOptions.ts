@@ -67,4 +67,5 @@ export interface ColumnCommonOptions {
      */
     transformer?: ValueTransformer|ValueTransformer[];
 
+    onConflict?: "ROLLBACK"|"ABORT"|"FAIL"|"IGNORE"|"REPLACE";
 }

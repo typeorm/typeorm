@@ -132,4 +132,6 @@ export interface TableColumnOptions {
      * SRID (Spatial Reference ID (EPSG code))
      */
     srid?: number;
+
+    onConflict?: "ROLLBACK"|"ABORT"|"FAIL"|"IGNORE"|"REPLACE";
 }

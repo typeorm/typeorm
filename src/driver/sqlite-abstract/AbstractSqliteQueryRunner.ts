@@ -1090,7 +1090,9 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             c += " NOT NULL";
         if (column.default !== undefined && column.default !== null)
             c += " DEFAULT (" + column.default + ")";
-
+        if (column.onConflict) {
+                c += ` ON CONFLICT ${column.onConflict}`;
+        }
         return c;
     }
 

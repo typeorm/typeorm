@@ -297,6 +297,8 @@ export class ColumnMetadata {
      */
     srid?: number;
 
+    onConflict?: "ROLLBACK"|"ABORT"|"FAIL"|"IGNORE"|"REPLACE";
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -351,6 +353,8 @@ export class ColumnMetadata {
             this.default = options.args.options.default;
         if (options.args.options.onUpdate)
             this.onUpdate = options.args.options.onUpdate;
+        if (options.args.options.onConflict)
+            this.onConflict = options.args.options.onConflict;
         if (options.args.options.scale !== null && options.args.options.scale !== undefined)
             this.scale = options.args.options.scale;
         if (options.args.options.zerofill) {

@@ -28,7 +28,7 @@ export class TableColumn {
      * ON UPDATE trigger. Works only for MySQL.
      */
     onUpdate?: string;
-
+    
     /**
      * Indicates if column is NULL, or is NOT NULL in the database.
      */
@@ -135,6 +135,8 @@ export class TableColumn {
      */
     srid?: number;
 
+    onConflict?: "ROLLBACK"|"ABORT"|"FAIL"|"IGNORE"|"REPLACE";
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -165,6 +167,7 @@ export class TableColumn {
             this.generatedType = options.generatedType;
             this.spatialFeatureType = options.spatialFeatureType;
             this.srid = options.srid;
+            this.onConflict = options.onConflict;
         }
     }
 
@@ -200,7 +203,8 @@ export class TableColumn {
             isArray: this.isArray,
             comment: this.comment,
             spatialFeatureType: this.spatialFeatureType,
-            srid: this.srid
+            srid: this.srid,
+            onConflict: this.onConflict
         });
     }
 

@@ -29,7 +29,8 @@ export class TableUtils {
             isArray: columnMetadata.isArray || false,
             enum: columnMetadata.enum ? columnMetadata.enum.map(val => val + "") : columnMetadata.enum,
             spatialFeatureType: columnMetadata.spatialFeatureType,
-            srid: columnMetadata.srid
+            srid: columnMetadata.srid,
+            onConflict: columnMetadata.onConflict
         };
     }
 
