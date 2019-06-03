@@ -297,6 +297,9 @@ export class ColumnMetadata {
      */
     srid?: number;
 
+    /**
+     * SQLite ON CONFLICT clause
+     */
     onConflict?: "ROLLBACK"|"ABORT"|"FAIL"|"IGNORE"|"REPLACE";
 
     // ---------------------------------------------------------------------

@@ -28,7 +28,7 @@ export class TableColumn {
      * ON UPDATE trigger. Works only for MySQL.
      */
     onUpdate?: string;
-    
+
     /**
      * Indicates if column is NULL, or is NOT NULL in the database.
      */
@@ -135,6 +135,10 @@ export class TableColumn {
      */
     srid?: number;
 
+
+    /**
+     * SQLite ON CONFLICT clause
+     */
     onConflict?: "ROLLBACK"|"ABORT"|"FAIL"|"IGNORE"|"REPLACE";
 
     // -------------------------------------------------------------------------

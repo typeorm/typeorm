@@ -67,5 +67,11 @@ export interface ColumnCommonOptions {
      */
     transformer?: ValueTransformer|ValueTransformer[];
 
+    /**
+     * Works only for SQLite.
+     * The ON CONFLICT clause specifies an algorithm used to resolve constraint conflicts.
+     * There are five choices: ROLLBACK, ABORT, FAIL, IGNORE, and REPLACE.
+     * The default algorithm is ABORT.
+     */
     onConflict?: "ROLLBACK"|"ABORT"|"FAIL"|"IGNORE"|"REPLACE";
 }
