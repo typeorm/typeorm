@@ -194,3 +194,33 @@ export type ColumnType = WithPrecisionColumnType
     |DateConstructor
     |NumberConstructor
     |StringConstructor;
+
+export const NumericTypes = [
+    "bigint", // mysql, postgres, mssql, sqlite, cockroachdb
+    "dec", // oracle, mssql
+    "dec", // oracle, mssql, mysql
+    "decimal", // mysql, postgres, mssql, sqlite
+    "decimal", // mysql, postgres, mssql, sqlite
+    "double precision", // postgres, oracle, sqlite, mysql, cockroachdb
+    "double", // mysql, sqlite
+    "fixed", // mysql
+    "fixed", // mysql
+    "float", // mysql, mssql, oracle, sqlite
+    "float4", // postgres, cockroachdb
+    "float8", // postgres, cockroachdb
+    "int", // mysql, mssql, oracle, sqlite
+    "int2", // postgres, sqlite, cockroachdb
+    "int4", // postgres, cockroachdb
+    "int8", // postgres, sqlite, cockroachdb
+    "integer", // postgres, oracle, sqlite, mysql, cockroachdb
+    "mediumint", // mysql, sqlite
+    "money", // postgres, mssql
+    "number", // oracle
+    "number", // oracle
+    "numeric", // postgres, mssql, sqlite
+    "numeric", // postgres, mssql, sqlite, mysql
+    "real", // mysql, postgres, mssql, oracle, sqlite, cockroachdb
+    "smallint", // mysql, postgres, mssql, oracle, sqlite, cockroachdb
+    "smallmoney", // mssql
+    "tinyint", // mysql, mssql, sqlite
+];

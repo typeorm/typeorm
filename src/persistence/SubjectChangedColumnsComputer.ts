@@ -1,3 +1,4 @@
+import {NumericTypes} from "../driver/types/ColumnTypes";
 import {Subject} from "./Subject";
 import {DateUtils} from "../util/DateUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
@@ -78,6 +79,11 @@ export class SubjectChangedColumnsComputer {
 
                     } else if (column.type === "time") {
                         normalizedValue = DateUtils.mixedDateToTimeString(entityValue);
+
+                    } else if (NumericTypes.some(t => t === column.type)) {
+                        normalizedValue = column.precision != null
+                            ? normalizedValue.toPrecision(column.precision)
+                            : normalizedValue.toString();
 
                     } else if (column.type === "datetime" || column.type === Date) {
                         normalizedValue = DateUtils.mixedDateToUtcDatetimeString(entityValue);
