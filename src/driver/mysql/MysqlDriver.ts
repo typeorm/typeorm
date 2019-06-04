@@ -234,7 +234,7 @@ export class MysqlDriver implements Driver {
         createDateDefault: "CURRENT_TIMESTAMP(6)",
         updateDate: "datetime",
         updateDatePrecision: 6,
-        updateDateDefault: "CURRENT_TIMESTAMP(6)",
+        updateDateDefault: "CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)",
         version: "int",
         treeLevel: "int",
         migrationId: "int",
