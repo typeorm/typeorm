@@ -44,8 +44,8 @@ describe("persistence > one-to-one", function() {
                 relations: ["access_token"]
             });
 
-            expect(loadedUser).not.to.be.empty;
-            expect(loadedUser!.access_token).not.to.be.empty;
+            expect(loadedUser).not.to.be.undefined;
+            expect(loadedUser!.access_token).not.to.be.undefined;
         })));
 
     });

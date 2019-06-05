@@ -8,8 +8,11 @@ import {EntityManager} from "../entity-manager/EntityManager";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SqlInMemory} from "../driver/SqlInMemory";
 import {TableUnique} from "../schema-builder/table/TableUnique";
+import {View} from "../schema-builder/view/View";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {TableCheck} from "../schema-builder/table/TableCheck";
+import {IsolationLevel} from "../driver/types/IsolationLevel";
+import {TableExclusion} from "../schema-builder/table/TableExclusion";
 
 /**
  * Runs queries on a single database connection.
@@ -54,6 +57,11 @@ export interface QueryRunner {
     loadedTables: Table[];
 
     /**
+     * All synchronized views in the database.
+     */
+    loadedViews: View[];
+
+    /**
      * Creates/uses database connection from the connection pool to perform further operations.
      * Returns obtained database connection.
      */
@@ -75,7 +83,7 @@ export interface QueryRunner {
     /**
      * Starts transaction.
      */
-    startTransaction(): Promise<void>;
+    startTransaction(isolationLevel?: IsolationLevel): Promise<void>;
 
     /**
      * Commits transaction.
@@ -100,13 +108,6 @@ export interface QueryRunner {
     stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream>;
 
     /**
-     * Inserts new values into closure table.
-     *
-     * @deprecated todo: move to ClosureQueryBuilder
-     */
-    insertIntoClosureTable(tablePath: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
-
-    /**
      * Returns all available database names including system databases.
      */
     getDatabases(): Promise<string[]>;
@@ -121,32 +122,42 @@ export interface QueryRunner {
     /**
      * Loads a table by a given name from the database.
      */
-    getTable(tableName: string): Promise<Table|undefined>;
+    getTable(tablePath: string): Promise<Table|undefined>;
 
     /**
      * Loads all tables from the database and returns them.
      *
-     * todo: make tableNames optional
+     * todo: make tablePaths optional
      */
-    getTables(tableNames: string[]): Promise<Table[]>;
+    getTables(tablePaths: string[]): Promise<Table[]>;
 
     /**
-     * Checks if database with the given name exist.
+     * Loads a view by a given name from the database.
+     */
+    getView(viewPath: string): Promise<View|undefined>;
+
+    /**
+     * Loads all views from the database and returns them.
+     */
+    getViews(viewPaths: string[]): Promise<View[]>;
+
+    /**
+     * Checks if a database with the given name exist.
      */
     hasDatabase(database: string): Promise<boolean>;
 
     /**
-     * Checks if schema with the given name exist.
+     * Checks if a schema with the given name exist.
      */
     hasSchema(schema: string): Promise<boolean>;
 
     /**
-     * Checks if table with the given name exist.
+     * Checks if a table with the given name exist.
      */
     hasTable(table: Table|string): Promise<boolean>;
 
     /**
-     * Checks if column exist in the table.
+     * Checks if a column exist in the table.
      */
     hasColumn(table: Table|string, columnName: string): Promise<boolean>;
 
@@ -183,6 +194,16 @@ export interface QueryRunner {
     dropTable(table: Table|string, ifExist?: boolean, dropForeignKeys?: boolean, dropIndices?: boolean): Promise<void>;
 
     /**
+     * Creates a new view.
+     */
+    createView(view: View, oldView?: View): Promise<void>;
+
+    /**
+     * Drops a view.
+     */
+    dropView(view: View|string): Promise<void>;
+
+    /**
      * Renames a table.
      */
     renameTable(oldTableOrName: Table|string, newTableName: string): Promise<void>;
@@ -193,7 +214,7 @@ export interface QueryRunner {
     addColumn(table: Table|string, column: TableColumn): Promise<void>;
 
     /**
-     * Adds a new columns.
+     * Adds new columns.
      */
     addColumns(table: Table|string, columns: TableColumn[]): Promise<void>;
 
@@ -208,7 +229,7 @@ export interface QueryRunner {
     changeColumn(table: Table|string, oldColumn: TableColumn|string, newColumn: TableColumn): Promise<void>;
 
     /**
-     * Changes a columns in the table.
+     * Changes columns in the table.
      */
     changeColumns(table: Table|string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>;
 
@@ -218,7 +239,7 @@ export interface QueryRunner {
     dropColumn(table: Table|string, column: TableColumn|string): Promise<void>;
 
     /**
-     * Drops a columns in the table.
+     * Drops columns in the table.
      */
     dropColumns(table: Table|string, columns: TableColumn[]): Promise<void>;
 
@@ -238,7 +259,7 @@ export interface QueryRunner {
     dropPrimaryKey(table: Table|string): Promise<void>;
 
     /**
-     * Creates new unique constraint.
+     * Creates a new unique constraint.
      */
     createUniqueConstraint(table: Table|string, uniqueConstraint: TableUnique): Promise<void>;
 
@@ -253,12 +274,12 @@ export interface QueryRunner {
     dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string): Promise<void>;
 
     /**
-     * Drops an unique constraints.
+     * Drops unique constraints.
      */
     dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>;
 
     /**
-     * Creates new check constraint.
+     * Creates a new check constraint.
      */
     createCheckConstraint(table: Table|string, checkConstraint: TableCheck): Promise<void>;
 
@@ -268,7 +289,7 @@ export interface QueryRunner {
     createCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>;
 
     /**
-     * Drops check constraint.
+     * Drops a check constraint.
      */
     dropCheckConstraint(table: Table|string, checkOrName: TableCheck|string): Promise<void>;
 
@@ -278,12 +299,32 @@ export interface QueryRunner {
     dropCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>;
 
     /**
+     * Creates a new exclusion constraint.
+     */
+    createExclusionConstraint(table: Table|string, exclusionConstraint: TableExclusion): Promise<void>;
+
+    /**
+     * Creates new exclusion constraints.
+     */
+    createExclusionConstraints(table: Table|string, exclusionConstraints: TableExclusion[]): Promise<void>;
+
+    /**
+     * Drops a exclusion constraint.
+     */
+    dropExclusionConstraint(table: Table|string, exclusionOrName: TableExclusion|string): Promise<void>;
+
+    /**
+     * Drops exclusion constraints.
+     */
+    dropExclusionConstraints(table: Table|string, exclusionConstraints: TableExclusion[]): Promise<void>;
+
+    /**
      * Creates a new foreign key.
      */
     createForeignKey(table: Table|string, foreignKey: TableForeignKey): Promise<void>;
 
     /**
-     * Creates a new foreign keys.
+     * Creates new foreign keys.
      */
     createForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>;
 
@@ -293,7 +334,7 @@ export interface QueryRunner {
     dropForeignKey(table: Table|string, foreignKeyOrName: TableForeignKey|string): Promise<void>;
 
     /**
-     * Drops a foreign keys.
+     * Drops foreign keys.
      */
     dropForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>;
 
@@ -303,7 +344,7 @@ export interface QueryRunner {
     createIndex(table: Table|string, index: TableIndex): Promise<void>;
 
     /**
-     * Creates a new indices.
+     * Creates new indices.
      */
     createIndices(table: Table|string, indices: TableIndex[]): Promise<void>;
 
@@ -313,7 +354,7 @@ export interface QueryRunner {
     dropIndex(table: Table|string, index: TableIndex|string): Promise<void>;
 
     /**
-     * Drops an indices.
+     * Drops indices.
      */
     dropIndices(table: Table|string, indices: TableIndex[]): Promise<void>;
 

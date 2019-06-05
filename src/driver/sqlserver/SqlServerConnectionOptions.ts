@@ -170,6 +170,11 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
         readonly camelCaseColumns?: boolean;
 
         /**
+         * A boolean, controlling whatever to disable RETURNING / OUTPUT statements.
+         */
+        readonly disableOutputReturning?: boolean;
+
+        /**
          * Debug options
          */
         readonly debug?: {
@@ -203,7 +208,7 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
          * The default isolation level that transactions will be run with. The isolation levels are available
          * from require('tedious').ISOLATION_LEVEL. (default: READ_COMMITTED).
          */
-        readonly isolationLevel?: "READ_UNCOMMITTED"|"READ_COMMITTED"|"REPEATABLE_READ"|"SERIALIZABLE"|"SNAPSHOT";
+        readonly isolation?: "READ_UNCOMMITTED"|"READ_COMMITTED"|"REPEATABLE_READ"|"SERIALIZABLE"|"SNAPSHOT";
 
         /**
          * The default isolation level for new connections. All out-of-transaction queries are executed with this

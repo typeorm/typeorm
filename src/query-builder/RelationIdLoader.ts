@@ -119,7 +119,7 @@ export class RelationIdLoader {
                 if (entityMatched) {
                     relatedEntities.forEach(relatedEntity => {
                         const relatedEntityMatched = columns.every(column => {
-                            return column.getEntityValue(relatedEntity) === relationId[column.entityMetadata.name + "_" + column.propertyPath.replace(".", "_")];
+                            return column.getEntityValue(relatedEntity) === relationId[column.entityMetadata.name + "_" + relation.propertyPath.replace(".", "_") + "_" + column.propertyPath.replace(".", "_")];
                         });
                         if (relatedEntityMatched) {
                             if (isMany) {
@@ -195,7 +195,7 @@ export class RelationIdLoader {
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName);
         });
         junctionMetadata.inverseColumns.forEach(column => {
-            const columnName = column.referencedColumn!.entityMetadata.name + "_" + column.referencedColumn!.propertyPath.replace(".", "_");
+            const columnName = column.referencedColumn!.entityMetadata.name + "_" + relation.propertyPath.replace(".", "_") + "_" + column.referencedColumn!.propertyPath.replace(".", "_");
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName);
         });
 
@@ -253,7 +253,7 @@ export class RelationIdLoader {
             qb.addSelect(mainAlias + "." + primaryColumn.propertyPath, columnName);
         });
         relation.joinColumns.forEach(column => {
-            const columnName = column.referencedColumn!.entityMetadata.name + "_" + column.referencedColumn!.propertyPath.replace(".", "_");
+            const columnName = column.referencedColumn!.entityMetadata.name + "_" + relation.propertyPath.replace(".", "_") + "_" + column.referencedColumn!.propertyPath.replace(".", "_");
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName);
         });
 
@@ -289,7 +289,7 @@ export class RelationIdLoader {
         // select all columns we need
         const qb = this.connection.createQueryBuilder();
         relation.entityMetadata.primaryColumns.forEach(primaryColumn => {
-            const columnName = primaryColumn.entityMetadata.name + "_" + primaryColumn.propertyPath.replace(".", "_");
+            const columnName = primaryColumn.entityMetadata.name + "_" + relation.inverseRelation!.propertyPath.replace(".", "_") + "_" + primaryColumn.propertyPath.replace(".", "_");
             qb.addSelect(mainAlias + "." + primaryColumn.propertyPath, columnName);
         });
         relation.joinColumns.forEach(column => {

@@ -36,8 +36,8 @@ describe("cascades > should insert by cascades from both sides (#57)", () => {
         });
 
         posts.should.be.eql([{
-            key: 1,
-            title: "Hello Post #1",
+            key: post1.key,
+            title: post1.title,
             details: {
                 keyword: "post-1"
             }

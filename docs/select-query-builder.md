@@ -73,7 +73,7 @@ There are several ways how you can create a `Query Builder`:
     
     const user = await getConnection()
         .createQueryBuilder()
-        .select()
+        .select("user")
         .from(User, "user")
         .where("user.id = :id", { id: 1 })
         .getOne();
@@ -110,7 +110,7 @@ There are 5 different `QueryBuilder` types available:
     
     const user = await getConnection()
         .createQueryBuilder()
-        .select()
+        .select("user")
         .from(User, "user")
         .where("user.id = :id", { id: 1 })
         .getOne();
@@ -220,7 +220,7 @@ We use aliases everywhere, except when we work with selected data.
 
 ```typescript
 createQueryBuilder()
-    .select()
+    .select("user")
     .from(User, "user")
 ```
 
@@ -235,7 +235,7 @@ Later we use this alias to access the table:
 
 ```typescript
 createQueryBuilder()
-    .select()
+    .select("user")
     .from(User, "user")
     .where("user.name = :name", { name: "Timber" })
 ```
@@ -272,6 +272,21 @@ is a shortcut for:
 ```typescript
 .where("user.name = :name")
 .setParameter("name", "Timber")
+```
+
+Note: do not use the same parameter name for different values across the query builder. Values will be overridden if you set them multiple times.
+
+You can also supply an array of values, and have them transformed into a list of values in the SQL
+statement, by using the special expansion syntax:
+
+```typescript
+.where("user.name IN (:...names)", { names: [ "Timber", "Cristal", "Lina" ] })
+```
+
+Which becomes:
+
+```sql
+WHERE user.name IN ('Timber', 'Cristal', 'Lina')
 ```
 
 ## Adding `WHERE` expression
@@ -315,6 +330,23 @@ Which will produce the following SQL query:
 
 ```sql
 SELECT ... FROM users user WHERE user.firstName = 'Timber' OR user.lastName = 'Saw'
+```
+
+You can add a complex `WHERE` expression into an existing `WHERE` using `Brackets`
+
+```typescript
+createQueryBuilder("user")
+    .where("user.registered = :registered", { registered: true })
+    .andWhere(new Brackets(qb => {
+        qb.where("user.firstName = :firstName", { firstName: "Timber" })
+          .orWhere("user.lastName = :lastName", { lastName: "Saw" })
+    }))
+```
+
+Which will produce the following SQL query:
+
+```sql
+SELECT ... FROM users user WHERE user.registered = true AND (user.firstName = 'Timber' OR user.lastName = 'Saw')
 ```
 
 You can combine as many `AND` and `OR` expressions as you need.
@@ -437,7 +469,7 @@ createQueryBuilder("user")
     .addGroupBy("user.id");
 ```
 
-If you use `.groupBy` more than once you'll override all previous `ORDER BY` expressions.
+If you use `.groupBy` more than once you'll override all previous `GROUP BY` expressions.
 
 ## Adding `LIMIT` expression
 
@@ -793,6 +825,15 @@ const users = await getRepository(User)
     .getMany();
 ```
 
+To use dirty read locking use the following method:
+
+```typescript
+const users = await getRepository(User)
+    .createQueryBuilder("user")
+    .setLock("dirty_read")
+    .getMany();
+```
+
 To use optimistic locking use the following method:
 
 ```typescript
@@ -915,7 +956,7 @@ const posts = await connection
 ```
 ## Hidden Columns
 
-If the model you are querying has a column with a `select: false` column, you must use the `addSelect` function in order to retreive the information from the column.
+If the model you are querying has a column with a `select: false` column, you must use the `addSelect` function in order to retrieve the information from the column.
 
 Let's say you have the following entity:
 
@@ -936,7 +977,7 @@ export class User {
 }
 ```
 
-Using a standard `find` or query, you will not recieve the `password` property for the model. However, if you do the following:
+Using a standard `find` or query, you will not receive the `password` property for the model. However, if you do the following:
 
 ```typescript
 const users = await connection.getRepository(User)

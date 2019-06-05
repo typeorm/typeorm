@@ -33,6 +33,13 @@ export interface MysqlConnectionOptions extends BaseConnectionOptions, MysqlConn
     readonly connectTimeout?: number;
 
     /**
+     * The milliseconds before a timeout doccurs during the initial connection to the MySQL server. (Default: 10000)
+     * This difference between connectTimeout and acquireTimeout is subtle and is described in the mysqljs/mysql docs
+     * https://github.com/mysqljs/mysql/tree/master#pool-options
+     */ 
+    readonly acquireTimeout?: number;
+
+    /**
      * Allow connecting to MySQL instances that ask for the old (insecure) authentication method. (Default: false)
      */
     readonly insecureAuth?: boolean;

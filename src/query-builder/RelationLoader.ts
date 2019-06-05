@@ -1,4 +1,4 @@
-import {Connection, ObjectLiteral} from "../";
+import {Connection, ObjectLiteral, QueryRunner} from "../";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
@@ -21,18 +21,19 @@ export class RelationLoader {
     /**
      * Loads relation data for the given entity and its relation.
      */
-    load(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[]): Promise<any[]> { // todo: check all places where it uses non array
+    load(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[], queryRunner?: QueryRunner): Promise<any[]> { // todo: check all places where it uses non array
+        if (queryRunner && queryRunner.isReleased) queryRunner = undefined; // get new one if already closed
         if (relation.isManyToOne || relation.isOneToOneOwner) {
-            return this.loadManyToOneOrOneToOneOwner(relation, entityOrEntities);
+            return this.loadManyToOneOrOneToOneOwner(relation, entityOrEntities, queryRunner);
 
         } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-            return this.loadOneToManyOrOneToOneNotOwner(relation, entityOrEntities);
+            return this.loadOneToManyOrOneToOneNotOwner(relation, entityOrEntities, queryRunner);
 
         } else if (relation.isManyToManyOwner) {
-            return this.loadManyToManyOwner(relation, entityOrEntities);
+            return this.loadManyToManyOwner(relation, entityOrEntities, queryRunner);
 
         } else { // many-to-many non owner
-            return this.loadManyToManyNotOwner(relation, entityOrEntities);
+            return this.loadManyToManyNotOwner(relation, entityOrEntities, queryRunner);
         }
     }
 
@@ -44,17 +45,17 @@ export class RelationLoader {
      * example: SELECT category.id AS category_id, category.name AS category_name FROM category category
      *              INNER JOIN post Post ON Post.category=category.id WHERE Post.id=1
      */
-    loadManyToOneOrOneToOneOwner(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[]): Promise<any> {
+    loadManyToOneOrOneToOneOwner(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[], queryRunner?: QueryRunner): Promise<any> {
         const entities = entityOrEntities instanceof Array ? entityOrEntities : [entityOrEntities];
         const columns = relation.entityMetadata.primaryColumns;
         const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation!.joinColumns;
         const conditions = joinColumns.map(joinColumn => {
-            return `${relation.entityMetadata.name}.${relation.propertyName} = ${relation.propertyName}.${joinColumn.referencedColumn!.propertyName}`;
+            return `${relation.entityMetadata.name}.${joinColumn.propertyName} = ${relation.propertyName}.${joinColumn.referencedColumn!.propertyName}`;
         }).join(" AND ");
 
         const joinAliasName = relation.entityMetadata.name;
         const qb = this.connection
-            .createQueryBuilder()
+            .createQueryBuilder(queryRunner)
             .select(relation.propertyName) // category
             .from(relation.type, relation.propertyName) // Category, category
             .innerJoin(relation.entityMetadata.target as Function, joinAliasName, conditions);
@@ -85,12 +86,12 @@ export class RelationLoader {
      * FROM post post
      * WHERE post.[joinColumn.name] = entity[joinColumn.referencedColumn]
      */
-    loadOneToManyOrOneToOneNotOwner(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[]): Promise<any> {
+    loadOneToManyOrOneToOneNotOwner(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[], queryRunner?: QueryRunner): Promise<any> {
         const entities = entityOrEntities instanceof Array ? entityOrEntities : [entityOrEntities];
         const aliasName = relation.propertyName;
         const columns = relation.inverseRelation!.joinColumns;
         const qb = this.connection
-            .createQueryBuilder()
+            .createQueryBuilder(queryRunner)
             .select(aliasName)
             .from(relation.inverseRelation!.entityMetadata.target, aliasName);
 
@@ -121,7 +122,7 @@ export class RelationLoader {
      * ON post_categories.postId = :postId
      * AND post_categories.categoryId = category.id
      */
-    loadManyToManyOwner(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[]): Promise<any> {
+    loadManyToManyOwner(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[], queryRunner?: QueryRunner): Promise<any> {
         const entities = entityOrEntities instanceof Array ? entityOrEntities : [entityOrEntities];
         const mainAlias = relation.propertyName;
         const joinAlias = relation.junctionEntityMetadata!.tableName;
@@ -137,7 +138,7 @@ export class RelationLoader {
         }, {} as ObjectLiteral);
 
         return this.connection
-            .createQueryBuilder()
+            .createQueryBuilder(queryRunner)
             .select(mainAlias)
             .from(relation.type, mainAlias)
             .innerJoin(joinAlias, joinAlias, [...joinColumnConditions, ...inverseJoinColumnConditions].join(" AND "))
@@ -154,7 +155,7 @@ export class RelationLoader {
      * ON post_categories.postId = post.id
      * AND post_categories.categoryId = post_categories.categoryId
      */
-    loadManyToManyNotOwner(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[]): Promise<any> {
+    loadManyToManyNotOwner(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[], queryRunner?: QueryRunner): Promise<any> {
         const entities = entityOrEntities instanceof Array ? entityOrEntities : [entityOrEntities];
         const mainAlias = relation.propertyName;
         const joinAlias = relation.junctionEntityMetadata!.tableName;
@@ -170,7 +171,7 @@ export class RelationLoader {
         }, {} as ObjectLiteral);
 
         return this.connection
-            .createQueryBuilder()
+            .createQueryBuilder(queryRunner)
             .select(mainAlias)
             .from(relation.type, mainAlias)
             .innerJoin(joinAlias, joinAlias, [...joinColumnConditions, ...inverseJoinColumnConditions].join(" AND "))
@@ -182,7 +183,7 @@ export class RelationLoader {
      * Wraps given entity and creates getters/setters for its given relation
      * to be able to lazily load data when accessing this relation.
      */
-    enableLazyLoad(relation: RelationMetadata, entity: ObjectLiteral) {
+    enableLazyLoad(relation: RelationMetadata, entity: ObjectLiteral, queryRunner?: QueryRunner) {
         const relationLoader = this;
         const dataIndex = "__" + relation.propertyName + "__"; // in what property of the entity loaded data will be stored
         const promiseIndex = "__promise_" + relation.propertyName + "__"; // in what property of the entity loading promise will be stored
@@ -190,14 +191,14 @@ export class RelationLoader {
 
         Object.defineProperty(entity, relation.propertyName, {
             get: function() {
-                if (this[resolveIndex] === true) // if related data already was loaded then simply return it
+                if (this[resolveIndex] === true || this[dataIndex] !== undefined) // if related data already was loaded then simply return it
                     return Promise.resolve(this[dataIndex]);
 
                 if (this[promiseIndex]) // if related data is loading then return a promise relationLoader loads it
                     return this[promiseIndex];
 
                 // nothing is loaded yet, load relation data and save it in the model once they are loaded
-                this[promiseIndex] = relationLoader.load(relation, this).then(result => {
+                this[promiseIndex] = relationLoader.load(relation, this, queryRunner).then(result => {
                     if (relation.isOneToOne || relation.isManyToOne) result = result[0];
                     this[dataIndex] = result;
                     this[resolveIndex] = true;

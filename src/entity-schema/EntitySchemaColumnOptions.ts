@@ -1,7 +1,8 @@
 import {ColumnType} from "../driver/types/ColumnTypes";
 import {ValueTransformer} from "../decorator/options/ValueTransformer";
+import { SpatialColumnOptions } from "../decorator/options/SpatialColumnOptions";
 
-export interface EntitySchemaColumnOptions {
+export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
 
     /**
      * Indicates if this column is a primary column.
@@ -69,8 +70,19 @@ export interface EntitySchemaColumnOptions {
      * Indicates if column value is not updated by "save" operation.
      * It means you'll be able to write this value only when you first time insert the object.
      * Default value is "false".
+     *
+     * @deprecated Please use the `update` option instead.  Careful, it takes
+     * the opposite value to readonly.
+     *
      */
     readonly?: boolean;
+
+    /**
+     * Indicates if column value is updated by "save" operation.
+     * If false you'll be able to write this value only when you first time insert the object.
+     * Default value is "true".
+     */
+    update?: boolean;
 
     /**
      * Indicates if column is always selected by QueryBuilder and find operations.
@@ -79,9 +91,15 @@ export interface EntitySchemaColumnOptions {
     select?: boolean;
 
     /**
+     * Indicates if column is inserted by default.
+     * Default value is "true".
+     */
+    insert?: boolean;
+
+    /**
      * Specifies if this column will use AUTO_INCREMENT or not (e.g. generated number).
      */
-    generated?: true|"increment"|"uuid";
+    generated?: true|"increment"|"uuid"|"rowid";
 
     /**
      * Specifies if column's value must be unique or not.
@@ -175,6 +193,6 @@ export interface EntitySchemaColumnOptions {
      * Specifies a value transformer that is to be used to (un)marshal
      * this column when reading or writing to the database.
      */
-    transformer?: ValueTransformer;
+    transformer?: ValueTransformer|ValueTransformer[];
 
 }

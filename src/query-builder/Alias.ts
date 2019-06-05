@@ -1,4 +1,5 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import { ObjectUtils } from "../util/ObjectUtils";
 
 /**
  */
@@ -20,7 +21,7 @@ export class Alias {
     subQuery?: string;
 
     constructor(alias?: Alias) {
-        Object.assign(this, alias || {});
+        ObjectUtils.assign(this, alias || {});
     }
 
     private _metadata?: EntityMetadata;

@@ -1,4 +1,4 @@
-import {ObjectLiteral} from "../common/ObjectLiteral";
+import { ObjectLiteral } from "../common/ObjectLiteral";
 
 export class OrmUtils {
 
@@ -15,7 +15,7 @@ export class OrmUtils {
         });
     }
 
-    static splitClassesAndStrings<T>(clsesAndStrings: (string|T)[]): [T[], string[]] {
+    static splitClassesAndStrings<T>(clsesAndStrings: (string | T)[]): [T[], string[]] {
         return [
             (clsesAndStrings).filter((cls): cls is T => typeof cls !== "string"),
             (clsesAndStrings).filter((str): str is string => typeof str === "string"),
@@ -37,7 +37,7 @@ export class OrmUtils {
 
     static uniq<T>(array: T[], criteria?: (item: T) => any): T[];
     static uniq<T, K extends keyof T>(array: T[], property: K): T[];
-    static uniq<T, K extends keyof T>(array: T[], criteriaOrProperty?: ((item: T) => any)|K): T[] {
+    static uniq<T, K extends keyof T>(array: T[], criteriaOrProperty?: ((item: T) => any) | K): T[] {
         return array.reduce((uniqueArray, item) => {
             let found: boolean = false;
             if (criteriaOrProperty instanceof Function) {
@@ -81,8 +81,12 @@ export class OrmUtils {
                 //     propertyKey = "__" + key + "__";
                 // }
 
-                if (this.isObject(source[propertyKey]) && !(source[propertyKey] instanceof Date) && !(source[propertyKey] instanceof Buffer)) {
-                    if (!target[key]) Object.assign(target, { [key]: {} });
+                if (this.isObject(source[propertyKey])
+                    && !(source[propertyKey] instanceof Map)
+                    && !(source[propertyKey] instanceof Set)
+                    && !(source[propertyKey] instanceof Date)
+                    && !(source[propertyKey] instanceof Buffer)) {
+                    if (!target[key]) Object.assign(target, { [key]: Object.create(Object.getPrototypeOf(source[propertyKey])) });
                     this.mergeDeep(target[key], source[propertyKey]);
                 } else {
                     Object.assign(target, { [key]: source[propertyKey] });
@@ -173,7 +177,14 @@ export class OrmUtils {
         if (x === y)
             return true;
 
-        if (x.equals instanceof Function && x.equals(y))
+        // Unequal, but either is null or undefined (use case: jsonb comparasion)
+        // PR #3776, todo: add tests
+        if (x === null || y === null || x === undefined || y === undefined)
+          return false;
+
+        // Fix the buffer compare bug.
+        // See: https://github.com/typeorm/typeorm/issues/3654
+        if ((typeof x.equals === "function" || x.equals instanceof Function) && x.equals(y))
             return true;
 
         // Works in case when functions are created in constructor.

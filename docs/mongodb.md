@@ -202,7 +202,6 @@ Both `MongoEntityManager` and `MongoRepository` contain lot of useful MongoDB-sp
 
 Creates a cursor for a query that can be used to iterate over results from MongoDB.
 
-
 #### `createEntityCursor`
 
 Creates a cursor for a query that can be used to iterate over results from MongoDB.
@@ -211,7 +210,6 @@ This returns a modified version of the cursor that transforms each result into E
 #### `aggregate`
 
 Execute an aggregation framework pipeline against the collection.
-
 
 #### `bulkWrite`
 
@@ -228,34 +226,35 @@ Creates an index on the db and collection.
 #### `createCollectionIndexes`
 
 Creates multiple indexes in the collection, this method is only supported in MongoDB 2.6 or higher.
+Earlier version of MongoDB will throw a command not supported error. Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
 
 #### `deleteMany`
 
-Earlier version of MongoDB will throw a command not supported error.
+Delete multiple documents on MongoDB.
 
 #### `deleteOne`
 
-Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
+Delete a document on MongoDB.
 
 #### `distinct`
 
-Delete multiple documents on MongoDB.
+The distinct command returns returns a list of distinct values for the given key across a collection.
 
 #### `dropCollectionIndex`
 
-Delete a document on MongoDB.
+Drops an index from this collection.
 
 #### `dropCollectionIndexes`
 
-The distinct command returns returns a list of distinct values for the given key across a collection.
+Drops all indexes from the collection.
 
 #### `findOneAndDelete`
 
-Drops an index from this collection.
+Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
 
 #### `findOneAndReplace`
 
-Drops all indexes from the collection.
+Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
 
 #### `findOneAndUpdate`
 
@@ -263,81 +262,81 @@ Find a document and update it in one atomic operation, requires a write lock for
 
 #### `geoHaystackSearch`
 
-Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
+Execute a geo search using a geo haystack index on a collection.
 
 #### `geoNear`
 
-Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
+Execute the geoNear command to search for items in the collection.
 
 #### `group`
 
-Execute a geo search using a geo haystack index on a collection.
+Run a group command across a collection.
 
 #### `collectionIndexes`
 
-Execute the geoNear command to search for items in the collection.
+Retrieve all the indexes on the collection.
 
 #### `collectionIndexExists`
 
-Run a group command across a collection.
+Retrieve if an index exists on the collection
 
 #### `collectionIndexInformation`
 
-Retrieve all the indexes on the collection.
+Retrieves this collections index info.
 
 #### `initializeOrderedBulkOp`
 
-Retrieve all the indexes on the collection.
+Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
 
 #### `initializeUnorderedBulkOp`
 
-Retrieves this collections index info.
+Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
 
 #### `insertMany`
 
-Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
+Inserts an array of documents into MongoDB.
 
 #### `insertOne`
 
-Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
+Inserts a single document into MongoDB.
 
 #### `isCapped`
 
-Inserts an array of documents into MongoDB.
+Returns if the collection is a capped collection.
 
 #### `listCollectionIndexes`
 
-Inserts a single document into MongoDB.
+Get the list of all indexes information for the collection.
 
 #### `mapReduce`
 
-Returns if the collection is a capped collection.
+Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
 
 #### `parallelCollectionScan`
 
-Get the list of all indexes information for the collection.
+Return N number of parallel cursors for a collection allowing parallel reading of entire collection. There are no ordering guarantees for returned results
 
 #### `reIndex`
 
-Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
+Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
 
 #### `rename`
 
-Return N number of parallel cursors for a collection allowing parallel reading of entire collection.
+Changes the name of an existing collection.
 
 #### `replaceOne`
 
-There are no ordering guarantees for returned results.
+Replace a document on MongoDB.
 
 #### `stats`
 
-Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
+Get all the collection statistics.
 
 #### `updateMany`
 
-Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
+Updates multiple documents within the collection based on the filter.
 
 #### `updateOne`
 
-Replace a document on MongoDB.
+Updates a single document within the collection based on the filter.
 

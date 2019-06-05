@@ -42,7 +42,7 @@ export class User {
 }
 ```
 
-Here we added `@ManyToOne` to the `photos` property and specified the target relation type to be `Photo`.
+Here we added `@OneToMany` to the `photos` property and specified the target relation type to be `Photo`.
 You can omit `@JoinColumn` in a `@ManyToOne` / `@OneToMany` relation.
 `@OneToMany` cannot exist without `@ManyToOne`.
 If you want to use `@OneToMany`, `@ManyToOne` is required.
@@ -79,6 +79,7 @@ photo2.url = "me-and-bears.jpg";
 await connection.manager.save(photo2);
 
 const user = new User();
+user.name = "John";
 user.photos = [photo1, photo2];
 await connection.manager.save(user);
 ```
@@ -87,6 +88,7 @@ or alternative you can do:
 
 ```typescript
 const user = new User();
+user.name = "Leo";
 await connection.manager.save(user);
 
 const photo1 = new Photo();

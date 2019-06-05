@@ -15,17 +15,23 @@ export interface UseContainerOptions {
 
 }
 
+export type ContainedType<T> = { new (...args: any[]): T } | Function;
+
+export interface ContainerInterface {
+    get<T>(someClass: ContainedType<T>): T;
+}
+
 /**
  * Container to be used by this library for inversion control. If container was not implicitly set then by default
  * container simply creates a new instance of the given class.
  */
-export const defaultContainer: { get<T>(someClass: { new (...args: any[]): T }|Function): T } = new (class {
+const defaultContainer: ContainerInterface = new (class implements ContainerInterface {
     private instances: { type: Function, object: any }[] = [];
 
-    get<T>(someClass: { new (...args: any[]): T }): T {
-        let instance = this.instances.find(instance => instance.type === someClass);
+    get<T>(someClass: ContainedType<T>): T {
+        let instance = this.instances.find(i => i.type === someClass);
         if (!instance) {
-            instance = { type: someClass, object: new someClass() };
+            instance = { type: someClass, object: new (someClass as new() => T)()};
             this.instances.push(instance);
         }
 
@@ -33,13 +39,13 @@ export const defaultContainer: { get<T>(someClass: { new (...args: any[]): T }|F
     }
 })();
 
-let userContainer: { get<T>(someClass: { new (...args: any[]): T }|Function): T };
+let userContainer: ContainerInterface;
 let userContainerOptions: UseContainerOptions|undefined;
 
 /**
  * Sets container to be used by this library.
  */
-export function useContainer(iocContainer: { get(someClass: any): any }, options?: UseContainerOptions) {
+export function useContainer(iocContainer: ContainerInterface, options?: UseContainerOptions) {
     userContainer = iocContainer;
     userContainerOptions = options;
 }
@@ -47,7 +53,7 @@ export function useContainer(iocContainer: { get(someClass: any): any }, options
 /**
  * Gets the IOC container used by this library.
  */
-export function getFromContainer<T>(someClass: { new (...args: any[]): T }|Function): T {
+export function getFromContainer<T>(someClass: ContainedType<T>): T {
     if (userContainer) {
         try {
             const instance = userContainer.get(someClass);

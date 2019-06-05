@@ -53,13 +53,12 @@ describe.skip("github issues > #1581 Composite key breaks OneToMany relation", (
         item1.amount = 3;
         await connection.manager.save(item1);
 
-        const orders2 = await connection.manager
+        await connection.manager
             .createQueryBuilder(Order, "order")
             .leftJoinAndSelect("order.deliverySlot", "deliverySlot")
             .leftJoinAndSelect("order.user", "user")
             .leftJoinAndSelect("order.items", "items")
             .getMany();
-        console.log(orders2);
 
         // const orders = await connection.manager.getRepository(RecurringOrder).find({ relations: ["items"] });
         // console.log(orders);

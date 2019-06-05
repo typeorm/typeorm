@@ -3,6 +3,8 @@
 * [Column indices](#column-indices)
 * [Unique indices](#unique-indices)
 * [Indices with multiple columns](#indices-with-multiple-columns)
+* [Spatial Indices](#spatial-indices)
+* [Disabling synchronization](#disabling-synchronization)
 
 ## Column indices
 
@@ -54,6 +56,8 @@ export class User {
 
 To create an unique index you need to specify `{ unique: true }` in the index options:
 
+> Note: CockroachDB stores unique indices as `UNIQUE` constraints
+
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
 
@@ -84,8 +88,7 @@ import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
 
 @Entity()
 @Index(["firstName", "lastName"])
-@Index(["lastName", "middleName"])
-@Index(["firstName", "lastName", "middleName"], { unique: true })
+@Index(["firstName", "middleName", "lastName"], { unique: true })
 export class User {
     
     @PrimaryGeneratedColumn()
@@ -93,12 +96,45 @@ export class User {
     
     @Column()
     firstName: string;
-    
-    @Column()
-    lastName: string;
-    
+
     @Column()
     middleName: string;
+
+    @Column()
+    lastName: string;
+
+}
+```
+
+## Spatial Indices
+
+MySQL and PostgreSQL (when PostGIS is available) both support spatial indices.
+
+To create a spatial index on a column in MySQL, add an `Index` with `spatial:
+true` on a column that uses a spatial type (`geometry`, `point`, `linestring`,
+`polygon`, `multipoint`, `multilinestring`, `multipolygon`,
+`geometrycollection`):
+
+```typescript
+@Entity()
+export class Thing {
+    @Column("point")
+    @Index({ spatial: true })
+    point: string;
+}
+```
+
+To create a spatial index on a column in PostgreSQL, add an `Index` with `spatial: true` on a column that uses a spatial type (`geometry`, `geography`):
+
+```typescript
+@Entity()
+export class Thing {
+    @Column("geometry", {
+      spatialFeatureType: "Point",
+      srid: 4326
+    })
+    @Index({ spatial: true })
+    point: Geometry;
 }
 ```
 

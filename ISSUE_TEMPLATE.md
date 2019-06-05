@@ -13,9 +13,11 @@
 [ ] `mysql` / `mariadb`
 [ ] `oracle`
 [ ] `postgres`
+[ ] `cockroachdb`
 [ ] `sqlite`
 [ ] `sqljs`
 [ ] `react-native`
+[ ] `expo`
 
 **TypeORM version:**
 

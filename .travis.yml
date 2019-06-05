@@ -1,9 +1,10 @@
-sudo: required
 language: node_js
 node_js:
-  - stable
+#  - stable
+  - 10
+  - 9
+  - 8
 #  - 6
-#  - 5
 #  - 4
 #  - 0.12
 #  - 0.11
@@ -15,10 +16,11 @@ before_script:
   - sudo service mysql stop
   - sudo service postgresql stop
   - docker-compose up -d
-  - npm run setup:config
+  - cp ormconfig.travis.json ormconfig.json
 
 script:
-  - npm run test-ci
+  - npm run lint
+  - npx nyc npm test
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

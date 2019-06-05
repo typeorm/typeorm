@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {setupSingleTestingConnection} from "../../utils/test-utils";
-import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {ConnectionManager} from "../../../src/connection/ConnectionManager";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {PrimaryGeneratedColumn} from "../../../src/decorator/columns/PrimaryGeneratedColumn";
@@ -29,10 +28,12 @@ describe("ConnectionManager", () => {
 
         it("should create a mysql connection when mysql driver is specified", () => {
 
-            const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "default",
                 entities: []
             });
+            if (!options)
+                return;
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
             connection.name.should.be.equal("default");
@@ -87,10 +88,12 @@ describe("ConnectionManager", () => {
     describe("get", function() {
 
         it("should give connection with a requested name", () => {
-            const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "myMysqlConnection",
                 entities: []
             });
+            if (!options)
+                return;
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
             connection.driver.should.be.instanceOf(MysqlDriver);
@@ -98,10 +101,12 @@ describe("ConnectionManager", () => {
         });
 
         it("should throw an error if connection with the given name was not found", () => {
-            const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "myMysqlConnection",
                 entities: []
             });
+            if (!options)
+                return;
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
             connection.driver.should.be.instanceOf(MysqlDriver);
@@ -113,11 +118,14 @@ describe("ConnectionManager", () => {
     describe("create connection options", function() {
 
         it("should not drop the database if dropSchema was not specified", async () => {
-            const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "myMysqlConnection",
                 schemaCreate: true,
                 entities: [Post]
             });
+            if (!options)
+                return;
+
             const connectionManager = new ConnectionManager();
 
             // create connection, save post and close connection
@@ -135,12 +143,15 @@ describe("ConnectionManager", () => {
         });
 
         it("should drop the database if dropSchema was set to true (mysql)", async () => {
-            const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "myMysqlConnection",
                 schemaCreate: true,
                 dropSchema: true,
                 entities: [Post]
             });
+            if (!options)
+                return;
+
             const connectionManager = new ConnectionManager();
 
             // create connection, save post and close connection

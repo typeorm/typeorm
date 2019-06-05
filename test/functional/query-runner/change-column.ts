@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 
@@ -17,6 +18,10 @@ describe("query runner > change column", () => {
     after(() => closeTestingConnections(connections));
 
     it("should correctly change column and revert change", () => Promise.all(connections.map(async connection => {
+
+        // CockroachDB does not allow changing primary columns and renaming constraints
+        if (connection.driver instanceof CockroachDriver)
+            return;
 
         const queryRunner = connection.createQueryRunner();
         let table = await queryRunner.getTable("post");
@@ -75,6 +80,10 @@ describe("query runner > change column", () => {
     })));
 
     it("should correctly change column 'isGenerated' property and revert change", () => Promise.all(connections.map(async connection => {
+
+        // CockroachDB does not allow changing generated columns in existent tables
+        if (connection.driver instanceof CockroachDriver)
+            return;
 
         const queryRunner = connection.createQueryRunner();
         let table = await queryRunner.getTable("post");

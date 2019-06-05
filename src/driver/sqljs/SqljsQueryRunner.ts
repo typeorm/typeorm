@@ -49,8 +49,9 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             const databaseConnection = this.driver.databaseConnection;
             this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
+            let statement: any;
             try {
-                const statement = databaseConnection.prepare(query);
+                statement = databaseConnection.prepare(query);
                 statement.bind(parameters);
                 
                 // log slow queries if maxQueryExecution time is set
@@ -70,6 +71,10 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 ok(result);
             }
             catch (e) {
+                if (statement) {
+                    statement.free();
+                }
+
                 this.driver.connection.logger.logQueryError(e, query, parameters, this);
                 fail(new QueryFailedError(query, parameters, e));
             }

@@ -3,6 +3,11 @@ import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {ConnectionOptionsReader} from "../../../src/connection/ConnectionOptionsReader";
 
 describe("ConnectionOptionsReader", () => {
+  after(() => {
+    delete process.env.TYPEORM_CONNECTION;
+    delete process.env.TYPEORM_DATABASE;
+  });
+
   it("properly loads config with entities specified", async () => {
     type EntititesList = Function[] | string[];
     const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/class-entities" });
@@ -20,4 +25,17 @@ describe("ConnectionOptionsReader", () => {
     expect(fileOptions.database).to.have.string("/test");
   });
 
+  it("properly loads config with specified file path", async () => {
+    const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/test-path-config.js" });
+    const fileOptions: ConnectionOptions = await connectionOptionsReader.get("file");
+    expect(fileOptions.database).to.have.string("/test-js");
+  });
+
+  // TODO This test requires the configs/.env file be moved to the matching directory in build/compiled
+  it.skip("properly loads config from .env file", async () => {
+    const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/.env" });
+    const [ fileOptions ]: ConnectionOptions[] = await connectionOptionsReader.all();
+    expect(fileOptions.database).to.have.string("test-js");
+    expect(process.env.TYPEORM_DATABASE).to.equal("test-js");
+  });
 });

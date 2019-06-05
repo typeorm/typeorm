@@ -16,7 +16,12 @@ export class PlatformTools {
      * Gets global variable where global stuff can be stored.
      */
     static getGlobalVariable(): any {
-        return window;
+        if (typeof window !== "undefined") {
+            return window
+        } else {
+            // NativeScript uses global, not window
+            return global
+        }
     }
 
     /**
@@ -154,4 +159,10 @@ interface Window {
 }
 
 declare var window: Window;
-window.Buffer = require("buffer/").Buffer;
+if (typeof window !== "undefined") {
+    window.Buffer = require("buffer/").Buffer;
+}
+// NativeScript uses global, not window
+if (typeof global !== "undefined") {
+    global.Buffer = require("buffer/").Buffer;
+}

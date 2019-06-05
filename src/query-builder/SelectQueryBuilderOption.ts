@@ -1,1 +1,1 @@
-export type SelectQueryBuilderOption = "disable-global-order";
+export type SelectQueryBuilderOption = "disable-global-order"|"create-pojo";

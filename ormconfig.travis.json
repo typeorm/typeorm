@@ -42,7 +42,7 @@
     "type": "sqljs"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",
@@ -62,9 +62,20 @@
   },
   {
     "skip": false,
+    "name": "cockroachdb",
+    "type": "cockroachdb",
+    "host": "localhost",
+    "port": 26257,
+    "username": "root",
+    "password": "",
+    "database": "defaultdb"
+  },
+  {
+    "skip": false,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
-    "database": "test"
+    "database": "test",
+    "useNewUrlParser": true
   }
 ]

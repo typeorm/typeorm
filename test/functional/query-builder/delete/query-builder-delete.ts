@@ -6,7 +6,7 @@ import {User} from "./entity/User";
 import {Photo} from "./entity/Photo";
 
 describe("query builder > delete", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -90,6 +90,27 @@ describe("query builder > delete", () => {
 
         const loadedPhoto4 = await connection.getRepository(Photo).findOne({ url: "3.jpg" });
         expect(loadedPhoto4).to.exist;
+    })));
+
+    it("should return correct delete result", () => Promise.all(connections.map(async connection => {
+
+        // don't run test for sqlite and sqljs as they don't return affected rows
+        if (connection.name === "sqlite" || connection.name === "sqljs")
+            return;
+
+        // save some users
+        const user1 = new User();
+        user1.name = "John Doe";
+        const user2 = new User();
+        user2.name = "Jane Doe";
+        await connection.manager.save([user1, user2]);
+
+        const result = await connection.createQueryBuilder()
+            .delete()
+            .from(User)
+            .execute();
+
+        expect(result.affected).to.equal(2);
     })));
 
 });

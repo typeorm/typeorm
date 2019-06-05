@@ -66,9 +66,9 @@ describe("basic-lazy-relations", () => {
 
         const categories = await post.categories;
         categories.length.should.be.equal(3);
-        categories.should.contain({ id: 1, name: "kids" });
-        categories.should.contain({ id: 2, name: "people" });
-        categories.should.contain({ id: 3, name: "animals" });
+        categories.should.deep.include({ id: 1, name: "kids" });
+        categories.should.deep.include({ id: 2, name: "people" });
+        categories.should.deep.include({ id: 3, name: "animals" });
     })));
 
 
@@ -104,9 +104,9 @@ describe("basic-lazy-relations", () => {
 
         const categories = await post.twoSideCategories;
         categories.length.should.be.equal(3);
-        categories.should.contain({ id: 1, name: "kids" });
-        categories.should.contain({ id: 2, name: "people" });
-        categories.should.contain({ id: 3, name: "animals" });
+        categories.should.deep.include({ id: 1, name: "kids" });
+        categories.should.deep.include({ id: 2, name: "people" });
+        categories.should.deep.include({ id: 3, name: "animals" });
 
         const category = (await categoryRepository.findOne(1))!;
         category.name.should.be.equal("kids");
@@ -117,7 +117,7 @@ describe("basic-lazy-relations", () => {
         likePost.id = 1;
         likePost.title = "Hello post";
         likePost.text = "This is post about post";
-        twoSidePosts.should.contain(likePost);
+        twoSidePosts.should.deep.include(likePost);
     })));
 
     it("should persist and hydrate successfully on a one-to-one relation with inverse side loaded from entity schema", () => Promise.all(connections.map(async connection => {
@@ -326,4 +326,39 @@ describe("basic-lazy-relations", () => {
         loadedPost.title.should.be.equal("post with great category");
     })));
 
+    it("should successfully load relations within a transaction", () => Promise.all(connections.filter((connection) => (new Set(["mysql", "sqlite", "postgres"])).has(connection.options.type)).map(async connection => {
+        await connection.manager.transaction(async (manager) => {
+            const category = new Category();
+            category.name = "category of great post";
+            await manager.save(category);
+    
+            const post = new Post();
+            post.title = "post with great category";
+            post.text = "post with great category and great text";
+            post.oneCategory = Promise.resolve(category);
+            await manager.save(post);
+
+            const loadedCategory = await manager.findOne(Category, { where: { name: "category of great post" } });
+            const loadedPost = await loadedCategory!.onePost;
+            loadedPost.title.should.be.equal("post with great category");
+        });
+    })));
+
+    it("should successfully load relations outside a transaction with entity generated within a transaction", () => Promise.all(connections.filter((connection) => (new Set(["mysql", "sqlite", "postgres"])).has(connection.options.type)).map(async connection => {
+        const loadedCategory = await connection.manager.transaction(async (manager) => {
+            const category = new Category();
+            category.name = "category of great post";
+            await manager.save(category);
+    
+            const post = new Post();
+            post.title = "post with great category";
+            post.text = "post with great category and great text";
+            post.oneCategory = Promise.resolve(category);
+            await manager.save(post);
+
+            return await manager.findOne(Category, { where: { name: "category of great post" } });
+        });
+        const loadedPost = await loadedCategory!.onePost;
+        loadedPost.title.should.be.equal("post with great category");
+    })));
 });

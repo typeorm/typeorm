@@ -1,5 +1,5 @@
 /**
- * Special options passed to Repository#persist method.
+ * Special options passed to Repository#save, Repository#insert and Repository#update methods.
  */
 export interface SaveOptions {
 
@@ -11,7 +11,7 @@ export interface SaveOptions {
 
     /**
      * Indicates if listeners and subscribers are called for this operation.
-     * By default they are enabled, you can disable them by setting { listeners: true } in save/remove options.
+     * By default they are enabled, you can disable them by setting { listeners: false } in save/remove options.
      */
     listeners?: boolean;
 

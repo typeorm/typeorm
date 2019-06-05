@@ -15,7 +15,7 @@ services:
 
   # mysql
   mysql:
-    image: "mysql:5.7.10"
+    image: "mysql:5.7.24"
     container_name: "typeorm-mysql"
     ports:
       - "3306:3306"
@@ -27,7 +27,7 @@ services:
 
   # mariadb
   mariadb:
-    image: "mariadb:10.1.16"
+    image: "mariadb:10.1.37"
     container_name: "typeorm-mariadb"
     ports:
       - "3307:3306"
@@ -39,7 +39,10 @@ services:
 
   # postgres
   postgres:
-    image: "postgres:9.6.1"
+    # mdillon/postgis is postgres + PostGIS (only). if you need additional
+    # extensions, it's probably time to create a purpose-built image with all
+    # necessary extensions. sorry, and thanks for adding support for them!
+    image: "mdillon/postgis:9.6"
     container_name: "typeorm-postgres"
     ports:
       - "5432:5432"
@@ -50,7 +53,7 @@ services:
 
   # mssql
   mssql:
-    image: "microsoft/mssql-server-linux:2017-GA"
+    image: "mcr.microsoft.com/mssql/server:2017-GA-ubuntu"
     container_name: "typeorm-mssql"
     ports:
       - "1433:1433"
@@ -58,9 +61,17 @@ services:
       SA_PASSWORD: "Admin12345"
       ACCEPT_EULA: "Y"
 
+  # cockroachdb
+  cockroachdb:
+    image: "cockroachdb/cockroach-unstable:v19.1.0-rc.2"
+    container_name: "typeorm-cockroachdb"
+    command: start --insecure
+    ports:
+      - "26257:26257"
+
   # mongodb
   mongodb:
-    image: "mongo:3.4.1"
+    image: "mongo:3.4.18"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"

@@ -43,7 +43,7 @@ export class ReturningResultsEntityUpdator {
                 const result = updateResult.raw instanceof Array ? updateResult.raw[entityIndex] : updateResult.raw;
                 const returningColumns = this.queryRunner.connection.driver.createGeneratedMap(metadata, result);
                 if (returningColumns) {
-                    this.queryRunner.manager.merge(metadata.target, entity, returningColumns);
+                    this.queryRunner.manager.merge(metadata.target as any, entity, returningColumns);
                     updateResult.generatedMaps.push(returningColumns);
                 }
 
@@ -65,10 +65,11 @@ export class ReturningResultsEntityUpdator {
                         .addSelect(this.getUpdationReturningColumns().map(column => metadata.targetName + "." + column.propertyPath))
                         .from(metadata.target, metadata.targetName)
                         .where(entityId)
+                        .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties maight be overridden by merge process
                         .getOne();
 
                     if (loadedReturningColumns) {
-                        this.queryRunner.manager.merge(metadata.target, entity, loadedReturningColumns);
+                        this.queryRunner.manager.merge(metadata.target as any, entity, loadedReturningColumns);
                         updateResult.generatedMaps.push(loadedReturningColumns);
                     }
                 }
@@ -109,7 +110,7 @@ export class ReturningResultsEntityUpdator {
                 });
             }
 
-            this.queryRunner.manager.merge(metadata.target, entity, generatedMap); // todo: this should not be here, but problem with below line
+            this.queryRunner.manager.merge(metadata.target as any, entity, generatedMap); // todo: this should not be here, but problem with below line
             return generatedMap;
         });
 
@@ -131,9 +132,10 @@ export class ReturningResultsEntityUpdator {
                     .addSelect(insertionColumns.map(column => metadata.targetName + "." + column.propertyPath))
                     .from(metadata.target, metadata.targetName)
                     .where(entityId)
+                    .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties maight be overridden by merge process
                     .getOne();
 
-                this.queryRunner.manager.merge(metadata.target, generatedMaps[entityIndex], returningResult);
+                this.queryRunner.manager.merge(metadata.target as any, generatedMaps[entityIndex], returningResult);
             }));
         }
 
@@ -141,7 +143,7 @@ export class ReturningResultsEntityUpdator {
             const entityId = metadata.getEntityIdMap(entity)!;
             insertResult.identifiers.push(entityId);
             insertResult.generatedMaps.push(generatedMaps[entityIndex]);
-            this.queryRunner.manager.merge(this.expressionMap.mainAlias!.metadata.target, entity, generatedMaps[entityIndex], generatedMaps[entityIndex]); // todo: why twice?!
+            this.queryRunner.manager.merge(this.expressionMap.mainAlias!.metadata.target as any, entity, generatedMaps[entityIndex], generatedMaps[entityIndex]); // todo: why twice?!
         });
     }
 

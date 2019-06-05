@@ -5,6 +5,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 import {DateUtils} from "../../../../../src/util/DateUtils";
+import {FruitEnum} from "./enum/FruitEnum";
 
 describe("database schema > column types > mssql", () => { // https://github.com/tediousjs/tedious/issues/722
 
@@ -66,6 +67,8 @@ describe("database schema > column types > mssql", () => { // https://github.com
         post.geometry3 = "GEOMETRYCOLLECTION (POINT (4 0), LINESTRING (4 2, 5 3), POLYGON ((0 0, 3 0, 3 3, 0 3, 0 0), (1 1, 1 2, 2 2, 2 1, 1 1)))";
         post.simpleArray = ["A", "B", "C"];
         post.simpleJson = { param: "VALUE" };
+        post.simpleEnum = "A";
+        post.simpleClassEnum1 = FruitEnum.Apple;
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;
@@ -93,6 +96,8 @@ describe("database schema > column types > mssql", () => { // https://github.com
         loadedPost.binary.toString().should.be.equal(post.binary.toString());
         loadedPost.varbinary.toString().should.be.equal(post.varbinary.toString());
         loadedPost.image.toString().should.be.equal(post.image.toString());
+        loadedPost.rowversion.should.not.be.null;
+        loadedPost.rowversion.should.not.be.undefined;
         loadedPost.dateObj.should.be.equal(DateUtils.mixedDateToDateString(post.dateObj));
         loadedPost.date.should.be.equal(post.date);
         // commented because mssql inserted milliseconds are not always equal to what we say it to insert
@@ -110,6 +115,8 @@ describe("database schema > column types > mssql", () => { // https://github.com
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
         loadedPost.simpleJson.param.should.be.equal(post.simpleJson.param);
+        loadedPost.simpleEnum.should.be.equal(post.simpleEnum);
+        loadedPost.simpleClassEnum1.should.be.equal(post.simpleClassEnum1);
 
         table!.findColumnByName("id")!.type.should.be.equal("int");
         table!.findColumnByName("name")!.type.should.be.equal("nvarchar");
@@ -135,6 +142,8 @@ describe("database schema > column types > mssql", () => { // https://github.com
         table!.findColumnByName("binary")!.type.should.be.equal("binary");
         table!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
         table!.findColumnByName("image")!.type.should.be.equal("image");
+        // the rowversion type's name in SQL server metadata is timestamp
+        table!.findColumnByName("rowversion")!.type.should.be.equal("timestamp");
         table!.findColumnByName("date")!.type.should.be.equal("date");
         table!.findColumnByName("dateObj")!.type.should.be.equal("date");
         table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
@@ -146,6 +155,14 @@ describe("database schema > column types > mssql", () => { // https://github.com
         table!.findColumnByName("geometry1")!.type.should.be.equal("geometry");
         table!.findColumnByName("simpleArray")!.type.should.be.equal("ntext");
         table!.findColumnByName("simpleJson")!.type.should.be.equal("ntext");
+        table!.findColumnByName("simpleEnum")!.type.should.be.equal("simple-enum");
+        table!.findColumnByName("simpleEnum")!.enum![0].should.be.equal("A");
+        table!.findColumnByName("simpleEnum")!.enum![1].should.be.equal("B");
+        table!.findColumnByName("simpleEnum")!.enum![2].should.be.equal("C");
+        table!.findColumnByName("simpleClassEnum1")!.type.should.be.equal("simple-enum");
+        table!.findColumnByName("simpleClassEnum1")!.enum![0].should.be.equal("apple");
+        table!.findColumnByName("simpleClassEnum1")!.enum![1].should.be.equal("pineapple");
+        table!.findColumnByName("simpleClassEnum1")!.enum![2].should.be.equal("banana");
 
     })));
 

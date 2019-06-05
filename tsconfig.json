@@ -6,6 +6,7 @@
         "target": "es5",
         "module": "commonjs",
         "moduleResolution": "node",
+        "importHelpers": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "sourceMap": true,
@@ -16,7 +17,8 @@
         "stripInternal": true,
         "pretty": true,
         "strictNullChecks": true,
-        "noUnusedLocals": true
+        "noUnusedLocals": true,
+        "downlevelIteration": true
     },
     "exclude": [
         "tmp",

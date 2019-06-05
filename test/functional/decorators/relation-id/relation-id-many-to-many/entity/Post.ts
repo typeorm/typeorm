@@ -1,6 +1,6 @@
+import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
 import {ManyToMany} from "../../../../../../src/decorator/relations/ManyToMany";
 import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../../src/decorator/columns/Column";
 import {JoinTable} from "../../../../../../src/decorator/relations/JoinTable";
 import {RelationId} from "../../../../../../src/decorator/relations/RelationId";
@@ -9,7 +9,7 @@ import {Category} from "./Category";
 @Entity()
 export class Post {
 
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number;
 
     @Column()

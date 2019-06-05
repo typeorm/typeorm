@@ -1,3 +1,4 @@
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
@@ -18,6 +19,8 @@ import {UniqueMetadata} from "../metadata/UniqueMetadata";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {CheckMetadata} from "../metadata/CheckMetadata";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {ExclusionMetadata} from "../metadata/ExclusionMetadata";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -68,13 +71,22 @@ export class EntityMetadataBuilder {
         const allTables = entityClasses ? this.metadataArgsStorage.filterTables(entityClasses) : this.metadataArgsStorage.tables;
 
         // filter out table metadata args for those we really create entity metadatas and tables in the db
-        const realTables = allTables.filter(table => table.type === "regular" || table.type === "closure" || table.type === "entity-child");
+        const realTables = allTables.filter(table => table.type === "regular" || table.type === "closure" || table.type === "entity-child" || table.type === "view");
 
         // create entity metadatas for a user defined entities (marked with @Entity decorator or loaded from entity schemas)
         const entityMetadatas = realTables.map(tableArgs => this.createEntityMetadata(tableArgs));
 
         // compute parent entity metadatas for table inheritance
         entityMetadatas.forEach(entityMetadata => this.computeParentEntityMetadata(entityMetadatas, entityMetadata));
+
+        // after all metadatas created we set child entity metadatas for table inheritance
+        entityMetadatas.forEach(metadata => {
+            metadata.childEntityMetadatas = entityMetadatas.filter(childMetadata => {
+                return metadata.target instanceof Function
+                    && childMetadata.target instanceof Function
+                    && MetadataUtils.isInherited(childMetadata.target, metadata.target);
+            });
+        });
 
         // build entity metadata (step0), first for non-single-table-inherited entity metadatas (dependant)
         entityMetadatas
@@ -134,10 +146,38 @@ export class EntityMetadataBuilder {
                                 }).join(" AND ");
                             }
 
-                            entityMetadata.indices.push(index);
+                            if (relation.embeddedMetadata) {
+                                relation.embeddedMetadata.indices.push(index);
+                            } else {
+                                relation.entityMetadata.ownIndices.push(index);
+                            }
+                            this.computeEntityMetadataStep2(entityMetadata);
+
                         } else {
-                            entityMetadata.uniques.push(uniqueConstraint);
+                            if (relation.embeddedMetadata) {
+                                relation.embeddedMetadata.uniques.push(uniqueConstraint);
+                            } else {
+                                relation.entityMetadata.ownUniques.push(uniqueConstraint);
+                            }
+                            this.computeEntityMetadataStep2(entityMetadata);
                         }
+                    }
+
+                    if (foreignKey && this.connection.driver instanceof CockroachDriver) {
+                        const index = new IndexMetadata({
+                            entityMetadata: relation.entityMetadata,
+                            columns: foreignKey.columns,
+                            args: {
+                                target: relation.entityMetadata.target!,
+                                synchronize: true
+                            }
+                        });
+                        if (relation.embeddedMetadata) {
+                            relation.embeddedMetadata.indices.push(index);
+                        } else {
+                            relation.entityMetadata.ownIndices.push(index);
+                        }
+                        this.computeEntityMetadataStep2(entityMetadata);
                     }
                 });
 
@@ -157,10 +197,14 @@ export class EntityMetadataBuilder {
                     entityMetadatas.push(junctionEntityMetadata);
                 });
 
-                // update entity metadata depend properties
+        });
+
+        // update entity metadata depend properties
+        entityMetadatas
+            .forEach(entityMetadata => {
                 entityMetadata.relationsWithJoinColumns = entityMetadata.relations.filter(relation => relation.isWithJoinColumn);
                 entityMetadata.hasNonNullableRelations = entityMetadata.relationsWithJoinColumns.some(relation => !relation.isNullable || relation.isPrimary);
-        });
+            });
 
         // generate closure junction tables for all closure tables
         entityMetadatas
@@ -172,15 +216,6 @@ export class EntityMetadataBuilder {
                 this.computeInverseProperties(closureJunctionEntityMetadata, entityMetadatas);
                 entityMetadatas.push(closureJunctionEntityMetadata);
             });
-
-        // after all metadatas created we set child entity metadatas for table inheritance
-        entityMetadatas.forEach(metadata => {
-            metadata.childEntityMetadatas = entityMetadatas.filter(childMetadata => {
-                return metadata.target instanceof Function
-                    && childMetadata.target instanceof Function
-                    && MetadataUtils.isInherited(childMetadata.target, metadata.target);
-            });
-        });
 
         // generate keys for tables with single-table inheritance
         entityMetadatas
@@ -202,6 +237,11 @@ export class EntityMetadataBuilder {
             entityMetadata.checks.forEach(check => check.build(this.connection.namingStrategy));
         });
 
+        // build all exclusion constraints
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.exclusions.forEach(exclusion => exclusion.build(this.connection.namingStrategy));
+        });
+
         // add lazy initializer for entity relations
         entityMetadatas
             .filter(metadata => metadata.target instanceof Function)
@@ -220,7 +260,13 @@ export class EntityMetadataBuilder {
                 if (generated) {
                     column.isGenerated = true;
                     column.generationStrategy = generated.strategy;
-                    column.type = generated.strategy === "increment" ? (column.type || Number) : "uuid";
+                    if (generated.strategy === "uuid") {
+                        column.type = "uuid";
+                    } else if (generated.strategy === "rowid") {
+                        column.type = "int";
+                    } else {
+                        column.type = column.type || Number;
+                    }
                     column.build(this.connection);
                     this.computeEntityMetadataStep2(entityMetadata);
                 }
@@ -288,7 +334,18 @@ export class EntityMetadataBuilder {
         const discriminatorValue = this.metadataArgsStorage.findDiscriminatorValue(entityMetadata.target);
         entityMetadata.discriminatorValue = discriminatorValue ? discriminatorValue.value : (entityMetadata.target as any).name; // todo: pass this to naming strategy to generate a name
 
-        entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(entityMetadata.inheritanceTree));
+        // if single table inheritance is used, we need to mark all embedded columns as nullable
+        entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(entityMetadata.inheritanceTree))
+            .map((embedded: EmbeddedMetadata): EmbeddedMetadata => {
+                 if (entityMetadata.inheritancePattern === "STI") {
+                     embedded.columns = embedded.columns.map((column: ColumnMetadata): ColumnMetadata => {
+                         column.isNullable = true;
+                         return column;
+                     });
+                 }
+                 return embedded;
+            });
+
         entityMetadata.ownColumns = this.metadataArgsStorage
             .filterColumns(entityMetadata.inheritanceTree)
             .map(args => {
@@ -421,15 +478,46 @@ export class EntityMetadataBuilder {
 
             return new RelationCountMetadata({ entityMetadata, args });
         });
-        entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree).map(args => {
-            return new IndexMetadata({ entityMetadata, args });
-        });
         entityMetadata.ownListeners = this.metadataArgsStorage.filterListeners(entityMetadata.inheritanceTree).map(args => {
             return new EntityListenerMetadata({ entityMetadata: entityMetadata, args: args });
         });
         entityMetadata.checks = this.metadataArgsStorage.filterChecks(entityMetadata.inheritanceTree).map(args => {
             return new CheckMetadata({ entityMetadata, args });
         });
+
+        // Only PostgreSQL supports exclusion constraints.
+        if (this.connection.driver instanceof PostgresDriver) {
+            entityMetadata.exclusions = this.metadataArgsStorage.filterExclusions(entityMetadata.inheritanceTree).map(args => {
+                return new ExclusionMetadata({ entityMetadata, args });
+            });
+        }
+
+        if (this.connection.driver instanceof CockroachDriver) {
+            entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree)
+                .filter(args => !args.unique)
+                .map(args => {
+                    return new IndexMetadata({entityMetadata, args});
+                });
+
+            const uniques = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree)
+                .filter(args => args.unique)
+                .map(args => {
+                    return new UniqueMetadata({
+                        entityMetadata: entityMetadata,
+                        args: {
+                            target: args.target,
+                            name: args.name,
+                            columns: args.columns,
+                        }
+                    });
+                });
+            entityMetadata.ownUniques.push(...uniques);
+
+        } else {
+            entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree).map(args => {
+                return new IndexMetadata({entityMetadata, args});
+            });
+        }
 
         // Mysql stores unique constraints as unique indices.
         if (this.connection.driver instanceof MysqlDriver) {
@@ -448,9 +536,10 @@ export class EntityMetadataBuilder {
             entityMetadata.ownIndices.push(...indices);
 
         } else {
-            entityMetadata.uniques = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
+            const uniques = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
                 return new UniqueMetadata({ entityMetadata, args });
             });
+            entityMetadata.ownUniques.push(...uniques);
         }
     }
 
@@ -474,6 +563,9 @@ export class EntityMetadataBuilder {
             });
             embeddedMetadata.indices = this.metadataArgsStorage.filterIndices(targets).map(args => {
                 return new IndexMetadata({ entityMetadata, embeddedMetadata, args });
+            });
+            embeddedMetadata.uniques = this.metadataArgsStorage.filterUniques(targets).map(args => {
+                return new UniqueMetadata({ entityMetadata, embeddedMetadata, args });
             });
             embeddedMetadata.relationIds = this.metadataArgsStorage.filterRelationIds(targets).map(args => {
                 return new RelationIdMetadata({ entityMetadata, args });
@@ -520,6 +612,7 @@ export class EntityMetadataBuilder {
         entityMetadata.beforeUpdateListeners = entityMetadata.listeners.filter(listener => listener.type === "before-update");
         entityMetadata.beforeRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === "before-remove");
         entityMetadata.indices = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
+        entityMetadata.uniques = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.uniquesFromTree), entityMetadata.ownUniques);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
         entityMetadata.nonVirtualColumns = entityMetadata.columns.filter(column => !column.isVirtual);
         entityMetadata.ancestorColumns = entityMetadata.columns.filter(column => column.closureType === "ancestor");
@@ -555,7 +648,7 @@ export class EntityMetadataBuilder {
             // compute inverse side (related) entity metadatas for all relation metadatas
             const inverseEntityMetadata = entityMetadatas.find(m => m.target === relation.type || (typeof relation.type === "string" && m.targetName === relation.type));
             if (!inverseEntityMetadata)
-                throw new Error("Entity metadata for " + entityMetadata.name + "#" + relation.propertyPath + " was not found. Check if you specified a correct entity object, check its really entity and its connected in the connection options.");
+                throw new Error("Entity metadata for " + entityMetadata.name + "#" + relation.propertyPath + " was not found. Check if you specified a correct entity object and if it's connected in the connection options.");
 
             relation.inverseEntityMetadata = inverseEntityMetadata;
             relation.inverseSidePropertyPath = relation.buildInverseSidePropertyPath();
@@ -578,14 +671,6 @@ export class EntityMetadataBuilder {
                     unique: false
                 }
             }),
-            new IndexMetadata({
-                entityMetadata: entityMetadata,
-                columns: [...entityMetadata.primaryColumns, entityMetadata.discriminatorColumn!],
-                args: {
-                    target: entityMetadata.target,
-                    unique: false
-                }
-            })
         );
     }
 

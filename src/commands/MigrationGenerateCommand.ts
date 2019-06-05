@@ -4,19 +4,20 @@ import {Connection} from "../connection/Connection";
 import {createConnection} from "../index";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {camelCase} from "../util/StringUtils";
-
+import * as yargs from "yargs";
 const chalk = require("chalk");
 
 /**
  * Generates a new migration file with sql needs to be executed to update schema.
  */
-export class MigrationGenerateCommand {
+export class MigrationGenerateCommand implements yargs.CommandModule {
 
     command = "migration:generate";
     describe = "Generates a new migration file with sql needs to be executed to update schema.";
+    aliases = "migrations:generate";
 
-    builder(yargs: any) {
-        return yargs
+    builder(args: yargs.Argv) {
+        return args
             .option("c", {
                 alias: "connection",
                 default: "default",
@@ -38,24 +39,34 @@ export class MigrationGenerateCommand {
             });
     }
 
-    async handler(argv: any) {
+    async handler(args: yargs.Arguments) {
+        if (args._[0] === "migrations:generate") {
+            console.log("'migrations:generate' is deprecated, please use 'migration:generate' instead");
+        }
+
         const timestamp = new Date().getTime();
-        const filename = timestamp + "-" + argv.name + ".ts";
-        let directory = argv.dir;
+        const filename = timestamp + "-" + args.name + ".ts";
+        let directory = args.dir;
 
         // if directory is not set then try to open tsconfig and find default path there
         if (!directory) {
             try {
-                const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-                const connectionOptions = await connectionOptionsReader.get(argv.connection);
+                const connectionOptionsReader = new ConnectionOptionsReader({
+                    root: process.cwd(),
+                    configName: args.config as any
+                });
+                const connectionOptions = await connectionOptionsReader.get(args.connection as any);
                 directory = connectionOptions.cli ? connectionOptions.cli.migrationsDir : undefined;
             } catch (err) { }
         }
 
         let connection: Connection|undefined = undefined;
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-            const connectionOptions = await connectionOptionsReader.get(argv.connection);
+            const connectionOptionsReader = new ConnectionOptionsReader({
+                root: process.cwd(),
+                configName: args.config as any
+            });
+            const connectionOptions = await connectionOptionsReader.get(args.connection as any);
             Object.assign(connectionOptions, {
                 synchronize: false,
                 migrationsRun: false,
@@ -69,30 +80,33 @@ export class MigrationGenerateCommand {
             // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
             // we are using simple quoted string instead of template string syntax
             if (connection.driver instanceof MysqlDriver) {
-                sqlInMemory.upQueries.forEach(query => {
-                    upSqls.push("        await queryRunner.query(\"" + query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                sqlInMemory.upQueries.forEach(upQuery => {
+                    upSqls.push("        await queryRunner.query(\"" + upQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
                 });
-                sqlInMemory.downQueries.forEach(query => {
-                    downSqls.push("        await queryRunner.query(\"" + query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                sqlInMemory.downQueries.forEach(downQuery => {
+                    downSqls.push("        await queryRunner.query(\"" + downQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
                 });
             } else {
-                sqlInMemory.upQueries.forEach(query => {
-                    upSqls.push("        await queryRunner.query(`" + query.replace(new RegExp("`", "g"), "\\`") + "`);");
+                sqlInMemory.upQueries.forEach(upQuery => {
+                    upSqls.push("        await queryRunner.query(`" + upQuery.query.replace(new RegExp("`", "g"), "\\`") + "`);");
                 });
-                sqlInMemory.downQueries.forEach(query => {
-                    downSqls.push("        await queryRunner.query(`" + query.replace(new RegExp("`", "g"), "\\`") + "`);");
+                sqlInMemory.downQueries.forEach(downQuery => {
+                    downSqls.push("        await queryRunner.query(`" + downQuery.query.replace(new RegExp("`", "g"), "\\`") + "`);");
                 });
             }
 
             if (upSqls.length) {
-                const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, upSqls, downSqls.reverse());
-                const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
-                await CommandUtils.createFile(path, fileContent);
+                if (args.name) {
+                    const fileContent = MigrationGenerateCommand.getTemplate(args.name as any, timestamp, upSqls, downSqls.reverse());
+                    const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+                    await CommandUtils.createFile(path, fileContent);
 
-                console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
-
+                    console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
+                } else {
+                    console.log(chalk.yellow("Please specify migration name"));
+                }
             } else {
-                console.log(chalk.yellow(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migrations:create" command`));
+                console.log(chalk.yellow(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`));
             }
             await connection.close();
 
@@ -115,7 +129,7 @@ export class MigrationGenerateCommand {
     protected static getTemplate(name: string, timestamp: number, upSqls: string[], downSqls: string[]): string {
         return `import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class ${camelCase(name)}${timestamp} implements MigrationInterface {
+export class ${camelCase(name, true)}${timestamp} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<any> {
 ${upSqls.join(`

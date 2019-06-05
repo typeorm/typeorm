@@ -111,7 +111,7 @@ You can read more about data mapper on [Wikipedia](https://en.wikipedia.org/wiki
 Example:
 
 ```typescript
-import {BaseEntity, Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
 
 @Entity()
 export class User {
@@ -178,7 +178,7 @@ const userRepository = connection.getCustomRepository(UserRepository);
 const timber = await userRepository.findByName("Timber", "Saw");
 ```
 
-Learn more about [custom repositories](working-with-entity-manager.md#custom-repositories).
+Learn more about [custom repositories](custom-repository.md).
 
 ## Which one should I choose?
 

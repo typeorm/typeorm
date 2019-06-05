@@ -58,19 +58,19 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
             .getMany();
 
         const loadedCategory1 = await loadedPosts[0].category;
-        expect(loadedCategory1!).not.to.be.empty;
+        expect(loadedCategory1!).not.to.be.undefined;
         loadedCategory1!.name.should.equal("category #1");
 
         const loadedCategory2 = await loadedPosts[1].category;
-        expect(loadedCategory2!).not.to.be.empty;
+        expect(loadedCategory2!).not.to.be.undefined;
         loadedCategory2!.name.should.equal("category #2");
 
         const loadedPosts1 = await loadedCategory1.posts;
-        expect(loadedPosts1!).not.to.be.empty;
+        expect(loadedPosts1!).not.to.be.undefined;
         loadedPosts1![0].title.should.equal("Hello Post #1");
 
         const loadedPosts2 = await loadedCategory2.posts;
-        expect(loadedPosts2!).not.to.be.empty;
+        expect(loadedPosts2!).not.to.be.undefined;
         loadedPosts2![0].title.should.equal("Hello Post #2");
 
     })));
@@ -128,13 +128,13 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
         // check owner side
 
         const loadedTags1 = await loadedPosts[0].tags;
-        expect(loadedTags1).not.to.be.empty;
+        expect(loadedTags1).not.to.be.undefined;
         loadedTags1.length.should.be.equal(2);
         loadedTags1[0].name.should.equal("tag #1_1");
         loadedTags1[1].name.should.equal("tag #1_2");
 
         const loadedTags2 = await loadedPosts[1].tags;
-        expect(loadedTags2).not.to.be.empty;
+        expect(loadedTags2).not.to.be.undefined;
         loadedTags2.length.should.be.equal(3);
         loadedTags2[0].name.should.equal("tag #2_1");
         loadedTags2[1].name.should.equal("tag #2_2");
@@ -143,12 +143,12 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
         // check inverse side
 
         const loadedPosts1 = await loadedTags1[0].posts;
-        expect(loadedPosts1).not.to.be.empty;
+        expect(loadedPosts1).not.to.be.undefined;
         loadedPosts1.length.should.be.equal(1);
         loadedPosts1[0].title.should.equal("Hello Post #1");
 
         const loadedPosts2 = await loadedTags2[0].posts;
-        expect(loadedPosts2).not.to.be.empty;
+        expect(loadedPosts2).not.to.be.undefined;
         loadedPosts2.length.should.be.equal(1);
         loadedPosts2[0].title.should.equal("Hello Post #2");
 

@@ -2,6 +2,7 @@ import {ColumnOptions, ColumnType, getMetadataArgsStorage} from "../../";
 import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
 import {PrimaryColumnCannotBeNullableError} from "../../error/PrimaryColumnCannotBeNullableError";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
+import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs";
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
@@ -61,6 +62,14 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
             mode: "regular",
             options: options
         } as ColumnMetadataArgs);
+
+        if (options.generated) {
+            getMetadataArgsStorage().generations.push({
+                target: object.constructor,
+                propertyName: propertyName,
+                strategy: typeof options.generated === "string" ? options.generated : "increment"
+            } as GeneratedMetadataArgs);
+        }
     };
 }
 

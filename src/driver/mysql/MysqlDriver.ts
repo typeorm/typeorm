@@ -17,6 +17,7 @@ import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
+import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -76,27 +77,40 @@ export class MysqlDriver implements Driver {
      * Gets list of supported column data types by a driver.
      *
      * @see https://www.tutorialspoint.com/mysql/mysql-data-types.htm
-     * @see https://dev.mysql.com/doc/refman/5.7/en/data-types.html
+     * @see https://dev.mysql.com/doc/refman/8.0/en/data-types.html
      */
     supportedDataTypes: ColumnType[] = [
+        // numeric types
+        "bit",
         "int",
+        "integer",          // synonym for int
         "tinyint",
         "smallint",
         "mediumint",
         "bigint",
         "float",
         "double",
-        "dec",
+        "double precision", // synonym for double
+        "real",             // synonym for double
         "decimal",
-        "numeric",
+        "dec",              // synonym for decimal
+        "numeric",          // synonym for decimal
+        "fixed",            // synonym for decimal
+        "bool",             // synonym for tinyint
+        "boolean",          // synonym for tinyint
+        // date and time types
         "date",
         "datetime",
         "timestamp",
         "time",
         "year",
+        // string types
         "char",
+        "nchar",            // synonym for national char
+        "national char",
         "varchar",
-        "nvarchar",
+        "nvarchar",         // synonym for national varchar
+        "national varchar",
         "blob",
         "text",
         "tinyblob",
@@ -106,8 +120,11 @@ export class MysqlDriver implements Driver {
         "longblob",
         "longtext",
         "enum",
-        "json",
         "binary",
+        "varbinary",
+        // json data type
+        "json",
+        // spatial data types
         "geometry",
         "point",
         "linestring",
@@ -139,17 +156,20 @@ export class MysqlDriver implements Driver {
         "char",
         "varchar",
         "nvarchar",
-        "binary"
+        "binary",
+        "varbinary"
     ];
 
     /**
      * Gets list of column data types that support length by a driver.
      */
     withWidthColumnTypes: ColumnType[] = [
+        "bit",
         "tinyint",
         "smallint",
         "mediumint",
         "int",
+        "integer",
         "bigint"
     ];
 
@@ -158,8 +178,13 @@ export class MysqlDriver implements Driver {
      */
     withPrecisionColumnTypes: ColumnType[] = [
         "decimal",
+        "dec",
+        "numeric",
+        "fixed",
         "float",
         "double",
+        "double precision",
+        "real",
         "time",
         "datetime",
         "timestamp"
@@ -170,8 +195,13 @@ export class MysqlDriver implements Driver {
      */
     withScaleColumnTypes: ColumnType[] = [
         "decimal",
+        "dec",
+        "numeric",
+        "fixed",
         "float",
         "double",
+        "double precision",
+        "real"
     ];
 
     /**
@@ -179,13 +209,19 @@ export class MysqlDriver implements Driver {
      */
     unsignedAndZerofillTypes: ColumnType[] = [
         "int",
+        "integer",
         "smallint",
         "tinyint",
         "mediumint",
         "bigint",
         "decimal",
+        "dec",
+        "numeric",
+        "fixed",
         "float",
-        "double"
+        "double",
+        "double precision",
+        "real"
     ];
 
     /**
@@ -210,6 +246,12 @@ export class MysqlDriver implements Driver {
         cacheDuration: "int",
         cacheQuery: "text",
         cacheResult: "text",
+        metadataType: "varchar",
+        metadataDatabase: "varchar",
+        metadataSchema: "varchar",
+        metadataTable: "varchar",
+        metadataName: "varchar",
+        metadataValue: "text",
     };
 
     /**
@@ -218,17 +260,35 @@ export class MysqlDriver implements Driver {
      */
     dataTypeDefaults: DataTypeDefaults = {
         "varchar": { length: 255 },
+        "nvarchar": { length: 255 },
+        "national varchar": { length: 255 },
         "char": { length: 1 },
         "binary": { length: 1 },
+        "varbinary": { length: 255 },
         "decimal": { precision: 10, scale: 0 },
+        "dec": { precision: 10, scale: 0 },
+        "numeric": { precision: 10, scale: 0 },
+        "fixed": { precision: 10, scale: 0 },
         "float": { precision: 12 },
         "double": { precision: 22 },
+        "time": { precision: 0 },
+        "datetime": { precision: 0 },
+        "timestamp": { precision: 0 },
+        "bit": { width: 1 },
         "int": { width: 11 },
+        "integer": { width: 11 },
         "tinyint": { width: 4 },
         "smallint": { width: 6 },
         "mediumint": { width: 9 },
         "bigint": { width: 20 }
     };
+
+
+    /**
+     * Max length allowed by MySQL for aliases.
+     * @see https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
+     */
+    maxAliasLength = 63;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -371,7 +431,7 @@ export class MysqlDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.to(value);
+            value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (value === null || value === undefined)
             return value;
@@ -396,6 +456,9 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
+
+        } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") {
+            return "" + value;
         }
 
         return value;
@@ -406,9 +469,9 @@ export class MysqlDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return value;
+            return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
-        if (columnMetadata.type === Boolean) {
+        if (columnMetadata.type === Boolean || columnMetadata.type === "bool" || columnMetadata.type === "boolean") {
             value = value ? true : false;
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
@@ -428,10 +491,17 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
+
+        } else if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum")
+            && columnMetadata.enum
+            && !isNaN(value)
+            && columnMetadata.enum.indexOf(parseInt(value)) >= 0) {
+            // convert to number if that exists in possible enum options
+            value = parseInt(value);
         }
 
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
+            value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
 
         return value;
     }
@@ -443,7 +513,7 @@ export class MysqlDriver implements Driver {
         if (column.type === Number || column.type === "integer") {
             return "int";
 
-        } else if (column.type === String || column.type === "nvarchar") {
+        } else if (column.type === String) {
             return "varchar";
 
         } else if (column.type === Date) {
@@ -455,14 +525,29 @@ export class MysqlDriver implements Driver {
         } else if (column.type === Boolean) {
             return "tinyint";
 
-        } else if (column.type === "numeric" || column.type === "dec") {
-            return "decimal";
-
         } else if (column.type === "uuid") {
             return "varchar";
 
         } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "text";
+
+        } else if (column.type === "simple-enum") {
+            return "enum";
+
+        } else if (column.type === "double precision" || column.type === "real") {
+            return "double";
+
+        } else if (column.type === "dec" || column.type === "numeric" || column.type === "fixed") {
+            return "decimal";
+
+        } else if (column.type === "bool" || column.type === "boolean") {
+            return "tinyint";
+
+        } else if (column.type === "nvarchar" || column.type === "national varchar") {
+            return "varchar";
+
+        } else if (column.type === "nchar" || column.type === "national char") {
+            return "char";
 
         } else {
             return column.type as string || "";
@@ -475,6 +560,10 @@ export class MysqlDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string {
         const defaultValue = columnMetadata.default;
 
+        if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
+            return `'${defaultValue}'`;
+        }
+
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
 
@@ -486,6 +575,9 @@ export class MysqlDriver implements Driver {
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;
+
+        } else if (defaultValue === null) {
+            return `null`;
 
         } else {
             return defaultValue;
@@ -506,13 +598,20 @@ export class MysqlDriver implements Driver {
         if (column.length)
             return column.length.toString();
 
+        /**
+         * fix https://github.com/typeorm/typeorm/issues/1139
+         */
+        if (column.generationStrategy === "uuid")
+            return "36";
+
         switch (column.type) {
             case String:
             case "varchar":
             case "nvarchar":
+            case "national varchar":
                 return "255";
-            case "uuid":
-                return "36";
+            case "varbinary":
+                return "255";
             default:
                 return "";
         }
@@ -524,7 +623,7 @@ export class MysqlDriver implements Driver {
     createFullType(column: TableColumn): string {
         let type = column.type;
 
-        // used 'getColumnLength()' method, because MySQL requires column length for `varchar` and `nvarchar` data types
+        // used 'getColumnLength()' method, because MySQL requires column length for `varchar`, `nvarchar` and `varbinary` data types
         if (this.getColumnLength(column)) {
             type += `(${this.getColumnLength(column)})`;
 
@@ -624,17 +723,24 @@ export class MysqlDriver implements Driver {
             // console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
             // console.log("comment:", tableColumn.comment, columnMetadata.comment);
             // console.log("default:", tableColumn.default, columnMetadata.default);
+            // console.log("enum:", tableColumn.enum, columnMetadata.enum);
             // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
             // console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
             // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
             // console.log("==========================================");
+
+            let columnMetadataLength = columnMetadata.length;
+            if (!columnMetadataLength && columnMetadata.generationStrategy === "uuid") { // fixing #3374
+                columnMetadataLength = this.getColumnLength(columnMetadata);
+            }
 
             return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadata.length
+                || tableColumn.length !== columnMetadataLength
                 || tableColumn.width !== columnMetadata.width
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
@@ -644,6 +750,7 @@ export class MysqlDriver implements Driver {
                 || tableColumn.generatedType !== columnMetadata.generatedType
                 // || tableColumn.comment !== columnMetadata.comment // todo
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
+                || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
                 || tableColumn.onUpdate !== columnMetadata.onUpdate
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
@@ -730,7 +837,11 @@ export class MysqlDriver implements Driver {
             database: credentials.database,
             port: credentials.port,
             ssl: options.ssl
-        }, options.extra || {});
+        },
+        options.acquireTimeout === undefined
+          ? {}
+          : { acquireTimeout: options.acquireTimeout },
+        options.extra || {});
     }
 
     /**

@@ -34,7 +34,7 @@ describe("github issues > #1042 EntityMetadata.createPropertyPath does not work 
 
         // load and check if saved user is correct
         const loadedUser = await connection.manager.findOne(User, 1);
-        expect(loadedUser).not.to.be.empty;
+        expect(loadedUser).not.to.be.undefined;
         loadedUser!.should.be.eql({
             id: 1,
             name: "Timber Saw aka Lumberjack",
@@ -67,7 +67,7 @@ describe("github issues > #1042 EntityMetadata.createPropertyPath does not work 
 
         // load and check again
         const loadedUser2 = await connection.manager.findOne(User, 1);
-        expect(loadedUser2).not.to.be.empty;
+        expect(loadedUser2).not.to.be.undefined;
         loadedUser2!.should.be.eql({
             id: 1,
             name: "Timber Saw aka Lumberjack",
@@ -101,7 +101,7 @@ describe("github issues > #1042 EntityMetadata.createPropertyPath does not work 
 
         // load and check again
         const loadedUser3 = await connection.manager.findOne(User, 1);
-        expect(loadedUser3).not.to.be.empty;
+        expect(loadedUser3).not.to.be.undefined;
         loadedUser3!.should.be.eql({
             id: 1,
             name: "Timber Saw aka Lumberjack",
@@ -135,7 +135,7 @@ describe("github issues > #1042 EntityMetadata.createPropertyPath does not work 
 
         // load and check again
         const loadedUser4 = await connection.manager.findOne(User, 1);
-        expect(loadedUser4).not.to.be.empty;
+        expect(loadedUser4).not.to.be.undefined;
         loadedUser4!.should.be.eql({
             id: 1,
             name: "Timber Saw aka Lumberjack",

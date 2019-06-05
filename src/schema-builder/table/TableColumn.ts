@@ -41,8 +41,9 @@ export class TableColumn {
 
     /**
      * Specifies generation strategy if this column will use auto increment.
+     * `rowid` option supported only in CockroachDB.
      */
-    generationStrategy?: "uuid"|"increment";
+    generationStrategy?: "uuid"|"increment"|"rowid";
 
     /**
      * Indicates if column is a primary key.
@@ -102,17 +103,17 @@ export class TableColumn {
      * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
      * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
      */
-    zerofill?: boolean;
+    zerofill: boolean = false;
 
     /**
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
      */
-    unsigned?: boolean;
+    unsigned: boolean = false;
 
     /**
      * Array of possible enumerated values.
      */
-    enum?: any[];
+    enum?: string[];
 
     /**
      * Generated column expression. Supports only in MySQL.
@@ -123,6 +124,16 @@ export class TableColumn {
      * Generated column type. Supports only in MySQL.
      */
     generatedType?: "VIRTUAL"|"STORED";
+
+    /**
+     * Spatial Feature Type (Geometry, Point, Polygon, etc.)
+     */
+    spatialFeatureType?: string;
+
+    /**
+     * SRID (Spatial Reference ID (EPSG code))
+     */
+    srid?: number;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -138,8 +149,8 @@ export class TableColumn {
             this.collation = options.collation;
             this.precision = options.precision;
             this.scale = options.scale;
-            this.zerofill = options.zerofill;
-            this.unsigned = this.zerofill ? true : options.unsigned;
+            this.zerofill = options.zerofill || false;
+            this.unsigned = this.zerofill ? true : (options.unsigned || false);
             this.default = options.default;
             this.onUpdate = options.onUpdate;
             this.isNullable = options.isNullable || false;
@@ -152,6 +163,8 @@ export class TableColumn {
             this.enum = options.enum;
             this.asExpression = options.asExpression;
             this.generatedType = options.generatedType;
+            this.spatialFeatureType = options.spatialFeatureType;
+            this.srid = options.srid;
         }
     }
 
@@ -185,7 +198,9 @@ export class TableColumn {
             isPrimary: this.isPrimary,
             isUnique: this.isUnique,
             isArray: this.isArray,
-            comment: this.comment
+            comment: this.comment,
+            spatialFeatureType: this.spatialFeatureType,
+            srid: this.srid
         });
     }
 

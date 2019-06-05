@@ -16,4 +16,7 @@ export class Counters {
 
     @Column(type => Information, { prefix: "testData" })
     data: Information;
+
+    @Column(type => Information, { prefix: "" })
+    dataWithoutPrefix: Information;
 }

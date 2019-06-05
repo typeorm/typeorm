@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import {expect} from "chai";
+import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Tag} from "./entity/Tag";
@@ -75,18 +76,18 @@ describe("query builder > joins", () => {
                 .leftJoinAndSelect("categories.images", "images")
                 .getMany();
 
-            expect(loadedPosts![0].tag).to.not.be.empty;
+            expect(loadedPosts![0].tag).to.not.be.undefined;
             expect(loadedPosts![0].tag.id).to.be.equal(1);
-            expect(loadedPosts![0].categories).to.not.be.empty;
+            expect(loadedPosts![0].categories).to.not.be.eql([]);
             expect(loadedPosts![0].categories.length).to.be.equal(2);
-            expect(loadedPosts![0].categories[0].images).to.not.be.empty;
+            expect(loadedPosts![0].categories[0].images).to.not.be.eql([]);
             expect(loadedPosts![0].categories[0].images.length).to.be.equal(2);
             expect(loadedPosts![0].categories[0].images.map(image => image.id)).to.have.members([1, 2]);
-            expect(loadedPosts![0].author).to.not.be.empty;
+            expect(loadedPosts![0].author).to.not.be.undefined;
             expect(loadedPosts![0].author.id).to.be.equal(1);
-            expect(loadedPosts![1].categories).to.not.be.empty;
+            expect(loadedPosts![1].categories).to.not.be.eql([]);
             expect(loadedPosts![1].categories.length).to.be.equal(1);
-            expect(loadedPosts![1].categories[0].images).to.not.be.empty;
+            expect(loadedPosts![1].categories[0].images).to.not.be.eql([]);
             expect(loadedPosts![1].categories[0].images.length).to.be.equal(1);
             expect(loadedPosts![1].categories[0].images[0].id).to.be.equal(3);
 
@@ -99,20 +100,20 @@ describe("query builder > joins", () => {
                 .where("post.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedPost!.tag).to.not.be.empty;
+            expect(loadedPost!.tag).to.not.be.undefined;
             expect(loadedPost!.tag instanceof Tag).to.be.true;
             expect(loadedPost!.tag.id).to.be.equal(1);
-            expect(loadedPost!.categories).to.not.be.empty;
+            expect(loadedPost!.categories).to.not.be.eql([]);
             expect(loadedPost!.categories.length).to.be.equal(2);
             expect(loadedPost!.categories[0] instanceof Category).to.be.true;
             expect(loadedPost!.categories[0].id).to.be.equal(1);
             expect(loadedPost!.categories[1].id).to.be.equal(2);
             expect(loadedPost!.categories[0].images[0] instanceof Image).to.be.true;
-            expect(loadedPost!.categories[0].images).to.not.be.empty;
+            expect(loadedPost!.categories[0].images).to.not.be.eql([]);
             expect(loadedPost!.categories[0].images.length).to.be.equal(2);
             expect(loadedPost!.categories[0].images.map(image => image.id)).to.have.members([1, 2]);
-            expect(loadedPost!.categories[1].images).to.be.empty;
-            expect(loadedPost!.author).to.not.be.empty;
+            expect(loadedPost!.categories[1].images).to.be.eql([]);
+            expect(loadedPost!.author).to.not.be.undefined;
             expect(loadedPost!.author instanceof User).to.be.true;
             expect(loadedPost!.author.id).to.be.equal(1);
 
@@ -150,10 +151,10 @@ describe("query builder > joins", () => {
                 .setParameters({ categoryId: 1, imageId: 2 })
                 .getOne();
 
-            expect(loadedPost!.categories).to.not.be.empty;
+            expect(loadedPost!.categories).to.not.be.eql([]);
             expect(loadedPost!.categories.length).to.be.equal(1);
             expect(loadedPost!.categories[0].id).to.be.equal(1);
-            expect(loadedPost!.categories[0].images).to.not.be.empty;
+            expect(loadedPost!.categories[0].images).to.not.be.eql([]);
             expect(loadedPost!.categories[0].images.length).to.be.equal(1);
             expect(loadedPost!.categories[0].images[0].id).to.be.equal(2);
 
@@ -177,7 +178,12 @@ describe("query builder > joins", () => {
                 .where("post.id = :id", { id: post.id })
                 .getRawOne();
 
-            expect(loadedRawPost!["categories_id"]).to.be.equal(1);
+            if (connection.driver instanceof CockroachDriver) {
+                expect(loadedRawPost!["categories_id"]).to.be.equal("1");
+
+            } else {
+                expect(loadedRawPost!["categories_id"]).to.be.equal(1);
+            }
 
         })));
 
@@ -228,13 +234,13 @@ describe("query builder > joins", () => {
                 .where("post.id = :id", { id: post.id })
                 .getOne();
 
-            expect(loadedPost!.tag).to.not.be.empty;
+            expect(loadedPost!.tag).to.not.be.undefined;
             expect(loadedPost!.tag.id).to.be.equal(1);
-            expect(loadedPost!.categories).to.not.be.empty;
+            expect(loadedPost!.categories).to.not.be.eql([]);
             expect(loadedPost!.categories.length).to.be.equal(1);
-            expect(loadedPost!.categories[0].images).to.not.be.empty;
+            expect(loadedPost!.categories[0].images).to.not.be.eql([]);
             expect(loadedPost!.categories[0].images.length).to.be.equal(2);
-            expect(loadedPost!.author).to.not.be.empty;
+            expect(loadedPost!.author).to.not.be.undefined;
             expect(loadedPost!.author.id).to.be.equal(1);
 
         })));
@@ -271,10 +277,10 @@ describe("query builder > joins", () => {
                 .setParameters({ categoryId: 1, imageId: 2 })
                 .getOne();
 
-            expect(loadedPost!.categories).to.not.be.empty;
+            expect(loadedPost!.categories).to.not.be.eql([]);
             expect(loadedPost!.categories.length).to.be.equal(1);
             expect(loadedPost!.categories[0].id).to.be.equal(1);
-            expect(loadedPost!.categories[0].images).to.not.be.empty;
+            expect(loadedPost!.categories[0].images).to.not.be.eql([]);
             expect(loadedPost!.categories[0].images.length).to.be.equal(1);
             expect(loadedPost!.categories[0].images[0].id).to.be.equal(2);
 
@@ -292,7 +298,7 @@ describe("query builder > joins", () => {
                 .where("post.id = :id", { id: post.id })
                 .getOne();
 
-            expect(loadedPost!).to.be.empty;
+            expect(loadedPost!).to.be.undefined;
 
         })));
 
@@ -342,14 +348,14 @@ describe("query builder > joins", () => {
                 .setParameters({ tagId: 1, userId: 1, categoryIds: [1, 2], imageIds: [1, 2] })
                 .getOne();
 
-            expect(loadedPost!.tag).to.not.be.empty;
+            expect(loadedPost!.tag).to.not.be.undefined;
             expect(loadedPost!.tag.id).to.be.equal(1);
-            expect(loadedPost!.categories).to.not.be.empty;
+            expect(loadedPost!.categories).to.not.be.eql([]);
             expect(loadedPost!.categories.length).to.be.equal(2);
-            expect(loadedPost!.categories[0].images).to.not.be.empty;
+            expect(loadedPost!.categories[0].images).to.not.be.eql([]);
             expect(loadedPost!.categories[0].images.length).to.be.equal(2);
             expect(loadedPost!.categories[0].images.map(image => image.id)).to.have.members([1, 2]);
-            expect(loadedPost!.author).to.not.be.empty;
+            expect(loadedPost!.author).to.not.be.undefined;
             expect(loadedPost!.author.id).to.be.equal(1);
 
         })));
@@ -396,14 +402,14 @@ describe("query builder > joins", () => {
                 .setParameters({ tagId: 1, userId: 1, categoryIds: [1, 2], imageIds: [1, 2] })
                 .getOne();
 
-            expect(loadedPost!.tag).to.not.be.empty;
+            expect(loadedPost!.tag).to.not.be.undefined;
             expect(loadedPost!.tag.id).to.be.equal(1);
-            expect(loadedPost!.categories).to.not.be.empty;
+            expect(loadedPost!.categories).to.not.be.eql([]);
             expect(loadedPost!.categories.length).to.be.equal(2);
-            expect(loadedPost!.categories[0].images).to.not.be.empty;
+            expect(loadedPost!.categories[0].images).to.not.be.eql([]);
             expect(loadedPost!.categories[0].images.length).to.be.equal(2);
             expect(loadedPost!.categories[0].images.map(image => image.id)).to.have.members([1, 2]);
-            expect(loadedPost!.author).to.not.be.empty;
+            expect(loadedPost!.author).to.not.be.undefined;
             expect(loadedPost!.author.id).to.be.equal(1);
 
         })));
@@ -434,9 +440,9 @@ describe("query builder > joins", () => {
                 .setParameters({ categoryIds: [1, 2], subcategoryIds: [3] })
                 .getOne();
 
-            expect(loadedPost!.categories).to.not.be.empty;
+            expect(loadedPost!.categories).to.not.be.eql([]);
             expect(loadedPost!.categories.length).to.be.equal(2);
-            expect(loadedPost!.subcategories).to.not.be.empty;
+            expect(loadedPost!.subcategories).to.not.be.eql([]);
             expect(loadedPost!.subcategories.length).to.be.equal(1);
 
         })));
@@ -502,24 +508,24 @@ describe("query builder > joins", () => {
                 .setParameters({ isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1 })
                 .getMany();
 
-            expect(loadedPosts![0].removedCategories).to.not.be.empty;
+            expect(loadedPosts![0].removedCategories).to.not.be.eql([]);
             expect(loadedPosts![0].removedCategories.length).to.be.equal(1);
             expect(loadedPosts![0].removedCategories[0].id).to.be.equal(3);
             expect(loadedPosts![0].removedCategories[0] instanceof Category).to.be.true;
             expect(loadedPosts![0].removedCategories[0].removedImages.length).to.be.equal(1);
             expect(loadedPosts![0].removedCategories[0].removedImages[0] instanceof Image).to.be.true;
             expect(loadedPosts![0].removedCategories[0].removedImages[0].id).to.be.equal(3);
-            expect(loadedPosts![0].subcategories).to.not.be.empty;
+            expect(loadedPosts![0].subcategories).to.not.be.eql([]);
             expect(loadedPosts![0].subcategories.length).to.be.equal(2);
             expect(loadedPosts![0].subcategories[0].titleImage.id).to.be.equal(1);
-            expect(loadedPosts![1].removedCategories).to.not.be.empty;
+            expect(loadedPosts![1].removedCategories).to.not.be.eql([]);
             expect(loadedPosts![1].removedCategories.length).to.be.equal(1);
             expect(loadedPosts![1].removedCategories[0].id).to.be.equal(4);
             expect(loadedPosts![1].removedCategories[0] instanceof Category).to.be.true;
             expect(loadedPosts![1].removedCategories[0].removedImages.length).to.be.equal(1);
             expect(loadedPosts![1].removedCategories[0].removedImages[0] instanceof Image).to.be.true;
             expect(loadedPosts![1].removedCategories[0].removedImages[0].id).to.be.equal(4);
-            expect(loadedPosts![1].subcategories).to.not.be.empty;
+            expect(loadedPosts![1].subcategories).to.not.be.eql([]);
             expect(loadedPosts![1].subcategories.length).to.be.equal(1);
             expect(loadedPosts![1].subcategories[0].titleImage.id).to.be.equal(1);
 
@@ -533,14 +539,14 @@ describe("query builder > joins", () => {
                 .where("post.id = :id", { id: post.id })
                 .getOne();
 
-            expect(loadedPost!.removedCategories).to.not.be.empty;
+            expect(loadedPost!.removedCategories).to.not.be.eql([]);
             expect(loadedPost!.removedCategories.length).to.be.equal(1);
             expect(loadedPost!.removedCategories[0].id).to.be.equal(3);
             expect(loadedPost!.removedCategories[0] instanceof Category).to.be.true;
             expect(loadedPost!.removedCategories[0].removedImages.length).to.be.equal(1);
             expect(loadedPost!.removedCategories[0].removedImages[0] instanceof Image).to.be.true;
             expect(loadedPost!.removedCategories[0].removedImages[0].id).to.be.equal(3);
-            expect(loadedPost!.subcategories).to.not.be.empty;
+            expect(loadedPost!.subcategories).to.not.be.eql([]);
             expect(loadedPost!.subcategories.length).to.be.equal(2);
             expect(loadedPost!.subcategories[0].titleImage.id).to.be.equal(1);
 
@@ -592,14 +598,14 @@ describe("query builder > joins", () => {
                 .setParameters({ tagId: 1, userId: 1, categoryIds: [1, 2], imageIds: [1, 2] })
                 .getOne();
 
-            expect(loadedPost!.tag).to.not.be.empty;
+            expect(loadedPost!.tag).to.not.be.undefined;
             expect(loadedPost!.tag.id).to.be.equal(1);
-            expect(loadedPost!.categories).to.not.be.empty;
+            expect(loadedPost!.categories).to.not.be.eql([]);
             expect(loadedPost!.categories.length).to.be.equal(2);
-            expect(loadedPost!.categories[0].images).to.not.be.empty;
+            expect(loadedPost!.categories[0].images).to.not.be.eql([]);
             expect(loadedPost!.categories[0].images.length).to.be.equal(2);
             expect(loadedPost!.categories[0].images.map(image => image.id)).to.have.members([1, 2]);
-            expect(loadedPost!.author).to.not.be.empty;
+            expect(loadedPost!.author).to.not.be.undefined;
             expect(loadedPost!.author.id).to.be.equal(1);
 
         })));
@@ -646,14 +652,14 @@ describe("query builder > joins", () => {
                 .setParameters({ tagId: 1, userId: 1, categoryIds: [1, 2], imageIds: [1, 2] })
                 .getOne();
 
-            expect(loadedPost!.tag).to.not.be.empty;
+            expect(loadedPost!.tag).to.not.be.undefined;
             expect(loadedPost!.tag.id).to.be.equal(1);
-            expect(loadedPost!.categories).to.not.be.empty;
+            expect(loadedPost!.categories).to.not.be.eql([]);
             expect(loadedPost!.categories.length).to.be.equal(2);
-            expect(loadedPost!.categories[0].images).to.not.be.empty;
+            expect(loadedPost!.categories[0].images).to.not.be.eql([]);
             expect(loadedPost!.categories[0].images.length).to.be.equal(2);
             expect(loadedPost!.categories[0].images.map(image => image.id)).to.have.members([1, 2]);
-            expect(loadedPost!.author).to.not.be.empty;
+            expect(loadedPost!.author).to.not.be.undefined;
             expect(loadedPost!.author.id).to.be.equal(1);
 
         })));
@@ -684,9 +690,9 @@ describe("query builder > joins", () => {
                 .setParameters({ categoryIds: [1, 2], subcategoryIds: [3] })
                 .getOne();
 
-            expect(loadedPost!.categories).to.not.be.empty;
+            expect(loadedPost!.categories).to.not.be.eql([]);
             expect(loadedPost!.categories.length).to.be.equal(2);
-            expect(loadedPost!.subcategories).to.not.be.empty;
+            expect(loadedPost!.subcategories).to.not.be.eql([]);
             expect(loadedPost!.subcategories.length).to.be.equal(1);
 
         })));
@@ -752,24 +758,24 @@ describe("query builder > joins", () => {
                 .setParameters({ isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1 })
                 .getMany();
 
-            expect(loadedPosts![0].removedCategories).to.not.be.empty;
+            expect(loadedPosts![0].removedCategories).to.not.be.eql([]);
             expect(loadedPosts![0].removedCategories.length).to.be.equal(1);
             expect(loadedPosts![0].removedCategories[0].id).to.be.equal(3);
             expect(loadedPosts![0].removedCategories[0] instanceof Category).to.be.true;
             expect(loadedPosts![0].removedCategories[0].removedImages.length).to.be.equal(1);
             expect(loadedPosts![0].removedCategories[0].removedImages[0] instanceof Image).to.be.true;
             expect(loadedPosts![0].removedCategories[0].removedImages[0].id).to.be.equal(3);
-            expect(loadedPosts![0].subcategories).to.not.be.empty;
+            expect(loadedPosts![0].subcategories).to.not.be.eql([]);
             expect(loadedPosts![0].subcategories.length).to.be.equal(2);
             expect(loadedPosts![0].subcategories[0].titleImage.id).to.be.equal(1);
-            expect(loadedPosts![1].removedCategories).to.not.be.empty;
+            expect(loadedPosts![1].removedCategories).to.not.be.eql([]);
             expect(loadedPosts![1].removedCategories.length).to.be.equal(1);
             expect(loadedPosts![1].removedCategories[0].id).to.be.equal(4);
             expect(loadedPosts![1].removedCategories[0] instanceof Category).to.be.true;
             expect(loadedPosts![1].removedCategories[0].removedImages.length).to.be.equal(1);
             expect(loadedPosts![1].removedCategories[0].removedImages[0] instanceof Image).to.be.true;
             expect(loadedPosts![1].removedCategories[0].removedImages[0].id).to.be.equal(4);
-            expect(loadedPosts![1].subcategories).to.not.be.empty;
+            expect(loadedPosts![1].subcategories).to.not.be.eql([]);
             expect(loadedPosts![1].subcategories.length).to.be.equal(1);
             expect(loadedPosts![1].subcategories[0].titleImage.id).to.be.equal(1);
 
@@ -783,14 +789,14 @@ describe("query builder > joins", () => {
                 .where("post.id = :id", { id: post.id })
                 .getOne();
 
-            expect(loadedPost!.removedCategories).to.not.be.empty;
+            expect(loadedPost!.removedCategories).to.not.be.eql([]);
             expect(loadedPost!.removedCategories.length).to.be.equal(1);
             expect(loadedPost!.removedCategories[0].id).to.be.equal(3);
             expect(loadedPost!.removedCategories[0] instanceof Category).to.be.true;
             expect(loadedPost!.removedCategories[0].removedImages.length).to.be.equal(1);
             expect(loadedPost!.removedCategories[0].removedImages[0] instanceof Image).to.be.true;
             expect(loadedPost!.removedCategories[0].removedImages[0].id).to.be.equal(3);
-            expect(loadedPost!.subcategories).to.not.be.empty;
+            expect(loadedPost!.subcategories).to.not.be.eql([]);
             expect(loadedPost!.subcategories.length).to.be.equal(2);
             expect(loadedPost!.subcategories[0].titleImage.id).to.be.equal(1);
 
@@ -809,7 +815,7 @@ describe("query builder > joins", () => {
                 .setParameters({ userId: 1 })
                 .getOne();
 
-            expect(loadedPost1!).to.be.empty;
+            expect(loadedPost1!).to.be.undefined;
 
             const loadedPost2 = await connection.manager
                 .createQueryBuilder(Post, "post")
@@ -818,7 +824,7 @@ describe("query builder > joins", () => {
                 .setParameters({ categoryId: 1 })
                 .getOne();
 
-            expect(loadedPost2!).to.be.empty;
+            expect(loadedPost2!).to.be.undefined;
 
         })));
     });

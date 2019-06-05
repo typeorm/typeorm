@@ -62,7 +62,7 @@ export class ClosureSubjectExecutor {
 
         if (parent) {
             const escape = (alias: string) => this.queryRunner.connection.driver.escape(alias);
-            const tableName = escape(subject.metadata.closureJunctionTable.tablePath); // todo: make sure to properly escape table path, not just a table name
+            const tableName = this.getTableName(subject.metadata.closureJunctionTable.tablePath);
             const ancestorColumnNames = subject.metadata.closureJunctionTable.ancestorColumns.map(column => {
                 return escape(column.databaseName);
             });
@@ -85,6 +85,7 @@ export class ClosureSubjectExecutor {
                 const parameterName = this.queryRunner.connection.driver.createParameter("parent_entity_" + column.databaseName, firstQueryParameters.length - 1);
                 return columnName + " = " + parameterName;
             }).join(", ");
+
             await this.queryRunner.query(
                 `INSERT INTO ${tableName} (${[...ancestorColumnNames, ...descendantColumnNames].join(", ")}) ` +
                 `SELECT ${ancestorColumnNames.join(", ")}, ${childEntityIds1.join(", ")} FROM ${tableName} WHERE ${whereCondition}`,
@@ -92,5 +93,20 @@ export class ClosureSubjectExecutor {
             );
         }
     }
+
+    /**
+     * Gets escaped table name with schema name if SqlServer or Postgres driver used with custom
+     * schema name, otherwise returns escaped table name.
+     */
+    protected getTableName(tablePath: string): string {
+        return tablePath.split(".")
+            .map(i => {
+                // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
+                if (i === "")
+                    return i;
+                return this.queryRunner.connection.driver.escape(i);
+            }).join(".");
+    }
+
 
 }

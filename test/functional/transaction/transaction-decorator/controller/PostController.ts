@@ -35,4 +35,10 @@ export class PostController {
         return categoryRepository.findByName(category.name);
     }
 
+    @Transaction({ connectionName: "mysql", isolation: "SERIALIZABLE" }) // "mysql" is a connection name. you can not pass it if you are using default connection.
+    async saveWithNonDefaultIsolation(post: Post, category: Category, @TransactionManager() entityManager: EntityManager) {
+        await entityManager.save(post);
+        await entityManager.save(category);
+    }
+
 }

@@ -8,7 +8,7 @@ import {
     Code,
     Collection,
     CollectionAggregationOptions,
-    CollectionBluckWriteOptions,
+    CollectionBulkWriteOptions,
     CollectionInsertManyOptions,
     CollectionInsertOneOptions,
     CollectionOptions,
@@ -104,7 +104,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      */
-    createCursor(query?: ObjectLiteral): Cursor<Entity> {
+    createCursor<T = any>(query?: ObjectLiteral): Cursor<T> {
         return this.manager.createCursor(this.metadata.target, query);
     }
 
@@ -119,21 +119,28 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Execute an aggregation framework pipeline against the collection.
      */
-    aggregate(pipeline: ObjectLiteral[], options?: CollectionAggregationOptions): AggregationCursor<Entity> {
-        return this.manager.aggregate(this.metadata.target, pipeline, options);
+    aggregate<R = any>(pipeline: ObjectLiteral[], options?: CollectionAggregationOptions): AggregationCursor<R> {
+        return this.manager.aggregate<R>(this.metadata.target, pipeline, options);
     }
 
     /**
+     * Execute an aggregation framework pipeline against the collection.
+     * This returns modified version of cursor that transforms each result into Entity model.
+     */
+    aggregateEntity(pipeline: ObjectLiteral[], options?: CollectionAggregationOptions): AggregationCursor<Entity> {
+        return this.manager.aggregateEntity(this.metadata.target, pipeline, options);
+    }
+    /**
      * Perform a bulkWrite operation without a fluent API.
      */
-    bulkWrite(operations: ObjectLiteral[], options?: CollectionBluckWriteOptions): Promise<BulkWriteOpResultObject> {
+    bulkWrite(operations: ObjectLiteral[], options?: CollectionBulkWriteOptions): Promise<BulkWriteOpResultObject> {
         return this.manager.bulkWrite(this.metadata.target, operations, options);
     }
 
     /**
      * Count number of matching documents in the db to a query.
      */
-    count(query?: ObjectLiteral, options?: MongoCountPreferences): Promise<any> {
+    count(query?: ObjectLiteral, options?: MongoCountPreferences): Promise<number> {
         return this.manager.count(this.metadata.target, query || {}, options);
     }
 
@@ -318,7 +325,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
-    rename(newName: string, options?: { dropTarget?: boolean }): Promise<Collection> {
+    rename(newName: string, options?: { dropTarget?: boolean }): Promise<Collection<any>> {
         return this.manager.rename(this.metadata.tableName, newName, options);
     }
 

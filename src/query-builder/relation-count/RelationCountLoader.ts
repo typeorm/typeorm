@@ -21,6 +21,10 @@ export class RelationCountLoader {
 
     async load(rawEntities: any[]): Promise<RelationCountLoadResult[]> {
 
+        const onlyUnique = (value: any, index: number, self: any) => {
+            return self.indexOf(value) === index;
+        };
+
         const promises = this.relationCountAttributes.map(async relationCountAttr => {
 
             if (relationCountAttr.relation.isOneToMany) {
@@ -37,9 +41,10 @@ export class RelationCountLoader {
                 const inverseSideTableAlias = relationCountAttr.alias || inverseSideTableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
                 const inverseSidePropertyName = inverseRelation.propertyName; // "category" from "post.category"
 
-                const referenceColumnValues = rawEntities
+                let referenceColumnValues = rawEntities
                     .map(rawEntity => rawEntity[relationCountAttr.parentAlias + "_" + referenceColumnName])
                     .filter(value => !!value);
+                referenceColumnValues = referenceColumnValues.filter(onlyUnique);
 
                 // ensure we won't perform redundant queries for joined data which was not found in selection
                 // example: if post.category was not found in db then no need to execute query for category.imageIds
@@ -89,9 +94,10 @@ export class RelationCountLoader {
                     secondJunctionColumn = relationCountAttr.relation.junctionEntityMetadata!.columns[0];
                 }
 
-                const referenceColumnValues = rawEntities
+                let referenceColumnValues = rawEntities
                     .map(rawEntity => rawEntity[relationCountAttr.parentAlias + "_" + joinTableColumnName])
-                    .filter(value => value);
+                    .filter(value => !!value);
+                referenceColumnValues = referenceColumnValues.filter(onlyUnique);
 
                 // ensure we won't perform redundant queries for joined data which was not found in selection
                 // example: if post.category was not found in db then no need to execute query for category.imageIds
@@ -102,7 +108,8 @@ export class RelationCountLoader {
                 const inverseSideTableName = relationCountAttr.joinInverseSideMetadata.tableName;
                 const inverseSideTableAlias = relationCountAttr.alias || inverseSideTableName;
                 const junctionTableName = relationCountAttr.relation.junctionEntityMetadata!.tableName;
-                const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + referenceColumnValues + ")" +
+                
+                const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + referenceColumnValues.map(vals => isNaN(vals) ? "'" + vals + "'" : vals) + ")" +
                     " AND " + junctionAlias + "." + secondJunctionColumn.propertyName + " = " + inverseSideTableAlias + "." + inverseJoinColumnName;
 
                 const qb = this.connection.createQueryBuilder(this.queryRunner);

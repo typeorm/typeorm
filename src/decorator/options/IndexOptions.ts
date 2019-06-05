@@ -10,7 +10,7 @@ export interface IndexOptions {
 
     /**
      * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
-     * Works only in MySQL.
+     * Works only in MySQL and PostgreSQL.
      */
     spatial?: boolean;
 
@@ -31,5 +31,17 @@ export interface IndexOptions {
      * This option is only supported for mongodb database.
      */
     sparse?: boolean;
+
+    /**
+     * Builds the index in the background so that building an index an does not block other database activities.
+     * This option is only supported for mongodb database.
+     */
+    background?: boolean;
+
+    /**
+     * Specifies a time to live, in seconds.
+     * This option is only supported for mongodb database.
+     */
+    expireAfterSeconds?: number;
 
 }

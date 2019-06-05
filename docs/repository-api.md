@@ -1,4 +1,4 @@
-# Repository API
+# Repository APIs
 
 * [Repository API](#repository-api)
 * [TreeRepository API](#treerepository-api)
@@ -100,6 +100,7 @@ If the entity already exist in the database, it is updated.
 If the entity does not exist in the database, it is inserted.
 It saves all given entities in a single transaction (in the case of entity, manager is not transactional).
 Also supports partial updating since all undefined properties are skipped.
+Returns the saved entity/entities.
 
 ```typescript
 await repository.save(user);
@@ -112,6 +113,7 @@ await repository.save([
 
 * `remove` - Removes a given entity or array of entities.
 It removes all given entities in a single transaction (in the case of entity, manager is not transactional).
+Returns the removed entity/entities.
 
 ```typescript
 await repository.remove(user);
@@ -122,13 +124,22 @@ await repository.remove([
 ]);
 ```
 
-* `insert` - Inserts a new entity.
+* `insert` - Inserts a new entity, or array of entities.
 
 ```typescript
 await repository.insert({
     firstName: "Timber",
     lastName: "Timber"
 });
+
+
+await manager.insert(User, [{ 
+    firstName: "Foo", 
+    lastName: "Bar" 
+}, { 
+    firstName: "Rizz", 
+    lastName: "Rak" 
+}]);
 ```
 
 * `update` - Partially updates entity by a given update options or entity id.
@@ -155,6 +166,17 @@ await repository.delete({ firstName: "Timber" });
 const count = await repository.count({ firstName: "Timber" });
 ```
 
+* `increment` - Increments some column by provided value of entities that match given options.
+
+```typescript
+await manager.increment(User, { firstName: "Timber" }, "age", 3);
+```
+
+* `decrement` - Decrements some column by provided value that match given options.
+```typescript
+await manager.decrement(User, { firstName: "Timber" }, "age", 3);
+```
+
 * `find` - Finds entities that match given options.
 
 ```typescript
@@ -163,7 +185,7 @@ const timbers = await repository.find({ firstName: "Timber" });
 
 * `findAndCount` - Finds entities that match given find options.
 Also counts all entities that match given conditions,
-but ignores pagination settings (`from` and `take` options).
+but ignores pagination settings (`skip` and `take` options).
 
 ```typescript
 const [timbers, timbersCount] = await repository.findAndCount({ firstName: "Timber" });
@@ -200,6 +222,34 @@ const rawData = await repository.query(`SELECT * FROM USERS`);
 
 ```typescript
 await repository.clear();
+```
+### Additional Options
+
+Optional `SaveOptions` can be passed as parameter for `save`, `insert` and `update`.
+
+* `data` -  Additional data to be passed with persist method. This data can be used in subscribers then.
+* `listeners`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
+* `transaction`: boolean - By default transactions are enabled and all queries in persistence operation are wrapped into the transaction. You can disable this behaviour by setting `{ transaction: false }` in the persistence options.
+* `chunk`: number - Breaks save execution into multiple groups of chunks. For example, if you want to save 100.000 objects but you have issues with saving them, you can break them into 10 groups of 10.000 objects (by setting `{ chunk: 10000 }`) and save each group separately. This option is needed to perform very big insertions when you have issues with underlying driver parameter number limitation.
+* `reload`: boolean - Flag to determine whether the entity that is being persisted should be reloaded during the persistence operation. It will work only on databases which does not support RETURNING / OUTPUT statement. Enabled by default.
+
+Example:
+```typescript
+// users contains array of User Entities
+userRepository.insert(users, {chunk: users.length / 1000});
+```
+
+Optional `RemoveOptions` can be passed as parameter for `remove` and `delete`.
+
+* `data` - Additional data to be passed with remove method. This data can be used in subscribers then.
+* `listener`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
+* `transaction`: boolean - By default transactions are enabled and all queries in persistence operation are wrapped into the transaction. You can disable this behaviour by setting `{ transaction: false }` in the persistence options.
+* `chunk`: number - Breaks save execution into multiple groups of chunks. For example, if you want to save 100.000 objects but you have issues saving them, you can break them into 10 groups of 10.000 objects, by setting `{ chunk: 10000 }`, and save each group separately. This option is needed to perform very big insertions when you have issues with underlying driver parameter number limitation.
+
+Example:
+```typescript
+// users contains array of User Entities
+userRepository.remove(users, {chunk: entities.length / 1000});
 ```
 
 ## `TreeRepository` API

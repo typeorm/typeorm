@@ -7,6 +7,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {TableUtils} from "../util/TableUtils";
 import {TableUnique} from "./TableUnique";
 import {TableCheck} from "./TableCheck";
+import {TableExclusion} from "./TableExclusion";
 
 /**
  * Table in the database represented in this class.
@@ -49,6 +50,11 @@ export class Table {
     checks: TableCheck[] = [];
 
     /**
+     * Table exclusion constraints.
+     */
+    exclusions: TableExclusion[] = [];
+
+    /**
      * Indicates if table was just created.
      * This is needed, for example to check if we need to skip primary keys creation
      * for new tables.
@@ -83,6 +89,9 @@ export class Table {
             if (options.checks)
                 this.checks = options.checks.map(check => new TableCheck(check));
 
+            if (options.exclusions)
+                this.exclusions = options.exclusions.map(exclusion => new TableExclusion(exclusion));
+
             if (options.justCreated !== undefined)
                 this.justCreated = options.justCreated;
 
@@ -113,6 +122,7 @@ export class Table {
             foreignKeys: this.foreignKeys.map(constraint => constraint.clone()),
             uniques: this.uniques.map(constraint => constraint.clone()),
             checks: this.checks.map(constraint => constraint.clone()),
+            exclusions: this.exclusions.map(constraint => constraint.clone()),
             justCreated: this.justCreated,
             engine: this.engine,
         });
@@ -179,6 +189,23 @@ export class Table {
     }
 
     /**
+     * Adds exclusion constraint.
+     */
+    addExclusionConstraint(exclusionConstraint: TableExclusion): void {
+        this.exclusions.push(exclusionConstraint);
+    }
+
+    /**
+     * Removes exclusion constraint.
+     */
+    removeExclusionConstraint(removedExclusion: TableExclusion): void {
+        const foundExclusion = this.exclusions.find(exclusion => exclusion.name === removedExclusion.name);
+        if (foundExclusion) {
+            this.exclusions.splice(this.exclusions.indexOf(foundExclusion), 1);
+        }
+    }
+
+    /**
      * Adds foreign keys.
      */
     addForeignKey(foreignKey: TableForeignKey): void {
@@ -222,7 +249,7 @@ export class Table {
             if (index.columnNames.length === 1 && index.isUnique && isMysql) {
                 const column = this.columns.find(c => c.name === index.columnNames[0]);
                 if (column)
-                    column.isUnique = false;
+                    column.isUnique = this.indices.some(ind => ind.columnNames.length === 1 && ind.columnNames[0] === column.name && !!index.isUnique);
             }
         }
     }
@@ -286,6 +313,7 @@ export class Table {
                 .map(index => TableIndex.create(index)),
             uniques: entityMetadata.uniques.map(unique => TableUnique.create(unique)),
             checks: entityMetadata.checks.map(check => TableCheck.create(check)),
+            exclusions: entityMetadata.exclusions.map(exclusion => TableExclusion.create(exclusion)),
         };
 
         return new Table(options);

@@ -1,10 +1,11 @@
 import {ColumnOptions, getMetadataArgsStorage} from "../../";
 import {
-    ColumnType, SimpleColumnType, WithLengthColumnType,
+    ColumnType, SimpleColumnType, SpatialColumnType, WithLengthColumnType,
     WithPrecisionColumnType, WithWidthColumnType
 } from "../../driver/types/ColumnTypes";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 import {ColumnCommonOptions} from "../options/ColumnCommonOptions";
+import {SpatialColumnOptions} from "../options/SpatialColumnOptions";
 import {ColumnWithLengthOptions} from "../options/ColumnWithLengthOptions";
 import {ColumnNumericOptions} from "../options/ColumnNumericOptions";
 import {ColumnEnumOptions} from "../options/ColumnEnumOptions";
@@ -13,6 +14,7 @@ import {EmbeddedMetadataArgs} from "../../metadata-args/EmbeddedMetadataArgs";
 import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
 import {ColumnHstoreOptions} from "../options/ColumnHstoreOptions";
 import {ColumnWithWidthOptions} from "../options/ColumnWithWidthOptions";
+import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
@@ -31,6 +33,12 @@ export function Column(options: ColumnOptions): Function;
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
 export function Column(type: SimpleColumnType, options?: ColumnCommonOptions): Function;
+
+/**
+ * Column decorator is used to mark a specific class property as a table column.
+ * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ */
+export function Column(type: SpatialColumnType, options?: ColumnCommonOptions & SpatialColumnOptions): Function;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
@@ -55,6 +63,12 @@ export function Column(type: WithPrecisionColumnType, options?: ColumnCommonOpti
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
 export function Column(type: "enum", options?: ColumnCommonOptions & ColumnEnumOptions): Function;
+
+/**
+ * Column decorator is used to mark a specific class property as a table column.
+ * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ */
+export function Column(type: "simple-enum", options?: ColumnCommonOptions & ColumnEnumOptions): Function;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
@@ -128,6 +142,14 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
                 mode: "regular",
                 options: options
             } as ColumnMetadataArgs);
+
+            if (options.generated) {
+                getMetadataArgsStorage().generations.push({
+                    target: object.constructor,
+                    propertyName: propertyName,
+                    strategy: typeof options.generated === "string" ? options.generated : "increment"
+                } as GeneratedMetadataArgs);
+            }
         }
     };
 }

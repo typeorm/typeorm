@@ -77,6 +77,7 @@ profile.photo = "me.jpg";
 await connection.manager.save(profile);
 
 const user = new User();
+user.name = 'Joe Smith';
 user.profile = profile;
 await connection.manager.save(user);
 ```

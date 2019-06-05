@@ -16,7 +16,7 @@ export class ConnectionManager {
     /**
      * List of connections registered in this connection manager.
      */
-    protected readonly connections: Connection[] = [];
+    public readonly connections: Connection[] = [];
 
     // -------------------------------------------------------------------------
     // Public Methods

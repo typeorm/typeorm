@@ -48,7 +48,7 @@ export class MaterializedPathSubjectExecutor {
             .update(subject.metadata.target)
             .set({
                 [subject.metadata.materializedPathColumn!.propertyPath]: parentPath + insertedEntityId + "."
-            })
+            } as any)
             .where(subject.identifier!)
             .execute();
     }

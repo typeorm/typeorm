@@ -11,10 +11,10 @@
 Relations helps you to work with related entities easily. 
 There are several types of relations:
 
-* one-to-one using `@OneToOne`
-* many-to-one using `@ManyToOne`
-* one-to-many using `@OneToMany`
-* many-to-many using `@ManyToMany`
+* [one-to-one](./one-to-one-relations.md) using `@OneToOne`
+* [many-to-one](./many-to-one-one-to-many-relations.md) using `@ManyToOne`
+* [one-to-many](./many-to-one-one-to-many-relations.md) using `@OneToMany`
+* [many-to-many](./many-to-many-relations.md) using `@ManyToMany`
           
 ## Relation options
 
@@ -99,7 +99,7 @@ Also, they provide a less explicit way of saving new objects into the database.
 `@JoinColumn` not only defines which side of the relation contains the join column with a foreign key, 
 but also allows you to customize join column name and referenced column name.
 
-When we set `@JoinColumn`, it automtically creates a column in the database named `propertyName + referencedColumnName`.
+When we set `@JoinColumn`, it automatically creates a column in the database named `propertyName + referencedColumnName`.
 For example:
 
 ```typescript

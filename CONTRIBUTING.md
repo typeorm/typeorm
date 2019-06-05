@@ -1,6 +1,6 @@
 # Contributing to TypeORM
 
-We would love for you to contribute to TypeORM and help make it even better than it is today! 
+We would love for you to contribute to TypeORM and help make it even better than it is today!
 As a contributor, here are the guidelines we would like you to follow:
 
  - [Question or Problem?](#question)
@@ -13,21 +13,21 @@ As a contributor, here are the guidelines we would like you to follow:
 There are several ways how you can ask your question:
 
 * You can create a question on [StackOverflow](https://stackoverflow.com/questions/tagged/typeorm) where the questions should be tagged with tag `typeorm`.
+* You can ask on [Slack](https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTFiNDEyOGUxZGQyYWIwOTA0NDQxODdkOGQ0OTUxNzFjYjUwY2E0ZmFlODc5OTYyYzAzNGM3MGZjYzhjYTBiZTY)
 * You can create issue on [github](https://github.com/typeorm/typeorm/issues)
-* You can write your questions in our [gitter channel](https://gitter.im/pleerock/typeorm)
 * If you have a Skype then try to find me there (`Umed Khudoiberdiev`)
 
 Preferred way if you create your question on StackOverflow, or create a github issue.
 
 ## <a name="issue"></a> Found a security vulnerability?
 
-If you find a security vulnerability or something that should be discussed personally, 
+If you find a security vulnerability or something that should be discussed personally,
 please contact me within my [email](https://github.com/typeorm/typeorm/blob/master/package.json#L10).
 
 ## <a name="issue"></a> Found a Bug?
 
-If you find a bug in the source code, you can help us by [submitting an issue](#submit-issue) to our 
-[GitHub Repository](https://github.com/typeorm/typeorm). 
+If you find a bug in the source code, you can help us by [submitting an issue](#submit-issue) to our
+[GitHub Repository](https://github.com/typeorm/typeorm).
 Even better, you can [submit a Pull Request](#submit-pr) with a fix.
 
 ## <a name="feature"></a> Missing a Feature?
@@ -46,11 +46,11 @@ and help you to craft the change so that it is successfully accepted into the pr
 
 ### <a name="submit-issue"></a> Submitting an Issue
 
-Before you submit an issue, please search the issue tracker, 
+Before you submit an issue, please search the issue tracker,
 maybe an issue for your problem already exists and the discussion might inform you of workarounds readily available.
 
 We want to fix all the issues as soon as possible, but before fixing a bug we need to reproduce and confirm it.
- In order to reproduce bugs we ask you to provide a minimal code snippet that shows a reproduction of the problem. 
+ In order to reproduce bugs we ask you to provide a minimal code snippet that shows a reproduction of the problem.
 
 You can file new issues by filling out our [new issue form](https://github.com/typeorm/typeorm/issues/new).
 
@@ -66,7 +66,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
      ```
 
 * Create your patch, **including appropriate test cases**. Without tests your PR will not be accepted.
-* Follow our [Coding Rules](#rules).
+* Add changelog record (short description, link to PR or issues) to the **Unreleased** section of `CHANGELOG.md`.
 * Run the full TypeORM test suite, as described in the [developer documentation](DEVELOPER.md), and ensure that all tests pass.
 * Commit your changes using a descriptive commit message
 

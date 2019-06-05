@@ -1,8 +1,9 @@
 import "reflect-metadata";
 import {expect} from "chai";
-import {Connection} from "../../../src/connection/Connection";
+import {Connection} from "../../../src";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Table} from "../../../src/schema-builder/table/Table";
+import {Table} from "../../../src";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
@@ -21,6 +22,10 @@ describe("query runner > rename column", () => {
     after(() => closeTestingConnections(connections));
 
     it("should correctly rename column and revert rename", () => Promise.all(connections.map(async connection => {
+
+        // TODO: https://github.com/cockroachdb/cockroach/issues/32555
+        if (connection.driver instanceof CockroachDriver)
+            return;
 
         const queryRunner = connection.createQueryRunner();
 
@@ -52,6 +57,10 @@ describe("query runner > rename column", () => {
 
     it("should correctly rename column with all constraints and revert rename", () => Promise.all(connections.map(async connection => {
 
+        // TODO: https://github.com/cockroachdb/cockroach/issues/32555
+        if (connection.driver instanceof CockroachDriver)
+            return;
+
         const queryRunner = connection.createQueryRunner();
 
         let table = await queryRunner.getTable("post");
@@ -59,7 +68,9 @@ describe("query runner > rename column", () => {
         await queryRunner.renameColumn(table!, idColumn, "id2");
 
         // should successfully drop pk if pk constraint was correctly renamed.
-        await queryRunner.dropPrimaryKey(table!);
+        // CockroachDB does not allow to drop PK
+        if (!(connection.driver instanceof CockroachDriver))
+            await queryRunner.dropPrimaryKey(table!);
 
         table = await queryRunner.getTable("post");
         expect(table!.findColumnByName("id")).to.be.undefined;
@@ -93,6 +104,10 @@ describe("query runner > rename column", () => {
     })));
 
     it("should correctly rename column with all constraints in custom table schema and database and revert rename", () => Promise.all(connections.map(async connection => {
+
+        // TODO: https://github.com/cockroachdb/cockroach/issues/32555
+        if (connection.driver instanceof CockroachDriver)
+            return;
 
         const queryRunner = connection.createQueryRunner();
         let table: Table|undefined;

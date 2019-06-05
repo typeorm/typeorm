@@ -37,7 +37,7 @@ compile and run. Create it using your favorite editor and put the following conf
 ```json
 {
   "compilerOptions": {
-    "lib": ["es5", "es6"],
+    "lib": ["es5", "es6", "dom"],
     "target": "es5",
     "module": "commonjs",
     "moduleResolution": "node",
@@ -148,7 +148,7 @@ npm i typeorm mysql reflect-metadata --save
 
 * `typeorm` is the typeorm package itself
 * `mysql` is the underlying database driver.
-If you are using a diffrent database system,  you must install the appropriate package
+If you are using a different database system, you must install the appropriate package
 * `reflect-metadata` is required to make decorators to work properly
 
 Now let's create `ormconfig.json` with the database connection configuration we will use.
@@ -215,28 +215,26 @@ createConnection().then(connection => {
     });
 
     app.get("/users/:id", async function(req: Request, res: Response) {
-        const user = await userRepository.findOne(req.params.id);
-        res.json(user);
+        const results = await userRepository.findOne(req.params.id);
+        return res.send(results);
     });
 
     app.post("/users", async function(req: Request, res: Response) {
-        const user = userRepository.create(req.body);
-        const created = await userRepository.save(user);
-        res.json(created);
+        const user = await userRepository.create(req.body);
+        const results = await userRepository.save(user);
+        return res.send(results);
     });
 
     app.put("/users/:id", async function(req: Request, res: Response) {
-        await userRepository.update(req.params.id, req.body);
-        res.json({
-          message: 'Updated.'
-        });
+        const user = await userRepository.findOne(req.params.id);
+        await userRepository.merge(user, req.body);
+        const results = await userRepository.save(user);
+        return res.send(results);
     });
 
     app.delete("/users/:id", async function(req: Request, res: Response) {
-        await userRepository.delete(req.params.id);
-        res.json({
-          message: 'Deleted.'
-        });
+        const results = await userRepository.remove(req.params.id);
+        return res.send(results);
     });
 
     // start express server

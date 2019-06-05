@@ -37,6 +37,7 @@ export class SubjectDatabaseEntityLoader {
 
             // prepare entity ids of the subjects we need to load
             const allIds: ObjectLiteral[] = [];
+            const allSubjects: Subject[] = [];
             subjectGroup.subjects.forEach(subject => {
 
                 // we don't load if subject already has a database entity loaded
@@ -44,6 +45,7 @@ export class SubjectDatabaseEntityLoader {
                     return;
 
                 allIds.push(subject.identifier);
+                allSubjects.push(subject);
             });
 
             // if there no ids found (means all entities are new and have generated ids) - then nothing to load there
@@ -91,16 +93,20 @@ export class SubjectDatabaseEntityLoader {
                 .findByIds(allIds, findOptions);
 
             // now when we have entities we need to find subject of each entity
-            // and insert that entity into database entity of the found subject
+            // and insert that entity into database entity of the found subjects
             entities.forEach(entity => {
-                const subject = this.findByPersistEntityLike(subjectGroup.target, entity);
-                if (subject) {
-                    subject.databaseEntity = entity;
-                    if (!subject.identifier)
-                        subject.identifier = subject.metadata.hasAllPrimaryKeys(entity) ? subject.metadata.getEntityIdMap(entity) : undefined;
-                }
+                const subjects = this.findByPersistEntityLike(subjectGroup.target, entity);
+                subjects.forEach(subject => {
+                  subject.databaseEntity = entity;
+                  if (!subject.identifier)
+                      subject.identifier = subject.metadata.hasAllPrimaryKeys(entity) ? subject.metadata.getEntityIdMap(entity) : undefined;
+                });
             });
 
+            // this way we tell what subjects we tried to load database entities of
+            for (let subject of allSubjects) {
+                subject.databaseEntityLoaded = true;
+            }
         });
 
         await Promise.all(promises);
@@ -111,11 +117,13 @@ export class SubjectDatabaseEntityLoader {
     // ---------------------------------------------------------------------
 
     /**
-     * Finds subject where entity like given subject's entity.
+     * Finds subjects where entity like given subject's entity.
      * Comparision made by entity id.
+     * Multiple subjects may be returned if duplicates are present in the subject array.
+     * This will likely result in the same row being updated multiple times during a transaction.
      */
-    protected findByPersistEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
-        return this.subjects.find(subject => {
+    protected findByPersistEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject[] {
+        return this.subjects.filter(subject => {
             if (!subject.entity)
                 return false;
 

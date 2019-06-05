@@ -9,4 +9,15 @@ export interface ColumnWithWidthOptions {
      */
     width?: number;
 
+    /**
+     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
+     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to this column
+     */
+    zerofill?: boolean;
+
+    /**
+     * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
+     */
+    unsigned?: boolean;
+
 }

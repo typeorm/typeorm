@@ -22,7 +22,7 @@ describe("other issues > double inheritance produces multiple duplicated columns
 
         // check if it was inserted correctly
         const loadedPost = await connection.manager.findOne(Post);
-        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).not.to.be.undefined;
         loadedPost!.title.should.be.equal("hello");
 
     })));

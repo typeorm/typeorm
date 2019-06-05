@@ -2,18 +2,20 @@ import {createConnection} from "../index";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
 import * as process from "process";
+import * as yargs from "yargs";
 const chalk = require("chalk");
 
 /**
  * Runs migration command.
  */
-export class MigrationRunCommand {
+export class MigrationRunCommand implements yargs.CommandModule {
 
     command = "migration:run";
     describe = "Runs all pending migrations.";
+    aliases = "migrations:run";
 
-    builder(yargs: any) {
-        return yargs
+    builder(args: yargs.Argv) {
+        return args
             .option("connection", {
                 alias: "c",
                 default: "default",
@@ -31,12 +33,18 @@ export class MigrationRunCommand {
             });
     }
 
-    async handler(argv: any) {
+    async handler(args: yargs.Arguments) {
+        if (args._[0] === "migrations:run") {
+            console.log("'migrations:run' is deprecated, please use 'migration:run' instead");
+        }
 
         let connection: Connection|undefined = undefined;
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-            const connectionOptions = await connectionOptionsReader.get(argv.connection);
+            const connectionOptionsReader = new ConnectionOptionsReader({
+                root: process.cwd(),
+                configName: args.config as any
+            });
+            const connectionOptions = await connectionOptionsReader.get(args.connection as any);
             Object.assign(connectionOptions, {
                 subscribers: [],
                 synchronize: false,
@@ -47,7 +55,7 @@ export class MigrationRunCommand {
             connection = await createConnection(connectionOptions);
 
             const options = {
-                transaction: argv["t"] === "false" ? false : true
+                transaction: args["t"] === "false" ? false : true
             };
             await connection.runMigrations(options);
             await connection.close();

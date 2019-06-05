@@ -36,7 +36,7 @@ describe("github issues > #174 Embeded types confusing with order by", () => {
             .orderBy("organisation.name")
             .getMany();
 
-        expect(organisations).not.to.be.empty;
+        expect(organisations).not.to.be.undefined;
         organisations!.should.be.eql([{
             id: 2,
             name: "ChockoWay",

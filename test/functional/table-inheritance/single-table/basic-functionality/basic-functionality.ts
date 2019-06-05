@@ -297,11 +297,11 @@ describe("table-inheritance > single-table > basic-functionality", () => {
         await connection.manager.save(employee);
 
         const loadedEmployee1 = await connection.manager.findOne(Employee, 1);
-        expect(loadedEmployee1).to.be.empty;
+        expect(loadedEmployee1).to.be.undefined;
 
         const loadedEmployee2 = await connection.manager.findOne(Employee, 2);
         loadedEmployee2!.should.be.instanceof(Employee);
-        expect(loadedEmployee2).not.to.be.empty;
+        expect(loadedEmployee2).not.to.be.undefined;
         loadedEmployee2!.id.should.be.eql(2);
         loadedEmployee2!.name.should.be.eql("John");
         loadedEmployee2!.salary.should.be.eql(1000);
@@ -319,7 +319,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
         loadedStudent1!.should.not.haveOwnProperty("salary");
 
         const loadedStudent2 = await connection.manager.findOne(Student, 2);
-        expect(loadedStudent2).to.be.empty;
+        expect(loadedStudent2).to.be.undefined;
 
         const loadedPerson1 = await connection.manager.findOne(Person, 1);
         loadedPerson1!.should.be.instanceof(Student);

@@ -28,7 +28,10 @@ export class DbQueryResultCache implements QueryResultCache {
     constructor(protected connection: Connection) {
 
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
-        this.queryResultCacheTable = this.connection.driver.buildTableName("query-result-cache", options.schema, options.database);
+        const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};    
+        const cacheTableName = cacheOptions.tableName || "query-result-cache";
+
+        this.queryResultCacheTable = this.connection.driver.buildTableName(cacheTableName, options.schema, options.database);
     }
 
     // -------------------------------------------------------------------------
@@ -140,7 +143,8 @@ export class DbQueryResultCache implements QueryResultCache {
      * Checks if cache is expired or not.
      */
     isExpired(savedCache: QueryResultCacheOptions): boolean {
-        return ((typeof savedCache.time === "string" ? parseInt(savedCache.time as any) : savedCache.time)! + savedCache.duration) < new Date().getTime();
+        const duration = typeof savedCache.duration === "string" ? parseInt(savedCache.duration) : savedCache.duration;
+        return ((typeof savedCache.time === "string" ? parseInt(savedCache.time as any) : savedCache.time)! + duration) < new Date().getTime();
     }
 
     /**

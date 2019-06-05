@@ -119,7 +119,7 @@ export class Post extends Content {
 All columns (relations, embeds, etc.) from parent entities (parent can extend other entity as well)
 will be inherited and created in final entities.
 
-This example will create 3 tables - `photo`, `question` and `post.
+This example will create 3 tables - `photo`, `question` and `post`.
 
 ## Single Table Inheritance
 
@@ -129,7 +129,7 @@ but in the database they are stored in the same table.
 
 ```typescript
 @Entity()
-@TableInheritance()
+@TableInheritance({ column: { type: "varchar", name: "type" } })
 export class Content {
     
     @PrimaryGeneratedColumn()

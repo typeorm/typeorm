@@ -57,7 +57,7 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
             .addOrderBy("game.id")
             .getOne();
 
-        expect(completePlatform).not.to.be.empty;
+        expect(completePlatform).not.to.be.undefined;
         completePlatform!.should.be.eql({
             id: platform.id,
             name: "Windows",
