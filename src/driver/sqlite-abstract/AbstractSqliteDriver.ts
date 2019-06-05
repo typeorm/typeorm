@@ -554,7 +554,7 @@ export abstract class AbstractSqliteDriver implements Driver {
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated)
-                || tableColumn.onConflict !== columnMetadata.onConflict
+                || tableColumn.onConflict !== columnMetadata.onConflict;
         });
     }
 
