@@ -3,6 +3,7 @@ import {FindOneOptions} from "./FindOneOptions";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {shorten} from "../util/StringUtils";
 
 /**
  * Utilities to work with FindOptions.
@@ -213,14 +214,21 @@ export class FindOptionsUtils {
         // go through all matched relations and add join for them
         matchedBaseRelations.forEach(relation => {
 
+            // generate a relation alias
+            let relationAlias: string = alias + "__" + relation;
+            // shorten it if needed by the driver
+            if (qb.connection.driver.maxAliasLength && relationAlias.length > qb.connection.driver.maxAliasLength) {
+                relationAlias = shorten(relationAlias);
+            }
+
             // add a join for the found relation
             const selection = alias + "." + relation;
-            qb.leftJoinAndSelect(selection, alias + "__" + relation);
+            qb.leftJoinAndSelect(selection, relationAlias);
 
             // join the eager relations of the found relation
             const relMetadata = metadata.relations.find(metadata => metadata.propertyName === relation);
             if (relMetadata) {
-                this.joinEagerRelations(qb, alias + "__" + relation, relMetadata.inverseEntityMetadata);
+                this.joinEagerRelations(qb, relationAlias, relMetadata.inverseEntityMetadata);
             }
 
             // remove added relations from the allRelations array, this is needed to find all not found relations at the end

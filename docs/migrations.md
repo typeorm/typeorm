@@ -53,6 +53,8 @@ This place is called "migrations".
 
 ## Creating a new migration
 
+**Pre-requisites**: [Installing CLI](./using-cli.md#installing-cli)
+
 Before creating a new migration you need to setup your connection options properly:
 
 ```json
@@ -82,10 +84,6 @@ Once you setup connection options you can create a new migration using CLI:
 ```
 typeorm migration:create -n PostRefactoring
 ```
-
-To use CLI commands, you need to install typeorm globally (`npm i typeorm -g`).
-Also, make sure your local typeorm version matches the global version.
-Learn more about the [TypeORM CLI](./using-cli.md).
 
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
 After you run the command you can see a new file generated in the "migration" directory 

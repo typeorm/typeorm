@@ -409,7 +409,7 @@ export class QueryExpressionMap {
         map.updateEntity = this.updateEntity;
         map.callListeners = this.callListeners;
         map.useTransaction = this.useTransaction;
-        map.nativeParameters = this.nativeParameters;
+        map.nativeParameters = Object.assign({}, this.nativeParameters);
         return map;
     }
 

@@ -1,6 +1,6 @@
 # Using CLI
 
-* [Notes on entity files written in typescript](#notes-on-entity-files-written-in-typescript)
+* [Installing CLI](#installing-cli)
 * [Initialize a new TypeORM project](#initialize-a-new-typeorm-project)
 * [Create a new entity](#create-a-new-entity)
 * [Create a new subscriber](#create-a-new-subscriber)
@@ -8,6 +8,7 @@
 * [Generate a migration from exist table schema](#generate-a-migration-from-exist-table-schema)
 * [Run migrations](#run-migrations)
 * [Revert migrations](#revert-migrations)
+* [Show migrations](#show-migrations)
 * [Sync database schema](#sync-database-schema)
 * [Log sync database schema queries without actual running them](#log-sync-database-schema-queries-without-actual-running-them)
 * [Drop database schema](#drop-database-schema)
@@ -15,7 +16,14 @@
 * [Clear cache](#clear-cache)
 * [Check version](#check-version)
 
-## Notes on entity files written in typescript
+## Installing CLI
+### If entities files are in javascript
+If you have a local typeorm version, make sure it matches the global version we are going to install.
+
+Install typeorm globally with `npm i -g typeorm`.
+You can also chose to use `npx typeorm <params>` for each command if you prefer not having to install it.
+
+### If entities files are in typescript
 This CLI tool is written in javascript and to be run on node. If your entity files are in typescript, you will need to transpile them to javascript before using CLI. You may skip this section if you only use javascript.
 
 You may setup ts-node in your project to ease the operation as follows:
@@ -42,6 +50,9 @@ If you need to pass parameter with dash to npm script, you will need to add them
 ```
 npm run typeorm migration:generate -- -n migrationNameHere
 ```
+
+### How to read the documentation
+To reduce verbosity of the documentation, the following sections are using a globally installed typeorm CLI. Depending on how you installed the CLI, you may replace `typeorm` at the start of the command, by either `npx typeorm` or `npm run typeorm`.
 
 ## Initialize a new TypeORM project
 
@@ -219,6 +230,19 @@ typeorm migration:revert
 This command will undo only the last executed migration.
 You can execute this command multiple times to revert multiple migrations.
 Learn more about [Migrations](./migrations.md).
+
+## Show migrations
+To show all migrations and whether they've been run or not use following command:
+
+```
+typeorm migration:show
+```
+
+[X] = Migration has been ran
+
+[ ] = Migration is pending/unapplied
+
+This command also returns an error code if there are unapplied migrations.
 
 ## Sync database schema
 

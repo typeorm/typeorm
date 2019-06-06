@@ -82,6 +82,8 @@ category2.name = "zoo";
 await connection.manager.save(category2);
 
 const question = new Question();
+question.title = "dogs";
+question.text = "who let the dogs out?";
 question.categories = [category1, category2];
 await connection.manager.save(question);
 ```

@@ -63,7 +63,15 @@ export class RawSqlResultsToEntityTransformer {
             keys.push(...alias.metadata.primaryColumns.map(column => DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName)));
         }
         rawResults.forEach(rawResult => {
-            const id = keys.map(key => rawResult[key]).join("_"); // todo: check partial
+            const id = keys.map(key => {
+                const keyValue = rawResult[key];
+
+                if (Buffer.isBuffer(keyValue)) {
+                    return keyValue.toString("hex");
+                }
+
+                return keyValue;
+            }).join("_"); // todo: check partial
             if (!id) return;
 
             const items = map.get(id);

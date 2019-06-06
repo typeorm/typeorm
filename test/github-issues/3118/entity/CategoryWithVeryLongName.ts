@@ -1,6 +1,6 @@
-import { JoinTable, Entity, ManyToMany } from "../../../../src";
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import { PostWithVeryLongName } from "./PostWithVeryLongName";
+import {JoinTable, Entity, ManyToMany} from "../../../../src";
+import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import {PostWithVeryLongName} from "./PostWithVeryLongName";
 
 @Entity()
 export class CategoryWithVeryLongName {
