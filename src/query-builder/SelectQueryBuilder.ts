@@ -1783,18 +1783,36 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             const metadata = this.expressionMap.mainAlias.metadata;
             const mainAliasName = this.expressionMap.mainAlias.name;
 
+            const distinctAlias = this.escape("distinctAlias");
             const querySelects = metadata.primaryColumns.map(primaryColumn => {
-                const distinctAlias = this.escape("distinctAlias");
                 const columnAlias = this.escape(DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName));
                 if (!orderBys[columnAlias]) // make sure we aren't overriding user-defined order in inverse direction
                     orderBys[columnAlias] = "ASC";
                 return `${distinctAlias}.${columnAlias} as "ids_${DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName)}"`;
             });
 
+            const innerQuery = this.clone().orderBy();
+
+            // select only columns that are necessary for orderBys
+            innerQuery.expressionMap.selects = [
+                ...selects,
+                ...metadata.primaryColumns.map(pc => {
+                    const alias = DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, pc.databaseName);
+                    if (!selects.some(s => s.aliasName === alias)) {
+                        return {
+                            selection: `${this.escape(mainAliasName)}.${this.escape(pc.databaseName)}`,
+                            aliasName: alias,
+                        } as SelectQuery;
+                    }
+                    return null;
+                })
+                .filter((s): s is SelectQuery => !!s),
+            ];
+
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
                 .select(`DISTINCT ${querySelects.join(", ")}`)
-                .addSelect(selects)
-                .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")
+                .addSelect(selects.map(s => `${distinctAlias}.${this.escape(s.aliasName!)}`).join(", "))
+                .from(`(${innerQuery.getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)
@@ -1856,25 +1874,26 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         };
     }
 
-    protected createOrderByCombinedWithSelectExpression(parentAlias: string): [ string, OrderByCondition] {
+    protected createOrderByCombinedWithSelectExpression(parentAlias: string): [Array<SelectQuery>, OrderByCondition] {
 
         // if table has a default order then apply it
         const orderBys = this.expressionMap.allOrderBys;
-        const selectString = Object.keys(orderBys)
+        const selects = Object.keys(orderBys)
             .map(orderCriteria => {
                 if (orderCriteria.indexOf(".") !== -1) {
                     const [aliasName, propertyPath] = orderCriteria.split(".");
                     const alias = this.expressionMap.findAliasByName(aliasName);
                     const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-                    return this.escape(parentAlias) + "." + this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName));
+                    return {
+                        selection: aliasName + "." + column!.databaseName,
+                        aliasName: DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName),
+                    };
                 } else {
-                    if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria))
-                        return this.escape(parentAlias) + "." + orderCriteria;
-
-                    return "";
+                    const select = this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria);
+                    return select || null;
                 }
             })
-            .join(", ");
+            .filter((s): s is SelectQuery => s !== null);
 
         const orderByObject: OrderByCondition = {};
         Object.keys(orderBys).forEach(orderCriteria => {
@@ -1885,14 +1904,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 orderByObject[this.escape(parentAlias) + "." + this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName))] = orderBys[orderCriteria];
             } else {
                 if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria)) {
-                    orderByObject[this.escape(parentAlias) + "." + orderCriteria] = orderBys[orderCriteria];
+                    orderByObject[this.escape(parentAlias) + "." + this.escape(orderCriteria)] = orderBys[orderCriteria];
                 } else {
                     orderByObject[orderCriteria] = orderBys[orderCriteria];
                 }
             }
         });
 
-        return [selectString, orderByObject];
+        return [selects, orderByObject];
     }
 
     /**
