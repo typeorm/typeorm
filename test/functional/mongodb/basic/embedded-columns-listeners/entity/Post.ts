@@ -19,4 +19,7 @@ export class Post {
     @Column(type => Counters)
     counters?: Counters;
 
+    @Column(type => Counters)
+    countersList?: Counters[];
+
 }

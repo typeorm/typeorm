@@ -24,14 +24,17 @@ describe("mongodb > embedded columns listeners", () => {
         post.title = "Post";
         post.text = "Everything about post";
         post.counters = new Counters();
+        post.countersList = [new Counters(), new Counters()];
         post.counters.information = new Information();
         await postRepository.save(post);
 
-        const loadedPost = await postRepository.findOne({title: "Post"});
+        const loadedPost = await postRepository.findOne({ title: "Post" });
 
         expect(loadedPost).to.be.not.empty;
         expect(loadedPost!.counters).to.be.not.empty;
+        expect(loadedPost!.countersList).to.be.not.empty;
         expect(loadedPost!.counters!.information).to.be.not.empty;
+        loadedPost!.countersList![0].likes.should.be.equal(100);
         loadedPost!.should.be.instanceOf(Post);
         loadedPost!.title.should.be.equal("Post");
         loadedPost!.text.should.be.equal("Everything about post");
@@ -39,7 +42,7 @@ describe("mongodb > embedded columns listeners", () => {
         post.title = "Updated post";
         await postRepository.save(post);
 
-        const loadedUpdatedPost = await postRepository.findOne({title: "Updated post"});
+        const loadedUpdatedPost = await postRepository.findOne({ title: "Updated post" });
 
         expect(loadedUpdatedPost).to.be.not.empty;
         expect(loadedUpdatedPost!.counters).to.be.not.empty;
