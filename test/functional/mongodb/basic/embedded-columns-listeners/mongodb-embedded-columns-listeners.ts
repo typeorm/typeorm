@@ -24,7 +24,6 @@ describe("mongodb > embedded columns listeners", () => {
         post.title = "Post";
         post.text = "Everything about post";
         post.counters = new Counters();
-        post.countersList = [new Counters(), new Counters()];
         post.counters.information = new Information();
         await postRepository.save(post);
 
@@ -32,9 +31,7 @@ describe("mongodb > embedded columns listeners", () => {
 
         expect(loadedPost).to.be.not.empty;
         expect(loadedPost!.counters).to.be.not.empty;
-        expect(loadedPost!.countersList).to.be.not.empty;
         expect(loadedPost!.counters!.information).to.be.not.empty;
-        loadedPost!.countersList![0].likes.should.be.equal(100);
         loadedPost!.should.be.instanceOf(Post);
         loadedPost!.title.should.be.equal("Post");
         loadedPost!.text.should.be.equal("Everything about post");
@@ -72,5 +69,24 @@ describe("mongodb > embedded columns listeners", () => {
         loadedPost.title.should.be.eql("Post");
         loadedPost.text.should.be.eql("Everything about post");
 
+    })));
+
+    it("should work listeners in entity array embeddeds correctly", () => Promise.all(connections.map(async connection => {
+        const postRepository = connection.getMongoRepository(Post);
+
+        // save posts without embeddeds
+        const post = new Post();
+        post.title = "Post";
+        post.text = "Everything about post";
+        post.countersList = [new Counters(), new Counters()];
+        await postRepository.save(post);
+
+        const cursor = postRepository.createCursor();
+        const loadedPost = await cursor.next();
+
+        loadedPost.title.should.be.eql("Post");
+        loadedPost.text.should.be.eql("Everything about post");
+        expect(loadedPost!.countersList).to.be.not.empty;
+        loadedPost!.countersList![0].likes.should.be.equal(100);
     })));
 });
