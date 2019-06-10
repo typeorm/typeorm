@@ -5,6 +5,7 @@ import {Post} from "./entity/Post";
 import {Counters} from "./entity/Counters";
 import {Information} from "./entity/Information";
 import {expect} from "chai";
+import { Tags } from "./entity/Tags";
 
 describe("mongodb > embedded columns listeners", () => {
 
@@ -78,7 +79,11 @@ describe("mongodb > embedded columns listeners", () => {
         const post = new Post();
         post.title = "Post";
         post.text = "Everything about post";
-        post.countersList = [new Counters(), new Counters()];
+        const tag1 = new Tags();
+        tag1.name = "Tag #1";
+        const tag2 = new Tags();
+        tag2.name = "Tag #2";
+        post.tags = [tag1, tag2];
         await postRepository.save(post);
 
         const cursor = postRepository.createCursor();
@@ -86,7 +91,8 @@ describe("mongodb > embedded columns listeners", () => {
 
         loadedPost.title.should.be.eql("Post");
         loadedPost.text.should.be.eql("Everything about post");
-        expect(loadedPost!.countersList).to.be.not.empty;
-        loadedPost!.countersList![0].likes.should.be.equal(100);
+        expect(loadedPost!.tags).to.be.not.empty;
+        loadedPost!.tags![0].used.should.be.equal(100);
+        loadedPost!.tags![1].name.should.be.equal("Tag #2");
     })));
 });
