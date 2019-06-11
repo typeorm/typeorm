@@ -1,6 +1,6 @@
 import {NamingStrategyInterface} from "./NamingStrategyInterface";
 import {RandomGenerator} from "../util/RandomGenerator";
-import {camelCase, snakeCase, titleCase} from "../util/StringUtils";
+import {camelCase, shorten, snakeCase, titleCase} from "../util/StringUtils";
 import {Table} from "../schema-builder/table/Table";
 
 /**
@@ -148,7 +148,13 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return prefix + tableName;
     }
 
-    eagerJoinRelationAlias(alias: string, propertyPath: string): string {
-        return alias + "_" + propertyPath.replace(".", "_");
+    joinRelationAlias(alias: string, relation: string, maxAliasLength?: number): string {
+        const relationAlias = alias + "__" + relation;
+        return maxAliasLength && relationAlias.length > maxAliasLength ? shorten(relationAlias) : relationAlias;
+    }
+
+    eagerJoinRelationAlias(alias: string, propertyPath: string, maxAliasLength?: number): string {
+        const relationAlias = alias + "__" + propertyPath.replace(".", "__");
+        return maxAliasLength && relationAlias.length > maxAliasLength ? shorten(relationAlias) : relationAlias;
     }
 }

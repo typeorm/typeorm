@@ -120,5 +120,10 @@ export interface NamingStrategyInterface {
     /**
      * Gets the name of the alias used for relation joins.
      */
-    eagerJoinRelationAlias(alias: string, propertyPath: string): string;
+    joinRelationAlias(alias: string, propertyPath: string, maxAliasLength?: number): string;
+
+    /**
+     * Gets the name of the alias used for eager relation joins.
+     */
+    eagerJoinRelationAlias(alias: string, propertyPath: string, maxAliasLength?: number): string;
 }
