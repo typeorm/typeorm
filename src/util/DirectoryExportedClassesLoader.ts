@@ -6,15 +6,24 @@ import {EntitySchema} from "../index";
  */
 export function importClassesFromDirectories(directories: string[], formats = [".js", ".ts"]): Function[] {
 
-    function loadFileClasses(exported: any, allLoaded: Function[]) {
+    function loadFileClasses(exported: any, allLoaded: Function[], visited: any[]) {
+
+        // create a shallow copy of already visited exported properties
+        visited = [...visited];
+
         if (typeof exported === "function" || exported instanceof EntitySchema) {
             allLoaded.push(exported);
 
         } else if (Array.isArray(exported)) {
-            exported.forEach((i: any) => loadFileClasses(i, allLoaded));
+            exported.forEach((i: any) => loadFileClasses(i, allLoaded, visited));
 
         } else if (typeof exported === "object" && exported !== null) {
-            Object.keys(exported).forEach(key => loadFileClasses(exported[key], allLoaded));
+            Object.keys(exported)
+                .filter(key => !!~visited.indexOf(exported[key]))
+                .forEach(key => {
+                    visited.push(exported[key]);
+                    loadFileClasses(exported[key], allLoaded, visited);
+                });
 
         }
         return allLoaded;
@@ -31,7 +40,7 @@ export function importClassesFromDirectories(directories: string[], formats = ["
         })
         .map(file => PlatformTools.load(PlatformTools.pathResolve(file)));
 
-    return loadFileClasses(dirs, []);
+    return loadFileClasses(dirs, [], []);
 }
 
 /**
