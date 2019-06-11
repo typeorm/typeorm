@@ -571,9 +571,9 @@ export class EntityMetadata {
             return undefined;
 
         let fullEntity = entity;
-        if (this.discriminatorColumn && !entity.hasOwnProperty(this.discriminatorColumn.databasePath)){
+        if (this.discriminatorColumn && !entity.hasOwnProperty(this.discriminatorColumn.databasePath))
             fullEntity[this.discriminatorColumn.databasePath] = this.discriminatorValue;
-        }
+
         return EntityMetadata.getValueMap(fullEntity, this.primaryColumns, { skipNulls: true });
     }
 
