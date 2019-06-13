@@ -127,6 +127,7 @@ export class EntityMetadataBuilder {
                         relation.registerForeignKeys(foreignKey); // push it to the relation and thus register there a join column
                         entityMetadata.foreignKeys.push(foreignKey);
                     }
+
                     if (uniqueConstraint) {
                         if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof SqlServerDriver) {
                             const index = new IndexMetadata({
@@ -163,7 +164,7 @@ export class EntityMetadataBuilder {
                         }
                     }
 
-                    if (foreignKey && this.connection.driver instanceof CockroachDriver) {
+                    if (foreignKey && !uniqueConstraint) {
                         const index = new IndexMetadata({
                             entityMetadata: relation.entityMetadata,
                             columns: foreignKey.columns,
