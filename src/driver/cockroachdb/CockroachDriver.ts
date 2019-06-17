@@ -735,16 +735,4 @@ export class CockroachDriver implements Driver {
         });
     }
 
-    /**
-     * Executes given query.
-     */
-    protected executeQuery(connection: any, query: string) {
-        return new Promise((ok, fail) => {
-            connection.query(query, (err: any, result: any) => {
-                if (err) return fail(err);
-                ok(result);
-            });
-        });
-    }
-
 }
