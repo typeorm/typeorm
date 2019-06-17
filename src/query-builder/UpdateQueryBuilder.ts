@@ -426,8 +426,13 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             if (metadata.versionColumn)
                 updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
-            if (metadata.updateDateColumn)
-                updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = DEFAULT"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
+            if (metadata.updateDateColumn) {
+                if (this.connection.driver instanceof MysqlDriver) {
+                    updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = DEFAULT");
+                } else {
+                    updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP");
+                }
+            }
 
         } else {
             Object.keys(valuesSet).map(key => {
