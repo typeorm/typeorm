@@ -8,6 +8,7 @@ import {EntityCreateCommand} from "./commands/EntityCreateCommand";
 import {MigrationCreateCommand} from "./commands/MigrationCreateCommand";
 import {MigrationRunCommand} from "./commands/MigrationRunCommand";
 import {MigrationRevertCommand} from "./commands/MigrationRevertCommand";
+import {MigrationShowCommand} from "./commands/MigrationShowCommand";
 import {SubscriberCreateCommand} from "./commands/SubscriberCreateCommand";
 import {SchemaLogCommand} from "./commands/SchemaLogCommand";
 import {MigrationGenerateCommand} from "./commands/MigrationGenerateCommand";
@@ -26,6 +27,7 @@ yargs
     .command(new MigrationCreateCommand())
     .command(new MigrationGenerateCommand())
     .command(new MigrationRunCommand())
+    .command(new MigrationShowCommand())
     .command(new MigrationRevertCommand())
     .command(new VersionCommand())
     .command(new CacheClearCommand())

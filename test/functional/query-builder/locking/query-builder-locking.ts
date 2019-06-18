@@ -99,6 +99,17 @@ describe("query builder > locking", () => {
         }
     })));
 
+    it("should attach dirty read lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof SqlServerDriver)) return;
+
+        const sql = connection.createQueryBuilder(PostWithVersion, "post")
+            .setLock("dirty_read")
+            .where("post.id = :id", { id: 1 })
+            .getSql();
+            
+        expect(sql.indexOf("WITH (NOLOCK)") !== -1).to.be.true;
+    })));
+
     it("should not attach pessimistic write lock statement on query if locking is not used", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof AbstractSqliteDriver)
             return;

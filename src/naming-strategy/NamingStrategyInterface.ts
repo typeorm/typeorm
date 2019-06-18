@@ -117,4 +117,8 @@ export interface NamingStrategyInterface {
      */
     prefixTableName(prefix: string, tableName: string): string;
 
+    /**
+     * Gets the name of the alias used for relation joins.
+     */
+    eagerJoinRelationAlias(alias: string, propertyPath: string): string;
 }

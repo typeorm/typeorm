@@ -191,7 +191,7 @@ export class RelationLoader {
 
         Object.defineProperty(entity, relation.propertyName, {
             get: function() {
-                if (this[resolveIndex] === true || this[dataIndex]) // if related data already was loaded then simply return it
+                if (this[resolveIndex] === true || this[dataIndex] !== undefined) // if related data already was loaded then simply return it
                     return Promise.resolve(this[dataIndex]);
 
                 if (this[promiseIndex]) // if related data is loading then return a promise relationLoader loads it

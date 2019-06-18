@@ -123,6 +123,27 @@ describe("repository > find options > locking", () => {
 
     })));
 
+    it("should attach dirty read lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof SqlServerDriver)) return;
+
+        const executedSql: string[] = [];
+
+        await connection.manager.transaction(entityManager => {
+            const originalQuery = entityManager.queryRunner!.query.bind(entityManager.queryRunner);
+            entityManager.queryRunner!.query = (...args) => {
+                executedSql.push(args[0]);
+                return originalQuery(...args);
+            };
+
+            return entityManager
+                .getRepository(PostWithVersion)
+                .findOne(1, {lock: {mode: "dirty_read"}});
+        });
+
+        expect(executedSql[0].indexOf("WITH (NOLOCK)") !== -1).to.be.true;
+
+    })));
+
     it("should throw error if optimistic lock used with `find` method", () => Promise.all(connections.map(async connection => {
        return connection
            .getRepository(PostWithVersion)

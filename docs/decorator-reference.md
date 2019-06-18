@@ -775,6 +775,7 @@ Learn more about [indices](indices.md).
 
 This decorator allows you to create a database unique constraint for a specific column or columns.
 This decorator can be applied only to an entity itself.
+You must specify the entity field names (not database column names) as arguments.
 
 Examples:
 
@@ -785,13 +786,13 @@ Examples:
 @Unique("UQ_NAMES", ["firstName", "lastName", "middleName"])
 export class User {
 
-    @Column()
+    @Column({ name: 'first_name' })
     firstName: string;
 
-    @Column()
+    @Column({ name: 'last_name' })
     lastName: string;
 
-    @Column()
+    @Column({ name: 'middle_name' })
     middleName: string;
 }
 ```

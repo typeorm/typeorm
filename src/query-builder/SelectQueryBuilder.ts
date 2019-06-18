@@ -949,12 +949,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "pessimistic_read"|"pessimistic_write"): this;
+    setLock(lockMode: "pessimistic_read"|"pessimistic_write"|"dirty_read"): this;
 
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "optimistic"|"pessimistic_read"|"pessimistic_write", lockVersion?: number|Date): this {
+    setLock(lockMode: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read", lockVersion?: number|Date): this {
         this.expressionMap.lockMode = lockMode;
         this.expressionMap.lockVersion = lockVersion;
         return this;
@@ -1384,6 +1384,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     break;
                 case "pessimistic_write":
                     lock = " WITH (UPDLOCK, ROWLOCK)";
+                    break;
+                case "dirty_read":
+                    lock = " WITH (NOLOCK)";
                     break;
             }
         }

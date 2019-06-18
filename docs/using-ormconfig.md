@@ -140,6 +140,10 @@ On production you can set all these values in real ENVIRONMENT VARIABLES.
 You cannot define multiple connections using an `env` file or environment variables.
 If your app has multiple connections then use alternative configuration storage format.
 
+If you need to pass a driver-specific option, e.g. `charset` for MySQL, you could use the `TYPEORM_DRIVER_EXTRA` variable in JSON format, e.g.
+```
+TYPEORM_DRIVER_EXTRA='{"charset": "utf8mb4"}'`
+```
 ## Using `ormconfig.yml`
 
 Create `ormconfig.yml` in the project root (near `package.json`). It should have the following content:
