@@ -2318,7 +2318,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
     protected buildWhere(where: any, metadata: EntityMetadata, alias: string, embedPrefix?: string): string {
         let condition: string = "";
-        let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
         if (where instanceof Array) {
             condition = ("(" + where.map(whereItem => {
                 return this.buildWhere(whereItem, metadata, alias, embedPrefix);
@@ -2327,6 +2326,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         } else {
             let andConditions: string[] = [];
             for (let key in where) {
+                // Earlier used to be at the very beginning of the buildWhere method, but should be in the loop
+                // Because when this loop call this.buildWhere() there are two separate `parameterIndex` variables
+                let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
+
                 if (where[key] === undefined)
                     continue;
 
