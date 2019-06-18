@@ -46,8 +46,8 @@ export class BaseEntity {
      * Saves current entity in the database.
      * If entity does not exist in the database then inserts, otherwise updates.
      */
-    save(): Promise<this> {
-        return (this.constructor as any).getRepository().save(this);
+    save(options?: SaveOptions): Promise<this> {
+        return (this.constructor as any).getRepository().save(this, options);
     }
 
     /**
