@@ -17,7 +17,7 @@ describe.only("github issues > #3309 findOptions uses same parameter for differe
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should not drop text column", () => Promise.all(connections.map(async connection => {
+    it("should returns 2 object correctly", () => Promise.all(connections.map(async connection => {
         interface objInterface {
             [key: string]: Photo
         }
@@ -32,7 +32,6 @@ describe.only("github issues > #3309 findOptions uses same parameter for differe
         })
 
         await connection.synchronize();
-        console.log({obj})
 
         const member1 = new Member();
         member1.name = "John";
