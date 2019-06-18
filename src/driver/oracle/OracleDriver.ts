@@ -383,7 +383,7 @@ export class OracleDriver implements Driver {
             return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
 
         if (columnMetadata.type === Boolean) {
-            value = value === 1 ? true : false;
+            value = !!value;
 
         } else if (columnMetadata.type === "date") {
             value = DateUtils.mixedDateToDateString(value);

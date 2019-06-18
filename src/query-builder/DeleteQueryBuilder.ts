@@ -15,6 +15,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../index";
 import {ObserverExecutor} from "../observer/ObserverExecutor";
+import { OracleDriver } from "../driver/oracle/OracleDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -77,6 +78,9 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 deleteResult.raw = result[0] ? result[0] : null;
                 // don't return 0 because it could confuse. null means that we did not receive this value
                 deleteResult.affected = typeof result[1] === "number" ? result[1] : null;
+            } else if (driver instanceof OracleDriver) {
+                deleteResult.affected = result;
+
             } else {
                 deleteResult.raw = result;
             }

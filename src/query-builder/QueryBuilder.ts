@@ -730,10 +730,10 @@ export abstract class QueryBuilder<Entity> {
 
         } else {
             const [primaryColumn] = metadata.primaryColumns;
-            const areAllNumbers = normalized.every((id: any) => typeof id === "number");
+            const normalizedValues = normalized.map(ent => ent[Object.keys(ent)[0]]);
+            const areAllNumbers = normalizedValues.every((id: any) => typeof id === "number");
             if (areAllNumbers) {
-                return `${alias + this.escape(primaryColumn.databaseName)} IN (${normalized.join(", ")})`;
-
+                return `${alias + this.escape(primaryColumn.databaseName)} IN (${normalizedValues.join(", ")})`;
             } else {
                 this.expressionMap.parameters["qb_ids"] = normalized.map(val => primaryColumn.getEntityValue(val, true));
                 return alias + this.escape(primaryColumn.databaseName) + " IN (:...qb_ids)";
