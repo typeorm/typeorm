@@ -60,7 +60,7 @@ describe("persistence > many-to-many", function() {
 
     })));
 
-    it("remove one element from many-to-many relation should remove from the database as well", () => Promise.all(connections.map(async connection => {
+    it.skip("remove one element from many-to-many relation should remove from the database as well", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);
