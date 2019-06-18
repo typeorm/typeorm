@@ -169,3 +169,35 @@ const categoriesWithQuestions = await connection
     .leftJoinAndSelect("category.questions", "question")
     .getMany();
 ```
+
+In case you need to have additional properties to your ManyToMany relationship you should create a new Entity yourself. For example if you would like entities A and B to have a ManyToMany relationship with an `order` property associated to it you want to create entity C like the following:
+```typescript
+import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { A } from "./a";
+import { B } from "./b";
+
+@Entity()
+export class C {
+  @PrimaryGeneratedColumn()
+  public cId!: number;
+  
+  public aId!: number;
+  public bId!: number;
+
+  @Column()
+  public order!: number;
+
+  @ManyToOne((type) => A, (a) => a.cs)
+  public a!: A;
+
+  @ManyToOne((type) => B, (b) => b.cs,
+  )
+  public b!: B;
+}
+
+```
+Additionally you will have to add a relationship like the following to `A` and `B`
+```typescript
+@OneToMany((type) => C, (c) => c.a)
+public cs!: number;
+```
