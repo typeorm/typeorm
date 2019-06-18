@@ -6,7 +6,7 @@ import {Category} from "./entity/Category";
 import {User} from "./entity/User";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
-describe("persistence > many-to-many", function() {
+describe.skip("persistence > many-to-many", function() {
 
     // -------------------------------------------------------------------------
     // Configuration
