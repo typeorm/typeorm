@@ -53,8 +53,8 @@ export class BaseEntity {
     /**
      * Removes current entity from the database.
      */
-    remove(): Promise<this> {
-        return (this.constructor as any).getRepository().remove(this);
+    remove(options?: RemoveOptions): Promise<this> {
+        return (this.constructor as any).getRepository().remove(this, options);
     }
 
     /**
