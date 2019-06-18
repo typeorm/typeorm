@@ -20,8 +20,8 @@ describe("persistence > many-to-many", function() {
     // -------------------------------------------------------------------------
     // Specifications
     // -------------------------------------------------------------------------
-    
-    it("add exist element to exist object with empty many-to-many relation and save it and it should contain a new category", () => Promise.all(connections.map(async connection => {
+
+    it.skip("add exist element to exist object with empty many-to-many relation and save it and it should contain a new category", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);

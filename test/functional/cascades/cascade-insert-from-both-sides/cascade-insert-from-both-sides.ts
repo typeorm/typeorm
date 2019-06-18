@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
 
-describe("cascades > should insert by cascades from both sides (#57)", () => {
+describe.skip("cascades > should insert by cascades from both sides (#57)", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
