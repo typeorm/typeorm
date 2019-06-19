@@ -172,9 +172,9 @@ const categoriesWithQuestions = await connection
 
 ## many-to-many relations with custom properties
 
-As noted as well in [FAQ](./faq.md#how-do-i-add-extra-columns-into-many-to-many-junction-table) it's not possible to add custom properties to a junction table generated via many-to-many relationships.
-
-In case you need to have additional properties to your many-to-many relationship you should create a new entity yourself. For example if you would like entities `Post` and `Category` to have a many-to-many relationship with a `createdAt` property associated to it you want to create entity `PostToCategory` like the following:
+In case you need to have additional properties to your many-to-many relationship you have to create a new entity yourself. 
+For example if you would like entities `Post` and `Category` to have a many-to-many relationship with a `createdAt` property 
+associated to it you have to create entity `PostToCategory` like the following:
 
 ```typescript
 import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
@@ -204,5 +204,5 @@ Additionally you will have to add a relationship like the following to `Post` an
 
 ```typescript
 @OneToMany((type) => PostToCategory, (postToCategory) => postToCategory.post)
-public postToCategories!: number;
+public postToCategories!: PostToCategory[];
 ```
