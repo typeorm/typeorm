@@ -170,34 +170,39 @@ const categoriesWithQuestions = await connection
     .getMany();
 ```
 
-In case you need to have additional properties to your ManyToMany relationship you should create a new Entity yourself. For example if you would like entities A and B to have a ManyToMany relationship with an `order` property associated to it you want to create entity C like the following:
+## many-to-many relations with custom properties
+
+As noted as well in [FAQ](./faq.md#how-do-i-add-extra-columns-into-many-to-many-junction-table) it's not possible to add custom properties to a junction table generated via many-to-many relationships.
+
+In case you need to have additional properties to your many-to-many relationship you should create a new entity yourself. For example if you would like entities `Post` and `Category` to have a many-to-many relationship with a `createdAt` property associated to it you want to create entity `PostToCategory` like the following:
+
 ```typescript
 import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { A } from "./a";
-import { B } from "./b";
+import { Post } from "./post";
+import { Category } from "./category";
 
 @Entity()
-export class C {
-  @PrimaryGeneratedColumn()
-  public cId!: number;
-  
-  public aId!: number;
-  public bId!: number;
+export class PostToCategory {
+    @PrimaryGeneratedColumn()
+    public postToCategoryId!: number;
 
-  @Column()
-  public order!: number;
+    public postId!: number;
+    public categoryId!: number;
 
-  @ManyToOne((type) => A, (a) => a.cs)
-  public a!: A;
+    @Column()
+    public order!: number;
 
-  @ManyToOne((type) => B, (b) => b.cs,
-  )
-  public b!: B;
+    @ManyToOne(type => Post, post => post.postToCategories)
+    public post!: Post;
+
+    @ManyToOne(type => Category, category => category.postToCategories)
+    public category!: Category;
 }
-
 ```
-Additionally you will have to add a relationship like the following to `A` and `B`
+
+Additionally you will have to add a relationship like the following to `Post` and `Category`:
+
 ```typescript
-@OneToMany((type) => C, (c) => c.a)
-public cs!: number;
+@OneToMany((type) => PostToCategory, (postToCategory) => postToCategory.post)
+public postToCategories!: number;
 ```
