@@ -75,12 +75,12 @@ export abstract class QueryBuilder<Entity> {
     /**
      * QueryBuilder can be initialized from given Connection and QueryRunner objects or from given other QueryBuilder.
      */
-    constructor(connection: Connection, queryRunner?: QueryRunner);
+    constructor(connection: Connection, queryRunner?: QueryRunner, expressionMap?: QueryExpressionMap);
 
     /**
      * QueryBuilder can be initialized from given Connection and QueryRunner objects or from given other QueryBuilder.
      */
-    constructor(connectionOrQueryBuilder: Connection|QueryBuilder<any>, queryRunner?: QueryRunner) {
+    constructor(connectionOrQueryBuilder: Connection|QueryBuilder<any>, queryRunner?: QueryRunner, expressionMap?: QueryExpressionMap) {
         if (connectionOrQueryBuilder instanceof QueryBuilder) {
             this.connection = connectionOrQueryBuilder.connection;
             this.queryRunner = connectionOrQueryBuilder.queryRunner;
@@ -89,7 +89,7 @@ export abstract class QueryBuilder<Entity> {
         } else {
             this.connection = connectionOrQueryBuilder;
             this.queryRunner = queryRunner;
-            this.expressionMap = new QueryExpressionMap(this.connection);
+            this.expressionMap = expressionMap || new QueryExpressionMap(this.connection);
         }
     }
 
@@ -422,6 +422,20 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
+     * Creates a query builder that shares some context with another query-builder.
+     * Used for creating Bracket Query Builders.
+     */
+    createBracketsQueryBuilder(): this {
+        const expressionMap = new QueryExpressionMap(this.connection);
+
+        expressionMap.mainAlias = new Alias(this.expressionMap.mainAlias);
+        expressionMap.aliasNamePrefixingEnabled = this.expressionMap.aliasNamePrefixingEnabled;
+        expressionMap.nativeParameters = this.expressionMap.nativeParameters;
+
+        return new (this.constructor as any)(this.connection, this.queryRunner, expressionMap);
+    }
+
+    /**
      * Clones query builder as it is.
      * Note: it uses new query runner, if you want query builder that uses exactly same query runner,
      * you can create query builder using its constructor, for example new SelectQueryBuilder(queryBuilder)
@@ -728,7 +742,7 @@ export abstract class QueryBuilder<Entity> {
             return where;
 
         if (where instanceof Brackets) {
-            const whereQueryBuilder = this.createQueryBuilder();
+            const whereQueryBuilder = this.createBracketsQueryBuilder();
             where.whereFactory(whereQueryBuilder as any);
             const whereString = whereQueryBuilder.createWhereExpressionString();
             this.setParameters(whereQueryBuilder.getParameters());
