@@ -414,22 +414,38 @@ export class MongoQueryRunner implements QueryRunner {
      * Commits transaction.
      */
     async commitTransaction(): Promise<void> {
-        if (!this.session)
-            throw new TransactionNotStartedError();
-        await this.session.commitTransaction();
-        this.session.endSession();
-        this.session = undefined;
+        try {
+            if (!this.session) {
+                throw new TransactionNotStartedError();
+            }
+            await this.session.commitTransaction();
+        } catch(e) {
+            throw e;
+        } finally {
+            if (this.session) {
+                this.session.endSession();
+                this.session = undefined;
+            }
+        }
     }
 
     /**
      * Rollbacks transaction.
      */
     async rollbackTransaction(): Promise<void> {
-        if (!this.session)
-            throw new TransactionNotStartedError();
-        await this.session.abortTransaction();
-        this.session.endSession();
-        this.session = undefined;
+        try {
+            if (!this.session) {
+                throw new TransactionNotStartedError();
+            }
+            await this.session.abortTransaction();
+        } catch(e) {
+            throw e;
+        } finally {
+            if (this.session) {
+                this.session.endSession();
+                this.session = undefined;
+            }
+        }
     }
 
     /**
