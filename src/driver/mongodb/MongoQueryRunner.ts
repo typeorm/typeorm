@@ -419,7 +419,7 @@ export class MongoQueryRunner implements QueryRunner {
                 throw new TransactionNotStartedError();
             }
             await this.session.commitTransaction();
-        } catch(e) {
+        } catch (e) {
             throw e;
         } finally {
             if (this.session) {
@@ -438,7 +438,7 @@ export class MongoQueryRunner implements QueryRunner {
                 throw new TransactionNotStartedError();
             }
             await this.session.abortTransaction();
-        } catch(e) {
+        } catch (e) {
             throw e;
         } finally {
             if (this.session) {
