@@ -47,8 +47,8 @@ import { TableUnique } from "../../schema-builder/table/TableUnique";
 import { Broadcaster } from "../../subscriber/Broadcaster";
 import { TableCheck } from "../../schema-builder/table/TableCheck";
 import { TableExclusion } from "../../schema-builder/table/TableExclusion";
-import { TransactionAlreadyStartedError } from '../../error/TransactionAlreadyStartedError';
-import { TransactionNotStartedError } from '../../error/TransactionNotStartedError';
+import { TransactionAlreadyStartedError } from "../../error/TransactionAlreadyStartedError";
+import { TransactionNotStartedError } from "../../error/TransactionNotStartedError";
 
 /**
  * Runs queries on a single MongoDB connection.
