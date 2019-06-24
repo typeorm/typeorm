@@ -30,7 +30,8 @@ import {
     ReadPreference,
     ReplaceOneOptions,
     UnorderedBulkOperation,
-    UpdateWriteOpResult
+    UpdateWriteOpResult,
+    ClientSession
 } from "../driver/mongodb/typings";
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 import {QueryRunner} from "../query-runner/QueryRunner";
@@ -233,7 +234,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Run a group command across a collection.
      */
-    group(keys: Object|Array<any>|Function|Code, condition: Object, initial: Object, reduce: Function|Code, finalize: Function|Code, command: boolean, options?: { readPreference?: ReadPreference | string }): Promise<any> {
+    group(keys: Object|Array<any>|Function|Code, condition: Object, initial: Object, reduce: Function|Code, finalize: Function|Code, command: boolean, options?: { readPreference?: ReadPreference | string, session?: ClientSession }): Promise<any> {
         return this.manager.group(this.metadata.tableName, keys, condition, initial, reduce, finalize, command, options);
     }
 
@@ -346,7 +347,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Update multiple documents on MongoDB.
      */
-    updateMany(query: ObjectLiteral, update: ObjectLiteral, options?: { upsert?: boolean, w?: any, wtimeout?: number, j?: boolean }): Promise<UpdateWriteOpResult> {
+    updateMany(query: ObjectLiteral, update: ObjectLiteral, options?: { upsert?: boolean, w?: any, wtimeout?: number, j?: boolean, arrayFilters?: any, session?: ClientSession }): Promise<UpdateWriteOpResult> {
         return this.manager.updateMany(this.metadata.tableName, query, update, options);
     }
 

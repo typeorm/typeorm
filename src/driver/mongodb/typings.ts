@@ -624,6 +624,11 @@ export interface DbOptions {
     returnNonCachedInstance?: boolean;
 }
 
+
+export interface CommonOptions {
+    session?: ClientSession;
+}
+
 export interface IndexInformationOptions {
 
     /**
@@ -1401,7 +1406,7 @@ export interface DbCollectionOptions {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createIndex
  */
-export interface MongodbIndexOptions {
+export interface MongodbIndexOptions extends CommonOptions {
 
     /**
      * The write concern.
@@ -3749,7 +3754,7 @@ export interface CollStats {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#aggregate
  */
-export interface CollectionAggregationOptions {
+export interface CollectionAggregationOptions extends CommonOptions {
 
     readPreference?: ReadPreference | string;
 
@@ -3784,7 +3789,7 @@ export interface CollectionAggregationOptions {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#insertMany
  */
-export interface CollectionInsertManyOptions {
+export interface CollectionInsertManyOptions extends CommandOptions {
 
     /**
      * The write concern.
@@ -3840,7 +3845,7 @@ export interface UpdateManyOptions {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#bulkWrite
  */
-export interface CollectionBulkWriteOptions {
+export interface CollectionBulkWriteOptions extends CommonOptions {
 
     /**
      * The write concern.
@@ -3926,7 +3931,7 @@ export interface BulkWriteOpResultObject {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#count
  */
-export interface MongoCountPreferences {
+export interface MongoCountPreferences extends CommonOptions {
 
     /**
      * The limit of documents to count.
@@ -4006,7 +4011,7 @@ export interface FindAndModifyWriteOpResultObject {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndReplace
  */
-export interface FindOneAndReplaceOption {
+export interface FindOneAndReplaceOption extends CommonOptions {
 
     /**
      * Limits the fields to return for all matching documents.
@@ -4032,6 +4037,11 @@ export interface FindOneAndReplaceOption {
      * When false, returns the updated document rather than the original. The default is true.
      */
     returnOriginal?: boolean;
+
+    /**
+     * New in version 3.6. The filtered positional operator $[<identifier>] identifies the array elements that match the arrayFilters conditions for an update operation
+     */
+    arrayFilters?: any;
 }
 
 /**
@@ -4039,7 +4049,7 @@ export interface FindOneAndReplaceOption {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#geoHaystackSearch
  */
-export interface GeoHaystackSearchOptions {
+export interface GeoHaystackSearchOptions extends CommonOptions {
 
     /**
      * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
@@ -4068,7 +4078,7 @@ export interface GeoHaystackSearchOptions {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#geoNear
  */
-export interface GeoNearOptions {
+export interface GeoNearOptions extends CommonOptions {
 
     /**
      * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
@@ -4145,7 +4155,7 @@ export declare class Code {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteMany
  */
-export interface CollectionOptions {
+export interface CollectionOptions extends CommonOptions {
 
     /**
      * The write concern.
@@ -4623,7 +4633,7 @@ export interface InsertWriteOpResult {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#insertOne
  */
-export interface CollectionInsertOneOptions {
+export interface CollectionInsertOneOptions extends CommonOptions {
 
     /**
      * The write concern.
@@ -4697,7 +4707,7 @@ export interface InsertOneWriteOpResult {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#parallelCollectionScan
  */
-export interface ParallelCollectionScanOptions {
+export interface ParallelCollectionScanOptions extends CommonOptions {
 
     /**
      * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
@@ -4726,7 +4736,7 @@ export interface ParallelCollectionScanOptions {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#replaceOne
  */
-export interface ReplaceOneOptions {
+export interface ReplaceOneOptions extends CommonOptions {
 
     /**
      * Update operation is an upsert.
@@ -4801,7 +4811,7 @@ export interface UpdateWriteOpResult {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#mapReduce
  */
-export interface MapReduceOptions {
+export interface MapReduceOptions extends CommonOptions {
 
     /**
      * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
@@ -5314,7 +5324,7 @@ export declare class ChangeStream extends Readable {
 /**
  * ChangeStreamOptions
  */
-export interface ChangeStreamOptions {
+export interface ChangeStreamOptions extends CommonOptions {
 
     /**
      * Allowed values: ‘default’, ‘updateLookup’.

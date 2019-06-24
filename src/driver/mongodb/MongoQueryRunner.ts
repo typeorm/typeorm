@@ -20,7 +20,6 @@ import {
     CollStats,
     CommandCursor,
     Cursor,
-    Db,
     DeleteWriteOpResultObject,
     FindAndModifyWriteOpResultObject,
     FindOneAndReplaceOption,
@@ -36,7 +35,9 @@ import {
     ReadPreference,
     ReplaceOneOptions,
     UnorderedBulkOperation,
-    UpdateWriteOpResult
+    UpdateWriteOpResult,
+    MongoClient,
+    ClientSession
 } from "./typings";
 import { Connection } from "../../connection/Connection";
 import { ReadStream } from "../../platform/PlatformTools";
@@ -46,6 +47,8 @@ import { TableUnique } from "../../schema-builder/table/TableUnique";
 import { Broadcaster } from "../../subscriber/Broadcaster";
 import { TableCheck } from "../../schema-builder/table/TableCheck";
 import { TableExclusion } from "../../schema-builder/table/TableExclusion";
+import { TransactionAlreadyStartedError } from '../../error/TransactionAlreadyStartedError';
+import { TransactionNotStartedError } from '../../error/TransactionNotStartedError';
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -103,13 +106,18 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Real database connection from a connection pool used to perform queries.
      */
-    databaseConnection: Db;
+    databaseConnection: MongoClient;
+
+    /**
+     * Real database connection from a connection pool used to perform queries.
+     */
+    session?: ClientSession;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection, databaseConnection: Db) {
+    constructor(connection: Connection, databaseConnection: MongoClient) {
         this.connection = connection;
         this.databaseConnection = databaseConnection;
         this.broadcaster = new Broadcaster(this);
@@ -130,28 +138,28 @@ export class MongoQueryRunner implements QueryRunner {
      * Execute an aggregation framework pipeline against the collection.
      */
     aggregate(collectionName: string, pipeline: ObjectLiteral[], options?: CollectionAggregationOptions): AggregationCursor<any> {
-        return this.getCollection(collectionName).aggregate(pipeline, options);
+        return this.getCollection(collectionName).aggregate(pipeline, this.addSessionToOptions<CollectionAggregationOptions>(options));
     }
 
     /**
      * Perform a bulkWrite operation without a fluent API.
      */
     async bulkWrite(collectionName: string, operations: ObjectLiteral[], options?: CollectionBulkWriteOptions): Promise<BulkWriteOpResultObject> {
-        return await this.getCollection(collectionName).bulkWrite(operations, options);
+        return await this.getCollection(collectionName).bulkWrite(operations, this.addSessionToOptions<CollectionBulkWriteOptions>(options));
     }
 
     /**
      * Count number of matching documents in the db to a query.
      */
     async count(collectionName: string, query?: ObjectLiteral, options?: MongoCountPreferences): Promise<any> {
-        return await this.getCollection(collectionName).countDocuments(query || {}, options);
+        return await this.getCollection(collectionName).countDocuments(query || {}, this.addSessionToOptions<MongoCountPreferences>(options));
     }
 
     /**
      * Creates an index on the db and collection.
      */
     async createCollectionIndex(collectionName: string, fieldOrSpec: string | any, options?: MongodbIndexOptions): Promise<string> {
-        return await this.getCollection(collectionName).createIndex(fieldOrSpec, options);
+        return await this.getCollection(collectionName).createIndex(fieldOrSpec, this.addSessionToOptions<MongodbIndexOptions>(options));
     }
 
     /**
@@ -166,28 +174,28 @@ export class MongoQueryRunner implements QueryRunner {
      * Delete multiple documents on MongoDB.
      */
     async deleteMany(collectionName: string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
-        return await this.getCollection(collectionName).deleteMany(query, options);
+        return await this.getCollection(collectionName).deleteMany(query, this.addSessionToOptions<CollectionOptions>(options));
     }
 
     /**
      * Delete a document on MongoDB.
      */
     async deleteOne(collectionName: string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
-        return await this.getCollection(collectionName).deleteOne(query, options);
+        return await this.getCollection(collectionName).deleteOne(query, this.addSessionToOptions<CollectionOptions>(options));
     }
 
     /**
      * The distinct command returns returns a list of distinct values for the given key across a collection.
      */
-    async distinct(collectionName: string, key: string, query: ObjectLiteral, options?: { readPreference?: ReadPreference | string }): Promise<any> {
-        return await this.getCollection(collectionName).distinct(key, query, options);
+    async distinct(collectionName: string, key: string, query: ObjectLiteral, options?: { readPreference?: ReadPreference | string, session?: ClientSession }): Promise<any> {
+        return await this.getCollection(collectionName).distinct(key, query, this.addSessionToOptions<{ readPreference?: ReadPreference | string, session?: ClientSession }>(options));
     }
 
     /**
      * Drops an index from this collection.
      */
     async dropCollectionIndex(collectionName: string, indexName: string, options?: CollectionOptions): Promise<any> {
-        return await this.getCollection(collectionName).dropIndex(indexName, options);
+        return await this.getCollection(collectionName).dropIndex(indexName, this.addSessionToOptions<CollectionOptions>(options));
     }
 
     /**
@@ -200,43 +208,43 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    async findOneAndDelete(collectionName: string, query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
-        return await this.getCollection(collectionName).findOneAndDelete(query, options);
+    async findOneAndDelete(collectionName: string, query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number, session?: ClientSession }): Promise<FindAndModifyWriteOpResultObject> {
+        return await this.getCollection(collectionName).findOneAndDelete(query, this.addSessionToOptions<{ projection?: Object, sort?: Object, maxTimeMS?: number, session?: ClientSession }>(options));
     }
 
     /**
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
      */
     async findOneAndReplace(collectionName: string, query: ObjectLiteral, replacement: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
-        return await this.getCollection(collectionName).findOneAndReplace(query, replacement, options);
+        return await this.getCollection(collectionName).findOneAndReplace(query, replacement, this.addSessionToOptions<FindOneAndReplaceOption>(options));
     }
 
     /**
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
      */
     async findOneAndUpdate(collectionName: string, query: ObjectLiteral, update: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
-        return await this.getCollection(collectionName).findOneAndUpdate(query, update, options);
+        return await this.getCollection(collectionName).findOneAndUpdate(query, update, this.addSessionToOptions<FindOneAndReplaceOption>(options));
     }
 
     /**
      * Execute a geo search using a geo haystack index on a collection.
      */
     async geoHaystackSearch(collectionName: string, x: number, y: number, options?: GeoHaystackSearchOptions): Promise<any> {
-        return await this.getCollection(collectionName).geoHaystackSearch(x, y, options);
+        return await this.getCollection(collectionName).geoHaystackSearch(x, y, this.addSessionToOptions<GeoHaystackSearchOptions>(options));
     }
 
     /**
      * Execute the geoNear command to search for items in the collection.
      */
     async geoNear(collectionName: string, x: number, y: number, options?: GeoNearOptions): Promise<any> {
-        return await this.getCollection(collectionName).geoNear(x, y, options);
+        return await this.getCollection(collectionName).geoNear(x, y, this.addSessionToOptions<GeoNearOptions>(options));
     }
 
     /**
      * Run a group command across a collection.
      */
-    async group(collectionName: string, keys: Object | Array<any> | Function | Code, condition: Object, initial: Object, reduce: Function | Code, finalize: Function | Code, command: boolean, options?: { readPreference?: ReadPreference | string }): Promise<any> {
-        return await this.getCollection(collectionName).group(keys, condition, initial, reduce, finalize, command, options);
+    async group(collectionName: string, keys: Object | Array<any> | Function | Code, condition: Object, initial: Object, reduce: Function | Code, finalize: Function | Code, command: boolean, options?: { readPreference?: ReadPreference | string, session?: ClientSession }): Promise<any> {
+        return await this.getCollection(collectionName).group(keys, condition, initial, reduce, finalize, command, this.addSessionToOptions<{ readPreference?: ReadPreference | string, session?: ClientSession }>(options));
     }
 
     /**
@@ -256,36 +264,36 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Retrieves this collections index info.
      */
-    async collectionIndexInformation(collectionName: string, options?: { full: boolean }): Promise<any> {
-        return await this.getCollection(collectionName).indexInformation(options);
+    async collectionIndexInformation(collectionName: string, options?: { full: boolean, session?: ClientSession }): Promise<any> {
+        return await this.getCollection(collectionName).indexInformation(this.addSessionToOptions<{ full: boolean, session?: ClientSession }>(options));
     }
 
     /**
      * Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
      */
     initializeOrderedBulkOp(collectionName: string, options?: CollectionOptions): OrderedBulkOperation {
-        return this.getCollection(collectionName).initializeOrderedBulkOp(options);
+        return this.getCollection(collectionName).initializeOrderedBulkOp(this.addSessionToOptions<CollectionOptions>(options));
     }
 
     /**
      * Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
      */
     initializeUnorderedBulkOp(collectionName: string, options?: CollectionOptions): UnorderedBulkOperation {
-        return this.getCollection(collectionName).initializeUnorderedBulkOp(options);
+        return this.getCollection(collectionName).initializeUnorderedBulkOp(this.addSessionToOptions<CollectionOptions>(options));
     }
 
     /**
      * Inserts an array of documents into MongoDB.
      */
     async insertMany(collectionName: string, docs: ObjectLiteral[], options?: CollectionInsertManyOptions): Promise<InsertWriteOpResult> {
-        return await this.getCollection(collectionName).insertMany(docs, options);
+        return await this.getCollection(collectionName).insertMany(docs, this.addSessionToOptions<CollectionInsertManyOptions>(options));
     }
 
     /**
      * Inserts a single document into MongoDB.
      */
     async insertOne(collectionName: string, doc: ObjectLiteral, options?: CollectionInsertOneOptions): Promise<InsertOneWriteOpResult> {
-        return await this.getCollection(collectionName).insertOne(doc, options);
+        return await this.getCollection(collectionName).insertOne(doc, this.addSessionToOptions<CollectionInsertOneOptions>(options));
     }
 
     /**
@@ -298,15 +306,15 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Get the list of all indexes information for the collection.
      */
-    listCollectionIndexes(collectionName: string, options?: { batchSize?: number, readPreference?: ReadPreference | string }): CommandCursor {
-        return this.getCollection(collectionName).listIndexes(options);
+    listCollectionIndexes(collectionName: string, options?: { batchSize?: number, readPreference?: ReadPreference | string, session?: ClientSession }): CommandCursor {
+        return this.getCollection(collectionName).listIndexes(this.addSessionToOptions<{ batchSize?: number, readPreference?: ReadPreference | string, session?: ClientSession }>(options));
     }
 
     /**
      * Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
      */
     async mapReduce(collectionName: string, map: Function | string, reduce: Function | string, options?: MapReduceOptions): Promise<any> {
-        return await this.getCollection(collectionName).mapReduce(map, reduce, options);
+        return await this.getCollection(collectionName).mapReduce(map, reduce, this.addSessionToOptions<MapReduceOptions>(options));
     }
 
     /**
@@ -314,7 +322,7 @@ export class MongoQueryRunner implements QueryRunner {
      * There are no ordering guarantees for returned results.
      */
     async parallelCollectionScan(collectionName: string, options?: ParallelCollectionScanOptions): Promise<Cursor<any>[]> {
-        return await this.getCollection(collectionName).parallelCollectionScan(options);
+        return await this.getCollection(collectionName).parallelCollectionScan(this.addSessionToOptions<ParallelCollectionScanOptions>(options));
     }
 
     /**
@@ -327,43 +335,43 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
-    async rename(collectionName: string, newName: string, options?: { dropTarget?: boolean }): Promise<Collection<any>> {
-        return await this.getCollection(collectionName).rename(newName, options);
+    async rename(collectionName: string, newName: string, options?: { dropTarget?: boolean, session?: ClientSession }): Promise<Collection<any>> {
+        return await this.getCollection(collectionName).rename(newName, this.addSessionToOptions<{ dropTarget?: boolean, session?: ClientSession }>(options));
     }
 
     /**
      * Replace a document on MongoDB.
      */
     async replaceOne(collectionName: string, query: ObjectLiteral, doc: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
-        return await this.getCollection(collectionName).replaceOne(query, doc, options);
+        return await this.getCollection(collectionName).replaceOne(query, doc, this.addSessionToOptions<ReplaceOneOptions>(options));
     }
 
     /**
      * Get all the collection statistics.
      */
-    async stats(collectionName: string, options?: { scale: number }): Promise<CollStats> {
-        return await this.getCollection(collectionName).stats(options);
+    async stats(collectionName: string, options?: { scale: number, session?: ClientSession }): Promise<CollStats> {
+        return await this.getCollection(collectionName).stats(this.addSessionToOptions<{ scale: number, session?: ClientSession }>(options));
     }
 
     /**
      * Watching new changes as stream.
      */
     watch(collectionName: string, pipeline?: Object[], options?: ChangeStreamOptions): ChangeStream {
-        return this.getCollection(collectionName).watch(pipeline, options);
+        return this.getCollection(collectionName).watch(pipeline, this.addSessionToOptions<ChangeStreamOptions>(options));
     }
 
     /**
      * Update multiple documents on MongoDB.
      */
-    async updateMany(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: { upsert?: boolean, w?: any, wtimeout?: number, j?: boolean }): Promise<UpdateWriteOpResult> {
-        return await this.getCollection(collectionName).updateMany(query, update, options);
+    async updateMany(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: { upsert?: boolean, w?: any, wtimeout?: number, j?: boolean, arrayFilters?: any, session?: ClientSession }): Promise<UpdateWriteOpResult> {
+        return await this.getCollection(collectionName).updateMany(query, update, this.addSessionToOptions<{ upsert?: boolean, w?: any, wtimeout?: number, j?: boolean, arrayFilters?: any, session?: ClientSession }>(options));
     }
 
     /**
      * Update a single document on MongoDB.
      */
     async updateOne(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
-        return await this.getCollection(collectionName).updateOne(query, update, options);
+        return await this.getCollection(collectionName).updateOne(query, update, this.addSessionToOptions<ReplaceOneOptions>(options));
     }
 
     // -------------------------------------------------------------------------
@@ -389,28 +397,39 @@ export class MongoQueryRunner implements QueryRunner {
      * For MongoDB database we don't release connection, because its single connection.
      */
     async release(): Promise<void> {
-        // releasing connection are not supported by mongodb driver, so simply don't do anything here
     }
 
     /**
      * Starts transaction.
      */
     async startTransaction(): Promise<void> {
-        // transactions are not supported by mongodb driver, so simply don't do anything here
+        if (this.session)
+            throw new TransactionAlreadyStartedError();
+        this.isTransactionActive = true;
+        this.session = this.databaseConnection.startSession();
+        this.session.startTransaction();
     }
 
     /**
      * Commits transaction.
      */
     async commitTransaction(): Promise<void> {
-        // transactions are not supported by mongodb driver, so simply don't do anything here
+        if (!this.session)
+            throw new TransactionNotStartedError();
+        await this.session.commitTransaction();
+        this.session.endSession();
+        this.session = undefined;
     }
 
     /**
      * Rollbacks transaction.
      */
     async rollbackTransaction(): Promise<void> {
-        // transactions are not supported by mongodb driver, so simply don't do anything here
+        if (!this.session)
+            throw new TransactionNotStartedError();
+        await this.session.abortTransaction();
+        this.session.endSession();
+        this.session = undefined;
     }
 
     /**
@@ -874,4 +893,18 @@ export class MongoQueryRunner implements QueryRunner {
         return this.databaseConnection.db(this.connection.driver.database!).collection(collectionName);
     }
 
+    /**
+     * Add session to options if session is used.
+     */
+    protected addSessionToOptions<T>(options: any): T {
+        if (this.isTransactionActive) {
+            if (options) {
+                options.session = this.session;
+            } else {
+                options = { session: this.session };
+            }
+            return options as T;
+        } 
+        return options as T;
+    }
 }
