@@ -85,19 +85,18 @@ export class ConnectionOptionsReader {
         // Detect if baseFilePath contains file extension
         const possibleExtension = this.baseFilePath.substr(this.baseFilePath.lastIndexOf("."));
         const fileExtension = fileFormats.find(extension => `.${extension}` === possibleExtension);
+        const fileDirname = PlatformTools.load("path").dirname(this.baseFilePath);
 
         // try to find any of following configuration formats
         const foundFileFormat = fileExtension || fileFormats.find(format => {
             return PlatformTools.fileExist(this.baseFilePath + "." + format);
         });
 
-        // if .env file found then load all its variables into process.env using dotenv package
+        // if .env file found then load all its variables into process.env using dotenv-flow package
         if (foundFileFormat === "env") {
-            const dotenv = PlatformTools.load("dotenv");
-            dotenv.config({ path: this.baseFilePath });
+            PlatformTools.load("dotenv-flow").config({ path: fileDirname, purge_dotenv: true });
         } else if (PlatformTools.fileExist(".env")) {
-            const dotenv = PlatformTools.load("dotenv");
-            dotenv.config({ path: ".env" });
+            PlatformTools.load("dotenv-flow").config({ purge_dotenv: true });
         }
 
         // Determine config file name

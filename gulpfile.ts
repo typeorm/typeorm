@@ -326,6 +326,12 @@ export class Gulpfile {
             .pipe(gulp.dest("./coverage"));
     }
 
+    @Task()
+    copyTestData() {
+        return gulp.src(["./test/**/!(*.ts)"], { dot: true })
+            .pipe(gulp.dest("./build/compiled/test"));
+    }
+
     /**
      * Compiles the code and runs tests + makes coverage report.
      */
@@ -333,10 +339,23 @@ export class Gulpfile {
     tests() {
         return [
             "compile",
+            "copyTestData",
             "coveragePre",
             "runTests",
             "coveragePost",
             "coverageRemap"
+        ];
+    }
+
+    /**
+     * Compiles the code and runs tests without coverage report.
+     */
+    @SequenceTask()
+    fastTests() {
+        return [
+            "compile",
+            "copyTestData",
+            "runTests"
         ];
     }
 
@@ -350,6 +369,7 @@ export class Gulpfile {
             "compile",
             "tslint",
             "wait",
+            "copyTestData",
             "coveragePre",
             "runTests",
             "coveragePost",
