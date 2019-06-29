@@ -10,6 +10,8 @@ import {SqljsConnectionOptions} from "../driver/sqljs/SqljsConnectionOptions";
 import {ReactNativeConnectionOptions} from "../driver/react-native/ReactNativeConnectionOptions";
 import {NativescriptConnectionOptions} from "../driver/nativescript/NativescriptConnectionOptions";
 import {ExpoConnectionOptions} from "../driver/expo/ExpoConnectionOptions";
+import {AuroraDataApiConnectionOptions} from "../driver/aurora-data-api/AuroraDataApiConnectionOptions";
+
 
 /**
  * ConnectionOptions is an interface with settings and options for specific connection.
@@ -28,4 +30,5 @@ export type ConnectionOptions =
     ReactNativeConnectionOptions|
     SqljsConnectionOptions|
     MongoConnectionOptions|
+    AuroraDataApiConnectionOptions|
     ExpoConnectionOptions;

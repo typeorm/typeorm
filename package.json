@@ -78,6 +78,8 @@
     "mssql": "^4.3.2",
     "mysql": "^2.15.0",
     "mysql2": "^1.6.5",
+    "data-api-client": "^1.0.0-beta",
+    "aws-sdk": "^2.484.0",
     "pg": "^7.8.1",
     "redis": "^2.8.0",
     "remap-istanbul": "^0.13.0",
