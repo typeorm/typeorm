@@ -6,7 +6,7 @@ import {ConnectionOptions, QueryRunner} from "../..";
  * Organizes communication with MySQL DBMS.
  */
 export class AuroraDataApiConnection extends Connection {
-    queryRunnter: AuroraDataApiQueryRunner
+    queryRunnter: AuroraDataApiQueryRunner;
 
     constructor(options: ConnectionOptions, queryRunner: AuroraDataApiQueryRunner) {
         super(options);

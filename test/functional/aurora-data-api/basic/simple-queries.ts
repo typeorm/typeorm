@@ -38,7 +38,7 @@ describe("aurora data api > simple queries", () => {
             likesCount: 4,
         }]);
 
-        const postId = insertResult.insertId
+        const postId = insertResult.insertId;
 
         const posts = await connection.query("select * from aurora_data_api_test_post where id = :id",
             [{ id: postId }]);
@@ -49,7 +49,7 @@ describe("aurora data api > simple queries", () => {
         expect(post.text).to.eq("Post Text");
         expect(post.likesCount).to.eq(4);
 
-        await connection.query("DROP TABLE aurora_data_api_test_post;")
+        await connection.query("DROP TABLE aurora_data_api_test_post;");
 
         await connection.close();
     });
