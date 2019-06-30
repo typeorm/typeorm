@@ -496,7 +496,7 @@ export class PostgresDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value);
 
         } else if (columnMetadata.type === "cube") {
-            value = value.replace(/[\(\)\s]+/g,"").split(",");
+            value = value.replace(/[\(\)\s]+/g,"").split(",").map(Number);
 
         } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum" ) {
             if (columnMetadata.isArray) {
