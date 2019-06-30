@@ -465,7 +465,9 @@ export abstract class AbstractSqliteDriver implements Driver {
      */
     createFullType(column: TableColumn): string {
         let type = column.type;
-
+        if (column.enum) {
+            return 'varchar'
+        }
         if (column.length) {
             type += "(" + column.length + ")";
 
