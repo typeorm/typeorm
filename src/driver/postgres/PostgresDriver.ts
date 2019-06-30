@@ -304,7 +304,7 @@ export class PostgresDriver implements Driver {
         });
         const hasCubeColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.columns.filter(column => column.type === "cube").length > 0;
-        })
+        });
         const hasGeometryColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.columns.filter(column => this.spatialTypes.indexOf(column.type) >= 0).length > 0;
         });
@@ -496,7 +496,7 @@ export class PostgresDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value);
 
         } else if (columnMetadata.type === "cube") {
-            value = value.replace(/[\(\)\s]+/g,"").split(",").map(Number);
+            value = value.replace(/[\(\)\s]+/g, "").split(",").map(Number);
 
         } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum" ) {
             if (columnMetadata.isArray) {
