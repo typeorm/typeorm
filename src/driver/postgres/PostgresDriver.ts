@@ -148,7 +148,8 @@ export class PostgresDriver implements Driver {
         "tstzrange",
         "daterange",
         "geometry",
-        "geography"
+        "geography",
+        "cube"
     ];
 
     /**
