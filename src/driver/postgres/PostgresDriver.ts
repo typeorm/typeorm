@@ -426,6 +426,9 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
 
+        } else if (columnMetadata.type === "cube") {
+            return `(${value.join(", ")})`;
+
         } else if (
             (
                 columnMetadata.type === "enum"
@@ -482,6 +485,9 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
+
+        } else if (columnMetadata.type === "cube") {
+            value = value.replace(/[\(\)\s]+/g,"").split(",");
 
         } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum" ) {
             if (columnMetadata.isArray) {
