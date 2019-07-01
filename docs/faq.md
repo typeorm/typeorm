@@ -137,7 +137,7 @@ and add extra columns in there. You can read more about this in [Many-to-Many re
 
 In TypeORM you can use service containers. Service containers allow you to inject custom services in some places, like in subscribers or custom naming strategies. For example, you can get access to ConnectionManager from any place using a service container.
 
-Here is an example for how you can set up typed service containers with TypeORM. Note: you can setup any service container with TypeORM.
+Here is an example for how you can set up typedi service containers with TypeORM. Note: you can setup any service container with TypeORM.
 
 ```typescript
 import {useContainer, createConnection} from "typeorm";
