@@ -22,7 +22,7 @@ jobs:
           POSTGRES_USER: "test"
           POSTGRES_PASSWORD: "test"
           POSTGRES_DB: "test"
-      - image: circleci/mongo:3.4.18
+      - image: circleci/mongo:4.0.9
       # - image: mcr.microsoft.com/mssql/server:2017-GA-ubuntu
       #   environment:
       #     SA_PASSWORD: "Admin12345"
@@ -38,9 +38,9 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+            - v1-dependencies-{{ checksum "package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
 
       - run: npm install
 

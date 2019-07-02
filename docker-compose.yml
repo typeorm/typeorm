@@ -1,6 +1,5 @@
-version: '3'
+version: "3"
 services:
-
   # mysql-5.5
   #mysql5.5:
   #  image: "mysql:5.5"
@@ -71,11 +70,10 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:3.4.18"
+    image: "mongo:4.0.9"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
-
   # redis
   # redis:
   #   image: "redis:3.0.3"
