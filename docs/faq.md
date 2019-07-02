@@ -131,13 +131,13 @@ join column / junction table settings, like join column name or junction table n
 It's not possible to add extra columns into a table created by a many-to-many relation.
 You'll need to create a separate entity and bind it using two many-to-one relations with the target entities
 (the effect will be same as creating a many-to-many table), 
-and add extra columns in there.
+and add extra columns in there. You can read more about this in [Many-to-Many relations](./many-to-many-relations.md#many-to-many-relations-with-custom-properties).
 
 ## How to use TypeORM with a dependency injection tool?
 
 In TypeORM you can use service containers. Service containers allow you to inject custom services in some places, like in subscribers or custom naming strategies. For example, you can get access to ConnectionManager from any place using a service container.
 
-Here is an example for how you can set up typed service containers with TypeORM. Note: you can setup any service container with TypeORM.
+Here is an example for how you can set up typedi service containers with TypeORM. Note: you can setup any service container with TypeORM.
 
 ```typescript
 import {useContainer, createConnection} from "typeorm";

@@ -47,6 +47,11 @@ export class QueryExpressionMap {
     selects: SelectQuery[] = [];
 
     /**
+     * Whether SELECT is DISTINCT.
+     */
+    selectDistinct: boolean = false;
+
+    /**
      * FROM-s to be selected.
      */
     // froms: { target: string, alias: string }[] = [];
