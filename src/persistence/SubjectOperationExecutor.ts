@@ -943,7 +943,10 @@ export class SubjectOperationExecutor {
             secondJoinColumns.forEach(joinColumn => {
                 inverseConditions[joinColumn.databaseName] = joinColumn.referencedColumn!.getEntityValue(relationIds);
             });
-            return this.queryRunner.delete(junctionMetadata.tableName, Object.assign({}, inverseConditions, conditions));
+            const tablePath = junctionMetadata.schema
+                ? `${junctionMetadata.schema}.${junctionMetadata.tableName}`
+                : junctionMetadata.tableName;
+            return this.queryRunner.delete(tablePath, Object.assign({}, inverseConditions, conditions));
         });
 
         await Promise.all(removePromises);
