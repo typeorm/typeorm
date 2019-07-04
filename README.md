@@ -1,3 +1,41 @@
+# FTR README
+
+## Development and testing
+
+Please see the [developer guide](DEVELOPER.md) if you are interested.
+
+At the time of writing, it's too much work for a simple fix.
+
+## Publishing
+
+Prior to publication, follow FTR's [Working with npm packages in feature branches][npm-doc] guide to create a feature branch then test it with dependent projects such as `ftr-beast`.
+
+Summary is below:
+
+### Pre-release
+
+Run:
+
+```
+npm version prerelease
+npm run package
+npm publish --tag FTRX-5000 build/package # Replace 5000 with your issue number
+```
+
+### Actual release
+
+To publish the project, compile and package the project first. This can be achieved by the command:
+
+```
+npm version patch # Replace patch with major/minor as appropriate
+npm run package
+npm publish build/package
+```
+
+[npm-doc]: https://fortherecord.atlassian.net/wiki/spaces/FPX/pages/150470657/Working+with+npm+packages+in+feature+branches
+
+# Original README
+
 <div align="center">
   <a href="https://typeorm.io/">
     <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">
