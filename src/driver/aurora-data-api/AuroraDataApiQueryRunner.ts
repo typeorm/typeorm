@@ -138,13 +138,13 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
             and ${parameters.length} in input`);
         }
 
-        const transformedParameters: any[] = []
+        const transformedParameters: any[] = [];
 
         if (parameters && parameters.length > 0) {
             const numberOfObjects = parameters.length / numberOfParametersInQueryString;
 
             for (let i = 0; i < (numberOfObjects); ++i) {
-                const parameterObject: any = {}
+                const parameterObject: any = {};
 
                 for (let y = 0; y < numberOfParametersInQueryString; ++y) {
                     const paramName = `param_${y}`;
