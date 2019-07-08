@@ -120,6 +120,48 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         this.isTransactionActive = false;
     }
 
+    transformQueryAndParameters(query: string, parameters?: any[]): any {
+        const queryParamRegex = /\?/g;
+
+        let numberOfParametersInQueryString = 0;
+
+        const newQueryString = query.replace(queryParamRegex, () => {
+            const paramName = `param_${numberOfParametersInQueryString}`;
+
+            numberOfParametersInQueryString += 1;
+
+            return ":" + paramName;
+        });
+
+        if (parameters && parameters.length > 0 && parameters.length % numberOfParametersInQueryString !== 0) {
+            throw new Error(`Number of parameters mismatch, got ${numberOfParametersInQueryString} in query string \
+            and ${parameters.length} in input`);
+        }
+
+        const transformedParameters: any[] = []
+
+        if (parameters && parameters.length > 0) {
+            const numberOfObjects = parameters.length / numberOfParametersInQueryString;
+
+            for (let i = 0; i < (numberOfObjects); ++i) {
+                const parameterObject: any = {}
+
+                for (let y = 0; y < numberOfParametersInQueryString; ++y) {
+                    const paramName = `param_${y}`;
+
+                    parameterObject[paramName] = parameters[i + y];
+                }
+
+                transformedParameters.push(parameterObject);
+            }
+        }
+
+        return {
+            queryString: newQueryString,
+            parameters: transformedParameters,
+        };
+    }
+
     /**
      * Executes a raw SQL query.
      */
@@ -127,9 +169,11 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const clientParameters = parameters && parameters[0];
+        const transformedQueryData = this.transformQueryAndParameters(query, parameters);
 
-        const result = await this.driver.client.query(query, clientParameters);
+        this.driver.connection.logger.logQuery(transformedQueryData.queryString, transformedQueryData.parameters, this);
+
+        const result = await this.driver.client.query(transformedQueryData.queryString, transformedQueryData.parameters);
 
         if (result.records) {
             return result.records;

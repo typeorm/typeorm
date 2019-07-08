@@ -12,6 +12,7 @@ describe("aurora data api > simple queries", () => {
             secretArn: process.env.secretArn!,
             resourceArn: process.env.resourceArn!,
             region: "eu-west-1",
+            logging: true,
         });
 
         const result = await connection.query("select 1");
@@ -30,24 +31,73 @@ describe("aurora data api > simple queries", () => {
             region: "eu-west-1",
             entities: [Post],
             synchronize: true,
+            logging: true,
         });
 
-        const insertResult = await connection.query(`INSERT INTO aurora_data_api_test_post (title,text,likesCount) VALUES(:title,:text,:likesCount)`, [{
-            title: "My First Post",
-            text: "Post Text",
-            likesCount: 4,
-        }]);
+        const postRepository = connection.getRepository(Post);
 
-        const postId = insertResult.insertId;
+        const post = new Post();
 
-        const posts = await connection.query("select * from aurora_data_api_test_post where id = :id",
-            [{ id: postId }]);
+        post.title = "My First Post";
+        post.text = "Post Text";
+        post.likesCount = 4;
 
-        const post = posts[0];
+        const insertResult = await postRepository.save(post);
 
-        expect(post.title).to.eq("My First Post");
-        expect(post.text).to.eq("Post Text");
-        expect(post.likesCount).to.eq(4);
+        const postId = insertResult.id;
+
+        const dbPost = await postRepository.findOne({ id: postId});
+
+        expect(dbPost).to.be.not.undefined;
+
+        expect(dbPost!.title).to.eq("My First Post");
+        expect(dbPost!.text).to.eq("Post Text");
+        expect(dbPost!.likesCount).to.eq(4);
+
+        await connection.query("DROP TABLE aurora_data_api_test_post;");
+
+        await connection.close();
+    });
+
+    it("batch insert", async () => {
+        const connection = await createConnection({
+            type: "aurora-data-api",
+            database: process.env.dbName!,
+            secretArn: process.env.secretArn!,
+            resourceArn: process.env.resourceArn!,
+            region: "eu-west-1",
+            entities: [Post],
+            synchronize: true,
+            logging: true,
+        });
+
+        const postRepository = connection.getRepository(Post);
+
+        const post = new Post();
+
+        post.title = "My First Post";
+        post.text = "Post Text";
+        post.likesCount = 4;
+
+        const secondPost = new Post();
+
+        secondPost.title = "My Second Post";
+        secondPost.text = "Post Text";
+        secondPost.likesCount = 5;
+
+        await postRepository.save([post, secondPost]);
+
+        const dbPosts = await postRepository.find();
+
+        expect(dbPosts).to.be.not.undefined;
+
+        expect(dbPosts.length).to.be.eq(2);
+
+        for (const dbPost of dbPosts) {
+            expect(dbPost!.title).to.be.a("string");
+            expect(dbPost!.text).to.be.a("string");
+            expect(dbPost!.likesCount).to.be.a("number");
+        }
 
         await connection.query("DROP TABLE aurora_data_api_test_post;");
 
