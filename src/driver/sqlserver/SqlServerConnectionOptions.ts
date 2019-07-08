@@ -106,6 +106,12 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
          * to idle time. Supercedes softIdleTimeoutMillis Default: 30000
          */
         readonly idleTimeoutMillis?: number;
+
+        /*
+        * Function handling errors thrown by drivers pool.
+        * Defaults to logging error with `warn` level.
+         */
+        readonly errorHandler?: (err: any) => any;
     };
 
     /**
@@ -270,5 +276,6 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
         readonly slaves: SqlServerConnectionCredentialsOptions[];
 
     };
+
 
 }

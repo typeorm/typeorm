@@ -180,6 +180,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `uuidExtension` - The Postgres extension to use when generating UUIDs. Defaults to `uuid-ossp`. Can be changed to `pgcrypto` if the `uuid-ossp` extension is unavailable.
 
+* `poolErrorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
+
 ## `sqlite` connection options
 
 * `database` - Database path. For example "./mydb.sql"
@@ -257,6 +259,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
  
 * `pool.idleTimeoutMillis` -  the minimum amount of time that an object may sit idle in the pool before it is eligible for
  eviction due to idle time. Supersedes `softIdleTimeoutMillis`. Default: `30000`.
+ 
+ * `pool.errorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
  
 * `options.fallbackToDefaultDb` - By default, if the database requestion by `options.database` cannot be accessed, the connection
  will fail with an error. However, if `options.fallbackToDefaultDb` is set to `true`, then the user's default database will
