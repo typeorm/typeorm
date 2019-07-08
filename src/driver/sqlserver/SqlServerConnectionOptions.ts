@@ -271,4 +271,10 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
 
     };
 
+    /*
+    * Function handling errors thrown by drivers pool.
+    * Defaults to logging error with `warn` level.
+     */
+    readonly poolErrorHandler?: (err: any) => any;
+
 }
