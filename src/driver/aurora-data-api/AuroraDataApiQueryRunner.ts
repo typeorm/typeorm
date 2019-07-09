@@ -121,7 +121,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     }
 
     transformQueryAndParameters(query: string, parameters?: any[]): any {
-        const queryParamRegex = /\?/g;
+        const queryParamRegex = /\?(?=(([^(")\\]*(\\.|"([^"\\]*\\.)*[^"\\]*"))*[^"]*$))(?=(([^(')\\]*(\\.|'([^'\\]*\\.)*[^'\\]*'))*[^']*$))/g;
 
         let numberOfParametersInQueryString = 0;
 
