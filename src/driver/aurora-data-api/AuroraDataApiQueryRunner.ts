@@ -87,7 +87,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
             throw new TransactionAlreadyStartedError();
 
         this.isTransactionActive = true;
-        await this.driver.client.commitTransaction();
+        await this.driver.client.startTransaction();
     }
 
     /**
