@@ -87,12 +87,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
             throw new TransactionAlreadyStartedError();
 
         this.isTransactionActive = true;
-        if (isolationLevel) {
-            await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
-            await this.query("START TRANSACTION");
-        } else {
-            await this.query("START TRANSACTION");
-        }
+        await this.driver.client.commitTransaction();
     }
 
     /**
@@ -103,7 +98,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.query("COMMIT");
+        await this.driver.client.commitTransaction();
         this.isTransactionActive = false;
     }
 
@@ -115,7 +110,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.query("ROLLBACK");
+        await this.driver.client.rollbackTransaction();
         this.isTransactionActive = false;
     }
 
