@@ -761,6 +761,7 @@ export class AuroraDataApiDriver implements Driver {
      */
     protected loadDependencies(): void {
         this.DataApiDriver = PlatformTools.load("typeorm-aurora-data-api-driver");
+        console.log(require.resolve("typeorm-aurora-data-api-driver"));
     }
 
     /**
