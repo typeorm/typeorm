@@ -78,8 +78,6 @@
     "mssql": "^4.3.2",
     "mysql": "^2.15.0",
     "mysql2": "^1.6.5",
-    "data-api-client": "^1.0.0-beta",
-    "aws-sdk": "^2.484.0",
     "pg": "^7.8.1",
     "redis": "^2.8.0",
     "remap-istanbul": "^0.13.0",
@@ -91,6 +89,7 @@
     "sqlite3": "^4.0.8",
     "ts-node": "^8.0.2",
     "tslint": "^5.13.1",
+    "typeorm-aurora-data-api-driver": "^1.0.2",
     "typescript": "^3.3.3333"
   },
   "dependencies": {

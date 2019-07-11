@@ -28,9 +28,9 @@ export class AuroraDataApiDriver implements Driver {
 
     connection: Connection;
     /**
-     * Mysql underlying library.
+     * Aurora Data API underlying library.
      */
-    data: any;
+    DataApiDriver: any;
 
     client: any;
 
@@ -297,7 +297,13 @@ export class AuroraDataApiDriver implements Driver {
         // load mysql package
         this.loadDependencies();
 
-        this.client = this.data({ ...this.options, options: { region: this.options.region }});
+        this.client = new this.DataApiDriver(
+            this.options.region,
+            this.options.secretArn,
+            this.options.resourceArn,
+            this.options.database,
+            (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
+        );
 
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
@@ -754,7 +760,7 @@ export class AuroraDataApiDriver implements Driver {
      * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
-        this.data = PlatformTools.load("data-api-client");
+        this.DataApiDriver = PlatformTools.load("typeorm-aurora-data-api-driver");
     }
 
     /**
