@@ -545,6 +545,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`));
         }
 
+        // create column's comment
+        if (column.comment) {
+            upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}.${column.name} IS ${column.comment}`))
+        }
+
         await this.executeQueries(upQueries, downQueries);
 
         clonedTable.addColumn(column);
@@ -862,7 +867,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`));
             }
-
+            
         }
 
         await this.executeQueries(upQueries, downQueries);
