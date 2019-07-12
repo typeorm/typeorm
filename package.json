@@ -89,8 +89,8 @@
     "sqlite3": "^4.0.8",
     "ts-node": "^8.0.2",
     "tslint": "^5.13.1",
-    "typeorm-aurora-data-api-driver": "^1.1.1",
-    "typescript": "^3.3.3333"
+    "typescript": "^3.3.3333",
+    "typeorm-aurora-data-api-driver": "^1.1.1"
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
