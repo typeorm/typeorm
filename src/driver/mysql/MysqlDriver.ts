@@ -391,10 +391,13 @@ export class MysqlDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
+        const keys = Object.keys(parameters).map(parameter => "(\\?|:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
+        const resultParameters: any[] = [];
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
             let value: any;
-            if (key.substr(0, 4) === ":...") {
+            if (key === "?") {
+                value = escapedParameters.shift();
+            } else if (key.substr(0, 4) === ":...") {
                 value = parameters[key.substr(4)];
             } else {
                 value = parameters[key.substr(1)];
@@ -404,11 +407,11 @@ export class MysqlDriver implements Driver {
                 return value();
 
             } else {
-                escapedParameters.push(value);
+                resultParameters.push(value);
                 return "?";
             }
         }); // todo: make replace only in value statements, otherwise problems
-        return [sql, escapedParameters];
+        return [sql, resultParameters];
     }
 
     /**
