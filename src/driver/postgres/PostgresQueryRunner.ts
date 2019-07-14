@@ -179,7 +179,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     } else {
                         switch (result.command) {
                             case "DELETE":
-                                // for DELETE query additionally return number of affected rows
+                            case "UPDATE":
+                                // for UPDATE and DELETE query additionally return number of affected rows
                                 ok([result.rows, result.rowCount]);
                                 break;
                             default:
