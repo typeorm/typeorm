@@ -51,7 +51,7 @@ export class DriverUtils {
         if (maxAliasLength && maxAliasLength > 0 && columnAliasName.length > maxAliasLength)
             return alias.length > column.length
                 ? `${shorten(alias)}_${column}`
-                : `${alias}_${shorten(column)_${random}}`;
+                : `${alias}_${shorten(column)}_${random}`;
 
         return columnAliasName;
     }
