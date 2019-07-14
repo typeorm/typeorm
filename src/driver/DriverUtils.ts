@@ -47,11 +47,11 @@ export class DriverUtils {
      */
     static buildColumnAlias({ maxAliasLength }: Driver, alias: string, column: string): string {
         const columnAliasName = alias + "_" + column;
-
+        const random = Math.random().toString(36).substring(3).substr(0,3);
         if (maxAliasLength && maxAliasLength > 0 && columnAliasName.length > maxAliasLength)
             return alias.length > column.length
                 ? `${shorten(alias)}_${column}`
-                : `${alias}_${shorten(column)}`;
+                : `${alias}_${shorten(column)_${random}}`;
 
         return columnAliasName;
     }
