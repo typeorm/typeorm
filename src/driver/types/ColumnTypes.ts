@@ -65,7 +65,8 @@ export type WithLengthColumnType = "character varying" // postgres, cockroachdb
     |"raw" // oracle
     |"binary" // mssql
     |"varbinary" // mssql
-    |"string"; // cockroachdb
+    |"string" // cockroachdb
+    |"blob sub_type text"; // firebird
 
 export type WithWidthColumnType = "tinyint" // mysql
     |"smallint" // mysql

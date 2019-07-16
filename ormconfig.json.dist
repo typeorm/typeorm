@@ -78,5 +78,16 @@
     "database": "test",
     "logging": false,
     "useNewUrlParser": true
+  },
+  {
+    "skip": false,
+    "name": "firebird",
+    "type": "firebird",
+    "host": "localhost",
+    "port": 3050,
+    "username": "SYSDBA",
+    "password": "masterkey",
+    "database": "test",
+    "logging": false
   }
 ]

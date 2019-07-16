@@ -16,14 +16,15 @@ import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder";
 import { FirebirdQueryRunner } from "./FirebirdQueryRunner";
 import { DateUtils } from "../../util/DateUtils";
 import { OrmUtils } from "../../util/OrmUtils";
+import { ApplyValueTransformers } from "../../util/ApplyValueTransformers";
 
 export class FirebirdDriver implements Driver {
     options: FirebirdConnectionOptions;
     database?: string | undefined;
     isReplicated: boolean;
     treeSupport: boolean;
-    
-    supportedDataTypes: ColumnType[] = [        
+
+    supportedDataTypes: ColumnType[] = [
         "int",
         "smallint",
         "bigint",
@@ -39,7 +40,7 @@ export class FirebirdDriver implements Driver {
         "varchar",
         "blob"
     ];
-    
+
     dataTypeDefaults: DataTypeDefaults = {
         "varchar": { length: 255 },
         "char": { length: 1 },
@@ -52,7 +53,7 @@ export class FirebirdDriver implements Driver {
     };
 
     spatialTypes: ColumnType[];
-    
+
     withLengthColumnTypes: ColumnType[] = [
         "char",
         "varchar",
@@ -66,7 +67,7 @@ export class FirebirdDriver implements Driver {
 
     withScaleColumnTypes: ColumnType[] = [
         "decimal",
-        "numeric"        
+        "numeric"
     ];
 
     mappedDataTypes: MappedColumnTypes = {
@@ -87,6 +88,12 @@ export class FirebirdDriver implements Driver {
         cacheDuration: "int",
         cacheQuery: "blob",
         cacheResult: "blob",
+        metadataType: "varchar",
+        metadataDatabase: "varchar",
+        metadataSchema: "varchar",
+        metadataTable: "varchar",
+        metadataName: "varchar",
+        metadataValue: "blob sub_type text",
     };
     connection: Connection;
     /**
@@ -95,7 +102,7 @@ export class FirebirdDriver implements Driver {
     firebird: any;
     /**
      * Connection options for firebird connection
-     */    
+     */
     firebirdOptions: Options;
 
     /**
@@ -112,7 +119,7 @@ export class FirebirdDriver implements Driver {
         this.connection = connection;
         this.options = connection.options as FirebirdConnectionOptions;
         this.firebirdOptions = connection.options as Options;
-        
+
         // load mysql package
         this.firebird = PlatformTools.load("node-firebird");
     }
@@ -152,7 +159,7 @@ export class FirebirdDriver implements Driver {
             } else {
                 this.firebirdDatabase.detach(() => ok());
             }
-        });        
+        });
     }
 
     createSchemaBuilder(): SchemaBuilder {
@@ -193,7 +200,7 @@ export class FirebirdDriver implements Driver {
     }
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata) {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.to(value);
+            value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (value === null || value === undefined)
             return value;
@@ -230,7 +237,7 @@ export class FirebirdDriver implements Driver {
         }
 
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
+            value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
 
         return value;
     }
