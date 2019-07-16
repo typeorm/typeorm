@@ -732,7 +732,7 @@ export abstract class QueryBuilder<Entity> {
             where.whereFactory(whereQueryBuilder as any);
             const whereString = whereQueryBuilder.createWhereExpressionString();
             this.setParameters(whereQueryBuilder.getParameters());
-            return whereString ? "(" + whereString + ")" : "";
+            return whereString ? (where.negate ? "NOT " : "") + "(" + whereString + ")" : "";
 
         } else if (where instanceof Function) {
             return where(this);

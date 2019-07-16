@@ -341,12 +341,15 @@ createQueryBuilder("user")
         qb.where("user.firstName = :firstName", { firstName: "Timber" })
           .orWhere("user.lastName = :lastName", { lastName: "Saw" })
     }))
+    .andWhere(new Brackets(qb => {
+        qb.where("user.firstName = :firstName2", { firstName2: "Bob" })
+    }, { negate : true }))
 ```
 
 Which will produce the following SQL query:
 
 ```sql
-SELECT ... FROM users user WHERE user.registered = true AND (user.firstName = 'Timber' OR user.lastName = 'Saw')
+SELECT ... FROM users user WHERE user.registered = true AND (user.firstName = 'Timber' OR user.lastName = 'Saw') AND NOT (user.firstName = 'BOB')
 ```
 
 You can combine as many `AND` and `OR` expressions as you need.
