@@ -1,17 +1,17 @@
-# Using ormconfig.json
+# ormconfig.json
 
-  - * [Creating a new connection from the configuration file](#creating-a-new-connection-from-the-configuration-file)
-  - * [Using `ormconfig.json`](#using-ormconfigjson)
-  - * [Using `ormconfig.js`](#using-ormconfigjs)
-  - * [Using environment variables](#using-environment-variables)
-  - * [Using `ormconfig.yml`](#using-ormconfigyml)
-  - * [Using `ormconfig.xml`](#using-ormconfigxml)
-  - * [Overriding options defined in ormconfig](#overriding-options-defined-in-ormconfig)
+  - [Creating a new connection from the configuration file](#creating-a-new-connection-from-the-configuration-file)
+  - [Using `ormconfig.json`](#using-ormconfigjson)
+  - [Using `ormconfig.js`](#using-ormconfigjs)
+  - [Using environment variables](#using-environment-variables)
+  - [Using `ormconfig.yml`](#using-ormconfigyml)
+  - [Using `ormconfig.xml`](#using-ormconfigxml)
+  - [Overriding options defined in ormconfig](#overriding-options-defined-in-ormconfig)
 
 ## Creating a new connection from the configuration file
 
 Most of the times you want to store your connection options in a separate configuration file.
-It makes it convenient and easy to manage. 
+It makes it convenient and easy to manage.
 TypeORM supports multiple configuration sources.
 You only need to create a `ormconfig.[format]` file in the root directory of your application (near `package.json`),
 put your configuration there and in your app call `createConnection()` without any configuration passed:
@@ -25,7 +25,7 @@ const connection = await createConnection();
 ```
 
 Supported ormconfig file formats are: `.json`, `.js`, `.env`, `.yml` and `.xml`.
- 
+
 ## Using `ormconfig.json`
 
 Create `ormconfig.json` in the project root (near `package.json`). It should have the following content:
@@ -115,6 +115,7 @@ List of available env variables you can set:
 * TYPEORM_MIGRATIONS_RUN
 * TYPEORM_ENTITIES
 * TYPEORM_MIGRATIONS
+* TYPEORM_MIGRATIONS_TABLE_NAME
 * TYPEORM_SUBSCRIBERS
 * TYPEORM_ENTITY_SCHEMAS
 * TYPEORM_LOGGING
@@ -125,6 +126,13 @@ List of available env variables you can set:
 * TYPEORM_MIGRATIONS_DIR
 * TYPEORM_SUBSCRIBERS_DIR
 * TYPEORM_DRIVER_EXTRA
+* TYPEORM_DEBUG
+* TYPEORM_CACHE
+* TYPEORM_CACHE_OPTIONS
+* TYPEORM_CACHE_ALWAYS_ENABLED
+* TYPEORM_CACHE_DURATION
+
+`TYPEORM_CACHE` should be boolean or string of cache type
 
 `ormconfig.env` should be used only during development.
 On production you can set all these values in real ENVIRONMENT VARIABLES.
@@ -143,7 +151,7 @@ default: # default connection
     username: "test"
     password: "test"
     database: "test"
-    
+
 second-connection: # other connection
     host: "localhost"
     port: 3306
@@ -180,6 +188,20 @@ Create `ormconfig.xml` in the project root (near `package.json`). It should have
 ```
 
 You can use any connection options available.
+
+## Which configuration file is used by Typeorm
+
+Sometimes, you may want to use multiple configurations using different formats. When calling `getConnectionOptions()`
+or attempting to use `createConnection()` without the connection options, Typeorm will attempt to load the configurations,
+in this order:
+
+1. From the environment variables. Typeorm will attempt to load the `.env` file using dotEnv if it exists. If the environment
+variables `TYPEORM_CONNECTION` or `TYPEORM_URL` are set, Typeorm will use this method.
+2. From the `ormconfig.env`.
+3. From the other `ormconfig.[format]` files, in this order: `[js, ts, json, yml, yaml, xml]`.
+
+Note that Typeorm will use the first valid method found and will not load the others. For example, Typeorm will not load the
+`ormconfig.[format]` files if the configuration was found in the environment.
 
 ## Overriding options defined in ormconfig
 

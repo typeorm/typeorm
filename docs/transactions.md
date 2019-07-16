@@ -7,7 +7,7 @@
 
 ## Creating and using transactions
 
-Transactions are creating using `Connection` or `EntityManager`. 
+Transactions are created using `Connection` or `EntityManager`. 
 Examples:
 
 ```typescript
@@ -48,7 +48,7 @@ All operations **MUST** be executed using the provided transactional entity mana
 
 ### Specifying Isolation Levels
 
-Specifying the isolation level for the transaction can be done by supplying it as the first paramter:
+Specifying the isolation level for the transaction can be done by supplying it as the first parameter:
 
 ```typescript
 import {getManager} from "typeorm";

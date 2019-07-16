@@ -7,11 +7,12 @@ import {RelationMetadataArgs} from "../metadata-args/RelationMetadataArgs";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
 import {JoinTableOptions} from "../decorator/options/JoinTableOptions";
-import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
+import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMultipleColumnsOptions";
 import {ColumnMode} from "../metadata-args/types/ColumnMode";
 import {GeneratedMetadataArgs} from "../metadata-args/GeneratedMetadataArgs";
 import {UniqueMetadataArgs} from "../metadata-args/UniqueMetadataArgs";
 import {CheckMetadataArgs} from "../metadata-args/CheckMetadataArgs";
+import {ExclusionMetadataArgs} from "../metadata-args/ExclusionMetadataArgs";
 
 /**
  * Transforms entity schema into metadata args storage.
@@ -40,7 +41,8 @@ export class EntitySchemaTransformer {
                 schema: options.schema,
                 type: options.type || "regular",
                 orderBy: options.orderBy,
-                synchronize: options.synchronize
+                synchronize: options.synchronize,
+                expression: options.expression
             };
             metadataArgsStorage.tables.push(tableMetadata);
 
@@ -72,7 +74,9 @@ export class EntitySchemaTransformer {
                         width: column.width,
                         nullable: column.nullable,
                         readonly: column.readonly,
+                        update: column.update,
                         select: column.select,
+                        insert: column.insert,
                         primary: column.primary,
                         unique: column.unique,
                         comment: column.comment,
@@ -89,7 +93,9 @@ export class EntitySchemaTransformer {
                         generatedType: column.generatedType,
                         hstoreType: column.hstoreType,
                         array: column.array,
-                        transformer: column.transformer
+                        transformer: column.transformer,
+                        spatialFeatureType: column.spatialFeatureType,
+                        srid: column.srid
                     }
                 };
                 metadataArgsStorage.columns.push(columnAgrs);
@@ -102,6 +108,9 @@ export class EntitySchemaTransformer {
                     };
                     metadataArgsStorage.generations.push(generationArgs);
                 }
+
+                if (column.unique)
+                    metadataArgsStorage.uniques.push({ target: options.target || options.name, columns: [columnName] });
             });
 
             // add relation metadata args from the schema
@@ -123,6 +132,7 @@ export class EntitySchemaTransformer {
                             nullable: relationSchema.nullable,
                             onDelete: relationSchema.onDelete,
                             onUpdate: relationSchema.onUpdate,
+                            deferrable: relationSchema.deferrable,
                             primary: relationSchema.primary,
                             persistence: relationSchema.persistence
                         }
@@ -212,6 +222,18 @@ export class EntitySchemaTransformer {
                         expression: check.expression
                     };
                     metadataArgsStorage.checks.push(checkAgrs);
+                });
+            }
+
+            // add exclusion metadata args from the schema
+            if (options.exclusions) {
+                options.exclusions.forEach(exclusion => {
+                    const exclusionArgs: ExclusionMetadataArgs = {
+                        target: options.target || options.name,
+                        name: exclusion.name,
+                        expression: exclusion.expression
+                    };
+                    metadataArgsStorage.exclusions.push(exclusionArgs);
                 });
             }
 

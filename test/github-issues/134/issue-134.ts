@@ -37,7 +37,7 @@ describe("github issues > #134 Error TIME is converted to 'HH-mm' instead of 'HH
         minutes = minutes.length === 1 ? "0" + minutes : minutes;
         seconds = seconds.length === 1 ? "0" + seconds : seconds;
 
-        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).not.to.be.undefined;
         loadedPost!.creationDate.should.be.equal(hours + ":" + minutes + ":" + seconds);
 
     })));

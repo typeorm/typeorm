@@ -23,11 +23,17 @@ export class RedisQueryResultCache implements QueryResultCache {
      */
     protected client: any;
 
+    /**
+     * Type of the Redis Client (redis or ioredis).
+     */
+    protected clientType: "redis" | "ioredis" | "ioredis/cluster";
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection) {
+    constructor(protected connection: Connection, clientType: "redis" | "ioredis" | "ioredis/cluster") {
+        this.clientType = clientType;
         this.redis = this.loadRedis();
     }
 
@@ -38,17 +44,35 @@ export class RedisQueryResultCache implements QueryResultCache {
     /**
      * Creates a connection with given cache provider.
      */
+
+
     async connect(): Promise<void> {
         const cacheOptions: any = this.connection.options.cache;
-        if (cacheOptions && cacheOptions.options) {
-            this.client = this.redis.createClient(cacheOptions.options);
-        } else {
-            this.client = this.redis.createClient();
+        if (this.clientType === "redis") {
+            if (cacheOptions && cacheOptions.options) {
+                this.client = this.redis.createClient(cacheOptions.options);
+            } else {
+                this.client = this.redis.createClient();
+            }
+        } else if (this.clientType === "ioredis") {
+            if (cacheOptions && cacheOptions.options) {
+                this.client = new this.redis(cacheOptions.options);
+            } else {
+                this.client = new this.redis();
+            }
+        } else if (this.clientType === "ioredis/cluster") {
+            if (cacheOptions && cacheOptions.options && cacheOptions.options instanceof Array) {
+                this.client = new this.redis.Cluster(cacheOptions.options);
+            } else if (cacheOptions && cacheOptions.options && cacheOptions.options.startupNodes) {
+                this.client = new this.redis.Cluster(cacheOptions.options.startupNodes, cacheOptions.options.options);
+            } else {
+                throw new Error(`options.startupNodes required for ${this.clientType}.`);
+            }
         }
     }
 
     /**
-     * Creates a connection with given cache provider.
+     * Disconnects the connection
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
@@ -105,13 +129,13 @@ export class RedisQueryResultCache implements QueryResultCache {
     async storeInCache(options: QueryResultCacheOptions, savedCache: QueryResultCacheOptions, queryRunner?: QueryRunner): Promise<void> {
         return new Promise<void>((ok, fail) => {
             if (options.identifier) {
-                this.client.set(options.identifier, JSON.stringify(options), 'PX', options.duration, (err: any, result: any) => {
+                this.client.set(options.identifier, JSON.stringify(options), "PX", options.duration, (err: any, result: any) => {
                     if (err) return fail(err);
                     ok();
                 });
 
             } else if (options.query) {
-                this.client.set(options.query, JSON.stringify(options), 'PX', options.duration, (err: any, result: any) => {
+                this.client.set(options.query, JSON.stringify(options), "PX", options.duration, (err: any, result: any) => {
                     if (err) return fail(err);
                     ok();
                 });
@@ -161,10 +185,10 @@ export class RedisQueryResultCache implements QueryResultCache {
      */
     protected loadRedis(): any {
         try {
-            return PlatformTools.load("redis");
+            return PlatformTools.load(this.clientType);
 
         } catch (e) {
-            throw new Error(`Cannot use cache because redis is not installed. Please run "npm i redis --save".`);
+            throw new Error(`Cannot use cache because ${this.clientType} is not installed. Please run "npm i ${this.clientType} --save".`);
         }
     }
 

@@ -1,4 +1,5 @@
 import {MissingDriverError} from "../error/MissingDriverError";
+import {CockroachDriver} from "./cockroachdb/CockroachDriver";
 import {MongoDriver} from "./mongodb/MongoDriver";
 import {SqlServerDriver} from "./sqlserver/SqlServerDriver";
 import {OracleDriver} from "./oracle/OracleDriver";
@@ -23,12 +24,14 @@ export class DriverFactory {
      * Creates a new driver depend on a given connection's driver type.
      */
     create(connection: Connection): Driver {
-        const type = connection.options.type;
+        const {type} = connection.options;
         switch (type) {
             case "mysql":
                 return new MysqlDriver(connection);
             case "postgres":
                 return new PostgresDriver(connection);
+            case "cockroachdb":
+                return new CockroachDriver(connection);
             case "mariadb":
                 return new MysqlDriver(connection);
             case "sqlite":

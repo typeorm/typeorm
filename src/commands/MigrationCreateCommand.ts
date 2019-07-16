@@ -1,18 +1,20 @@
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
 import {camelCase} from "../util/StringUtils";
+import * as yargs from "yargs";
 const chalk = require("chalk");
 
 /**
  * Creates a new migration file.
  */
-export class MigrationCreateCommand {
+export class MigrationCreateCommand implements yargs.CommandModule {
 
     command = "migration:create";
     describe = "Creates a new migration file.";
+    aliases = "migrations:create";
 
-    builder(yargs: any) {
-        return yargs
+    builder(args: yargs.Argv) {
+        return args
             .option("c", {
                 alias: "connection",
                 default: "default",
@@ -34,18 +36,25 @@ export class MigrationCreateCommand {
             });
     }
 
-    async handler(argv: any) {
+    async handler(args: yargs.Arguments) {
+        if (args._[0] === "migrations:create") {
+            console.log("'migrations:create' is deprecated, please use 'migration:create' instead");
+        }
+
         try {
             const timestamp = new Date().getTime();
-            const fileContent = MigrationCreateCommand.getTemplate(argv.name, timestamp);
-            const filename = timestamp + "-" + argv.name + ".ts";
-            let directory = argv.dir;
+            const fileContent = MigrationCreateCommand.getTemplate(args.name as any, timestamp);
+            const filename = timestamp + "-" + args.name + ".ts";
+            let directory = args.dir;
 
             // if directory is not set then try to open tsconfig and find default path there
             if (!directory) {
                 try {
-                    const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-                    const connectionOptions = await connectionOptionsReader.get(argv.connection);
+                    const connectionOptionsReader = new ConnectionOptionsReader({
+                        root: process.cwd(),
+                        configName: args.config as any
+                    });
+                    const connectionOptions = await connectionOptionsReader.get(args.connection as any);
                     directory = connectionOptions.cli ? connectionOptions.cli.migrationsDir : undefined;
                 } catch (err) { }
             }

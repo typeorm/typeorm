@@ -13,7 +13,7 @@ export function importClassesFromDirectories(directories: string[], formats = ["
         } else if (Array.isArray(exported)) {
             exported.forEach((i: any) => loadFileClasses(i, allLoaded));
 
-        } else if (typeof exported === "object") {
+        } else if (typeof exported === "object" && exported !== null) {
             Object.keys(exported).forEach(key => loadFileClasses(exported[key], allLoaded));
 
         }

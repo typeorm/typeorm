@@ -24,7 +24,7 @@ describe("columns > no-selection functionality", () => {
         await postRepository.save(post);
 
         // check if all columns are updated except for readonly columns
-        const loadedPost = await postRepository.findOne(1);
+        const loadedPost = await postRepository.findOne(post.id);
         expect(loadedPost!.title).to.be.equal("About columns");
         expect(loadedPost!.text).to.be.equal("Some text about columns");
         expect(loadedPost!.authorName).to.be.undefined;
@@ -43,7 +43,7 @@ describe("columns > no-selection functionality", () => {
         // check if all columns are updated except for readonly columns
         const loadedPost = await postRepository
             .createQueryBuilder("post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", { id: post.id })
             .getOne();
         expect(loadedPost!.title).to.be.equal("About columns");
         expect(loadedPost!.text).to.be.equal("Some text about columns");
@@ -64,7 +64,7 @@ describe("columns > no-selection functionality", () => {
         const loadedPost = await postRepository
             .createQueryBuilder("post")
             .addSelect("post.authorName")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", { id: post.id })
             .getOne();
         expect(loadedPost!.title).to.be.equal("About columns");
         expect(loadedPost!.text).to.be.equal("Some text about columns");

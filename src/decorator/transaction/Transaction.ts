@@ -31,11 +31,11 @@ export function Transaction(connectionOrOptions?: string | TransactionOptions): 
                 if (typeof connectionOrOptions === "string") {
                     connectionName = connectionOrOptions;
                 } else {
-                    if (connectionOrOptions.hasOwnProperty("connectionName") && connectionOrOptions.connectionName) {
+                    if (connectionOrOptions.connectionName) {
                         connectionName = connectionOrOptions.connectionName;
                     }
-                    if (connectionOrOptions.hasOwnProperty("isolation") && connectionOrOptions.isolationLevel) {
-                        isolationLevel = connectionOrOptions.isolationLevel;
+                    if (connectionOrOptions.isolation) {
+                        isolationLevel = connectionOrOptions.isolation;
                     }
                 }
             }

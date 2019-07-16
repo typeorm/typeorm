@@ -46,6 +46,8 @@ createConnection({
 
 Then you can get your connection instance from anywhere in your app using `getConnection`.
 
+Learn more about [Connections](connection.md)
+
 ## Schema synchronization
 
 In sequelize you do schema synchronization this way:
@@ -144,6 +146,8 @@ and provides a declarative way to define what part of your model
 will become part of your database table.
 The power of TypeScript gives you type hinting and other useful features that you can use in classes.
 
+Learn more about [Entities and columns](entities.md)
+
 ## Other model settings
 
 The following in sequelize:
@@ -237,24 +241,26 @@ updateDate: Date;
 
 ### Working with models
 
-To create a new model in sequelize you write:
+To create and save a new model in sequelize you write:
 
 ```javascript
 const employee = await Employee.create({ name: "John Doe", title: "senior engineer" });
 ```
 
-In TypeORM there are several ways to create a new model:
+In TypeORM there are several ways to create and save a new model:
 
 ```typescript
 const employee = new Employee(); // you can use constructor parameters as well
 employee.name = "John Doe";
 employee.title = "senior engineer";
+await getRepository(Employee).save(employee)
 ```
 
-or 
+or active record pattern
 
 ```typescript
 const employee = Employee.create({ name: "John Doe", title: "senior engineer" });
+await employee.save();
 ```
 
 if you want to load an existing entity from the database and replace some of its properties you can use the following method:
@@ -262,6 +268,7 @@ if you want to load an existing entity from the database and replace some of its
 ```typescript
 const employee = await Employee.preload({ id: 1, name: "John Doe" });
 ```
+Learn more about [Active Record vs Data Mapper](active-record-data-mapper.md) and [Repository API](repository-api.md).
 
 To access properties in sequelize you do the following:
 
@@ -296,3 +303,4 @@ In TypeORM you do:
 export class User {
 }
 ```
+Learn more about [Indices](indices.md)

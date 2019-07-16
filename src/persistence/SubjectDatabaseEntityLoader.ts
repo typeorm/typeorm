@@ -37,6 +37,7 @@ export class SubjectDatabaseEntityLoader {
 
             // prepare entity ids of the subjects we need to load
             const allIds: ObjectLiteral[] = [];
+            const allSubjects: Subject[] = [];
             subjectGroup.subjects.forEach(subject => {
 
                 // we don't load if subject already has a database entity loaded
@@ -44,6 +45,7 @@ export class SubjectDatabaseEntityLoader {
                     return;
 
                 allIds.push(subject.identifier);
+                allSubjects.push(subject);
             });
 
             // if there no ids found (means all entities are new and have generated ids) - then nothing to load there
@@ -100,6 +102,11 @@ export class SubjectDatabaseEntityLoader {
                       subject.identifier = subject.metadata.hasAllPrimaryKeys(entity) ? subject.metadata.getEntityIdMap(entity) : undefined;
                 });
             });
+
+            // this way we tell what subjects we tried to load database entities of
+            for (let subject of allSubjects) {
+                subject.databaseEntityLoaded = true;
+            }
         });
 
         await Promise.all(promises);

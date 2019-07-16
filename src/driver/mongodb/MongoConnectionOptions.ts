@@ -3,6 +3,7 @@ import {ReadPreference} from "./typings";
 
 /**
  * MongoDB specific connection options.
+ * Synced with http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html
  */
 export interface MongoConnectionOptions extends BaseConnectionOptions {
 
@@ -30,7 +31,7 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * Database username.
      */
     readonly username?: string;
-    
+
     /**
      * Database password.
      */
@@ -73,13 +74,19 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * String or buffer containing the certificate private key we wish to present
      * (needs to have a mongod server with ssl support, 2.4 or higher)
      */
-    readonly sslKey?: string|Buffer;
+    readonly sslKey?: string;
 
     /**
      * String or buffer containing the certificate password
      * (needs to have a mongod server with ssl support, 2.4 or higher)
      */
     readonly sslPass?: string|Buffer;
+
+    /**
+     * SSL Certificate revocation list binary buffer
+     * (needs to have a mongod server with ssl support, 2.4 or higher)
+     */
+    readonly sslCRL?: string|Buffer;
 
     /**
      * Reconnect on error. Default: true
@@ -102,6 +109,12 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
     readonly connectTimeoutMS?: number;
 
     /**
+     * Version of IP stack. Can be 4, 6.
+     * If undefined, will attempt to connect with IPv6, and will fall back to IPv4 on failure
+     */
+    readonly family?: number;
+
+    /**
      * TCP Socket timeout setting. Default: 360000
      */
     readonly socketTimeoutMS?: number;
@@ -117,12 +130,12 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
     readonly reconnectInterval?: number;
 
     /**
-     * Turn on high availability monitoring. Default true
+     * Control if high availability monitoring runs for Replicaset or Mongos proxies. Default true
      */
     readonly ha?: boolean;
 
     /**
-     * Time between each replicaset status check. Default: 10000,5000
+     * The High availability period for replicaset inquiry. Default: 10000
      */
     readonly haInterval?: number;
 
@@ -212,13 +225,13 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * Sets a cap on how many operations the driver will buffer up before giving up on getting a working connection,
      * default is -1 which is unlimited.
      */
-    readonly bufferMaxEntries?: boolean;
+    readonly bufferMaxEntries?: number;
 
     /**
      * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED, ReadPreference.SECONDARY,
      * ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
      */
-    readonly readPreference?: ReadPreference;
+    readonly readPreference?: ReadPreference|string;
 
     /**
      * A primary key factory object for generation of custom _id keys.
@@ -245,8 +258,67 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      */
     readonly loggerLevel?: "error"|"warn"|"info"|"debug";
 
+    // Do not overwrite BaseConnectionOptions.logger
+    // readonly logger?: any;
+
+    /**
+     * Ensure we check server identify during SSL, set to false to disable checking. Only works for Node 0.12.x or higher. You can pass in a boolean or your own checkServerIdentity override function
+     * Default: true
+     */
+    readonly checkServerIdentity?: boolean|Function;
+
+    /**
+     * Validate MongoClient passed in options for correctness. Default: false
+     */
+    readonly validateOptions?: boolean|any;
+
+    /**
+     * The name of the application that created this MongoClient instance. MongoDB 3.4 and newer will print this value in the server log upon establishing each connection. It is also recorded in the slow query log and profile collections
+     */
+    readonly appname?: string;
+
     /**
      * Sets the authentication mechanism that MongoDB will use to authenticate the connection
      */
     readonly authMechanism?: string;
+
+    /**
+     * Type of compression to use: snappy or zlib
+     */
+    readonly compression?: any;
+
+    /**
+     * Specify a file sync write concern. Default: false
+     */
+    readonly fsync?: boolean;
+
+    /**
+     * Read preference tags
+     */
+    readonly readPreferenceTags?: any[];
+
+    /**
+     * The number of retries for a tailable cursor. Default: 5
+     */
+    readonly numberOfRetries?: number;
+
+    /**
+     * Enable auto reconnecting for single server instances. Default: true
+     */
+    readonly auto_reconnect?: boolean;
+
+    /**
+     * Enable command monitoring for this client. Default: false
+     */
+    readonly monitorCommands?: boolean;
+
+    /**
+     * If present, the connection pool will be initialized with minSize connections, and will never dip below minSize connections
+     */
+    readonly minSize?: number;
+
+    /**
+     * Determines whether or not to use the new url parser. Default: false
+     */
+    readonly useNewUrlParser?: boolean;
 }

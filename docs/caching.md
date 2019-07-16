@@ -97,9 +97,9 @@ const users = await connection
     .getRepository(User)
     .find({
         where: { isAdmin: true },
-        cache: { 
+        cache: {
             id: "users_admins",
-            milisseconds: 25000
+            milliseconds: 25000
         }
     });
 ```
@@ -113,8 +113,24 @@ await connection.queryResultCache.remove(["users_admins"]);
 
 
 By default, TypeORM uses a separate table called `query-result-cache` and stores all queries and results there.
-If storing cache in a single database table is not effective for you, 
-you can change the cache type to "redis" and TypeORM will store all cached records in redis instead.
+Table name is configurable, so you could change its by give the value in the tableName property.
+Example:
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    ...
+    cache: {
+        type: "database",
+        tableName: "configurable-table-query-result-cache"
+    }
+}
+```
+
+If storing cache in a single database table is not effective for you,
+you can change the cache type to "redis" or "ioredis" and TypeORM will store all cached records in redis instead.
 Example:
 
 ```typescript
@@ -133,6 +149,68 @@ Example:
 }
 ```
 
-"options" are [redis specific options](https://github.com/NodeRedis/node_redis#options-object-properties). 
+"options" can be [node_redis specific options](https://github.com/NodeRedis/node_redis#options-object-properties) or [ioredis specific options](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options) depending on what type you're using.
+
+
+In case you want to connect to a redis-cluster using IORedis's cluster functionality, you can do that as well by doing the following:
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    cache: {
+        type: "ioredis/cluster",
+        options: {
+            startupNodes: [
+                {
+                    host: 'localhost',
+                    port: 7000,
+                },
+                {
+                    host: 'localhost',
+                    port: 7001,
+                },
+                {
+                    host: 'localhost',
+                    port: 7002,
+                }
+            ],
+            options: {
+                scaleReads: 'all',
+                clusterRetryStrategy: function (times) { return null },
+                redisOptions: {
+                    maxRetriesPerRequest: 1
+                }
+            }
+        }
+    }
+}
+```
+
+Note that, you can still use options as first argument of IORedis's cluster constructor.
+```typescript
+{
+    ...
+    cache: {
+        type: "ioredis/cluster",
+        options: [
+            {
+                host: 'localhost',
+                port: 7000,
+            },
+            {
+                host: 'localhost',
+                port: 7001,
+            },
+            {
+                host: 'localhost',
+                port: 7002,
+            }
+        ]
+    },
+    ...
+}
+```
 
 You can use `typeorm cache:clear` to clear everything stored in the cache.

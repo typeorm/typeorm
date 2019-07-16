@@ -1,7 +1,7 @@
-sudo: required
 language: node_js
 node_js:
 #  - stable
+  - 10
   - 9
   - 8
 #  - 6
@@ -19,7 +19,8 @@ before_script:
   - cp ormconfig.travis.json ormconfig.json
 
 script:
-  - npm test
+  - npm run lint
+  - npx nyc npm test
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

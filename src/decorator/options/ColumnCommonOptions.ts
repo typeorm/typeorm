@@ -23,10 +23,10 @@ export interface ColumnCommonOptions {
     primary?: boolean;
 
     /**
-     * Specifies if this column will use auto increment (sequence, generated identity).
-     * Note that only one column in entity can be marked as generated, and it must be a primary column.
+     * Specifies if this column will use auto increment (sequence, generated identity, rowid).
+     * Note that in some databases only one column in entity can be marked as generated, and it must be a primary column.
      */
-    generated?: boolean;
+    generated?: boolean|"increment"|"uuid"|"rowid";
 
     /**
      * Specifies if column's value must be unique or not.
@@ -40,6 +40,7 @@ export interface ColumnCommonOptions {
 
     /**
      * Default database value.
+     * Note that default value is not supported when column type is 'json' of mysql.
      */
     default?: any;
 
@@ -64,6 +65,6 @@ export interface ColumnCommonOptions {
      * Specifies a value transformer that is to be used to (un)marshal
      * this column when reading or writing to the database.
      */
-    transformer?: ValueTransformer;
+    transformer?: ValueTransformer|ValueTransformer[];
 
 }

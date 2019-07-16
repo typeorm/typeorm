@@ -86,18 +86,22 @@ export class DocumentToEntityTransformer {
                     return;
 
                 if (embedded.isArray) {
-                    entity[embedded.propertyName] = (document[embedded.prefix] as any[]).map(subValue => {
+                    entity[embedded.propertyName] = (document[embedded.prefix] as any[]).map((subValue: any, index: number) => {
                         const newItem = embedded.create();
                         embedded.columns.forEach(column => {
                             newItem[column.propertyName] = subValue[column.databaseNameWithoutPrefixes];
                         });
+                        addEmbeddedValuesRecursively(newItem, document[embedded.prefix][index], embedded.embeddeds);
                         return newItem;
                     });
 
                 } else {
+                    if (embedded.embeddeds.length && !entity[embedded.propertyName]) 
+                        entity[embedded.propertyName] = embedded.create();
+                    
                     embedded.columns.forEach(column => {
                         const value = document[embedded.prefix][column.databaseNameWithoutPrefixes];
-                        if (!value) return;
+                        if (value === undefined) return;
 
                         if (!entity[embedded.propertyName])
                             entity[embedded.propertyName] = embedded.create();

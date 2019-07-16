@@ -1,18 +1,19 @@
 import {createConnection} from "../index";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
+import * as yargs from "yargs";
 const chalk = require("chalk");
 
 /**
  * Clear cache command.
  */
-export class CacheClearCommand {
+export class CacheClearCommand implements yargs.CommandModule {
 
     command = "cache:clear";
     describe = "Clears all data stored in query runner cache.";
 
-    builder(yargs: any) {
-        return yargs
+    builder(args: yargs.Argv) {
+        return args
             .option("connection", {
                 alias: "c",
                 default: "default",
@@ -25,12 +26,15 @@ export class CacheClearCommand {
             });
     }
 
-    async handler(argv: any) {
+    async handler(args: yargs.Arguments) {
 
         let connection: Connection|undefined = undefined;
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-            const connectionOptions = await connectionOptionsReader.get(argv.connection);
+            const connectionOptionsReader = new ConnectionOptionsReader({
+                root: process.cwd(),
+                configName: args.config as any
+            });
+            const connectionOptions = await connectionOptionsReader.get(args.connection as any);
             Object.assign(connectionOptions, {
                 subscribers: [],
                 synchronize: false,
@@ -40,8 +44,10 @@ export class CacheClearCommand {
             });
             connection = await createConnection(connectionOptions);
 
-            if (!connection.queryResultCache)
-                return console.log(chalk.black.bgRed("Cache is not enabled. To use cache enable it in connection configuration."));
+            if (!connection.queryResultCache) {
+                console.log(chalk.black.bgRed("Cache is not enabled. To use cache enable it in connection configuration."));
+                return;
+            }
 
             await connection.queryResultCache.clear();
             console.log(chalk.green("Cache was successfully cleared"));

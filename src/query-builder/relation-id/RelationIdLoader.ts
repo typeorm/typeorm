@@ -3,8 +3,7 @@ import {Connection} from "../../connection/Connection";
 import {RelationIdLoadResult} from "./RelationIdLoadResult";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {abbreviate} from "../../util/StringUtils";
-import {OracleDriver} from "../../driver/oracle/OracleDriver";
+import {DriverUtils} from "../../driver/DriverUtils";
 
 export class RelationIdLoader {
 
@@ -36,11 +35,11 @@ export class RelationIdLoader {
                 const results = rawEntities.map(rawEntity => {
                     const result: ObjectLiteral = {};
                     relationIdAttr.relation.joinColumns.forEach(joinColumn => {
-                        result[joinColumn.databaseName] = rawEntity[this.buildColumnAlias(relationIdAttr.parentAlias, joinColumn.databaseName)];
+                        result[joinColumn.databaseName] = this.connection.driver.prepareHydratedValue(rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.databaseName)], joinColumn.referencedColumn!);
                     });
 
                     relationIdAttr.relation.entityMetadata.primaryColumns.forEach(primaryColumn => {
-                        result[primaryColumn.databaseName] = rawEntity[this.buildColumnAlias(relationIdAttr.parentAlias, primaryColumn.databaseName)];
+                        result[primaryColumn.databaseName] = this.connection.driver.prepareHydratedValue(rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, primaryColumn.databaseName)], primaryColumn);
                     });
                     return result;
                 });
@@ -65,7 +64,7 @@ export class RelationIdLoader {
                 const condition = rawEntities.map((rawEntity, index) => {
                     return joinColumns.map(joinColumn => {
                         const parameterName = joinColumn.databaseName + index;
-                        parameters[parameterName] = rawEntity[this.buildColumnAlias(relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
+                        parameters[parameterName] = rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
                         return tableAlias + "." + joinColumn.propertyPath + " = :" + parameterName;
                     }).join(" AND ");
                 }).map(condition => "(" + condition + ")")
@@ -96,9 +95,19 @@ export class RelationIdLoader {
                 if (relationIdAttr.queryBuilderFactory)
                     relationIdAttr.queryBuilderFactory(qb);
 
+                const results = await qb.getRawMany();
+                results.forEach(result => {
+                    joinColumns.forEach(column => {
+                        result[column.databaseName] = this.connection.driver.prepareHydratedValue(result[column.databaseName], column.referencedColumn!);
+                    });
+                    relation.inverseRelation!.entityMetadata.primaryColumns.forEach(column => {
+                        result[column.databaseName] = this.connection.driver.prepareHydratedValue(result[column.databaseName], column);
+                    });
+                });
+
                 return {
                     relationIdAttribute: relationIdAttr,
-                    results: await qb.getRawMany()
+                    results
                 };
 
             } else {
@@ -119,7 +128,7 @@ export class RelationIdLoader {
 
                 const mappedColumns = rawEntities.map(rawEntity => {
                     return joinColumns.reduce((map, joinColumn) => {
-                        map[joinColumn.propertyPath] = rawEntity[this.buildColumnAlias(relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
+                        map[joinColumn.propertyPath] = rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
                         return map;
                     }, {} as ObjectLiteral);
                 });
@@ -166,30 +175,20 @@ export class RelationIdLoader {
                 if (relationIdAttr.queryBuilderFactory)
                     relationIdAttr.queryBuilderFactory(qb);
 
+                const results = await qb.getRawMany();
+                results.forEach(result => {
+                    [...joinColumns, ...inverseJoinColumns].forEach(column => {
+                        result[column.databaseName] = this.connection.driver.prepareHydratedValue(result[column.databaseName], column.referencedColumn!);
+                    });
+                });
+
                 return {
                     relationIdAttribute: relationIdAttr,
-                    results: await qb.getRawMany()
+                    results
                 };
             }
         });
 
         return Promise.all(promises);
     }
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Builds column alias from given alias name and column name,
-     * If alias length is more than 29, abbreviates column name.
-     */
-    protected buildColumnAlias(aliasName: string, columnName: string): string {
-        const columnAliasName = aliasName + "_" + columnName;
-        if (columnAliasName.length > 29 && this.connection.driver instanceof OracleDriver)
-            return aliasName  + "_" + abbreviate(columnName, 2);
-
-        return columnAliasName;
-    }
-
 }

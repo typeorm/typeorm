@@ -108,6 +108,13 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "CHK_" + RandomGenerator.sha1(key).substr(0, 26);
     }
 
+    exclusionConstraintName(tableOrName: Table|string, expression: string): string {
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const replacedTableName = tableName.replace(".", "_");
+        const key = `${replacedTableName}_${expression}`;
+        return "XCL_" + RandomGenerator.sha1(key).substr(0, 26);
+    }
+
     joinColumnName(relationName: string, referencedColumnName: string): string {
         return camelCase(relationName + "_" + referencedColumnName);
     }
@@ -141,4 +148,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return prefix + tableName;
     }
 
+    eagerJoinRelationAlias(alias: string, propertyPath: string): string {
+        return alias + "_" + propertyPath.replace(".", "_");
+    }
 }

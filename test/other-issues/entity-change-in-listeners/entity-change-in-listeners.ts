@@ -22,7 +22,7 @@ describe("other issues > entity change in listeners should affect persistence", 
 
         // check if it was inserted correctly
         const loadedPost = await connection.manager.findOne(Post);
-        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).not.to.be.undefined;
         loadedPost!.title.should.be.equal("hello");
 
         // now update some property and let update listener trigger
@@ -32,7 +32,7 @@ describe("other issues > entity change in listeners should affect persistence", 
         // check if update listener was triggered and entity was really updated by the changes in the listener
         const loadedUpdatedPost = await connection.manager.findOne(Post);
 
-        expect(loadedUpdatedPost).not.to.be.empty;
+        expect(loadedUpdatedPost).not.to.be.undefined;
         loadedUpdatedPost!.title.should.be.equal("hello!");
 
         await connection.manager.save(loadedPost!);

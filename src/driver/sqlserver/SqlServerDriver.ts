@@ -18,6 +18,7 @@ import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {SqlServerConnectionCredentialsOptions} from "./SqlServerConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
+import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -174,6 +175,12 @@ export class SqlServerDriver implements Driver {
         cacheDuration: "int",
         cacheQuery: "nvarchar(MAX)" as any,
         cacheResult: "nvarchar(MAX)" as any,
+        metadataType: "varchar",
+        metadataDatabase: "varchar",
+        metadataSchema: "varchar",
+        metadataTable: "varchar",
+        metadataName: "varchar",
+        metadataValue: "nvarchar(MAX)" as any,
     };
 
     /**
@@ -193,6 +200,12 @@ export class SqlServerDriver implements Driver {
         "datetime2": { precision: 7 },
         "datetimeoffset": { precision: 7 }
     };
+
+    /**
+     * Max length allowed by MSSQL Server for aliases (identifiers).
+     * @see https://docs.microsoft.com/en-us/sql/sql-server/maximum-capacity-specifications-for-sql-server
+     */
+    maxAliasLength = 128;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -254,11 +267,22 @@ export class SqlServerDriver implements Driver {
         if (!this.master)
             return Promise.reject(new ConnectionIsNotSetError("mssql"));
 
-        this.master.close();
-        this.slaves.forEach(slave => slave.close());
+        await this.closePool(this.master);
+        await Promise.all(this.slaves.map(slave => this.closePool(slave)));
         this.master = undefined;
         this.slaves = [];
     }
+
+
+    /**
+     * Closes connection pool.
+     */
+    protected async closePool(pool: any): Promise<void> {
+        return new Promise<void>((ok, fail) => {
+            pool.close((err: any) => err ? fail(err) : ok());
+        });
+    }
+
 
     /**
      * Creates a schema builder used to build and sync a schema.
@@ -342,7 +366,7 @@ export class SqlServerDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.to(value);
+            value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (value === null || value === undefined)
             return value;
@@ -370,6 +394,10 @@ export class SqlServerDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
+
+        } else if (columnMetadata.type === "simple-enum") {
+            return DateUtils.simpleEnumToString(value);
+
         }
 
         return value;
@@ -380,7 +408,7 @@ export class SqlServerDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return value;
+            return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         if (columnMetadata.type === Boolean) {
             value = value ? true : false;
@@ -403,10 +431,14 @@ export class SqlServerDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
+
+        } else if (columnMetadata.type === "simple-enum") {
+            value = DateUtils.stringToSimpleEnum(value, columnMetadata);
+
         }
 
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
+            value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
 
         return value;
     }
@@ -436,6 +468,9 @@ export class SqlServerDriver implements Driver {
         } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "ntext";
 
+        } else if (column.type === "simple-enum") {
+            return "nvarchar";
+
         } else if (column.type === "dec") {
             return "decimal";
 
@@ -443,7 +478,7 @@ export class SqlServerDriver implements Driver {
             return "float";
 
         } else if (column.type === "rowversion") {
-            return "timestamp";  // the rowversion type's name in SQL server metadata is timestamp            
+            return "timestamp";  // the rowversion type's name in SQL server metadata is timestamp
 
         } else {
             return column.type as string || "";
@@ -548,7 +583,7 @@ export class SqlServerDriver implements Driver {
         return Object.keys(insertResult).reduce((map, key) => {
             const column = metadata.findColumnWithDatabaseName(key);
             if (column) {
-                OrmUtils.mergeDeep(map, column.createValueMap(insertResult[key]));
+                OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column)));
             }
             return map;
         }, {} as ObjectLiteral);
@@ -570,18 +605,29 @@ export class SqlServerDriver implements Driver {
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
-                || (!tableColumn.isGenerated && this.normalizeDefault(columnMetadata) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
+                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNessesary(this.normalizeDefault(columnMetadata)) !== this.lowerDefaultValueIfNessesary(tableColumn.default)) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || tableColumn.isGenerated !== columnMetadata.isGenerated;
         });
     }
-
+    private lowerDefaultValueIfNessesary(value: string | undefined) {
+        // SqlServer saves function calls in default value as lowercase #2733
+        if (!value) {
+            return value;
+        }
+        return value.split(`'`).map((v, i) => {
+            return i % 2 === 1 ? v : v.toLowerCase();
+        }).join(`'`);
+    }
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
     isReturningSqlSupported(): boolean {
+        if (this.options.options && this.options.options.disableOutputReturning) {
+            return false;
+        }
         return true;
     }
 

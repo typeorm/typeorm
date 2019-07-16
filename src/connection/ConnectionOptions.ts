@@ -1,3 +1,4 @@
+import {CockroachConnectionOptions} from "../driver/cockroachdb/CockroachConnectionOptions";
 import {MysqlConnectionOptions} from "../driver/mysql/MysqlConnectionOptions";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {SqliteConnectionOptions} from "../driver/sqlite/SqliteConnectionOptions";
@@ -19,6 +20,7 @@ import { FirebirdConnectionOptions } from "../driver/firebird/FirebirdConnection
 export type ConnectionOptions =
     MysqlConnectionOptions|
     PostgresConnectionOptions|
+    CockroachConnectionOptions|
     SqliteConnectionOptions|
     SqlServerConnectionOptions|
     OracleConnectionOptions|

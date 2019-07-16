@@ -1,19 +1,20 @@
 import {CommandUtils} from "./CommandUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-const chalk = require("chalk");
 import * as path from "path";
+import * as yargs from "yargs";
+const chalk = require("chalk");
 
 /**
  * Generates a new project with TypeORM.
  */
-export class InitCommand {
+export class InitCommand implements yargs.CommandModule {
     command = "init";
     describe = "Generates initial TypeORM project structure. " +
         "If name specified then creates files inside directory called as name. " +
         "If its not specified then creates files inside current directory.";
 
-    builder(yargs: any) {
-        return yargs
+    builder(args: yargs.Argv) {
+        return args
             .option("c", {
                 alias: "connection",
                 default: "default",
@@ -35,13 +36,13 @@ export class InitCommand {
             });
     }
 
-    async handler(argv: any) {
+    async handler(args: yargs.Arguments) {
         try {
-            const database = argv.database || "mysql";
-            const isExpress = argv.express !== undefined ? true : false;
-            const isDocker = argv.docker !== undefined ? true : false;
-            const basePath = process.cwd() + (argv.name ? ("/" + argv.name) : "");
-            const projectName = argv.name ? path.basename(argv.name) : undefined;
+            const database: string = args.database as any || "mysql";
+            const isExpress = args.express !== undefined ? true : false;
+            const isDocker = args.docker !== undefined ? true : false;
+            const basePath = process.cwd() + (args.name ? ("/" + args.name) : "");
+            const projectName = args.name ? path.basename(args.name as any) : undefined;
             await CommandUtils.createFile(basePath + "/package.json", InitCommand.getPackageJsonTemplate(projectName), false);
             if (isDocker)
                 await CommandUtils.createFile(basePath + "/docker-compose.yml", InitCommand.getDockerComposeTemplate(database), false);
@@ -62,7 +63,7 @@ export class InitCommand {
             const packageJsonContents = await CommandUtils.readFile(basePath + "/package.json");
             await CommandUtils.createFile(basePath + "/package.json", InitCommand.appendPackageJson(packageJsonContents, database, isExpress));
 
-            if (argv.name) {
+            if (args.name) {
                 console.log(chalk.green(`Project created inside ${chalk.blue(basePath)} directory.`));
 
             } else {
@@ -120,6 +121,16 @@ export class InitCommand {
                     "username": "test",
                     "password": "test",
                     "database": "test",
+                });
+                break;
+            case "cockroachdb":
+                Object.assign(options, {
+                    "type": "cockroachdb",
+                    "host": "localhost",
+                    "port": 26257,
+                    "username": "root",
+                    "password": "",
+                    "database": "defaultdb",
                 });
                 break;
             case "mssql":
@@ -248,7 +259,7 @@ export const Routes = [{
     action: "save"
 }, {
     method: "delete",
-    route: "/users",
+    route: "/users/:id",
     controller: UserController,
     action: "remove"
 }];`;
@@ -355,13 +366,13 @@ createConnection().then(async connection => {
     user.age = 25;
     await connection.manager.save(user);
     console.log("Saved a new user with id: " + user.id);
-    
+
     console.log("Loading users from the database...");
     const users = await connection.manager.find(User);
     console.log("Loaded users: ", users);
-     
+
     console.log("Here you can setup and run express/koa/any other framework.");
-    
+
 }).catch(error => console.log(error));
 `;
         }
@@ -434,6 +445,17 @@ services:
       POSTGRES_DB: "test"
 
 `;
+            case "cockroachdb":
+                return `version: '3'
+services:
+
+  cockroachdb:
+    image: "cockroachdb/cockroach:v2.1.4"
+    command: start --insecure
+    ports:
+      - "26257:26257"
+
+`;
             case "sqlite":
                 return `version: '3'
 services:
@@ -459,7 +481,7 @@ services:
 services:
 
   mongodb:
-    image: "mongo:3.4.1"
+    image: "mongo:4.0.6"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
@@ -474,7 +496,7 @@ services:
      */
     protected static getReadmeTemplate(options: { docker: boolean }): string {
         let template = `# Awesome Project Build with TypeORM
-        
+
 Steps to run this project:
 
 1. Run \`npm i\` command
@@ -503,7 +525,7 @@ Steps to run this project:
         Object.assign(packageJson.devDependencies, {
             "ts-node": "3.3.0",
             "@types/node": "^8.0.29",
-            "typescript": "2.5.2"
+            "typescript": "3.3.3333"
         });
 
         if (!packageJson.dependencies) packageJson.dependencies = {};
@@ -518,10 +540,11 @@ Steps to run this project:
                 packageJson.dependencies["mysql"] = "^2.14.1";
                 break;
             case "postgres":
+            case "cockroachdb":
                 packageJson.dependencies["pg"] = "^7.3.0";
                 break;
             case "sqlite":
-                packageJson.dependencies["sqlite3"] = "^3.1.10";
+                packageJson.dependencies["sqlite3"] = "^4.0.3";
                 break;
             case "oracle":
                 packageJson.dependencies["oracledb"] = "^1.13.1";
@@ -530,7 +553,7 @@ Steps to run this project:
                 packageJson.dependencies["mssql"] = "^4.0.4";
                 break;
             case "mongodb":
-                packageJson.dependencies["mongodb"] = "^2.2.31";
+                packageJson.dependencies["mongodb"] = "^3.0.8";
                 break;
         }
 

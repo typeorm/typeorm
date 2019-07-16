@@ -1,16 +1,17 @@
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
+import * as yargs from "yargs";
 const chalk = require("chalk");
 
 /**
  * Generates a new subscriber.
  */
-export class SubscriberCreateCommand {
+export class SubscriberCreateCommand implements yargs.CommandModule {
     command = "subscriber:create";
     describe = "Generates a new subscriber.";
 
-    builder(yargs: any) {
-        return yargs
+    builder(args: yargs.Argv) {
+        return args
             .option("c", {
                 alias: "connection",
                 default: "default",
@@ -32,18 +33,21 @@ export class SubscriberCreateCommand {
             });
     }
 
-    async handler(argv: any) {
+    async handler(args: yargs.Arguments) {
 
         try {
-            const fileContent = SubscriberCreateCommand.getTemplate(argv.name);
-            const filename = argv.name + ".ts";
-            let directory = argv.dir;
+            const fileContent = SubscriberCreateCommand.getTemplate(args.name as any);
+            const filename = args.name + ".ts";
+            let directory = args.dir;
 
             // if directory is not set then try to open tsconfig and find default path there
             if (!directory) {
                 try {
-                    const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-                    const connectionOptions = await connectionOptionsReader.get(argv.connection);
+                    const connectionOptionsReader = new ConnectionOptionsReader({
+                        root: process.cwd(),
+                        configName: args.config as any
+                    });
+                    const connectionOptions = await connectionOptionsReader.get(args.connection as any);
                     directory = connectionOptions.cli ? connectionOptions.cli.subscribersDir : undefined;
                 } catch (err) { }
             }

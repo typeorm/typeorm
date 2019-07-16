@@ -32,7 +32,7 @@ describe.skip("github issues > #1591 Define order of relation data when querying
             await connection.manager.save(user);
         }
 
-        const users = await connection
+        await connection
             .createQueryBuilder(User, "user")
             .leftJoinAndSelect("user.photos", "photo")
             .orderBy("user.name")
@@ -41,7 +41,6 @@ describe.skip("github issues > #1591 Define order of relation data when querying
             .take(5)
             .getMany();
 
-        console.log(users);
     })));
 
 });

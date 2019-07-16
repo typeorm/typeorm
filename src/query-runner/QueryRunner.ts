@@ -8,9 +8,11 @@ import {EntityManager} from "../entity-manager/EntityManager";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SqlInMemory} from "../driver/SqlInMemory";
 import {TableUnique} from "../schema-builder/table/TableUnique";
+import {View} from "../schema-builder/view/View";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {TableCheck} from "../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
+import {TableExclusion} from "../schema-builder/table/TableExclusion";
 
 /**
  * Runs queries on a single database connection.
@@ -53,6 +55,11 @@ export interface QueryRunner {
      * All synchronized tables in the database.
      */
     loadedTables: Table[];
+
+    /**
+     * All synchronized views in the database.
+     */
+    loadedViews: View[];
 
     /**
      * Creates/uses database connection from the connection pool to perform further operations.
@@ -115,14 +122,24 @@ export interface QueryRunner {
     /**
      * Loads a table by a given name from the database.
      */
-    getTable(tableName: string): Promise<Table|undefined>;
+    getTable(tablePath: string): Promise<Table|undefined>;
 
     /**
      * Loads all tables from the database and returns them.
      *
-     * todo: make tableNames optional
+     * todo: make tablePaths optional
      */
-    getTables(tableNames: string[]): Promise<Table[]>;
+    getTables(tablePaths: string[]): Promise<Table[]>;
+
+    /**
+     * Loads a view by a given name from the database.
+     */
+    getView(viewPath: string): Promise<View|undefined>;
+
+    /**
+     * Loads all views from the database and returns them.
+     */
+    getViews(viewPaths: string[]): Promise<View[]>;
 
     /**
      * Checks if a database with the given name exist.
@@ -175,6 +192,16 @@ export interface QueryRunner {
      * Drops a table.
      */
     dropTable(table: Table|string, ifExist?: boolean, dropForeignKeys?: boolean, dropIndices?: boolean): Promise<void>;
+
+    /**
+     * Creates a new view.
+     */
+    createView(view: View, oldView?: View): Promise<void>;
+
+    /**
+     * Drops a view.
+     */
+    dropView(view: View|string): Promise<void>;
 
     /**
      * Renames a table.
@@ -270,6 +297,26 @@ export interface QueryRunner {
      * Drops check constraints.
      */
     dropCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>;
+
+    /**
+     * Creates a new exclusion constraint.
+     */
+    createExclusionConstraint(table: Table|string, exclusionConstraint: TableExclusion): Promise<void>;
+
+    /**
+     * Creates new exclusion constraints.
+     */
+    createExclusionConstraints(table: Table|string, exclusionConstraints: TableExclusion[]): Promise<void>;
+
+    /**
+     * Drops a exclusion constraint.
+     */
+    dropExclusionConstraint(table: Table|string, exclusionOrName: TableExclusion|string): Promise<void>;
+
+    /**
+     * Drops exclusion constraints.
+     */
+    dropExclusionConstraints(table: Table|string, exclusionConstraints: TableExclusion[]): Promise<void>;
 
     /**
      * Creates a new foreign key.

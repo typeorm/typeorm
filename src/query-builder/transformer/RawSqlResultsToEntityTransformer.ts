@@ -8,9 +8,8 @@ import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {QueryExpressionMap} from "../QueryExpressionMap";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {abbreviate} from "../../util/StringUtils";
-import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {QueryRunner} from "../..";
+import {DriverUtils} from "../../driver/DriverUtils";
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -57,9 +56,22 @@ export class RawSqlResultsToEntityTransformer {
      */
     protected group(rawResults: any[], alias: Alias): Map<string, any[]> {
         const map = new Map();
-        const keys = alias.metadata.primaryColumns.map(column => this.buildColumnAlias(alias.name, column.databaseName));
+        const keys: string[] = [];
+        if (alias.metadata.tableType === "view") {
+            keys.push(...alias.metadata.columns.map(column => DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName)));
+        } else {
+            keys.push(...alias.metadata.primaryColumns.map(column => DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName)));
+        }
         rawResults.forEach(rawResult => {
-            const id = keys.map(key => rawResult[key]).join("_"); // todo: check partial
+            const id = keys.map(key => {
+                const keyValue = rawResult[key];
+
+                if (Buffer.isBuffer(keyValue)) {
+                    return keyValue.toString("hex");
+                }
+
+                return keyValue;
+            }).join("_"); // todo: check partial
             if (!id) return;
 
             const items = map.get(id);
@@ -80,7 +92,7 @@ export class RawSqlResultsToEntityTransformer {
         let metadata = alias.metadata;
 
         if (metadata.discriminatorColumn) {
-            const discriminatorValues = rawResults.map(result => result[this.buildColumnAlias(alias.name, alias.metadata.discriminatorColumn!.databaseName)]);
+            const discriminatorValues = rawResults.map(result => result[DriverUtils.buildColumnAlias(this.driver, alias.name, alias.metadata.discriminatorColumn!.databaseName)]);
             const discriminatorMetadata = metadata.childEntityMetadatas.find(childEntityMetadata => {
                 return !!discriminatorValues.find(value => value === childEntityMetadata.discriminatorValue);
             });
@@ -119,7 +131,7 @@ export class RawSqlResultsToEntityTransformer {
             if (metadata.childEntityMetadatas.length > 0 && metadata.childEntityMetadatas.map(metadata => metadata.target).indexOf(column.target) !== -1)
                 return;
 
-            const value = rawResults[0][this.buildColumnAlias(alias.name, column.databaseName)];
+            const value = rawResults[0][DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName)];
             if (value === undefined || column.isVirtual)
                 return;
 
@@ -143,7 +155,7 @@ export class RawSqlResultsToEntityTransformer {
 
         // let discriminatorValue: string = "";
         // if (metadata.discriminatorColumn)
-        //     discriminatorValue = rawResults[0][this.buildColumnAlias(alias.name, alias.metadata.discriminatorColumn!.databaseName)];
+        //     discriminatorValue = rawResults[0][DriverUtils.buildColumnAlias(this.connection.driver, alias.name, alias.metadata.discriminatorColumn!.databaseName)];
 
         this.expressionMap.joinAttributes.forEach(join => { // todo: we have problem here - when inner joins are used without selects it still create empty array
 
@@ -289,7 +301,7 @@ export class RawSqlResultsToEntityTransformer {
                     referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn!.databaseName : relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName;
                 }
 
-                const referenceColumnValue = rawSqlResults[0][this.buildColumnAlias(alias.name, referenceColumnName)]; // we use zero index since its grouped data // todo: selection with alias for entity columns wont work
+                const referenceColumnValue = rawSqlResults[0][DriverUtils.buildColumnAlias(this.driver, alias.name, referenceColumnName)]; // we use zero index since its grouped data // todo: selection with alias for entity columns wont work
                 if (referenceColumnValue !== undefined && referenceColumnValue !== null) {
                     entity[rawRelationCountResult.relationCountAttribute.mapToPropertyPropertyName] = 0;
                     rawRelationCountResult.results
@@ -302,18 +314,6 @@ export class RawSqlResultsToEntityTransformer {
             });
 
         return hasData;
-    }
-
-    /**
-     * Builds column alias from given alias name and column name,
-     * If alias length is more than 29, abbreviates column name.
-     */
-    protected buildColumnAlias(aliasName: string, columnName: string): string {
-        const columnAliasName = aliasName + "_" + columnName;
-        if (columnAliasName.length > 29 && this.driver instanceof OracleDriver)
-            return aliasName  + "_" + abbreviate(columnName, 2);
-
-        return columnAliasName;
     }
 
     private createValueMapFromJoinColumns(relation: RelationMetadata, parentAlias: string, rawSqlResults: any[]): ObjectLiteral {
@@ -332,9 +332,9 @@ export class RawSqlResultsToEntityTransformer {
         return columns.reduce((valueMap, column) => {
             rawSqlResults.forEach(rawSqlResult => {
                 if (relation.isManyToOne || relation.isOneToOneOwner) {
-                    valueMap[column.databaseName] = rawSqlResult[this.buildColumnAlias(parentAlias, column.databaseName)];
+                    valueMap[column.databaseName] = this.driver.prepareHydratedValue(rawSqlResult[DriverUtils.buildColumnAlias(this.driver, parentAlias, column.databaseName)], column);
                 } else {
-                    valueMap[column.databaseName] =  rawSqlResult[this.buildColumnAlias(parentAlias, column.referencedColumn!.databaseName)];
+                    valueMap[column.databaseName] =  this.driver.prepareHydratedValue(rawSqlResult[DriverUtils.buildColumnAlias(this.driver, parentAlias, column.referencedColumn!.databaseName)], column);
                 }
             });
             return valueMap;

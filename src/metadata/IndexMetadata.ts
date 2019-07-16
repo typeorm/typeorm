@@ -53,6 +53,18 @@ export class IndexMetadata {
     isSparse?: boolean;
 
     /**
+     * Builds the index in the background so that building an index an does not block other database activities.
+     * This option is only supported for mongodb database.
+     */
+    isBackground?: boolean;
+
+    /**
+     * Specifies a time to live, in seconds.
+     * This option is only supported for mongodb database.
+     */
+    expireAfterSeconds?: number;
+
+    /**
      * Target class to which metadata is applied.
      */
     target?: Function|string;
@@ -114,6 +126,8 @@ export class IndexMetadata {
             this.isFulltext = !!options.args.fulltext;
             this.where = options.args.where;
             this.isSparse = options.args.sparse;
+            this.isBackground = options.args.background;
+            this.expireAfterSeconds = options.args.expireAfterSeconds;
             this.givenName = options.args.name;
             this.givenColumnNames = options.args.columns;
         }
@@ -167,7 +181,9 @@ export class IndexMetadata {
                 if (relationWithSameName) {
                     return relationWithSameName.joinColumns;
                 }
-                throw new Error(`Index ${this.givenName ? "\"" + this.givenName + "\" " : ""}contains column that is missing in the entity: ` + propertyPath);
+                const indexName = this.givenName ? "\"" + this.givenName + "\" " : "";
+                const entityName = this.entityMetadata.targetName;
+                throw new Error(`Index ${indexName}contains column that is missing in the entity (${entityName}): ` + propertyPath);
             })
             .reduce((a, b) => a.concat(b));
         }
@@ -175,9 +191,11 @@ export class IndexMetadata {
         this.columnNamesWithOrderingMap = Object.keys(map).reduce((updatedMap, key) => {
             const column = this.entityMetadata.columns.find(column => column.propertyPath === key);
             if (column)
-                updatedMap[column.databaseName] = map[key];
+                updatedMap[column.databasePath] = map[key];
+
             return updatedMap;
         }, {} as { [key: string]: number });
+
         this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName), this.where);
         return this;
     }

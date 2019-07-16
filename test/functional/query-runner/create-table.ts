@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {Table} from "../../../src/schema-builder/table/Table";
 import {TableOptions} from "../../../src/schema-builder/options/TableOptions";
@@ -228,6 +229,14 @@ describe("query runner > create table", () => {
             questionTable!.uniques.length.should.be.equal(0);
             questionTable!.indices.length.should.be.equal(2);
 
+        } else if (connection.driver instanceof CockroachDriver) {
+            // CockroachDB stores unique indices as UNIQUE constraints
+            questionTable!.uniques.length.should.be.equal(2);
+            questionTable!.uniques[0].columnNames.length.should.be.equal(2);
+            questionTable!.uniques[1].columnNames.length.should.be.equal(2);
+            questionTable!.indices.length.should.be.equal(0);
+            questionTable!.checks.length.should.be.equal(1);
+
         } else {
             questionTable!.uniques.length.should.be.equal(1);
             questionTable!.uniques[0].columnNames.length.should.be.equal(2);
@@ -293,6 +302,13 @@ describe("query runner > create table", () => {
         if (connection.driver instanceof MysqlDriver) {
             table!.uniques.length.should.be.equal(0);
             table!.indices.length.should.be.equal(4);
+            tagColumn!.isUnique.should.be.true;
+            textColumn!.isUnique.should.be.true;
+
+        } else if (connection.driver instanceof CockroachDriver) {
+            // CockroachDB stores unique indices as UNIQUE constraints
+            table!.uniques.length.should.be.equal(4);
+            table!.indices.length.should.be.equal(0);
             tagColumn!.isUnique.should.be.true;
             textColumn!.isUnique.should.be.true;
 

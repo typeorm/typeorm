@@ -2,6 +2,11 @@ import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
 import {CreateDateColumn} from "../../../src/decorator/columns/CreateDateColumn";
 import {UpdateDateColumn} from "../../../src/decorator/columns/UpdateDateColumn";
 
+export enum SampleEnum {
+    ONE = "one",
+    TWO = "two"
+}
+
 @Entity("sample11_everything_entity")
 export class EverythingEntity {
 
@@ -64,6 +69,9 @@ export class EverythingEntity {
 
     @Column("simple_array")
     simpleArrayColumn: string[];
+
+    @Column("enum", { enum: SampleEnum })
+    enum: SampleEnum;
 
     @CreateDateColumn()
     createdDate: Date;

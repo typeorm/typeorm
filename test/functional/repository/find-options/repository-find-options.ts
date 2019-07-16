@@ -12,6 +12,7 @@ describe("repository > find options", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
+        enabledDrivers: ["sqlite"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -117,6 +118,49 @@ describe("repository > find options", () => {
         // })));
     })));
 
+    it("should select by given conditions", () => Promise.all(connections.map(async connection => {
+
+        const category1 = new Category();
+        category1.name = "Bears";
+        await connection.manager.save(category1);
+
+        const category2 = new Category();
+        category2.name = "Dogs";
+        await connection.manager.save(category2);
+
+        const category3 = new Category();
+        category3.name = "Cats";
+        await connection.manager.save(category3);
+
+        const loadedCategories1 = await connection.getRepository(Category).find({
+            where: {
+                name: "Bears"
+            }
+        });
+
+        expect(loadedCategories1).to.be.eql([{
+            id: 1,
+            name: "Bears"
+        }]);
+
+        const loadedCategories2 = await connection.getRepository(Category).find({
+            where: [{
+                name: "Bears"
+            }, {
+                name: "Cats"
+            }]
+        });
+
+        expect(loadedCategories2).to.be.eql([{
+            id: 1,
+            name: "Bears"
+        }, {
+            id: 3,
+            name: "Cats"
+        }]);
+
+    })));
+
 });
 
 
@@ -130,7 +174,7 @@ describe("repository > find options > cache", () => {
     after(() => closeTestingConnections(connections));
 
     it("repository should cache results properly", () => Promise.all(connections.map(async connection => {
-        
+
         // first prepare data - insert users
         const user1 = new User();
         user1.name = "Harry";

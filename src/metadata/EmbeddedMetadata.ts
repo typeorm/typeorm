@@ -8,6 +8,7 @@ import {Connection} from "../connection/Connection";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {IndexMetadata} from "./IndexMetadata";
+import {UniqueMetadata} from "./UniqueMetadata";
 
 /**
  * Contains all information about entity's embedded property.
@@ -66,6 +67,11 @@ export class EmbeddedMetadata {
     indices: IndexMetadata[] = [];
 
     /**
+     * Uniques applied to the embed columns.
+     */
+    uniques: UniqueMetadata[] = [];
+
+    /**
      * Relation ids inside this embed.
      */
     relationIds: RelationIdMetadata[] = [];
@@ -83,13 +89,13 @@ export class EmbeddedMetadata {
     /**
      * Indicates if this embedded is in array mode.
      *
-     * This option works only in monogodb.
+     * This option works only in mongodb.
      */
     isArray: boolean = false;
 
     /**
      * Prefix of the embedded, used instead of propertyName.
-     * If set to empty string, then prefix is not set at all.
+     * If set to empty string or false, then prefix is not set at all.
      */
     customPrefix: string|boolean|undefined;
 
@@ -97,7 +103,7 @@ export class EmbeddedMetadata {
      * Gets the prefix of the columns.
      * By default its a property name of the class where this prefix is.
      * But if custom prefix is set then it takes its value as a prefix.
-     * However if custom prefix is set to empty string prefix to column is not applied at all.
+     * However if custom prefix is set to empty string or false, then prefix to column is not applied at all.
      */
     prefix: string;
 
@@ -145,6 +151,11 @@ export class EmbeddedMetadata {
      * Indices of this embed and all indices from its child embeds.
      */
     indicesFromTree: IndexMetadata[] = [];
+
+    /**
+     * Uniques of this embed and all uniques from its child embeds.
+     */
+    uniquesFromTree: UniqueMetadata[] = [];
 
     /**
      * Relation ids of this embed and all relation ids from its child embeds.
@@ -197,6 +208,7 @@ export class EmbeddedMetadata {
         this.relationsFromTree = this.buildRelationsFromTree();
         this.listenersFromTree = this.buildListenersFromTree();
         this.indicesFromTree = this.buildIndicesFromTree();
+        this.uniquesFromTree = this.buildUniquesFromTree();
         this.relationIdsFromTree = this.buildRelationIdsFromTree();
         this.relationCountsFromTree = this.buildRelationCountsFromTree();
         return this;
@@ -206,6 +218,25 @@ export class EmbeddedMetadata {
     // Protected Methods
     // ---------------------------------------------------------------------
 
+    protected buildPartialPrefix(): string[] {
+        // if prefix option was not set or explicitly set to true - default prefix
+        if (this.customPrefix === undefined || this.customPrefix === true) {
+            return [this.propertyName];
+        }
+
+        // if prefix option was set to empty string or explicity set to false - disable prefix
+        if (this.customPrefix === "" || this.customPrefix === false) {
+            return [];
+        }
+
+        // use custom prefix
+        if (typeof this.customPrefix === "string") {
+            return [this.customPrefix];
+        }
+
+        throw new Error(`Invalid prefix option given for ${this.entityMetadata.targetName}#${this.propertyName}`);
+    }
+
     protected buildPrefix(connection: Connection): string {
         if (connection.driver instanceof MongoDriver)
             return this.propertyName;
@@ -214,11 +245,7 @@ export class EmbeddedMetadata {
         if (this.parentEmbeddedMetadata)
             prefixes.push(this.parentEmbeddedMetadata.buildPrefix(connection));
 
-        if (this.customPrefix === undefined) {
-            prefixes.push(this.propertyName);
-        } else if (typeof this.customPrefix === "string") {
-            prefixes.push(this.customPrefix);
-        }
+        prefixes.push(...this.buildPartialPrefix());
 
         return prefixes.join("_"); // todo: use naming strategy instead of "_"  !!!
     }
@@ -228,7 +255,7 @@ export class EmbeddedMetadata {
     }
 
     protected buildParentPrefixes(): string[] {
-        return [this.prefix || this.propertyName];
+        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildParentPrefixes().concat(this.buildPartialPrefix()) : this.buildPartialPrefix();
     }
 
     protected buildEmbeddedMetadataTree(): EmbeddedMetadata[] {
@@ -249,6 +276,10 @@ export class EmbeddedMetadata {
 
     protected buildIndicesFromTree(): IndexMetadata[] {
         return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildIndicesFromTree()), this.indices);
+    }
+
+    protected buildUniquesFromTree(): UniqueMetadata[] {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildUniquesFromTree()), this.uniques);
     }
 
     protected buildRelationIdsFromTree(): RelationIdMetadata[] {

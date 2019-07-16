@@ -1,3 +1,5 @@
+import { ObjectUtils } from "../util/ObjectUtils";
+
 /**
  * Thrown when query execution has failed.
 */
@@ -10,7 +12,7 @@ export class QueryFailedError extends Error {
             .replace(/^error: /, "")
             .replace(/^Error: /, "")
             .replace(/^Request/, "");
-        Object.assign(this, {
+        ObjectUtils.assign(this, {
             ...driverError,
             name: "QueryFailedError",
             query: query,

@@ -2,6 +2,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {Connection} from "../connection/Connection";
+import {IndexMetadata} from "../metadata/IndexMetadata";
 
 /**
  * Creates EntityMetadata for junction tables of the closure entities.
@@ -72,6 +73,25 @@ export class ClosureJunctionEntityMetadataBuilder {
                 }
             }));
         });
+
+        entityMetadata.ownIndices = [
+            new IndexMetadata({
+                entityMetadata: entityMetadata,
+                columns: [entityMetadata.ownColumns[0]],
+                args: {
+                    target: entityMetadata.target,
+                    synchronize: true
+                }
+            }),
+            new IndexMetadata({
+                entityMetadata: entityMetadata,
+                columns: [entityMetadata.ownColumns[1]],
+                args: {
+                    target: entityMetadata.target,
+                    synchronize: true
+                }
+            })
+        ];
 
         // if tree level column was defined by a closure entity then add it to the junction columns as well
         if (parentClosureEntityMetadata.treeLevelColumn) {

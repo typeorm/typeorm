@@ -34,8 +34,8 @@ describe("github issues > #71 ManyToOne relation with custom column name persist
             .where("artikel.id=:id", { id: 1 })
             .getOne();
 
-        expect(kollektion).not.to.be.empty;
-        expect(loadedArtikel).not.to.be.empty;
+        expect(kollektion).not.to.be.undefined;
+        expect(loadedArtikel).not.to.be.undefined;
         loadedArtikel!.should.be.eql({
             id: 1,
             nummer: "1",

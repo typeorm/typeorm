@@ -274,6 +274,21 @@ is a shortcut for:
 .setParameter("name", "Timber")
 ```
 
+Note: do not use the same parameter name for different values across the query builder. Values will be overridden if you set them multiple times.
+
+You can also supply an array of values, and have them transformed into a list of values in the SQL
+statement, by using the special expansion syntax:
+
+```typescript
+.where("user.name IN (:...names)", { names: [ "Timber", "Cristal", "Lina" ] })
+```
+
+Which becomes:
+
+```sql
+WHERE user.name IN ('Timber', 'Cristal', 'Lina')
+```
+
 ## Adding `WHERE` expression
 
 Adding a `WHERE` expression is as easy as:
@@ -325,6 +340,7 @@ createQueryBuilder("user")
     .andWhere(new Brackets(qb => {
         qb.where("user.firstName = :firstName", { firstName: "Timber" })
           .orWhere("user.lastName = :lastName", { lastName: "Saw" })
+    }))
 ```
 
 Which will produce the following SQL query:
@@ -809,6 +825,15 @@ const users = await getRepository(User)
     .getMany();
 ```
 
+To use dirty read locking use the following method:
+
+```typescript
+const users = await getRepository(User)
+    .createQueryBuilder("user")
+    .setLock("dirty_read")
+    .getMany();
+```
+
 To use optimistic locking use the following method:
 
 ```typescript
@@ -931,7 +956,7 @@ const posts = await connection
 ```
 ## Hidden Columns
 
-If the model you are querying has a column with a `select: false` column, you must use the `addSelect` function in order to retreive the information from the column.
+If the model you are querying has a column with a `select: false` column, you must use the `addSelect` function in order to retrieve the information from the column.
 
 Let's say you have the following entity:
 
@@ -952,7 +977,7 @@ export class User {
 }
 ```
 
-Using a standard `find` or query, you will not recieve the `password` property for the model. However, if you do the following:
+Using a standard `find` or query, you will not receive the `password` property for the model. However, if you do the following:
 
 ```typescript
 const users = await connection.getRepository(User)

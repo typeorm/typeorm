@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 
 describe("query runner > drop column", () => {
@@ -30,12 +31,18 @@ describe("query runner > drop column", () => {
         // In Sqlite 'dropColumns' method is more optimal than 'dropColumn', because it recreate table just once,
         // without all removed columns. In other drivers it's no difference between these methods, because 'dropColumns'
         // calls 'dropColumn' method for each removed column.
-        await queryRunner.dropColumns(table!, [idColumn, nameColumn, versionColumn]);
+        // CockroachDB does not support changing pk.
+        if (connection.driver instanceof CockroachDriver) {
+            await queryRunner.dropColumns(table!, [nameColumn, versionColumn]);
+        } else {
+            await queryRunner.dropColumns(table!, [idColumn, nameColumn, versionColumn]);
+        }
 
         table = await queryRunner.getTable("post");
-        expect(table!.findColumnByName("id")).to.be.undefined;
         expect(table!.findColumnByName("name")).to.be.undefined;
         expect(table!.findColumnByName("version")).to.be.undefined;
+        if (!(connection.driver instanceof CockroachDriver))
+            expect(table!.findColumnByName("id")).to.be.undefined;
 
         await queryRunner.executeMemoryDownSql();
 

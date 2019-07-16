@@ -78,43 +78,52 @@ export class ConnectionOptionsReader {
      * todo: get in count NODE_ENV somehow
      */
     protected async load(): Promise<ConnectionOptions[]|undefined> {
+        let connectionOptions: ConnectionOptions|ConnectionOptions[]|undefined = undefined;
+
+        const fileFormats = ["env", "js", "ts", "json", "yml", "yaml", "xml"];
+
+        // Detect if baseFilePath contains file extension
+        const possibleExtension = this.baseFilePath.substr(this.baseFilePath.lastIndexOf("."));
+        const fileExtension = fileFormats.find(extension => `.${extension}` === possibleExtension);
 
         // try to find any of following configuration formats
-        const foundFileFormat = ["env", "js", "ts", "json", "yml", "yaml", "xml"].find(format => {
+        const foundFileFormat = fileExtension || fileFormats.find(format => {
             return PlatformTools.fileExist(this.baseFilePath + "." + format);
         });
 
         // if .env file found then load all its variables into process.env using dotenv package
         if (foundFileFormat === "env") {
             const dotenv = PlatformTools.load("dotenv");
-            dotenv.config({ path: this.baseFilePath + ".env" });
+            dotenv.config({ path: this.baseFilePath });
         } else if (PlatformTools.fileExist(".env")) {
             const dotenv = PlatformTools.load("dotenv");
             dotenv.config({ path: ".env" });
         }
 
+        // Determine config file name
+        const configFile = fileExtension ? this.baseFilePath : this.baseFilePath + "." + foundFileFormat;
+
         // try to find connection options from any of available sources of configuration
-        let connectionOptions: ConnectionOptions|ConnectionOptions[]|undefined = undefined;
-        if (PlatformTools.getEnvVariable("TYPEORM_CONNECTION")) {
+        if (PlatformTools.getEnvVariable("TYPEORM_CONNECTION") || PlatformTools.getEnvVariable("TYPEORM_URL")) {
             connectionOptions = new ConnectionOptionsEnvReader().read();
 
         } else if (foundFileFormat === "js") {
-            connectionOptions = PlatformTools.load(this.baseFilePath + ".js");
+            connectionOptions = PlatformTools.load(configFile);
 
         } else if (foundFileFormat === "ts") {
-            connectionOptions = PlatformTools.load(this.baseFilePath + ".ts");
+            connectionOptions = PlatformTools.load(configFile);
 
         } else if (foundFileFormat === "json") {
-            connectionOptions = PlatformTools.load(this.baseFilePath + ".json");
+            connectionOptions = PlatformTools.load(configFile);
 
         } else if (foundFileFormat === "yml") {
-            connectionOptions = new ConnectionOptionsYmlReader().read(this.baseFilePath + ".yml");
+            connectionOptions = new ConnectionOptionsYmlReader().read(configFile);
 
         } else if (foundFileFormat === "yaml") {
-            connectionOptions = new ConnectionOptionsYmlReader().read(this.baseFilePath + ".yaml");
+            connectionOptions = new ConnectionOptionsYmlReader().read(configFile);
 
         } else if (foundFileFormat === "xml") {
-            connectionOptions = await new ConnectionOptionsXmlReader().read(this.baseFilePath + ".xml");
+            connectionOptions = await new ConnectionOptionsXmlReader().read(configFile);
         }
 
         // normalize and return connection options
@@ -133,11 +142,10 @@ export class ConnectionOptionsReader {
             connectionOptions = [connectionOptions];
 
         connectionOptions.forEach(options => {
-
             if (options.entities) {
                 const entities = (options.entities as any[]).map(entity => {
                     if (typeof entity === "string" && entity.substr(0, 1) !== "/")
-                        return this.baseFilePath + "/" + entity;
+                        return this.baseDirectory + "/" + entity;
 
                     return entity;
                 });
@@ -146,7 +154,7 @@ export class ConnectionOptionsReader {
             if (options.subscribers) {
                 const subscribers = (options.subscribers as any[]).map(subscriber => {
                     if (typeof subscriber === "string" && subscriber.substr(0, 1) !== "/")
-                        return this.baseFilePath + "/" + subscriber;
+                        return this.baseDirectory + "/" + subscriber;
 
                     return subscriber;
                 });
@@ -155,7 +163,7 @@ export class ConnectionOptionsReader {
             if (options.migrations) {
                 const migrations = (options.migrations as any[]).map(migration => {
                     if (typeof migration === "string" && migration.substr(0, 1) !== "/")
-                        return this.baseFilePath + "/" + migration;
+                        return this.baseDirectory + "/" + migration;
 
                     return migration;
                 });
@@ -179,7 +187,7 @@ export class ConnectionOptionsReader {
     }
 
     /**
-     * Gets directory where configuration file should be located and configuration file name without extension.
+     * Gets directory where configuration file should be located and configuration file name.
      */
     protected get baseFilePath(): string {
         return this.baseDirectory + "/" + this.baseConfigName;

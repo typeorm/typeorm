@@ -2,20 +2,21 @@ import {createConnection} from "../index";
 import {Connection} from "../connection/Connection";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {highlight} from "cli-highlight";
+import * as yargs from "yargs";
 
 const chalk = require("chalk");
 
 /**
  * Shows sql to be executed by schema:sync command.
  */
-export class SchemaLogCommand {
+export class SchemaLogCommand implements yargs.CommandModule {
 
     command = "schema:log";
     describe = "Shows sql to be executed by schema:sync command. It shows sql log only for your default connection. " +
         "To run update queries on a concrete connection use -c option.";
 
-    builder(yargs: any) {
-        return yargs
+    builder(args: yargs.Argv) {
+        return args
             .option("c", {
                 alias: "connection",
                 default: "default",
@@ -28,13 +29,16 @@ export class SchemaLogCommand {
             });
     }
 
-    async handler(argv: any) {
+    async handler(args: yargs.Arguments) {
 
         let connection: Connection|undefined = undefined;
         try {
 
-            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-            const connectionOptions = await connectionOptionsReader.get(argv.connection);
+            const connectionOptionsReader = new ConnectionOptionsReader({
+                root: process.cwd(),
+                configName: args.config as any
+            });
+            const connectionOptions = await connectionOptionsReader.get(args.connection as any);
             Object.assign(connectionOptions, {
                 synchronize: false,
                 migrationsRun: false,
@@ -52,8 +56,8 @@ export class SchemaLogCommand {
                 console.log(chalk.yellow.bold(`-- Schema syncronization will execute following sql queries (${chalk.white(sqlInMemory.upQueries.length)}):`));
                 console.log(chalk.yellow("---------------------------------------------------------------" + lengthSeparators));
 
-                sqlInMemory.upQueries.forEach(query => {
-                    let sqlString = query;
+                sqlInMemory.upQueries.forEach(upQuery => {
+                    let sqlString = upQuery.query;
                     sqlString = sqlString.trim();
                     sqlString = sqlString.substr(-1) === ";" ? sqlString : sqlString + ";";
                     console.log(highlight(sqlString));

@@ -13,8 +13,14 @@ export class Post {
     @PrimaryColumn()
     id: number;
 
+    @Column("bit")
+    bit: Buffer;
+
     @Column("int")
     int: number;
+
+    @Column("integer")
+    integer: number;
 
     @Column("tinyint")
     tinyint: number;
@@ -34,8 +40,33 @@ export class Post {
     @Column("double")
     double: number;
 
+    @Column("double precision")
+    doublePrecision: number;
+
+    @Column("real")
+    real: number;
+
+    @Column("dec")
+    dec: string;
+
     @Column("decimal")
     decimal: string;
+
+    @Column("numeric")
+    numeric: string;
+
+    @Column("fixed")
+    fixed: string;
+
+    // -------------------------------------------------------------------------
+    // Boolean Type
+    // -------------------------------------------------------------------------
+
+    @Column("boolean")
+    boolean: boolean;
+
+    @Column("bool")
+    bool: boolean;
 
     // -------------------------------------------------------------------------
     // String Types
@@ -44,8 +75,20 @@ export class Post {
     @Column("char")
     char: string;
 
+    @Column("nchar")
+    nChar: string;
+
+    @Column("national char")
+    nationalChar: string;
+
     @Column("varchar")
     varchar: string;
+
+    @Column("nvarchar")
+    nVarchar: string;
+
+    @Column("national varchar")
+    nationalVarchar: string;
 
     @Column("text")
     text: string;
@@ -149,4 +192,10 @@ export class Post {
 
     @Column("simple-json")
     simpleJson: { param: string };
+
+    @Column("simple-enum", { enum: ["A", "B", "C"] })
+    simpleEnum: string;
+
+    @Column("simple-enum", { enum: FruitEnum })
+    simpleClassEnum1: FruitEnum;
 }

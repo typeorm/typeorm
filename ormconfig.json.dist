@@ -5,8 +5,8 @@
     "type": "mysql",
     "host": "localhost",
     "port": 3306,
-    "username": "test",
-    "password": "test",
+    "username": "root",
+    "password": "admin",
     "database": "test",
     "logging": false
   },
@@ -16,8 +16,8 @@
     "type": "mariadb",
     "host": "localhost",
     "port": 3307,
-    "username": "test",
-    "password": "test",
+    "username": "root",
+    "password": "admin",
     "database": "test",
     "logging": false
   },
@@ -40,7 +40,7 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",
@@ -62,16 +62,21 @@
   },
   {
     "skip": false,
+    "name": "cockroachdb",
+    "type": "cockroachdb",
+    "host": "localhost",
+    "port": 26257,
+    "username": "root",
+    "password": "",
+    "database": "defaultdb"
+  },
+  {
+    "skip": false,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
     "database": "test",
-    "logging": false
-  },
-  {
-    "skip": false,
-    "name": "sqljs",
-    "type": "sqljs",
-    "logging": false
+    "logging": false,
+    "useNewUrlParser": true
   }
 ]

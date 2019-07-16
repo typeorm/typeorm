@@ -74,6 +74,11 @@ export interface Driver {
     mappedDataTypes: MappedColumnTypes;
 
     /**
+     * Max length allowed by the DBMS for aliases (execution of queries).
+     */
+    maxAliasLength?: number;
+
+    /**
      * Performs connection to the database.
      * Depend on driver type it may create a connection pool.
      */

@@ -35,8 +35,8 @@ describe("github issues > Join query on ManyToMany relations not working", () =>
             .where("category.category_id IN (:...ids)", { ids: [21] })
             .getOne();
 
-        expect(loadedPost).not.to.be.empty;
-        expect(loadedPost!.categories).not.to.be.empty;
+        expect(loadedPost).not.to.be.undefined;
+        expect(loadedPost!.categories).not.to.be.undefined;
 
     })));
 

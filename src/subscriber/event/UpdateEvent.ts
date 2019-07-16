@@ -3,6 +3,7 @@ import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {Connection} from "../../connection/Connection";
+import { EntityMetadata } from "../../metadata/EntityMetadata";
 
 /**
  * UpdateEvent is an object that broadcaster sends to the entity subscriber when entity is being updated in the database.
@@ -32,21 +33,23 @@ export interface UpdateEvent<Entity> {
     entity: Entity;
 
     /**
+     * Metadata of the entity.
+     */
+    metadata: EntityMetadata;
+
+    /**
      * Updating entity in the database.
      */
     databaseEntity: Entity;
 
     /**
-     * List of updated columns.
+     * List of updated columns. In query builder has no affected
      */
     updatedColumns: ColumnMetadata[];
 
     /**
-     * List of updated relations.
+     * List of updated relations. In query builder has no affected
      */
     updatedRelations: RelationMetadata[];
-
-    // todo: send old and new update values
-    // todo: send updated relations?
 
 }

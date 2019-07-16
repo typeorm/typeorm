@@ -91,4 +91,35 @@ export interface MappedColumnTypes {
      */
     cacheResult: ColumnType;
 
+    /**
+     * Column type for metadata type column in typeorm metadata table.
+     * Stores type of metadata. E.g. 'VIEW' or 'CHECK'
+     */
+    metadataType: ColumnType;
+
+    /**
+     * Column type for metadata database name column in typeorm metadata table.
+     */
+    metadataDatabase: ColumnType;
+
+    /**
+     * Column type for metadata schema name column in typeorm metadata table.
+     */
+    metadataSchema: ColumnType;
+
+    /**
+     * Column type for metadata table name column in typeorm metadata table.
+     */
+    metadataTable: ColumnType;
+
+    /**
+     * Column type for metadata name column in typeorm metadata table.
+     */
+    metadataName: ColumnType;
+
+    /**
+     * Column type for metadata value column in typeorm metadata table.
+     */
+    metadataValue: ColumnType;
+
 }

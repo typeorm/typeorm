@@ -2,6 +2,7 @@
 
 * [Entity decorators](#entity-decorators)
     * [`@Entity`](#entity)
+    * [`@ViewEntity`](#viewentity)
 * [Column decorators](#column-decorators)
     * [`@Column`](#column)
     * [`@PrimaryColumn`](#primarycolumn)
@@ -32,6 +33,7 @@
     * [`@Index`](#index)
     * [`@Unique`](#unique)
     * [`@Check`](#check)
+    * [`@Exclusion`](#exclusion)
     * [`@Transaction`, `@TransactionManager` and `@TransactionRepository`](#transaction-transactionmanager-and-transactionrepository)
     * [`@EntityRepository`](#entityrepository)
 
@@ -55,7 +57,7 @@ You can also specify some additional entity options:
 * `database` - database name in selected DB server.
 * `schema` - schema name.
 * `engine` - database engine to be set during table creation (works only in some databases).
-* `skipSync` - entities marked with this decorator are skipped from schema updates.
+* `synchronize` - entities marked with `false` are skipped from schema updates.
 * `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`.
 
 Example:
@@ -66,7 +68,7 @@ Example:
     engine: "MyISAM",
     database: 'example_dev',
     schema: 'schema_with_best_tables',
-    skipSync: true,
+    synchronize: false,
     orderBy: {
         name: "ASC",
         id: "DESC"
@@ -76,6 +78,62 @@ export class User {
 ```
 
 Learn more about [Entities](entities.md).
+
+#### `@ViewEntity`
+
+View entity is a class that maps to a database view.
+
+`@ViewEntity()` accepts following options:
+
+* `name` - view name. If not specified, then view name is generated from entity class name.
+* `database` - database name in selected DB server.
+* `schema` - schema name.
+* `expression` - view definition. **Required parameter**.
+
+`expression` can be string with properly escaped columns and tables, depend on database used (postgres in example):
+
+```typescript
+@ViewEntity({ 
+    expression: `
+        SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
+        FROM "post" "post"
+        LEFT JOIN "category" "category" ON "post"."categoryId" = "category"."id"
+    `
+})
+export class PostCategory {
+```
+
+or an instance of QueryBuilder
+
+```typescript
+@ViewEntity({ 
+    expression: (connection: Connection) => connection.createQueryBuilder()
+        .select("post.id", "id")
+        .addSelect("post.name", "name")
+        .addSelect("category.name", "categoryName")
+        .from(Post, "post")
+        .leftJoin(Category, "category", "category.id = post.categoryId")
+})
+export class PostCategory {
+```
+
+**Note:** parameter binding is not supported due to drivers limitations. Use the literal parameters instead.
+
+```typescript
+@ViewEntity({ 
+    expression: (connection: Connection) => connection.createQueryBuilder()
+        .select("post.id", "id")
+        .addSelect("post.name", "name")
+        .addSelect("category.name", "categoryName")
+        .from(Post, "post")
+        .leftJoin(Category, "category", "category.id = post.categoryId")
+        .where("category.name = :name", { name: "Cars" })  // <-- this is wrong
+        .where("category.name = 'Cars'")                   // <-- and this is right
+})
+export class PostCategory {
+```
+
+Learn more about [View Entities](view-entities.md).
 
 ## Column decorators
 
@@ -87,47 +145,47 @@ Example:
 ```typescript
 @Entity("users")
 export class User {
-    
+
     @Column({ primary: true })
     id: number;
-    
+
     @Column({ type: "varchar", length: 200, unique: true })
     firstName: string;
-    
+
     @Column({ nullable: true })
     lastName: string;
-    
+
     @Column({ default: false })
-    isActive: string;
-    
+    isActive: boolean;
 }
 ```
 
 `@Column` accept several options you can use:
 
 * `type: ColumnType` - Column type. One of the [supported column types](entities.md#column-types).
-* `name: string` - Column name in the database table. 
+* `name: string` - Column name in the database table.
 By default the column name is generated from the name of the property.
 You can change it by specifying your own name.
-* `length: string|number` - Column type's length. For example, if you want to create `varchar(150)` type 
+* `length: string|number` - Column type's length. For example, if you want to create `varchar(150)` type
 you specify column type and length options.
 * `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
 * `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
-* `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. 
+* `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database.
 By default column is `nullable: false`.
-* `readonly: boolean` - Indicates if column value is not updated by "save" operation. It means you'll be able to write this value only when you first time insert the object.
-Default value is `false`.
+* `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object.
+Default value is `true`.
+* `insert: boolean` - Indicates if column value is set the first time you insert the object.  Default value is `true`.
 * `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
-* `default: string` - Adds database-level column's `DEFAULT` value. 
+* `default: string` - Adds database-level column's `DEFAULT` value.
 * `primary: boolean` - Marks column as primary. Same as using  `@PrimaryColumn`.
 * `unique: boolean` - Marks column as unique column (creates unique constraint).
 * `comment: string` - Database's column comment. Not supported by all database types.
 * `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
  number of digits that are stored for the values. Used in some column types.
-* `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), 
-which represents the number of digits to the right of the decimal point and must not be greater than precision. 
+* `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column),
+which represents the number of digits to the right of the decimal point and must not be greater than precision.
 Used in some column types.
-* `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. 
+* `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL.
 If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
 * `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
 * `charset: string` - Defines a column character set. Not supported by all database types.
@@ -137,8 +195,8 @@ You can specify array of values or specify a enum class.
 * `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
-* `array: boolean` - Used for postgres column types which can be array (for example int[]).
-* `transformer: ValueTransformer` - Specifies a value transformer that is to be used to (un)marshal this column when reading or writing to the database.
+* `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[]).
+* `transformer: ValueTransformer|ValueTransformer[]` - Specifies a value transformer (or array of value transformers) that is to be used to (un)marshal this column when reading or writing to the database. In case of an array, the value transformers will be applied in the natural order from entityValue to databaseValue, and in reverse order from databaseValue to entityValue.
 * `spatialFeatureType: string` - Optional feature type (`Point`, `Polygon`, `LineString`, `Geometry`) used as a constraint on a spatial column. If not specified, it will behave as though `Geometry` was provided. Used only in PostgreSQL.
 * `srid: number` - Optional [Spatial Reference ID](https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys) used as a constraint on a spatial column. If not specified, it will default to `0`. Standard geographic coordinates (latitude/longitude in the WGS84 datum) correspond to [EPSG 4326](http://spatialreference.org/ref/epsg/wgs-84/). Used only in PostgreSQL.
 
@@ -153,10 +211,10 @@ Example:
 ```typescript
 @Entity()
 export class User {
-    
+
     @PrimaryColumn()
     id: number;
-    
+
 }
 ```
 
@@ -171,10 +229,10 @@ Example:
 ```typescript
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
 }
 ```
 
@@ -182,16 +240,19 @@ There are two generation strategies:
 
 * `increment` - uses AUTO_INCREMENT / SERIAL / SEQUENCE (depend on database type) to generate incremental number.
 * `uuid` - generates unique `uuid` string.
+* `rowid` - only for [CockroachDB](https://www.cockroachlabs.com/docs/stable/serial.html). Value is automatically generated using the `unique_rowid()` 
+function. This produces a 64-bit integer from the current timestamp and ID of the node executing the `INSERT` or `UPSERT` operation.
+> Note: property with a `rowid` generation strategy must be a `string` data type
 
-Default generation strategy is `increment`, to change it to `uuid`, simply pass it as the first argument to decorator:
+Default generation strategy is `increment`, to change it to another strategy, simply pass it as the first argument to decorator:
 
 ```typescript
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn("uuid")
     id: number;
-    
+
 }
 ```
 
@@ -207,10 +268,10 @@ Example:
 ```typescript
 @Entity()
 export class User {
-    
+
     @ObjectIdColumn()
     id: ObjectID;
-    
+
 }
 ```
 
@@ -225,42 +286,42 @@ Example:
 ```typescript
 @Entity()
 export class User {
-    
+
     @CreateDateColumn()
     createdDate: Date;
-    
+
 }
 ```
 
 #### `@UpdateDateColumn`
 
-Special column that is automatically set to the entity's update time 
+Special column that is automatically set to the entity's update time
 each time you call `save` from entity manager or repository.
 You don't need to write a value into this column - it will be automatically set.
 
 ```typescript
 @Entity()
 export class User {
-    
+
     @UpdateDateColumn()
     updatedDate: Date;
-    
+
 }
 ```
 
 #### `@VersionColumn`
 
-Special column that is automatically set to the entity's version (incremental number)  
+Special column that is automatically set to the entity's version (incremental number)
 each time you call `save` from entity manager or repository.
 You don't need to write a value into this column - it will be automatically set.
 
 ```typescript
 @Entity()
 export class User {
-    
+
     @VersionColumn()
     version: number;
-    
+
 }
 ```
 
@@ -271,11 +332,11 @@ Marks column to be a generated value. For example:
 ```typescript
 @Entity()
 export class User {
-    
+
     @Column()
     @Generated("uuid")
     uuid: string;
-    
+
 }
 ```
 
@@ -296,11 +357,11 @@ import {Profile} from "./Profile";
 
 @Entity()
 export class User {
-    
+
     @OneToOne(type => Profile, profile => profile.user)
     @JoinColumn()
     profile: Profile;
-    
+
 }
 ```
 
@@ -319,16 +380,16 @@ import {User} from "./User";
 
 @Entity()
 export class Photo {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     url: string;
-    
+
     @ManyToOne(type => User, user => user.photos)
     user: User;
-    
+
 }
 ```
 
@@ -347,16 +408,16 @@ import {Photo} from "./Photo";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
     @OneToMany(type => Photo, photo => photo.user)
     photos: Photo[];
-    
+
 }
 ```
 
@@ -375,20 +436,20 @@ import {Category} from "./Category";
 
 @Entity()
 export class Question {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     title: string;
-    
+
     @Column()
     text: string;
-    
+
     @ManyToMany(type => Category)
     @JoinTable()
     categories: Category[];
-    
+
 }
 ```
 
@@ -396,21 +457,21 @@ Learn more about [many-to-many relations](many-to-many-relations.md).
 
 #### `@JoinColumn`
 
-Defines which side of the relation contains the join column with a foreign key and 
-allows you to customize the join column name and referenced column name. 
+Defines which side of the relation contains the join column with a foreign key and
+allows you to customize the join column name and referenced column name.
 Example:
 
 ```typescript
 @Entity()
 export class Post {
-    
+
     @ManyToOne(type => Category)
-    @JoinColumn({ 
+    @JoinColumn({
         name: "cat_id",
         referencedColumnName: "name"
     })
     category: Category;
-    
+
 }
 ```
 
@@ -424,7 +485,7 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-    
+
     @ManyToMany(type => Category)
     @JoinTable({
         name: "question_categories",
@@ -438,11 +499,11 @@ export class Post {
         }
     })
     categories: Category[];
-    
+
 }
 ```
 
-If the destination table has composite primary keys, 
+If the destination table has composite primary keys,
 then an array of properties must be sent to the `@JoinTable` decorator.
 
 #### `@RelationId`
@@ -455,13 +516,13 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-    
+
     @ManyToOne(type => Category)
     category: Category;
-    
+
     @RelationId((post: Post) => post.category) // you need to specify target relation
     categoryId: number;
-    
+
 }
 ```
 
@@ -470,13 +531,13 @@ This functionality works for all kind of relations, including `many-to-many`:
 ```typescript
 @Entity()
 export class Post {
-        
+
     @ManyToMany(type => Category)
     categories: Category[];
-    
+
     @RelationId((post: Post) => post.categories)
     categoryIds: number[];
-    
+
 }
 ```
 
@@ -488,14 +549,14 @@ The underlying relation is not added/removed/changed when chaining the value.
 #### `@AfterLoad`
 
 You can define a method with any name in entity and mark it with `@AfterLoad`
-and TypeORM will call it each time the entity 
+and TypeORM will call it each time the entity
 is loaded using `QueryBuilder` or repository/manager find methods.
 Example:
 
 ```typescript
 @Entity()
 export class Post {
-    
+
     @AfterLoad()
     updateCounters() {
         if (this.likesCount === undefined)
@@ -515,7 +576,7 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-    
+
     @BeforeInsert()
     updateDates() {
         this.createdDate = new Date();
@@ -533,7 +594,7 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-    
+
     @AfterInsert()
     resetCounters() {
         this.counters = 0;
@@ -552,7 +613,7 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-    
+
     @BeforeUpdate()
     updateDates() {
         this.updatedDate = new Date();
@@ -571,7 +632,7 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-    
+
     @AfterUpdate()
     updateCounters() {
         this.counter = 0;
@@ -590,7 +651,7 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-    
+
     @BeforeRemove()
     updateStatus() {
         this.status = "removed";
@@ -609,7 +670,7 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-    
+
     @AfterRemove()
     updateStatus() {
         this.status = "removed";
@@ -629,14 +690,14 @@ Example:
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface<Post> {
 
-    
+
     /**
      * Indicates that this subscriber only listen to Post events.
      */
     listenTo() {
         return Post;
     }
-    
+
     /**
      * Called before post insertion.
      */
@@ -653,7 +714,7 @@ To listen to any entity, you just omit the `listenTo` method and use `any`:
 ```typescript
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface {
-    
+
     /**
      * Called before entity insertion.
      */
@@ -680,11 +741,11 @@ Examples:
 ```typescript
 @Entity()
 export class User {
-    
+
     @Index()
     @Column()
     firstName: string;
-    
+
     @Index({ unique: true })
     @Column()
     lastName: string;
@@ -696,13 +757,13 @@ export class User {
 @Index(["lastName", "middleName"])
 @Index(["firstName", "lastName", "middleName"], { unique: true })
 export class User {
-    
+
     @Column()
     firstName: string;
-    
+
     @Column()
     lastName: string;
-    
+
     @Column()
     middleName: string;
 }
@@ -714,6 +775,7 @@ Learn more about [indices](indices.md).
 
 This decorator allows you to create a database unique constraint for a specific column or columns.
 This decorator can be applied only to an entity itself.
+You must specify the entity field names (not database column names) as arguments.
 
 Examples:
 
@@ -723,14 +785,14 @@ Examples:
 @Unique(["lastName", "middleName"])
 @Unique("UQ_NAMES", ["firstName", "lastName", "middleName"])
 export class User {
-    
-    @Column()
+
+    @Column({ name: 'first_name' })
     firstName: string;
-    
-    @Column()
+
+    @Column({ name: 'last_name' })
     lastName: string;
-    
-    @Column()
+
+    @Column({ name: 'middle_name' })
     middleName: string;
 }
 ```
@@ -740,7 +802,7 @@ export class User {
 #### `@Check`
 
 This decorator allows you to create a database check constraint for a specific column or columns.
-This decorator can be applied only to an entity itself. 
+This decorator can be applied only to an entity itself.
 
 Examples:
 
@@ -749,13 +811,13 @@ Examples:
 @Check(`"firstName" <> 'John' AND "lastName" <> 'Doe'`)
 @Check(`"age" > 18`)
 export class User {
-    
+
     @Column()
     firstName: string;
-    
+
     @Column()
     lastName: string;
-    
+
     @Column()
     age: number;
 }
@@ -763,10 +825,35 @@ export class User {
 
 > Note: MySQL does not support check constraints.
 
+#### `@Exclusion`
+
+This decorator allows you to create a database exclusion constraint for a specific column or columns.
+This decorator can be applied only to an entity itself.
+
+Examples:
+
+```typescript
+@Entity()
+@Exclusion(`USING gist ("room" WITH =, tsrange("from", "to") WITH &&)`)
+export class RoomBooking {
+
+    @Column()
+    room: string;
+
+    @Column()
+    from: Date;
+
+    @Column()
+    to: Date;
+}
+```
+
+> Note: Only PostgreSQL supports exclusion constraints.
+
 #### `@Transaction`, `@TransactionManager` and `@TransactionRepository`
 
 `@Transaction` is used on a method and wraps all its execution into a single database transaction.
-All database queries must be performed using the `@TransactionManager` provided manager 
+All database queries must be performed using the `@TransactionManager` provided manager
 or with the transaction repositories injected with `@TransactionRepository`.
 Examples:
 
@@ -790,7 +877,7 @@ save(user: User, @TransactionRepository(User) userRepository: Repository<User>) 
 save(@QueryParam("name") name: string, @TransactionRepository() userRepository: UserRepository) {
     return userRepository.findByName(name);
 }
-``` 
+```
 
 > Note: all operations inside a transaction MUST ONLY use the provided instance of `EntityManager` or injected repositories.
 Using any other source of queries (global manager, global repositories, etc.) will lead to bugs and errors.
@@ -805,9 +892,9 @@ Example:
 ```typescript
 @EntityRepository()
 export class UserRepository {
-    
+
     /// ... custom repository methods ...
-    
+
 }
 ```
 
@@ -818,6 +905,6 @@ Learn more about [custom entity repositories](custom-repository.md).
 
 ----
 
-> Note: some decorators (like `@Tree`, `@ChildEntity`, etc.) aren't 
-documented in this reference because they are treated as experimental at the moment. 
+> Note: some decorators (like `@Tree`, `@ChildEntity`, etc.) aren't
+documented in this reference because they are treated as experimental at the moment.
 Expect to see their documentation in the future.

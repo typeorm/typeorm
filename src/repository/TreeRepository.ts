@@ -248,9 +248,14 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     protected createRelationMaps(alias: string, rawResults: any[]): { id: any, parentId: any }[] {
         return rawResults.map(rawResult => {
+            const joinColumn = this.metadata.treeParentRelation!.joinColumns[0];
+            // fixes issue #2518, default to databaseName property when givenDatabaseName is not set
+            const joinColumnName = joinColumn.givenDatabaseName || joinColumn.databaseName;
+            const id = rawResult[alias + "_" + this.metadata.primaryColumns[0].databaseName];
+            const parentId = rawResult[alias + "_" + joinColumnName];
             return {
-                id: rawResult[alias + "_" + this.metadata.primaryColumns[0].databaseName],
-                parentId: rawResult[alias + "_" + this.metadata.treeParentRelation!.joinColumns[0].givenDatabaseName]
+                id: this.manager.connection.driver.prepareHydratedValue(id, this.metadata.primaryColumns[0]),
+                parentId: this.manager.connection.driver.prepareHydratedValue(parentId, joinColumn),
             };
         });
     }

@@ -3,6 +3,7 @@ import {Post} from "./entity/Post";
 import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
+import {FruitEnum} from "./enum/FruitEnum";
 
 describe("database schema > column types > sqlite", () => {
 
@@ -56,6 +57,8 @@ describe("database schema > column types > sqlite", () => {
         post.datetime.setMilliseconds(0);
         post.simpleArray = ["A", "B", "C"];
         post.simpleJson = { param: "VALUE" };
+        post.simpleEnum = "A";
+        post.simpleClassEnum1 = FruitEnum.Apple;
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;
@@ -92,6 +95,8 @@ describe("database schema > column types > sqlite", () => {
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
         loadedPost.simpleJson.param.should.be.equal(post.simpleJson.param);
+        loadedPost.simpleEnum.should.be.equal(post.simpleEnum);
+        loadedPost.simpleClassEnum1.should.be.equal(post.simpleClassEnum1);
 
         table!.findColumnByName("id")!.type.should.be.equal("integer");
         table!.findColumnByName("name")!.type.should.be.equal("varchar");
@@ -123,6 +128,14 @@ describe("database schema > column types > sqlite", () => {
         table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
         table!.findColumnByName("simpleArray")!.type.should.be.equal("text");
         table!.findColumnByName("simpleJson")!.type.should.be.equal("text");
+        table!.findColumnByName("simpleEnum")!.type.should.be.equal("simple-enum");
+        table!.findColumnByName("simpleEnum")!.enum![0].should.be.equal("A");
+        table!.findColumnByName("simpleEnum")!.enum![1].should.be.equal("B");
+        table!.findColumnByName("simpleEnum")!.enum![2].should.be.equal("C");
+        table!.findColumnByName("simpleClassEnum1")!.type.should.be.equal("simple-enum");
+        table!.findColumnByName("simpleClassEnum1")!.enum![0].should.be.equal("apple");
+        table!.findColumnByName("simpleClassEnum1")!.enum![1].should.be.equal("pineapple");
+        table!.findColumnByName("simpleClassEnum1")!.enum![2].should.be.equal("banana");
 
     })));
 

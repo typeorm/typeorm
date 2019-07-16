@@ -56,6 +56,8 @@ export class User {
 
 To create an unique index you need to specify `{ unique: true }` in the index options:
 
+> Note: CockroachDB stores unique indices as `UNIQUE` constraints
+
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
 

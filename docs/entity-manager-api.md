@@ -169,7 +169,7 @@ await manager.increment(User, { firstName: "Timber" }, "age", 3);
 
 * `decrement` - Decrements some column by provided value that match given options.
 ```typescript
-await manager.count(User, { firstName: "Timber" }, "age", 3);
+await manager.decrement(User, { firstName: "Timber" }, "age", 3);
 ```
 
 * `find` - Finds entities that match given options.

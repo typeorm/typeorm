@@ -1,3 +1,5 @@
+import { ColumnMetadata } from "../metadata/ColumnMetadata";
+
 /**
  * Provides utilities to transform hydrated and persisted data.
  */
@@ -169,6 +171,23 @@ export class DateUtils {
 
     static stringToSimpleJson(value: any) {
         return typeof value === "string" ? JSON.parse(value) : value;
+    }
+
+    static simpleEnumToString(value: any) {
+        return "" + value;
+    }
+
+    static stringToSimpleEnum(value: any, columnMetadata: ColumnMetadata) {
+        if (
+            columnMetadata.enum
+            && !isNaN(value)
+            && columnMetadata.enum.indexOf(parseInt(value)) >= 0
+        ) {
+            // convert to number if that exists in poosible enum options
+            value = parseInt(value);
+        }
+
+        return value;
     }
 
     // -------------------------------------------------------------------------

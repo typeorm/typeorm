@@ -85,28 +85,36 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * Creates connection with the database.
      */
-    protected createDatabaseConnection() {
-        return new Promise<void>(async (ok, fail) => {
-            await this.createDatabaseDirectory(this.options.database);
-            const databaseConnection = new this.sqlite.Database(this.options.database, (err: any) => {
+    protected async createDatabaseConnection() {
+        await this.createDatabaseDirectory(this.options.database);
+
+        const databaseConnection: any = await new Promise((ok, fail) => {
+            const connection = new this.sqlite.Database(this.options.database, (err: any) => {
                 if (err) return fail(err);
-
-                // we need to enable foreign keys in sqlite to make sure all foreign key related features
-                // working properly. this also makes onDelete to work with sqlite.
-                databaseConnection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
-                    if (err) return fail(err);
-                    ok(databaseConnection);
-                });
-
-                // in the options, if encryption key for for SQLCipher is setted.
-                if (this.options.key) {
-                  databaseConnection.run(`PRAGMA key = ${this.options.key};`, (err: any, result: any) => {
-                    if (err) return fail(err);
-                    ok(databaseConnection);
-                  });
-                }
+                ok(connection);
             });
         });
+
+        // Internal function to run a command on the connection and fail if an error occured.
+        function run(line: string): Promise<void> {
+            return new Promise((ok, fail) => {
+                databaseConnection.run(line, (err: any) => {
+                    if (err) return fail(err);
+                    ok();
+                });
+            });
+        }
+
+        // we need to enable foreign keys in sqlite to make sure all foreign key related features
+        // working properly. this also makes onDelete to work with sqlite.
+        await run(`PRAGMA foreign_keys = ON;`);
+
+        // in the options, if encryption key for SQLCipher is setted.
+        if (this.options.key) {
+            await run(`PRAGMA key = ${JSON.stringify(this.options.key)};`);
+        }
+
+        return databaseConnection;
     }
 
     /**

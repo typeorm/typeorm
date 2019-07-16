@@ -21,7 +21,7 @@ describe("github issues > #512 Table name escaping in UPDATE in QueryBuilder", (
             })
             .getSql();
 
-        return query.should.contain(driver.escape("Posts"));
+        return query.should.deep.include(driver.escape("Posts"));
     })));
 
 });

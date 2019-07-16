@@ -46,6 +46,23 @@ Querying a column from an embedded entity should be done with respect to the hie
 userRepository.find({ where: { name: { first: "Timber", last: "Saw" } } });
 ```
 
+Querying with OR operator:
+
+```typescript
+userRepository.find({
+  where: [
+    { firstName: "Timber", lastName: "Saw" },
+    { firstName: "Stan", lastName: "Lee" }
+  ]
+});
+```
+
+will execute following query: 
+
+```sql
+SELECT * FROM "user" WHERE ("firstName" = 'Timber' AND "lastName" = 'Saw') OR ("firstName" = 'Stan' AND "lastName" = 'Lee')
+```
+
 * `order` - selection order.
 
 ```typescript
@@ -94,6 +111,23 @@ userRepository.find({
 ```typescript
 userRepository.find({
     cache: true
+})
+```
+
+* `lock` - Enables locking mechanism for query. Can be used only in `findOne` method. `lock` is an object which can be defined as:
+```ts
+{ mode: "optimistic", version: number|Date }
+```
+or
+```ts
+{ mode: "pessimistic_read"|"pessimistic_write"|"dirty_read" }
+```
+
+for example:
+
+```typescript
+userRepository.findOne(1, {
+    lock: { mode: "optimistic", version: 1 }
 })
 ```
 
@@ -154,6 +188,22 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" < 10
 ```
 
+* `LessThanOrEqual`
+
+```ts
+import {LessThanOrEqual} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    likes: LessThanOrEqual(10)
+});
+```
+
+will execute following query: 
+
+```sql
+SELECT * FROM "post" WHERE "likes" <= 10
+```
+
 * `MoreThan`
 
 ```ts
@@ -168,6 +218,22 @@ will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "likes" > 10
+```
+
+* `MoreThanOrEqual`
+
+```ts
+import {MoreThanOrEqual} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    likes: MoreThanOrEqual(10)
+});
+```
+
+will execute following query: 
+
+```sql
+SELECT * FROM "post" WHERE "likes" >= 10
 ```
 
 * `Equal`
@@ -272,14 +338,31 @@ SELECT * FROM "post" WHERE "title" IS NULL
 import {Raw} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: Raw( "1 + likes = 4")
+    likes: Raw("dislikes - 4")
 });
 ```
 
 will execute following query: 
 
 ```sql
-SELECT * FROM "post" WHERE 1 + "likes" = 4
+SELECT * FROM "post" WHERE "likes" = "dislikes" - 4
+```
+
+In the simplest case, a raw query is inserted immediately after the equal symbol.
+ But you can also completely rewrite the comparison logic using the function.
+
+```ts
+import {Raw} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    currentDate: Raw(alias =>`${alias} > NOW()`)
+});
+```
+
+will execute following query: 
+
+```sql
+SELECT * FROM "post" WHERE "currentDate" > NOW()
 ```
 
 > Note: beware with `Raw` operator. It executes pure SQL from supplied expression and should not contain a user input,

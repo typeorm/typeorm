@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {PostWithVersion} from "./entity/PostWithVersion";
@@ -57,7 +58,7 @@ describe("query builder > locking", () => {
     })));
 
     it("should not throw error if pessimistic lock used with transaction", () => Promise.all(connections.map(async connection => {
-        if (connection.driver instanceof AbstractSqliteDriver)
+        if (connection.driver instanceof AbstractSqliteDriver || connection.driver instanceof CockroachDriver)
             return;
 
         return connection.manager.transaction(entityManager => {
@@ -76,7 +77,7 @@ describe("query builder > locking", () => {
     })));
 
     it("should attach pessimistic read lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
-        if (connection.driver instanceof AbstractSqliteDriver)
+        if (connection.driver instanceof AbstractSqliteDriver || connection.driver instanceof CockroachDriver)
             return;
 
         const sql = connection.createQueryBuilder(PostWithVersion, "post")
@@ -98,6 +99,17 @@ describe("query builder > locking", () => {
         }
     })));
 
+    it("should attach dirty read lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof SqlServerDriver)) return;
+
+        const sql = connection.createQueryBuilder(PostWithVersion, "post")
+            .setLock("dirty_read")
+            .where("post.id = :id", { id: 1 })
+            .getSql();
+            
+        expect(sql.indexOf("WITH (NOLOCK)") !== -1).to.be.true;
+    })));
+
     it("should not attach pessimistic write lock statement on query if locking is not used", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof AbstractSqliteDriver)
             return;
@@ -111,7 +123,7 @@ describe("query builder > locking", () => {
     })));
 
     it("should attach pessimistic write lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
-        if (connection.driver instanceof AbstractSqliteDriver)
+        if (connection.driver instanceof AbstractSqliteDriver || connection.driver instanceof CockroachDriver)
             return;
 
         const sql = connection.createQueryBuilder(PostWithVersion, "post")
@@ -260,7 +272,7 @@ describe("query builder > locking", () => {
     })));
 
     it("should throw error if pessimistic locking not supported by given driver", () => Promise.all(connections.map(async connection => {
-        if (connection.driver instanceof AbstractSqliteDriver)
+        if (connection.driver instanceof AbstractSqliteDriver || connection.driver instanceof CockroachDriver)
             return connection.manager.transaction(entityManager => {
                 return Promise.all([
                     entityManager.createQueryBuilder(PostWithVersion, "post")
