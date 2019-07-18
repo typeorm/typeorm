@@ -23,7 +23,7 @@ or
 ```typescript
 import {getManager} from "typeorm";
 
-await getManager().transaction(transactionalEntityManager => {
+await getManager().transaction(async transactionalEntityManager => {
     
 });
 ```
