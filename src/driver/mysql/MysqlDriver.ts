@@ -831,12 +831,15 @@ export class MysqlDriver implements Driver {
             multipleStatements: options.multipleStatements,
             flags: options.flags
         }, {
-            host: credentials.host,
             user: credentials.username,
             password: credentials.password,
             database: credentials.database,
             port: credentials.port,
             ssl: options.ssl
+        }, credentials.host === undefined ? {} : {
+            host: credentials.host
+        }, credentials.socketPath === undefined ? {} : {
+            socketPath: credentials.socketPath
         },
         options.acquireTimeout === undefined
           ? {}

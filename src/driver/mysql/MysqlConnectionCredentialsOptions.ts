@@ -16,6 +16,11 @@ export interface MysqlConnectionCredentialsOptions {
     readonly host?: string;
 
     /**
+     * Database socket path, MUST NOT co-exist with database host
+     */
+    readonly socketPath?: string;
+
+    /**
      * Database host port.
      */
     readonly port?: number;
