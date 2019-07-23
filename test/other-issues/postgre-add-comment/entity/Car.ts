@@ -2,17 +2,14 @@ import {Entity, PrimaryGeneratedColumn, Column} from "../../../../src/index";
 
 @Entity("cars")
 export class Car {
-    public static build(item: { wheelsCount: number }) {
-        const entity = new Car();
-        entity.wheelsCount = item.wheelsCount;
-
-        return entity;
-    }
-
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn({
+        name: "id",
+        comment: "Row index"
+    })
     public id: number;
 
     @Column({
+        name: "wheelscount",
         comment: "Car wheels count"
     })
     public wheelsCount: number;

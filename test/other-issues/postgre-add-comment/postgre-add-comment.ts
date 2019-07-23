@@ -18,15 +18,19 @@ describe("add comment for field in postgre", () => {
     it("should comment not undefined or empty", () => Promise.all(connections.map(async connection => {
         const entityFieldDescription: { column_name: string, description: string }[]
             = await connection.query("SELECT c.column_name, pgd.description FROM pg_catalog.pg_statio_all_tables AS st "
-            + "INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid) "
-            + "RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname) " 
-            + "WHERE table_schema = $1 and table_name = $2;", [ "public", "connection.getMetadata(CarWithWheels).tableName" ]);
+                + "INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid) "
+                + "RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname) " 
+                + "WHERE table_schema = $1 and table_name = $2;", [ "public", connection.getMetadata(Car).tableName ]);
         
         const carColumns = connection.getMetadata(Car).columns;
-        entityFieldDescription.forEach((it) => {
-            const regularColumn = carColumns.find((entityColumn) => entityColumn.propertyName === it.column_name);
 
-            assert.isNotNull(regularColumn);
+        assert.isArray(entityFieldDescription);
+        assert.isAbove(entityFieldDescription.length, 0);
+
+        entityFieldDescription.forEach((it) => {
+            const regularColumn = carColumns.find((entityColumn) => entityColumn.databaseName === it.column_name || entityColumn.databaseNameWithoutPrefixes === it.column_name );
+
+            assert.exists(regularColumn);
             assert.equal(regularColumn!.comment, it.description);
         });
     })));
