@@ -47,6 +47,11 @@ export class QueryExpressionMap {
     selects: SelectQuery[] = [];
 
     /**
+     * Whether SELECT is DISTINCT.
+     */
+    selectDistinct: boolean = false;
+
+    /**
      * FROM-s to be selected.
      */
     // froms: { target: string, alias: string }[] = [];
@@ -140,7 +145,7 @@ export class QueryExpressionMap {
     /**
      * Locking mode.
      */
-    lockMode?: "optimistic"|"pessimistic_read"|"pessimistic_write";
+    lockMode?: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read";
 
     /**
      * Current version of the entity, used for locking.
@@ -409,7 +414,7 @@ export class QueryExpressionMap {
         map.updateEntity = this.updateEntity;
         map.callListeners = this.callListeners;
         map.useTransaction = this.useTransaction;
-        map.nativeParameters = this.nativeParameters;
+        map.nativeParameters = Object.assign({}, this.nativeParameters);
         return map;
     }
 

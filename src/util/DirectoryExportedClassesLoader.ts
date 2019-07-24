@@ -1,11 +1,14 @@
 import {PlatformTools} from "../platform/PlatformTools";
 import {EntitySchema} from "../index";
-
+import {Logger} from "../logger/Logger";
 /**
  * Loads all exported classes from the given directory.
  */
-export function importClassesFromDirectories(directories: string[], formats = [".js", ".ts"]): Function[] {
+export function importClassesFromDirectories(logger: Logger, directories: string[], formats = [".js", ".ts"]): Function[] {
 
+    const logLevel = "info";
+    const classesNotFoundMessage = "No classes were found using the provided glob pattern: ";
+    const classesFoundMessage = "All classes found using provided glob pattern";
     function loadFileClasses(exported: any, allLoaded: Function[]) {
         if (typeof exported === "function" || exported instanceof EntitySchema) {
             allLoaded.push(exported);
@@ -24,6 +27,11 @@ export function importClassesFromDirectories(directories: string[], formats = ["
         return allDirs.concat(PlatformTools.load("glob").sync(PlatformTools.pathNormalize(dir)));
     }, [] as string[]);
 
+    if (directories.length > 0 && allFiles.length === 0) {
+        logger.log(logLevel, `${classesNotFoundMessage} "${directories}"`);
+    } else if (allFiles.length > 0) {
+        logger.log(logLevel, `${classesFoundMessage} "${directories}" : "${allFiles}"`);
+    }
     const dirs = allFiles
         .filter(file => {
             const dtsExtension = file.substring(file.length - 5, file.length);

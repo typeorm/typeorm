@@ -120,7 +120,7 @@ userRepository.find({
 ```
 or
 ```ts
-{ mode: "pessimistic_read"|"pessimistic_write" }
+{ mode: "pessimistic_read"|"pessimistic_write"|"dirty_read" }
 ```
 
 for example:

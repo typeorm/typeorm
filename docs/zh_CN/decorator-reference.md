@@ -168,9 +168,9 @@ export class User {
 -   `width: number` - 列类型的显示宽度。 仅用于 [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
 -   `onUpdate: string` - `ON UPDATE` 触发器。仅用于 [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 -   `nullable: boolean` - 设置列值`NULL`或`NOT NULL`。
-    默认值是 `nullable: false`.
--   `readonly: boolean` - 指示"save"操作是否未更新列值。 这意味着只有在第一次插入对象时才能写入此值。
-    默认值是 `false`。
+    默认值是 `nullable: false`。
+-   `update: boolean` - 指示"save"操作是否更新列值。如果为false，则只能在第一次插入对象时编写该值。
+    默认值为"true"。
 -   `select: boolean` - 定义在进行查询时是否默认隐藏此列。 设置为`false`时，列数据不会显示标准查询。 默认值`select：true`。
 -   `default: string` - 添加数据库级列的`DEFAULT`值。
 -   `primary: boolean` - 将列标记为主列。 与`@PrimaryColumn`使用相同。

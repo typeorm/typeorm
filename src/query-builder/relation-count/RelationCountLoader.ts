@@ -108,7 +108,8 @@ export class RelationCountLoader {
                 const inverseSideTableName = relationCountAttr.joinInverseSideMetadata.tableName;
                 const inverseSideTableAlias = relationCountAttr.alias || inverseSideTableName;
                 const junctionTableName = relationCountAttr.relation.junctionEntityMetadata!.tableName;
-                const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + referenceColumnValues + ")" +
+                
+                const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + referenceColumnValues.map(vals => isNaN(vals) ? "'" + vals + "'" : vals) + ")" +
                     " AND " + junctionAlias + "." + secondJunctionColumn.propertyName + " = " + inverseSideTableAlias + "." + inverseJoinColumnName;
 
                 const qb = this.connection.createQueryBuilder(this.queryRunner);

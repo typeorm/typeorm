@@ -40,7 +40,7 @@ export class Post {
 你需要使用以下 sql 查询（postgres dialect）创建新的迁移：
 
 ```sql
-ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name";
+ALTER TABLE "post" RENAME COLUMN "title" TO "name";
 ```
 
 运行此 sql 查询后，你的数据库架构就可以使用新的代码库了。

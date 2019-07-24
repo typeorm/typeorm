@@ -34,7 +34,7 @@ describe("columns > readonly functionality", () => {
         const loadedPost = await postRepository.findOne(post.id);
         expect(loadedPost!.title).to.be.equal("About columns1");
         expect(loadedPost!.text).to.be.equal("Some text about columns1");
-        expect(loadedPost!.authorName).to.be.equal("Umed1");
+        expect(loadedPost!.authorName).to.be.equal("Umed");  // blocked by readonly
 
     })));
 

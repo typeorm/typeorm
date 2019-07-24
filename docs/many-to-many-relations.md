@@ -82,6 +82,8 @@ category2.name = "zoo";
 await connection.manager.save(category2);
 
 const question = new Question();
+question.title = "dogs";
+question.text = "who let the dogs out?";
 question.categories = [category1, category2];
 await connection.manager.save(question);
 ```
@@ -166,4 +168,41 @@ const categoriesWithQuestions = await connection
     .createQueryBuilder("category")
     .leftJoinAndSelect("category.questions", "question")
     .getMany();
+```
+
+## many-to-many relations with custom properties
+
+In case you need to have additional properties to your many-to-many relationship you have to create a new entity yourself. 
+For example if you would like entities `Post` and `Category` to have a many-to-many relationship with a `createdAt` property 
+associated to it you have to create entity `PostToCategory` like the following:
+
+```typescript
+import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Post } from "./post";
+import { Category } from "./category";
+
+@Entity()
+export class PostToCategory {
+    @PrimaryGeneratedColumn()
+    public postToCategoryId!: number;
+
+    public postId!: number;
+    public categoryId!: number;
+
+    @Column()
+    public order!: number;
+
+    @ManyToOne(type => Post, post => post.postToCategories)
+    public post!: Post;
+
+    @ManyToOne(type => Category, category => category.postToCategories)
+    public category!: Category;
+}
+```
+
+Additionally you will have to add a relationship like the following to `Post` and `Category`:
+
+```typescript
+@OneToMany((type) => PostToCategory, (postToCategory) => postToCategory.post)
+public postToCategories!: PostToCategory[];
 ```

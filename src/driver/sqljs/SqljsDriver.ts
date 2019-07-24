@@ -246,11 +246,14 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * If database is specified it is loaded, otherwise a new empty database is created.
      */
     protected async createDatabaseConnectionWithImport(database?: Uint8Array): Promise<any> {
+        // sql.js < 1.0 exposes an object with a `Database` method.
+        const isLegacyVersion = typeof this.sqlite.Database === "function";
+        const sqlite = isLegacyVersion ? this.sqlite : await this.sqlite(); 
         if (database && database.length > 0) {
-            this.databaseConnection = new this.sqlite.Database(database);
+            this.databaseConnection = new sqlite.Database(database);
         }
         else {
-            this.databaseConnection = new this.sqlite.Database();
+            this.databaseConnection = new sqlite.Database();
         }
 
         // Enable foreign keys for database

@@ -40,7 +40,7 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Enables or disables query result caching.
      */
-    lock?: { mode: "optimistic", version: number|Date } | { mode: "pessimistic_read"|"pessimistic_write" };
+    lock?: { mode: "optimistic", version: number|Date } | { mode: "pessimistic_read"|"pessimistic_write"|"dirty_read" };
 
     /**
      * If sets to true then loads all relation ids of the entity and maps them into relation values (not relation objects).

@@ -318,6 +318,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             .filter(column => column.type === "enum" || column.type === "simple-enum")
             .map(async column => {
                 const hasEnum = await this.hasEnumType(table, column);
+                // TODO: Should also check if values of existing type matches expected ones
                 if (!hasEnum) {
                     upQueries.push(this.createEnumTypeSql(table, column));
                     downQueries.push(this.dropEnumTypeSql(table, column));
@@ -479,13 +480,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         });
 
         // rename ENUM types
-        newTable.columns
-            .filter(column => column.type === "enum" || column.type === "simple-enum")
-            .forEach(column => {
-                upQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(oldTable, column)} RENAME TO ${this.buildEnumName(newTable, column, false)}`));
-                downQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(newTable, column)} RENAME TO ${this.buildEnumName(oldTable, column, false)}`));
-            });
-
+        const enumColumns = newTable.columns.filter(column => column.type === "enum" || column.type === "simple-enum");
+        for (let column of enumColumns) {
+            const oldEnumType = await this.getEnumTypeName(oldTable, column);
+            upQueries.push(new Query(`ALTER TYPE "${oldEnumType.enumTypeSchema}"."${oldEnumType.enumTypeName}" RENAME TO ${this.buildEnumName(newTable, column, false)}`));
+            downQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(newTable, column)} RENAME TO "${oldEnumType.enumTypeName}"`));
+        }
         await this.executeQueries(upQueries, downQueries);
     }
 
@@ -609,8 +609,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                 // rename ENUM type
                 if (oldColumn.type === "enum" || oldColumn.type === "simple-enum") {
-                    upQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(table, oldColumn)} RENAME TO ${this.buildEnumName(table, newColumn, false)}`));
-                    downQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(table, newColumn)} RENAME TO ${this.buildEnumName(table, oldColumn, false)}`));
+                    const oldEnumType = await this.getEnumTypeName(table, oldColumn);
+                    upQueries.push(new Query(`ALTER TYPE "${oldEnumType.enumTypeSchema}"."${oldEnumType.enumTypeName}" RENAME TO ${this.buildEnumName(table, newColumn, false)}`));
+                    downQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(table, newColumn)} RENAME TO "${oldEnumType.enumTypeName}"`));
                 }
 
                 // rename column primary key constraint
@@ -708,18 +709,18 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             if (
                 (newColumn.type === "enum" || newColumn.type === "simple-enum")
-                && (oldColumn.type === "enum" || newColumn.type === "simple-enum")
+                && (oldColumn.type === "enum" || oldColumn.type === "simple-enum")
                 && !OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!)
             ) {
                 const enumName = this.buildEnumName(table, newColumn);
-                const enumNameWithoutSchema = this.buildEnumName(table, newColumn, false);
                 const arraySuffix = newColumn.isArray ? "[]" : "";
                 const oldEnumName = this.buildEnumName(table, newColumn, true, false, true);
                 const oldEnumNameWithoutSchema = this.buildEnumName(table, newColumn, false, false, true);
+                const enumTypeBeforeColumnChange = await this.getEnumTypeName(table, oldColumn);
 
                 // rename old ENUM
-                upQueries.push(new Query(`ALTER TYPE ${enumName} RENAME TO ${oldEnumNameWithoutSchema}`));
-                downQueries.push(new Query(`ALTER TYPE ${oldEnumName} RENAME TO ${enumNameWithoutSchema}`));
+                upQueries.push(new Query(`ALTER TYPE "${enumTypeBeforeColumnChange.enumTypeSchema}"."${enumTypeBeforeColumnChange.enumTypeName}" RENAME TO ${oldEnumNameWithoutSchema}`));
+                downQueries.push(new Query(`ALTER TYPE ${oldEnumName} RENAME TO  "${enumTypeBeforeColumnChange.enumTypeName}"`));
 
                 // create new ENUM
                 upQueries.push(this.createEnumTypeSql(table, newColumn));
@@ -939,8 +940,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (column.type === "enum" || column.type === "simple-enum") {
             const hasEnum = await this.hasEnumType(table, column);
             if (hasEnum) {
-                upQueries.push(this.dropEnumTypeSql(table, column));
-                downQueries.push(this.createEnumTypeSql(table, column));
+                const enumType = await this.getEnumTypeName(table, column);
+                const escapedEnumName = `"${enumType.enumTypeSchema}"."${enumType.enumTypeName}"`;
+                upQueries.push(this.dropEnumTypeSql(table, column, escapedEnumName));
+                downQueries.push(this.createEnumTypeSql(table, column, escapedEnumName));
             }
         }
 
@@ -1399,8 +1402,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             `"ns"."nspname" AS "referenced_table_schema", "cl"."relname" AS "referenced_table_name", "att"."attname" AS "referenced_column_name", "con"."confdeltype" AS "on_delete", ` +
             `"con"."confupdtype" AS "on_update", "con"."condeferrable" AS "deferrable", "con"."condeferred" AS "deferred" ` +
             `FROM ( ` +
-            `SELECT UNNEST ("con1"."conkey") AS "parent", UNNEST ("con1"."confkey") AS "child", "con1"."confrelid", "con1"."conrelid", "con1"."conname", "con1"."contype", "ns"."nspname", ` + 
-            `"cl"."relname", "con1"."condeferrable", ` + 
+            `SELECT UNNEST ("con1"."conkey") AS "parent", UNNEST ("con1"."confkey") AS "child", "con1"."confrelid", "con1"."conrelid", "con1"."conname", "con1"."contype", "ns"."nspname", ` +
+            `"cl"."relname", "con1"."condeferrable", ` +
             `CASE WHEN "con1"."condeferred" THEN 'INITIALLY DEFERRED' ELSE 'INITIALLY IMMEDIATE' END as condeferred, ` +
             `CASE "con1"."confdeltype" WHEN 'a' THEN 'NO ACTION' WHEN 'r' THEN 'RESTRICT' WHEN 'c' THEN 'CASCADE' WHEN 'n' THEN 'SET NULL' WHEN 'd' THEN 'SET DEFAULT' END as "confdeltype", ` +
             `CASE "con1"."confupdtype" WHEN 'a' THEN 'NO ACTION' WHEN 'r' THEN 'RESTRICT' WHEN 'c' THEN 'CASCADE' WHEN 'n' THEN 'SET NULL' WHEN 'd' THEN 'SET DEFAULT' END as "confupdtype" ` +
@@ -1480,9 +1483,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     if (tableColumn.type.indexOf("enum") !== -1) {
                         tableColumn.type = "enum";
                         const sql = `SELECT "e"."enumlabel" AS "value" FROM "pg_enum" "e" ` +
-                            `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
-                            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-                            `WHERE "n"."nspname" = '${dbTable["table_schema"]}' AND "t"."typname" = '${this.buildEnumName(table, tableColumn.name, false, true)}'`;
+                        `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
+                        `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+                        `WHERE "n"."nspname" = '${dbTable["table_schema"]}' AND "t"."typname" = '${this.buildEnumName(table, tableColumn.name, false, true)}'`;
                         const results: ObjectLiteral[] = await this.query(sql);
                         tableColumn.enum = results.map(result => result["value"]);
                     }
@@ -1991,6 +1994,22 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         return enumName.split(".").map(i => {
             return disableEscape ? i : `"${i}"`;
         }).join(".");
+    }
+
+    protected async getEnumTypeName(table: Table, column: TableColumn) {
+        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
+        const currentSchema = currentSchemaQuery[0]["current_schema"];
+        let [schema, name] = table.name.split(".");
+        if (!name) {
+            name = schema;
+            schema = this.driver.options.schema || currentSchema;
+        }
+        const result = await this.query(`SELECT "udt_schema", "udt_name" ` +
+            `FROM "information_schema"."columns" WHERE "table_schema" = '${schema}' AND "table_name" = '${name}' AND "column_name"='${column.name}'`);
+        return {
+            enumTypeSchema: result[0]["udt_schema"],
+            enumTypeName: result[0]["udt_name"]
+        };
     }
 
     /**

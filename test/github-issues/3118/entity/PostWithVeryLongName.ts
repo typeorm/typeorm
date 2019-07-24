@@ -1,7 +1,7 @@
 import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import { AuthorWithVeryLongName } from "./PostAuthorWithVeryLongName";
-import { ManyToMany, Entity, ManyToOne } from "../../../../src";
-import { CategoryWithVeryLongName } from "./CategoryWithVeryLongName";
+import {AuthorWithVeryLongName} from "./AuthorWithVeryLongName";
+import {ManyToMany, Entity, ManyToOne} from "../../../../src";
+import {CategoryWithVeryLongName} from "./CategoryWithVeryLongName";
 
 @Entity()
 export class PostWithVeryLongName {

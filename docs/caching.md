@@ -113,6 +113,22 @@ await connection.queryResultCache.remove(["users_admins"]);
 
 
 By default, TypeORM uses a separate table called `query-result-cache` and stores all queries and results there.
+Table name is configurable, so you could change its by give the value in the tableName property.
+Example:
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    ...
+    cache: {
+        type: "database",
+        tableName: "configurable-table-query-result-cache"
+    }
+}
+```
+
 If storing cache in a single database table is not effective for you,
 you can change the cache type to "redis" or "ioredis" and TypeORM will store all cached records in redis instead.
 Example:

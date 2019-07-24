@@ -117,6 +117,12 @@ export interface BaseConnectionOptions {
         readonly type?: "database" | "redis" | "ioredis" | "ioredis/cluster"; // todo: add mongodb and other cache providers as well in the future
 
         /**
+         * Configurable table name for "database" type cache.
+         * Default value is "query-result-cache"
+         */
+        readonly tableName?: string;
+
+        /**
          * Used to provide redis connection options.
          */
         readonly options?: any;

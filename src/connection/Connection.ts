@@ -306,6 +306,18 @@ export class Connection {
     }
 
     /**
+     * Lists all migrations and whether they have been run.
+     * Returns true if there are no pending migrations
+     */
+    async showMigrations(): Promise<boolean> {
+        if (!this.isConnected) {
+            throw new CannotExecuteNotConnectedError(this.name);
+        }
+        const migrationExecutor = new MigrationExecutor(this);
+        return await migrationExecutor.showMigrations();
+    }
+
+    /**
      * Checks if entity metadata exist for the given entity class, target name or table name.
      */
     hasMetadata(target: Function|EntitySchema<any>|string): boolean {

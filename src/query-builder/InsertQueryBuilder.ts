@@ -249,7 +249,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
       if (statement && statement.overwrite instanceof Array) {
         if (this.connection.driver instanceof MysqlDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = VALUES(${column})`).join(", ");
-        } else if (this.connection.driver instanceof PostgresDriver) {
+        } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = EXCLUDED.${column}`).join(", ");
         }
       }
@@ -337,9 +337,15 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             if (this.expressionMap.insertColumns.length)
                 return this.expressionMap.insertColumns.indexOf(column.propertyPath) !== -1;
 
+            // skip columns the user doesn't want included by default
+            if (!column.isInsert) { return false; }
+
             // if user did not specified such list then return all columns except auto-increment one
             // for Oracle we return auto-increment column as well because Oracle does not support DEFAULT VALUES expression
-            if (column.isGenerated && column.generationStrategy === "increment" && !(this.connection.driver instanceof OracleDriver) && !(this.connection.driver instanceof MysqlDriver))
+            if (column.isGenerated && column.generationStrategy === "increment"
+                && !(this.connection.driver instanceof OracleDriver)
+                && !(this.connection.driver instanceof AbstractSqliteDriver)
+                && !(this.connection.driver instanceof MysqlDriver))
                 return false;
 
             return true;

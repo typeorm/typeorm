@@ -1,6 +1,7 @@
 import {UpdateEvent} from "./event/UpdateEvent";
 import {RemoveEvent} from "./event/RemoveEvent";
 import {InsertEvent} from "./event/InsertEvent";
+import {LoadEvent} from "./event/LoadEvent";
 
 /**
  * Classes that implement this interface are subscribers that subscribe for the specific events in the ORM.
@@ -15,8 +16,13 @@ export interface EntitySubscriberInterface<Entity = any> {
 
     /**
      * Called after entity is loaded from the database.
+     *
+     * For backward compatibility this signature is slightly different from the
+     * others.  `event` was added later but is always provided (it is only
+     * optional in the signature so that its introduction does not break
+     * compilation for existing subscribers).
      */
-    afterLoad?(entity: Entity): Promise<any>|void;
+    afterLoad?(entity: Entity, event?: LoadEvent<Entity>): Promise<any>|void;
 
     /**
      * Called before entity is inserted to the database.

@@ -106,6 +106,22 @@ await connection.queryResultCache.remove(["users_admins"]);
 ```
 
 默认情况下，TypeORM 使用一个名为`query-result-cache`的单独表，并在那里存储所有查询和结果。
+表名是可配置的，因此您可以通过在 tableName 属性中给出值来更改它
+例如：
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    ...
+    cache: {
+        type: "database",
+        tableName: "configurable-table-query-result-cache"
+    }
+}
+```
+
 如果在单个数据库表中存储缓存对你无效，则可以将缓存类型更改为"redis"或者"ioredis"，而 TypeORM 将以 redis 形式存储所有缓存的记录。
 例如：
 
