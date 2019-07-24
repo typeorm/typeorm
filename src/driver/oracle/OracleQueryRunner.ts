@@ -1385,10 +1385,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     protected createViewSql(view: View): Query {
+        const materializedClause = view.materialized ? "" : "MATERIALIZED ";
         if (typeof view.expression === "string") {
-            return new Query(`CREATE VIEW "${view.name}" AS ${view.expression}`);
+            return new Query(`CREATE ${materializedClause}VIEW "${view.name}" AS ${view.expression}`);
         } else {
-            return new Query(`CREATE VIEW "${view.name}" AS ${view.expression(this.connection).getQuery()}`);
+            return new Query(`CREATE ${materializedClause}VIEW "${view.name}" AS ${view.expression(this.connection).getQuery()}`);
         }
     }
 

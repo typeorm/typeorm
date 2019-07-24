@@ -139,7 +139,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Returns only entities that should be synced in the database.
      */
     protected get viewEntityToSyncMetadatas(): EntityMetadata[] {
-        return this.connection.entityMetadatas.filter(metadata => metadata.tableType === "view");
+        return this.connection.entityMetadatas.filter(metadata => metadata.tableType === "view" && metadata.synchronize);
     }
 
     /**
