@@ -9,9 +9,9 @@ export class Post {
     id: number;
 
     @Column({
-        type:"simple-json",
-        nullable:true
+        type: "simple-json",
+        nullable: true
     })
-    jsonField:any
+    jsonField: any;
 
 }

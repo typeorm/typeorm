@@ -18,7 +18,7 @@ describe("github issues > #4440 simple-json column type throws error for string 
     after(() => closeTestingConnections(connections));
 
     it("should correctly add retrieve simple-json field with no value", () =>
-    Promise.all(connections.map(async (connection)=>{
+    Promise.all(connections.map(async (connection) => {
         const queryRunner = connection.createQueryRunner();
         await queryRunner.query(`INSERT INTO post (id, jsonField) VALUES(1, '')`);
         
@@ -26,11 +26,11 @@ describe("github issues > #4440 simple-json column type throws error for string 
         const post = await repo.findOne(1);
 
         post!.id.should.eql(1);
-        post!.jsonField.should.eql('');
+        post!.jsonField.should.eql("");
     })));
 
     it("should correctly add retrieve simple-json field with some value", () =>
-    Promise.all(connections.map(async (connection)=>{
+    Promise.all(connections.map(async (connection) => {
         const queryRunner = connection.createQueryRunner();
         await queryRunner.query(`INSERT INTO post (id, jsonField) VALUES(1, '{"key":"value"}')`);
         
@@ -38,7 +38,7 @@ describe("github issues > #4440 simple-json column type throws error for string 
         const post = await repo.findOne(1);
 
         post!.id.should.eql(1);
-        post!.jsonField.should.eql({"key":"value"});
+        post!.jsonField.should.eql({"key": "value"});
     })));
 
 });
