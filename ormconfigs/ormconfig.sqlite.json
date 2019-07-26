@@ -1,0 +1,9 @@
+[
+    {
+        "skip": false,
+        "name": "sqlite",
+        "type": "sqlite",
+        "database": "temp/sqlitedb.db",
+        "logging": false
+    }
+]

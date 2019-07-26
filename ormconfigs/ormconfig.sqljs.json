@@ -1,0 +1,8 @@
+[
+    {
+        "skip": true,
+        "name": "sqljs",
+        "type": "sqljs",
+        "logging": false
+      }
+]
