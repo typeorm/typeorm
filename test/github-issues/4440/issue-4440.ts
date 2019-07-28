@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Post} from "./entity/Post";
+import { Connection } from "../../../src/connection/Connection";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Post } from "./entity/Post";
 
 describe("github issues > #4440 simple-json column type throws error for string with no value", () => {
 
@@ -11,7 +11,20 @@ describe("github issues > #4440 simple-json column type throws error for string 
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
-            enabledDrivers: ["sqlite", "mysql"],
+            enabledDrivers: [
+            "mysql",
+            "postgres",
+            "cockroachdb",
+            "mariadb",
+            "sqlite",
+            "cordova",
+            "react-native",
+            "nativescript" ,
+            "sqljs",
+            "oracle",
+            "mssql",
+            "mongodb",
+            "expo"],
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
