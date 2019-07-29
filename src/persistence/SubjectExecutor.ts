@@ -328,6 +328,13 @@ export class SubjectExecutor {
             }
 
             subjects.forEach(subject => {
+                if (subject.diffColumns) {
+                    subject.diffColumns.forEach(column => {
+                        const value = column.getEntityValue(subject.entity!);
+                        const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                        column.setEntityValue(subject.entity!, preparedValue);
+                    });
+                }
                 if (subject.generatedMap) {
                     subject.metadata.columns.forEach(column => {
                         const value = column.getEntityValue(subject.generatedMap!);
@@ -393,6 +400,13 @@ export class SubjectExecutor {
                 }
 
                 const updateResult = await updateQueryBuilder.execute();
+                if (subject.diffColumns) {
+                    subject.diffColumns.forEach(column => {
+                        const value = column.getEntityValue(subject.entity!);
+                        const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                        column.setEntityValue(subject.entity!, preparedValue);
+                    });
+                }
                 subject.generatedMap = updateResult.generatedMaps[0];
                 if (subject.generatedMap) {
                     subject.metadata.columns.forEach(column => {
