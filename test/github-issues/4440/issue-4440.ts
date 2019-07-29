@@ -24,7 +24,8 @@ describe("github issues > #4440 simple-json column type throws error for string 
             "oracle",
             "mssql",
             "mongodb",
-            "expo"],
+            "expo"
+        ],
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
@@ -32,26 +33,27 @@ describe("github issues > #4440 simple-json column type throws error for string 
 
     it("should correctly add retrieve simple-json field with no value", () =>
     Promise.all(connections.map(async (connection) => {
-        const queryRunner = connection.createQueryRunner();
-        await queryRunner.query(`INSERT INTO post (id, jsonField) VALUES(1, '')`);
-        
         const repo = connection.getRepository(Post);
-        const post = await repo.findOne(1);
-
-        post!.id.should.eql(1);
-        post!.jsonField.should.eql("");
+        const post = new Post();
+        post.id = 1;
+        post.jsonField = "";
+        const postsaved = await repo.save(post);
+        console.log("TCL: postsaved", postsaved);
+        const postFound = await repo.findOne(1);
+        postFound!.id.should.eql(1);
+        postFound!.jsonField.should.eql({});
     })));
 
     it("should correctly add retrieve simple-json field with some value", () =>
-    Promise.all(connections.map(async (connection) => {
-        const queryRunner = connection.createQueryRunner();
-        await queryRunner.query(`INSERT INTO post (id, jsonField) VALUES(1, '{"key":"value"}')`);
-        
+    Promise.all(connections.map(async (connection) => {   
         const repo = connection.getRepository(Post);
-        const post = await repo.findOne(1);
-
-        post!.id.should.eql(1);
-        post!.jsonField.should.eql({"key": "value"});
+        const post = new Post();
+        post.id = 1;
+        post.jsonField = {"key": "value"};
+        await repo.save(post);
+        const postFound = await repo.findOne(1);
+        postFound!.id.should.eql(1);
+        postFound!.jsonField.should.eql({"key": "value"});
     })));
 
 });

@@ -170,8 +170,10 @@ export class DateUtils {
     }
 
     static stringToSimpleJson(value: any) {
-        // Checking if value is truthy then checking if it is a string
-        return !!value && typeof value === "string" ? JSON.parse(value) : {};
+        // try/catch implemented
+        let simpleJSON = null;
+        try {simpleJSON = JSON.parse(value); } 
+        finally {return (typeof simpleJSON === "object") ? simpleJSON : {}; }
     }
 
     static simpleEnumToString(value: any) {
