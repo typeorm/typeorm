@@ -170,7 +170,7 @@ const timbers = await repository.find({ firstName: "Timber" });
 ```
 
 - `findAndCount` - 查找指定条件的实体。还会计算与给定条件匹配的所有实体数量，
-  但是忽略分页设置 (`from` 和 `take` 选项).
+  但是忽略分页设置 (`skip` 和 `take` 选项)。
 
 ```typescript
 const [timbers, timbersCount] = await repository.findAndCount({ firstName: "Timber" });
@@ -206,6 +206,34 @@ const rawData = await repository.query(`SELECT * FROM USERS`);
 
 ```typescript
 await repository.clear();
+```
+### 其他选项
+
+`SaveOptions`选项可以传递`save`, `insert` 和 `update`参数。
+
+* `data` -  使用persist方法传递的其他数据。这个数据可以在订阅者中使用。
+* `listeners`: boolean - 指示是否为此操作调用监听者和订阅者。默认启用，可以通过在save/remove选项中设置`{listeners：false}`来禁用。
+* `transaction`: boolean - 默认情况下，启用事务并将持久性操作中的所有查询都包裹在事务中。可以通过在持久性选项中设置`{transaction：false}`来禁用此行为。
+* `chunk`: number - 中断将执行保存到多个块组中的操作。 例如，如果要保存100.000个对象但是在保存它们时遇到问题，可以将它们分成10组10.000个对象（通过设置`{chunk：10000}`）并分别保存每个组。 当遇到基础驱动程序参数数量限制问题时，需要此选项来执行非常大的插入。
+* `reload`: boolean - 用于确定是否应在持久性操作期间重新加载正在保留的实体的标志。 它仅适用于不支持RETURNING/OUTPUT语句的数据库。 默认情况下启用。
+
+示例:
+```typescript
+// users包含用user实体数组
+userRepository.insert(users, {chunk: users.length / 1000});
+```
+
+`RemoveOptions`可以传递`remove`和`delete`参数。
+
+* `data` - 使用remove方法传递的其他数据。 这个数据可以在订阅者中使用。
+* `listener`: boolean - 指示是否为此操作调用监听者和订阅者。默认启用，可以通过在save/remove选项中设置`{listeners：false}`来禁用。
+* `transaction`: boolean - 默认情况下，启用事务并将持久性操作中的所有查询都包裹在事务中。可以通过在持久性选项中设置`{transaction：false}`来禁用此行为。
+* `chunk`: number - 中断将执行保存到多个块组中的操作。 例如，如果要保存100.000个对象但是在保存它们时遇到问题，可以将它们分成10组10.000个对象（通过设置`{chunk：10000}`）并分别保存每个组。 当遇到基础驱动程序参数数量限制问题时，需要此选项来执行非常大的插入。
+
+示例:
+```typescript
+// users包含用user实体数组
+userRepository.remove(users, {chunk: entities.length / 1000});
 ```
 
 ## `TreeRepository`API

@@ -56,12 +56,12 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .orderBy("post.id, categories.code")
                 .getMany();
 
-            expect(loadedPosts[0].categories).to.not.be.empty;
+            expect(loadedPosts[0].categories).to.not.be.eql([]);
             expect(loadedPosts[0].categories[0].name).to.be.equal("cars");
             expect(loadedPosts[0].categories[0].type).to.be.equal("common-category");
             expect(loadedPosts[0].categories[1].name).to.be.equal("BMW");
             expect(loadedPosts[0].categories[1].type).to.be.equal("cars-category");
-            expect(loadedPosts[1].categories).to.not.be.empty;
+            expect(loadedPosts[1].categories).to.not.be.eql([]);
             expect(loadedPosts[1].categories[0].name).to.be.equal("airplanes");
             expect(loadedPosts[1].categories[0].type).to.be.equal("common-category");
 
@@ -72,7 +72,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .where("post.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedPost!.categories).to.not.be.empty;
+            expect(loadedPost!.categories).to.not.be.eql([]);
             expect(loadedPost!.categories[0].name).to.be.equal("cars");
             expect(loadedPost!.categories[0].type).to.be.equal("common-category");
 
@@ -117,12 +117,12 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .orderBy("post.id, categories.code")
                 .getMany();
 
-            expect(loadedPosts[0].categoriesWithOptions).to.not.be.empty;
+            expect(loadedPosts[0].categoriesWithOptions).to.not.be.eql([]);
             expect(loadedPosts[0].categoriesWithOptions[0].name).to.be.equal("cars");
             expect(loadedPosts[0].categoriesWithOptions[0].type).to.be.equal("common-category");
             expect(loadedPosts[0].categoriesWithOptions[1].name).to.be.equal("BMW");
             expect(loadedPosts[0].categoriesWithOptions[1].type).to.be.equal("cars-category");
-            expect(loadedPosts[1].categoriesWithOptions).to.not.be.empty;
+            expect(loadedPosts[1].categoriesWithOptions).to.not.be.eql([]);
             expect(loadedPosts[1].categoriesWithOptions[0].name).to.be.equal("airplanes");
             expect(loadedPosts[1].categoriesWithOptions[0].type).to.be.equal("common-category");
 
@@ -133,7 +133,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .where("post.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedPost!.categoriesWithOptions).to.not.be.empty;
+            expect(loadedPost!.categoriesWithOptions).to.not.be.eql([]);
             expect(loadedPost!.categoriesWithOptions[0].name).to.be.equal("cars");
             expect(loadedPost!.categoriesWithOptions[0].type).to.be.equal("common-category");
 
@@ -181,14 +181,14 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .orderBy("post.id, categories.code")
                 .getMany();
 
-            expect(loadedPosts[0].categoriesWithNonPKColumns).to.not.be.empty;
+            expect(loadedPosts[0].categoriesWithNonPKColumns).to.not.be.eql([]);
             expect(loadedPosts[0].categoriesWithNonPKColumns[0].code).to.be.equal(1);
             expect(loadedPosts[0].categoriesWithNonPKColumns[0].version).to.be.equal(1);
             expect(loadedPosts[0].categoriesWithNonPKColumns[0].description).to.be.equal("category of cars");
             expect(loadedPosts[0].categoriesWithNonPKColumns[1].code).to.be.equal(2);
             expect(loadedPosts[0].categoriesWithNonPKColumns[1].version).to.be.equal(1);
             expect(loadedPosts[0].categoriesWithNonPKColumns[1].description).to.be.equal("category of BMW");
-            expect(loadedPosts[1].categoriesWithNonPKColumns).to.not.be.empty;
+            expect(loadedPosts[1].categoriesWithNonPKColumns).to.not.be.eql([]);
             expect(loadedPosts[1].categoriesWithNonPKColumns[0].code).to.be.equal(3);
             expect(loadedPosts[1].categoriesWithNonPKColumns[0].version).to.be.equal(1);
             expect(loadedPosts[1].categoriesWithNonPKColumns[0].description).to.be.equal("category of airplanes");
@@ -200,7 +200,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .where("post.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedPost!.categoriesWithNonPKColumns).to.not.be.empty;
+            expect(loadedPost!.categoriesWithNonPKColumns).to.not.be.eql([]);
             expect(loadedPost!.categoriesWithNonPKColumns[0].code).to.be.equal(1);
             expect(loadedPost!.categoriesWithNonPKColumns[0].version).to.be.equal(1);
             expect(loadedPost!.categoriesWithNonPKColumns[0].description).to.be.equal("category of cars");
@@ -250,12 +250,12 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .orderBy("tag.code, categories.code")
                 .getMany();
 
-            expect(loadedTags[0].categories).to.not.be.empty;
+            expect(loadedTags[0].categories).to.not.be.eql([]);
             expect(loadedTags[0].categories[0].name).to.be.equal("cars");
             expect(loadedTags[0].categories[0].type).to.be.equal("common-category");
             expect(loadedTags[0].categories[1].name).to.be.equal("BMW");
             expect(loadedTags[0].categories[1].type).to.be.equal("cars-category");
-            expect(loadedTags[1].categories).to.not.be.empty;
+            expect(loadedTags[1].categories).to.not.be.eql([]);
             expect(loadedTags[1].categories[0].name).to.be.equal("airplanes");
             expect(loadedTags[1].categories[0].type).to.be.equal("common-category");
 
@@ -266,7 +266,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .where("tag.code = :code", { code: 1 })
                 .getOne();
 
-            expect(loadedTag!.categories).to.not.be.empty;
+            expect(loadedTag!.categories).to.not.be.eql([]);
             expect(loadedTag!.categories[0].name).to.be.equal("cars");
             expect(loadedTag!.categories[0].type).to.be.equal("common-category");
 
@@ -315,12 +315,12 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .orderBy("tag.code, categories.code")
                 .getMany();
 
-            expect(loadedTags[0].categoriesWithOptions).to.not.be.empty;
+            expect(loadedTags[0].categoriesWithOptions).to.not.be.eql([]);
             expect(loadedTags[0].categoriesWithOptions[0].name).to.be.equal("cars");
             expect(loadedTags[0].categoriesWithOptions[0].type).to.be.equal("common-category");
             expect(loadedTags[0].categoriesWithOptions[1].name).to.be.equal("BMW");
             expect(loadedTags[0].categoriesWithOptions[1].type).to.be.equal("cars-category");
-            expect(loadedTags[1].categoriesWithOptions).to.not.be.empty;
+            expect(loadedTags[1].categoriesWithOptions).to.not.be.eql([]);
             expect(loadedTags[1].categoriesWithOptions[0].name).to.be.equal("airplanes");
             expect(loadedTags[1].categoriesWithOptions[0].type).to.be.equal("common-category");
 
@@ -331,7 +331,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .where("tag.code = :code", { code: 1 })
                 .getOne();
 
-            expect(loadedTag!.categoriesWithOptions).to.not.be.empty;
+            expect(loadedTag!.categoriesWithOptions).to.not.be.eql([]);
             expect(loadedTag!.categoriesWithOptions[0].name).to.be.equal("cars");
             expect(loadedTag!.categoriesWithOptions[0].type).to.be.equal("common-category");
 
@@ -383,14 +383,14 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .orderBy("tag.code, categories.code")
                 .getMany();
 
-            expect(loadedTags[0].categoriesWithNonPKColumns).to.not.be.empty;
+            expect(loadedTags[0].categoriesWithNonPKColumns).to.not.be.eql([]);
             expect(loadedTags[0].categoriesWithNonPKColumns[0].code).to.be.equal(1);
             expect(loadedTags[0].categoriesWithNonPKColumns[0].version).to.be.equal(1);
             expect(loadedTags[0].categoriesWithNonPKColumns[0].description).to.be.equal("category of cars");
             expect(loadedTags[0].categoriesWithNonPKColumns[1].code).to.be.equal(2);
             expect(loadedTags[0].categoriesWithNonPKColumns[1].version).to.be.equal(1);
             expect(loadedTags[0].categoriesWithNonPKColumns[1].description).to.be.equal("category of BMW");
-            expect(loadedTags[1].categoriesWithNonPKColumns).to.not.be.empty;
+            expect(loadedTags[1].categoriesWithNonPKColumns).to.not.be.eql([]);
             expect(loadedTags[1].categoriesWithNonPKColumns[0].code).to.be.equal(3);
             expect(loadedTags[1].categoriesWithNonPKColumns[0].version).to.be.equal(1);
             expect(loadedTags[1].categoriesWithNonPKColumns[0].description).to.be.equal("category of airplanes");
@@ -402,7 +402,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .where("tag.code = :code", { code: 1 })
                 .getOne();
 
-            expect(loadedTag!.categoriesWithNonPKColumns).to.not.be.empty;
+            expect(loadedTag!.categoriesWithNonPKColumns).to.not.be.eql([]);
             expect(loadedTag!.categoriesWithNonPKColumns[0].code).to.be.equal(1);
             expect(loadedTag!.categoriesWithNonPKColumns[0].version).to.be.equal(1);
             expect(loadedTag!.categoriesWithNonPKColumns[0].description).to.be.equal("category of cars");
@@ -449,10 +449,10 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .orderBy("category.code, posts.id")
                 .getMany();
 
-            expect(loadedCategories[0].posts).to.not.be.empty;
+            expect(loadedCategories[0].posts).to.not.be.eql([]);
             expect(loadedCategories[0].posts[0].id).to.be.equal(1);
             expect(loadedCategories[0].posts[1].id).to.be.equal(2);
-            expect(loadedCategories[1].posts).to.not.be.empty;
+            expect(loadedCategories[1].posts).to.not.be.eql([]);
             expect(loadedCategories[1].posts[0].id).to.be.equal(3);
 
             const loadedCategory = await connection.manager
@@ -462,7 +462,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .where("category.code = :code", { code: 1 })
                 .getOne();
 
-            expect(loadedCategory!.posts).to.not.be.empty;
+            expect(loadedCategory!.posts).to.not.be.eql([]);
             expect(loadedCategory!.posts[0].id).to.be.equal(1);
             expect(loadedCategory!.posts[1].id).to.be.equal(2);
 
@@ -504,10 +504,10 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .orderBy("category.code, posts.id")
                 .getMany();
 
-            expect(loadedCategories[0].postsWithOptions).to.not.be.empty;
+            expect(loadedCategories[0].postsWithOptions).to.not.be.eql([]);
             expect(loadedCategories[0].postsWithOptions[0].id).to.be.equal(1);
             expect(loadedCategories[0].postsWithOptions[1].id).to.be.equal(2);
-            expect(loadedCategories[1].postsWithOptions).to.not.be.empty;
+            expect(loadedCategories[1].postsWithOptions).to.not.be.eql([]);
             expect(loadedCategories[1].postsWithOptions[0].id).to.be.equal(3);
 
             const loadedCategory = await connection.manager
@@ -517,7 +517,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .where("category.code = :code", { code: 1 })
                 .getOne();
 
-            expect(loadedCategory!.postsWithOptions).to.not.be.empty;
+            expect(loadedCategory!.postsWithOptions).to.not.be.eql([]);
             expect(loadedCategory!.postsWithOptions[0].id).to.be.equal(1);
             expect(loadedCategory!.postsWithOptions[1].id).to.be.equal(2);
 
@@ -561,10 +561,10 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .orderBy("category.code, posts.id")
                 .getMany();
 
-            expect(loadedCategories[0].postsWithNonPKColumns).to.not.be.empty;
+            expect(loadedCategories[0].postsWithNonPKColumns).to.not.be.eql([]);
             expect(loadedCategories[0].postsWithNonPKColumns[0].id).to.be.equal(1);
             expect(loadedCategories[0].postsWithNonPKColumns[1].id).to.be.equal(2);
-            expect(loadedCategories[1].postsWithNonPKColumns).to.not.be.empty;
+            expect(loadedCategories[1].postsWithNonPKColumns).to.not.be.eql([]);
             expect(loadedCategories[1].postsWithNonPKColumns[0].id).to.be.equal(3);
 
             const loadedCategory = await connection.manager
@@ -574,7 +574,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .where("category.code = :code", { code: 1 })
                 .getOne();
 
-            expect(loadedCategory!.postsWithNonPKColumns).to.not.be.empty;
+            expect(loadedCategory!.postsWithNonPKColumns).to.not.be.eql([]);
             expect(loadedCategory!.postsWithNonPKColumns[0].id).to.be.equal(1);
             expect(loadedCategory!.postsWithNonPKColumns[1].id).to.be.equal(2);
 
@@ -622,12 +622,12 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .orderBy("category.code, tags.code")
                 .getMany();
 
-            expect(loadedCategories[0].tags).to.not.be.empty;
+            expect(loadedCategories[0].tags).to.not.be.eql([]);
             expect(loadedCategories[0].tags[0].title).to.be.equal("About BMW");
             expect(loadedCategories[0].tags[0].description).to.be.equal("Tag about BMW");
             expect(loadedCategories[0].tags[1].title).to.be.equal("About Audi");
             expect(loadedCategories[0].tags[1].description).to.be.equal("Tag about Audi");
-            expect(loadedCategories[1].tags).to.not.be.empty;
+            expect(loadedCategories[1].tags).to.not.be.eql([]);
             expect(loadedCategories[1].tags[0].title).to.be.equal("About Boeing");
             expect(loadedCategories[1].tags[0].description).to.be.equal("tag about Boeing");
 
@@ -638,7 +638,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .where("category.code = :code", { code: 1 })
                 .getOne();
 
-            expect(loadedCategory!.tags).to.not.be.empty;
+            expect(loadedCategory!.tags).to.not.be.eql([]);
             expect(loadedCategory!.tags[0].title).to.be.equal("About BMW");
             expect(loadedCategory!.tags[0].description).to.be.equal("Tag about BMW");
 
@@ -686,12 +686,12 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .orderBy("category.code, tags.code")
                 .getMany();
 
-            expect(loadedCategories[0].tagsWithOptions).to.not.be.empty;
+            expect(loadedCategories[0].tagsWithOptions).to.not.be.eql([]);
             expect(loadedCategories[0].tagsWithOptions[0].title).to.be.equal("About BMW");
             expect(loadedCategories[0].tagsWithOptions[0].description).to.be.equal("Tag about BMW");
             expect(loadedCategories[0].tagsWithOptions[1].title).to.be.equal("About Audi");
             expect(loadedCategories[0].tagsWithOptions[1].description).to.be.equal("Tag about Audi");
-            expect(loadedCategories[1].tagsWithOptions).to.not.be.empty;
+            expect(loadedCategories[1].tagsWithOptions).to.not.be.eql([]);
             expect(loadedCategories[1].tagsWithOptions[0].title).to.be.equal("About Boeing");
             expect(loadedCategories[1].tagsWithOptions[0].description).to.be.equal("tag about Boeing");
 
@@ -702,7 +702,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .where("category.code = :code", { code: 1 })
                 .getOne();
 
-            expect(loadedCategory!.tagsWithOptions).to.not.be.empty;
+            expect(loadedCategory!.tagsWithOptions).to.not.be.eql([]);
             expect(loadedCategory!.tagsWithOptions[0].title).to.be.equal("About BMW");
             expect(loadedCategory!.tagsWithOptions[0].description).to.be.equal("Tag about BMW");
 
@@ -752,12 +752,12 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .orderBy("category.code, tags.code")
                 .getMany();
 
-            expect(loadedCategories[0].tagsWithNonPKColumns).to.not.be.empty;
+            expect(loadedCategories[0].tagsWithNonPKColumns).to.not.be.eql([]);
             expect(loadedCategories[0].tagsWithNonPKColumns[0].title).to.be.equal("About BMW");
             expect(loadedCategories[0].tagsWithNonPKColumns[0].description).to.be.equal("Tag about BMW");
             expect(loadedCategories[0].tagsWithNonPKColumns[1].title).to.be.equal("About Audi");
             expect(loadedCategories[0].tagsWithNonPKColumns[1].description).to.be.equal("Tag about Audi");
-            expect(loadedCategories[1].tagsWithNonPKColumns).to.not.be.empty;
+            expect(loadedCategories[1].tagsWithNonPKColumns).to.not.be.eql([]);
             expect(loadedCategories[1].tagsWithNonPKColumns[0].title).to.be.equal("About Boeing");
             expect(loadedCategories[1].tagsWithNonPKColumns[0].description).to.be.equal("tag about Boeing");
 
@@ -768,7 +768,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .where("category.code = :code", { code: 1 })
                 .getOne();
 
-            expect(loadedCategory!.tagsWithNonPKColumns).to.not.be.empty;
+            expect(loadedCategory!.tagsWithNonPKColumns).to.not.be.eql([]);
             expect(loadedCategory!.tagsWithNonPKColumns[0].title).to.be.equal("About BMW");
             expect(loadedCategory!.tagsWithNonPKColumns[0].description).to.be.equal("Tag about BMW");
 

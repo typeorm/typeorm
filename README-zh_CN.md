@@ -20,7 +20,7 @@
   <br>
 </div>
 
-TypeORM 是一个[ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)框架，它可以运行在 NodeJS、Browser、Cordova、PhoneGap、Ionic、React Native、Expo 和 Electron 平台上，可以与 TypeScript 和 JavaScript (ES5,ES6,ES7,ES8)一起使用。 它的目标是始终支持最新的 JavaScript 特性并提供额外的特性以帮助你开发任何使用数据库的（不管是只有几张表的小型应用还是拥有多数据库的大型企业应用）应用程序。
+TypeORM 是一个 [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 框架，它可以运行在 NodeJS、Browser、Cordova、PhoneGap、Ionic、React Native、Expo 和 Electron 平台上，可以与 TypeScript 和 JavaScript (ES5,ES6,ES7,ES8)一起使用。 它的目标是始终支持最新的 JavaScript 特性并提供额外的特性以帮助你开发任何使用数据库的（不管是只有几张表的小型应用还是拥有多数据库的大型企业应用）应用程序。
 
 不同于现有的所有其他 JavaScript ORM 框架，TypeORM 支持 Active Record 和 Data Mapper 模式，这意味着你可以以最高效的方式编写高质量的、松耦合的、可扩展的、可维护的应用程序。
 
@@ -67,7 +67,7 @@ TypeORM 的一些特性:
 
 还有更多...
 
-通过使用 `TypeORM` 你的 `models` 看起来像这样:
+通过使用 `TypeORM` 你的 `models` 看起来如下:
 
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
@@ -88,7 +88,7 @@ export class User {
 }
 ```
 
-逻辑操作就像是这样:
+逻辑操作如下:
 
 ```typescript
 const user = new User();
@@ -98,13 +98,13 @@ user.age = 25;
 await repository.save(user);
 
 const allUsers = await repository.find();
-const firstUser = await repository.findOne(1); // find by id
+const firstUser = await repository.findOne(1); // 根据id查找
 const timber = await repository.findOne({ firstName: "Timber", lastName: "Saw" });
 
 await repository.remove(timber);
 ```
 
-或者，如果你更喜欢使用`ActiveRecord`实现，也可以这样用：
+或者，如果你更喜欢使用 `ActiveRecord` 模式，也可以这样用：
 
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from "typeorm";
@@ -145,7 +145,7 @@ await timber.remove();
 
 ## 安装
 
-1. 通过`npm`安装:
+1. 通过 `npm` 安装:
 
    `npm install typeorm --save`
 
@@ -200,19 +200,19 @@ await timber.remove();
 
 ##### TypeScript 配置
 
-此外，请确保你使用的是 TypeScript 编译器版本**2.3**或更高版本，并且已经在`tsconfig.json`中启用了以下设置:
+此外，请确保你使用的 TypeScript 编译器版本是**2.3**或更高版本，并且已经在 `tsconfig.json` 中启用了以下设置:
 
 ```json
 "emitDecoratorMetadata": true,
 "experimentalDecorators": true,
 ```
 
-你可能还需要在编译器选项的`lib`中启用`es6`，或者从`@types`安装`es6-shim`。
+除此之外，你可能还需要在编译器选项的 `lib` 中启用 `es6`，或者安装 `es6-shim` 的 `@types`。
 
 ## 快速开始
 
-开始使用 TypeORM 的最快方法是使用其 CLI 命令生成启动项目。
-只有在 NodeJS 应用程序中使用 TypeORM 时，此操作才有效。如果你使用的是其他平台，请继续执行[分步指南](#分步指南)。
+快速上手 TypeORM 的方法是使用其 CLI 命令生成启动项目。
+但是只有在 NodeJS 应用程序中使用 TypeORM 时，此操作才有效。如果你使用的是其他平台，请查看[分步指南](#分步指南)。
 
 首先全局安装 TypeORM:
 
@@ -226,12 +226,12 @@ npm install typeorm -g
 typeorm init --name MyProject --database mysql
 ```
 
-其中`name`是项目的名称，`database`是您将使用的数据库。
+其中 `name` 是项目的名称，`database` 是将使用的数据库。
 
-数据库可以是以下值之一: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`, `mongodb`,
-`cordova`, `react-native`, `expo`, `nativescript`.
+数据库可以是以下值之一: `mysql`、 `mariadb`、 `postgres`、 `sqlite`、 `mssql`、 `oracle`、 `mongodb`、
+`cordova`、 `react-native`、 `expo`、 `nativescript`.
 
-此命令将在`MyProject`目录中生成一个包含以下文件的新项目:
+此命令将在 `MyProject` 目录中生成一个包含以下文件的新项目:
 
 ```
 MyProject
@@ -247,7 +247,7 @@ MyProject
 └── tsconfig.json    // TypeScript 编译选项
 ```
 
-> 你还可以在现有 node 项目上运行`typeorm init`，但要注意，此操作可能会覆盖已有的某些文件。
+> 你还可以在现有 node 项目上运行 `typeorm init`，但要注意，此操作可能会覆盖已有的某些文件。
 
 接下来安装项目依赖项：
 
@@ -256,7 +256,7 @@ cd MyProject
 npm install
 ```
 
-在安装过程中，编辑`ormconfig.json`文件并在其中放置您自己的数据库连接配置选项：
+在安装过程中，编辑 `ormconfig.json` 文件并在其中编辑自己的数据库连接配置选项：
 
 ```json
 {
@@ -274,8 +274,7 @@ npm install
 }
 ```
 
-绝大多数情况下，你只需要配置
-`host`, `username`, `password`, `database` 或者 `port`。
+绝大多数情况下，你只需要配置 `host`, `username`, `password`, `database` 或者 `port` 即可。
 
 完成配置并安装所有 node modules 后，即可运行应用程序：
 
@@ -285,18 +284,18 @@ npm start
 
 至此你的应用程序应该成功运行并将新用户插入数据库。你可以继续使用此项目并集成所需的其他模块并创建更多实体。
 
-> 你可以通过运行`typeorm init --name MyProject --database mysql --express`来生成一个更高级的 Express 项目
+> 你可以通过运行 `typeorm init --name MyProject --database mysql --express` 来生成一个更高级的 Express 项目
 
 ## 分步指南
 
-您对 ORM 有何期待？您期望它将为您创建数据库表，并且无需编写大量难以维护的 SQL 语句来查找/插入/更新/删除您的数据。本指南将向您展示如何从头开始设置 TypeORM 并实现这些操作。
+你对 ORM 有何期待？期望它将为你创建数据库表，并且无需编写大量难以维护的 SQL 语句来查找/插入/更新/删除数据。本指南将向你展示如何从头开始设置 TypeORM 并实现这些操作。
 
 ### 创建一个模型
 
 使用数据库从创建表开始。如何告诉 TypeORM 创建数据库表？答案是 - 通过模型。
 应用程序中的模型即是数据库中的表。
 
-举个例子, 你有一个`Photo` 模型:
+举个例子, 你有一个 `Photo` 模型:
 
 ```typescript
 export class Photo {
@@ -308,13 +307,13 @@ export class Photo {
 }
 ```
 
-并且希望将 photos 存储在数据库中。要在数据库中存储内容，首先需要一个数据库表，并从模型中创建数据库表。但是并非所有模型，只有您定义为*entities*的模型。
+并且希望将 photos 存储在数据库中。要在数据库中存储内容，首先需要一个数据库表，并从模型中创建数据库表。但是并非所有模型，只有定义为*entities*的模型。
 
 ### 创建一个实体
 
-*Entity*是由`@Entity`装饰器装饰的模型。将为此类模型创建数据库表。你可以使用 TypeORM 处理各处的实体，可以使用它们 load/insert/update/remove 并执行其他操作。
+*实体*是由 `@Entity` 装饰器装饰的模型。将为此类模型创建数据库表。你可以使用 TypeORM 处理各处的实体，可以使用它们 load/insert/update/remove 并执行其他操作。
 
-让我们将`Photo`模型作为一个实体
+让我们将 `Photo` 模型作为一个实体
 
 ```typescript
 import { Entity } from "typeorm";
@@ -330,12 +329,12 @@ export class Photo {
 }
 ```
 
-现在，将为`Photo`实体创建一个数据库表，我们将能够在应用程序中的任何位置使用它。
-我们已经创建了一个数据库表，但是没有哪个字段属于哪一列，下面让我们在数据库表中创建几列。
+现在，将为 `Photo` 实体创建一个数据库表，我们将能够在应用程序中的任何位置使用它。
+我们已经创建了一个数据库表，但是没有指明哪个字段属于哪一列，下面让我们在数据库表中创建列。
 
 ### 添加表列
 
-要添加数据库列，你只需要将要生成的实体属性加上`@Column`装饰器。
+要添加数据库列，你只需要将要生成的实体属性加上 `@Column` 装饰器。
 
 ```typescript
 import { Entity, Column } from "typeorm";
@@ -362,14 +361,14 @@ export class Photo {
 }
 ```
 
-现在 `id`, `name`, `description`, `filename`, `views` 和 `isPublished` 列将会被添加到`photo`表中。
-数据库中的列类型是根据你使用的属性类型推断的，例如： `number`将被转换为`integer`，`string`将转换为`varchar`，`boolean`转换为`bool`等。但你也可以通过在`@Column`装饰器中隐式指定列类型来使用数据库支持的任何列类型。
+现在 `id`, `name`, `description`, `filename`, `views` 和 `isPublished` 列将会被添加到 `photo` 表中。
+数据库中的列类型是根据你使用的属性类型推断的，例如： `number` 将被转换为 `integer`，`string` 将转换为 `varchar`，`boolean` 转换为 `bool` 等。但你也可以通过 `@Column` 装饰器中隐式指定列类型来使用数据库支持的任何列类型。
 
-我们已经生成了一个包含列的数据库表，但还剩下一件事。每个数据库表必须具有包含主键的列。
+我们已经生成了一个包含列的数据库表，但是别忘了，每个数据库表必须具有包含主键的列。
 
 ### 创建主列
 
-每个实体**必须**至少有一个主键列。这是必须的，你无法避免。要使列成为主键，您需要使用`@PrimaryColumn`装饰器。
+每个**必须**至少有一个主键列。这是必须的，你无法避免。要使列成为主键，你需要使用 `@PrimaryColumn` 装饰器。
 
 ```typescript
 import { Entity, Column, PrimaryColumn } from "typeorm";
@@ -398,7 +397,7 @@ export class Photo {
 
 ### 创建自动生成的列
 
-假设你希望 id 列自动生成（这称为 auto-increment/sequence/serial/generated identity column）。为此你需要将`@PrimaryColumn`装饰器更改为`@PrimaryGeneratedColumn`装饰器：
+假设你希望 id 列自动生成（这称为 auto-increment/sequence/serial/generated identity column）。为此你需要将`@PrimaryColumn` 装饰器更改为 `@PrimaryGeneratedColumn` 装饰器：
 
 ```typescript
 import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
@@ -427,8 +426,8 @@ export class Photo {
 
 ### 列数据类型
 
-接下来，让我们修复数据类型。默认情况下，字符串被映射到一个 varchar(255)类型（取决于数据库类型）。
-数字被映射到一个类似整数类型（取决于数据库类型）。但是我们不希望所有的列都是有限的 varchars 或整数，让我们修改下代码以设置想要的数据类型：
+接下来，让我们修改数据类型。默认情况下，字符串被映射到一个 varchar(255) 类型（取决于数据库类型）。
+数字被映射到一个类似 integer 类型（取决于数据库类型）。但是我们不希望所有的列都是有限的 varchars 或 integer，让我们修改下代码以设置想要的数据类型：
 
 ```typescript
 import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
@@ -485,15 +484,15 @@ createConnection({
   .catch(error => console.log(error));
 ```
 
-我们在此示例中使用 MySQL，你可以使用任何其他受支持的数据库。要使用其他数据库，只需将选项中的`type`更改为希望使用的数据库类型：mysql，mariadb，postgres，sqlite，mssql，oracle，cordova，nativescript，react-native，expo 或 mongodb。同时还要确保 host, port, username, password 和数据库设置的正确性。
+我们在此示例中使用 MySQL，你可以使用任何其他受支持的数据库。要使用其他数据库，只需将选项中的 `type` 更改为希望使用的数据库类型：`mysql`，`mariadb`，`postgres`，`sqlite`，`mssql`，`oracle`，`cordova`，`nativescript`，`react-native`，`expo` 或 `mongodb`。同时还要确保 `host`, `port`, `username`, `password` 和 `database` 正确设置。
 
-我们将 Photo 实体添加到此连接的实体列表中。所有需要在连接中使用的每个实体都必须加到这个表中。
+我们将 Photo 实体添加到此连接的实体列表中，并且所有需要使用的实体都必须加进来。
 
-设置`synchronize`可确保每次运行应用程序时实体都将与数据库同步。
+设置 `synchronize` 可确保每次运行应用程序时实体都将与数据库同步。
 
 ### 加载目录中所有实体
 
-之后当我们创建更多实体时，都需要将一一它们添加到配置中的实体中，但是这不是很方便，所以我们可以设置整个目录，从中连接所有实体并在连接中使用：
+之后当我们创建更多实体时，都需要一一将它们添加到配置中的实体中，但是这不是很方便，所以我们可以设置加载整个目录，从中连接所有实体并使用：
 
 ```typescript
 import { createConnection } from "typeorm";
@@ -514,21 +513,21 @@ createConnection({
   .catch(error => console.log(error));
 ```
 
-但要小心这种方法。
-如果使用的是`ts-node`，则需要指定`.ts`文件的路径。
-如果使用的是`outDir`，那么需要在`outDir`目录中指定`.js`文件的路径。
-如果使用`outDir`，当你删除或重命名实体时，请确保清除`outDir`目录并再次重新编译项目，因为当你删除`.ts`源文件时，其编译的`.js`版本不会从输出目录中删除,并且 TypeORM 依然会从`outDir`中加载这些文件，从而导致异常。
+但要小心使用这种方法。
+如果使用的是 `ts-node`，则需要指定 `.ts` 文件的路径。
+如果使用的是 `outDir`，那么需要在 `outDir` 目录中指定 `.js` 文件的路径。
+如果使用 `outDir`，当你删除或重命名实体时，请确保清除 `outDir` 目录并再次重新编译项目，因为当你删除 `.ts` 源文件时，其编译的 `.js` 文件不会从输出目录中删除，并且 TypeORM 依然会从 `outDir` 中加载这些文件，从而导致异常。
 
 ### 启动应用
 
-现在可以启动`app.ts`，启动后可以发现数据库自动被初始化，并且 Photo 这个表也会创建出来。
+现在可以启动 `app.ts`，启动后可以发现数据库自动被初始化，并且 Photo 这个表也会创建出来。
 
 ```bash
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
 | id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| name        | varchar(500) |                            |
+| name        | varchar(100) |                            |
 | description | text         |                            |
 | filename    | varchar(255) |                            |
 | views       | int(11)      |                            |
@@ -560,11 +559,11 @@ createConnection(/*...*/)
   .catch(error => console.log(error));
 ```
 
-保存实体后，它将获得新生成的 ID。 `save`方法返回传递给它的同一对象的实例。但它不是对象的新副本，只是修改了它的"id"并返回它。
+保存实体后，将获得新生成的 ID。 `save` 方法返回传递给它的同一对象的实例，但并不是对象的新副本，只是修改了它的"id"并返回。
 
 ### 使用 async/await 语法
 
-我们可以使用最新的 ES8（ES2017）功能，并使用 async / await 语法代替：
+我们可以使用ES8(ES2017)的新特性，并使用 async/await 语法代替：
 
 ```typescript
 import { createConnection } from "typeorm";
@@ -587,7 +586,7 @@ createConnection(/*...*/)
 
 ### 使用 Entity Manager
 
-我们刚创建了一张新 photo 并将其保存在数据库中。使用`EntityManager`你可以操纵应用中的任何实体。
+我们刚创建了一张新 photo 表并将其保存在数据库中。通过使用 `EntityManager` 你可以操纵应用中的任何实体。
 
 例如，加载已经保存的实体：
 
@@ -604,13 +603,13 @@ createConnection(/*...*/)
   .catch(error => console.log(error));
 ```
 
-`savedPhotos`是一个 Photo 对象数组，其中包含从数据库加载的数据。
+`savedPhotos` 是一个 Photo 对象数组，其中包含从数据库加载的数据。
 
-了解[更多](./docs/working-with-entity-manager.md)有关 EntityManager 的信息。
+了解更多有关 [EntityManager](./docs/working-with-entity-manager.md) 的信息。
 
 ### 使用 Repositories
 
-现在让我们重构之前的代码，并使用`Repository`而不是`EntityManager`。每个实体都有自己的存储库，可以处理其实体的所有操作。当你经常处理实体时，Repositories 比 EntityManagers 更方便使用：
+现在让我们重构之前的代码，并使用 `Repository` 替代 `EntityManager`。每个实体都有自己的repository，可以处理其实体的所有操作。当你经常处理实体时，Repositories 比 EntityManagers 更方便使用：
 
 ```typescript
 import { createConnection } from "typeorm";
@@ -636,7 +635,7 @@ createConnection(/*...*/)
   .catch(error => console.log(error));
 ```
 
-了解[更多](./docs/working-with-repository.md)有关 Repository 的信息。
+了解更多有关 [Repository](./docs/working-with-repository.md) 的信息。
 
 ### 从数据库加载
 
@@ -671,7 +670,7 @@ createConnection(/*...*/)
   .catch(error => console.log(error));
 ```
 
-### 在数据库中更新
+### 从数据库中更新
 
 让我们从数据库加载出 photo，更新并保存到数据库：
 
@@ -689,11 +688,11 @@ createConnection(/*...*/)
   .catch(error => console.log(error));
 ```
 
-这个`id = 1`的 photo 在数据库中就成功更新了。
+这个 `id = 1` 的 photo 在数据库中就成功更新了。
 
 ### 从数据库中删除
 
-让我们从数据库中删除我们的 Photo:
+让我们从数据库中删除 Photo:
 
 ```typescript
 import { createConnection } from "typeorm";
@@ -708,11 +707,11 @@ createConnection(/*...*/)
   .catch(error => console.log(error));
 ```
 
-这个`id = 1`的 photo 在数据库中被移除了。
+这个 `id = 1`的 photo 在数据库中被移除了。
 
 ### 创建一对一的关系
 
-让我们与另一个类创建一对一的关系。先在`PhotoMetadata.ts`中创建一个新类。此 PhotoMetadata 类应包含 photo 的其他元信息：
+要与另一个类创建一对一的关系。先在 `PhotoMetadata.ts` 中创建一个新类。此 PhotoMetadata 类应包含 photo 的其他元信息：
 
 ```typescript
 import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
@@ -744,13 +743,13 @@ export class PhotoMetadata {
 }
 ```
 
-这里我们使用了一个名为`@OneToOne`的新装饰器,它允许我们在两个实体之间创建一对一的关系。
-`type => Photo`是一个函数，返回我们想要与之建立关系的实体的类。由于特定于语言的关系，我们只能使用一个返回类的函数，而不是直接使用该类。
-同时也可以把它写成`()=> Photo`，但是`type => Photo`显得代码更有可读性。type 变量本身不包含任何内容。
+这里我们使用了一个名为 `@OneToOne` 的新装饰器，它允许我们在两个实体之间创建一对一的关系。
+`type => Photo` 是一个函数，返回我们想要与之建立关系的实体的类。由于特定于语言的关系，我们只能使用一个返回类的函数，而不是直接使用该类。
+同时也可以把它写成 `()=> Photo`，但是 `type => Photo` 显得代码更有可读性。type 变量本身不包含任何内容。
 
-我们还添加了一个`@JoinColumn`装饰器，表明实体键的对应关系。关系可以是单向的或双向的。但是只有一方是拥有者。在关系的所有者方面需要使用@JoinColumn 装饰器。
+我们还添加了一个 `@JoinColumn` 装饰器，表明实体键的对应关系。关系可以是单向的或双向的。但是只有一方可以拥有。在关系的所有者方需要使用 `@JoinColumn` 装饰器。
 
-如果运行该应用程序，你将看到一个新生成的表，它将包含一个带有关系外键的列：
+如果运行该应用程序，你将看到一个新生成的表，它将包含一个带有外键的列：
 
 ```bash
 +-------------+--------------+----------------------------+
@@ -768,7 +767,7 @@ export class PhotoMetadata {
 
 ### 保存一对一的关系
 
-现在来创建一个 photo，它的元信息将它们互相连接起来。
+现在让我们来创建一个 photo，它的元信息将它们互相连接起来。
 
 ```typescript
 import { createConnection } from "typeorm";
@@ -819,7 +818,7 @@ import { Photo } from "./Photo";
 
 @Entity()
 export class PhotoMetadata {
-  /* ... other columns */
+  /* ... 其他列 */
 
   @OneToOne(type => Photo, photo => photo.metadata)
   @JoinColumn()
@@ -833,20 +832,20 @@ import { PhotoMetadata } from "./PhotoMetadata";
 
 @Entity()
 export class Photo {
-  /* ... other columns */
+  /* ... 其他列 */
 
   @OneToOne(type => PhotoMetadata, photoMetadata => photoMetadata.photo)
   metadata: PhotoMetadata;
 }
 ```
 
-`photo => photo.metadata`是用来指定反向关系的名称。Photo 类的元数据属性是在 Photo 类中存储 PhotoMetadata 的地方。你可以选择简单地将字符串传递给`@OneToOne`装饰器，而不是传递返回 photo 属性的函数，例如`"metadata"`。这种函数类型的方法使我们的重构更容易。
+`photo => photo.metadata` 是用来指定反向关系的名称。Photo 类的元数据属性是在 Photo 类中存储 PhotoMetadata 的地方。你可以选择简单地将字符串传递给 `@OneToOne` 装饰器，而不是传递返回 photo 属性的函数，例如 `"metadata"`。这种函数类型的方法使我们的重构更容易。
 
-注意，我们应该仅在关系的一侧使用`@JoinColumn`装饰器。你把这个装饰者放在哪一方将是这段关系的拥有方。关系的拥有方包含数据库中具有外键的列。
+注意，我们应该仅在关系的一侧使用 `@JoinColumn` 装饰器。你把这个装饰者放在哪一方将是这段关系的拥有方。关系的拥有方包含数据库中具有外键的列。
 
 ### 取出关系对象的数据
 
-在一个查询中加载 photo 及 photo metadata 有两种方法。使用`find *`或使用`QueryBuilder`。我们先使用`find *`方法。 `find *`方法允许你使用`FindOneOptions` / `FindManyOptions`接口指定对象。
+在一个查询中加载 photo 及 photo metadata 有两种方法。使用 `find *` 或使用 `QueryBuilder`。我们先使用 `find *` 方法。 `find *` 方法允许你使用 `FindOneOptions` / `FindManyOptions` 接口指定对象。
 
 ```typescript
 import { createConnection } from "typeorm";
@@ -862,9 +861,9 @@ createConnection(/*...*/)
   .catch(error => console.log(error));
 ```
 
-photos 将包含来自数据库的 photos 数组，每个 photo 将包含其 photo metadata。详细了解本文档中的[查找选项](./docs/find-options.md)。
+photos 包含来自数据库的 photos 数组，每个 photo 包含其 photo metadata。详细了解本文档中的[Find 选项](./docs/find-options.md)。
 
-使用查找选项很简单，但是如果你需要更复杂的查询，则应该使用`QueryBuilder`。 `QueryBuilder`允许以更优雅的方式使用更复杂的查询：
+使用find选项很简单，但是如果你需要更复杂的查询，则应该使用 `QueryBuilder`。 `QueryBuilder` 使用更优雅的方式执行更复杂的查询：
 
 ```typescript
 import { createConnection } from "typeorm";
@@ -883,15 +882,15 @@ createConnection(/*...*/)
   .catch(error => console.log(error));
 ```
 
-`QueryBuilder`允许创建和执行几乎任何复杂性的 SQL 查询。使用`QueryBuilder`时，请考虑创建 SQL 查询。在此示例中，"photo"和"metadata"是应用于所选 photos 的 ​​ 别名。你可以使用别名来访问所选数据的列和属性。
+`QueryBuilder` 允许你创建和执行几乎任何复杂性的 SQL 查询。使用 `QueryBuilder` 时，请考虑创建 SQL 查询。在此示例中，"photo"和"metadata"是应用于所选 photos 的别名。你可以使用别名来访问所选数据的列和属性。
 
 ### 使用 cascades 自动保存相关对象
 
-我们可以在关系中设置`cascade`选项，这是就可以在保存其他对象的同时保存相关对象。让我们更改一下的 photo 的`@OneToOne`装饰器：
+我们可以在关系中设置 `cascade` 选项，这时就可以在保存其他对象的同时保存相关对象。让我们更改一下的 photo 的 `@OneToOne` 装饰器：
 
 ```typescript
 export class Photo {
-  /// ... other columns
+  /// ... 其他列
 
   @OneToOne(type => PhotoMetadata, metadata => metadata.photo, {
     cascade: true
@@ -900,7 +899,7 @@ export class Photo {
 }
 ```
 
-使用`cascade`允许就不需要边存 photo 边存元数据对象。我们可以简单地保存一个 photo 对象，由于使用了 cascade，metadata 也将自动保存。
+使用 `cascade` 允许就不需要边存 photo 边存元数据对象。我们可以简单地保存一个 photo 对象，由于使用了 cascade，metadata 也将自动保存。
 
 ```typescript
 createConnection(options)
@@ -949,7 +948,7 @@ export class Author {
   @Column()
   name: string;
 
-  @OneToMany(type => Photo, photo => photo.author) // note: we will create author property in the Photo class below
+  @OneToMany(type => Photo, photo => photo.author) // 注意：我们将在下面的Photo类中创建author属性
   photos: Photo[];
 }
 ```
@@ -1027,7 +1026,7 @@ export class Album {
 
 ```typescript
 export class Photo {
-  /// ... other columns
+  /// ... 其他列
 
   @ManyToMany(type => Album, album => album.photos)
   albums: Album[];
@@ -1049,7 +1048,7 @@ export class Photo {
 
 ```typescript
 const options: ConnectionOptions = {
-  // ... other options
+  // ... 其他选项
   entities: [Photo, PhotoMetadata, Author, Album]
 };
 ```
@@ -1059,7 +1058,7 @@ const options: ConnectionOptions = {
 ```typescript
 let connection = await createConnection(options);
 
-// create a few albums
+// 创建一些 albums
 let album1 = new Album();
 album1.name = "Bears";
 await connection.manager.save(album1);
@@ -1068,7 +1067,7 @@ let album2 = new Album();
 album2.name = "Me";
 await connection.manager.save(album2);
 
-// create a few photos
+// 创建一些 photos
 let photo = new Photo();
 photo.name = "Me and Bears";
 photo.description = "I am near polar bears";
@@ -1076,8 +1075,8 @@ photo.filename = "photo-with-bears.jpg";
 photo.albums = [album1, album2];
 await connection.manager.save(photo);
 
-// now our photo is saved and albums are attached to it
-// now lets load them:
+// 现在我们的`photo`被保存了，并且'albums`被附加到它上面
+// 然后加载它们
 const loadedPhoto = await connection.getRepository(Photo).findOne(1, { relations: ["albums"] });
 ```
 
@@ -1106,7 +1105,7 @@ const loadedPhoto = await connection.getRepository(Photo).findOne(1, { relations
 ```typescript
 let photos = await connection
   .getRepository(Photo)
-  .createQueryBuilder("photo") // first argument is an alias. Alias is what you are selecting - photos. You must specify it.
+  .createQueryBuilder("photo") // 第一个参数是别名。即photos。 该参数必须指定。
   .innerJoinAndSelect("photo.metadata", "metadata")
   .leftJoinAndSelect("photo.albums", "album")
   .where("photo.isPublished = true")

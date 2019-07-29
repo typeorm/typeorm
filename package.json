@@ -1,13 +1,25 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.2.12",
+  "version": "0.2.18",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
   "author": {
     "name": "Umed Khudoiberdiev",
     "email": "pleerock.me@gmail.com"
+  },
+  "main": "./index.js",
+  "browser": {
+    "./browser/driver/postgres/PostgresDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/oracle/OracleDriver.ts": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/mysql/MysqlDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/sqlserver/SqlServerDriver.ts": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/mongodb/MongoDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/mongodb/MongoQueryRunner.js": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/entity-manager/MongoEntityManager.js": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/repository/MongoRepository.js": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./index.js": "./browser/index.js"
   },
   "repository": {
     "type": "git",
@@ -36,62 +48,64 @@
   "devDependencies": {
     "@types/chai": "^4.1.2",
     "@types/chai-as-promised": "7.1.0",
-    "@types/debug": "0.0.30",
-    "@types/mocha": "^5.0.0",
+    "@types/debug": "4.1.2",
+    "@types/mocha": "^5.2.6",
     "@types/node": "^9.6.0",
     "@types/rimraf": "^2.0.2",
-    "@types/sinon": "^4.3.0",
-    "@types/source-map-support": "^0.4.0",
-    "@types/yargs": "^12.0.1",
-    "chai": "^3.5.0",
+    "@types/sinon": "^7.0.8",
+    "@types/source-map-support": "^0.4.2",
+    "@types/yargs": "^12.0.9",
+    "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
+    "class-transformer": "^0.2.3",
+    "conventional-changelog-angular": "^5.0.3",
+    "conventional-changelog-cli": "^2.0.21",
     "del": "^3.0.0",
     "gulp": "^4.0.0",
     "gulp-istanbul": "^1.1.3",
-    "gulp-mocha": "^5.0.0",
+    "gulp-mocha": "^6.0.0",
     "gulp-rename": "^1.2.2",
-    "gulp-replace": "^0.6.1",
+    "gulp-replace": "^1.0.0",
     "gulp-shell": "^0.6.5",
-    "gulp-sourcemaps": "^2.6.4",
-    "gulp-tslint": "^8.1.3",
-    "gulp-typescript": "^4.0.2",
+    "gulp-sourcemaps": "^2.6.5",
+    "gulp-tslint": "^8.1.4",
+    "gulp-typescript": "^5.0.0",
     "gulpclass": "^0.2.0",
-    "husky": "^0.14.3",
-    "lint-staged": "^7.0.0",
-    "mocha": "^5.0.5",
-    "mongodb": "^3.1.10",
-    "mssql": "^4.2.2",
+    "husky": "^1.3.1",
+    "lint-staged": "^8.1.4",
+    "mocha": "^6.1.4",
+    "mongodb": "^3.1.13",
+    "mssql": "^4.3.2",
     "mysql": "^2.15.0",
-    "mysql2": "^1.5.3",
-    "pg": "^7.4.0",
+    "mysql2": "^1.6.5",
+    "pg": "^7.8.1",
     "redis": "^2.8.0",
-    "remap-istanbul": "^0.11.0",
-    "rimraf": "^2.6.2",
-    "sinon": "^2.4.1",
-    "sinon-chai": "^2.13.0",
-    "source-map-support": "^0.5.4",
-    "sql.js": "^0.5.0",
-    "sqlite3": "^4.0.3",
-    "ts-node": "^5.0.0",
-    "tslint": "^5.9.1",
-    "tslint-stylish": "^2.1.0",
-    "typescript": "^2.8.1"
+    "remap-istanbul": "^0.13.0",
+    "rimraf": "^2.6.3",
+    "sinon": "^7.2.5",
+    "sinon-chai": "^3.3.0",
+    "source-map-support": "^0.5.10",
+    "sql.js": "^1.0.0",
+    "sqlite3": "^4.0.9",
+    "ts-node": "^8.0.2",
+    "tslint": "^5.13.1",
+    "typescript": "^3.3.3333"
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
     "buffer": "^5.1.0",
-    "chalk": "^2.3.2",
-    "cli-highlight": "^1.2.3",
-    "debug": "^3.1.0",
-    "dotenv": "^5.0.1",
+    "chalk": "^2.4.2",
+    "cli-highlight": "^2.0.0",
+    "debug": "^4.1.1",
+    "dotenv": "^6.2.0",
     "glob": "^7.1.2",
-    "js-yaml": "^3.11.0",
+    "js-yaml": "^3.13.1",
     "mkdirp": "^0.5.1",
-    "reflect-metadata": "^0.1.12",
+    "reflect-metadata": "^0.1.13",
+    "tslib": "^1.9.0",
     "xml2js": "^0.4.17",
     "yargonaut": "^1.1.2",
-    "tslib": "^1.9.0",
-    "yargs": "^12.0.5"
+    "yargs": "^13.2.1"
   },
   "lint-staged": {
     "*.ts": [
@@ -102,9 +116,11 @@
   "scripts": {
     "test-ci": "gulp ci-tests",
     "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
+    "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
     "compile": "rimraf ./build && tsc",
     "package": "gulp package",
-    "lint": "tslint -p ."
+    "lint": "tslint -p .",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -u"
   },
   "bin": {
     "typeorm": "./cli.js"
@@ -113,5 +129,20 @@
     "type": "opencollective",
     "url": "https://opencollective.com/typeorm",
     "logo": "https://opencollective.com/opencollective/logo.txt"
+  },
+  "nyc": {
+    "all": true,
+    "cache": false,
+    "exclude": [
+      "**/*.d.ts"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "include": [
+      "build/compiled/src/**",
+      "src/**"
+    ],
+    "reporter": "json"
   }
 }

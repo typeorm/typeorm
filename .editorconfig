@@ -11,3 +11,8 @@ trim_trailing_whitespace = true
 charset = utf-8
 indent_style = space
 indent_size = 4
+
+# Matches the exact files either *.json or *.yml
+[*.{json,yml}]
+indent_style = space
+indent_size = 2

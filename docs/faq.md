@@ -1,7 +1,7 @@
 # FAQ
 
 * [How do I change a column name in the database?](#how-do-i-change-a-column-name-in-the-database)
-* [How can I set value of default some function, for example `NOW()`?](#how-can-i-set-value-of-default-some-function-for-example-now)
+* [How can I set value of default some function, for example `NOW()`?](#how-can-i-set-the-default-value-to-some-function-for-example-now)
 * [How to do validation?](#how-to-do-validation)
 * [What does "owner side" in relations mean or why we need to put `@JoinColumn` and `@JoinTable` decorators?](#what-does-owner-side-in-a-relations-mean-or-why-we-need-to-use-joincolumn-and-jointable)
 * [How do I add extra columns into many-to-many (junction) table?](#how-do-i-add-extra-columns-into-many-to-many-junction-table)
@@ -131,7 +131,7 @@ join column / junction table settings, like join column name or junction table n
 It's not possible to add extra columns into a table created by a many-to-many relation.
 You'll need to create a separate entity and bind it using two many-to-one relations with the target entities
 (the effect will be same as creating a many-to-many table), 
-and add extra columns in there.
+and add extra columns in there. You can read more about this in [Many-to-Many relations](./many-to-many-relations.md#many-to-many-relations-with-custom-properties).
 
 ## How to use TypeORM with a dependency injection tool?
 
@@ -153,7 +153,7 @@ createConnection({/* ... */});
 When you are using the `outDir` compiler option, don't forget to copy assets and resources your app is using into the output directory.
 Otherwise, make sure to setup correct paths to those assets.
 
-One important thing to know is that when you remove or move entities, the old entities are left untouched inside the ouput directory.
+One important thing to know is that when you remove or move entities, the old entities are left untouched inside the output directory.
 For example, you create a `Post` entity and rename it to `Blog`,
 you no longer have `Post.ts` in your project. However, `Post.js` is left inside the output directory.
 Now, when TypeORM reads entities from your output directory, it sees two entities - `Post` and `Blog`.
@@ -202,14 +202,14 @@ module.exports = {
 
 ### Bundling Migration Files
 
-By default Webpack tries to bundle everything into one file. This can be problematic when your project has migration files which are meant to be executed after bundled code is deployed to production. To make sure all your migrations can be recongized and excuted by TypeORM, you may need to use "Object Syntax" for the `entry` configuration for the migration files only.
+By default Webpack tries to bundle everything into one file. This can be problematic when your project has migration files which are meant to be executed after bundled code is deployed to production. To make sure all your migrations can be recognized and executed by TypeORM, you may need to use "Object Syntax" for the `entry` configuration for the migration files only.
 
 ```js
 const glob = require('glob');
 const path = require('path');
 
 module.exports = {
-  // ... your webpack configrations here...
+  // ... your webpack configurations here...
   // Dynamically generate a `{ [name]: sourceFileName }` map for the `entry` option
   // change `src/db/migrations` to the relative path to your migration folder
   entry: glob.sync(path.resolve('src/db/migrations/*.ts')).reduce((entries, filename) => {
@@ -232,7 +232,7 @@ module.exports = {
 };
 ```
 
-Also, since Webpack 4, when using `mode: 'production'`, files are optmized by default which includes mangling your code in order to minimize file sizes. This breaks the migrations because TypeORM relies on their names to determine which has already been executed. You may disable minimization completely by adding:
+Also, since Webpack 4, when using `mode: 'production'`, files are optimized by default which includes mangling your code in order to minimize file sizes. This breaks the migrations because TypeORM relies on their names to determine which has already been executed. You may disable minimization completely by adding:
 
 ```js
 module.exports = {
@@ -243,7 +243,7 @@ module.exports = {
 };
 ```
 
-Alternativley, if you are using the `UglifyJsPlugin`, you can tell it to not change class or function names like so:
+Alternatively, if you are using the `UglifyJsPlugin`, you can tell it to not change class or function names like so:
 
 ```js
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');

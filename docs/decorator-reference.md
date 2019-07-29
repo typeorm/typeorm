@@ -2,6 +2,7 @@
 
 * [Entity decorators](#entity-decorators)
     * [`@Entity`](#entity)
+    * [`@ViewEntity`](#viewentity)
 * [Column decorators](#column-decorators)
     * [`@Column`](#column)
     * [`@PrimaryColumn`](#primarycolumn)
@@ -78,6 +79,62 @@ export class User {
 
 Learn more about [Entities](entities.md).
 
+#### `@ViewEntity`
+
+View entity is a class that maps to a database view.
+
+`@ViewEntity()` accepts following options:
+
+* `name` - view name. If not specified, then view name is generated from entity class name.
+* `database` - database name in selected DB server.
+* `schema` - schema name.
+* `expression` - view definition. **Required parameter**.
+
+`expression` can be string with properly escaped columns and tables, depend on database used (postgres in example):
+
+```typescript
+@ViewEntity({ 
+    expression: `
+        SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
+        FROM "post" "post"
+        LEFT JOIN "category" "category" ON "post"."categoryId" = "category"."id"
+    `
+})
+export class PostCategory {
+```
+
+or an instance of QueryBuilder
+
+```typescript
+@ViewEntity({ 
+    expression: (connection: Connection) => connection.createQueryBuilder()
+        .select("post.id", "id")
+        .addSelect("post.name", "name")
+        .addSelect("category.name", "categoryName")
+        .from(Post, "post")
+        .leftJoin(Category, "category", "category.id = post.categoryId")
+})
+export class PostCategory {
+```
+
+**Note:** parameter binding is not supported due to drivers limitations. Use the literal parameters instead.
+
+```typescript
+@ViewEntity({ 
+    expression: (connection: Connection) => connection.createQueryBuilder()
+        .select("post.id", "id")
+        .addSelect("post.name", "name")
+        .addSelect("category.name", "categoryName")
+        .from(Post, "post")
+        .leftJoin(Category, "category", "category.id = post.categoryId")
+        .where("category.name = :name", { name: "Cars" })  // <-- this is wrong
+        .where("category.name = 'Cars'")                   // <-- and this is right
+})
+export class PostCategory {
+```
+
+Learn more about [View Entities](view-entities.md).
+
 ## Column decorators
 
 #### `@Column`
@@ -115,8 +172,9 @@ you specify column type and length options.
 * `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 * `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database.
 By default column is `nullable: false`.
-* `readonly: boolean` - Indicates if column value is not updated by "save" operation. It means you'll be able to write this value only when you first time insert the object.
-Default value is `false`.
+* `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object.
+Default value is `true`.
+* `insert: boolean` - Indicates if column value is set the first time you insert the object.  Default value is `true`.
 * `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
 * `default: string` - Adds database-level column's `DEFAULT` value.
 * `primary: boolean` - Marks column as primary. Same as using  `@PrimaryColumn`.
@@ -137,8 +195,8 @@ You can specify array of values or specify a enum class.
 * `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
-* `array: boolean` - Used for postgres column types which can be array (for example int[]).
-* `transformer: ValueTransformer` - Specifies a value transformer that is to be used to (un)marshal this column when reading or writing to the database.
+* `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[]).
+* `transformer: ValueTransformer|ValueTransformer[]` - Specifies a value transformer (or array of value transformers) that is to be used to (un)marshal this column when reading or writing to the database. In case of an array, the value transformers will be applied in the natural order from entityValue to databaseValue, and in reverse order from databaseValue to entityValue.
 * `spatialFeatureType: string` - Optional feature type (`Point`, `Polygon`, `LineString`, `Geometry`) used as a constraint on a spatial column. If not specified, it will behave as though `Geometry` was provided. Used only in PostgreSQL.
 * `srid: number` - Optional [Spatial Reference ID](https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys) used as a constraint on a spatial column. If not specified, it will default to `0`. Standard geographic coordinates (latitude/longitude in the WGS84 datum) correspond to [EPSG 4326](http://spatialreference.org/ref/epsg/wgs-84/). Used only in PostgreSQL.
 
@@ -182,8 +240,11 @@ There are two generation strategies:
 
 * `increment` - uses AUTO_INCREMENT / SERIAL / SEQUENCE (depend on database type) to generate incremental number.
 * `uuid` - generates unique `uuid` string.
+* `rowid` - only for [CockroachDB](https://www.cockroachlabs.com/docs/stable/serial.html). Value is automatically generated using the `unique_rowid()` 
+function. This produces a 64-bit integer from the current timestamp and ID of the node executing the `INSERT` or `UPSERT` operation.
+> Note: property with a `rowid` generation strategy must be a `string` data type
 
-Default generation strategy is `increment`, to change it to `uuid`, simply pass it as the first argument to decorator:
+Default generation strategy is `increment`, to change it to another strategy, simply pass it as the first argument to decorator:
 
 ```typescript
 @Entity()
@@ -714,6 +775,7 @@ Learn more about [indices](indices.md).
 
 This decorator allows you to create a database unique constraint for a specific column or columns.
 This decorator can be applied only to an entity itself.
+You must specify the entity field names (not database column names) as arguments.
 
 Examples:
 
@@ -724,13 +786,13 @@ Examples:
 @Unique("UQ_NAMES", ["firstName", "lastName", "middleName"])
 export class User {
 
-    @Column()
+    @Column({ name: 'first_name' })
     firstName: string;
 
-    @Column()
+    @Column({ name: 'last_name' })
     lastName: string;
 
-    @Column()
+    @Column({ name: 'middle_name' })
     middleName: string;
 }
 ```

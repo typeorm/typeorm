@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 
 describe("query runner > drop exclusion constraint", () => {
 
@@ -9,6 +8,7 @@ describe("query runner > drop exclusion constraint", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"], // Only PostgreSQL supports exclusion constraints.
             schemaCreate: true,
             dropSchema: true,
         });
@@ -17,10 +17,6 @@ describe("query runner > drop exclusion constraint", () => {
     after(() => closeTestingConnections(connections));
 
     it("should correctly drop exclusion constraint and revert drop", () => Promise.all(connections.map(async connection => {
-
-        // Only PostgreSQL supports exclusion constraints.
-        if (!(connection.driver instanceof PostgresDriver))
-            return;
 
         const queryRunner = connection.createQueryRunner();
 

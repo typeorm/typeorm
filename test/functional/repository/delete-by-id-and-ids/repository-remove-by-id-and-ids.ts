@@ -49,10 +49,10 @@ describe("repository > deleteById methods", function() {
 
         // assert
         loadedPosts.length.should.be.equal(3);
-        expect(loadedPosts.find(p => p.id === 1)).to.be.empty;
-        expect(loadedPosts.find(p => p.id === 2)).not.to.be.empty;
-        expect(loadedPosts.find(p => p.id === 3)).not.to.be.empty;
-        expect(loadedPosts.find(p => p.id === 4)).not.to.be.empty;
+        expect(loadedPosts.find(p => p.id === 1)).to.be.undefined;
+        expect(loadedPosts.find(p => p.id === 2)).not.to.be.undefined;
+        expect(loadedPosts.find(p => p.id === 3)).not.to.be.undefined;
+        expect(loadedPosts.find(p => p.id === 4)).not.to.be.undefined;
     })));
 
     it("remove using removeByIds method should delete successfully",  () => Promise.all(connections.map(async connection => {
@@ -83,10 +83,10 @@ describe("repository > deleteById methods", function() {
 
         // assert
         loadedPosts.length.should.be.equal(2);
-        expect(loadedPosts.find(p => p.id === 1)).not.to.be.empty;
-        expect(loadedPosts.find(p => p.id === 2)).to.be.empty;
-        expect(loadedPosts.find(p => p.id === 3)).to.be.empty;
-        expect(loadedPosts.find(p => p.id === 4)).not.to.be.empty;
+        expect(loadedPosts.find(p => p.id === 1)).not.to.be.undefined;
+        expect(loadedPosts.find(p => p.id === 2)).to.be.undefined;
+        expect(loadedPosts.find(p => p.id === 3)).to.be.undefined;
+        expect(loadedPosts.find(p => p.id === 4)).not.to.be.undefined;
     })));
 
 });

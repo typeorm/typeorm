@@ -68,6 +68,12 @@ export function Column(type: "enum", options?: ColumnCommonOptions & ColumnEnumO
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
+export function Column(type: "simple-enum", options?: ColumnCommonOptions & ColumnEnumOptions): Function;
+
+/**
+ * Column decorator is used to mark a specific class property as a table column.
+ * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ */
 export function Column(type: "hstore", options?: ColumnCommonOptions & ColumnHstoreOptions): Function;
 
 /**
@@ -141,7 +147,7 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
                 getMetadataArgsStorage().generations.push({
                     target: object.constructor,
                     propertyName: propertyName,
-                    strategy: options.type === "uuid" ? "uuid" : "increment"
+                    strategy: typeof options.generated === "string" ? options.generated : "increment"
                 } as GeneratedMetadataArgs);
             }
         }

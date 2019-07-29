@@ -42,6 +42,12 @@ export class TableForeignKey {
      */
     onUpdate?: string;
 
+    /**
+     * Set this foreign key constraint as "DEFERRABLE" e.g. check constraints at start 
+     * or at the end of a transaction
+     */
+    deferrable?: string;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -53,6 +59,7 @@ export class TableForeignKey {
         this.referencedTableName = options.referencedTableName;
         this.onDelete = options.onDelete;
         this.onUpdate = options.onUpdate;
+        this.deferrable = options.deferrable;
     }
 
     // -------------------------------------------------------------------------
@@ -69,7 +76,8 @@ export class TableForeignKey {
             referencedColumnNames: [...this.referencedColumnNames],
             referencedTableName: this.referencedTableName,
             onDelete: this.onDelete,
-            onUpdate: this.onUpdate
+            onUpdate: this.onUpdate,
+            deferrable: this.deferrable,
         });
     }
 
@@ -87,7 +95,8 @@ export class TableForeignKey {
             referencedColumnNames: metadata.referencedColumnNames,
             referencedTableName: metadata.referencedTablePath,
             onDelete: metadata.onDelete,
-            onUpdate: metadata.onUpdate
+            onUpdate: metadata.onUpdate,
+            deferrable: metadata.deferrable,
         });
     }
 

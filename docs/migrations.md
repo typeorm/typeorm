@@ -53,6 +53,8 @@ This place is called "migrations".
 
 ## Creating a new migration
 
+**Pre-requisites**: [Installing CLI](./using-cli.md#installing-cli)
+
 Before creating a new migration you need to setup your connection options properly:
 
 ```json
@@ -82,10 +84,6 @@ Once you setup connection options you can create a new migration using CLI:
 ```
 typeorm migration:create -n PostRefactoring
 ```
-
-To use CLI commands, you need to install typeorm globally (`npm i typeorm -g`).
-Also, make sure your local typeorm version matches the global version.
-Learn more about the [TypeORM CLI](./using-cli.md).
 
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
 After you run the command you can see a new file generated in the "migration" directory 
@@ -128,14 +126,12 @@ import {MigrationInterface, QueryRunner} from "typeorm";
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
     
     async up(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
+        await queryRunner.query(`ALTER TABLE "post" RENAME COLUMN "title" TO "name"`);
     }
 
     async down(queryRunner: QueryRunner): Promise<any> { 
-        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`); // reverts things made in "up" method
+        await queryRunner.query(`ALTER TABLE "post" RENAME COLUMN "name" TO "title"`); // reverts things made in "up" method
     }
-
-    
 }
 ```
 
@@ -207,7 +203,7 @@ In order to use an API to change a database schema you can use `QueryRunner`.
 Example:
 
 ```ts
-import {MigrationInterface, QueryRunner, Table } from "typeorm";
+import {MigrationInterface, QueryRunner, Table, TableIndex, TableColumn, TableForeignKey } from "typeorm";
 
 export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
     
@@ -777,7 +773,7 @@ Disables special query runner mode in which sql queries won't be executed. Previ
 clearSqlMemory(): void
 ```
 
-Flushes all memorized sqls.
+Flushes all memorized sql statements.
 
 ---
 
@@ -785,7 +781,7 @@ Flushes all memorized sqls.
 getMemorySql(): SqlInMemory
 ```
 
-- returns `SqlInMemory` object with array of `upQueries` and `downQueries` sqls
+- returns `SqlInMemory` object with array of `upQueries` and `downQueries` sql statements
 
 Gets sql stored in the memory. Parameters in the sql are already replaced.
 

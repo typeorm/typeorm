@@ -4,6 +4,7 @@
 export type DatabaseType =
     "mysql"|
     "postgres"|
+    "cockroachdb"|
     "mariadb"|
     "sqlite"|
     "cordova"|

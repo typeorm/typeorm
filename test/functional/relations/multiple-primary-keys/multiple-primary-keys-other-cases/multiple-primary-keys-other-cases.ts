@@ -79,20 +79,20 @@ describe("relations > multiple-primary-keys > other-cases", () => {
             .orderBy("event.id, user.id")
             .getMany();
 
-        expect(loadedEvents[0].author).to.not.be.empty;
+        expect(loadedEvents[0].author).to.not.be.undefined;
         expect(loadedEvents[0].author.fullName).to.be.equal("Alice A");
-        expect(loadedEvents[0].author.user).to.not.be.empty;
+        expect(loadedEvents[0].author.user).to.not.be.undefined;
         expect(loadedEvents[0].author.user.id).to.be.equal(1);
-        expect(loadedEvents[0].members).to.not.be.empty;
+        expect(loadedEvents[0].members).to.not.be.eql([]);
         expect(loadedEvents[0].members[0].user.id).to.be.equal(1);
         expect(loadedEvents[0].members[0].user.name).to.be.equal("Alice");
         expect(loadedEvents[0].members[1].user.id).to.be.equal(2);
         expect(loadedEvents[0].members[1].user.name).to.be.equal("Bob");
-        expect(loadedEvents[1].author).to.not.be.empty;
+        expect(loadedEvents[1].author).to.not.be.undefined;
         expect(loadedEvents[1].author.fullName).to.be.equal("Bob B");
-        expect(loadedEvents[1].author.user).to.not.be.empty;
+        expect(loadedEvents[1].author.user).to.not.be.undefined;
         expect(loadedEvents[1].author.user.id).to.be.equal(2);
-        expect(loadedEvents[1].members).to.not.be.empty;
+        expect(loadedEvents[1].members).to.not.be.eql([]);
         expect(loadedEvents[1].members[0].user.id).to.be.equal(1);
         expect(loadedEvents[1].members[0].user.name).to.be.equal("Alice");
         expect(loadedEvents[1].members[1].user.id).to.be.equal(3);
@@ -105,15 +105,15 @@ describe("relations > multiple-primary-keys > other-cases", () => {
             .orderBy("user.id, event.id")
             .getMany();
 
-        expect(loadedUsers[0].members).to.not.be.empty;
+        expect(loadedUsers[0].members).to.not.be.eql([]);
         expect(loadedUsers[0].members[0].event.id).to.be.equal(1);
         expect(loadedUsers[0].members[0].event.name).to.be.equal("Event #1");
         expect(loadedUsers[0].members[1].event.id).to.be.equal(2);
         expect(loadedUsers[0].members[1].event.name).to.be.equal("Event #2");
-        expect(loadedUsers[1].members).to.not.be.empty;
+        expect(loadedUsers[1].members).to.not.be.eql([]);
         expect(loadedUsers[1].members[0].event.id).to.be.equal(1);
         expect(loadedUsers[1].members[0].event.name).to.be.equal("Event #1");
-        expect(loadedUsers[2].members).to.not.be.empty;
+        expect(loadedUsers[2].members).to.not.be.eql([]);
         expect(loadedUsers[2].members[0].event.id).to.be.equal(2);
         expect(loadedUsers[2].members[0].event.name).to.be.equal("Event #2");
 

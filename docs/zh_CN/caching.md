@@ -106,6 +106,22 @@ await connection.queryResultCache.remove(["users_admins"]);
 ```
 
 默认情况下，TypeORM 使用一个名为`query-result-cache`的单独表，并在那里存储所有查询和结果。
+表名是可配置的，因此您可以通过在 tableName 属性中给出值来更改它
+例如：
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    ...
+    cache: {
+        type: "database",
+        tableName: "configurable-table-query-result-cache"
+    }
+}
+```
+
 如果在单个数据库表中存储缓存对你无效，则可以将缓存类型更改为"redis"或者"ioredis"，而 TypeORM 将以 redis 形式存储所有缓存的记录。
 例如：
 
@@ -137,6 +153,40 @@ await connection.queryResultCache.remove(["users_admins"]);
     username: "test",
     cache: {
         type: "ioredis/cluster",
+        options: {
+            startupNodes: [
+                {
+                    host: 'localhost',
+                    port: 7000,
+                },
+                {
+                    host: 'localhost',
+                    port: 7001,
+                },
+                {
+                    host: 'localhost',
+                    port: 7002,
+                }
+            ],
+            options: {
+                scaleReads: 'all',
+                clusterRetryStrategy: function (times) { return null },
+                redisOptions: {
+                    maxRetriesPerRequest: 1
+                }
+            }
+        }
+    }
+}
+```
+
+请注意，你仍然可以使用选项作为IORedis的集群构造函数的第一个参数。
+
+``` typescript
+{
+    ...
+    cache: {
+        type: "ioredis/cluster",
         options: [
             {
                 host: 'localhost',
@@ -150,10 +200,10 @@ await connection.queryResultCache.remove(["users_admins"]);
                 host: 'localhost',
                 port: 7002,
             }
-        ],
-    }
+        ]
+    },
+    ...
 }
 ```
-只需在一个数组中指定集群中的所有节点及其主机和端口。
 
 你可以使用`typeorm cache：clear`来清除存储在缓存中的所有内容。

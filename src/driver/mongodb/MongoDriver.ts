@@ -15,6 +15,7 @@ import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ConnectionOptions} from "../../connection/ConnectionOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {ObjectUtils} from "../../util/ObjectUtils";
+import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 
 /**
  * Organizes communication with MongoDB.
@@ -24,6 +25,11 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Underlying mongodb library.
+     */
+    mongodb: any;
 
     /**
      * Mongodb does not require to dynamically create query runner each time,
@@ -99,6 +105,12 @@ export class MongoDriver implements Driver {
         cacheDuration: "int",
         cacheQuery: "int",
         cacheResult: "int",
+        metadataType: "int",
+        metadataDatabase: "int",
+        metadataSchema: "int",
+        metadataTable: "int",
+        metadataName: "int",
+        metadataValue: "int",
     };
 
     /**
@@ -107,14 +119,15 @@ export class MongoDriver implements Driver {
      */
     dataTypeDefaults: DataTypeDefaults;
 
+    /**
+     * No documentation specifying a maximum length for identifiers could be found
+     * for MongoDB.
+     */
+    maxAliasLength?: number;
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Underlying mongodb library.
-     */
-    public mongodb: any;
 
     /**
      * Valid mongo connection options
@@ -278,7 +291,7 @@ export class MongoDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.to(value);
+            value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
         return value;
     }
 
@@ -287,7 +300,7 @@ export class MongoDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
+            value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
         return value;
     }
 

@@ -45,7 +45,7 @@ createConnection({
 
 **Don't forget to include reflect-metadata**
     
-In your main html page, you need to include refllect-metadata:
+In your main html page, you need to include reflect-metadata:
 
 ```html
 <script src="./node_modules/reflect-metadata/Reflect.js"></script>
@@ -69,7 +69,7 @@ TypeORM is able to run on Expo apps using the [Expo SQLite API](https://docs.exp
 
 1. `tns install webpack` (read below why webpack is required)
 2. `tns plugin add nativescript-sqlite`
-3. Create Database connetion in your app's entry point
+3. Create Database connection in your app's entry point
     ```typescript
     import driver from 'nativescript-sqlite'
 
@@ -78,7 +78,7 @@ TypeORM is able to run on Expo apps using the [Expo SQLite API](https://docs.exp
         type: 'nativescript',
         driver,
         entities: [
-            Todo //... whatver entities you have
+            Todo //... whatever entities you have
         ],
         logging: true
     })

@@ -49,7 +49,7 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
               .execute();
 
             let loadedUser = await UserRepository.find();
-            expect(loadedUser).not.to.be.empty;
+            expect(loadedUser).not.to.be.undefined;
             expect(loadedUser).to.have.lengthOf(1);
             expect(loadedUser[0]).to.includes({ is_updated: "yes" });
         }
@@ -83,7 +83,7 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
             .execute();
 
           let loadedUser = await UserRepository.find();
-          expect(loadedUser).not.to.be.empty;
+          expect(loadedUser).not.to.be.undefined;
           expect(loadedUser).to.have.lengthOf(1);
           expect(loadedUser[0]).to.includes({ is_updated: "yes" });
         }

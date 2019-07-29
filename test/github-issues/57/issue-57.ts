@@ -34,7 +34,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
             .innerJoinAndSelect("token.user", "user")
             .getMany();
 
-        expect(tokens).not.to.be.empty;
+        expect(tokens).not.to.be.undefined;
         tokens.should.be.eql([{
             primaryKey: 1,
             user: {
@@ -49,7 +49,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
             .innerJoinAndSelect("user.access_token", "token")
             .getMany();
 
-        expect(users).not.to.be.empty;
+        expect(users).not.to.be.undefined;
         users.should.be.eql([{
             primaryKey: 1,
             email: "mwelnick@test.com",

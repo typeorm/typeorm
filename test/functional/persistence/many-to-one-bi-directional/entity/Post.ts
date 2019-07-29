@@ -1,5 +1,5 @@
+import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
 import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {Category} from "./Category";
 import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
@@ -7,7 +7,7 @@ import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
 @Entity()
 export class Post {
 
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number;
 
     @Column()
@@ -16,7 +16,8 @@ export class Post {
     @OneToMany(type => Category, category => category.post)
     categories: Category[];
 
-    constructor(title: string) {
+    constructor(id: number, title: string) {
+        this.id = id;
         this.title = title;
     }
 

@@ -4,6 +4,7 @@ import { Connection } from "../../../../src/connection/Connection";
 import { UpdateResult } from "../../../../src";
 import { Post } from "./entity/Post";
 import { PostBigInt } from "./entity/PostBigInt";
+import { UserWithEmbededEntity } from "./entity/UserWithEmbededEntity";
 
 describe("repository > decrement method", () => {
 
@@ -180,6 +181,33 @@ describe("repository > decrement method", () => {
 
             const loadedPost2 = await connection.manager.findOne(PostBigInt, 2);
             loadedPost2!.counter.should.be.equal("2");
+
+        })));
+
+    });
+
+
+    describe("embeded entities", () => {
+
+        let connections: Connection[];
+        before(async () => connections = await createTestingConnections({
+            entities: [UserWithEmbededEntity],
+        }));
+        beforeEach(() => reloadTestingDatabases(connections));
+        after(() => closeTestingConnections(connections));
+
+        it("should decrement value", () => Promise.all(connections.map(async connection => {
+
+            const userWithEmbededEntity = new UserWithEmbededEntity();
+            userWithEmbededEntity.id = 1;
+            await connection.manager.save([userWithEmbededEntity]);
+
+            await connection
+                .getRepository(UserWithEmbededEntity)
+                .decrement({ id: 1 }, "friend.sent", 15);
+
+            const loadedUser = await connection.manager.findOne(UserWithEmbededEntity, 1);
+            loadedUser!.friend.sent.should.be.equal(-15);
 
         })));
 

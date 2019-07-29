@@ -9,13 +9,13 @@ import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
 
 @Entity()
 export class Category {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
 }
 ```
 
@@ -25,20 +25,20 @@ import {Category} from "./Category";
 
 @Entity()
 export class Question {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     title: string;
-    
+
     @Column()
     text: string;
-    
+
     @ManyToMany(type => Category)
     @JoinTable()
     categories: Category[];
-    
+
 }
 ```
 
@@ -63,7 +63,7 @@ This example will produce following tables:
 +-------------+--------------+----------------------------+
 
 +-------------+--------------+----------------------------+
-|                   question_categories                   |
+|              question_categories_category               |
 +-------------+--------------+----------------------------+
 | questionId  | int(11)      | PRIMARY KEY FOREIGN KEY    |
 | categoryId  | int(11)      | PRIMARY KEY FOREIGN KEY    |
@@ -82,6 +82,8 @@ category2.name = "zoo";
 await connection.manager.save(category2);
 
 const question = new Question();
+question.title = "dogs";
+question.text = "who let the dogs out?";
 question.categories = [category1, category2];
 await connection.manager.save(question);
 ```
@@ -89,7 +91,7 @@ await connection.manager.save(question);
 With cascades enabled you can save this relation with only one `save` call.
 
 To load question with categories inside you must specify relation in `FindOptions`:
- 
+
 ```typescript
 const questionRepository = connection.getRepository(Question);
 const questions = await questionRepository.find({ relations: ["categories"] });
@@ -107,7 +109,7 @@ const questions = await connection
 
 With eager loading enabled on a relation you don't have to specify relation or join it - it will ALWAYS be loaded automatically.
 
-Relations can be uni-directional and bi-directional. 
+Relations can be uni-directional and bi-directional.
 Uni-directional are relations with a relation decorator only on one side.
 Bi-directional are relations with decorators on both sides of a relation.
 
@@ -119,16 +121,16 @@ import {Question} from "./Question";
 
 @Entity()
 export class Category {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
     @ManyToMany(type => Question, question => question.categories)
     questions: Question[];
-    
+
 }
 ```
 
@@ -138,27 +140,27 @@ import {Category} from "./Category";
 
 @Entity()
 export class Question {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     title: string;
-    
+
     @Column()
     text: string;
-    
+
     @ManyToMany(type => Category, category => category.questions)
     @JoinTable()
     categories: Category[];
-    
+
 }
 ```
 
 We just made our relation bi-directional. Note, the inverse relation does not have a `@JoinTable`.
 `@JoinTable` must be only on one side of the relation.
 
-Bi-directional relations allow you to join relations from both sides using `QueryBuilder`: 
+Bi-directional relations allow you to join relations from both sides using `QueryBuilder`:
 
 ```typescript
 const categoriesWithQuestions = await connection
@@ -166,4 +168,41 @@ const categoriesWithQuestions = await connection
     .createQueryBuilder("category")
     .leftJoinAndSelect("category.questions", "question")
     .getMany();
+```
+
+## many-to-many relations with custom properties
+
+In case you need to have additional properties to your many-to-many relationship you have to create a new entity yourself. 
+For example if you would like entities `Post` and `Category` to have a many-to-many relationship with a `createdAt` property 
+associated to it you have to create entity `PostToCategory` like the following:
+
+```typescript
+import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Post } from "./post";
+import { Category } from "./category";
+
+@Entity()
+export class PostToCategory {
+    @PrimaryGeneratedColumn()
+    public postToCategoryId!: number;
+
+    public postId!: number;
+    public categoryId!: number;
+
+    @Column()
+    public order!: number;
+
+    @ManyToOne(type => Post, post => post.postToCategories)
+    public post!: Post;
+
+    @ManyToOne(type => Category, category => category.postToCategories)
+    public category!: Category;
+}
+```
+
+Additionally you will have to add a relationship like the following to `Post` and `Category`:
+
+```typescript
+@OneToMany((type) => PostToCategory, (postToCategory) => postToCategory.post)
+public postToCategories!: PostToCategory[];
 ```

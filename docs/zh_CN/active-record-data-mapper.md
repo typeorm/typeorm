@@ -106,7 +106,7 @@ const timber = await User.findByName("Timber", "Saw");
 例如:
 
 ```typescript
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity()
 export class User {

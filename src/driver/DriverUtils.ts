@@ -1,3 +1,6 @@
+import { Driver } from "./Driver";
+import { shorten } from "../util/StringUtils";
+
     /**
  * Common driver utility functions.
  */
@@ -28,6 +31,29 @@ export class DriverUtils {
             return Object.assign({}, options, urlDriverOptions);
         }
         return Object.assign({}, options);
+    }
+
+    /**
+     * Builds column alias from given alias name and column name,
+     * If alias length is greater than the limit (if any) allowed by the current
+     * driver, abbreviates the longest part (alias or column name) in the resulting
+     * alias.
+     *
+     * @param driver Current `Driver`.
+     * @param alias Alias part.
+     * @param column Name of the column to be concatened to `alias`.
+     *
+     * @return An alias allowing to select/transform the target `column`.
+     */
+    static buildColumnAlias({ maxAliasLength }: Driver, alias: string, column: string): string {
+        const columnAliasName = alias + "_" + column;
+
+        if (maxAliasLength && maxAliasLength > 0 && columnAliasName.length > maxAliasLength)
+            return alias.length > column.length
+                ? `${shorten(alias)}_${column}`
+                : `${alias}_${shorten(column)}`;
+
+        return columnAliasName;
     }
 
     // -------------------------------------------------------------------------
@@ -61,11 +87,10 @@ export class DriverUtils {
         return {
             type: type,
             host: host,
-            username: username,
-            password: password,
+            username: decodeURIComponent(username),
+            password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
             database: afterBase || undefined
         };
     }
-
 }

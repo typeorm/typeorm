@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 
@@ -51,8 +52,13 @@ describe("schema builder > create table", () => {
 
         studentTable = await queryRunner.getTable("student");
         studentTable!.should.exist;
-        studentTable!.indices.length.should.be.equal(1);
         studentTable!.foreignKeys.length.should.be.equal(2);
+        // CockroachDB also stores indices for relation columns
+        if (connection.driver instanceof CockroachDriver) {
+            studentTable!.indices.length.should.be.equal(3);
+        } else {
+            studentTable!.indices.length.should.be.equal(1);
+        }
 
         facultyTable = await queryRunner.getTable("faculty");
         facultyTable!.should.exist;

@@ -51,16 +51,22 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
         // if directory is not set then try to open tsconfig and find default path there
         if (!directory) {
             try {
-                const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: args.config });
-                const connectionOptions = await connectionOptionsReader.get(args.connection);
+                const connectionOptionsReader = new ConnectionOptionsReader({
+                    root: process.cwd(),
+                    configName: args.config as any
+                });
+                const connectionOptions = await connectionOptionsReader.get(args.connection as any);
                 directory = connectionOptions.cli ? connectionOptions.cli.migrationsDir : undefined;
             } catch (err) { }
         }
 
         let connection: Connection|undefined = undefined;
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: args.config });
-            const connectionOptions = await connectionOptionsReader.get(args.connection);
+            const connectionOptionsReader = new ConnectionOptionsReader({
+                root: process.cwd(),
+                configName: args.config as any
+            });
+            const connectionOptions = await connectionOptionsReader.get(args.connection as any);
             Object.assign(connectionOptions, {
                 synchronize: false,
                 migrationsRun: false,
@@ -74,24 +80,24 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
             // we are using simple quoted string instead of template string syntax
             if (connection.driver instanceof MysqlDriver) {
-                sqlInMemory.upQueries.forEach(query => {
-                    upSqls.push("        await queryRunner.query(\"" + query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                sqlInMemory.upQueries.forEach(upQuery => {
+                    upSqls.push("        await queryRunner.query(\"" + upQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
                 });
-                sqlInMemory.downQueries.forEach(query => {
-                    downSqls.push("        await queryRunner.query(\"" + query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                sqlInMemory.downQueries.forEach(downQuery => {
+                    downSqls.push("        await queryRunner.query(\"" + downQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
                 });
             } else {
-                sqlInMemory.upQueries.forEach(query => {
-                    upSqls.push("        await queryRunner.query(`" + query.replace(new RegExp("`", "g"), "\\`") + "`);");
+                sqlInMemory.upQueries.forEach(upQuery => {
+                    upSqls.push("        await queryRunner.query(`" + upQuery.query.replace(new RegExp("`", "g"), "\\`") + "`);");
                 });
-                sqlInMemory.downQueries.forEach(query => {
-                    downSqls.push("        await queryRunner.query(`" + query.replace(new RegExp("`", "g"), "\\`") + "`);");
+                sqlInMemory.downQueries.forEach(downQuery => {
+                    downSqls.push("        await queryRunner.query(`" + downQuery.query.replace(new RegExp("`", "g"), "\\`") + "`);");
                 });
             }
 
             if (upSqls.length) {
                 if (args.name) {
-                    const fileContent = MigrationGenerateCommand.getTemplate(args.name, timestamp, upSqls, downSqls.reverse());
+                    const fileContent = MigrationGenerateCommand.getTemplate(args.name as any, timestamp, upSqls, downSqls.reverse());
                     const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
                     await CommandUtils.createFile(path, fileContent);
 

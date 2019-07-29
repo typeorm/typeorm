@@ -49,7 +49,7 @@ describe("github issues > #58 relations with multiple primary keys", () => {
             .innerJoinAndSelect("postCategory.category", "category")
             .getOne();
 
-        expect(loadedPost!).not.to.be.empty;
+        expect(loadedPost!).not.to.be.undefined;
         loadedPost!.should.be.eql({
             id: 1,
             title: "Hello Post #1",

@@ -21,15 +21,21 @@ describe("many-to-one", function() {
     // connect to db
     let connection: Connection;
     before(async function() {
-        connection = await createConnection(setupSingleTestingConnection("mysql", {
+        const options = setupSingleTestingConnection("mysql", {
             entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor],
-        }));
+        });
+
+        if (!options)
+            return;
+        connection = await createConnection(options);
     });
 
     after(() => connection.close());
 
     // clean up database before each test
     function reloadDatabase() {
+        if (!connection)
+            return;
         return connection.synchronize(true);
     }
 
@@ -39,6 +45,8 @@ describe("many-to-one", function() {
         postImageRepository: Repository<PostImage>,
         postMetadataRepository: Repository<PostMetadata>;
     before(function() {
+        if (!connection)
+            return;
         postRepository = connection.getRepository(Post);
         postDetailsRepository = connection.getRepository(PostDetails);
         postCategoryRepository = connection.getRepository(PostCategory);
@@ -51,6 +59,8 @@ describe("many-to-one", function() {
     // -------------------------------------------------------------------------
 
     describe("insert post and details (has inverse relation + full cascade options)", function() {
+        if (!connection)
+            return;
         let newPost: Post, details: PostDetails, savedPost: Post;
         
         before(reloadDatabase);
@@ -77,11 +87,13 @@ describe("many-to-one", function() {
         });
 
         it("should have a new generated id after post is created", function () {
-            expect(savedPost.id).not.to.be.empty;
-            expect(savedPost.details.id).not.to.be.empty;
+            expect(savedPost.id).not.to.be.undefined;
+            expect(savedPost.details.id).not.to.be.undefined;
         });
 
         it("should have inserted post in the database", function() {
+            if (!connection)
+                return;
             const expectedPost = new Post();
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
@@ -91,6 +103,8 @@ describe("many-to-one", function() {
         });
 
         it("should have inserted post details in the database", function() {
+            if (!connection)
+                return;
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedPost.details.id;
             expectedDetails.authorName = savedPost.details.authorName;
@@ -101,6 +115,8 @@ describe("many-to-one", function() {
         });
 
         it("should load post and its details if left join used", function() {
+            if (!connection)
+                return;
             const expectedPost = new Post();
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
@@ -121,6 +137,8 @@ describe("many-to-one", function() {
         });
 
         it("should load details and its post if left join used (from reverse side)", function() {
+            if (!connection)
+                return;
 
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedPost.details.id;
@@ -146,6 +164,8 @@ describe("many-to-one", function() {
         });
 
         it("should load saved post without details if left joins are not specified", function() {
+            if (!connection)
+                return;
             const expectedPost = new Post();
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
@@ -159,6 +179,8 @@ describe("many-to-one", function() {
         });
 
         it("should load saved post without details if left joins are not specified", function() {
+            if (!connection)
+                return;
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedPost.details.id;
             expectedDetails.authorName = savedPost.details.authorName;
@@ -175,6 +197,8 @@ describe("many-to-one", function() {
     });
 
     describe("insert post and category (one-side relation)", function() {
+        if (!connection)
+            return;
         let newPost: Post, category: PostCategory, savedPost: Post;
 
         before(reloadDatabase);
@@ -200,11 +224,13 @@ describe("many-to-one", function() {
         });
 
         it("should have a new generated id after post is created", function () {
-            expect(savedPost.id).not.to.be.empty;
-            expect(savedPost.category.id).not.to.be.empty;
+            expect(savedPost.id).not.to.be.undefined;
+            expect(savedPost.category.id).not.to.be.undefined;
         });
 
         it("should have inserted post in the database", function() {
+            if (!connection)
+                return;
             const expectedPost = new Post();
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
@@ -213,6 +239,8 @@ describe("many-to-one", function() {
         });
 
         it("should have inserted category in the database", function() {
+            if (!connection)
+                return;
             const expectedPost = new PostCategory();
             expectedPost.id = savedPost.category.id;
             expectedPost.name = "technology";
@@ -220,6 +248,8 @@ describe("many-to-one", function() {
         });
 
         it("should load post and its category if left join used", function() {
+            if (!connection)
+                return;
             const expectedPost = new Post();
             expectedPost.id = savedPost.id;
             expectedPost.title = savedPost.title;
@@ -249,6 +279,8 @@ describe("many-to-one", function() {
     });
 
     describe("cascade updates should not be executed when cascadeUpdate option is not set", function() {
+        if (!connection)
+            return;
         let newPost: Post, details: PostDetails;
 
         before(reloadDatabase);
@@ -285,6 +317,8 @@ describe("many-to-one", function() {
     });
 
     describe("cascade remove should not be executed when cascadeRemove option is not set", function() {
+        if (!connection)
+            return;
         let newPost: Post, details: PostDetails;
 
         before(reloadDatabase);
@@ -320,6 +354,8 @@ describe("many-to-one", function() {
     });
 
     describe("cascade updates should be executed when cascadeUpdate option is set", function() {
+        if (!connection)
+            return;
         let newPost: Post, newImage: PostImage;
 
         before(reloadDatabase);
@@ -368,6 +404,8 @@ describe("many-to-one", function() {
     });
 
     describe("cascade remove should be executed when cascadeRemove option is set", function() {
+        if (!connection)
+            return;
         let newPost: Post, newMetadata: PostMetadata;
 
         before(reloadDatabase);
@@ -416,6 +454,8 @@ describe("many-to-one", function() {
     });
 
     describe("insert post details from reverse side", function() {
+        if (!connection)
+            return;
         let newPost: Post, details: PostDetails, savedDetails: PostDetails;
 
         before(reloadDatabase);
@@ -442,8 +482,8 @@ describe("many-to-one", function() {
         });
 
         it("should have a new generated id after post is created", function () {
-            expect(savedDetails.id).not.to.be.empty;
-            expect(details.id).not.to.be.empty;
+            expect(savedDetails.id).not.to.be.undefined;
+            expect(details.id).not.to.be.undefined;
         });
 
         it("should have inserted post in the database", function() {

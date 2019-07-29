@@ -113,6 +113,22 @@ await connection.queryResultCache.remove(["users_admins"]);
 
 
 By default, TypeORM uses a separate table called `query-result-cache` and stores all queries and results there.
+Table name is configurable, so you could change its by give the value in the tableName property.
+Example:
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    ...
+    cache: {
+        type: "database",
+        tableName: "configurable-table-query-result-cache"
+    }
+}
+```
+
 If storing cache in a single database table is not effective for you,
 you can change the cache type to "redis" or "ioredis" and TypeORM will store all cached records in redis instead.
 Example:
@@ -145,6 +161,39 @@ In case you want to connect to a redis-cluster using IORedis's cluster functiona
     username: "test",
     cache: {
         type: "ioredis/cluster",
+        options: {
+            startupNodes: [
+                {
+                    host: 'localhost',
+                    port: 7000,
+                },
+                {
+                    host: 'localhost',
+                    port: 7001,
+                },
+                {
+                    host: 'localhost',
+                    port: 7002,
+                }
+            ],
+            options: {
+                scaleReads: 'all',
+                clusterRetryStrategy: function (times) { return null },
+                redisOptions: {
+                    maxRetriesPerRequest: 1
+                }
+            }
+        }
+    }
+}
+```
+
+Note that, you can still use options as first argument of IORedis's cluster constructor.
+```typescript
+{
+    ...
+    cache: {
+        type: "ioredis/cluster",
         options: [
             {
                 host: 'localhost',
@@ -158,10 +207,10 @@ In case you want to connect to a redis-cluster using IORedis's cluster functiona
                 host: 'localhost',
                 port: 7002,
             }
-        ],
-    }
+        ]
+    },
+    ...
 }
 ```
-Just specify all the nodes in the cluster inside an array with their hosts  and ports.
 
 You can use `typeorm cache:clear` to clear everything stored in the cache.

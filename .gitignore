@@ -1,3 +1,4 @@
+.nyc_output/
 .DS_Store
 .vscode/
 .idea/

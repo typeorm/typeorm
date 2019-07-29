@@ -24,11 +24,11 @@ describe("multi-schema-and-database > custom-junction-schema", () => {
         const junctionMetadata = connection.getManyToManyMetadata(Post, "categories")!;
         const junctionTable = await queryRunner.getTable("yoman." + junctionMetadata.tableName);
         await queryRunner.release();
-        expect(postTable).not.to.be.empty;
+        expect(postTable).not.to.be.undefined;
         postTable!.name!.should.be.equal("yoman.post");
-        expect(categoryTable).not.to.be.empty;
+        expect(categoryTable).not.to.be.undefined;
         categoryTable!.name!.should.be.equal("yoman.category");
-        expect(junctionTable).not.to.be.empty;
+        expect(junctionTable).not.to.be.undefined;
         junctionTable!.name!.should.be.equal("yoman." + junctionMetadata.tableName);
     })));
 

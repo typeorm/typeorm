@@ -37,7 +37,7 @@ compile and run. Create it using your favorite editor and put the following conf
 ```json
 {
   "compilerOptions": {
-    "lib": ["es5", "es6"],
+    "lib": ["es5", "es6", "dom"],
     "target": "es5",
     "module": "commonjs",
     "moduleResolution": "node",
@@ -148,7 +148,7 @@ npm i typeorm mysql reflect-metadata --save
 
 * `typeorm` is the typeorm package itself
 * `mysql` is the underlying database driver.
-If you are using a diffrent database system,  you must install the appropriate package
+If you are using a different database system, you must install the appropriate package
 * `reflect-metadata` is required to make decorators to work properly
 
 Now let's create `ormconfig.json` with the database connection configuration we will use.
@@ -162,7 +162,8 @@ Now let's create `ormconfig.json` with the database connection configuration we 
     "password": "test",
     "database": "test",
     "entities": ["src/entity/*.js"],
-    "logging": true
+    "logging": true,
+    "synchronize": true
   }
 ```
 
@@ -196,7 +197,7 @@ import * as express from "express";
 import {Request, Response} from "express";
 import * as bodyParser from  "body-parser";
 import {createConnection} from "typeorm";
-import {User} from "./User";
+import {User} from "./entity/User";
 
 // create typeorm connection
 createConnection().then(connection => {
@@ -209,26 +210,31 @@ createConnection().then(connection => {
     // register routes
 
     app.get("/users", async function(req: Request, res: Response) {
-        return userRepository.find();
+        const users = await userRepository.find();
+        res.json(users);
     });
 
     app.get("/users/:id", async function(req: Request, res: Response) {
-        return userRepository.findOne(req.params.id);
+        const results = await userRepository.findOne(req.params.id);
+        return res.send(results);
     });
 
     app.post("/users", async function(req: Request, res: Response) {
-        const user = userRepository.create(req.body);
-        return userRepository.save(user);
+        const user = await userRepository.create(req.body);
+        const results = await userRepository.save(user);
+        return res.send(results);
     });
 
-    app.put("/users/:id", function(req: Request, res: Response) {
-        const user = userRepository.findOne(req.params.id);
-        userRepository.merge(user, req.body);
-        return userRepository.save(user);
+    app.put("/users/:id", async function(req: Request, res: Response) {
+        const user = await userRepository.findOne(req.params.id);
+        await userRepository.merge(user, req.body);
+        const results = await userRepository.save(user);
+        return res.send(results);
     });
 
     app.delete("/users/:id", async function(req: Request, res: Response) {
-        return userRepository.remove(req.params.id);
+        const results = await userRepository.remove(req.params.id);
+        return res.send(results);
     });
 
     // start express server
@@ -241,7 +247,7 @@ you can simply use `getConnection`:
 
 ```typescript
 import {getConnection} from "typeorm";
-import {User} from "./User";
+import {User} from "./entity/User";
 
 export function UsersListAction(req: Request, res: Response) {
     return getConnection().getRepository(User).find();
@@ -252,7 +258,7 @@ You don't even need `getConnection` in this example - you can directly use the `
 
 ```typescript
 import {getRepository} from "typeorm";
-import {User} from "./User";
+import {User} from "./entity/User";
 
 export function UsersListAction(req: Request, res: Response) {
     return getRepository(User).find();

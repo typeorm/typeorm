@@ -5,7 +5,7 @@ To learn more about hierarchy table take a look at [this awesome presentation by
 
 * [Adjacency list](#adjacency-list)
 * [Nested set](#nested-set)
-* [Materialized Path (aka Path Enumeration)](#nested-set-aka-path-enumeration)
+* [Materialized Path (aka Path Enumeration)](#materialized-path-aka-path-enumeration)
 * [Closure table](#closure-table)
 * [Working with tree entities](#working-with-tree-entities)
 
@@ -206,21 +206,21 @@ const rootCategories = await repository.findRoots();
 * `findDescendants` - Gets all children (descendants) of the given entity. Returns them all in a flat array.
 
 ```typescript
-const childrens = await repository.findDescendants(parentCategory);
+const children = await repository.findDescendants(parentCategory);
 // returns all direct subcategories (without its nested categories) of a parentCategory
 ```
 
 * `findDescendantsTree` - Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
 
 ```typescript
-const childrensTree = await repository.findDescendantsTree(parentCategory);
+const childrenTree = await repository.findDescendantsTree(parentCategory);
 // returns all direct subcategories (with its nested categories) of a parentCategory
 ```
 
 * `createDescendantsQueryBuilder` - Creates a query builder used to get descendants of the entities in a tree.
 
 ```typescript
-const childrens = await repository
+const children = await repository
     .createDescendantsQueryBuilder("category", "categoryClosure", parentCategory)
     .andWhere("category.type = 'secondary'")
     .getMany();

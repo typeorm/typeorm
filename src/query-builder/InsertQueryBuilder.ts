@@ -1,3 +1,4 @@
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
@@ -248,7 +249,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
       if (statement && statement.overwrite instanceof Array) {
         if (this.connection.driver instanceof MysqlDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = VALUES(${column})`).join(", ");
-        } else if (this.connection.driver instanceof PostgresDriver) {
+        } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = EXCLUDED.${column}`).join(", ");
         }
       }
@@ -316,7 +317,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         // add RETURNING expression
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver)) {
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
             query += ` RETURNING ${returningExpression}`;
         }
 
@@ -336,9 +337,15 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             if (this.expressionMap.insertColumns.length)
                 return this.expressionMap.insertColumns.indexOf(column.propertyPath) !== -1;
 
+            // skip columns the user doesn't want included by default
+            if (!column.isInsert) { return false; }
+
             // if user did not specified such list then return all columns except auto-increment one
             // for Oracle we return auto-increment column as well because Oracle does not support DEFAULT VALUES expression
-            if (column.isGenerated && column.generationStrategy === "increment" && !(this.connection.driver instanceof OracleDriver) && !(this.connection.driver instanceof MysqlDriver))
+            if (column.isGenerated && column.generationStrategy === "increment"
+                && !(this.connection.driver instanceof OracleDriver)
+                && !(this.connection.driver instanceof AbstractSqliteDriver)
+                && !(this.connection.driver instanceof MysqlDriver))
                 return false;
 
             return true;
@@ -413,8 +420,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     //     expression += subQuery;
 
                     } else if (column.isDiscriminator) {
-                        this.expressionMap.nativeParameters["discriminator_value"] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
-                        expression += this.connection.driver.createParameter("discriminator_value", parametersCount);
+                        this.expressionMap.nativeParameters["discriminator_value_" + parametersCount] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
+                        expression += this.connection.driver.createParameter("discriminator_value_" + parametersCount, parametersCount);
                         parametersCount++;
                         // return "1";
 
@@ -489,37 +496,55 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 return "";
 
             return expression;
-
         } else { // for tables without metadata
-
             // get values needs to be inserted
-            return valueSets.map((valueSet, insertionIndex) => {
-                const columnValues = Object.keys(valueSet).map(columnName => {
+            let expression = "";
+            let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
+
+            valueSets.forEach((valueSet, insertionIndex) => {
+                const columns = Object.keys(valueSet);
+                columns.forEach((columnName, columnIndex) => {
+                    if (columnIndex === 0) {
+                        expression += "(";
+                    }
                     const paramName = "i" + insertionIndex + "_" + columnName;
                     const value = valueSet[columnName];
 
                     // support for SQL expressions in queries
                     if (value instanceof Function) {
-                        return value();
+                        expression += value();
 
                     // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
                         if (this.connection.driver instanceof AbstractSqliteDriver) {
-                            return "NULL";
+                            expression += "NULL";
 
                         } else {
-                            return "DEFAULT";
+                            expression += "DEFAULT";
                         }
 
                     // just any other regular value
                     } else {
                         this.expressionMap.nativeParameters[paramName] = value;
-                        return this.connection.driver.createParameter(paramName, Object.keys(this.expressionMap.nativeParameters).length - 1);
+                        expression += this.connection.driver.createParameter(paramName, parametersCount);
+                        parametersCount++;
                     }
 
-                }).join(", ").trim();
-                return columnValues ? "(" + columnValues + ")" : "";
-            }).join(", ");
+                    if (columnIndex === Object.keys(valueSet).length - 1) {
+                        if (insertionIndex === valueSets.length - 1) {
+                            expression += ")";
+                        } else {
+                            expression += "), ";
+                        }
+                    }
+                    else {
+                        expression += ", ";
+                    }
+                });
+            });
+            if (expression === "()")
+                return "";
+            return expression;
         }
     }
 

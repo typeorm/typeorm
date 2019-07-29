@@ -73,7 +73,7 @@ const connections = await createConnections([
 这两种方式都根据你传递的连接选项创建`Connection`，并调用`connect`方法。另外你也可以在项目的根目录中创建一个`ormconfig.json`文件，`createConnection`和`createConnections`将自动从此文件中读取连接选项。项目的根目录与`node_modules`目录的级别相同。
 
 ```typescript
-import { createConnection, Connection } from "typeorm";
+import { createConnection, createConnections, Connection } from "typeorm";
 
 // createConnection将从ormconfig.json / ormconfig.js / ormconfig.yml / ormconfig.env / ormconfig.xml 文件或特殊环境变量中加载连接选项
 const connection: Connection = await createConnection();

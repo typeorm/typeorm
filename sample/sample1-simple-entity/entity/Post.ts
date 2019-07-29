@@ -15,9 +15,7 @@ export class Post {
     @Column()
     text: string;
 
-    @Column("int", {
-        nullable: false
-    })
+    @Column({ nullable: false })
     likesCount: number;
 
 }

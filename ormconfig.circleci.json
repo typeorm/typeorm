@@ -6,15 +6,15 @@
     "host": "localhost",
     "port": 3306,
     "username": "root",
-    "password": "",
-    "database": "circle_test"
+    "password": "admin",
+    "database": "test"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mariadb",
     "type": "mariadb",
-    "host": "localhost",
-    "port": 3307,
+    "host": "mariadb",
+    "port": 3306,
     "username": "root",
     "password": "admin",
     "database": "test"
@@ -31,10 +31,9 @@
     "type": "postgres",
     "host": "localhost",
     "port": 5432,
-    "username": "postgres",
-    "password": "mysecretpassword",
-    "database": "circle_test",
-    "logging": false
+    "username": "test",
+    "password": "test",
+    "database": "test"
   },
   {
     "skip": false,
@@ -59,6 +58,16 @@
     "password": "oracle",
     "port": 1521,
     "sid": "xe.oracle.docker"
+  },
+  {
+    "skip": true,
+    "name": "cockroachdb",
+    "type": "cockroachdb",
+    "host": "localhost",
+    "port": 26257,
+    "username": "root",
+    "password": "",
+    "database": "defaultdb"
   },
   {
     "skip": false,

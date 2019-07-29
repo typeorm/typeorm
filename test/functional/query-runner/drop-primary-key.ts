@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 
 describe("query runner > drop primary key", () => {
@@ -16,6 +17,10 @@ describe("query runner > drop primary key", () => {
     after(() => closeTestingConnections(connections));
 
     it("should correctly drop primary key and revert drop", () => Promise.all(connections.map(async connection => {
+
+        // CockroachDB does not allow dropping primary key
+        if (connection.driver instanceof CockroachDriver)
+            return;
 
         const queryRunner = connection.createQueryRunner();
 

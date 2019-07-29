@@ -11,10 +11,10 @@
 关系可以帮助你轻松地与相关实体合作。
 有几种类型的关系：
 
-- 一对一 `@OneToOne`
-- 多对一 `@ManyToOne`
-- 一对多 `@OneToMany`
-- 多对多 `@ManyToMany`
+* [一对一](./one-to-one-relations.md) 使用 `@OneToOne`
+* [多对一](./many-to-one-one-to-many-relations.md) 使用 `@ManyToOne`
+* [一对多](./many-to-one-one-to-many-relations.md) 使用 `@OneToMany`
+* [多对多](./many-to-many-relations.md) 使用 `@ManyToMany`
 
 ## 关系选项
 

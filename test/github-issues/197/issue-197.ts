@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { Connection } from "../../../src/connection/Connection";
-import { EntityMetadata } from "../../../src/metadata/EntityMetadata";
+import { Connection } from "../../../src";
+import { EntityMetadata } from "../../../src";
 import { Person } from "./entity/person";
 
 describe("github issues > #197 Fails to drop indexes when removing fields", () => {

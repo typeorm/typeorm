@@ -1,5 +1,5 @@
 import {Column} from "../../../../../src/decorator/columns/Column";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
 import {Entity} from "../../../../../src/decorator/entity/Entity";
 import {Post} from "./Post";
 import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
@@ -7,7 +7,7 @@ import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
 @Entity()
 export class User {
 
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number;
 
     @Column()

@@ -4,12 +4,12 @@ import { Connection } from "../../../src/connection/Connection";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { Bar } from "./entity/Bar";
 
-describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() for mysql", () => {
+describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() for mysql and sqlite", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mysql", "mariadb"],
+        enabledDrivers: ["mysql", "mariadb", "sqlite"],
         schemaCreate: true,
         dropSchema: true
     }));

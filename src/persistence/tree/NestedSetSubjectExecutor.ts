@@ -40,7 +40,11 @@ export class NestedSetSubjectExecutor {
                 .from(subject.metadata.target, subject.metadata.targetName)
                 .whereInIds(parentId)
                 .getRawOne()
-                .then(result => result ? result["right"] : undefined);
+                .then(result => {
+                    const value: any = result ? result["right"] : undefined;
+                    // CockroachDB returns numeric types as string
+                    return typeof value === "string" ? parseInt(value) : value;
+                });
         }
 
         if (parentNsRight !== undefined) {

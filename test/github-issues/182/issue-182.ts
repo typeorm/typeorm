@@ -25,7 +25,7 @@ describe("github issues > #182 enums are not saved properly", () => {
         await connection.manager.save(post1);
 
         const loadedPosts1 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
-        expect(loadedPosts1!).not.to.be.empty;
+        expect(loadedPosts1!).not.to.be.undefined;
         loadedPosts1!.should.be.eql({
             id: 1,
             title: "Hello Post #1",
@@ -43,7 +43,7 @@ describe("github issues > #182 enums are not saved properly", () => {
         await connection.manager.save(post2);
 
         const loadedPosts2 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
-        expect(loadedPosts2!).not.to.be.empty;
+        expect(loadedPosts2!).not.to.be.undefined;
         loadedPosts2!.should.be.eql({
             id: 2,
             title: "Hello Post #1",
@@ -61,7 +61,7 @@ describe("github issues > #182 enums are not saved properly", () => {
         await connection.manager.save(post3);
 
         const loadedPosts3 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
-        expect(loadedPosts3!).not.to.be.empty;
+        expect(loadedPosts3!).not.to.be.undefined;
         loadedPosts3!.should.be.eql({
             id: 3,
             title: "Hello Post #1",

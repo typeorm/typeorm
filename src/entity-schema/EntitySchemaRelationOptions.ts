@@ -1,6 +1,7 @@
 import {JoinColumnOptions} from "../decorator/options/JoinColumnOptions";
 import {RelationType} from "../metadata/types/RelationTypes";
 import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMultipleColumnsOptions";
+import {DeferrableType} from "../metadata/types/DeferrableType";
 import {OnDeleteType} from "../metadata/types/OnDeleteType";
 import {OnUpdateType} from "../metadata/types/OnUpdateType";
 import {JoinTableOptions} from "../index";
@@ -91,5 +92,10 @@ export interface EntitySchemaRelationOptions {
      * Database cascade action on update.
      */
     onUpdate?: OnUpdateType;
+
+    /**
+     * Indicate if foreign key constraints can be deferred.
+     */
+    deferrable?: DeferrableType;
 
 }

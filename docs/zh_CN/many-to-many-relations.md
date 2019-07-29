@@ -59,7 +59,7 @@ export class Question {
 +-------------+--------------+----------------------------+
 
 +-------------+--------------+----------------------------+
-|                   question_categories                   |
+|              question_categories_category               |
 +-------------+--------------+----------------------------+
 | questionId  | int(11)      | PRIMARY KEY FOREIGN KEY    |
 | categoryId  | int(11)      | PRIMARY KEY FOREIGN KEY    |

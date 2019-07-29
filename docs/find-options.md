@@ -114,6 +114,23 @@ userRepository.find({
 })
 ```
 
+* `lock` - Enables locking mechanism for query. Can be used only in `findOne` method. `lock` is an object which can be defined as:
+```ts
+{ mode: "optimistic", version: number|Date }
+```
+or
+```ts
+{ mode: "pessimistic_read"|"pessimistic_write"|"dirty_read" }
+```
+
+for example:
+
+```typescript
+userRepository.findOne(1, {
+    lock: { mode: "optimistic", version: 1 }
+})
+```
+
 Complete example of find options:
 
 ```typescript

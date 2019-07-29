@@ -7,6 +7,8 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Table} from "../../schema-builder/table/Table";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {View} from "../../schema-builder/view/View";
+import {Query} from "../Query";
 import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
 import {ReadStream} from "../../platform/PlatformTools";
 import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
@@ -197,8 +199,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * Creates a new table.
      */
     async createTable(table: Table, ifNotExist: boolean = false, createForeignKeys: boolean = true, createIndices: boolean = true): Promise<void> {
-        const upQueries: string[] = [];
-        const downQueries: string[] = [];
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
 
         if (ifNotExist) {
             const isTableExist = await this.hasTable(table);
@@ -234,8 +236,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         // if dropTable called with dropForeignKeys = true, we must create foreign keys in down query.
         const createForeignKeys: boolean = dropForeignKeys;
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const upQueries: string[] = [];
-        const downQueries: string[] = [];
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
 
         if (dropIndices) {
             table.indices.forEach(index => {
@@ -251,6 +253,35 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     }
 
     /**
+     * Creates a new view.
+     */
+    async createView(view: View): Promise<void> {
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
+        upQueries.push(this.createViewSql(view));
+        upQueries.push(this.insertViewDefinitionSql(view));
+        downQueries.push(this.dropViewSql(view));
+        downQueries.push(this.deleteViewDefinitionSql(view));
+        await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
+     * Drops the view.
+     */
+    async dropView(target: View|string): Promise<void> {
+        const viewName = target instanceof View ? target.name : target;
+        const view = await this.getCachedView(viewName);
+
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
+        upQueries.push(this.deleteViewDefinitionSql(view));
+        upQueries.push(this.dropViewSql(view));
+        downQueries.push(this.insertViewDefinitionSql(view));
+        downQueries.push(this.createViewSql(view));
+        await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
      * Renames the given table.
      */
     async renameTable(oldTableOrName: Table|string, newTableName: string): Promise<void> {
@@ -259,8 +290,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         newTable.name = newTableName;
 
         // rename table
-        const up = `ALTER TABLE "${oldTable.name}" RENAME TO "${newTableName}"`;
-        const down = `ALTER TABLE "${newTableName}" RENAME TO "${oldTable.name}"`;
+        const up = new Query(`ALTER TABLE "${oldTable.name}" RENAME TO "${newTableName}"`);
+        const down = new Query(`ALTER TABLE "${newTableName}" RENAME TO "${oldTable.name}"`);
         await this.executeQueries(up, down);
 
         // rename old table;
@@ -675,9 +706,13 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         await this.query(`PRAGMA foreign_keys = OFF;`);
         await this.startTransaction();
         try {
-            const selectDropsQuery = `SELECT 'DROP TABLE "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'table' AND "name" != 'sqlite_sequence'`;
-            const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-            await Promise.all(dropQueries.map(q => this.query(q["query"])));
+            const selectViewDropsQuery = `SELECT 'DROP VIEW "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'view'`;
+            const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
+            await Promise.all(dropViewQueries.map(q => this.query(q["query"])));
+
+            const selectTableDropsQuery = `SELECT 'DROP TABLE "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'table' AND "name" != 'sqlite_sequence'`;
+            const dropTableQueries: ObjectLiteral[] = await this.query(selectTableDropsQuery);
+            await Promise.all(dropTableQueries.map(q => this.query(q["query"])));
             await this.commitTransaction();
 
         } catch (error) {
@@ -694,6 +729,24 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    protected async loadViews(viewNames: string[]): Promise<View[]> {
+        const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
+        if (!hasTable)
+            return Promise.resolve([]);
+
+        const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
+        let query = `SELECT "t".* FROM "${this.getTypeormMetadataTableName()}" "t" INNER JOIN "sqlite_master" s ON "s"."name" = "t"."name" AND "s"."type" = 'view' WHERE "t"."type" = 'VIEW'`;
+        if (viewNamesString.length > 0)
+            query += ` AND "t"."name" IN (${viewNamesString})`;
+        const dbViews = await this.query(query);
+        return dbViews.map((dbView: any) => {
+            const view = new View();
+            view.name = dbView["name"];
+            view.expression = dbView["value"];
+            return view;
+        });
+    }
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
@@ -760,6 +813,16 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 tableColumn.isGenerated = autoIncrementColumnName === dbColumn["name"];
                 if (tableColumn.isGenerated) {
                     tableColumn.generationStrategy = "increment";
+                }
+
+                if (tableColumn.type === "varchar") {
+                    // Check if this is an enum
+                    const enumMatch = sql.match(new RegExp("\"(" + tableColumn.name + ")\" varchar CHECK\\s*\\(\\s*\\1\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)"));
+                    if (enumMatch) {
+                        // This is an enum
+                        tableColumn.type = "simple-enum";
+                        tableColumn.enum = enumMatch[2].substr(1, enumMatch[2].length - 2).split("','");
+                    }
                 }
 
                 // parse datatype and attempt to retrieve length
@@ -866,7 +929,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     /**
      * Builds create table sql.
      */
-    protected createTableSql(table: Table, createForeignKeys?: boolean): string {
+    protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
 
         const primaryColumns = table.columns.filter(column => column.isPrimary);
         const hasAutoIncrement = primaryColumns.find(column => column.isGenerated && column.generationStrategy === "increment");
@@ -934,31 +997,74 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         sql += `)`;
 
-        return sql;
+        return new Query(sql);
     }
 
     /**
      * Builds drop table sql.
      */
-    protected dropTableSql(tableOrName: Table|string, ifExist?: boolean): string {
+    protected dropTableSql(tableOrName: Table|string, ifExist?: boolean): Query {
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        return ifExist ? `DROP TABLE IF EXISTS "${tableName}"` : `DROP TABLE "${tableName}"`;
+        const query = ifExist ? `DROP TABLE IF EXISTS "${tableName}"` : `DROP TABLE "${tableName}"`;
+        return new Query(query);
+    }
+
+    protected createViewSql(view: View): Query {
+        if (typeof view.expression === "string") {
+            return new Query(`CREATE VIEW "${view.name}" AS ${view.expression}`);
+        } else {
+            return new Query(`CREATE VIEW "${view.name}" AS ${view.expression(this.connection).getQuery()}`);
+        }
+    }
+
+    protected insertViewDefinitionSql(view: View): Query {
+        const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
+        const [query, parameters] = this.connection.createQueryBuilder()
+            .insert()
+            .into(this.getTypeormMetadataTableName())
+            .values({ type: "VIEW", name: view.name, value: expression })
+            .getQueryAndParameters();
+
+        return new Query(query, parameters);
+    }
+
+    /**
+     * Builds drop view sql.
+     */
+    protected dropViewSql(viewOrPath: View|string): Query {
+        const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
+        return new Query(`DROP VIEW "${viewName}"`);
+    }
+
+    /**
+     * Builds remove view sql.
+     */
+    protected deleteViewDefinitionSql(viewOrPath: View|string): Query {
+        const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
+        const qb = this.connection.createQueryBuilder();
+        const [query, parameters] = qb.delete()
+            .from(this.getTypeormMetadataTableName())
+            .where(`${qb.escape("type")} = 'VIEW'`)
+            .andWhere(`${qb.escape("name")} = :name`, { name: viewName })
+            .getQueryAndParameters();
+
+        return new Query(query, parameters);
     }
 
     /**
      * Builds create index sql.
      */
-    protected createIndexSql(table: Table, index: TableIndex): string {
+    protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table.name}" (${columns}) ${index.where ? "WHERE " + index.where : ""}`;
+        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table.name}" (${columns}) ${index.where ? "WHERE " + index.where : ""}`);
     }
 
     /**
      * Builds drop index sql.
      */
-    protected dropIndexSql(indexOrName: TableIndex|string): string {
+    protected dropIndexSql(indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        return `DROP INDEX "${indexName}"`;
+        return new Query(`DROP INDEX "${indexName}"`);
     }
 
     /**
@@ -972,6 +1078,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             c += " " + this.connection.driver.createFullType(column);
         }
 
+        if (column.enum)
+            c += " CHECK( " + column.name + " IN (" + column.enum.map(val => "'" + val + "'").join(",") + ") )";
         if (column.isPrimary && !skipPrimary)
             c += " PRIMARY KEY";
         if (column.isGenerated === true && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
@@ -987,8 +1095,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     }
 
     protected async recreateTable(newTable: Table, oldTable: Table, migrateData = true): Promise<void> {
-        const upQueries: string[] = [];
-        const downQueries: string[] = [];
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
 
         // drop old table indices
         oldTable.indices.forEach(index => {
@@ -1018,8 +1126,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 }).map(column => `"${column.name}"`).join(", ");
             }
 
-            upQueries.push(`INSERT INTO "${newTable.name}"(${newColumnNames}) SELECT ${oldColumnNames} FROM "${oldTable.name}"`);
-            downQueries.push(`INSERT INTO "${oldTable.name}"(${oldColumnNames}) SELECT ${newColumnNames} FROM "${newTable.name}"`);
+            upQueries.push(new Query(`INSERT INTO "${newTable.name}"(${newColumnNames}) SELECT ${oldColumnNames} FROM "${oldTable.name}"`));
+            downQueries.push(new Query(`INSERT INTO "${oldTable.name}"(${oldColumnNames}) SELECT ${newColumnNames} FROM "${newTable.name}"`));
         }
 
         // drop old table
@@ -1027,8 +1135,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         downQueries.push(this.createTableSql(oldTable, true));
 
         // rename old table
-        upQueries.push(`ALTER TABLE "${newTable.name}" RENAME TO "${oldTable.name}"`);
-        downQueries.push(`ALTER TABLE "${oldTable.name}" RENAME TO "${newTable.name}"`);
+        upQueries.push(new Query(`ALTER TABLE "${newTable.name}" RENAME TO "${oldTable.name}"`));
+        downQueries.push(new Query(`ALTER TABLE "${oldTable.name}" RENAME TO "${newTable.name}"`));
         newTable.name = oldTable.name;
 
         // recreate table indices

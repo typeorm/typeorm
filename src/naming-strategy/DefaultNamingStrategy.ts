@@ -148,4 +148,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return prefix + tableName;
     }
 
+    eagerJoinRelationAlias(alias: string, propertyPath: string): string {
+        return alias + "_" + propertyPath.replace(".", "_");
+    }
 }

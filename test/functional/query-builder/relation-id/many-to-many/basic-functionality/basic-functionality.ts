@@ -57,14 +57,14 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .addOrderBy("post.id, tag.id, categories.id")
             .getMany();
 
-        expect(loadedPosts![0].tag).to.not.be.empty;
-        expect(loadedPosts![0].tagId).to.be.empty;
-        expect(loadedPosts![0].categories).to.not.be.empty;
-        expect(loadedPosts![0].categoryIds).to.be.empty;
-        expect(loadedPosts![1].tag).to.not.be.empty;
-        expect(loadedPosts![1].tagId).to.be.empty;
-        expect(loadedPosts![1].categories).to.not.be.empty;
-        expect(loadedPosts![1].categoryIds).to.be.empty;
+        expect(loadedPosts![0].tag).to.not.be.undefined;
+        expect(loadedPosts![0].tagId).to.be.undefined;
+        expect(loadedPosts![0].categories).to.not.be.eql([]);
+        expect(loadedPosts![0].categoryIds).to.be.undefined;
+        expect(loadedPosts![1].tag).to.not.be.undefined;
+        expect(loadedPosts![1].tagId).to.be.undefined;
+        expect(loadedPosts![1].categories).to.not.be.eql([]);
+        expect(loadedPosts![1].categoryIds).to.be.undefined;
 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
@@ -74,10 +74,10 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .where("post.id = :id", { id: post.id })
             .getOne();
 
-        expect(loadedPost!.tag).to.not.be.empty;
-        expect(loadedPost!.tagId).to.be.empty;
-        expect(loadedPost!.categories).to.not.be.empty;
-        expect(loadedPost!.categoryIds).to.be.empty;
+        expect(loadedPost!.tag).to.not.be.undefined;
+        expect(loadedPost!.tagId).to.be.undefined;
+        expect(loadedPost!.categories).to.not.be.eql([]);
+        expect(loadedPost!.categoryIds).to.be.undefined;
 
     })));
 
@@ -106,10 +106,10 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .loadRelationIdAndMap("post.categoryIds", "post.categories")
             .getMany();
 
-        expect(loadedPosts![0].categoryIds).to.not.be.empty;
+        expect(loadedPosts![0].categoryIds).to.not.be.undefined;
         expect(loadedPosts![0].categoryIds[0]).to.be.equal(1);
         expect(loadedPosts![0].categoryIds[1]).to.be.equal(2);
-        expect(loadedPosts![1].categoryIds).to.not.be.empty;
+        expect(loadedPosts![1].categoryIds).to.not.be.undefined;
         expect(loadedPosts![1].categoryIds[0]).to.be.equal(1);
         expect(loadedPosts![1].categoryIds[1]).to.be.equal(2);
 
@@ -119,7 +119,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .where("post.id = :id", { id: post.id })
             .getOne();
 
-        expect(loadedPost!.categoryIds).to.not.be.empty;
+        expect(loadedPost!.categoryIds).to.not.be.undefined;
         expect(loadedPost!.categoryIds[0]).to.be.equal(1);
         expect(loadedPost!.categoryIds[1]).to.be.equal(2);
 
@@ -149,7 +149,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .where("post.id = :id", { id: post.id })
             .getOne();
 
-        expect(loadedPost!.categoryIds).to.not.be.empty;
+        expect(loadedPost!.categoryIds).to.not.be.undefined;
         expect(loadedPost!.categoryIds[0]).to.be.equal(1);
         expect(loadedPost!.categoryIds[1]).to.be.equal(2);
 
@@ -180,7 +180,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .where("category.id = :id", { id: category.id })
             .getOne();
 
-        expect(loadedCategory!.postIds).to.not.be.empty;
+        expect(loadedCategory!.postIds).to.not.be.undefined;
         expect(loadedCategory!.postIds[0]).to.be.equal(1);
         expect(loadedCategory!.postIds[1]).to.be.equal(2);
 
@@ -209,7 +209,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories", qb => qb.andWhere("categories.id = :categoryId", { categoryId: 1 }))
             .getOne();
 
-        expect(loadedPost!.categoryIds).to.not.be.empty;
+        expect(loadedPost!.categoryIds).to.not.be.undefined;
         expect(loadedPost!.categoryIds.length).to.be.equal(1);
         expect(loadedPost!.categoryIds[0]).to.be.equal(1);
 
@@ -238,7 +238,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .loadRelationIdAndMap("post.categoryIds", "post.subcategories", "subCategories", qb => qb.andWhere("subCategories.id = :categoryId", { categoryId: 1 }))
             .getOne();
 
-        expect(loadedPost!.categoryIds).to.not.be.empty;
+        expect(loadedPost!.categoryIds).to.not.be.undefined;
         expect(loadedPost!.categoryIds.length).to.be.equal(1);
         expect(loadedPost!.categoryIds[0]).to.be.equal(1);
 
@@ -269,7 +269,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .where("category.id = :id", { id: category.id })
             .getOne();
 
-        expect(loadedCategory!.postIds).to.not.be.empty;
+        expect(loadedCategory!.postIds).to.not.be.undefined;
         expect(loadedCategory!.postIds.length).to.be.equal(1);
         expect(loadedCategory!.postIds[0]).to.be.equal(1);
 
@@ -311,12 +311,12 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .addOrderBy("post.id, categories.id")
             .getOne();
 
-        expect(loadedPost!.categories).to.not.be.empty;
-        expect(loadedPost!.categoryIds).to.not.be.empty;
+        expect(loadedPost!.categories).to.not.be.eql([]);
+        expect(loadedPost!.categoryIds).to.not.be.undefined;
         expect(loadedPost!.categoryIds.length).to.be.equal(2);
         expect(loadedPost!.categoryIds[0]).to.be.equal(1);
         expect(loadedPost!.categoryIds[1]).to.be.equal(2);
-        expect(loadedPost!.categories[0].imageIds).to.not.be.empty;
+        expect(loadedPost!.categories[0].imageIds).to.not.be.eql([]);
         expect(loadedPost!.categories[0].imageIds.length).to.be.equal(2);
         expect(loadedPost!.categories[0].imageIds[0]).to.be.equal(1);
         expect(loadedPost!.categories[0].imageIds[1]).to.be.equal(2);
@@ -359,11 +359,11 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .addOrderBy("post.id, categories.id")
             .getOne();
 
-        expect(loadedPost!.categories).to.not.be.empty;
-        expect(loadedPost!.categoryIds).to.not.be.empty;
+        expect(loadedPost!.categories).to.not.be.eql([]);
+        expect(loadedPost!.categoryIds).to.not.be.undefined;
         expect(loadedPost!.categoryIds.length).to.be.equal(1);
         expect(loadedPost!.categoryIds[0]).to.be.equal(1);
-        expect(loadedPost!.categories[0].imageIds).to.not.be.empty;
+        expect(loadedPost!.categories[0].imageIds).to.not.be.eql([]);
         expect(loadedPost!.categories[0].imageIds.length).to.be.equal(1);
         expect(loadedPost!.categories[0].imageIds[0]).to.be.equal(1);
 
@@ -401,7 +401,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .addOrderBy("post.id, categories.id")
             .getOne();
 
-        expect(loadedPost!.categories).to.be.empty;
+        expect(loadedPost!.categories).to.be.eql([]);
 
     })));
 

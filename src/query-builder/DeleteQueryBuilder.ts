@@ -1,3 +1,5 @@
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
@@ -10,6 +12,7 @@ import {Brackets} from "./Brackets";
 import {DeleteResult} from "./result/DeleteResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../index";
 
@@ -66,25 +69,21 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             const deleteResult = new DeleteResult();
             const result = await queryRunner.query(sql, parameters);
 
-            switch (queryRunner.connection.name) {
-                case "mysql":
-                case "mariadb": {
-                    deleteResult.raw = result;
-                    deleteResult.affected = result.affectedRows;
-                    break;
-                }
-                case "mssql":
-                case "postgres": {
-                    deleteResult.raw = result[0] ? result[0] : null;
-                    // don't return 0 because it could confuse. null means that we did not receive this value
-                    deleteResult.affected = typeof result[1] === "number" ? result[1] : null;
-                    break;
-                }
-                // sqlite & sqljs doesn't return anything
-                case "sqlite":
-                case "sqljs":
-                default:
-                    deleteResult.raw = result;
+            const driver = queryRunner.connection.driver;
+            if (driver instanceof MysqlDriver) {
+                deleteResult.raw = result;
+                deleteResult.affected = result.affectedRows;
+
+            } else if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
+                deleteResult.raw = result[0] ? result[0] : null;
+                // don't return 0 because it could confuse. null means that we did not receive this value
+                deleteResult.affected = typeof result[1] === "number" ? result[1] : null;
+
+            } else if (driver instanceof OracleDriver) {
+                deleteResult.affected = result;
+
+            } else {
+                deleteResult.raw = result;
             }
 
             // call after deletion methods in listeners and subscribers
@@ -257,7 +256,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const whereExpression = this.createWhereExpression();
         const returningExpression = this.createReturningExpression();
 
-        if (returningExpression && this.connection.driver instanceof PostgresDriver) {
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof CockroachDriver)) {
             return `DELETE FROM ${tableName}${whereExpression} RETURNING ${returningExpression}`;
 
         } else if (returningExpression !== "" && this.connection.driver instanceof SqlServerDriver) {

@@ -14,6 +14,7 @@ describe("github issues > #1261 onDelete property on foreign key is not modified
     after(() => closeTestingConnections(connections));
 
     it("should modify onDelete property on foreign key on sync", () => PromiseUtils.runInSequence(connections, async connection => {
+
         await connection.synchronize();
         BaseEntity.useConnection(connection);
 

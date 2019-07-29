@@ -227,7 +227,7 @@ const userMetadata = connection.getMetadata(User);
 
 * `getRepository` - 获取给定实体的`Repository`。
 你还可以指定表名，如果找到给定表的存储库，则会返回该表。
-了解更多关于 [Repositories](working-with-entity-manager.md).
+了解更多关于 [Repositories](working-with-repository.md)。
 
 ```typescript
 const repository = connection.getRepository(User);
@@ -237,7 +237,7 @@ const users = await repository.findOne(1);
 
 * `getTreeRepository` - Gets `TreeRepository` of the given entity.
 你还可以指定表名，如果找到给定表的存储库，则会返回该表。
-了解更多关于 [Repositories](working-with-entity-manager.md).
+了解更多关于 [Repositories](working-with-repository.md)。
 
 ```typescript
 const repository = connection.getTreeRepository(Category);
@@ -258,7 +258,7 @@ const category2 = await categoryCursor.next();
 ```
 
 * `getCustomRepository` - 获取自定义的存储库。
-了解更多关于 [custom repositories](working-with-entity-manager.md).
+了解更多关于 [custom repositories](custom-repository.md)。
 
 ```typescript
 const userRepository = connection.getCustomRepository(UserRepository);

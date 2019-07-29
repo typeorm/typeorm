@@ -3,6 +3,7 @@ import {FindOneOptions} from "./FindOneOptions";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {shorten} from "../util/StringUtils";
 
 /**
  * Utilities to work with FindOptions.
@@ -29,8 +30,10 @@ export class FindOptionsUtils {
                     possibleOptions.cache instanceof Object ||
                     typeof possibleOptions.cache === "boolean" ||
                     typeof possibleOptions.cache === "number" ||
+                    possibleOptions.lock instanceof Object ||
                     possibleOptions.loadRelationIds instanceof Object ||
-                    typeof possibleOptions.loadRelationIds === "boolean"
+                    typeof possibleOptions.loadRelationIds === "boolean" ||
+                    typeof possibleOptions.loadEagerRelations === "boolean"
                 );
     }
 
@@ -169,6 +172,14 @@ export class FindOptionsUtils {
             }
         }
 
+        if (options.lock) {
+            if (options.lock.mode === "optimistic") {
+                qb.setLock(options.lock.mode, options.lock.version as any);
+            } else if (options.lock.mode === "pessimistic_read" || options.lock.mode === "pessimistic_write" || options.lock.mode === "dirty_read") {
+                qb.setLock(options.lock.mode);
+            }
+        }
+
         if (options.loadRelationIds === true) {
             qb.loadAllRelationIds();
 
@@ -203,14 +214,21 @@ export class FindOptionsUtils {
         // go through all matched relations and add join for them
         matchedBaseRelations.forEach(relation => {
 
+            // generate a relation alias
+            let relationAlias: string = alias + "__" + relation;
+            // shorten it if needed by the driver
+            if (qb.connection.driver.maxAliasLength && relationAlias.length > qb.connection.driver.maxAliasLength) {
+                relationAlias = shorten(relationAlias);
+            }
+
             // add a join for the found relation
             const selection = alias + "." + relation;
-            qb.leftJoinAndSelect(selection, alias + "__" + relation);
+            qb.leftJoinAndSelect(selection, relationAlias);
 
             // join the eager relations of the found relation
             const relMetadata = metadata.relations.find(metadata => metadata.propertyName === relation);
             if (relMetadata) {
-                this.joinEagerRelations(qb, alias + "__" + relation, relMetadata.inverseEntityMetadata);
+                this.joinEagerRelations(qb, relationAlias, relMetadata.inverseEntityMetadata);
             }
 
             // remove added relations from the allRelations array, this is needed to find all not found relations at the end
@@ -224,7 +242,7 @@ export class FindOptionsUtils {
 
     public static joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
         metadata.eagerRelations.forEach(relation => {
-            const relationAlias = alias + "_" + relation.propertyPath.replace(".", "_");
+            const relationAlias = qb.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath);
             qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
             this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
         });

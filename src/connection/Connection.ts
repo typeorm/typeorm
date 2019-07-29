@@ -62,7 +62,7 @@ export class Connection {
     /**
      * Indicates if connection is initialized or not.
      */
-    readonly isConnected = false;
+    readonly isConnected: boolean;
 
     /**
      * Database driver used by this connection.
@@ -128,6 +128,7 @@ export class Connection {
         this.queryResultCache = options.cache ? new QueryResultCacheFactory(this).create() : undefined;
         this.relationLoader = new RelationLoader(this);
         this.relationIdLoader = new RelationIdLoader(this);
+        this.isConnected = false;
     }
 
     // -------------------------------------------------------------------------
@@ -256,17 +257,20 @@ export class Connection {
     // TODO rename
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.createQueryRunner("master");
-        if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
-            const databases: string[] = this.driver.database ? [this.driver.database] : [];
-            this.entityMetadatas.forEach(metadata => {
-                if (metadata.database && databases.indexOf(metadata.database) === -1)
-                    databases.push(metadata.database);
-            });
-            await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(database));
-        } else {
-            await queryRunner.clearDatabase();
+        try {
+            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
+                const databases: string[] = this.driver.database ? [this.driver.database] : [];
+                this.entityMetadatas.forEach(metadata => {
+                    if (metadata.database && databases.indexOf(metadata.database) === -1)
+                        databases.push(metadata.database);
+                });
+                await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(database));
+            } else {
+                await queryRunner.clearDatabase();
+            }
+        } finally {
+            await queryRunner.release();
         }
-        await queryRunner.release();
     }
 
     /**
@@ -299,6 +303,18 @@ export class Connection {
             migrationExecutor.transaction = false;
         }
         await migrationExecutor.undoLastMigration();
+    }
+
+    /**
+     * Lists all migrations and whether they have been run.
+     * Returns true if there are no pending migrations
+     */
+    async showMigrations(): Promise<boolean> {
+        if (!this.isConnected) {
+            throw new CannotExecuteNotConnectedError(this.name);
+        }
+        const migrationExecutor = new MigrationExecutor(this);
+        return await migrationExecutor.showMigrations();
     }
 
     /**
@@ -502,7 +518,7 @@ export class Connection {
         ObjectUtils.assign(this, { migrations: migrations });
 
         // validate all created entity metadatas to make sure user created entities are valid and correct
-        entityMetadataValidator.validateMany(this.entityMetadatas, this.driver);
+        entityMetadataValidator.validateMany(this.entityMetadatas.filter(metadata => metadata.tableType !== "view"), this.driver);
     }
 
 }

@@ -1,6 +1,20 @@
 import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Any, Between, Connection, Equal, In, IsNull, LessThan, LessThanOrEqual, Like, MoreThan, MoreThanOrEqual, Not} from "../../../../src";
+import {
+    Any,
+    Between,
+    Connection,
+    Equal,
+    In,
+    IsNull,
+    LessThan,
+    LessThanOrEqual,
+    Like,
+    MoreThan,
+    MoreThanOrEqual,
+    Not,
+    PromiseUtils
+} from "../../../../src";
 import {Post} from "./entity/Post";
 import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
 import {Raw} from "../../../../src/find-options/operator/Raw";
@@ -11,7 +25,7 @@ describe("repository > find options > operators", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"]
+        entities: [__dirname + "/entity/*{.js,.ts}"],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -521,7 +535,7 @@ describe("repository > find options > operators", () => {
 
     })));
 
-    it("should work with ActiveRecord model", () => Promise.all(connections.map(async connection => {
+    it("should work with ActiveRecord model", () => PromiseUtils.runInSequence(connections, async connection => {
         PersonAR.useConnection(connection);
 
         const person = new PersonAR();
@@ -533,6 +547,6 @@ describe("repository > find options > operators", () => {
         });
         expect(loadedPeople[0].name).to.be.equal("Timber");
 
-    })));
+    }));
 
 });

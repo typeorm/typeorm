@@ -266,6 +266,18 @@ SELECT ... FROM users user WHERE user.name = 'Timber'
 
 注意：不要在查询构建器中为不同的值使用相同的参数名称。如果多次设置则后值将会把前面的覆盖。
 
+还可以提供一组值，并使用特殊的扩展语法将它们转换为SQL语句中的值列表：
+
+``` typescript
+.where("user.name IN (:...names)", { names: [ "Timber", "Cristal", "Lina" ] })
+```
+
+该语句将生成：
+
+``` sql
+WHERE user.name IN ('Timber', 'Cristal', 'Lina')
+```
+
 ## 添加`WHERE`表达式
 
 添加 `WHERE` 表达式就像：
@@ -771,7 +783,7 @@ const users = await getRepository(User)
 ## 加锁
 
 QueryBuilder 支持 optimistic 和 pessimistic 锁定。
-要使用 pessimistic 读锁定，请使用以下方法：
+要使用 pessimistic 读锁定，请使用以下方式：
 
 ```typescript
 const users = await getRepository(User)
@@ -780,7 +792,7 @@ const users = await getRepository(User)
   .getMany();
 ```
 
-要使用 pessimistic 写锁定，请使用以下方法：
+要使用 pessimistic 写锁定，请使用以下方式：
 
 ```typescript
 const users = await getRepository(User)
@@ -789,7 +801,7 @@ const users = await getRepository(User)
   .getMany();
 ```
 
-要使用 optimistic 锁定，请使用以下方法：
+要使用 optimistic 读锁定，请使用以下方式：
 
 ```typescript
 const users = await getRepository(User)
@@ -798,7 +810,15 @@ const users = await getRepository(User)
   .getMany();
 ```
 
-Optimistic 锁定与`@ Version`和`@ UpdatedDate`装饰器一起使用。
+要使用 dirty 读锁定，请使用以下方式：
+
+```typescript
+const users = await getRepository(User)
+    .createQueryBuilder("user")
+    .setLock("dirty_read")
+    .getMany();
+
+Optimistic 锁定与`@Version`和`@UpdatedDate`装饰器一起使用。
 
 ## 查询部分字段
 

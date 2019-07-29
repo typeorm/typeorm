@@ -296,9 +296,9 @@ describe("query builder > relational query builder > add operation > one to many
             .addAndRemove([post1, post3], [post2]); // post
 
         const loadedCategory = await connection.manager.findOne(Category, 3, { relations: ["posts"] });
-        expect(loadedCategory!.posts).to.contain({ id: 1, title: "post #1" });
+        expect(loadedCategory!.posts).to.deep.include({ id: 1, title: "post #1" });
         expect(loadedCategory!.posts).to.not.contain({ id: 2, title: "post #2" });
-        expect(loadedCategory!.posts).to.contain({ id: 3, title: "post #3" });
+        expect(loadedCategory!.posts).to.deep.include({ id: 3, title: "post #3" });
     })));
 
 });

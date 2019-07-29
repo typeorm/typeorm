@@ -1,4 +1,8 @@
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {Query} from "../driver/Query";
 import {SqlInMemory} from "../driver/SqlInMemory";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
+import {View} from "../schema-builder/view/View";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {Connection} from "../connection/Connection";
 import {Table} from "../schema-builder/table/Table";
@@ -43,6 +47,11 @@ export abstract class BaseQueryRunner {
      * All synchronized tables in the database.
      */
     loadedTables: Table[] = [];
+
+    /**
+     * All synchronized views in the database.
+     */
+    loadedViews: View[] = [];
 
     /**
      * Broadcaster used on this query runner to broadcast entity events.
@@ -90,6 +99,8 @@ export abstract class BaseQueryRunner {
 
     protected abstract async loadTables(tablePaths: string[]): Promise<Table[]>;
 
+    protected abstract async loadViews(tablePaths: string[]): Promise<View[]>;
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -108,6 +119,22 @@ export abstract class BaseQueryRunner {
     async getTables(tableNames: string[]): Promise<Table[]> {
         this.loadedTables = await this.loadTables(tableNames);
         return this.loadedTables;
+    }
+
+    /**
+     * Loads given view's data from the database.
+     */
+    async getView(viewPath: string): Promise<View|undefined> {
+        this.loadedViews = await this.loadViews([viewPath]);
+        return this.loadedViews.length > 0 ? this.loadedViews[0] : undefined;
+    }
+
+    /**
+     * Loads given view's data from the database.
+     */
+    async getViews(viewPaths: string[]): Promise<View[]> {
+        this.loadedViews = await this.loadViews(viewPaths);
+        return this.loadedViews;
     }
 
     /**
@@ -149,19 +176,35 @@ export abstract class BaseQueryRunner {
      * Executes up sql queries.
      */
     async executeMemoryUpSql(): Promise<void> {
-        await PromiseUtils.runInSequence(this.sqlInMemory.upQueries, downQuery => this.query(downQuery));
+        await PromiseUtils.runInSequence(this.sqlInMemory.upQueries, upQuery => this.query(upQuery.query, upQuery.parameters));
     }
 
     /**
      * Executes down sql queries.
      */
     async executeMemoryDownSql(): Promise<void> {
-        await PromiseUtils.runInSequence(this.sqlInMemory.downQueries.reverse(), downQuery => this.query(downQuery));
+        await PromiseUtils.runInSequence(this.sqlInMemory.downQueries.reverse(), downQuery => this.query(downQuery.query, downQuery.parameters));
     }
 
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Gets view from previously loaded views, otherwise loads it from database.
+     */
+    protected async getCachedView(viewName: string): Promise<View> {
+        const view = this.loadedViews.find(view => view.name === viewName);
+        if (view) return view;
+
+        const foundViews = await this.loadViews([viewName]);
+        if (foundViews.length > 0) {
+            this.loadedViews.push(foundViews[0]);
+            return foundViews[0];
+        } else {
+            throw new Error(`View "${viewName}" does not exist.`);
+        }
+    }
 
     /**
      * Gets table from previously loaded tables, otherwise loads it from database.
@@ -194,6 +237,11 @@ export abstract class BaseQueryRunner {
             foundTable.justCreated = changedTable.justCreated;
             foundTable.engine = changedTable.engine;
         }
+    }
+
+    protected getTypeormMetadataTableName(): string {
+        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
+        return this.connection.driver.buildTableName("typeorm_metadata", options.schema, options.database);
     }
 
     /**
@@ -330,10 +378,10 @@ export abstract class BaseQueryRunner {
     /**
      * Executes sql used special for schema build.
      */
-    protected async executeQueries(upQueries: string|string[], downQueries: string|string[]): Promise<void> {
-        if (typeof upQueries === "string")
+    protected async executeQueries(upQueries: Query|Query[], downQueries: Query|Query[]): Promise<void> {
+        if (upQueries instanceof Query)
             upQueries = [upQueries];
-        if (typeof downQueries === "string")
+        if (downQueries instanceof Query)
             downQueries = [downQueries];
 
         this.sqlInMemory.upQueries.push(...upQueries);
@@ -343,7 +391,7 @@ export abstract class BaseQueryRunner {
         if (this.sqlMemoryMode === true)
             return Promise.resolve() as Promise<any>;
 
-        await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery));
+        await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery.query, upQuery.parameters));
     }
 
 }
