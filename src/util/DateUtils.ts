@@ -173,7 +173,7 @@ export class DateUtils {
         // try/catch implemented
         let simpleJSON = null;
         try {simpleJSON = JSON.parse(value); } 
-        finally {return (typeof simpleJSON === "object") ? simpleJSON : {}; }
+        finally {return (simpleJSON && typeof simpleJSON === "object") ? simpleJSON : {}; }
     }
 
     static simpleEnumToString(value: any) {

@@ -8,7 +8,7 @@ describe("github issues > #4440 simple-json column type throws error for string 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [Post],
             schemaCreate: true,
             dropSchema: true,
             enabledDrivers: [
@@ -23,7 +23,6 @@ describe("github issues > #4440 simple-json column type throws error for string 
             "sqljs",
             "oracle",
             "mssql",
-            "mongodb",
             "expo"
         ],
         });
@@ -37,8 +36,7 @@ describe("github issues > #4440 simple-json column type throws error for string 
         const post = new Post();
         post.id = 1;
         post.jsonField = "";
-        const postsaved = await repo.save(post);
-        console.log("TCL: postsaved", postsaved);
+        await repo.save(post);
         const postFound = await repo.findOne(1);
         postFound!.id.should.eql(1);
         postFound!.jsonField.should.eql({});
