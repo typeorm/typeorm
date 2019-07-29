@@ -3,7 +3,7 @@ import {Connection} from "../../../src";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Example} from "./entity/Example";
 
-describe.only("github issues > #4293 Transformer value not returned on save", () => {
+describe("github issues > #4293 Transformer value not returned on save", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [Example],
