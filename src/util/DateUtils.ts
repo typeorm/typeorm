@@ -175,7 +175,9 @@ export class DateUtils {
         try {
             simpleJSON = JSON.parse(value); 
         } 
-        finally {return (simpleJSON && typeof simpleJSON === "object") ? simpleJSON : {}; }
+        finally {
+            return (simpleJSON && typeof simpleJSON === "object") ? simpleJSON : {}; 
+        }
     }
 
     static simpleEnumToString(value: any) {
