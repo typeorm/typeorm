@@ -172,7 +172,9 @@ export class DateUtils {
     static stringToSimpleJson(value: any) {
         // try/catch implemented
         let simpleJSON = null;
-        try {simpleJSON = JSON.parse(value); } 
+        try {
+            simpleJSON = JSON.parse(value); 
+        } 
         finally {return (simpleJSON && typeof simpleJSON === "object") ? simpleJSON : {}; }
     }
 
