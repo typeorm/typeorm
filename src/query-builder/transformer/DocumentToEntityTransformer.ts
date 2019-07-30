@@ -89,7 +89,10 @@ export class DocumentToEntityTransformer {
                     entity[embedded.propertyName] = (document[embedded.prefix] as any[]).map((subValue: any, index: number) => {
                         const newItem = embedded.create();
                         embedded.columns.forEach(column => {
-                            newItem[column.propertyName] = subValue[column.databaseNameWithoutPrefixes];
+                            const value = subValue[column.databaseNameWithoutPrefixes];
+                            if (value === undefined) return;
+
+                            newItem[column.propertyName] = value;
                         });
                         addEmbeddedValuesRecursively(newItem, document[embedded.prefix][index], embedded.embeddeds);
                         return newItem;

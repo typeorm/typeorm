@@ -8,9 +8,13 @@ export class Counters {
     @Column()
     text: string;
 
-    constructor(likes: number, text: string) {
+    @Column()
+    tags: string[];
+
+    constructor(likes: number, text: string = "default text") {
         this.likes = likes;
         this.text = text;
+        this.tags = [];
     }
 
 }

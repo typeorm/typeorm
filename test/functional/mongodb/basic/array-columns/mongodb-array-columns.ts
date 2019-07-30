@@ -118,4 +118,32 @@ describe("mongodb > array columns", () => {
 
     })));
 
+    it("should transform entity with nested embedded array columns correctly", () => Promise.all(connections.map(async connection => {
+        const postRepository = connection.getRepository(Post);
+
+        // save a old post that has a counter without text and tags
+        const post = new Post();
+        post.title = "Old Post";
+        post.names = ["umed", "dima"];
+        post.numbers = [1, 0];
+        post.booleans = [true, false];
+        const counters = new Counters(100);
+        delete counters.text; // change default text undefined forcely
+        delete counters.tags; // change default tags undefined forcely
+        post.counters = [counters];
+        await postRepository.save(post);
+
+        // check saved post
+        const loadedPost = await postRepository.findOne({ title: "Old Post" });
+
+        expect(loadedPost).to.be.not.empty;
+        loadedPost!.counters[0].should.be.instanceOf(Counters);
+        loadedPost!.counters[0].likes.should.be.equal(100);
+
+        // default values not overwritten with undefined
+        loadedPost!.counters[0].text.should.be.equal("default text");
+        expect(loadedPost!.counters[0].tags).to.be.empty;
+
+    })));
+
 });
