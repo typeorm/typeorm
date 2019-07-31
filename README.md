@@ -1261,6 +1261,8 @@ There are a few repositories which you can clone and start with:
 * [Example how to use TypeORM in a Cordova/PhoneGap app](https://github.com/typeorm/cordova-example)
 * [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
 * [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
+* [Example how to use TypeORM with Nativescript-Vue](https://github.com/typeorm/nativescript-vue-typeorm-sample)
+* [Example how to use TypeORM with Nativescript-Angular](https://github.com/betov18x/nativescript-angular-typeorm-example)
 * [Example how to use TypeORM with Electron using JavaScript](https://github.com/typeorm/electron-javascript-example)
 * [Example how to use TypeORM with Electron using TypeScript](https://github.com/typeorm/electron-typescript-example)
 
