@@ -10,21 +10,7 @@ describe("github issues > #4440 simple-json column type throws error for string 
         connections = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
-            dropSchema: true,
-            enabledDrivers: [
-            "mysql",
-            "postgres",
-            "cockroachdb",
-            "mariadb",
-            "sqlite",
-            "cordova",
-            "react-native",
-            "nativescript" ,
-            "sqljs",
-            "oracle",
-            "mssql",
-            "expo"
-        ],
+            dropSchema: true
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
