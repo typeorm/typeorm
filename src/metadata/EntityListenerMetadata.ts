@@ -66,11 +66,11 @@ export class EntityListenerMetadata {
     /**
      * Executes listener method of the given entity.
      */
-    execute(entity: ObjectLiteral) {
+    execute(entity: ObjectLiteral, ...entityEmbeddedCallbackParams: any[]) {
         if (!this.embeddedMetadata)
-            return entity[this.propertyName]();
+            return entity[this.propertyName](...entityEmbeddedCallbackParams);
 
-        this.callEntityEmbeddedMethod(entity, this.embeddedMetadata.propertyPath.split("."));
+        this.callEntityEmbeddedMethod(entity, this.embeddedMetadata.propertyPath.split("."), ...entityEmbeddedCallbackParams);
     }
 
     // ---------------------------------------------------------------------
@@ -80,16 +80,16 @@ export class EntityListenerMetadata {
     /**
      * Calls embedded entity listener method no matter how nested it is.
      */
-    protected callEntityEmbeddedMethod(entity: ObjectLiteral, propertyPaths: string[]): void {
+    protected callEntityEmbeddedMethod(entity: ObjectLiteral, propertyPaths: string[], ...entityEmbeddedCallbackParams: any[]): void {
         const propertyPath = propertyPaths.shift();
         if (!propertyPath || !entity[propertyPath])
             return;
 
         if (propertyPaths.length === 0) {
-            entity[propertyPath][this.propertyName]();
+            entity[propertyPath][this.propertyName](...entityEmbeddedCallbackParams);
         } else {
             if (entity[propertyPath])
-                this.callEntityEmbeddedMethod(entity[propertyPath], propertyPaths);
+                this.callEntityEmbeddedMethod(entity[propertyPath], propertyPaths, ...entityEmbeddedCallbackParams);
         }
     }
 

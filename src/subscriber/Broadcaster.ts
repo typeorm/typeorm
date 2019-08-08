@@ -5,6 +5,10 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {BroadcasterResult} from "./BroadcasterResult";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
+import {InsertEvent} from "./event/InsertEvent";
+import {RemoveEvent} from "./event/RemoveEvent";
+import {UpdateEvent} from "./event/UpdateEvent";
+import {LoadEvent} from "./event/LoadEvent";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
@@ -32,10 +36,18 @@ export class Broadcaster {
      */
     broadcastBeforeInsertEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral): void {
 
+        const event: InsertEvent<typeof entity> = {
+            connection: this.queryRunner.connection,
+            queryRunner: this.queryRunner,
+            manager: this.queryRunner.manager,
+            entity: entity,
+            metadata: metadata
+        };
+
         if (entity && metadata.beforeInsertListeners.length) {
             metadata.beforeInsertListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity, event);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -46,13 +58,7 @@ export class Broadcaster {
         if (this.queryRunner.connection.subscribers.length) {
             this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeInsert) {
-                    const executionResult = subscriber.beforeInsert({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata
-                    });
+                    const executionResult = subscriber.beforeInsert(event);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -70,10 +76,22 @@ export class Broadcaster {
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
     broadcastBeforeUpdateEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]): void { // todo: send relations too?
+
+        const event: UpdateEvent<typeof entity> = {
+            connection: this.queryRunner.connection,
+            queryRunner: this.queryRunner,
+            manager: this.queryRunner.manager,
+            entity: entity,
+            metadata: metadata,
+            databaseEntity: databaseEntity,
+            updatedColumns: updatedColumns || [],
+            updatedRelations: updatedRelations || []
+        };
+
         if (entity && metadata.beforeUpdateListeners.length) {
             metadata.beforeUpdateListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity, event);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -84,16 +102,7 @@ export class Broadcaster {
         if (this.queryRunner.connection.subscribers.length) {
             this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeUpdate) {
-                    const executionResult = subscriber.beforeUpdate({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || []
-                    });
+                    const executionResult = subscriber.beforeUpdate(event);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -111,10 +120,21 @@ export class Broadcaster {
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
     broadcastBeforeRemoveEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
+
+        const event: RemoveEvent<typeof entity> = {
+            connection: this.queryRunner.connection,
+            queryRunner: this.queryRunner,
+            manager: this.queryRunner.manager,
+            entity: entity,
+            metadata: metadata,
+            databaseEntity: databaseEntity,
+            entityId: metadata.getEntityIdMixedMap(databaseEntity)
+        };
+
         if (entity && metadata.beforeRemoveListeners.length) {
             metadata.beforeRemoveListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity, event);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -125,15 +145,7 @@ export class Broadcaster {
         if (this.queryRunner.connection.subscribers.length) {
             this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeRemove) {
-                    const executionResult = subscriber.beforeRemove({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
-                    });
+                    const executionResult = subscriber.beforeRemove(event);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -152,10 +164,18 @@ export class Broadcaster {
      */
     broadcastAfterInsertEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral): void {
 
+        const event: InsertEvent<typeof entity> = {
+            connection: this.queryRunner.connection,
+            queryRunner: this.queryRunner,
+            manager: this.queryRunner.manager,
+            entity: entity,
+            metadata: metadata
+        };
+
         if (entity && metadata.afterInsertListeners.length) {
             metadata.afterInsertListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity, event);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -166,13 +186,7 @@ export class Broadcaster {
         if (this.queryRunner.connection.subscribers.length) {
             this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterInsert) {
-                    const executionResult = subscriber.afterInsert({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata
-                    });
+                    const executionResult = subscriber.afterInsert(event);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -191,10 +205,21 @@ export class Broadcaster {
      */
     broadcastAfterUpdateEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]): void {
 
+        const event: UpdateEvent<typeof entity> = {
+            connection: this.queryRunner.connection,
+            queryRunner: this.queryRunner,
+            manager: this.queryRunner.manager,
+            entity: entity,
+            metadata: metadata,
+            databaseEntity: databaseEntity,
+            updatedColumns: updatedColumns || [],
+            updatedRelations: updatedRelations || []
+        };
+
         if (entity && metadata.afterUpdateListeners.length) {
             metadata.afterUpdateListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity, event);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -205,16 +230,7 @@ export class Broadcaster {
         if (this.queryRunner.connection.subscribers.length) {
             this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterUpdate) {
-                    const executionResult = subscriber.afterUpdate({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || []
-                    });
+                    const executionResult = subscriber.afterUpdate(event);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -233,10 +249,20 @@ export class Broadcaster {
      */
     broadcastAfterRemoveEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
 
+        const event: RemoveEvent<typeof entity> = {
+            connection: this.queryRunner.connection,
+            queryRunner: this.queryRunner,
+            manager: this.queryRunner.manager,
+            entity: entity,
+            metadata: metadata,
+            databaseEntity: databaseEntity,
+            entityId: metadata.getEntityIdMixedMap(databaseEntity)
+        };
+
         if (entity && metadata.afterRemoveListeners.length) {
             metadata.afterRemoveListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity, event);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -247,15 +273,7 @@ export class Broadcaster {
         if (this.queryRunner.connection.subscribers.length) {
             this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterRemove) {
-                    const executionResult = subscriber.afterRemove({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
-                    });
+                    const executionResult = subscriber.afterRemove(event);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -291,10 +309,18 @@ export class Broadcaster {
                 });
             }
 
+            const event: LoadEvent<typeof entity> = {
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
+                entity: entity,
+                metadata: metadata
+            };
+
             if (metadata.afterLoadListeners.length) {
                 metadata.afterLoadListeners.forEach(listener => {
                     if (listener.isAllowed(entity)) {
-                        const executionResult = listener.execute(entity);
+                        const executionResult = listener.execute(entity, event);
                         if (executionResult instanceof Promise)
                             result.promises.push(executionResult);
                         result.count++;
@@ -305,13 +331,7 @@ export class Broadcaster {
             if (this.queryRunner.connection.subscribers.length) {
                 this.queryRunner.connection.subscribers.forEach(subscriber => {
                     if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterLoad) {
-                        const executionResult = subscriber.afterLoad!(entity, {
-                            connection: this.queryRunner.connection,
-                            queryRunner: this.queryRunner,
-                            manager: this.queryRunner.manager,
-                            entity: entity,
-                            metadata: metadata
-                        });
+                        const executionResult = subscriber.afterLoad!(entity, event);
                         if (executionResult instanceof Promise)
                             result.promises.push(executionResult);
                         result.count++;
