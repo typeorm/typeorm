@@ -18,6 +18,7 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
 
     it("should execute operations in READ UNCOMMITED isolation level", () => Promise.all(connections.map(async function(connection) {
 
+        // Oracle doesn't support that transaction isolation level.
         if (connection.driver instanceof OracleDriver) {
             return;
         }
