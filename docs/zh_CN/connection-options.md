@@ -372,6 +372,8 @@
 
 - `database`: 应导入的原始 UInt8Array 数据库。
 
+- `sqlJsConfig`: sql.js可选启动配置
+
 - `autoSave`: 是否应禁用 autoSave。如果设置为 true，则在发生更改并指定`location`时，数据库将保存到给定的文件位置（Node.js）或 LocalStorage（浏览器）。否则可以使用`autoSaveCallback`。
 
 - `autoSaveCallback`: 在对数据库进行更改并启用`autoSave`时调用的函数。该函数获取表示数据库的`UInt8Array`。

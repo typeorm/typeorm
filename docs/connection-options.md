@@ -461,6 +461,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `database`: The raw UInt8Array database that should be imported.
 
+* `sqlJsConfig`: Optional initialize config for sql.js.
+
 * `autoSave`: Whether or not autoSave should be disabled. If set to true the database will be saved to the given file location (Node.js) or LocalStorage element (browser) when a change happens and `location` is specified. Otherwise `autoSaveCallback` can be used.
 
 * `autoSaveCallback`: A function that get's called when changes to the database are made and `autoSave` is enabled. The function gets a `UInt8Array` that represents the database.
