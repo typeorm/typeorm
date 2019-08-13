@@ -187,7 +187,7 @@ export const CategoryEntity = new EntitySchema<Category>({
 });
 ```
 
-Be sure to add the `extended` columns also to the `Categeory` interface (e.g., via `export interface Category extend BaseEntity`).
+Be sure to add the `extended` columns also to the `Category` interface (e.g., via `export interface Category extend BaseEntity`).
 
 ## Using Schemas to Query / Insert Data
 

@@ -27,6 +27,21 @@ describe("query builder > select", () => {
             "FROM post post");
     })));
 
+    it("should append all entity mapped columns from main selection to SELECT DISTINCT statement", () => Promise.all(connections.map(async connection => {
+        const sql = connection.manager.createQueryBuilder(Post, "post")
+            .distinct()
+            .disableEscaping()
+            .getSql();
+
+        expect(sql).to.equal("SELECT DISTINCT post.id AS post_id, " +
+            "post.title AS post_title, " +
+            "post.description AS post_description, " +
+            "post.rating AS post_rating, " +
+            "post.version AS post_version, " +
+            "post.categoryId AS post_categoryId " +
+            "FROM post post");
+    })));
+
     it("should append all entity mapped columns from both main selection and join selections to select statement", () => Promise.all(connections.map(async connection => {
         const sql = connection.createQueryBuilder(Post, "post")
             .leftJoinAndSelect("category", "category")

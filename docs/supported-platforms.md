@@ -63,7 +63,7 @@ TypeORM is able to on React Native apps using the [react-native-sqlite-storage](
 
 ## Expo
 
-TypeORM is able to run on Expo apps using the [Expo SQLite API](https://docs.expo.io/versions/latest/sdk/sqlite.html). For an example how to use TypeORM in Expo see [typeorm/react-native-example](https://github.com/typeorm/react-native-example).
+TypeORM is able to run on Expo apps using the [Expo SQLite API](https://docs.expo.io/versions/latest/sdk/sqlite/). For an example how to use TypeORM in Expo see [typeorm/expo-example](https://github.com/typeorm/expo-example).
 
 ## NativeScript
 

@@ -148,7 +148,8 @@ export class PostgresDriver implements Driver {
         "tstzrange",
         "daterange",
         "geometry",
-        "geography"
+        "geography",
+        "cube"
     ];
 
     /**
@@ -301,13 +302,16 @@ export class PostgresDriver implements Driver {
         const hasHstoreColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.columns.filter(column => column.type === "hstore").length > 0;
         });
+        const hasCubeColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.columns.filter(column => column.type === "cube").length > 0;
+        });
         const hasGeometryColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.columns.filter(column => this.spatialTypes.indexOf(column.type) >= 0).length > 0;
         });
         const hasExclusionConstraints = this.connection.entityMetadatas.some(metadata => {
             return metadata.exclusions.length > 0;
         });
-        if (hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns || hasExclusionConstraints) {
+        if (hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns || hasCubeColumns || hasExclusionConstraints) {
             await Promise.all([this.master, ...this.slaves].map(pool => {
                 return new Promise((ok, fail) => {
                     pool.connect(async (err: any, connection: any, release: Function) => {
@@ -336,6 +340,12 @@ export class PostgresDriver implements Driver {
                                 await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "postgis"`);
                             } catch (_) {
                                 logger.log("warn", "At least one of the entities has a geometry column, but the 'postgis' extension cannot be installed automatically. Please install it manually using superuser rights");
+                            }
+                        if (hasCubeColumns)
+                            try {
+                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "cube"`);
+                            } catch (_) {
+                                logger.log("warn", "At least one of the entities has a cube column, but the 'cube' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         if (hasExclusionConstraints)
                             try {
@@ -425,6 +435,9 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
 
+        } else if (columnMetadata.type === "cube") {
+            return `(${value.join(", ")})`;
+
         } else if (
             (
                 columnMetadata.type === "enum"
@@ -481,6 +494,9 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
+
+        } else if (columnMetadata.type === "cube") {
+            value = value.replace(/[\(\)\s]+/g, "").split(",").map(Number);
 
         } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum" ) {
             if (columnMetadata.isArray) {

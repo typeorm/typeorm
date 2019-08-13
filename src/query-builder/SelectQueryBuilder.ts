@@ -159,6 +159,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Sets whether the selection is DISTINCT.
+     */
+    distinct(distinct: boolean = true): this {
+        this.expressionMap.selectDistinct = distinct;
+        return this;
+    }
+
+    /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
@@ -1400,8 +1408,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 return this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
             });
+        const select = "SELECT " + (this.expressionMap.selectDistinct ? "DISTINCT " : "");
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
-        return "SELECT " + selection + " FROM " + froms.join(", ") + lock;
+        return select + selection + " FROM " + froms.join(", ") + lock;
     }
 
     /**

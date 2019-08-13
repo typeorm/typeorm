@@ -96,7 +96,7 @@ TYPEORM_DATABASE = test
 TYPEORM_PORT = 3000
 TYPEORM_SYNCHRONIZE = true
 TYPEORM_LOGGING = true
-TYPEORM_ENTITIES = entity/.*js,modules/**/entity/.*js
+TYPEORM_ENTITIES = entity/*.js,modules/**/entity/*.js
 ```
 
 List of available env variables you can set:
