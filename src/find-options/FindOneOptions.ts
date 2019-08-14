@@ -20,7 +20,7 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Indicates what relations of entity should be loaded (simplified left join form).
      */
-    relations?: string[];
+    relations?: (keyof Entity)[] | string[];
 
     /**
      * Specifies what relations should be loaded.
@@ -46,7 +46,7 @@ export interface FindOneOptions<Entity = any> {
      * If sets to true then loads all relation ids of the entity and maps them into relation values (not relation objects).
      * If array of strings is given then loads only relation ids of the given properties.
      */
-    loadRelationIds?: boolean|{ relations?: string[], disableMixedMap?: boolean }; // todo: extract options into separate interface, reuse
+    loadRelationIds?: boolean|{ relations?: (keyof Entity)[] | string[], disableMixedMap?: boolean }; // todo: extract options into separate interface, reuse
 
     /**
      * Indicates if eager relations should be loaded or not.
