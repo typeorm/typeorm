@@ -839,8 +839,10 @@ export class EntityMetadata {
      */
     protected buildTablePath(): string {
         let tablePath = this.tableName;
-        if (this.schema)
+        if (this.schema && ((this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver))) {
             tablePath = this.schema + "." + tablePath;
+        }
+
         if (this.database && !(this.connection.driver instanceof PostgresDriver)) {
             if (!this.schema && this.connection.driver instanceof SqlServerDriver) {
                 tablePath = this.database + ".." + tablePath;
