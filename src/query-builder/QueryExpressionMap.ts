@@ -297,8 +297,8 @@ export class QueryExpressionMap {
     setMainAlias(alias: Alias): Alias {
 
         // if main alias is already set then remove it from the array
-        // if (this.mainAlias)
-        //     this.aliases.splice(this.aliases.indexOf(this.mainAlias));
+        if (this.mainAlias)
+             this.aliases.splice(this.aliases.indexOf(this.mainAlias));
 
         // set new main alias
         this.mainAlias = alias;
