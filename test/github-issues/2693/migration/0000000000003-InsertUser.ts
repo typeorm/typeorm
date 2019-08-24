@@ -1,12 +1,14 @@
 import { MigrationInterface } from "../../../../src/migration/MigrationInterface";
 import { QueryRunner } from "../../../../src/query-runner/QueryRunner";
+import { User } from "../entity/user";
 
-export class CreateUuidExtension1544044606093 implements MigrationInterface {
+export class InsertUser0000000000003 implements MigrationInterface {
     public up(queryRunner: QueryRunner): Promise<any> {
-        return queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
+        const userRepo = queryRunner.connection.getRepository<User>(User);
+        return userRepo.save(new User());
     }
 
     public down(queryRunner: QueryRunner): Promise<any> {
-        return queryRunner.query("DROP EXTENSION \"uuid-ossp\"");
+        return Promise.resolve();
     }
 }

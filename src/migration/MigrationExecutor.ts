@@ -26,7 +26,7 @@ export class MigrationExecutor {
      *   none: all migrations are run without a transaction
      *   each: each migration is run in a separate transaction
      */
-    transactionMode: "all" | "none" | "each" = "all";
+    transaction: "all" | "none" | "each" = "all";
 
     // -------------------------------------------------------------------------
     // Private Properties
@@ -103,6 +103,9 @@ export class MigrationExecutor {
         // get all user's migrations in the source code
         const allMigrations = this.getMigrations();
 
+        // variable to store all migrations we did successefuly
+        const successMigrations: Migration[] = [];
+
         // find all migrations that needs to be executed
         const pendingMigrations = allMigrations.filter(migration => {
             // check if we already have executed migration
@@ -134,14 +137,55 @@ export class MigrationExecutor {
             this.connection.logger.logSchemaBuild(`${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp).toString()}.`);
         this.connection.logger.logSchemaBuild(`${pendingMigrations.length} migrations are new migrations that needs to be executed.`);
 
-        switch (this.transactionMode) {
-            case "each":
-                return this.runEachMigrationInSeparateTransaction(queryRunner, pendingMigrations);
-            case "all":
-                return this.runAllMigrationsInSingleTransaction(queryRunner, pendingMigrations);
-            case "none":
-                return this.runAllMigrationsWithoutTransaction(queryRunner, pendingMigrations);
+        // start transaction if its not started yet
+        let transactionStartedByUs = false;
+        if (this.transaction === "all" && !queryRunner.isTransactionActive) {
+            await queryRunner.startTransaction();
+            transactionStartedByUs = true;
         }
+
+        // run all pending migrations in a sequence
+        try {
+            await PromiseUtils.runInSequence(pendingMigrations, async migration => {
+                if (this.transaction === "each" && !queryRunner.isTransactionActive) {
+                    await queryRunner.startTransaction();
+                    transactionStartedByUs = true;
+                }
+
+                return migration.instance!.up(queryRunner)
+                    .then(async () => { // now when migration is executed we need to insert record about it into the database
+                        await this.insertExecutedMigration(queryRunner, migration);
+                        // commit transaction if we started it
+                        if (this.transaction === "each" && transactionStartedByUs)
+                            await queryRunner.commitTransaction();
+                    })
+                    .then(() => { // informative log about migration success
+                        successMigrations.push(migration);
+                        this.connection.logger.logSchemaBuild(`Migration ${migration.name} has been executed successfully.`);
+                    });
+            });
+
+            // commit transaction if we started it
+            if (this.transaction === "all" && transactionStartedByUs)
+                await queryRunner.commitTransaction();
+
+        } catch (err) { // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try { // we throw original error even if rollback thrown an error
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+
+            throw err;
+
+        } finally {
+
+            // if query runner was created by us then release it
+            if (!this.queryRunner)
+                await queryRunner.release();
+        }
+        return successMigrations;
+
     }
 
     /**
@@ -183,7 +227,7 @@ export class MigrationExecutor {
 
         // start transaction if its not started yet
         let transactionStartedByUs = false;
-        if ((this.transactionMode !== "none") && !queryRunner.isTransactionActive) {
+        if ((this.transaction !== "none") && !queryRunner.isTransactionActive) {
             await queryRunner.startTransaction();
             transactionStartedByUs = true;
         }
@@ -361,116 +405,4 @@ export class MigrationExecutor {
         }
 
     }
-
-    protected async runEachMigrationInSeparateTransaction(queryRunner: QueryRunner, pendingMigrations: Migration[]) {
-        // variable to store all migrations we did successefuly
-        const successMigrations: Migration[] = [];
-
-        if (queryRunner.isTransactionActive) {
-            throw new Error("Trying to run each migration in separate transaction, but already in one. Try changing this option and run migrations again.");
-        }
-
-        // run all pending migrations in a sequence
-        try {
-            await PromiseUtils.runInSequence(pendingMigrations, async migration => {
-                await queryRunner.startTransaction();
-                return migration.instance!.up(queryRunner)
-                    .then(async () => { // now when migration is executed we need to insert record about it into the database
-                        await this.insertExecutedMigration(queryRunner, migration);
-                        await queryRunner.commitTransaction();
-                    })
-                    .then(() => { // informative log about migration success
-                        successMigrations.push(migration);
-                        this.connection.logger.logSchemaBuild(`Migration ${migration.name} has been executed successfully.`);
-                    });
-            });
-
-        } catch (err) { // rollback transaction if we started it
-            try { // we throw original error even if rollback thrown an error
-                if (queryRunner.isTransactionActive) {
-                    await queryRunner.rollbackTransaction();
-                }
-            } catch (rollbackError) { }
-
-            throw err;
-
-        } finally {
-            // if query runner was created by us then release it
-            if (!this.queryRunner)
-                await queryRunner.release();
-        }
-        return successMigrations;
-    }
-
-    protected async runAllMigrationsInSingleTransaction(queryRunner: QueryRunner, pendingMigrations: Migration[]) {
-        // variable to store all migrations we did successefuly
-        const successMigrations: Migration[] = [];
-
-        // start transaction if its not started yet
-        let transactionStartedByUs = false;
-        if (!queryRunner.isTransactionActive) {
-            await queryRunner.startTransaction();
-            transactionStartedByUs = true;
-        }
-
-        // run all pending migrations in a sequence
-        try {
-            await PromiseUtils.runInSequence(pendingMigrations, migration => {
-                return migration.instance!.up(queryRunner)
-                    .then(() => { // now when migration is executed we need to insert record about it into the database
-                        return this.insertExecutedMigration(queryRunner, migration);
-                    })
-                    .then(() => { // informative log about migration success
-                        successMigrations.push(migration);
-                        this.connection.logger.logSchemaBuild(`Migration ${migration.name} has been executed successfully.`);
-                    });
-            });
-
-            // commit transaction if we started it
-            if (transactionStartedByUs)
-                await queryRunner.commitTransaction();
-
-        } catch (err) { // rollback transaction if we started it
-            if (transactionStartedByUs) {
-                try { // we throw original error even if rollback thrown an error
-                    await queryRunner.rollbackTransaction();
-                } catch (rollbackError) { }
-            }
-
-            throw err;
-
-        } finally {
-
-            // if query runner was created by us then release it
-            if (!this.queryRunner)
-                await queryRunner.release();
-        }
-        return successMigrations;
-    }
-
-    protected async runAllMigrationsWithoutTransaction(queryRunner: QueryRunner, pendingMigrations: Migration[]) {
-        // variable to store all migrations we did successefuly
-        const successMigrations: Migration[] = [];
-
-        // run all pending migrations in a sequence
-        try {
-            await PromiseUtils.runInSequence(pendingMigrations, migration => {
-                return migration.instance!.up(queryRunner)
-                    .then(() => { // now when migration is executed we need to insert record about it into the database
-                        return this.insertExecutedMigration(queryRunner, migration);
-                    })
-                    .then(() => { // informative log about migration success
-                        successMigrations.push(migration);
-                        this.connection.logger.logSchemaBuild(`Migration ${migration.name} has been executed successfully.`);
-                    });
-            });
-        } finally {
-
-            // if query runner was created by us then release it
-            if (!this.queryRunner)
-                await queryRunner.release();
-        }
-        return successMigrations;
-    }
-
 }

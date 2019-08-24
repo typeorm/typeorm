@@ -54,19 +54,19 @@ export class MigrationRevertCommand implements yargs.CommandModule {
             connection = await createConnection(connectionOptions);
 
             const options = {
-                transactionMode: "all" as "all" | "none" | "each",
+                transaction: "all" as "all" | "none" | "each",
             };
 
-            switch (argv["t"]) {
+            switch (args.t) {
                 case "all":
-                    options.transactionMode = "all";
+                    options.transaction = "all";
                     break;
                 case "none":
                 case "false":
-                    options.transactionMode = "none";
+                    options.transaction = "none";
                     break;
                 case "each":
-                    options.transactionMode = "each";
+                    options.transaction = "each";
                     break;
                 default:
                     // noop
