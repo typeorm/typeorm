@@ -1636,7 +1636,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += " UNSIGNED";
         }
         if (column.enum)
-            c += ` (${column.enum.map(value => "'" + value + "'").join(", ")})`;
+            c += ` (${column.enum.map(value => "'" + value.replace("'", "''") + "'").join(", ")})`;
         if (column.charset)
             c += ` CHARACTER SET "${column.charset}"`;
         if (column.collation)
