@@ -4,18 +4,19 @@ import {Connection} from "../../../src/connection/Connection";
 import { Realm } from "./entity/User";
 import {User} from "./entity/User";
 
-describe("github issues > #4360 Enum string not escaping resulting in broken migrations.", () => {
+describe.only("github issues > #4630 Enum string not escaping resulting in broken migrations.", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
         dropSchema: true,
+        enabledDrivers: ["mysql", "postgres"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should should allow postgres enums to have apostrophes in the values", () => Promise.all(connections.map(async connection => {
+    it("should support enums of strings with apostrophes in them", () => Promise.all(connections.map(async connection => {
         const user = new User();
         user.realm = Realm.KelThuzad;
 
