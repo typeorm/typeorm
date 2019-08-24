@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
-import { Realm } from './entity/User';
+import { Realm } from "./entity/User";
 import {User} from "./entity/User";
 
 describe("github issues > #4360 Enum string not escaping resulting in broken migrations.", () => {
@@ -16,7 +16,7 @@ describe("github issues > #4360 Enum string not escaping resulting in broken mig
     after(() => closeTestingConnections(connections));
 
     it("should should allow postgres enums to have apostrophes in the values", () => Promise.all(connections.map(async connection => {
-        const user = new User()
+        const user = new User();
         user.realm = Realm.KelThuzad;
 
         await connection.manager.save(user);
@@ -26,6 +26,6 @@ describe("github issues > #4360 Enum string not escaping resulting in broken mig
         users.should.eql([{
             id: 1,
             realm: "Kel'Thuzad"
-        }])
+        }]);
     })));
 });
