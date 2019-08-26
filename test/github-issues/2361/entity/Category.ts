@@ -1,12 +1,13 @@
 import { Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent } from "../../../../src";
+import { JoinColumn } from "../../../../src/decorator/relations/JoinColumn";
 
 @Entity({
     name: "Category"
 })
 @Tree("closure-table")
 export class Category {
-    @PrimaryGeneratedColumn()
-    customId: number;
+    @PrimaryGeneratedColumn("uuid")
+    custom_id: string;
 
     @Column()
     name: string;
@@ -15,5 +16,8 @@ export class Category {
     children: Category[];
 
     @TreeParent()
+    @JoinColumn({
+        name: "parent_id"
+    })
     parent: Category;
 }

@@ -8,10 +8,10 @@ export class CustomIdCategory1566290016158 implements MigrationInterface {
             columns: [
                 {
                     name: "custom_id",
-                    type: "number",
+                    type: "varchar",
                     isPrimary: true,
                     isGenerated: true,
-                    generationStrategy: "increment",
+                    generationStrategy: "uuid",
                 },
                 {
                     name: "name",
@@ -19,14 +19,14 @@ export class CustomIdCategory1566290016158 implements MigrationInterface {
                 },
                 {
                     name: "parent_id",
-                    type: "number",
+                    type: "varchar",
                     isNullable: true,
                 },
             ],
             foreignKeys: [
                 {
                     name: "parentFK",
-                    columnNames: ["parentId"],
+                    columnNames: ["parent_id"],
                     referencedColumnNames: ["custom_id"],
                     referencedTableName: "Category",
                     onDelete: "RESTRICT",

@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import { createTestingConnections, closeTestingConnections } from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {expect} from "chai";
 import { Category } from "./entity/Category";
@@ -10,21 +10,29 @@ describe("github issues > #2361 ER_BAD_FIELD_ERROR: Unknown column 'treeEntity.p
         entities: [__dirname + "/entity/*{.js,.ts}"],
         migrations: [__dirname + "/migration/*{.js,.ts}"],
         dropSchema: true,
+        schemaCreate: false,
+        enabledDrivers: ["mysql"],
     }));
-    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("Should be possible to find roots in tree that has id column name different than id", () => Promise.all(connections.map(async connection => {
+        await connection.runMigrations();
+
         const categoryTreeRepository = connection.getTreeRepository<Category>(Category);
         let error;
 
-        const newCategory = categoryTreeRepository.merge(new Category(), { name: "name" });
-        await categoryTreeRepository.save(newCategory);
+        const parentCategory = categoryTreeRepository.merge(new Category(), { name: "name" });
+        await categoryTreeRepository.save(parentCategory);
         const createdCategory = await categoryTreeRepository.findOne();
         expect(createdCategory).not.to.be.an("undefined");
+        const childCategory = categoryTreeRepository.merge(new Category(), { name: "child", parent: parentCategory });
+        await categoryTreeRepository.save(childCategory);
 
         try {
-            await categoryTreeRepository.findRoots();
+            const categories = await categoryTreeRepository.find();
+            expect(categories.length).to.equal(2);
+            const roots = await categoryTreeRepository.findRoots();
+            expect(roots.length).to.equal(1);
         } catch (e) {
             error = e;
         }
