@@ -32,7 +32,8 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     findRoots(): Promise<Entity[]> {
         const escapeAlias = (alias: string) => this.manager.connection.driver.escape(alias);
         const escapeColumn = (column: string) => this.manager.connection.driver.escape(column);
-        const parentPropertyName = this.manager.connection.namingStrategy.joinColumnName(
+        const joinColumnName = this.metadata.treeParentRelation!.joinColumns[0].databaseName;
+        const parentPropertyName = joinColumnName || this.manager.connection.namingStrategy.joinColumnName(
           this.metadata.treeParentRelation!.propertyName, "id"
         );
 
