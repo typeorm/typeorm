@@ -307,7 +307,7 @@ export class Connection {
 
     /**
      * Lists all migrations and whether they have been run.
-     * Returns true if there are no pending migrations
+     * Returns true if there are pending migrations
      */
     async showMigrations(): Promise<boolean> {
         if (!this.isConnected) {
