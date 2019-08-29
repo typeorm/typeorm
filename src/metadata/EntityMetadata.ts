@@ -14,6 +14,7 @@ import {OrmUtils} from "../util/OrmUtils";
 import {shorten} from "../util/StringUtils";
 import {CheckMetadata} from "./CheckMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
+import {TemporalMetadata} from "./TemporalMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {ExclusionMetadata} from "./ExclusionMetadata";
@@ -184,6 +185,11 @@ export class EntityMetadata {
      * Its also possible to understand if entity is junction via tableType.
      */
     isJunction: boolean = false;
+
+    /**
+     * Its also possible to understand if entity is temporal table via tableType.
+     */
+    temporal?: TemporalMetadata;
 
     /**
      * Indicates if this entity is a tree, what type of tree it is.
@@ -508,6 +514,9 @@ export class EntityMetadata {
         this.tableType = this.tableMetadataArgs.type;
         this.expression = this.tableMetadataArgs.expression;
         this.withoutRowid = this.tableMetadataArgs.withoutRowid;
+        if (this.connection.driver instanceof SqlServerDriver && this.tableMetadataArgs.temporal) {
+            this.temporal = new TemporalMetadata(this, this.tableMetadataArgs.temporal);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -811,6 +820,9 @@ export class EntityMetadata {
         this.schemaPath = this.buildSchemaPath();
         this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
 
+        if (this.connection.driver instanceof SqlServerDriver && this.tableMetadataArgs.temporal) {
+            this.temporal = new TemporalMetadata(this, this.tableMetadataArgs.temporal);
+        }
         this.isJunction = this.tableMetadataArgs.type === "closure-junction" || this.tableMetadataArgs.type === "junction";
         this.isClosureJunction = this.tableMetadataArgs.type === "closure-junction";
     }

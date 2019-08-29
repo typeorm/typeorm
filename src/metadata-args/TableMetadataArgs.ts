@@ -1,6 +1,7 @@
 import {Connection, SelectQueryBuilder} from "..";
 import {OrderByCondition} from "../find-options/OrderByCondition";
-import {TableType} from "../metadata/types/TableTypes";
+import { TableType } from "../metadata/types/TableTypes";
+import { TemporalMetadataArgs } from "../metadata-args/TemporalMetadataArgs";
 
 /**
  * Arguments for TableMetadata class, helps to construct an TableMetadata object.
@@ -63,7 +64,13 @@ export interface TableMetadataArgs {
 
      /**
      * If set to 'true' this option disables Sqlite's default behaviour of secretly creating
-     * an integer primary key column named 'rowid' on table creation. 
+     * an integer primary key column named 'rowid' on table creation.
      */
-    withoutRowid?: boolean;   
+    withoutRowid?: boolean;
+
+    /**
+     * Indicates if table is temporal table, used for Sql Server
+     */
+    temporal?: TemporalMetadataArgs;
+
 }

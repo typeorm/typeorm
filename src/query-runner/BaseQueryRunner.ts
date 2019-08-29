@@ -236,6 +236,7 @@ export abstract class BaseQueryRunner {
             foundTable.checks = changedTable.checks;
             foundTable.justCreated = changedTable.justCreated;
             foundTable.engine = changedTable.engine;
+            foundTable.temporal = changedTable.temporal;
         }
     }
 

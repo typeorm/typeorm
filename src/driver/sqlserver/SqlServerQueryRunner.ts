@@ -307,6 +307,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
+     * returns list of temporal tables from database if given
+     */
+
+    async getTemporalTables(database?: string): Promise<ObjectLiteral[]> {
+        return await this.query(this.findTemporalTableSql(database));
+    }
+
+    /**
      * Returns all available database names including system databases.
      */
     async getDatabases(): Promise<string[]> {
@@ -340,6 +348,15 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const result = await this.query(`SELECT SCHEMA_ID('${schema}') as "schema_id"`);
         const schemaId = result[0]["schema_id"];
         return !!schemaId;
+    }
+
+    /**
+     * Checks if a table with the given name is temporal
+     */
+
+    async isTemporalTable(tableOrName: Table|string): Promise<boolean> {
+        const results = await this.temporalTableMetadata(tableOrName);
+        return results.length !== 0;
     }
 
     /**
@@ -474,6 +491,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             });
         }
 
+        if (table.temporal) {
+            downQueries.push(this.dropTableSql(this.getHistoricalTableName(table)));
+            downQueries.push(this.disableTemporalTableSql(table));
+        }
+
         await this.executeQueries(upQueries, downQueries);
     }
 
@@ -507,10 +529,61 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (dropForeignKeys)
             table.foreignKeys.forEach(foreignKey => upQueries.push(this.dropForeignKeySql(table, foreignKey)));
 
+        let isTemporal: boolean = await this.isTemporalTable(table);
+        if (isTemporal) {
+            upQueries.push(this.disableTemporalTableSql(table));
+            upQueries.push(await this.dropHistoricalTable(table));
+        }
         upQueries.push(this.dropTableSql(table));
         downQueries.push(this.createTableSql(table, createForeignKeys));
 
         await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
+     * return metadata for a given temporal table
+     * @param tableOrName
+     */
+
+    async temporalTableMetadata(tableOrName: Table | string): Promise<ObjectLiteral[]> {
+        const parsedTableName = this.parseTableName(tableOrName);
+        const schema = parsedTableName.schema === "SCHEMA_NAME()" ? parsedTableName.schema : `'${parsedTableName.schema}'`;
+        let sql = this.findTemporalTableSql(parsedTableName.database);
+        sql += ` AND t.name = '${parsedTableName.name}' AND SCHEMA_NAME(t.schema_id) = ${schema}`;
+        return this.query(sql);
+    }
+
+    /**
+     * returns sql query that lists all temporal table pairs in current database
+     * @param database options parameter
+     */
+
+    protected findTemporalTableSql(database?: string): string {
+        let sql: string;
+        database = database === undefined ? "" : `${database}.`;
+        sql = `SELECT SCHEMA_NAME(t.schema_id) AS TABLE_SCHEMA,
+            t.name AS TABLE_NAME,
+            SCHEMA_NAME(h.schema_id) AS TEMPORAL_TABLE_SCHEMA,
+            h.name AS TEMPORAL_TABLE_NAME
+        FROM ${database}sys.tables t
+        LEFT OUTER JOIN ${database}sys.tables h
+            ON t.history_table_id = h.object_id
+        WHERE t.temporal_type = 2`;
+        return sql;
+    }
+
+    /**
+     * returns query to drop a historical table based on the name of persistent table
+     * @param tableOrName table or name of persisted table
+     * @param ifExist boolean
+     */
+
+    protected async dropHistoricalTable(tableOrName: Table|string, ifExist?: boolean): Promise<Query> {
+        const temporalTableInfo: ObjectLiteral[] = await this.temporalTableMetadata(tableOrName);
+        let tableName = temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_SCHEMA" ] ?
+            `${temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_SCHEMA" ]}.${temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_NAME" ]}` :
+            temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_NAME" ];
+        return this.dropTableSql(tableName, true);
     }
 
     /**
@@ -1342,6 +1415,43 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
+     * Disable temporal table
+     */
+
+    async disableTemporalTable(tableOrName: Table | string): Promise<void> {
+        const upQueries: Query[] = [], downQueries: Query[] = [];
+        let isTemporal: boolean = await this.isTemporalTable(tableOrName);
+        if (isTemporal) {
+            upQueries.push(this.disableTemporalTableSql(tableOrName));
+            downQueries.push(this.enableTemporalTableSql(tableOrName));
+            await this.executeQueries(upQueries, downQueries);
+        } else {
+            return Promise.resolve();
+        }
+    }
+
+    /**
+     * Disable all temporal tables in database
+     * @param database
+     */
+
+    async disableAllTemporalTables(database?: string): Promise<void> {
+        const upQueries: Query[] = [], downQueries: Query[] = [];
+        const allTemporalTablesResults: ObjectLiteral[] = await this.getTemporalTables(database);
+        database = database === undefined ? "" : `${database}.`;
+        if (allTemporalTablesResults.length > 0) {
+            allTemporalTablesResults.map(async temporalTable => {
+                let tableName = `${database}${temporalTable[ "TABLE_SCHEMA" ]}.${temporalTable[ "TABLE_NAME" ]}`;
+                upQueries.push(this.disableTemporalTableSql(tableName));
+                downQueries.push(this.enableTemporalTableSql(tableName));
+            });
+            await this.executeQueries(upQueries, downQueries);
+        } else {
+            return Promise.resolve();
+        }
+    }
+
+    /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
@@ -1371,6 +1481,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 const dropTableSql = `DROP VIEW "${viewResult["TABLE_SCHEMA"]}"."${viewResult["TABLE_NAME"]}"`;
                 return this.query(dropTableSql);
             }));
+
+            await this.disableAllTemporalTables(database);
 
             let allTablesSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
@@ -1800,8 +1912,18 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Builds and returns SQL for create table.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(table, column, false, true)).join(", ");
+
+        const columnDefinitions = table.columns.filter(c => {
+            if (table.temporal) {
+                return c.name !== table.temporal.sysStartTimeColumnName && c.name !== table.temporal.sysEndTimeColumnName;
+            } else {
+                return true;
+            }
+        }).map(column => this.buildCreateColumnSql(table, column, false, true)).join(", ");
+
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`;
+        if (table.temporal)
+             sql += this.addTemporalColumnsSql(table);
 
         table.columns
             .filter(column => column.isUnique)
@@ -1861,7 +1983,28 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         sql += `)`;
 
+        if (table.temporal) {
+            sql += ` WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ${this.getHistoricalTableName(table)}))`;
+        }
         return new Query(sql);
+    }
+
+    /**
+     * Build disable temporal table sql
+     */
+
+    protected disableTemporalTableSql(tableOrName: Table|string): Query {
+        const query = `ALTER TABLE ${this.escapePath(tableOrName)} SET (SYSTEM_VERSIONING = OFF)`;
+        return new Query(query);
+    }
+
+        /**
+     * Build enable temporal table sql
+     */
+
+    protected enableTemporalTableSql(tableOrName: Table|string): Query {
+        const query = `ALTER TABLE ${this.escapePath(tableOrName)} SET (SYSTEM_VERSIONING = ON)`;
+        return new Query(query);
     }
 
     /**
@@ -1891,6 +2034,23 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             .getQueryAndParameters();
 
         return new Query(query, parameters);
+    }
+
+    protected getHistoricalTableName(table: Table): string {
+        let historicalTableName;
+        if (table.temporal && table.temporal.historicalTableName !== undefined) {
+            const parsedTableName = this.parseTableName(table.temporal.historicalTableName);
+            const schema = parsedTableName.schema === "SCHEMA_NAME()" ? "dbo" : `${parsedTableName.schema}`;
+            historicalTableName = `${schema}.${parsedTableName.name}`;
+        } else {
+            const parsedTableName = this.parseTableName(table);
+            const schema = parsedTableName.schema === "SCHEMA_NAME()" ? "dbo" : `${parsedTableName.schema}`;
+            historicalTableName = `${schema}.${parsedTableName.name}_historical`;
+        }
+        if (table.temporal)
+            table.temporal.historicalTableName = historicalTableName;
+
+        return historicalTableName;
     }
 
     /**
@@ -1945,6 +2105,28 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
+     * Build temporal table sql
+     */
+
+    protected addTemporalColumnsSql(table: Table): string {
+        let sql: string = "" ;
+        if (table.temporal) {
+            let precision = 3;
+            if (table.temporal.precision !== undefined) {
+                precision = table.temporal.precision;
+            }
+            sql += ` , "${table.temporal.sysStartTimeColumnName}" datetime2 (${precision}) GENERATED ALWAYS AS ROW START NOT NULL`;
+            if (table.temporal.getDateFunction) {
+                let constraintName = this.connection.namingStrategy.uniqueConstraintName(table.name, [ table.temporal.sysStartTimeColumnName ]);
+                sql += ` CONSTRAINT ${constraintName} DEFAULT ${table.temporal.getDateFunction}`;
+            }
+            sql += `, "${table.temporal.sysEndTimeColumnName}" datetime2 (${precision}) GENERATED ALWAYS AS ROW END NOT NULL`;
+            sql += `, PERIOD FOR SYSTEM_TIME (${table.temporal.sysStartTimeColumnName}, ${table.temporal.sysEndTimeColumnName})`;
+        }
+        return sql;
+    }
+
+     /**
      * Builds drop primary key sql.
      */
     protected dropPrimaryKeySql(table: Table): Query {

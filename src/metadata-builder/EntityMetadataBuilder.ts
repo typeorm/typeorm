@@ -17,6 +17,7 @@ import {RelationJoinColumnBuilder} from "./RelationJoinColumnBuilder";
 import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {UniqueMetadata} from "../metadata/UniqueMetadata";
+import {TemporalMetadata} from "../metadata/TemporalMetadata";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {CheckMetadata} from "../metadata/CheckMetadata";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -277,6 +278,13 @@ export class EntityMetadataBuilder {
 
         });
 
+        if (this.connection.driver instanceof SqlServerDriver) {
+            entityMetadatas.forEach(entityMetadata => {
+                if (entityMetadata.temporal instanceof TemporalMetadata)
+                    entityMetadata.temporal.build();
+            });
+        }
+
         return entityMetadatas;
     }
 
@@ -289,7 +297,6 @@ export class EntityMetadataBuilder {
      * Creates column, relation, etc. metadatas for everything this entity metadata owns.
      */
     protected createEntityMetadata(tableArgs: TableMetadataArgs): EntityMetadata {
-
         // we take all "inheritance tree" from a target entity to collect all stored metadata args
         // (by decorators or inside entity schemas). For example for target Post < ContentModel < Unit
         // it will be an array of [Post, ContentModel, Unit] and we can then get all metadata args of those classes
