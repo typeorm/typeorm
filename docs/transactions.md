@@ -13,7 +13,7 @@ Examples:
 ```typescript
 import {getConnection} from "typeorm";
 
-await getConnection().transaction(transactionalEntityManager => {
+await getConnection().transaction(async transactionalEntityManager => {
     
 });
 ```
