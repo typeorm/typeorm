@@ -185,8 +185,12 @@ import { Category } from "./category";
 export class PostToCategory {
     @PrimaryGeneratedColumn()
     public postToCategoryId!: number;
-
+    
+    // Add `@Column` decorator on `postId` adn `categoryId`, so that we can search by these two key
+    @Column()
     public postId!: number;
+    
+    @Column()
     public categoryId!: number;
 
     @Column()
@@ -203,6 +207,13 @@ export class PostToCategory {
 Additionally you will have to add a relationship like the following to `Post` and `Category`:
 
 ```typescript
+// category.ts
+...
+@OneToMany((type) => PostToCategory, (postToCategory) => postToCategory.category)
+public postToCategories!: PostToCategory[];
+
+// post.ts
+...
 @OneToMany((type) => PostToCategory, (postToCategory) => postToCategory.post)
 public postToCategories!: PostToCategory[];
 ```
