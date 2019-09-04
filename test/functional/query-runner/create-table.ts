@@ -356,7 +356,7 @@ describe("query runner > create table", () => {
     
             try {
                 await connection.manager.query("SELECT rowid FROM book2");
-            } catch(e) {
+            } catch (e) {
                 expect(e.message).equal("SQLITE_ERROR: no such column: rowid");
             }
 
