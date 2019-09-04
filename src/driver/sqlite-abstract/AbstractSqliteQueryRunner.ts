@@ -997,6 +997,11 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         sql += `)`;
 
+        const tableMetadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === table.name);
+        if (tableMetadata && tableMetadata.withoutRowid) {
+            sql += " WITHOUT ROWID"
+        }
+
         return new Query(sql);
     }
 
