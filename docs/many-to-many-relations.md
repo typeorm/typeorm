@@ -185,8 +185,7 @@ import { Category } from "./category";
 export class PostToCategory {
     @PrimaryGeneratedColumn()
     public postToCategoryId!: number;
-    
-    // Add `@Column` decorator on `postId` adn `categoryId`, so that we can search by these two key
+
     @Column()
     public postId!: number;
     
