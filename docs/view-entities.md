@@ -109,6 +109,7 @@ import {ViewEntity, ViewColumn} from "typeorm";
 export class PostCategory {
 
     @ViewColumn()
+    @PrimaryColumn()
     id: number;
 
     @ViewColumn()
@@ -136,6 +137,7 @@ import {ViewEntity, ViewColumn} from "typeorm";
 export class PostCategory {
 
     @ViewColumn()
+    @PrimaryColumn()
     id: number;
 
     @ViewColumn()
@@ -203,6 +205,7 @@ import {ViewEntity, ViewColumn} from "typeorm";
 export class PostCategory {
 
     @ViewColumn()
+    @PrimaryColumn()
     id: number;
 
     @ViewColumn()
