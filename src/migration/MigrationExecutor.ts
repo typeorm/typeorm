@@ -291,16 +291,22 @@ export class MigrationExecutor {
     }
 
     /**
-     * Loads all migrations that were executed and saved into the database.
+     * Loads all migrations that were executed and saved into the database (sorts by id).
      */
     protected async loadExecutedMigrations(queryRunner: QueryRunner): Promise<Migration[]> {
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            return await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).find().toArray();
+            return await mongoRunner.databaseConnection
+            .db(this.connection.driver.database!)
+            .collection(this.migrationsTableName)
+            .find<Migration>()
+            .sort("_id", -1)
+            .toArray();
         } else {
             const migrationsRaw: ObjectLiteral[] = await this.connection.manager
             .createQueryBuilder(queryRunner)
             .select()
+            .orderBy("id", "DESC")
             .from(this.migrationsTable, this.migrationsTableName)
             .getRawMany();
             return migrationsRaw.map(migrationRaw => {
@@ -335,10 +341,10 @@ export class MigrationExecutor {
     }
 
     /**
-     * Finds the latest migration (sorts by id) in the given array of migrations.
+     * Finds the latest migration in the given array of migrations.
+     * PRE: Migration array must be sorted by descending id.
      */
-    protected getLatestExecutedMigration(migrations: Migration[]): Migration|undefined {
-        const sortedMigrations = migrations.map(migration => migration).sort((a, b) => ((a.id || 0) - (b.id || 0)) * -1);
+    protected getLatestExecutedMigration(sortedMigrations: Migration[]): Migration|undefined {
         return sortedMigrations.length > 0 ? sortedMigrations[0] : undefined;
     }
 
@@ -354,9 +360,9 @@ export class MigrationExecutor {
             values["timestamp"] = migration.timestamp;
             values["name"] = migration.name;
         }
-        if (this.connection.driver instanceof MongoDriver) {  
+        if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);               
+            await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.insert()
@@ -382,7 +388,7 @@ export class MigrationExecutor {
 
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).deleteOne(conditions);               
+            await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).deleteOne(conditions);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.delete()
