@@ -357,9 +357,9 @@ export class MigrationExecutor {
             values["timestamp"] = migration.timestamp;
             values["name"] = migration.name;
         }
-        if (this.connection.driver instanceof MongoDriver) {
+        if (this.connection.driver instanceof MongoDriver) {  
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);
+            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);               
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.insert()
@@ -385,7 +385,7 @@ export class MigrationExecutor {
 
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).deleteOne(conditions);
+            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).deleteOne(conditions);               
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.delete()
