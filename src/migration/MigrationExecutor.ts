@@ -323,7 +323,10 @@ export class MigrationExecutor {
         });
 
         // sort them by timestamp
-        return migrations.sort((a, b) => a.timestamp - b.timestamp);
+        const sorted = migrations.sort((a, b) => a.timestamp - b.timestamp);
+
+        // remove duplicates
+        return sorted.filter((migration, index) => sorted.findIndex((unique) => unique.name === migration.name) === index);
     }
 
     /**
@@ -354,9 +357,9 @@ export class MigrationExecutor {
             values["timestamp"] = migration.timestamp;
             values["name"] = migration.name;
         }
-        if (this.connection.driver instanceof MongoDriver) {  
+        if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);               
+            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.insert()
@@ -382,7 +385,7 @@ export class MigrationExecutor {
 
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).deleteOne(conditions);               
+            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).deleteOne(conditions);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.delete()
