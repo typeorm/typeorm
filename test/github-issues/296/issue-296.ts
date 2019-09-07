@@ -15,7 +15,7 @@ describe("github issues > #296 select additional computed columns", () => {
     after(() => closeTestingConnections(connections));
 
 
-    it("should correctly substring the text column and populate the entity property", () => Promise.all(connections.map(async connection => {
+    it("should correctly select computed size of text column and populate given entity property", () => Promise.all(connections.map(async connection => {
         const post = new Post();
         post.title = "hello post";
         post.text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiu";
@@ -33,6 +33,6 @@ describe("github issues > #296 select additional computed columns", () => {
         expect(loadedPost!.text).not.to.be.undefined;
         // Because some drivers return int's as strings's, so just to be sure we
         // cast both to string
-        expect("" + (loadedPost!.textSize)).to.be.equal("" + post.text.length);
+        expect("" + loadedPost!.textSize).to.be.equal("" + post.text.length);
     })));
 });
