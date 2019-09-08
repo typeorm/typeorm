@@ -233,7 +233,7 @@ createConnection().then(connection => {
     });
 
     app.delete("/users/:id", async function(req: Request, res: Response) {
-        const results = await userRepository.remove(req.params.id);
+        const results = await userRepository.delete(req.params.id);
         return res.send(results);
     });
 

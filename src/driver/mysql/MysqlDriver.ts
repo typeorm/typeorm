@@ -120,6 +120,7 @@ export class MysqlDriver implements Driver {
         "longblob",
         "longtext",
         "enum",
+        "set",
         "binary",
         "varbinary",
         // json data type
@@ -459,6 +460,9 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") {
             return "" + value;
+
+        } else if (columnMetadata.type === "set") {
+            return DateUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -498,6 +502,8 @@ export class MysqlDriver implements Driver {
             && columnMetadata.enum.indexOf(parseInt(value)) >= 0) {
             // convert to number if that exists in possible enum options
             value = parseInt(value);
+        } else if (columnMetadata.type === "set") {
+            value = DateUtils.stringToSimpleArray(value);
         }
 
         if (columnMetadata.transformer)
@@ -562,6 +568,10 @@ export class MysqlDriver implements Driver {
 
         if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
             return `'${defaultValue}'`;
+        }
+
+        if ((columnMetadata.type === "set") && defaultValue !== undefined) {
+            return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
         }
 
         if (typeof defaultValue === "number") {

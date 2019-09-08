@@ -179,7 +179,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     } else {
                         switch (result.command) {
                             case "DELETE":
-                                // for DELETE query additionally return number of affected rows
+                            case "UPDATE":
+                                // for UPDATE and DELETE query additionally return number of affected rows
                                 ok([result.rows, result.rowCount]);
                                 break;
                             default:
@@ -1838,7 +1839,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     protected createEnumTypeSql(table: Table, column: TableColumn, enumName?: string): Query {
         if (!enumName)
             enumName = this.buildEnumName(table, column);
-        const enumValues = column.enum!.map(value => `'${value}'`).join(", ");
+        const enumValues = column.enum!.map(value => `'${value.replace("'", "''")}'`).join(", ");
         return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`);
     }
 

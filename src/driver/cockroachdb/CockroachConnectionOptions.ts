@@ -33,4 +33,11 @@ export interface CockroachConnectionOptions extends BaseConnectionOptions, Cockr
 
     };
 
+
+    /*
+    * Function handling errors thrown by drivers pool.
+    * Defaults to logging error with `warn` level.
+     */
+    readonly poolErrorHandler?: (err: any) => any;
+
 }
