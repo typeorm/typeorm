@@ -16,6 +16,7 @@ const sourcemaps = require("gulp-sourcemaps");
 const istanbul = require("gulp-istanbul");
 const remapIstanbul = require("remap-istanbul/lib/gulpRemapIstanbul");
 const ts = require("gulp-typescript");
+const typedoc = require("gulp-typedoc");
 const args = require("yargs").argv;
 
 @Gulpclass()
@@ -48,6 +49,25 @@ export class Gulpfile {
     compile() {
         return gulp.src("package.json", { read: false })
             .pipe(shell(["npm run compile"]));
+    }
+
+    /**
+     * Generates reference documentation.
+     */
+    @Task()
+    docs() {
+        return gulp.src(["src/**/*.ts"])
+            .pipe(typedoc({
+                mode: "file",
+                readme: "none",
+                tsconfig: "./tsconfig.json",
+
+                // TODO: Why do we get a handful of errors at all?
+                ignoreCompilerErrors: true,
+
+                // TODO: Where should this go?
+                out: "./docs/ref"
+            }));
     }
 
     // -------------------------------------------------------------------------
