@@ -424,9 +424,18 @@ export class PostgresDriver implements Driver {
             if (typeof value === "string") {
                 return value;
             } else {
-                return Object.keys(value).map(key => {
-                    return `"${key}"=>"${value[key]}"`;
-                }).join(", ");
+                // https://www.postgresql.org/docs/9.0/hstore.html
+                const quoteString = (value: unknown) => {
+                    // If a string to be quoted is `null` or `undefined`, we return a literal unquoted NULL.
+                    // This way, NULL values can be stored in the hstore object.
+                    if (value === null || typeof value === "undefined") {
+                        return "NULL";
+                    }
+                    // Convert non-null values to string since HStore only stores strings anyway.
+                    // To include a double quote or a backslash in a key or value, escape it with a backslash.
+                    return `"${`${value}`.replace(/(?=["\\])/g, "\\")}"`;
+                };
+                return Object.keys(value).map(key => quoteString(key) + "=>" + quoteString(value[key])).join(",");
             }
 
         } else if (columnMetadata.type === "simple-array") {
@@ -476,13 +485,13 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
-                const regexp = /"(.*?)"=>"(.*?[^\\"])"/gi;
-                const matchValue = value.match(regexp);
+                const unescapeString = (str: string) => str.replace(/\\./g, (m) => m[1]);
+                const regexp = /"([^"\\]*(?:\\.[^"\\]*)*)"=>(?:(NULL)|"([^"\\]*(?:\\.[^"\\]*)*)")(?:,|$)/g;
                 const object: ObjectLiteral = {};
-                let match;
-                while (match = regexp.exec(matchValue)) {
-                    object[match[1].replace(`\\"`, `"`)] = match[2].replace(`\\"`, `"`);
-                }
+                `${value}`.replace(regexp, (_, key, nullValue, stringValue) => {
+                    object[unescapeString(key)] = nullValue ? null : unescapeString(stringValue);
+                    return "";
+                });
                 return object;
 
             } else {
