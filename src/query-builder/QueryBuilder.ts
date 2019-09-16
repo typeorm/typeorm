@@ -565,27 +565,45 @@ export abstract class QueryBuilder<Entity> {
      * Replaces all entity's propertyName to name in the given statement.
      */
     protected replacePropertyNames(statement: string) {
-        this.expressionMap.aliases.forEach(alias => {
-            if (!alias.hasMetadata) return;
-            const replaceAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? alias.name + "\\." : "";
-            const replacementAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? this.escape(alias.name) + "." : "";
-            alias.metadata.columns.forEach(column => {
-                const expression = "([ =\(]|^.{0})" + replaceAliasNamePrefix + column.propertyPath + "([ =\)\,]|.{0}$)";
-                statement = statement.replace(new RegExp(expression, "gm"), "$1" + replacementAliasNamePrefix + this.escape(column.databaseName) + "$2");
-                const expression2 = "([ =\(]|^.{0})" + replaceAliasNamePrefix + column.propertyName + "([ =\)\,]|.{0}$)";
-                statement = statement.replace(new RegExp(expression2, "gm"), "$1" + replacementAliasNamePrefix + this.escape(column.databaseName) + "$2");
-            });
-            alias.metadata.relations.forEach(relation => {
-                [...relation.joinColumns, ...relation.inverseJoinColumns].forEach(joinColumn => {
-                    const expression = "([ =\(]|^.{0})" + replaceAliasNamePrefix + relation.propertyPath + "\\." + joinColumn.referencedColumn!.propertyPath + "([ =\)\,]|.{0}$)";
-                    statement = statement.replace(new RegExp(expression, "gm"), "$1" + replacementAliasNamePrefix + this.escape(joinColumn.databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
-                });
-                if (relation.joinColumns.length > 0) {
-                    const expression = "([ =\(]|^.{0})" + replaceAliasNamePrefix + relation.propertyPath + "([ =\)\,]|.{0}$)";
-                    statement = statement.replace(new RegExp(expression, "gm"), "$1" + replacementAliasNamePrefix + this.escape(relation.joinColumns[0].databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
+        for (const alias of this.expressionMap.aliases) {
+            if (!alias.hasMetadata) continue;
+            const replaceAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? `${alias.name}\\.` : "";
+            const replacementAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? `${this.escape(alias.name)}.` : "";
+
+            const replacements: { [key: string]: ColumnMetadata } = {};
+
+            for (const column of alias.metadata.columns) {
+                if (!(column.propertyPath in replacements))
+                    replacements[column.propertyPath] = column;
+                if (!(column.propertyName in replacements))
+                    replacements[column.propertyName] = column;
+            }
+
+            for (const relation of alias.metadata.relations) {
+                for (const joinColumn of [...relation.joinColumns, ...relation.inverseJoinColumns]) {
+                    const key =
+                        `${relation.propertyPath}.${
+                        joinColumn.referencedColumn!.propertyPath}`;
+                    if (!(key in replacements))
+                        replacements[key] = joinColumn;
                 }
-            });
-        });
+                if (relation.joinColumns.length > 0 && !(relation.propertyPath in replacements))
+                    replacements[relation.propertyPath] = relation.joinColumns[0];
+            }
+
+            const replacementKeys = Object.keys(replacements)
+                .map(k => k.replace(/\./g, "\\."));
+            if (replacementKeys.length) {
+                statement = statement.replace(new RegExp(
+                    `([ =\(]|^.{0})${replaceAliasNamePrefix}(${
+                    replacementKeys.join("|")})([ =\)\,]|.{0}$)`,
+                    "gm"
+                ), (_, pre, p, post) =>
+                    `${pre}${replacementAliasNamePrefix}${this.escape(replacements[p].databaseName)}${post}`
+                );
+            }
+        }
+
         return statement;
     }
 
