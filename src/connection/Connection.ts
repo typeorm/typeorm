@@ -517,7 +517,7 @@ export class Connection {
         const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
         ObjectUtils.assign(this, { migrations: migrations });
 
-        if(!Boolean(this.driver.database)) {
+        if (!Boolean(this.driver.database)) {
             this.driver.database = <string> this.options.database;
         }
 
