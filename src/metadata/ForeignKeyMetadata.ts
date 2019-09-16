@@ -106,7 +106,7 @@ export class ForeignKeyMetadata {
         this.columnNames = this.columns.map(column => column.databaseName);
         this.referencedColumnNames = this.referencedColumns.map(column => column.databaseName);
         this.referencedTablePath = this.referencedEntityMetadata.tablePath;
-        this.name = namingStrategy.foreignKeyName(this.entityMetadata.tablePath, this.columnNames);
+        this.name = namingStrategy.foreignKeyName(this.entityMetadata.tablePath, this.columnNames, this.referencedTablePath, this.referencedColumnNames);
     }
 
 }

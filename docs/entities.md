@@ -294,7 +294,7 @@ or
 `bit`, `int`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `float`, `double`,
 `double precision`, `dec`, `decimal`, `numeric`, `fixed`, `bool`, `boolean`, `date`, `datetime`,
 `timestamp`, `time`, `year`, `char`, `nchar`, `national char`, `varchar`, `nvarchar`, `national varchar`,
-`text`, `tinytext`, `mediumtext`, `blob`, `longtext`, `tinyblob`, `mediumblob`, `longblob`, `enum`,
+`text`, `tinytext`, `mediumtext`, `blob`, `longtext`, `tinyblob`, `mediumblob`, `longblob`, `enum`, `set`,
 `json`, `binary`, `varbinary`, `geometry`, `point`, `linestring`, `polygon`, `multipoint`, `multilinestring`,
 `multipolygon`, `geometrycollection`
 
@@ -390,6 +390,52 @@ export class User {
 }
 ```
 
+### `set` column type
+
+`set` column type is supported by `mariadb` and `mysql`. There are various possible column definitions:
+
+Using typescript enums:
+```typescript
+export enum UserRole {
+    ADMIN = "admin",
+    EDITOR = "editor",
+    GHOST = "ghost"
+}
+
+@Entity()
+export class User {
+
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column({
+        type: "set",
+        enum: UserRole,
+        default: [UserRole.GHOST, UserRole.EDITOR]
+    })
+    roles: UserRole[]
+
+}
+```
+
+Using array with `set` values:
+```typescript
+export type UserRoleType = "admin" | "editor" | "ghost",
+
+@Entity()
+export class User {
+
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column({
+        type: "set",
+        enum: ["admin", "editor", "ghost"],
+        default: ["ghost", "editor"]
+    })
+    roles: UserRoleType[]
+}
+```
 
 ### `simple-array` column type
 

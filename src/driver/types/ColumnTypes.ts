@@ -161,6 +161,7 @@ export type SimpleColumnType =
 
     // other types
     |"enum" // mysql, postgres
+    |"set" // mysql
     |"cidr" // postgres
     |"inet" // postgres, cockroachdb
     |"macaddr"// postgres

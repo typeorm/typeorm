@@ -304,7 +304,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         // rename foreign key constraints
         newTable.foreignKeys.forEach(foreignKey => {
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames);
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
         });
 
         // rename indices
@@ -384,7 +384,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 changedTable.findColumnForeignKeys(changedColumnSet.oldColumn).forEach(fk => {
                     fk.columnNames.splice(fk.columnNames.indexOf(changedColumnSet.oldColumn.name), 1);
                     fk.columnNames.push(changedColumnSet.newColumn.name);
-                    fk.name = this.connection.namingStrategy.foreignKeyName(changedTable, fk.columnNames);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(changedTable, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
                 });
 
                 changedTable.findColumnIndices(changedColumnSet.oldColumn).forEach(index => {
@@ -848,7 +848,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 const columnNames = ownForeignKeys.map(dbForeignKey => dbForeignKey["from"]);
                 const referencedColumnNames = ownForeignKeys.map(dbForeignKey => dbForeignKey["to"]);
                 // build foreign key name, because we can not get it directly.
-                const fkName = this.connection.namingStrategy.foreignKeyName(table, columnNames);
+                const fkName = this.connection.namingStrategy.foreignKeyName(table, columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
 
                 return new TableForeignKey({
                     name: fkName,
@@ -975,7 +975,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
                 if (!fk.name)
-                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
 
                 let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES "${fk.referencedTableName}" (${referencedColumnNames})`;

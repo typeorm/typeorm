@@ -1,4 +1,4 @@
-# ormconfig.json
+# Using Configuration Sources
 
   - [Creating a new connection from the configuration file](#creating-a-new-connection-from-the-configuration-file)
   - [Using `ormconfig.json`](#using-ormconfigjson)

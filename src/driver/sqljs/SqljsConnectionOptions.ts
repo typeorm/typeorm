@@ -16,6 +16,11 @@ export interface SqljsConnectionOptions extends BaseConnectionOptions {
     readonly database?: Uint8Array;
 
     /**
+     * Config that's used to initialize sql.js.
+     */
+    readonly sqlJsConfig?: any;
+
+    /**
      * Enables the autoSave mechanism which either saves to location
      * or calls autoSaveCallback every time a change to the database is made.
      */

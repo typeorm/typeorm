@@ -220,7 +220,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     }
 
     /**
-     * Adds additional ON CONFLICT statement supported in postgres.
+     * Adds additional ON CONFLICT statement supported in postgres and cockroach.
      */
     onConflict(statement: string): this {
         this.expressionMap.onConflict = statement;
@@ -249,7 +249,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
       if (statement && statement.overwrite instanceof Array) {
         if (this.connection.driver instanceof MysqlDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = VALUES(${column})`).join(", ");
-        } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver) {
+        } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = EXCLUDED.${column}`).join(", ");
         }
       }
@@ -300,7 +300,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 query += ` DEFAULT VALUES`;
             }
         }
-        if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver) {
+        if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
           query += `${this.expressionMap.onIgnore ? " ON CONFLICT DO NOTHING " : ""}`;
           query += `${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
           if (this.expressionMap.onUpdate) {

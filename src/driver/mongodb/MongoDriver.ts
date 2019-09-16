@@ -192,7 +192,8 @@ export class MongoDriver implements Driver {
         "auto_reconnect",
         "minSize",
         "monitorCommands",
-        "useNewUrlParser"
+        "useNewUrlParser",
+        "useUnifiedTopology"
     ];
 
     // -------------------------------------------------------------------------

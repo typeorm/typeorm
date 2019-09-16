@@ -346,49 +346,6 @@ export class User {
 }
 ```
 
-### `simple-array` column type
-
-`postgres`和`mysql`支持`enum`列类型。 有多种列定义方式：
-
-使用 typescript 枚举:
-
-```typescript
-export enum UserRole {
-    ADMIN = "admin",
-    EDITOR = "editor"
-    GHOST = "ghost"
-}
- @Entity()
-export class User {
-     @PrimaryGeneratedColumn()
-    id: number;
-     @Column({
-        type: "enum",
-        enum: UserRole,
-        default: UserRole.GHOST
-    })
-    role: UserRole
- }
-```
-
-> 注意：支持字符串，数字和异构枚举。
-> 使用带枚举值的数组：
-
-```typescript
-export type UserRoleType = "admin" | "editor" | "ghost",
- @Entity()
-export class User {
-     @PrimaryGeneratedColumn()
-    id: number;
-     @Column({
-        type: "enum",
-        enum: ["admin", "editor", "ghost"],
-        default: "ghost"
-    })
-    role: UserRoleType
-}
-```
-
 ### `simple-array`的列类型
 
 有一种称为`simple-array`的特殊列类型，它可以将原始数组值存储在单个字符串列中。

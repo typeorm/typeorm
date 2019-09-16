@@ -60,7 +60,7 @@ export interface NamingStrategyInterface {
     /**
      * Gets the name of the foreign key.
      */
-    foreignKeyName(tableOrName: Table|string, columnNames: string[]): string;
+    foreignKeyName(tableOrName: Table|string, columnNames: string[], referencedTablePath?: string, referencedColumnNames?: string[]): string;
 
     /**
      * Gets the name of the index - simple and compose index.
