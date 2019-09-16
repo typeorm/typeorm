@@ -517,7 +517,9 @@ export class Connection {
         const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
         ObjectUtils.assign(this, { migrations: migrations });
 
-        this.driver.database = <string> this.options.database;
+        if(!Boolean(this.driver.database)) {
+            this.driver.database = <string> this.options.database;
+        }
 
         // validate all created entity metadatas to make sure user created entities are valid and correct
         entityMetadataValidator.validateMany(this.entityMetadatas.filter(metadata => metadata.tableType !== "view"), this.driver);
