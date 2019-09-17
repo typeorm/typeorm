@@ -25,6 +25,11 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                 default: "default",
                 describe: "Indicates if transaction should be used or not for migration revert. Enabled by default."
             })
+            .option("until", {
+                alias: "until",
+                default: null,
+                describe: "Revert all migrations run after migration with given name."
+            })
             .option("f", {
                 alias: "config",
                 default: "ormconfig",
@@ -55,7 +60,15 @@ export class MigrationRevertCommand implements yargs.CommandModule {
             const options = {
                 transaction: args["t"] === "false" ? false : true
             };
-            await connection.undoLastMigration(options);
+            if (args["until"]) {
+                await connection.undoMigrationsUntil({
+                    ...options,
+                    name: String(args["until"]),
+                });
+            } else {
+                await connection.undoLastMigration(options);
+            }
+
             await connection.close();
 
         } catch (err) {

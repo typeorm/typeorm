@@ -247,6 +247,84 @@ export class MigrationExecutor {
         }
     }
 
+    async undoMigrationsUntil(options: { name: string }): Promise<Migration[] | void> {
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+
+        // create migrations table if its not created yet
+        await this.createMigrationsTableIfNotExist(queryRunner);
+
+        // get all migrations that are executed and saved in the database
+        const executedMigrations = await this.loadExecutedMigrations(queryRunner);
+
+        // get migration to which we should revert
+        let targetMigration = executedMigrations.find(migration => migration.name === options.name);
+
+        // if no migration found in the database then nothing to revert
+        if (!targetMigration) {
+            this.connection.logger.logSchemaBuild(`No migration with name ${options.name} was found in the database. Nothing to revert!`);
+            return;
+        }
+
+
+        // get all user's migrations in the source code
+        const allMigrations = this.getMigrations();
+
+        const migrationsToRevert = executedMigrations
+            .filter(migration => migration.id! > targetMigration!.id!)
+            .map(migration => allMigrations.find(migrationSource => migrationSource.name === migration.name));
+
+        if (migrationsToRevert.some(migration => !migration)) {
+            this.connection.logger.logSchemaBuild(`Some migrations was found in the database but not in the sourcecode!`);
+            return;
+        }
+
+        if (!migrationsToRevert.length) {
+            this.connection.logger.logSchemaBuild(`No migrations run after migration with name ${options.name} was found in the database. Nothing to revert!`);
+            return;
+        }
+
+        // log information about migration execution
+        this.connection.logger.logSchemaBuild(`${executedMigrations.length} migrations are already loaded in the database.`);
+        this.connection.logger.logSchemaBuild(`${migrationsToRevert.length} will be reverted.`);
+        this.connection.logger.logSchemaBuild(`Now reverting it...`);
+
+        // start transaction if its not started yet
+        let transactionStartedByUs = false;
+        if (this.transaction && !queryRunner.isTransactionActive) {
+            await queryRunner.startTransaction();
+            transactionStartedByUs = true;
+        }
+
+        try {
+            await migrationsToRevert.reduceRight(async (acc, migrationToRevert) => {
+                await acc;
+                await migrationToRevert!.instance!.down(queryRunner);
+                await this.deleteExecutedMigration(queryRunner, migrationToRevert!);
+                this.connection.logger.logSchemaBuild(`Migration ${migrationToRevert!.name} has been reverted successfully.`);
+            }, Promise.resolve());
+
+            // commit transaction if we started it
+            if (transactionStartedByUs)
+                await queryRunner.commitTransaction();
+
+            return this.loadExecutedMigrations(queryRunner);
+        } catch (err) { // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try { // we throw original error even if rollback thrown an error
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+
+            throw err;
+
+        } finally {
+
+            // if query runner was created by us then release it
+            if (!this.queryRunner)
+                await queryRunner.release();
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -354,9 +432,9 @@ export class MigrationExecutor {
             values["timestamp"] = migration.timestamp;
             values["name"] = migration.name;
         }
-        if (this.connection.driver instanceof MongoDriver) {  
+        if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);               
+            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.insert()
@@ -382,7 +460,7 @@ export class MigrationExecutor {
 
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).deleteOne(conditions);               
+            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).deleteOne(conditions);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.delete()

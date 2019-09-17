@@ -306,6 +306,22 @@ export class Connection {
     }
 
     /**
+     * Reverts all migrations run after migration having specified name
+     * Can be used only after connection to the database is established.
+     */
+    async undoMigrationsUntil(options: { transaction?: boolean, name: string }): Promise<Migration[] | void> {
+
+        if (!this.isConnected)
+            throw new CannotExecuteNotConnectedError(this.name);
+
+        const migrationExecutor = new MigrationExecutor(this);
+        if (options && options.transaction === false) {
+            migrationExecutor.transaction = false;
+        }
+        return migrationExecutor.undoMigrationsUntil(options);
+    }
+
+    /**
      * Lists all migrations and whether they have been run.
      * Returns true if there are pending migrations
      */
