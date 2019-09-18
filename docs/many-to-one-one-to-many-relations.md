@@ -56,7 +56,7 @@ This example will produce following tables:
 +-------------+--------------+----------------------------+
 | id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
 | url         | varchar(255) |                            |
-| userId      | int(11)      |                            |
+| userId      | int(11)      | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 
 +-------------+--------------+----------------------------+
