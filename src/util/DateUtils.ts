@@ -118,7 +118,7 @@ export class DateUtils {
     }
 
     /**
-     * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss" format.
+     * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss.sss" format.
      */
     static mixedDateToUtcDatetimeString(value: Date|any): string|any {
         if (typeof value === "string") {
