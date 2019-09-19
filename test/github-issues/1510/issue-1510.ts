@@ -22,8 +22,8 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
         }
     });
 
-    const UserWithoutObjectIDEntity = new EntitySchema<any>({
-        name: "UserWithoutObjectID",
+    const UserWithoutObjectIdEntity = new EntitySchema<any>({
+        name: "UserWithoutObjectId",
         tableName: "test_1510_users2",
         columns: {
             _id: {
@@ -40,7 +40,7 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
     let connections: Connection[];
     before(async () => {
         return connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}", UserEntity, UserWithoutObjectIDEntity],
+            entities: [__dirname + "/entity/*{.js,.ts}", UserEntity, UserWithoutObjectIdEntity],
             enabledDrivers: ["mongodb"]
         });
     });
@@ -48,7 +48,7 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
     after(() => closeTestingConnections(connections));
 
     it("throws an error because there is no object id defined", () => Promise.all(connections.map(async connection => {
-        const repo = connection.getRepository("UserWithoutObjectID");
+        const repo = connection.getRepository("UserWithoutObjectId");
 
         try {
             await repo.insert({

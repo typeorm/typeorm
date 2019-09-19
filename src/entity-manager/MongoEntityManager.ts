@@ -29,7 +29,7 @@ import {
     MongoCountPreferences,
     MongodbIndexOptions,
     MongoError,
-    ObjectID,
+    ObjectId,
     OrderedBulkOperation,
     ParallelCollectionScanOptions,
     ReadPreference,
@@ -137,7 +137,8 @@ export class MongoEntityManager extends EntityManager {
     async findByIds<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string, ids: any[], optionsOrConditions?: FindManyOptions<Entity> | Partial<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        const mongodb = PlatformTools.load("mongodb");
+        const objectIdInstance = mongodb.ObjectId || mongodb.ObjectID;
         query["_id"] = {
             $in: ids.map(id => {
                 if (id instanceof objectIdInstance)
@@ -165,9 +166,10 @@ export class MongoEntityManager extends EntityManager {
      * Finds first entity that matches given conditions and/or find options.
      */
     async findOne<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string,
-                          optionsOrConditions?: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOneOptions<Entity> | DeepPartial<Entity>,
+                          optionsOrConditions?: string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[] | FindOneOptions<Entity> | DeepPartial<Entity>,
                           maybeOptions?: FindOneOptions<Entity>): Promise<Entity | undefined> {
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        const mongodb = PlatformTools.load("mongodb");
+        const objectIdInstance = mongodb.ObjectId || mongodb.ObjectID;
         const id = (optionsOrConditions instanceof objectIdInstance) || typeof optionsOrConditions === "string" ? optionsOrConditions : undefined;
         const findOneOptionsOrConditions = (id ? maybeOptions : optionsOrConditions) as any;
         const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(findOneOptionsOrConditions) || {};
@@ -220,7 +222,7 @@ export class MongoEntityManager extends EntityManager {
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      */
-    async update<Entity>(target: ObjectType<Entity> | EntitySchema<Entity> | string, criteria: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindConditions<Entity>, partialEntity: QueryDeepPartialEntity<Entity>): Promise<UpdateResult> {
+    async update<Entity>(target: ObjectType<Entity> | EntitySchema<Entity> | string, criteria: string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[] | FindConditions<Entity>, partialEntity: QueryDeepPartialEntity<Entity>): Promise<UpdateResult> {
         if (criteria instanceof Array) {
             await Promise.all((criteria as any[]).map(criteriaItem => {
                 return this.update(target, criteriaItem, partialEntity);
@@ -240,7 +242,7 @@ export class MongoEntityManager extends EntityManager {
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
      */
-    async delete<Entity>(target: ObjectType<Entity> | EntitySchema<Entity> | string, criteria: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindConditions<Entity>): Promise<DeleteResult> {
+    async delete<Entity>(target: ObjectType<Entity> | EntitySchema<Entity> | string, criteria: string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[] | FindConditions<Entity>): Promise<DeleteResult> {
         if (criteria instanceof Array) {
             await Promise.all((criteria as any[]).map(criteriaItem => {
                 return this.delete(target, criteriaItem);
@@ -640,7 +642,8 @@ export class MongoEntityManager extends EntityManager {
         }
 
         // means idMap is just object id
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        const mongodb = PlatformTools.load("mongodb");
+        const objectIdInstance = mongodb.ObjectId || mongodb.ObjectID;
         return {
             "_id": (idMap instanceof objectIdInstance) ? idMap : new objectIdInstance(idMap)
         };

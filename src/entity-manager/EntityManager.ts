@@ -27,7 +27,7 @@ import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupportedError";
 import {QueryDeepPartialEntity} from "../query-builder/QueryPartialEntity";
 import {EntityPersistExecutor} from "../persistence/EntityPersistExecutor";
-import {ObjectID} from "../driver/mongodb/typings";
+import {ObjectId} from "../driver/mongodb/typings";
 import {InsertResult} from "../query-builder/result/InsertResult";
 import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
@@ -495,7 +495,7 @@ export class EntityManager {
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
-    update<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|any, partialEntity: QueryDeepPartialEntity<Entity>): Promise<UpdateResult> {
+    update<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectId|ObjectId[]|any, partialEntity: QueryDeepPartialEntity<Entity>): Promise<UpdateResult> {
 
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (criteria === undefined ||
@@ -533,7 +533,7 @@ export class EntityManager {
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
-    delete<Entity>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|any): Promise<DeleteResult> {
+    delete<Entity>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectId|ObjectId[]|any): Promise<DeleteResult> {
 
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (criteria === undefined ||
@@ -768,17 +768,17 @@ export class EntityManager {
     /**
      * Finds first entity that matches given find options.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>, id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+    findOne<Entity>(entityClass: ObjectType<Entity>, id?: string|number|Date|ObjectId, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given find options.
      */
-    findOne<Entity>(entityClass: EntitySchema<Entity>, id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+    findOne<Entity>(entityClass: EntitySchema<Entity>, id?: string|number|Date|ObjectId, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given find options.
      */
-    findOne<Entity>(entityClass: string, id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+    findOne<Entity>(entityClass: string, id?: string|number|Date|ObjectId, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given find options.
@@ -813,7 +813,7 @@ export class EntityManager {
     /**
      * Finds first entity that matches given conditions.
      */
-    async findOne<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|any, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+    async findOne<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectId|ObjectId[]|FindOneOptions<Entity>|any, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
 
         let findOptions: FindManyOptions<any>|FindOneOptions<any>|undefined = undefined;
         if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions)) {
@@ -859,17 +859,17 @@ export class EntityManager {
     /**
      * Finds first entity that matches given find options or rejects the returned promise on error.
      */
-    findOneOrFail<Entity>(entityClass: ObjectType<Entity>, id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity>;
+    findOneOrFail<Entity>(entityClass: ObjectType<Entity>, id?: string|number|Date|ObjectId, options?: FindOneOptions<Entity>): Promise<Entity>;
 
     /**
      * Finds first entity that matches given find options or rejects the returned promise on error.
      */
-    findOneOrFail<Entity>(entityClass: EntitySchema<Entity>, id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity>;
+    findOneOrFail<Entity>(entityClass: EntitySchema<Entity>, id?: string|number|Date|ObjectId, options?: FindOneOptions<Entity>): Promise<Entity>;
 
     /**
      * Finds first entity that matches given find options or rejects the returned promise on error.
      */
-    findOneOrFail<Entity>(entityClass: string, id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity>;
+    findOneOrFail<Entity>(entityClass: string, id?: string|number|Date|ObjectId, options?: FindOneOptions<Entity>): Promise<Entity>;
 
     /**
      * Finds first entity that matches given find options or rejects the returned promise on error.
@@ -904,7 +904,7 @@ export class EntityManager {
     /**
      * Finds first entity that matches given conditions or rejects the returned promise on error.
      */
-    async findOneOrFail<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|any, maybeOptions?: FindOneOptions<Entity>): Promise<Entity> {
+    async findOneOrFail<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectId|ObjectId[]|FindOneOptions<Entity>|any, maybeOptions?: FindOneOptions<Entity>): Promise<Entity> {
         return this.findOne<Entity>(entityClass as any, idOrOptionsOrConditions as any, maybeOptions).then((value) => {
             if (value === undefined) {
                 return Promise.reject(new EntityNotFoundError(entityClass, idOrOptionsOrConditions));
