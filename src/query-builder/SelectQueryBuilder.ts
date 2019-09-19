@@ -151,7 +151,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             this.setParameters(subQueryBuilder.getParameters());
             this.expressionMap.selects.push({ selection: subQueryBuilder.getQuery(), aliasName: selectionAliasName });
 
-        } else if (selection) {
+        } else {
             this.expressionMap.selects.push({ selection: selection, aliasName: selectionAliasName });
         }
 
