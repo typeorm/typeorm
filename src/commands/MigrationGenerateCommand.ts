@@ -5,6 +5,7 @@ import {createConnection} from "../index";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {camelCase} from "../util/StringUtils";
 import * as yargs from "yargs";
+import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 const chalk = require("chalk");
 
 /**
@@ -79,7 +80,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
             // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
             // we are using simple quoted string instead of template string syntax
-            if (connection.driver instanceof MysqlDriver) {
+            if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver) {
                 sqlInMemory.upQueries.forEach(upQuery => {
                     upSqls.push("        await queryRunner.query(\"" + upQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
                 });

@@ -15,6 +15,7 @@ import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../index";
+import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -70,7 +71,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             const result = await queryRunner.query(sql, parameters);
 
             const driver = queryRunner.connection.driver;
-            if (driver instanceof MysqlDriver) {
+            if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver) {
                 deleteResult.raw = result;
                 deleteResult.affected = result.affectedRows;
 

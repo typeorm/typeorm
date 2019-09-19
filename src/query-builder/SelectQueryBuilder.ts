@@ -34,6 +34,7 @@ import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
+import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1560,7 +1561,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             if (offset)
                 return prefix + " OFFSET " + offset + " ROWS";
 
-        } else if (this.connection.driver instanceof MysqlDriver) {
+        } else if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
 
             if (limit && offset)
                 return " LIMIT " + limit + " OFFSET " + offset;
@@ -1606,7 +1607,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const driver = this.connection.driver;
         switch (this.expressionMap.lockMode) {
             case "pessimistic_read":
-                if (driver instanceof MysqlDriver) {
+                if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver) {
                     return " LOCK IN SHARE MODE";
 
                 } else if (driver instanceof PostgresDriver) {
@@ -1622,7 +1623,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     throw new LockNotSupportedOnGivenDriverError();
                 }
             case "pessimistic_write":
-                if (driver instanceof MysqlDriver || driver instanceof PostgresDriver || driver instanceof OracleDriver) {
+                if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver || driver instanceof PostgresDriver || driver instanceof OracleDriver) {
                     return " FOR UPDATE";
 
                 } else if (driver instanceof SqlServerDriver) {
@@ -1680,7 +1681,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
             let selectionPath = this.escape(aliasName) + "." + this.escape(column.databaseName);
             if (this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                if (this.connection.driver instanceof MysqlDriver)
+                if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
                     selectionPath = `AsText(${selectionPath})`;
 
                 if (this.connection.driver instanceof PostgresDriver)

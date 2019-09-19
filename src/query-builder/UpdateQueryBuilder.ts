@@ -21,6 +21,7 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
+import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -361,6 +362,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const updateColumnAndValues: string[] = [];
         const newParameters: ObjectLiteral = {};
         let parametersCount =   this.connection.driver instanceof MysqlDriver ||
+                                this.connection.driver instanceof AuroraDataApiDriver ||
                                 this.connection.driver instanceof OracleDriver ||
                                 this.connection.driver instanceof AbstractSqliteDriver
             ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
@@ -399,6 +401,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }
 
                         if (this.connection.driver instanceof MysqlDriver ||
+                            this.connection.driver instanceof AuroraDataApiDriver ||
                             this.connection.driver instanceof OracleDriver ||
                             this.connection.driver instanceof AbstractSqliteDriver) {
                             newParameters[paramName] = value;
@@ -407,7 +410,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }
 
                         let expression = null;
-                        if (this.connection.driver instanceof MysqlDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                        if ((this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             expression = `GeomFromText(${this.connection.driver.createParameter(paramName, parametersCount)})`;
                         } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             if (column.srid != null) {
@@ -443,6 +446,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     //     value = new ArrayParameter(value);
 
                     if (this.connection.driver instanceof MysqlDriver ||
+                        this.connection.driver instanceof AuroraDataApiDriver ||
                         this.connection.driver instanceof OracleDriver ||
                         this.connection.driver instanceof AbstractSqliteDriver) {
                         newParameters[key] = value;
@@ -463,6 +467,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // we re-write parameters this way because we want our "UPDATE ... SET" parameters to be first in the list of "nativeParameters"
         // because some drivers like mysql depend on order of parameters
         if (this.connection.driver instanceof MysqlDriver ||
+            this.connection.driver instanceof AuroraDataApiDriver ||
             this.connection.driver instanceof OracleDriver ||
             this.connection.driver instanceof AbstractSqliteDriver) {
             this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
@@ -510,7 +515,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         let limit: number|undefined = this.expressionMap.limit;
 
         if (limit) {
-            if (this.connection.driver instanceof MysqlDriver) {
+            if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
                 return " LIMIT " + limit;
             } else {
                 throw new LimitOnUpdateNotSupportedError();
