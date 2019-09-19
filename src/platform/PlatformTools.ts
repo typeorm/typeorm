@@ -122,6 +122,8 @@ export class PlatformTools {
                 case "glob":
                     return require("glob");
 
+                case "typeorm-aurora-data-api-driver":
+                    return require("typeorm-aurora-data-api-driver");
                 /**
                 * default
                 */
