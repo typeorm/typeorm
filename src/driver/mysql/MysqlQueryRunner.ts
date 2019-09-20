@@ -21,6 +21,7 @@ import {ColumnType, PromiseUtils} from "../../index";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import { VersionUtils } from "../../util/VersionUtils";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -1243,6 +1244,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             return [];
 
         const isMariaDb = this.driver.options.type === "mariadb";
+        const dbVersion = await this.getVersion();
 
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
@@ -1290,8 +1292,16 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         || (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")) {
                         tableColumn.default = undefined;
 
+                    } else if (/^CURRENT_TIMESTAMP(\([0-9]*\))?$/i.test(dbColumn["COLUMN_DEFAULT"])) {
+                        // New versions of MariaDB return expressions in lowercase.  We need to set it in
+                        // uppercase so the comparison in MysqlDriver#compareDefaultValues does not fail.
+                        tableColumn.default = dbColumn["COLUMN_DEFAULT"].toUpperCase();
+                    } else if (isMariaDb && VersionUtils.isGreaterOrEqual(dbVersion, "10.2.7")) {
+                        // MariaDB started adding quotes to literals in COLUMN_DEFAULT since version 10.2.7
+                        // See https://mariadb.com/kb/en/library/information-schema-columns-table/
+                        tableColumn.default = dbColumn["COLUMN_DEFAULT"];
                     } else {
-                        tableColumn.default = dbColumn["COLUMN_DEFAULT"] === "CURRENT_TIMESTAMP" ? dbColumn["COLUMN_DEFAULT"] : `'${dbColumn["COLUMN_DEFAULT"]}'`;
+                        tableColumn.default = `'${dbColumn["COLUMN_DEFAULT"]}'`;
                     }
 
                     if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
@@ -1657,6 +1667,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += ` ON UPDATE ${column.onUpdate}`;
 
         return c;
+    }
+
+    protected async getVersion(): Promise<string> {
+        const result = await this.query(`SELECT VERSION() AS \`version\``);
+        return result[0]["version"];
     }
 
 }
