@@ -20,4 +20,10 @@ export interface AuroraDataApiConnectionOptions extends BaseConnectionOptions, A
     readonly resourceArn: string;
 
     readonly database: string;
+
+    /**
+     * Use spatial functions like GeomFromText and AsText which are removed in MySQL 8.
+     * (Default: true)
+     */
+    readonly legacySpatialSupport?: boolean;
 }

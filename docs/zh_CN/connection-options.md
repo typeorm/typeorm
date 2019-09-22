@@ -98,6 +98,8 @@
 
 - `multipleStatements` - 每个查询允许多个 mysql 语句。请注意，它可能会增加 SQL 注入攻击的范围。 （默认值：`false`）
 
+- `legacySpatialSupport` - Use spatial functions like GeomFromText and AsText which are removed in MySQL 8. (Default: true)
+
 - `flags` - 使用非默认连接标志的连接标志列表。也可以将默认值列入黑名单。有关更多信息，请查看[Connection Flags](https://github.com/mysqljs/mysql#connection-flags)。
 
 - `ssl` - 带有 ssl 参数的对象或包含 ssl 配置文件名称的字符串。请参阅[SSL 选项](https://github.com/mysqljs/mysql#ssl-options)。

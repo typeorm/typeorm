@@ -154,6 +154,8 @@ Slight performance penalty for most calls. (Default: `true`)
 * `multipleStatements` - Allow multiple mysql statements per query. Be careful with this, it could increase the scope 
 of SQL injection attacks. (Default: `false`)
 
+* `legacySpatialSupport` - Use spatial functions like GeomFromText and AsText which are removed in MySQL 8. (Default: true)
+
 * `flags` - List of connection flags to use other than the default ones. It is also possible to blacklist default ones.
  For more information, check [Connection Flags](https://github.com/mysqljs/mysql#connection-flags).
  

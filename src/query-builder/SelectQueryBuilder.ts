@@ -1681,8 +1681,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
             let selectionPath = this.escape(aliasName) + "." + this.escape(column.databaseName);
             if (this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
-                    selectionPath = `AsText(${selectionPath})`;
+                if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
+                    const useLegacy = this.connection.driver.options.legacySpatialSupport;
+                    const asText = useLegacy ? "AsText" : "ST_AsText";
+                    selectionPath = `${asText}(${selectionPath})`;
+                }
 
                 if (this.connection.driver instanceof PostgresDriver)
                     // cast to JSON to trigger parsing in the driver
