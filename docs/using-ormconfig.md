@@ -142,7 +142,7 @@ If your app has multiple connections then use alternative configuration storage 
 
 If you need to pass a driver-specific option, e.g. `charset` for MySQL, you could use the `TYPEORM_DRIVER_EXTRA` variable in JSON format, e.g.
 ```
-TYPEORM_DRIVER_EXTRA='{"charset": "utf8mb4"}'`
+TYPEORM_DRIVER_EXTRA='{"charset": "utf8mb4"}'
 ```
 ## Using `ormconfig.yml`
 
