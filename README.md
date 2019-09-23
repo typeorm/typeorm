@@ -31,7 +31,7 @@ that help you to develop any kind of application that uses databases - from
 small applications with a few tables to large scale enterprise applications
 with multiple databases.
 
-TypeORM supports both Active Record and Data Mapper patterns,
+TypeORM supports both [Active Record](active-record-data-mapper.md#what-is-the-active-record-pattern) and [Data Mapper](active-record-data-mapper.md#what-is-the-data-mapper-pattern) patterns,
 unlike all other JavaScript ORMs currently in existence,
 which means you can write high quality, loosely coupled, scalable,
 maintainable applications the most productive way.
@@ -41,7 +41,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
 Some TypeORM features:
 
-* supports both DataMapper and ActiveRecord (your choice)
+* supports both [DataMapper](active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice)
 * entities and columns
 * database-specific column types
 * entity manager
