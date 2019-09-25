@@ -9,7 +9,7 @@ import {Question} from "./model/Question";
 import {Blog} from "./entity/Blog";
 import {Category} from "./entity/Category";
 import {DeepPartial} from "../../../../src/common/DeepPartial";
-import {EntitySchema} from "../../../../src";
+import {EntitySchema, OldEntityFactory} from "../../../../src";
 
 describe("repository > basic methods", () => {
 
@@ -27,6 +27,7 @@ describe("repository > basic methods", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [Post, Blog, Category, UserEntity, QuestionEntity],
+        entityFactory:  new OldEntityFactory()
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
