@@ -3,21 +3,18 @@ import {expect} from "chai";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
+import { OldEntityFactory } from '../../../src';
 
-describe("entity-factory > custom entity factory", () => {
+describe("entity-factory > old entity factory", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [Post],
         /**
-         * Defining a custom entity factory that initializes entity by
-         * calling its constructor.
+         * Using the old entity factory that creates entities by
+         * calling constructors.
          */
-        entityFactory: {
-            createEntity(target: Function) {
-                return new (<any> target)();
-            }
-        },
+        entityFactory: new OldEntityFactory(),
         dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
