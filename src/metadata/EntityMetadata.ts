@@ -509,8 +509,7 @@ export class EntityMetadata {
         // if target is set to a function (e.g. class) that can be created then create it
         let ret: any;
         if (this.target instanceof Function) {
-            ret = {};
-            Reflect.setPrototypeOf(ret, this.target.prototype);
+            ret = this.connection.entityFactory.createEntity(this.target)
             this.lazyRelations.forEach(relation => this.connection.relationLoader.enableLazyLoad(relation, ret, queryRunner));
             return ret;
         }
