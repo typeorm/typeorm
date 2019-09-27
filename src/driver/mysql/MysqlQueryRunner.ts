@@ -1265,7 +1265,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     const columnUniqueIndex = dbIndices.find(dbIndex => {
                         return this.driver.buildTableName(dbIndex["TABLE_NAME"], undefined, dbIndex["TABLE_SCHEMA"]) === tableFullName
-                            && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] && dbIndex["NON_UNIQUE"] === 0;
+                            && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] && dbIndex["NON_UNIQUE"] == 0;
                     });
 
                     const tableMetadata = this.connection.entityMetadatas.find(metadata => metadata.tablePath === table.name);
@@ -1388,7 +1388,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     table: table,
                     name: constraint["INDEX_NAME"],
                     columnNames: indices.map(i => i["COLUMN_NAME"]),
-                    isUnique: constraint["NON_UNIQUE"] === 0,
+                    isUnique: constraint["NON_UNIQUE"] == 0,
                     isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
                     isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT"
                 });
