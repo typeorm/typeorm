@@ -1217,8 +1217,18 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
                 .map(dbColumn => {
 
                     const columnUniqueIndex = dbIndices.find(dbIndex => {
-                        return this.driver.buildTableName(dbIndex["TABLE_NAME"], undefined, dbIndex["TABLE_SCHEMA"]) === tableFullName
-                            && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] && dbIndex["NON_UNIQUE"] === "0";
+                        const indexTableFullName = this.driver.buildTableName(dbIndex["TABLE_NAME"], undefined, dbIndex["TABLE_SCHEMA"]);
+                        if (indexTableFullName !== tableFullName) {
+                            return false;
+                        }
+
+                        // Index is not for this column
+                        if (dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"]) {
+                            return false;
+                        }
+
+                        const nonUnique = parseInt(dbIndex["NON_UNIQUE"], 10);
+                        return nonUnique === 0;
                     });
 
                     const tableMetadata = this.connection.entityMetadatas.find(metadata => metadata.tablePath === table.name);
@@ -1336,11 +1346,14 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
                         && index["TABLE_NAME"] === constraint["TABLE_NAME"]
                         && index["INDEX_NAME"] === constraint["INDEX_NAME"];
                 });
+
+                const nonUnique = parseInt(constraint["NON_UNIQUE"], 10);
+
                 return new TableIndex(<TableIndexOptions>{
                     table: table,
                     name: constraint["INDEX_NAME"],
                     columnNames: indices.map(i => i["COLUMN_NAME"]),
-                    isUnique: constraint["NON_UNIQUE"] === "0",
+                    isUnique: nonUnique === 0,
                     isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
                     isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT"
                 });
