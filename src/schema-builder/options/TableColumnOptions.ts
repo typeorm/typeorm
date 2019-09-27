@@ -114,6 +114,11 @@ export interface TableColumnOptions {
     enum?: string[];
 
     /**
+     * Exact name of enum
+     */
+    enumName?: string;
+
+    /**
      * Generated column expression. Supports only in MySQL.
      */
     asExpression?: string;
