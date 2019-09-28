@@ -39,4 +39,14 @@ export interface TableIndexOptions {
      */
     where?: string;
 
+    /**
+     * The PG_TEXT_SEARCH_INDEX modifier creates an index to improve the performance of full text searches.
+     * Works only in PostgreSQL.
+     * https://www.postgresql.org/docs/10/textsearch-indexes.html
+     */
+    pgTextSearchIndex?: {
+        indexType: "GIN" | "GIST";
+        operator?: string;
+    };
+
 }
