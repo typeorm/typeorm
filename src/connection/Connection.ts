@@ -517,10 +517,26 @@ export class Connection {
         const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
         ObjectUtils.assign(this, { migrations: migrations });
 
-        this.driver.database = <string> this.options.database;
+        this.driver.database = this.getDatabaseName();
 
         // validate all created entity metadatas to make sure user created entities are valid and correct
         entityMetadataValidator.validateMany(this.entityMetadatas.filter(metadata => metadata.tableType !== "view"), this.driver);
     }
+
+    // This database name property is nested for replication configs.
+    protected getDatabaseName(): string {
+    const options = this.options;
+    switch (options.type) {
+        case "mysql" :
+        case "mariadb" :
+        case "postgres":
+        case "cockroachdb":
+        case "mssql":
+        case "oracle":
+            return (options.replication ? options.replication.master.database : options.database) as string;
+        default:
+            return options.database as string;
+    }
+}
 
 }
