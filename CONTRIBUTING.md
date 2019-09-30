@@ -14,7 +14,7 @@ As a contributor, here are the guidelines we would like you to follow:
 There are several ways how you can ask your question:
 
 * You can create a question on [StackOverflow](https://stackoverflow.com/questions/tagged/typeorm) where the questions should be tagged with tag `typeorm`.
-* You can ask on [Slack](https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTFiNDEyOGUxZGQyYWIwOTA0NDQxODdkOGQ0OTUxNzFjYjUwY2E0ZmFlODc5OTYyYzAzNGM3MGZjYzhjYTBiZTY)
+* You can ask on [Slack](https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTUxNTZhM2Q4NDNhMjMzNjQ2NGM1ZjI1ZGRkNjJjYzI4OTZjMGYyYTc0MzAxYTdjMWE3ZDIxOWUzZTdlM2QxNTY)
 * You can create issue on [github](https://github.com/typeorm/typeorm/issues)
 * If you have a Skype then try to find me there (`Umed Khudoiberdiev`)
 
