@@ -130,8 +130,8 @@ To create a spatial index on a column in PostgreSQL, add an `Index` with `spatia
 @Entity()
 export class Thing {
     @Column("geometry", {
-      spatialFeatureType: "Point",
-      srid: 4326
+        spatialFeatureType: "Point",
+        srid: 4326
     })
     @Index({ spatial: true })
     point: Geometry;

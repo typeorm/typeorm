@@ -16,7 +16,7 @@ export interface IndexOptions {
 
     /**
      * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
-     * Works only in MySQL.
+     * Works only in MySQL and Postgres.
      */
     fulltext?: boolean;
 
