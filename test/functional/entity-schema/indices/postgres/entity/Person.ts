@@ -25,10 +25,7 @@ export const PersonSchema = new EntitySchema<any>({
     indices: [
         {
             name: "text_search_index",
-            pgTextSearchIndex: {
-                indexType: "GIN",
-                operator: "gin_trgm_ops"
-            },
+            fulltext: true,
             columns: [
                 "FirstName"
             ]

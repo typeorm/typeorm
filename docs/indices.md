@@ -138,23 +138,6 @@ export class Thing {
 }
 ```
 
-## GiST and GIN Index Types
-
-PostgreSQL (when pg_trgm is available) supports GiST and GIN Index Types to improve the performance of full text searches.
-
-https://www.postgresql.org/docs/9.1/textsearch-indexes.html
-
-```typescript
-@Entity()
-export class Event {
-    @Column("name")
-    @Index("trgm_idx_event_name", {
-        pgTextSearchIndex: { indexType: "GIN", operator: "gin_trgm_ops" }
-    })
-    name: string;
-}
-```
-
 ## Disabling synchronization
 
 TypeORM does not support some index options and definitions (e.g. `lower`, `pg_trgm`) because of lot of different database specifics and multiple

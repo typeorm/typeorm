@@ -1856,7 +1856,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapePath(table)} ${index.pgTextSearchIndex ? `USING ${index.pgTextSearchIndex.indexType}` : ""} ${index.isSpatial ? "USING GiST " : ""}(${columns} ${index.pgTextSearchIndex && index.pgTextSearchIndex.operator || ""}) ${index.where ? "WHERE " + index.where : ""}`);
+        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapePath(table)} ${index.isFulltext ? `USING GIN` : ""} ${index.isSpatial ? "USING GiST " : ""}(${columns} ${index.isFulltext ? `gin_trgm_ops` : ""}) ${index.where ? "WHERE " + index.where : ""}`);
     }
 
     /**

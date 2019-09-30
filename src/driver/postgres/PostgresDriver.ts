@@ -312,7 +312,7 @@ export class PostgresDriver implements Driver {
             return metadata.exclusions.length > 0;
         });
         const hasFullTextSearchIndex = this.connection.entityMetadatas.some(metadata => {
-            return metadata.indices.filter(index => !!index.pgTextSearchIndex).length > 0;
+            return metadata.indices.filter(index => !!index.isFulltext).length > 0;
         });
 
         if (hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns || hasCubeColumns || hasExclusionConstraints || hasFullTextSearchIndex) {

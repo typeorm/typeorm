@@ -32,18 +32,8 @@ export class TableIndex {
     isSpatial: boolean;
 
     /**
-     * The PG_TEXT_SEARCH_INDEX modifier creates an index to improve the performance of full text searches.
-     * Works only in PostgreSQL.
-     * https://www.postgresql.org/docs/10/textsearch-indexes.html
-     */
-    pgTextSearchIndex?: {
-        indexType: "GIN" | "GIST";
-        operator?: string;
-    };
-
-    /**
      * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
-     * Works only in MySQL.
+     * Works only in MySQL and Postgres.
      */
     isFulltext: boolean;
 
@@ -63,7 +53,6 @@ export class TableIndex {
         this.isSpatial = !!options.isSpatial;
         this.isFulltext = !!options.isFulltext;
         this.where = options.where ? options.where : "";
-        this.pgTextSearchIndex = options.pgTextSearchIndex;
     }
 
     // -------------------------------------------------------------------------
@@ -80,8 +69,7 @@ export class TableIndex {
             isUnique: this.isUnique,
             isSpatial: this.isSpatial,
             isFulltext: this.isFulltext,
-            where: this.where,
-            pgTextSearchIndex: this.pgTextSearchIndex
+            where: this.where
         });
     }
 
@@ -99,8 +87,7 @@ export class TableIndex {
             isUnique: indexMetadata.isUnique,
             isSpatial: indexMetadata.isSpatial,
             isFulltext: indexMetadata.isFulltext,
-            where: indexMetadata.where,
-            pgTextSearchIndex: indexMetadata.pgTextSearchIndex
+            where: indexMetadata.where
         });
     }
 

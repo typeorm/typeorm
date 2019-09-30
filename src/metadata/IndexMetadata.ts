@@ -35,18 +35,8 @@ export class IndexMetadata {
     isSpatial: boolean = false;
 
     /**
-     * The PG_TEXT_SEARCH_INDEX modifier creates an index to improve the performance of full text searches.
-     * Works only in PostgreSQL.
-     * https://www.postgresql.org/docs/10/textsearch-indexes.html
-     */
-    pgTextSearchIndex?: {
-        indexType: "GIN" | "GIST";
-        operator?: string;
-    };
-
-    /**
      * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
-     * Works only in MySQL.
+     * Works only in MySQL and Postgres.
      */
     isFulltext: boolean = false;
 
@@ -140,7 +130,6 @@ export class IndexMetadata {
             this.expireAfterSeconds = options.args.expireAfterSeconds;
             this.givenName = options.args.name;
             this.givenColumnNames = options.args.columns;
-            this.pgTextSearchIndex = options.args.pgTextSearchIndex;
         }
     }
 
