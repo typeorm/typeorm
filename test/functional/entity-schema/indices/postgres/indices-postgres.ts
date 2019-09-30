@@ -20,7 +20,7 @@ describe("entity-schema > indices > postgres", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should correctly create GiST/GIN indices", () =>
+    it("should correctly create a FULLTEXT index", () =>
         Promise.all(
             connections.map(async connection => {
                 const expectedIndex = `CREATE INDEX text_search_index ON public.person USING gin ("FirstName" gin_trgm_ops)`;
