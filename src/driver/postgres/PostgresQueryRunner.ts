@@ -1,4 +1,4 @@
-import {PromiseUtils} from "../../";
+import {PromiseUtils, getMetadataArgsStorage} from "../../";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
@@ -1428,6 +1428,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!dbTables.length)
             return [];
 
+        
+        const fullTextIndices = getMetadataArgsStorage().indices.filter(index => !!index.fulltext);
+
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
@@ -1636,6 +1639,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         && index["table_name"] === constraint["table_name"]
                         && index["constraint_name"] === constraint["constraint_name"];
                 });
+
                 return new TableIndex(<TableIndexOptions>{
                     table: table,
                     name: constraint["constraint_name"],
@@ -1643,7 +1647,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     isUnique: constraint["is_unique"] === "TRUE",
                     where: constraint["condition"],
                     isSpatial: indices.every(i => this.driver.spatialTypes.indexOf(i["type_name"]) >= 0),
-                    isFulltext: false
+                    isFulltext: fullTextIndices.findIndex(index => index.name === constraint["constraint_name"]) > -1
                 });
             });
 
