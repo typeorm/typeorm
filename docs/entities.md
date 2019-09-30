@@ -98,7 +98,7 @@ If you want to set a base prefix for all database tables in your application you
 
 When using an entity constructor its arguments **must be optional**. Since ORM creates instances of entity classes when loading from the database, therefore it is not aware of your constructor arguments.
 
-Learn more about parameters @Entity in [Decorators reference](decorator-reference.md).
+Learn more about parameters `@Entity` in [Decorators reference](decorator-reference.md).
 
 ## Entity columns
 
