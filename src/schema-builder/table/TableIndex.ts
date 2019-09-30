@@ -80,7 +80,8 @@ export class TableIndex {
             isUnique: this.isUnique,
             isSpatial: this.isSpatial,
             isFulltext: this.isFulltext,
-            where: this.where
+            where: this.where,
+            pgTextSearchIndex: this.pgTextSearchIndex
         });
     }
 

@@ -194,6 +194,7 @@ export class EntitySchemaTransformer {
                         fulltext: index.fulltext === true ? true : false,
                         synchronize: index.synchronize === false ? false : true,
                         where: index.where,
+                        pgTextSearchIndex: index.pgTextSearchIndex,
                         sparse: index.sparse,
                         columns: index.columns
                     };
