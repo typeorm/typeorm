@@ -1,4 +1,4 @@
-import {PromiseUtils, getMetadataArgsStorage} from "../../";
+import {PromiseUtils} from "../../";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
