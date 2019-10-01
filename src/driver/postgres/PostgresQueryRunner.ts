@@ -1378,7 +1378,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             `LEFT JOIN "pg_attribute" "a" ON "a"."attrelid" = "cnst"."conrelid" AND "a"."attnum" = ANY ("cnst"."conkey") ` +
             `WHERE "t"."relkind" = 'r' AND (${constraintsCondition})`;
 
-        const indicesSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
+        const indicesSql = `SELECT "ns"."nspname" AS "table_schema", "pg_am"."amname" AS "access_method", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
             `"types"."typname" AS "type_name" ` +
             `FROM "pg_class" "t" ` +
@@ -1388,6 +1388,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
             `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
+            `LEFT JOIN "pg_am" ON "pg_am"."oid" = "i"."relam" ` +
             `WHERE "t"."relkind" = 'r' AND "cnst"."contype" IS NULL AND (${constraintsCondition})`;
 
         const foreignKeysCondition = tableNames.map(tableName => {
@@ -1427,9 +1428,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         // if tables were not found in the db, no need to proceed
         if (!dbTables.length)
             return [];
-
-        
-        const fullTextIndices = getMetadataArgsStorage().indices.filter(index => !!index.fulltext);
 
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
@@ -1647,7 +1645,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     isUnique: constraint["is_unique"] === "TRUE",
                     where: constraint["condition"],
                     isSpatial: indices.every(i => this.driver.spatialTypes.indexOf(i["type_name"]) >= 0),
-                    isFulltext: fullTextIndices.findIndex(index => index.name === constraint["constraint_name"]) > -1
+                    isFulltext: typeof constraint["access_method"] === "string" && constraint["access_method"] === "gin"
                 });
             });
 
