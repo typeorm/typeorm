@@ -378,6 +378,7 @@ export class QueryExpressionMap {
         const map = new QueryExpressionMap(this.connection);
         map.queryType = this.queryType;
         map.selects = this.selects.map(select => select);
+        map.selectDistinct = this.selectDistinct;
         this.aliases.forEach(alias => map.aliases.push(new Alias(alias)));
         map.mainAlias = this.mainAlias;
         map.valuesSet = this.valuesSet;
