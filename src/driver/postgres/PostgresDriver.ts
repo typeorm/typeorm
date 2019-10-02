@@ -445,7 +445,10 @@ export class PostgresDriver implements Driver {
             return DateUtils.simpleJsonToString(value);
 
         } else if (columnMetadata.type === "cube") {
-            return `(${value.join(", ")})`;
+            if (columnMetadata.isArray) {
+                return `{${value.map((cube: number[]) => `"(${cube.join(",")})"`).join(",")}}`
+            }
+            return `(${value.join(",")})`;
 
         } else if (
             (
@@ -505,7 +508,39 @@ export class PostgresDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value);
 
         } else if (columnMetadata.type === "cube") {
-            value = value.replace(/[\(\)\s]+/g, "").split(",").filter(Boolean).map(Number);
+            value = value.replace(/[\(\)\s]+/g, ""); // remove whitespace
+            if (columnMetadata.isArray) {
+                /**
+                 * Strips these groups from `{"(1,2,3)","()",NULL}`:
+                 * 1. ["1,2,3", undefined]  <- cube of arity 3
+                 * 2. ["", undefined]         <- cube of arity 0
+                 * 3. [undefined, "NULL"]     <- NULL
+                 */
+                const regexp = /(?:(?:\"\()((?:[\d\s\.,])*)(?:\)\"))|(?:(NULL))/g;
+                const unparsedArrayString = value;
+
+                value = [];
+                let cube: RegExpExecArray | null = null;
+                // Iterate through all regexp matches for cubes/null in array
+                while (true) {
+                    cube = regexp.exec(unparsedArrayString);
+                    console.log({cube})
+                    if (!cube) {
+                        break;
+                    }
+
+                    if (cube[1] === undefined) {
+                        if (cube[2] === "NULL") {
+                            value.push(undefined);
+                            continue;
+                        }
+                    } else {
+                        value.push(cube[1].split(",").filter(Boolean).map(Number));
+                    }
+                }
+            } else {
+                value = value.split(",").filter(Boolean).map(Number);
+            }
 
         } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum" ) {
             if (columnMetadata.isArray) {

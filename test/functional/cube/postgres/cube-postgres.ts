@@ -28,10 +28,18 @@ describe("cube-postgres", () => {
                 expect(schema).not.to.be.undefined;
                 const cubeColumn = schema!.columns.find(
                     tableColumn =>
-                        tableColumn.name === "color" &&
-                        tableColumn.type === "cube"
+                        tableColumn.name === "mainColor" &&
+                        tableColumn.type === "cube" &&
+                        !tableColumn.isArray
                 );
                 expect(cubeColumn).to.not.be.undefined;
+                const cubeArrayColumn = schema!.columns.find(
+                    tableColumn =>
+                        tableColumn.name === "colors" &&
+                        tableColumn.type === "cube" &&
+                        tableColumn.isArray
+                );
+                expect(cubeArrayColumn).to.not.be.undefined;
             })
         ));
 
@@ -41,11 +49,11 @@ describe("cube-postgres", () => {
                 const color = [255, 0, 0];
                 const postRepo = connection.getRepository(Post);
                 const post = new Post();
-                post.color = color;
+                post.mainColor = color;
                 const persistedPost = await postRepo.save(post);
                 const foundPost = await postRepo.findOne(persistedPost.id);
                 expect(foundPost).to.exist;
-                expect(foundPost!.color).to.deep.equal(color);
+                expect(foundPost!.mainColor).to.deep.equal(color);
             })
         ));
 
@@ -56,17 +64,17 @@ describe("cube-postgres", () => {
                 const color2 = [0, 255, 0];
                 const postRepo = connection.getRepository(Post);
                 const post = new Post();
-                post.color = color;
+                post.mainColor = color;
                 const persistedPost = await postRepo.save(post);
 
                 await postRepo.update(
                     { id: persistedPost.id },
-                    { color: color2 }
+                    { mainColor: color2 }
                 );
 
                 const foundPost = await postRepo.findOne(persistedPost.id);
                 expect(foundPost).to.exist;
-                expect(foundPost!.color).to.deep.equal(color2);
+                expect(foundPost!.mainColor).to.deep.equal(color2);
             })
         ));
 
@@ -77,15 +85,15 @@ describe("cube-postgres", () => {
                 const color2 = [0, 255, 0];
                 const postRepo = connection.getRepository(Post);
                 const post = new Post();
-                post.color = color;
+                post.mainColor = color;
                 const persistedPost = await postRepo.save(post);
 
-                persistedPost.color = color2;
+                persistedPost.mainColor = color2;
                 await postRepo.save(persistedPost);
 
                 const foundPost = await postRepo.findOne(persistedPost.id);
                 expect(foundPost).to.exist;
-                expect(foundPost!.color).to.deep.equal(color2);
+                expect(foundPost!.mainColor).to.deep.equal(color2);
             })
         ));
 
@@ -95,11 +103,11 @@ describe("cube-postgres", () => {
                 const color: number[] = [];
                 const postRepo = connection.getRepository(Post);
                 const post = new Post();
-                post.color = color;
+                post.mainColor = color;
                 const persistedPost = await postRepo.save(post);
                 const foundPost = await postRepo.findOne(persistedPost.id);
                 expect(foundPost).to.exist;
-                expect(foundPost!.color).to.deep.equal(color);
+                expect(foundPost!.mainColor).to.deep.equal(color);
             })
         ));
 
@@ -111,20 +119,34 @@ describe("cube-postgres", () => {
                 const color3 = [255, 255, 255];
 
                 const post1 = new Post();
-                post1.color = color1;
+                post1.mainColor = color1;
                 const post2 = new Post();
-                post2.color = color2;
+                post2.mainColor = color2;
                 const post3 = new Post();
-                post3.color = color3;
+                post3.mainColor = color3;
                 await connection.manager.save([post1, post2, post3]);
 
                 const posts = await connection.manager
                     .createQueryBuilder(Post, "post")
-                    .orderBy("color <-> '(0, 255, 0)'", "DESC")
+                    .orderBy("\"mainColor\" <-> '(0, 255, 0)'", "DESC")
                     .getMany();
 
                 const postIds = posts.map(post => post.id);
                 expect(postIds).to.deep.equal([post1.id, post3.id, post2.id]);
+            })
+        ));
+
+    it("should persist cube array correctly", () =>
+        Promise.all(
+            connections.map(async connection => {
+                const colors = [[255, 0, 0], [255, 255, 0]];
+                const postRepo = connection.getRepository(Post);
+                const post = new Post();
+                post.colors = colors;
+                const persistedPost = await postRepo.save(post);
+                const foundPost = await postRepo.findOne(persistedPost.id);
+                expect(foundPost).to.exist;
+                expect(foundPost!.colors).to.deep.equal(colors);
             })
         ));
 });
