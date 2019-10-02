@@ -1,5 +1,3 @@
-// import "reflect-metadata";
-
 import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
