@@ -446,7 +446,7 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "cube") {
             if (columnMetadata.isArray) {
-                return `{${value.map((cube: number[]) => `"(${cube.join(",")})"`).join(",")}}`
+                return `{${value.map((cube: number[]) => `"(${cube.join(",")})"`).join(",")}}`;
             }
             return `(${value.join(",")})`;
 
@@ -524,7 +524,6 @@ export class PostgresDriver implements Driver {
                 // Iterate through all regexp matches for cubes/null in array
                 while (true) {
                     cube = regexp.exec(unparsedArrayString);
-                    console.log({cube})
                     if (!cube) {
                         break;
                     }
