@@ -1243,7 +1243,33 @@ The selection result will be ordered by id in descending order.
 The photo's albums will be left-joined and their metadata will be inner joined.
 
 You'll use the query builder in your application a lot.
-Learn more about QueryBuilder [here](./docs/select-query-builder.md).
+Learn more about QueryBuilder [here](./docs/select-query-builder.md).\
+
+
+### Using Transformers
+
+See: https://github.com/typeorm/typeorm/blob/2c34e53bdf5bedd7e73a28066f6ad3089e9d15bb/test/github-issues/3395/entity/Post.ts#L12
+
+Sometimes your data may need to be transformed upon insertion into or reading from your database. You can use transformers to accomplish this at the level of a single record. For example, if data from your API is in JSON format and you need to `JSON.stringify(data)` on insert, and `JSON.parse(data` on read: 
+
+```
+ @Column({
+    type: "varchar",
+    nullable: true,
+    transformer: {
+      // used to deserialize your data from db field value
+      from(val: string) {
+        return JSON.parse(val);
+      },
+      // used to serialize your data to db field
+      to(val: object) {
+        return JSON.stringify(val);
+      }
+    }
+  })
+  column: object;
+  ```
+
 
 ## Samples
 
