@@ -97,6 +97,20 @@ describe("cube-postgres", () => {
             })
         ));
 
+    it("should persist cube of arity 0 correctly", () =>
+        Promise.all(
+            connections.map(async connection => {
+                const color: number[] = [];
+                const postRepo = connection.getRepository(Post);
+                const post = new Post();
+                post.mainColor = color;
+                const persistedPost = await postRepo.save(post);
+                const foundPost = await postRepo.findOne(persistedPost.id);
+                expect(foundPost).to.exist;
+                expect(foundPost!.mainColor).to.deep.equal(color);
+            })
+        ));
+
     it("should be able to order cube by euclidean distance", () =>
         Promise.all(
             connections.map(async connection => {
