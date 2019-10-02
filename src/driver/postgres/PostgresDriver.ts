@@ -516,7 +516,7 @@ export class PostgresDriver implements Driver {
                  * 2. ["", undefined]         <- cube of arity 0
                  * 3. [undefined, "NULL"]     <- NULL
                  */
-                const regexp = /(?:(?:\"\()((?:[\d\s\.,])*)(?:\)\"))|(?:(NULL))/g;
+                const regexp = /(?:(?:\")((?:[\d\s\.,])*)(?:\"))|(?:(NULL))/g;
                 const unparsedArrayString = value;
 
                 value = [];
