@@ -522,19 +522,11 @@ export class PostgresDriver implements Driver {
                 value = [];
                 let cube: RegExpExecArray | null = null;
                 // Iterate through all regexp matches for cubes/null in array
-                while (true) {
-                    cube = regexp.exec(unparsedArrayString);
-                    if (!cube) {
-                        break;
-                    }
-
-                    if (cube[1] === undefined) {
-                        if (cube[2] === "NULL") {
-                            value.push(undefined);
-                            continue;
-                        }
-                    } else {
+                while ((cube = regexp.exec(unparsedArrayString)) !== null) {
+                    if (cube[1] !== undefined) {
                         value.push(cube[1].split(",").filter(Boolean).map(Number));
+                    } else {
+                        value.push(undefined);
                     }
                 }
             } else {
