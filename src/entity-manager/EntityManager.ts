@@ -936,7 +936,7 @@ export class EntityManager {
      */
     async increment<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
                             conditions: any,
-                            propertyPath: string,
+                            propertyPath: Extract<keyof Entity, string> | string,
                             value: number | string): Promise<UpdateResult> {
 
         const metadata = this.connection.getMetadata(entityClass);
@@ -968,7 +968,7 @@ export class EntityManager {
      */
     async decrement<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
                             conditions: any,
-                            propertyPath: string,
+                            propertyPath: Extract<keyof Entity, string> | string,
                             value: number | string): Promise<UpdateResult> {
 
         const metadata = this.connection.getMetadata(entityClass);
