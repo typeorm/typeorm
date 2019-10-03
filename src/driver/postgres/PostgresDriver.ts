@@ -511,12 +511,12 @@ export class PostgresDriver implements Driver {
             value = value.replace(/[\(\)\s]+/g, ""); // remove whitespace
             if (columnMetadata.isArray) {
                 /**
-                 * Strips these groups from `{"(1,2,3)","()",NULL}`:
+                 * Strips these groups from `{"1,2,3","",NULL}`:
                  * 1. ["1,2,3", undefined]  <- cube of arity 3
                  * 2. ["", undefined]         <- cube of arity 0
                  * 3. [undefined, "NULL"]     <- NULL
                  */
-                const regexp = /(?:(?:\")((?:[\d\s\.,])*)(?:\"))|(?:(NULL))/g;
+                const regexp = /(?:\"((?:[\d\s\.,])*)\")|(?:(NULL))/g;
                 const unparsedArrayString = value;
 
                 value = [];
