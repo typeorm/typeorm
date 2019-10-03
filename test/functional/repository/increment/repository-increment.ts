@@ -33,7 +33,7 @@ describe("repository > increment method", () => {
             // increment counter of post 1
             await connection
                 .getRepository(Post)
-                .increment({ id: 1 }, "counter", 1);
+                .increment({ id: 1 }, "counter");
 
             // increment counter of post 2
             await connection
@@ -113,7 +113,7 @@ describe("repository > increment method", () => {
             // increment counter of post 1
             await connection
                 .getRepository(Post)
-                .increment({ id: 1 }, "unknownProperty", 1)
+                .increment({ id: 1 }, "unknownProperty")
                 .should.be.rejected;
 
         })));

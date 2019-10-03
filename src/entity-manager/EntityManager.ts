@@ -937,17 +937,17 @@ export class EntityManager {
     async increment<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
                             conditions: any,
                             propertyPath: Extract<keyof Entity, string> | string,
-                            value: number | string): Promise<UpdateResult> {
+                            value: number | string = 1): Promise<UpdateResult> {
+
+        if (isNaN(Number(value)))
+            throw new Error(`Value "${value}" is not a number.`);
 
         const metadata = this.connection.getMetadata(entityClass);
         const column = metadata.findColumnWithPropertyPath(propertyPath);
         if (!column)
             throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
 
-        if (isNaN(Number(value)))
-            throw new Error(`Value "${value}" is not a number.`);
-
-        // convert possible embeded path "social.likes" into object { social: { like: () => value } }
+        // convert possible embedded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
@@ -969,17 +969,17 @@ export class EntityManager {
     async decrement<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
                             conditions: any,
                             propertyPath: Extract<keyof Entity, string> | string,
-                            value: number | string): Promise<UpdateResult> {
+                            value: number | string = 1): Promise<UpdateResult> {
+
+        if (isNaN(Number(value)))
+            throw new Error(`Value "${value}" is not a number.`);
 
         const metadata = this.connection.getMetadata(entityClass);
         const column = metadata.findColumnWithPropertyPath(propertyPath);
         if (!column)
             throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
 
-        if (isNaN(Number(value)))
-            throw new Error(`Value "${value}" is not a number.`);
-
-        // convert possible embeded path "social.likes" into object { social: { like: () => value } }
+        // convert possible embedded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
