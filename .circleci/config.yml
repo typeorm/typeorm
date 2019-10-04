@@ -10,6 +10,8 @@ executors:
         name: mariadb
         environment:
           MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
           MYSQL_DATABASE: "test"
   mongodb:
     docker:
@@ -28,6 +30,8 @@ executors:
       - image: mysql:5.7.24
         environment:
           MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
           MYSQL_DATABASE: "test"
   oracle:
     docker:
