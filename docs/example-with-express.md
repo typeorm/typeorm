@@ -227,7 +227,7 @@ createConnection().then(connection => {
 
     app.put("/users/:id", async function(req: Request, res: Response) {
         const user = await userRepository.findOne(req.params.id);
-        await userRepository.merge(user, req.body);
+        userRepository.merge(user, req.body);
         const results = await userRepository.save(user);
         return res.send(results);
     });
