@@ -4,9 +4,10 @@ import {createConnection} from "../../../src/index";
 import * as rimraf from "rimraf";
 import {dirname} from "path";
 import {Connection} from "../../../src/connection/Connection";
+import { createTestingConnections, closeTestingConnections } from "../../utils/test-utils";
 
 describe("github issues > #799 sqlite: 'database' path should be created", () => {
-    let connection: Connection;
+    let connections: Connection[];
 
     const path = `${__dirname}/tmp/sqlitedb.db`;
     const cleanup = (done: () => void) => {
@@ -15,23 +16,20 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
         });
     };
 
+    before(async () => connections = await createTestingConnections({ __dirname, enabledDrivers: ["sqlite"] }));
     before(cleanup);
     after(cleanup);
 
-    afterEach(() => {
-        if (connection && connection.isConnected) {
-            connection.close();
-        }
-    });
+    after(() => closeTestingConnections(connections));
 
-    it("should create the whole path to database file", async function () {
+    it("should create the whole path to database file", () => Promise.all(connections.map(async connection => {
         connection = await createConnection({
-            "name": "sqlite",
+            "name": "sqlite-github799",
             "type": "sqlite",
             "database": path
         });
 
         assert.strictEqual(connection.isConnected, true);
-    });
+    })));
 
 });
