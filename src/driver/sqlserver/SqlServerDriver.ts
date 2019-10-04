@@ -380,13 +380,13 @@ export class SqlServerDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToDate(value);
 
-        } else if (columnMetadata.type === "datetime"
-            || columnMetadata.type === "smalldatetime"
-            || columnMetadata.type === Date) {
+        } else if (columnMetadata.type === "smalldatetime") {
             return DateUtils.mixedDateToDate(value, false, false);
 
-        } else if (columnMetadata.type === "datetime2"
-            || columnMetadata.type === "datetimeoffset") {
+        } else if (columnMetadata.type === "datetime"
+            || columnMetadata.type === "datetime2"
+            || columnMetadata.type === "datetimeoffset"
+            || columnMetadata.type === Date) {
             return DateUtils.mixedDateToDate(value, false, true);
 
         } else if (columnMetadata.type === "simple-array") {
