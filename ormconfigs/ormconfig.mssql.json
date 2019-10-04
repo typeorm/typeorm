@@ -1,0 +1,12 @@
+[
+    {
+        "skip": true,
+        "name": "mssql",
+        "type": "mssql",
+        "host": "localhost",
+        "username": "sa",
+        "password": "Admin12345",
+        "database": "tempdb",
+        "logging": false
+      }
+]

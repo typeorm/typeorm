@@ -1,0 +1,13 @@
+[
+    {
+        "skip": true,
+        "name": "mariadb",
+        "type": "mariadb",
+        "host": "localhost",
+        "port": 3307,
+        "username": "test",
+        "password": "test",
+        "database": "test",
+        "logging": false
+      }
+]

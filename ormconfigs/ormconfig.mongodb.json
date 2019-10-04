@@ -1,0 +1,10 @@
+[
+    {
+        "skip": false,
+        "disabledIfNotEnabledImplicitly": true,
+        "name": "mongodb",
+        "type": "mongodb",
+        "database": "test",
+        "logging": false
+      }
+]

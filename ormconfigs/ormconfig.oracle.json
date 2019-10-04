@@ -1,0 +1,13 @@
+[
+    {
+        "skip": true,
+        "name": "oracle",
+        "type": "oracle",
+        "host": "localhost",
+        "username": "system",
+        "password": "oracle",
+        "port": 1521,
+        "sid": "xe.oracle.docker",
+        "logging": false
+      }
+]

@@ -1,0 +1,13 @@
+[
+    {
+        "skip": false,
+        "name": "postgres",
+        "type": "postgres",
+        "host": "localhost",
+        "port": 5432,
+        "username": "test",
+        "password": "test",
+        "database": "test",
+        "logging": false
+      }
+]

@@ -2,8 +2,61 @@
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 version: 2.1
 
+executors:
+  mariadb:
+    docker:
+      - image: circleci/node:10.15.0
+      - image: mariadb:10.1.37
+        name: mariadb
+        environment:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_DATABASE: "test"
+  mongodb:
+    docker:
+      - image: circleci/node:10.15.0
+      - image: circleci/mongo:3.4.18
+  mssql:
+    docker:
+      - image: circleci/node:10.15.0
+      - image: "mcr.microsoft.com/mssql/server:2017-GA-ubuntu"
+        environment:
+          SA_PASSWORD: "Admin12345"
+          ACCEPT_EULA: "Y"
+  mysql:
+    docker:
+      - image: circleci/node:10.15.0
+      - image: mysql:5.7.24
+        environment:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_DATABASE: "test"
+  oracle:
+    docker:
+      - image: circleci/node:10.15.0
+      # TODO oracle is skipped right now - not sure what image to use for the DB
+  postgres:
+    docker:
+      - image: circleci/node:10.15.0
+      - image: circleci/postgres:9.6.11-postgis
+        environment:
+          POSTGRES_USER: "test"
+          POSTGRES_PASSWORD: "test"
+          POSTGRES_DB: "test"
+  sqlite:
+    docker:
+      - image: circleci/node:10.15.0 # sqlite doesn't require another image
+  sqljs:
+    docker:
+      - image: circleci/node:10.15.0 # sqljs doesn't require another image
+
 commands:
-  run-tests:
+  prepare-for-tests:
+    parameters:
+      node_folder:
+        type: enum
+        enum:
+          - node8
+          - node10
+          - node12
     steps:
       - attach_workspace:
           at: ~/typeorm/
@@ -13,21 +66,37 @@ commands:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - ${NODE_VERSION}-v1-dependencies-{{ checksum "package.json" }}
+            - << parameters.node_folder >>-v1-dependencies-{{ checksum "package.json" }}
             # fallback to using the latest cache if no exact match is found
-            - ${NODE_VERSION}-v1-dependencies-
+            - << parameters.node_folder >>-v1-dependencies-
 
       - run: npm install
 
       - save_cache:
           paths:
             - node_modules
-          key: ${NODE_VERSION}-v1-dependencies-{{ checksum "package.json" }}
-
-      # - run: docker-compose up -d
+          key: << parameters.node_folder >>-v1-dependencies-{{ checksum "package.json" }}
 
       # run tests
       - run: npm run lint
+
+  run-db-tests:
+    parameters:
+      database:
+        type: enum
+        enum:
+          - mariadb
+          - mongodb
+          - mssql
+          - mysql
+          - oracle
+          - postgres
+          - sqlite
+          - sqljs
+    steps:
+      - attach_workspace:
+          at: ~/typeorm/
+      - run: cp ormconfigs/ormconfig.<< parameters.database >>.json ormconfig.json
       - run: npm test
 
 jobs:
@@ -74,10 +143,70 @@ jobs:
           POSTGRES_PASSWORD: "test"
           POSTGRES_DB: "test"
       - image: circleci/mongo:3.4.18
-    environment:
-      NODE_VERSION: node8
     steps:
-      - run-tests
+      - prepare-for-tests:
+          node_folder: node8
+      - persist_to_workspace:
+          root: ~/typeorm/
+          paths:
+            - ./node8/
+
+  test-node8-mariadb: &mariadb-template
+    executor: mariadb
+    working_directory: ~/typeorm/node8/
+    steps:
+      - run-db-tests:
+          database: mariadb
+
+  test-node8-mongodb: &mongodb-template
+    executor: mongodb
+    working_directory: ~/typeorm/node8/
+    steps:
+      - run-db-tests:
+          database: mongodb
+
+  test-node8-mssql: &mssql-template
+    executor: mssql
+    working_directory: ~/typeorm/node8/
+    steps:
+      - run-db-tests:
+          database: mssql
+
+  test-node8-mysql: &mysql-template
+    executor: mysql
+    working_directory: ~/typeorm/node8/
+    steps:
+      - run-db-tests:
+          database: mysql
+
+  test-node8-oracle: &oracle-template
+    executor: oracle
+    working_directory: ~/typeorm/node8/
+    steps:
+      - run-db-tests:
+          database: oracle
+
+  test-node8-postgres: &postgres-template
+    executor: postgres
+    working_directory: ~/typeorm/node8/
+    steps:
+      - run-db-tests:
+          database: postgres
+
+  test-node8-sqlite: &sqlite-template
+    executor: sqlite
+    working_directory: ~/typeorm/node8/
+    steps:
+      - run: npm install sqlite3
+      - run-db-tests:
+          database: sqlite
+
+  test-node8-sqljs: &sqljs-template
+    executor: sqljs
+    working_directory: ~/typeorm/node8/
+    steps:
+      - run-db-tests:
+          database: sqljs
 
   test-node10:
     <<: *test-template
@@ -99,8 +228,45 @@ jobs:
           POSTGRES_PASSWORD: "test"
           POSTGRES_DB: "test"
       - image: circleci/mongo:3.4.18
-    environment:
-      NODE_VERSION: node10
+    steps:
+      - prepare-for-tests:
+          node_folder: node8
+      - persist_to_workspace:
+          root: ~/typeorm/
+          paths:
+            - ./node10/
+
+  test-node10-mariadb:
+    <<: *mariadb-template
+    working_directory: ~/typeorm/node10/
+
+  test-node10-mongodb:
+    <<: *mongodb-template
+    working_directory: ~/typeorm/node10/
+
+  test-node10-mssql:
+    <<: *mssql-template
+    working_directory: ~/typeorm/node10/
+
+  test-node10-mysql:
+    <<: *mysql-template
+    working_directory: ~/typeorm/node10/
+
+  test-node10-oracle:
+    <<: *oracle-template
+    working_directory: ~/typeorm/node10/
+
+  test-node10-postgres:
+    <<: *postgres-template
+    working_directory: ~/typeorm/node10/
+
+  test-node10-sqlite:
+    <<: *sqlite-template
+    working_directory: ~/typeorm/node10/
+
+  test-node10-sqljs:
+    <<: *sqljs-template
+    working_directory: ~/typeorm/node10/
 
   test-node12:
     <<: *test-template
@@ -122,20 +288,132 @@ jobs:
           POSTGRES_PASSWORD: "test"
           POSTGRES_DB: "test"
       - image: circleci/mongo:3.4.18
-    environment:
-      NODE_VERSION: node12
+    steps:
+      - prepare-for-tests:
+          node_folder: node8
+      - persist_to_workspace:
+          root: ~/typeorm/
+          paths:
+            - ./node12
+
+  test-node12-mariadb:
+    <<: *mariadb-template
+    working_directory: ~/typeorm/node12/
+
+  test-node12-mongodb:
+    <<: *mongodb-template
+    working_directory: ~/typeorm/node12/
+
+  test-node12-mssql:
+    <<: *mssql-template
+    working_directory: ~/typeorm/node12/
+
+  test-node12-mysql:
+    <<: *mysql-template
+    working_directory: ~/typeorm/node12/
+
+  test-node12-oracle:
+    <<: *oracle-template
+    working_directory: ~/typeorm/node12/
+
+  test-node12-postgres:
+    <<: *postgres-template
+    working_directory: ~/typeorm/node12/
+
+  test-node12-sqlite:
+    <<: *sqlite-template
+    working_directory: ~/typeorm/node12/
+
+  test-node12-sqljs:
+    <<: *sqljs-template
+    working_directory: ~/typeorm/node12/
 
 workflows:
   version: 2
   test:
     jobs:
       - checkout_code
+
       - test-node8:
           requires:
             - checkout_code
+      - test-node8-mariadb:
+          requires:
+            - test-node8
+      - test-node8-mongodb:
+          requires:
+            - test-node8
+      - test-node8-mssql:
+          requires:
+            - test-node8
+      - test-node8-mysql:
+          requires:
+            - test-node8
+      - test-node8-oracle:
+          requires:
+            - test-node8
+      - test-node8-postgres:
+          requires:
+            - test-node8
+      - test-node8-sqlite:
+          requires:
+            - test-node8
+      - test-node8-sqljs:
+          requires:
+            - test-node8
+
       - test-node10:
           requires:
             - checkout_code
+      - test-node10-mariadb:
+          requires:
+            - test-node10
+      - test-node10-mongodb:
+          requires:
+            - test-node10
+      - test-node10-mssql:
+          requires:
+            - test-node10
+      - test-node10-mysql:
+          requires:
+            - test-node10
+      - test-node10-oracle:
+          requires:
+            - test-node10
+      - test-node10-postgres:
+          requires:
+            - test-node10
+      - test-node10-sqlite:
+          requires:
+            - test-node10
+      - test-node10-sqljs:
+          requires:
+            - test-node10
+
       - test-node12:
           requires:
             - checkout_code
+      - test-node12-mariadb:
+          requires:
+            - test-node12
+      - test-node12-mongodb:
+          requires:
+            - test-node12
+      - test-node12-mssql:
+          requires:
+            - test-node12
+      - test-node12-mysql:
+          requires:
+            - test-node12
+      - test-node12-oracle:
+          requires:
+            - test-node12
+      - test-node12-postgres:
+          requires:
+            - test-node12
+      - test-node12-sqlite:
+          requires:
+            - test-node12
+      - test-node12-sqljs:
+          requires:
+            - test-node12
