@@ -1,13 +1,64 @@
 # Javascript Node CircleCI 2.0 configuration file
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
-version: 2
+version: 2.1
+
+commands:
+  run-tests:
+    steps:
+      - attach_workspace:
+          at: ~/typeorm/
+      - run: sudo npm install -g npm@latest
+      - run: cp ormconfig.circleci.json ormconfig.json
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - ${NODE_VERSION}-v1-dependencies-{{ checksum "package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - ${NODE_VERSION}-v1-dependencies-
+
+      - run: npm install
+
+      - save_cache:
+          paths:
+            - node_modules
+          key: ${NODE_VERSION}-v1-dependencies-{{ checksum "package.json" }}
+
+      # - run: docker-compose up -d
+
+      # run tests
+      - run: npm run lint
+      - run: npm test
+
 jobs:
-  build:
-    working_directory: ~/typeorm
+  checkout_code:
     docker:
-      # specify pre-built docker images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
       - image: circleci/node:10.15.0
+    working_directory: ~/typeorm/checkout/
+    steps:
+      - checkout
+      - run:
+          name: Copy source for node versions
+          command: |
+            mkdir ~/typeorm/node8/
+            mkdir ~/typeorm/node10/
+            mkdir ~/typeorm/node12/
+
+            cp -R ~/typeorm/checkout/. ~/typeorm/node8/
+            cp -R ~/typeorm/checkout/. ~/typeorm/node10/
+            cp -R ~/typeorm/checkout/. ~/typeorm/node12/
+      - persist_to_workspace:
+          root: ~/typeorm/
+          paths:
+            - ./checkout/
+            - ./node8/
+            - ./node10/
+            - ./node12
+
+  test-node8: &test-template
+    working_directory: ~/typeorm/node8/
+    docker:
+      - image: circleci/node:8.16.1
       - image: mysql:5.7.24
         environment:
           MYSQL_ROOT_PASSWORD: "admin"
@@ -23,34 +74,68 @@ jobs:
           POSTGRES_PASSWORD: "test"
           POSTGRES_DB: "test"
       - image: circleci/mongo:3.4.18
-      # - image: mcr.microsoft.com/mssql/server:2017-GA-ubuntu
-      #   environment:
-      #     SA_PASSWORD: "Admin12345"
-      #     ACCEPT_EULA: "Y"
-      # - image: cockroachdb/cockroach-unstable:latest
-      #   command: start --insecure
-
+    environment:
+      NODE_VERSION: node8
     steps:
-      - checkout
-      - run: sudo npm install -g npm@latest
-      - run: cp ormconfig.circleci.json ormconfig.json
+      - run-tests
 
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+  test-node10:
+    <<: *test-template
+    working_directory: ~/typeorm/node10/
+    docker:
+      - image: circleci/node:10.16.3
+      - image: mysql:5.7.24
+        environment:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_DATABASE: "test"
+      - image: mariadb:10.1.37
+        name: mariadb
+        environment:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_DATABASE: "test"
+      - image: circleci/postgres:9.6.11-postgis
+        environment:
+          POSTGRES_USER: "test"
+          POSTGRES_PASSWORD: "test"
+          POSTGRES_DB: "test"
+      - image: circleci/mongo:3.4.18
+    environment:
+      NODE_VERSION: node10
 
-      - run: npm install
+  test-node12:
+    <<: *test-template
+    working_directory: ~/typeorm/node12/
+    docker:
+      - image: circleci/node:12.10.0
+      - image: mysql:5.7.24
+        environment:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_DATABASE: "test"
+      - image: mariadb:10.1.37
+        name: mariadb
+        environment:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_DATABASE: "test"
+      - image: circleci/postgres:9.6.11-postgis
+        environment:
+          POSTGRES_USER: "test"
+          POSTGRES_PASSWORD: "test"
+          POSTGRES_DB: "test"
+      - image: circleci/mongo:3.4.18
+    environment:
+      NODE_VERSION: node12
 
-      - save_cache:
-          paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
-
-      # - run: docker-compose up -d
-
-      # run tests
-      - run: npm run lint
-      - run: npm test
+workflows:
+  version: 2
+  test:
+    jobs:
+      - checkout_code
+      - test-node8:
+          requires:
+            - checkout_code
+      - test-node10:
+          requires:
+            - checkout_code
+      - test-node12:
+          requires:
+            - checkout_code
