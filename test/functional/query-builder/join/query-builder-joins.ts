@@ -8,9 +8,10 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Image} from "./entity/Image";
 import {User} from "./entity/User";
+import {Phone} from "./entity/Phone";
 
 describe("query builder > joins", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -185,6 +186,35 @@ describe("query builder > joins", () => {
                 expect(loadedRawPost!["categories_id"]).to.be.equal(1);
             }
 
+        })));
+
+        it("should load correct number of data when ordering by joined entity columns and limiting with take", () => Promise.all(connections.map(async connection => {
+
+            const user1 = new User();
+            user1.id = 1;
+            user1.name = "User1";
+
+            const user2 = new User();
+            user2.id = 2;
+            user2.name = "User2";
+            await connection.manager.save([user1, user2]);
+
+            const phone1 = new Phone();
+            phone1.number = 1;
+            phone1.user = user2;
+
+            const phone2 = new Phone();
+            phone2.number = 2;
+            phone2.user = user2;
+            await connection.manager.save([phone1, phone2]);
+
+            const loadedUsers1 = await connection.manager.createQueryBuilder(User, "user")
+                .leftJoinAndSelect("user.phones", "phone")
+                .orderBy("phone.number", "ASC")
+                .take(2)
+                .getMany();
+
+            expect(loadedUsers1!).to.be.length(2);
         })));
 
     });

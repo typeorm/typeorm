@@ -1789,7 +1789,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // we are skipping order by here because its not working in subqueries anyway
             // to make order by working we need to apply it on a distinct query
-            const [selects, orderBys] = this.createOrderByCombinedWithSelectExpression("distinctAlias");
+            const [, orderBys] = this.createOrderByCombinedWithSelectExpression("distinctAlias");
             const metadata = this.expressionMap.mainAlias.metadata;
             const mainAliasName = this.expressionMap.mainAlias.name;
 
@@ -1803,11 +1803,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
                 .select(`DISTINCT ${querySelects.join(", ")}`)
-                .addSelect(selects)
-                .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")
+                .from(`(${this.clone()
+                    .orderBy(this.expressionMap.allOrderBys)
+                    .getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
-                .orderBy(orderBys)
                 .cache(this.expressionMap.cache ? this.expressionMap.cache : this.expressionMap.cacheId, this.expressionMap.cacheDuration)
                 .setParameters(this.getParameters())
                 .setNativeParameters(this.expressionMap.nativeParameters)
@@ -1876,10 +1876,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     const [aliasName, propertyPath] = orderCriteria.split(".");
                     const alias = this.expressionMap.findAliasByName(aliasName);
                     const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-                    return this.escape(parentAlias) + "." + this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName));
+                    return this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName));
                 } else {
                     if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria))
-                        return this.escape(parentAlias) + "." + orderCriteria;
+                        return orderCriteria;
 
                     return "";
                 }
@@ -1892,10 +1892,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 const [aliasName, propertyPath] = orderCriteria.split(".");
                 const alias = this.expressionMap.findAliasByName(aliasName);
                 const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-                orderByObject[this.escape(parentAlias) + "." + this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName))] = orderBys[orderCriteria];
+                orderByObject[this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName))] = orderBys[orderCriteria];
             } else {
                 if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria)) {
-                    orderByObject[this.escape(parentAlias) + "." + orderCriteria] = orderBys[orderCriteria];
+                    orderByObject[orderCriteria] = orderBys[orderCriteria];
                 } else {
                     orderByObject[orderCriteria] = orderBys[orderCriteria];
                 }
