@@ -1,7 +1,8 @@
+import "reflect-metadata";
 import {expect} from "chai";
-import {Post} from "./entity/Post";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
+import {Post} from "./entity/Post";
 
 describe("github issues > #4842 QueryExpressionMap doesn't clone distinct property", () => {
     let connections: Connection[];
