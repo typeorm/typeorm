@@ -13,7 +13,7 @@ describe("github issues > #4842 QueryExpressionMap doesn't clone distinct proper
     after(() => closeTestingConnections(connections));
 
     it("should contain correct distinct value after query builder is cloned", () => Promise.all(connections.map(async connection => {
-        const query = connection.manager.createQueryBuilder(Post, 'post')
+      const query = connection.manager.createQueryBuilder(Post, "post")
           .distinct()
           .disableEscaping();
         const sqlWithDistinct = query.getSql();
