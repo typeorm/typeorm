@@ -128,7 +128,7 @@ jobs:
             - ./node10/
             - ./node12
 
-  prepare-node8: &test-template
+  prep-node8: &test-template
     working_directory: ~/typeorm/node8/
     docker:
       - image: circleci/node:8.16.1
@@ -197,7 +197,7 @@ jobs:
       - run-db-tests:
           database: sqljs
 
-  prepare-node10:
+  prep-node10:
     <<: *test-template
     working_directory: ~/typeorm/node10/
     docker:
@@ -242,7 +242,7 @@ jobs:
     <<: *sqljs-template
     working_directory: ~/typeorm/node10/
 
-  prepare-node12:
+  prep-node12:
     <<: *test-template
     working_directory: ~/typeorm/node12/
     docker:
@@ -293,86 +293,86 @@ workflows:
     jobs:
       - checkout_code
 
-      - prepare-node8:
+      - prep-node8:
           requires:
             - checkout_code
       - mariadb-node8:
           requires:
-            - prepare-node8
+            - prep-node8
       - mongodb-node8:
           requires:
-            - prepare-node8
+            - prep-node8
       - mssql-node8:
           requires:
-            - prepare-node8
+            - prep-node8
       - mysql-node8:
           requires:
-            - prepare-node8
+            - prep-node8
       - oracle-node8:
           requires:
-            - prepare-node8
+            - prep-node8
       - postgres-node8:
           requires:
-            - prepare-node8
+            - prep-node8
       - sqlite-node8:
           requires:
-            - prepare-node8
+            - prep-node8
       - sqljs-node8:
           requires:
-            - prepare-node8
+            - prep-node8
 
-      - prepare-node10:
+      - prep-node10:
           requires:
             - checkout_code
       - mariadb-node10:
           requires:
-            - prepare-node10
+            - prep-node10
       - mongodb-node10:
           requires:
-            - prepare-node10
+            - prep-node10
       - mssql-node10:
           requires:
-            - prepare-node10
+            - prep-node10
       - mysql-node10:
           requires:
-            - prepare-node10
+            - prep-node10
       - oracle-node10:
           requires:
-            - prepare-node10
+            - prep-node10
       - postgres-node10:
           requires:
-            - prepare-node10
+            - prep-node10
       - sqlite-node10:
           requires:
-            - prepare-node10
+            - prep-node10
       - sqljs-node10:
           requires:
-            - prepare-node10
+            - prep-node10
 
-      - prepare-node12:
+      - prep-node12:
           requires:
             - checkout_code
       - mariadb-node12:
           requires:
-            - prepare-node12
+            - prep-node12
       - mongodb-node12:
           requires:
-            - prepare-node12
+            - prep-node12
       - mssql-node12:
           requires:
-            - prepare-node12
+            - prep-node12
       - mysql-node12:
           requires:
-            - prepare-node12
+            - prep-node12
       - oracle-node12:
           requires:
-            - prepare-node12
+            - prep-node12
       - postgres-node12:
           requires:
-            - prepare-node12
+            - prep-node12
       - sqlite-node12:
           requires:
-            - prepare-node12
+            - prep-node12
       - sqljs-node12:
           requires:
-            - prepare-node12
+            - prep-node12
