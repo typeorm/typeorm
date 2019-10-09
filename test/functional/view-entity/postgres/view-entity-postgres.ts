@@ -6,13 +6,14 @@ import {Connection} from "../../../../src";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Post} from "./entity/Post";
 import {PostCategory} from "./entity/PostCategory";
+import {PostByCategory} from "./entity/PostByCategory";
 
 describe("view entity > postgres", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["postgres", "cockroachdb"]
+        enabledDrivers: ["postgres"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -24,6 +25,31 @@ describe("view entity > postgres", () => {
         expect(postCategory).to.be.exist;
         await queryRunner.release();
 
+    })));
+
+    it("should not return data without refreshing the materialized view", () => Promise.all(connections.map(async connection => {
+        const queryRunner = connection.createQueryRunner();
+
+        const category1 = new Category();
+        category1.name = "Cars";
+        await queryRunner.manager.save(category1);
+
+        const post1 = new Post();
+        post1.name = "About BMW";
+        post1.categoryId = category1.id;
+        await queryRunner.manager.save(post1);
+
+        const emptyResult = await queryRunner.manager.find(PostByCategory);
+        emptyResult.length.should.be.equal(0);
+
+        await queryRunner.query("REFRESH MATERIALIZED VIEW post_by_category");
+        const resultWithData = await queryRunner.manager.find(PostByCategory);
+        resultWithData.length.should.be.equal(1);
+
+        expect(resultWithData[0].categoryName).to.eq(category1.name);
+        expect(Number(resultWithData[0].postCount)).to.eq(1);
+
+        await queryRunner.release();
     })));
 
     it("should correctly return data from View", () => Promise.all(connections.map(async connection => {

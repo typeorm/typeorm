@@ -66,7 +66,7 @@ export class View {
         const options: ViewOptions = {
             name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
             expression: entityMetadata.expression!,
-            materialized: false
+            materialized: entityMetadata.tableMetadataArgs.materialized
         };
 
         return new View(options);

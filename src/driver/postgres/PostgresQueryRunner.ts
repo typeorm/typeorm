@@ -1739,10 +1739,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     protected createViewSql(view: View): Query {
+        const materializedClause = view.materialized ? "MATERIALIZED " : "";
+        const viewName = this.escapePath(view);
+
         if (typeof view.expression === "string") {
-            return new Query(`CREATE VIEW ${this.escapePath(view)} AS ${view.expression}`);
+            return new Query(`CREATE ${materializedClause}VIEW ${viewName} AS ${view.expression}`);
         } else {
-            return new Query(`CREATE VIEW ${this.escapePath(view)} AS ${view.expression(this.connection).getQuery()}`);
+            return new Query(`CREATE ${materializedClause}VIEW ${viewName} AS ${view.expression(this.connection).getQuery()}`);
         }
     }
 
