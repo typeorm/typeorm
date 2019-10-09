@@ -7,6 +7,7 @@ import {CustomRepositoryDoesNotHaveEntityError} from "../error/CustomRepositoryD
 import {getMetadataArgsStorage} from "../index";
 import {CustomRepositoryNotFoundError} from "../error/CustomRepositoryNotFoundError";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import { EntitySchema } from "../entity-schema/EntitySchema";
 
 /**
  * Provides abstract class for custom repositories that do not inherit from original orm Repository.
@@ -99,7 +100,7 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
      * Gets custom repository's managed entity.
      * If given custom repository does not manage any entity then undefined will be returned.
      */
-    private getCustomRepositoryTarget(customRepository: any): Function|string|undefined {
+    private getCustomRepositoryTarget(customRepository: any): Function|string|EntitySchema<any>|undefined {
         const entityRepositoryMetadataArgs = getMetadataArgsStorage().entityRepositories.find(repository => {
             return repository.target === (customRepository instanceof Function ? customRepository : (customRepository as any).constructor);
         });
