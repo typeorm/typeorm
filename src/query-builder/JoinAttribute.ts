@@ -69,14 +69,14 @@ export class JoinAttribute {
         return false;
     }
 
-    
+
     isSelectedCache: boolean;
-    isSelectedEvalueated: boolean = false;
+    isSelectedEvaluated: boolean = false;
     /**
      * Indicates if this join is selected.
      */
     get isSelected(): boolean {
-        if (!this.isSelectedEvalueated) {
+        if (!this.isSelectedEvaluated) {
             let getValue = () => {
                 for (const select of this.queryExpressionMap.selects) {
                     if (select.selection === this.alias.name)
@@ -89,7 +89,7 @@ export class JoinAttribute {
                 return false;
             };
             this.isSelectedCache = getValue();
-            this.isSelectedEvalueated = true;
+            this.isSelectedEvaluated = true;
         }
         return this.isSelectedCache;
 
@@ -130,7 +130,7 @@ export class JoinAttribute {
     }
 
     relationCache: RelationMetadata|undefined;
-    relationEvalueated: boolean = false;
+    relationEvaluated: boolean = false;
     /**
      * Relation of the parent.
      * This is used to understand what is joined.
@@ -138,7 +138,7 @@ export class JoinAttribute {
      * Relation can be undefined if entityOrProperty is regular entity or custom table.
      */
     get relation(): RelationMetadata | undefined {
-        if (!this.relationEvalueated) {
+        if (!this.relationEvaluated) {
             let getValue = () => {
                 if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
                     return undefined;
@@ -160,7 +160,7 @@ export class JoinAttribute {
                 throw new Error(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);
             };
             this.relationCache = getValue.bind(this)();
-            this.relationEvalueated = true;
+            this.relationEvaluated = true;
         }
         return this.relationCache;
     }
