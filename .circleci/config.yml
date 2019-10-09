@@ -140,14 +140,14 @@ jobs:
           paths:
             - ./node8/
 
-  mariadb-node8: &mariadb-template
+  maria-node8: &mariadb-template
     executor: mariadb
     working_directory: ~/typeorm/node8/
     steps:
       - run-db-tests:
           database: mariadb
 
-  mongodb-node8: &mongodb-template
+  mongo-node8: &mongodb-template
     executor: mongodb
     working_directory: ~/typeorm/node8/
     steps:
@@ -175,7 +175,7 @@ jobs:
       - run-db-tests:
           database: oracle
 
-  postgres-node8: &postgres-template
+  pg-node8: &postgres-template
     executor: postgres
     working_directory: ~/typeorm/node8/
     steps:
@@ -210,11 +210,11 @@ jobs:
           paths:
             - ./node10/
 
-  mariadb-node10:
+  maria-node10:
     <<: *mariadb-template
     working_directory: ~/typeorm/node10/
 
-  mongodb-node10:
+  mongo-node10:
     <<: *mongodb-template
     working_directory: ~/typeorm/node10/
 
@@ -230,7 +230,7 @@ jobs:
     <<: *oracle-template
     working_directory: ~/typeorm/node10/
 
-  postgres-node10:
+  pg-node10:
     <<: *postgres-template
     working_directory: ~/typeorm/node10/
 
@@ -255,11 +255,11 @@ jobs:
           paths:
             - ./node12
 
-  mariadb-node12:
+  maria-node12:
     <<: *mariadb-template
     working_directory: ~/typeorm/node12/
 
-  mongodb-node12:
+  mongo-node12:
     <<: *mongodb-template
     working_directory: ~/typeorm/node12/
 
@@ -275,7 +275,7 @@ jobs:
     <<: *oracle-template
     working_directory: ~/typeorm/node12/
 
-  postgres-node12:
+  pg-node12:
     <<: *postgres-template
     working_directory: ~/typeorm/node12/
 
@@ -296,10 +296,10 @@ workflows:
       - prep-node8:
           requires:
             - checkout_code
-      - mariadb-node8:
+      - maria-node8:
           requires:
             - prep-node8
-      - mongodb-node8:
+      - mongo-node8:
           requires:
             - prep-node8
       - mssql-node8:
@@ -311,7 +311,7 @@ workflows:
       - oracle-node8:
           requires:
             - prep-node8
-      - postgres-node8:
+      - pg-node8:
           requires:
             - prep-node8
       - sqlite-node8:
@@ -324,10 +324,10 @@ workflows:
       - prep-node10:
           requires:
             - checkout_code
-      - mariadb-node10:
+      - maria-node10:
           requires:
             - prep-node10
-      - mongodb-node10:
+      - mongo-node10:
           requires:
             - prep-node10
       - mssql-node10:
@@ -339,7 +339,7 @@ workflows:
       - oracle-node10:
           requires:
             - prep-node10
-      - postgres-node10:
+      - pg-node10:
           requires:
             - prep-node10
       - sqlite-node10:
@@ -352,10 +352,10 @@ workflows:
       - prep-node12:
           requires:
             - checkout_code
-      - mariadb-node12:
+      - maria-node12:
           requires:
             - prep-node12
-      - mongodb-node12:
+      - mongo-node12:
           requires:
             - prep-node12
       - mssql-node12:
@@ -367,7 +367,7 @@ workflows:
       - oracle-node12:
           requires:
             - prep-node12
-      - postgres-node12:
+      - pg-node12:
           requires:
             - prep-node12
       - sqlite-node12:
