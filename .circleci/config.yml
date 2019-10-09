@@ -81,8 +81,8 @@ commands:
             - node_modules
           key: << parameters.node_folder >>-v1-dependencies-{{ checksum "package.json" }}
 
-      # run tests
       - run: npm run lint
+      - run: npm run compile
 
   run-db-tests:
     parameters:
@@ -101,7 +101,7 @@ commands:
       - attach_workspace:
           at: ~/typeorm/
       - run: cp ormconfigs/ormconfig.<< parameters.database >>.json ormconfig.json
-      - run: npm test
+      - run: npm run test-fast # test-fast since we already compiled
 
 jobs:
   checkout_code:
