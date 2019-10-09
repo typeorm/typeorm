@@ -140,49 +140,49 @@ jobs:
           paths:
             - ./node8/
 
-  test-node8-mariadb: &mariadb-template
+  mariadb-node8: &mariadb-template
     executor: mariadb
     working_directory: ~/typeorm/node8/
     steps:
       - run-db-tests:
           database: mariadb
 
-  test-node8-mongodb: &mongodb-template
+  mongodb-node8: &mongodb-template
     executor: mongodb
     working_directory: ~/typeorm/node8/
     steps:
       - run-db-tests:
           database: mongodb
 
-  test-node8-mssql: &mssql-template
+  mssql-node8: &mssql-template
     executor: mssql
     working_directory: ~/typeorm/node8/
     steps:
       - run-db-tests:
           database: mssql
 
-  test-node8-mysql: &mysql-template
+  mysql-node8: &mysql-template
     executor: mysql
     working_directory: ~/typeorm/node8/
     steps:
       - run-db-tests:
           database: mysql
 
-  test-node8-oracle: &oracle-template
+  oracle-node8: &oracle-template
     executor: oracle
     working_directory: ~/typeorm/node8/
     steps:
       - run-db-tests:
           database: oracle
 
-  test-node8-postgres: &postgres-template
+  postgres-node8: &postgres-template
     executor: postgres
     working_directory: ~/typeorm/node8/
     steps:
       - run-db-tests:
           database: postgres
 
-  test-node8-sqlite: &sqlite-template
+  sqlite-node8: &sqlite-template
     executor: sqlite
     working_directory: ~/typeorm/node8/
     steps:
@@ -190,7 +190,7 @@ jobs:
       - run-db-tests:
           database: sqlite
 
-  test-node8-sqljs: &sqljs-template
+  sqljs-node8: &sqljs-template
     executor: sqljs
     working_directory: ~/typeorm/node8/
     steps:
@@ -210,35 +210,35 @@ jobs:
           paths:
             - ./node10/
 
-  test-node10-mariadb:
+  mariadb-node10:
     <<: *mariadb-template
     working_directory: ~/typeorm/node10/
 
-  test-node10-mongodb:
+  mongodb-node10:
     <<: *mongodb-template
     working_directory: ~/typeorm/node10/
 
-  test-node10-mssql:
+  mssql-node10:
     <<: *mssql-template
     working_directory: ~/typeorm/node10/
 
-  test-node10-mysql:
+  mysql-node10:
     <<: *mysql-template
     working_directory: ~/typeorm/node10/
 
-  test-node10-oracle:
+  oracle-node10:
     <<: *oracle-template
     working_directory: ~/typeorm/node10/
 
-  test-node10-postgres:
+  postgres-node10:
     <<: *postgres-template
     working_directory: ~/typeorm/node10/
 
-  test-node10-sqlite:
+  sqlite-node10:
     <<: *sqlite-template
     working_directory: ~/typeorm/node10/
 
-  test-node10-sqljs:
+  sqljs-node10:
     <<: *sqljs-template
     working_directory: ~/typeorm/node10/
 
@@ -255,35 +255,35 @@ jobs:
           paths:
             - ./node12
 
-  test-node12-mariadb:
+  mariadb-node12:
     <<: *mariadb-template
     working_directory: ~/typeorm/node12/
 
-  test-node12-mongodb:
+  mongodb-node12:
     <<: *mongodb-template
     working_directory: ~/typeorm/node12/
 
-  test-node12-mssql:
+  mssql-node12:
     <<: *mssql-template
     working_directory: ~/typeorm/node12/
 
-  test-node12-mysql:
+  mysql-node12:
     <<: *mysql-template
     working_directory: ~/typeorm/node12/
 
-  test-node12-oracle:
+  oracle-node12:
     <<: *oracle-template
     working_directory: ~/typeorm/node12/
 
-  test-node12-postgres:
+  postgres-node12:
     <<: *postgres-template
     working_directory: ~/typeorm/node12/
 
-  test-node12-sqlite:
+  sqlite-node12:
     <<: *sqlite-template
     working_directory: ~/typeorm/node12/
 
-  test-node12-sqljs:
+  sqljs-node12:
     <<: *sqljs-template
     working_directory: ~/typeorm/node12/
 
@@ -296,83 +296,83 @@ workflows:
       - prepare-node8:
           requires:
             - checkout_code
-      - test-node8-mariadb:
+      - mariadb-node8:
           requires:
             - prepare-node8
-      - test-node8-mongodb:
+      - mongodb-node8:
           requires:
             - prepare-node8
-      - test-node8-mssql:
+      - mssql-node8:
           requires:
             - prepare-node8
-      - test-node8-mysql:
+      - mysql-node8:
           requires:
             - prepare-node8
-      - test-node8-oracle:
+      - oracle-node8:
           requires:
             - prepare-node8
-      - test-node8-postgres:
+      - postgres-node8:
           requires:
             - prepare-node8
-      - test-node8-sqlite:
+      - sqlite-node8:
           requires:
             - prepare-node8
-      - test-node8-sqljs:
+      - sqljs-node8:
           requires:
             - prepare-node8
 
       - prepare-node10:
           requires:
             - checkout_code
-      - test-node10-mariadb:
+      - mariadb-node10:
           requires:
             - prepare-node10
-      - test-node10-mongodb:
+      - mongodb-node10:
           requires:
             - prepare-node10
-      - test-node10-mssql:
+      - mssql-node10:
           requires:
             - prepare-node10
-      - test-node10-mysql:
+      - mysql-node10:
           requires:
             - prepare-node10
-      - test-node10-oracle:
+      - oracle-node10:
           requires:
             - prepare-node10
-      - test-node10-postgres:
+      - postgres-node10:
           requires:
             - prepare-node10
-      - test-node10-sqlite:
+      - sqlite-node10:
           requires:
             - prepare-node10
-      - test-node10-sqljs:
+      - sqljs-node10:
           requires:
             - prepare-node10
 
       - prepare-node12:
           requires:
             - checkout_code
-      - test-node12-mariadb:
+      - mariadb-node12:
           requires:
             - prepare-node12
-      - test-node12-mongodb:
+      - mongodb-node12:
           requires:
             - prepare-node12
-      - test-node12-mssql:
+      - mssql-node12:
           requires:
             - prepare-node12
-      - test-node12-mysql:
+      - mysql-node12:
           requires:
             - prepare-node12
-      - test-node12-oracle:
+      - oracle-node12:
           requires:
             - prepare-node12
-      - test-node12-postgres:
+      - postgres-node12:
           requires:
             - prepare-node12
-      - test-node12-sqlite:
+      - sqlite-node12:
           requires:
             - prepare-node12
-      - test-node12-sqljs:
+      - sqljs-node12:
           requires:
             - prepare-node12
