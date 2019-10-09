@@ -128,7 +128,7 @@ jobs:
             - ./node10/
             - ./node12
 
-  test-node8: &test-template
+  prepare-node8: &test-template
     working_directory: ~/typeorm/node8/
     docker:
       - image: circleci/node:8.16.1
@@ -197,7 +197,7 @@ jobs:
       - run-db-tests:
           database: sqljs
 
-  test-node10:
+  prepare-node10:
     <<: *test-template
     working_directory: ~/typeorm/node10/
     docker:
@@ -242,7 +242,7 @@ jobs:
     <<: *sqljs-template
     working_directory: ~/typeorm/node10/
 
-  test-node12:
+  prepare-node12:
     <<: *test-template
     working_directory: ~/typeorm/node12/
     docker:
@@ -293,86 +293,86 @@ workflows:
     jobs:
       - checkout_code
 
-      - test-node8:
+      - prepare-node8:
           requires:
             - checkout_code
       - test-node8-mariadb:
           requires:
-            - test-node8
+            - prepare-node8
       - test-node8-mongodb:
           requires:
-            - test-node8
+            - prepare-node8
       - test-node8-mssql:
           requires:
-            - test-node8
+            - prepare-node8
       - test-node8-mysql:
           requires:
-            - test-node8
+            - prepare-node8
       - test-node8-oracle:
           requires:
-            - test-node8
+            - prepare-node8
       - test-node8-postgres:
           requires:
-            - test-node8
+            - prepare-node8
       - test-node8-sqlite:
           requires:
-            - test-node8
+            - prepare-node8
       - test-node8-sqljs:
           requires:
-            - test-node8
+            - prepare-node8
 
-      - test-node10:
+      - prepare-node10:
           requires:
             - checkout_code
       - test-node10-mariadb:
           requires:
-            - test-node10
+            - prepare-node10
       - test-node10-mongodb:
           requires:
-            - test-node10
+            - prepare-node10
       - test-node10-mssql:
           requires:
-            - test-node10
+            - prepare-node10
       - test-node10-mysql:
           requires:
-            - test-node10
+            - prepare-node10
       - test-node10-oracle:
           requires:
-            - test-node10
+            - prepare-node10
       - test-node10-postgres:
           requires:
-            - test-node10
+            - prepare-node10
       - test-node10-sqlite:
           requires:
-            - test-node10
+            - prepare-node10
       - test-node10-sqljs:
           requires:
-            - test-node10
+            - prepare-node10
 
-      - test-node12:
+      - prepare-node12:
           requires:
             - checkout_code
       - test-node12-mariadb:
           requires:
-            - test-node12
+            - prepare-node12
       - test-node12-mongodb:
           requires:
-            - test-node12
+            - prepare-node12
       - test-node12-mssql:
           requires:
-            - test-node12
+            - prepare-node12
       - test-node12-mysql:
           requires:
-            - test-node12
+            - prepare-node12
       - test-node12-oracle:
           requires:
-            - test-node12
+            - prepare-node12
       - test-node12-postgres:
           requires:
-            - test-node12
+            - prepare-node12
       - test-node12-sqlite:
           requires:
-            - test-node12
+            - prepare-node12
       - test-node12-sqljs:
           requires:
-            - test-node12
+            - prepare-node12
