@@ -90,7 +90,7 @@ export class RelationRemover {
                         }),
                         ...junctionMetadata.inverseColumns.map((column, columnIndex) => {
                             const parameterName = "secondValue_" + firstColumnValIndex + "_" + secondColumnValIndex + "_" + columnIndex;
-                            parameters[parameterName] = firstColumnVal instanceof Object ? column.referencedColumn!.getEntityValue(secondColumnVal) : secondColumnVal;
+                            parameters[parameterName] = secondColumnVal instanceof Object ? column.referencedColumn!.getEntityValue(secondColumnVal) : secondColumnVal;
                             return `${column.databaseName} = :${parameterName}`;
                         })
                     ].join(" AND ");

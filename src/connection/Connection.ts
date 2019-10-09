@@ -37,6 +37,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {PromiseUtils} from "../";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
+import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -258,7 +259,7 @@ export class Connection {
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.createQueryRunner("master");
         try {
-            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
+            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver || this.driver instanceof AuroraDataApiDriver) {
                 const databases: string[] = this.driver.database ? [this.driver.database] : [];
                 this.entityMetadatas.forEach(metadata => {
                     if (metadata.database && databases.indexOf(metadata.database) === -1)
@@ -307,7 +308,7 @@ export class Connection {
 
     /**
      * Lists all migrations and whether they have been run.
-     * Returns true if there are no pending migrations
+     * Returns true if there are pending migrations
      */
     async showMigrations(): Promise<boolean> {
         if (!this.isConnected) {
@@ -516,6 +517,8 @@ export class Connection {
         // create migration instances
         const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
         ObjectUtils.assign(this, { migrations: migrations });
+
+        this.driver.database = <string> this.options.database;
 
         // validate all created entity metadatas to make sure user created entities are valid and correct
         entityMetadataValidator.validateMany(this.entityMetadatas.filter(metadata => metadata.tableType !== "view"), this.driver);

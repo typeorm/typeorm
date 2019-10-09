@@ -5,7 +5,7 @@
 * [Create a new entity](#create-a-new-entity)
 * [Create a new subscriber](#create-a-new-subscriber)
 * [Create a new migration](#create-a-new-migration)
-* [Generate a migration from exist table schema](#generate-a-migration-from-exist-table-schema)
+* [Generate a migration from existing table schema](#generate-a-migration-from-exist-table-schema)
 * [Run migrations](#run-migrations)
 * [Revert migrations](#revert-migrations)
 * [Show migrations](#show-migrations)
@@ -196,7 +196,7 @@ typeorm migration:create -n UserMigration -d src/user/migration
 
 Learn more about [Migrations](./migrations.md).
 
-## Generate a migration from exist table schema
+## Generate a migration from existing table schema
 
 Automatic migration generation creates a new migration file
 and writes all sql queries that must be executed to update the database.

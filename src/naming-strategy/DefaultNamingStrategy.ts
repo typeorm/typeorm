@@ -78,7 +78,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "DF_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
-    foreignKeyName(tableOrName: Table|string, columnNames: string[]): string {
+    foreignKeyName(tableOrName: Table|string, columnNames: string[], _referencedTablePath?: string, _referencedColumnNames?: string[]): string {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
         const clonedColumnNames = [...columnNames];
         clonedColumnNames.sort();

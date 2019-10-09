@@ -749,11 +749,13 @@ export class SqlServerDriver implements Driver {
             const pool = new this.mssql.ConnectionPool(connectionOptions);
 
             const { logger } = this.connection;
+
+            const poolErrorHandler = (options.pool && options.pool.errorHandler) || ((error: any) => logger.log("warn", `MSSQL pool raised an error. ${error}`));
             /*
               Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
               cause the hosting app to crash.
              */
-            pool.on("error", (error: any) => logger.log("warn", `MSSQL pool raised an error. ${error}`));
+            pool.on("error", poolErrorHandler);
 
             const connection = pool.connect((err: any) => {
                 if (err) return fail(err);

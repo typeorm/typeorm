@@ -170,7 +170,12 @@ export class DateUtils {
     }
 
     static stringToSimpleJson(value: any) {
-        return typeof value === "string" ? JSON.parse(value) : value;
+        try {
+            const simpleJSON = JSON.parse(value); 
+            return (typeof simpleJSON === "object") ? simpleJSON : {};
+       } catch (err) {
+            return {};
+       }
     }
 
     static simpleEnumToString(value: any) {
