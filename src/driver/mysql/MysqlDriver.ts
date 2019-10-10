@@ -232,10 +232,10 @@ export class MysqlDriver implements Driver {
     mappedDataTypes: MappedColumnTypes = {
         createDate: "datetime",
         createDatePrecision: 6,
-        createDateDefault: "CURRENT_TIMESTAMP(6)",
+        createDateDefault: "current_timestamp(6)",
         updateDate: "datetime",
         updateDatePrecision: 6,
-        updateDateDefault: "CURRENT_TIMESTAMP(6)",
+        updateDateDefault: "current_timestamp(6)",
         version: "int",
         treeLevel: "int",
         migrationId: "int",
