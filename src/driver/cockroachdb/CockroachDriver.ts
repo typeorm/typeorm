@@ -672,6 +672,23 @@ export class CockroachDriver implements Driver {
     protected loadDependencies(): void {
         try {
             this.postgres = PlatformTools.load("pg");
+            // https://github.com/cockroachdb/cockroach/issues/14701
+            this.postgres.types.setTypeParser(20, (value: string) => {
+                const parsed = parseInt(value);
+
+                // Is this number safe to convert?
+                if (parsed.toString() !== value) {
+                  return value;
+                }
+
+                // Even if it was parsed correctly, don't trust it if
+                // it's outside the bounds.
+                if (parsed > Number.MAX_SAFE_INTEGER || parsed < Number.MIN_SAFE_INTEGER) {
+                  return value;
+                }
+
+                return parsed;
+              });
             try {
                 const pgNative = PlatformTools.load("pg-native");
                 if (pgNative && this.postgres.native) this.postgres = this.postgres.native;
