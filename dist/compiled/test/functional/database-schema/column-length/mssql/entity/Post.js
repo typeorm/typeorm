@@ -1,0 +1,56 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = require("tslib");
+var Entity_1 = require("../../../../../../src/decorator/entity/Entity");
+var PrimaryColumn_1 = require("../../../../../../src/decorator/columns/PrimaryColumn");
+var Column_1 = require("../../../../../../src/decorator/columns/Column");
+var Post = /** @class */ (function () {
+    function Post() {
+    }
+    tslib_1.__decorate([
+        PrimaryColumn_1.PrimaryColumn(),
+        tslib_1.__metadata("design:type", Number)
+    ], Post.prototype, "id", void 0);
+    tslib_1.__decorate([
+        Column_1.Column("char", {
+            length: 50
+        }),
+        tslib_1.__metadata("design:type", String)
+    ], Post.prototype, "char", void 0);
+    tslib_1.__decorate([
+        Column_1.Column("varchar", {
+            length: 50
+        }),
+        tslib_1.__metadata("design:type", String)
+    ], Post.prototype, "varchar", void 0);
+    tslib_1.__decorate([
+        Column_1.Column("nchar", {
+            length: 50
+        }),
+        tslib_1.__metadata("design:type", String)
+    ], Post.prototype, "nchar", void 0);
+    tslib_1.__decorate([
+        Column_1.Column("nvarchar", {
+            length: 50
+        }),
+        tslib_1.__metadata("design:type", String)
+    ], Post.prototype, "nvarchar", void 0);
+    tslib_1.__decorate([
+        Column_1.Column("binary", {
+            length: 50
+        }),
+        tslib_1.__metadata("design:type", Buffer)
+    ], Post.prototype, "binary", void 0);
+    tslib_1.__decorate([
+        Column_1.Column("varbinary", {
+            length: 50
+        }),
+        tslib_1.__metadata("design:type", Buffer)
+    ], Post.prototype, "varbinary", void 0);
+    Post = tslib_1.__decorate([
+        Entity_1.Entity()
+    ], Post);
+    return Post;
+}());
+exports.Post = Post;
+//# sourceMappingURL=Post.js.map

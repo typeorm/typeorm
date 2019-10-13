@@ -1,0 +1,35 @@
+export declare class User {
+    id: number;
+    nickName: string;
+    firstName: string;
+    lastName: string;
+    birthday: Date;
+    createdAt: Date;
+    phone: string;
+    email: string;
+    phoneConfirmed: boolean;
+    emailConfirmed: boolean;
+    lastActivity: Date;
+    link: string;
+    avatar: string;
+    cityID: number;
+    avatarUrl: string;
+    friendsCount: number;
+    unreadNotificationsCount: number;
+    verified: boolean;
+    fbID: string;
+    vkID: number;
+    twitchID: number;
+    isCompletedRegistration: boolean;
+    online: boolean;
+    unreadMessagesCount: number;
+    notificationLastReadAt: Date;
+    preferRegionID: number;
+    autoConnect: boolean;
+    receiveEmailNotifications: boolean;
+    isMobile: boolean;
+    unreadDialogsCount: number;
+    friendsInvitesCount: number;
+    regionID: number;
+    instagramID: number;
+}
