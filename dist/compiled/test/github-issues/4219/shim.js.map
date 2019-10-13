@@ -1,1 +1,0 @@
-{"version":3,"file":"shim.js","sourceRoot":"","sources":["../../../../../test/github-issues/4219/shim.ts"],"names":[],"mappings":";;AAAA,IAAI,KAAU,CAAC;AACf,IAAI;IACA,iBAAiB;IACjB,KAAK,GAAG,OAAO,CAAC,kDAAkD,CAAC,CAAC;CACvE;AAAC,OAAO,CAAC,EAAE;IACR,gCAAgC;IAChC,KAAK,GAAI,OAAO,CAAC,qDAAqD,CAAC,CAAC;CAC3E;AAEY,QAAA,IAAI,GAAG,KAAK,CAAC"}
