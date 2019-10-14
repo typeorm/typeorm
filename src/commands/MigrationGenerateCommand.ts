@@ -128,9 +128,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
      * Gets contents of the migration file.
      */
     protected static getTemplate(name: string, timestamp: number, upSqls: string[], downSqls: string[]): string {
+        const migrationName = `${camelCase(name, true)}${timestamp}`;
+
         return `import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class ${camelCase(name, true)}${timestamp} implements MigrationInterface {
+export class ${migrationName} implements MigrationInterface {
+    name = '${migrationName}'
 
     public async up(queryRunner: QueryRunner): Promise<any> {
 ${upSqls.join(`
