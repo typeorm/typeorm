@@ -1271,45 +1271,28 @@ var SelectQueryBuilder = /** @class */ (function (_super) {
     };
     SelectQueryBuilder.prototype.executeCountQuery = function (queryRunner) {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var mainAlias, metadata, distinctAlias, countSql, results;
+            var mainAlias, metadata, querySelects, distinctQuery, results;
             var _this = this;
             return tslib_1.__generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         mainAlias = this.expressionMap.mainAlias.name;
                         metadata = this.expressionMap.mainAlias.metadata;
-                        distinctAlias = this.escape(mainAlias);
-                        countSql = "";
-                        if (metadata.hasMultiplePrimaryKeys) {
-                            if (this.connection.driver instanceof AbstractSqliteDriver_1.AbstractSqliteDriver) {
-                                countSql = "COUNT(DISTINCT(" + metadata.primaryColumns.map(function (primaryColumn, index) {
-                                    var propertyName = _this.escape(primaryColumn.databaseName);
-                                    return distinctAlias + "." + propertyName;
-                                }).join(" || ") + ")) as \"cnt\"";
-                            }
-                            else {
-                                countSql = "COUNT(DISTINCT(CONCAT(" + metadata.primaryColumns.map(function (primaryColumn, index) {
-                                    var propertyName = _this.escape(primaryColumn.databaseName);
-                                    return distinctAlias + "." + propertyName;
-                                }).join(", ") + "))) as \"cnt\"";
-                            }
-                        }
-                        else {
-                            countSql = "COUNT(DISTINCT(" + metadata.primaryColumns.map(function (primaryColumn, index) {
-                                var propertyName = _this.escape(primaryColumn.databaseName);
-                                return distinctAlias + "." + propertyName;
-                            }).join(", ") + ")) as \"cnt\"";
-                        }
-                        return [4 /*yield*/, this.clone()
-                                .orderBy()
-                                .groupBy()
-                                .offset(undefined)
-                                .limit(undefined)
-                                .skip(undefined)
-                                .take(undefined)
-                                .select(countSql)
-                                .setOption("disable-global-order")
-                                .loadRawResults(queryRunner)];
+                        querySelects = metadata.primaryColumns.map(function (primaryColumn) {
+                            var distinctAlias = _this.escape("distinctAlias");
+                            var columnAlias = _this.escape(DriverUtils_1.DriverUtils.buildColumnAlias(_this.connection.driver, mainAlias, primaryColumn.databaseName));
+                            return distinctAlias + "." + columnAlias + " as \"ids_" + columnAlias + "\"";
+                        });
+                        distinctQuery = new SelectQueryBuilder(this.connection, queryRunner)
+                            .select("DISTINCT " + querySelects.join(", "))
+                            .from("(" + this.clone().orderBy().limit().offset().skip().take().getQuery() + ")", "distinctAlias");
+                        return [4 /*yield*/, new SelectQueryBuilder(this.connection, queryRunner)
+                                .select("COUNT(1) as cnt")
+                                .from("(" + distinctQuery.getSql() + ")", "count")
+                                .setParameters(this.getParameters())
+                                .setNativeParameters(this.expressionMap.nativeParameters)
+                                .cache(this.expressionMap.cache ? this.expressionMap.cache : this.expressionMap.cacheId, this.expressionMap.cacheDuration)
+                                .getRawMany()];
                     case 1:
                         results = _a.sent();
                         if (!results || !results[0] || !results[0]["cnt"])

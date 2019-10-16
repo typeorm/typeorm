@@ -1715,39 +1715,23 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const mainAlias = this.expressionMap.mainAlias!.name; // todo: will this work with "fromTableName"?
         const metadata = this.expressionMap.mainAlias!.metadata;
 
-        const distinctAlias = this.escape(mainAlias);
-        let countSql: string = "";
-        if (metadata.hasMultiplePrimaryKeys) {
-            if (this.connection.driver instanceof AbstractSqliteDriver) {
-                countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                    const propertyName = this.escape(primaryColumn.databaseName);
-                    return `${distinctAlias}.${propertyName}`;
-                }).join(" || ") + ")) as \"cnt\"";
+        const querySelects = metadata.primaryColumns.map(primaryColumn => {
+            const distinctAlias = this.escape("distinctAlias");
+            const columnAlias = this.escape(DriverUtils.buildColumnAlias(this.connection.driver, mainAlias, primaryColumn.databaseName));
+            return `${distinctAlias}.${columnAlias} as "ids_${columnAlias}"`;
+        });
 
-            } else {
-                countSql = `COUNT(DISTINCT(CONCAT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                    const propertyName = this.escape(primaryColumn.databaseName);
-                    return `${distinctAlias}.${propertyName}`;
-                }).join(", ") + "))) as \"cnt\"";
-            }
+        const distinctQuery = new SelectQueryBuilder(this.connection, queryRunner)
+            .select(`DISTINCT ${querySelects.join(", ")}`)
+            .from(`(${this.clone().orderBy().limit().offset().skip().take().getQuery()})`, "distinctAlias");
 
-        } else {
-            countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                const propertyName = this.escape(primaryColumn.databaseName);
-                return `${distinctAlias}.${propertyName}`;
-            }).join(", ") + ")) as \"cnt\"";
-        }
-
-        const results = await this.clone()
-            .orderBy()
-            .groupBy()
-            .offset(undefined)
-            .limit(undefined)
-            .skip(undefined)
-            .take(undefined)
-            .select(countSql)
-            .setOption("disable-global-order")
-            .loadRawResults(queryRunner);
+        const results = await new SelectQueryBuilder(this.connection, queryRunner)
+            .select("COUNT(1) as cnt")
+            .from(`(${distinctQuery.getSql()})`, "count")
+            .setParameters(this.getParameters())
+            .setNativeParameters(this.expressionMap.nativeParameters)
+            .cache(this.expressionMap.cache ? this.expressionMap.cache : this.expressionMap.cacheId, this.expressionMap.cacheDuration)
+            .getRawMany();
 
         if (!results || !results[0] || !results[0]["cnt"])
             return 0;
