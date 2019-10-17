@@ -17,4 +17,7 @@ export class User {
     @Column()
     isAdmin: boolean;
 
+    @Column()
+    dateOfBirth: Date;
+
 }

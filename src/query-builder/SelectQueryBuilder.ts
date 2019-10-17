@@ -1920,7 +1920,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
             }, queryRunner);
             if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
-                return JSON.parse(savedQueryResultCacheOptions.result);
+                return JSON.parse(savedQueryResultCacheOptions.result, (key, value) => {
+                    if (typeof value === "string") {
+                        const isoRegex = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*))(?:Z|(\+|-)([\d|:]*))?$/;
+
+                        if (isoRegex.exec(value)) {
+                            return new Date(value);
+                        }
+                    }
+
+                    return value;
+                });
         }
 
         const results = await queryRunner.query(sql, parameters);

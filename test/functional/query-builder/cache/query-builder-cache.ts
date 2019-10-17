@@ -10,7 +10,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
 
 describe("query builder > cache", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -26,24 +26,28 @@ describe("query builder > cache", () => {
     after(() => closeTestingConnections(connections));
 
     it("should cache results properly", () => Promise.all(connections.map(async connection => {
+        const date = new Date();
 
         // first prepare data - insert users
         const user1 = new User();
         user1.firstName = "Timber";
         user1.lastName = "Saw";
         user1.isAdmin = false;
+        user1.dateOfBirth = date;
         await connection.manager.save(user1);
 
         const user2 = new User();
         user2.firstName = "Alex";
         user2.lastName = "Messer";
         user2.isAdmin = false;
+        user2.dateOfBirth = date;
         await connection.manager.save(user2);
 
         const user3 = new User();
         user3.firstName = "Umed";
         user3.lastName = "Pleerock";
         user3.isAdmin = true;
+        user3.dateOfBirth = date;
         await connection.manager.save(user3);
 
         // select for the first time with caching enabled
@@ -53,12 +57,14 @@ describe("query builder > cache", () => {
             .cache(true)
             .getMany();
         expect(users1.length).to.be.equal(1);
+        expect(users1[0].dateOfBirth.getTime()).to.be.equal(date.getTime());
 
         // insert new entity
         const user4 = new User();
         user4.firstName = "Bakhrom";
         user4.lastName = "Brochik";
         user4.isAdmin = true;
+        user4.dateOfBirth = date;
         await connection.manager.save(user4);
 
         // without cache it must return really how many there entities are
@@ -67,6 +73,7 @@ describe("query builder > cache", () => {
             .where("user.isAdmin = :isAdmin", { isAdmin: true })
             .getMany();
         expect(users2.length).to.be.equal(2);
+        expect(users2[0].dateOfBirth.getTime()).to.be.equal(date.getTime());
 
         // but with cache enabled it must not return newly inserted entity since cache is not expired yet
         const users3 = await connection
@@ -75,6 +82,7 @@ describe("query builder > cache", () => {
             .cache(true)
             .getMany();
         expect(users3.length).to.be.equal(1);
+        expect(users3[0].dateOfBirth.getTime()).to.be.equal(date.getTime());
 
         // give some time for cache to expire
         await sleep(1000);
@@ -86,6 +94,7 @@ describe("query builder > cache", () => {
             .cache(true)
             .getMany();
         expect(users4.length).to.be.equal(2);
+        expect(users4[0].dateOfBirth.getTime()).to.be.equal(date.getTime());
 
     })));
 
