@@ -70,7 +70,9 @@ This example will produce following tables:
 +-------------+--------------+----------------------------+
 ```
 
-Example how to save such relation:
+## Saving many-to-many relations
+
+With [cascades](./relations.md#cascades) enabled you can save this relation with only one `save` call.
 
 ```typescript
 const category1 = new Category();
@@ -88,7 +90,23 @@ question.categories = [category1, category2];
 await connection.manager.save(question);
 ```
 
-With cascades enabled you can save this relation with only one `save` call.
+## Deleting many-to-many relations
+
+With [cascades](./relations.md#cascades) enabled you can delete this relation with only one `save` call.
+
+To delete a many-to-many relationship between two records, remove it from the corresponding field and save the record.
+
+```typescript
+const question = getRepository(Question);
+question.categories = question.categories.filter(category => {
+    category.id !== categoryToRemove.id
+})
+await connection.manager.save(question)
+```
+
+This will only remove the record in the join table. The `question` and `categoryToRemove` records will still exist.
+
+## Loading many-to-many relations
 
 To load question with categories inside you must specify relation in `FindOptions`:
 
