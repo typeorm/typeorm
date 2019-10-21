@@ -251,7 +251,7 @@ Default generation strategy is `increment`, to change it to another strategy, si
 export class User {
 
     @PrimaryGeneratedColumn("uuid")
-    id: number;
+    id: string;
 
 }
 ```
