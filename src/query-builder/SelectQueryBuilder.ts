@@ -1409,9 +1409,33 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 return this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
             });
-        const select = "SELECT " + (this.expressionMap.selectDistinct ? "DISTINCT " : "");
+
+        // const select = "SELECT " + (this.expressionMap.selectDistinct ? "DISTINCT " : "");
+        const select = this.createSelectDistinctExpression();
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
+
         return select + selection + " FROM " + froms.join(", ") + lock;
+    }
+
+    /**
+     * Create distinct part of SQL query.
+     */
+    protected createSelectDistinctExpression(): string {
+      const {selectDistinct, selectDistinctOn} = this.expressionMap;
+      const {driver} = this.connection;
+
+      let select = "SELECT ";
+      if (driver instanceof PostgresDriver && this.expressionMap.selectDistinctOn) {
+        console.log('POSTGRES');
+        const selectDistinctOnMap = selectDistinctOn.join(', ');
+
+        select = `SELECT DISTINCT ON(${selectDistinctOnMap})`;
+      } else if (this.expressionMap.selectDistinct) {
+        select = "SELECT DISTINCT ";
+      }
+
+      console.log(select);
+      return select;
     }
 
     /**
