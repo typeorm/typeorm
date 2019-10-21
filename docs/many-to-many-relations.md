@@ -1,5 +1,14 @@
 # Many-to-many relations
 
+ * [What are many-to-many relations](#what-are-many-to-many-relations)
+ * [Saving many-to-many relations](#saving-many-to-many-relations)
+ * [Deleting many-to-many relations](#deleting-many-to-many-relations)
+ * [Loading many-to-many relations](#loading-many-to-many-relations)
+ * [bi-directional relations](#bi-directional-relations)
+ * [many-to-many relations with custom properties](#many-to-many-relations-with-custom-properties)
+
+## What are many-to-many relations
+
 Many-to-many is a relation where A contains multiple instances of B, and B contain multiple instances of A.
 Let's take for example `Question` and `Category` entities.
 Question can have multiple categories, and each category can have multiple questions.
@@ -126,6 +135,8 @@ const questions = await connection
 ```
 
 With eager loading enabled on a relation you don't have to specify relation or join it - it will ALWAYS be loaded automatically.
+
+## bi-directional relations
 
 Relations can be uni-directional and bi-directional.
 Uni-directional are relations with a relation decorator only on one side.
