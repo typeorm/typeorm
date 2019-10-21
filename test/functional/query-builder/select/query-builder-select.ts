@@ -110,4 +110,13 @@ describe("query builder > select", () => {
         expect(sql).to.equal("SELECT post.name FROM post post");
     })));
 
+    it("should clear selections", () => Promise.all(connections.map(async connection => {
+        const sql = connection.createQueryBuilder(Post, "post")
+            .clearSelection()
+            .addSelect('1')
+            .getSql();
+
+        expect(sql).to.equal("SELECT 1 FROM post post");
+    })));
+
 });

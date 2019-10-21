@@ -123,6 +123,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Removes all previous selections if they exist
+     */
+    clearSelection(): this {
+        this.expressionMap.selects = [];
+        return this;
+    }
+
+    /**
      * Adds new selection to the SELECT query.
      */
     addSelect(selection: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, selectionAliasName?: string): this;
