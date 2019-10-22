@@ -54,7 +54,7 @@ export class QueryExpressionMap {
     /**
      * SELECT DISTINCT ON query (postgres).
      */
-    selectDistinctOn: string[]|boolean = false;
+    selectDistinctOn: string[] = [];
 
     /**
      * FROM-s to be selected.

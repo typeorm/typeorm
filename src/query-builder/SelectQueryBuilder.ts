@@ -168,6 +168,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Sets the distinct on clause for Postgres.
+     */
+    distinctOn(distinctOn: string[]): this {
+      this.expressionMap.selectDistinctOn = distinctOn;
+      return this;
+    }
+
+    /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
@@ -1410,7 +1418,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 return this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
             });
 
-        // const select = "SELECT " + (this.expressionMap.selectDistinct ? "DISTINCT " : "");
         const select = this.createSelectDistinctExpression();
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
 
@@ -1418,24 +1425,24 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
-     * Create distinct part of SQL query.
+     * Creates select | select distinct part of SQL query.
      */
     protected createSelectDistinctExpression(): string {
-      const {selectDistinct, selectDistinctOn} = this.expressionMap;
-      const {driver} = this.connection;
+        const {selectDistinct, selectDistinctOn} = this.expressionMap;
+        const {driver} = this.connection;
 
-      let select = "SELECT ";
-      if (driver instanceof PostgresDriver && this.expressionMap.selectDistinctOn) {
-        console.log('POSTGRES');
-        const selectDistinctOnMap = selectDistinctOn.join(', ');
+        let select = "SELECT ";
+        if (driver instanceof PostgresDriver && selectDistinctOn.length > 0) {
+            const selectDistinctOnMap = selectDistinctOn.map(
+              (on) => this.replacePropertyNames(on)
+            ).join(", ");
 
-        select = `SELECT DISTINCT ON(${selectDistinctOnMap})`;
-      } else if (this.expressionMap.selectDistinct) {
-        select = "SELECT DISTINCT ";
-      }
+            select = `SELECT DISTINCT ON (${selectDistinctOnMap}) `;
+        } else if (selectDistinct) {
+            select = "SELECT DISTINCT ";
+        }
 
-      console.log(select);
-      return select;
+        return select;
     }
 
     /**
