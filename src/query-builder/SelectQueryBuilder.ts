@@ -171,8 +171,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Sets the distinct on clause for Postgres.
      */
     distinctOn(distinctOn: string[]): this {
-      this.expressionMap.selectDistinctOn = distinctOn;
-      return this;
+        this.expressionMap.selectDistinctOn = distinctOn;
+        return this;
     }
 
     /**
