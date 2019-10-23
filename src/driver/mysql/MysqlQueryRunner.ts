@@ -1632,7 +1632,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Extracts the table name from a table path
      */
     protected extractTableName(tablePath: string): string {
-        const path = tablePath.split('.') 
+        const path = tablePath.split(".");
         return path[path.length - 1];
     }
 
