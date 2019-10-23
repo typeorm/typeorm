@@ -70,10 +70,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             await this.queryRunner.startTransaction();
         try {
             const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
-            // TODO: typeorm_metadata table needs only for Views for now.
-            //  Remove condition or add new conditions if necessary (for CHECK constraints for example).
-            if (this.viewEntityToSyncMetadatas.length > 0)
-                await this.createTypeormMetadataTable();
+            await this.createMetadataTableIfNecessary();
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
             await this.executeSchemaSyncOperationsInProperOrder();
@@ -99,16 +96,23 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
+     * If the schema contains views, create the typeorm_metadata table if it doesn't exist yet
+     */
+    async createMetadataTableIfNecessary(): Promise<void> {
+        if (!this.queryRunner) this.queryRunner = this.connection.createQueryRunner("master");
+        if (this.viewEntityToSyncMetadatas.length > 0) {
+            await this.createTypeormMetadataTable();
+        }
+    }
+
+    /**
      * Returns sql queries to be executed by schema builder.
      */
     async log(): Promise<SqlInMemory> {
         this.queryRunner = this.connection.createQueryRunner("master");
         try {
             const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
-            // TODO: typeorm_metadata table needs only for Views for now.
-            //  Remove condition or add new conditions if necessary (for CHECK constraints for example).
-            if (this.viewEntityToSyncMetadatas.length > 0)
-                await this.createTypeormMetadataTable();
+            await this.createMetadataTableIfNecessary();
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
             this.queryRunner.enableSqlMemory();

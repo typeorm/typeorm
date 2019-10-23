@@ -3,6 +3,7 @@ import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
 import * as process from "process";
 import * as yargs from "yargs";
+import {RdbmsSchemaBuilder} from "../schema-builder/RdbmsSchemaBuilder";
 const chalk = require("chalk");
 
 /**
@@ -71,6 +72,12 @@ export class MigrationRunCommand implements yargs.CommandModule {
                     break;
                 default:
                     // noop
+            }
+
+            const schemaBuilder = connection.driver.createSchemaBuilder();
+
+            if (schemaBuilder instanceof RdbmsSchemaBuilder) {
+                await schemaBuilder.createMetadataTableIfNecessary();
             }
 
             await connection.runMigrations(options);
