@@ -1155,7 +1155,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected async loadViews(viewNames: string[]): Promise<View[]> {
         const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
         if (!hasTable)
-            return Promise.resolve([]);
+            return Promise.resolve([]); 
 
         const currentDatabase = await this.getCurrentDatabase();
         const viewsCondition = viewNames.map(tableName => {
@@ -1168,11 +1168,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }).join(" OR ");
 
         const query = `SELECT \`t\`.*, \`v\`.\`check_option\` FROM ${this.escapePath(this.getTypeormMetadataTableName())} \`t\` ` +
-            `INNER JOIN \`information_schema\`.\`views\` \`v\` ON \`v\`.\`table_name\` = \`t\`.\`name\` WHERE \`t\`.\`type\` = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+            `INNER JOIN \`information_schema\`.\`views\` \`v\` ON \`v\`.\`table_schema\` = '${currentDatabase}' AND \`v\`.\`table_name\` = \`t\`.\`name\` WHERE \`t\`.\`type\` = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
-            const db = dbView["schema"] === currentDatabase ? undefined : dbView["schema"];
+            const db = currentDatabase;
             view.name = this.driver.buildTableName(dbView["name"], undefined, db);
             view.expression = dbView["value"];
             return view;
@@ -1530,7 +1531,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const [query, parameters] = this.connection.createQueryBuilder()
             .insert()
             .into(this.extractTableName(this.getTypeormMetadataTableName()))
-            .values({ type: "VIEW", schema: null, name: view.name, value: expression })
+            .values({ type: "VIEW", schema: () => "DATABASE()", name: view.name, value: expression })
             .getQueryAndParameters();
 
         return new Query(query, parameters);
