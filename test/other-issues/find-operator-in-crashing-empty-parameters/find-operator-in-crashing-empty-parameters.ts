@@ -26,4 +26,26 @@ describe("other issues > find operator in crashing when passed empty parameters"
         }
         expect(error).to.equal(null);
     })));
+
+    it("should return nothing if the array passed to the In operator is empty", () => () => Promise.all(connections.map(async function(connection) {
+        const repository = connection.getRepository(User)
+        const newUser = repository.create()
+        const user = await repository.save(newUser)
+
+        const users = await connection.getRepository(User).find({
+            where: {
+                uuid: In([user.uuid])
+            }
+        })
+
+        expect(users.length).to.equal(1)
+
+        const usersEmptyIn = await connection.getRepository(User).find({
+            where: {
+                uuid: In([])
+            }
+        })
+
+        expect(usersEmptyIn.length).to.equal(0);
+    })));
 });
