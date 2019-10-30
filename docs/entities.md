@@ -460,12 +460,12 @@ const user = new User();
 user.names = [
     "Alexander",
     "Alex",
-    "Sasha",
+    "Sascha",
     "Shurik"
 ];
 ```
 
-Will be stored in a single database column as `Alexander,Alex,Sasha,Shurik` value.
+Will be stored in a single database column as `Alexander,Alex,Sascha,Shurik` value.
 When you'll load data from the database, the names will be returned as an array of names,
 just like you stored them.
 
