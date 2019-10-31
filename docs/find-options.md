@@ -325,6 +325,7 @@ const loadedPosts = await connection.getRepository(Post).find({
     title: IsNull()
 });
 ```
+Note: if you want execute expression where value not equal to `null` - follow the note in this section https://typeorm.io/#/select-query-builder/adding-where-expression
 
 will execute following query: 
 
