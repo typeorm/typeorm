@@ -35,6 +35,17 @@ userRepository.find({
 });
 ```
 
+* `loadRelationIds` - loads all relation ids of the entity and maps them into relation values (not relation objects).
+
+```typescript
+userRepository.find({ 
+    loadRelationIds: true
+});
+userRepository.find({ 
+    loadRelationIds: ["profile"]
+});
+```
+
 * `where` - simple conditions by which entity should be queried.
 
 ```typescript
