@@ -352,6 +352,15 @@ SELECT ... FROM users user WHERE user.registered = true AND (user.firstName = 'T
 You can combine as many `AND` and `OR` expressions as you need.
 If you use `.where` more than once you'll override all previous `WHERE` expressions.
 
+Note: if you want execute expression where value not equal to `null` - just write 'value is not null' like below
+```
+createQueryBuilder("user")
+    .where("user.registered = :registered", { registered: true })
+    .andWhere("user.firstName is not null)
+    .getMany()
+    }))
+```
+
 Note: be careful with `orWhere` - if you use complex expressions with both `AND` and `OR` expressions,
 keep in mind that they are stacked without any pretences. 
 Sometimes you'll need to create a where string instead, and avoid using `orWhere`. 
