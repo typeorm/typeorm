@@ -41,7 +41,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
 Some TypeORM features:
 
-* supports both [DataMapper](active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice)
+* supports both [DataMapper](docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](docs/active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice)
 * entities and columns
 * database-specific column types
 * entity manager
