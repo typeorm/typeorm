@@ -22,6 +22,7 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {Query} from "../Query";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {PostgresDriver} from "./PostgresDriver";
+import {PostgresClearOptions} from "./PostgresClearOptions";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -1260,8 +1261,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    async clearTable(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.escapePath(tableName)}`);
+    async clearTable(tableName: string, options?: PostgresClearOptions): Promise<void> {
+        await this.query(`TRUNCATE TABLE ${this.escapePath(tableName)} ${options && options.cascade ? "CASCADE" : ""}`);
     }
 
     /**

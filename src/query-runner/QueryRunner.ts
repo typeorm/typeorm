@@ -13,6 +13,7 @@ import {Broadcaster} from "../subscriber/Broadcaster";
 import {TableCheck} from "../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {TableExclusion} from "../schema-builder/table/TableExclusion";
+import {ClearOptions} from "../repository/ClearOptions";
 
 /**
  * Runs queries on a single database connection.
@@ -362,7 +363,7 @@ export interface QueryRunner {
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    clearTable(tableName: string): Promise<void>;
+    clearTable(tableName: string, options?: ClearOptions): Promise<void>;
 
     /**
      * Enables special query runner mode in which sql queries won't be executed,

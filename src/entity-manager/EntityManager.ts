@@ -35,6 +35,7 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {FindConditions} from "../find-options/FindConditions";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {ObjectUtils} from "../util/ObjectUtils";
+import {ClearOptions} from "../repository/ClearOptions";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -919,11 +920,11 @@ export class EntityManager {
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
      * @see https://stackoverflow.com/a/5972738/925151
      */
-    async clear<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string): Promise<void> {
+    async clear<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, options?: ClearOptions): Promise<void> {
         const metadata = this.connection.getMetadata(entityClass);
         const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
         try {
-            return await queryRunner.clearTable(metadata.tablePath); // await is needed here because we are using finally
+            return await queryRunner.clearTable(metadata.tablePath, options); // await is needed here because we are using finally
 
         } finally {
             if (!this.queryRunner)

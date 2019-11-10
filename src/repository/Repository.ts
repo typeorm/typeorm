@@ -14,6 +14,7 @@ import {InsertResult} from "../query-builder/result/InsertResult";
 import {QueryDeepPartialEntity} from "../query-builder/QueryPartialEntity";
 import {ObjectID} from "../driver/mongodb/typings";
 import {FindConditions} from "../find-options/FindConditions";
+import {ClearOptions} from "./ClearOptions";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -332,8 +333,8 @@ export class Repository<Entity extends ObjectLiteral> {
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
      * @see https://stackoverflow.com/a/5972738/925151
      */
-    clear(): Promise<void> {
-        return this.manager.clear(this.metadata.target);
+    clear(options?: ClearOptions): Promise<void> {
+        return this.manager.clear(this.metadata.target, options);
     }
 
     /**
