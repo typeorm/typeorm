@@ -2341,7 +2341,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (column) {
 
                     const aliasPath = `${alias}.${propertyPath}`;
-                    const parameterName = alias + "_" + propertyPath.replace(".", "_") + "_" + parameterIndex;
+                    const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
                     const parameterValue = column.transformer && column.transformer.to ? column.transformer.to(where[key]) : where[key];
 
                     if (parameterValue === null) {

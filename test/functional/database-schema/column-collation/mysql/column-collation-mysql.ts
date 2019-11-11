@@ -29,7 +29,6 @@ describe("database schema > column collation > mysql", () => {
         post.description = "This is post";
         await postRepository.save(post);
 
-        console.log(table);
         table!.findColumnByName("name")!.charset!.should.be.equal("ascii");
         table!.findColumnByName("name")!.collation!.should.be.equal("ascii_general_ci");
         table!.findColumnByName("title")!.charset!.should.be.equal("utf8");

@@ -4,6 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 import { Category } from "./entity/Category";
+import { OracleDriver } from "../../../src/driver/oracle/OracleDriver";
 
 describe("github issues > #3363 Isolation Level in transaction() from Connection", () => {
 
@@ -16,6 +17,11 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
     after(() => closeTestingConnections(connections));
 
     it("should execute operations in READ UNCOMMITED isolation level", () => Promise.all(connections.map(async function(connection) {
+
+        // Oracle doesn't support that transaction isolation level.
+        if (connection.driver instanceof OracleDriver) {
+            return;
+        }
 
         let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
 

@@ -3,7 +3,7 @@ import {Connection, Not} from "../../../../src";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Post} from "./entity/Post";
 import {prepareData} from "./find-options-test-utils";
-import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
+import { expect } from "chai";
 
 describe("find options > order", () => {
 
@@ -179,9 +179,6 @@ describe("find options > order", () => {
 
     it("order by nested relations", () => Promise.all(connections.map(async connection => {
 
-        if (connection.driver instanceof PostgresDriver) // in postgres ordering works a bit different that's why we decided to skip it
-            return;
-
         await prepareData(connection.manager);
 
         const posts = await connection.createQueryBuilder(Post, "post").setFindOptions({
@@ -196,16 +193,14 @@ describe("find options > order", () => {
                 }
             }
         }).getMany();
-        posts.should.be.eql([
+        // exact row order depends of settings like NULLS FIRST and NULLS LAST
+        posts.should.have.deep.members([
             { id: 3, title: "Post #3", text: "About post #3", counters: { likes: 1 } },
             { id: 2, title: "Post #2", text: "About post #2", counters: { likes: 2 } },
         ]);
     })));
 
     it("order by complex nested relations", () => Promise.all(connections.map(async connection => {
-
-        if (connection.driver instanceof PostgresDriver) // in postgres ordering works a bit different that's why we decided to skip it
-            return;
 
         await prepareData(connection.manager);
 
@@ -221,11 +216,15 @@ describe("find options > order", () => {
                 }
             }
         }).getMany();
-        posts.should.be.eql([
+        // exact row order depends of settings like NULLS FIRST and NULLS LAST
+        posts.should.have.deep.members([
             { id: 1, title: "Post #1", text: "About post #1", counters: { likes: 1 } },
             { id: 2, title: "Post #2", text: "About post #2", counters: { likes: 2 } },
-            { id: 3, title: "Post #3", text: "About post #3", counters: { likes: 1 } },
+            { id: 3, title: "Post #3", text: "About post #3", counters: { likes: 1 } }
         ]);
+        expect(posts[0].id).to.be.oneOf([1, 3]);
+        expect(posts[1].id).to.be.oneOf([2, 1]);
+        expect(posts[2].id).to.be.oneOf([3, 2]);
     })));
 
     it("order by column in embed", () => Promise.all(connections.map(async connection => {
