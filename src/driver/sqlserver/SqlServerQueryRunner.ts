@@ -940,12 +940,21 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             }
 
             if (newColumn.default !== oldColumn.default) {
-                if (newColumn.default !== null && newColumn.default !== undefined) {
+                const defaultNotEmpty = (value: null | undefined) => value !== null && value !== undefined;
+                if (defaultNotEmpty(newColumn.default) && defaultNotEmpty(oldColumn.default) && oldColumn.default !== newColumn.default) {
+                    const newDefaultName = this.connection.namingStrategy.defaultConstraintName(table.name, newColumn.name);
+                    const oldDefaultName = this.connection.namingStrategy.defaultConstraintName(table.name, oldColumn.name);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${oldDefaultName}"`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${newDefaultName}" DEFAULT ${newColumn.default} FOR "${newColumn.name}"`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${newDefaultName}"`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${oldDefaultName}" DEFAULT ${oldColumn.default} FOR "${oldColumn.name}"`));
+
+                } else if (defaultNotEmpty(newColumn.default)) {
                     const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, newColumn.name);
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${newColumn.default} FOR "${newColumn.name}"`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
 
-                } else if (oldColumn.default !== null && oldColumn.default !== undefined) {
+                } else if (defaultNotEmpty(oldColumn.default)) {
                     const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, oldColumn.name);
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${oldColumn.default} FOR "${oldColumn.name}"`));
