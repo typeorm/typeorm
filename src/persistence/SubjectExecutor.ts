@@ -352,7 +352,7 @@ export class SubjectExecutor {
 
             // for mongodb we have a bit different updation logic
             if (this.queryRunner instanceof MongoQueryRunner) {
-                const partialEntity = OrmUtils.mergeDeep({}, subject.entity!);
+                const partialEntity = OrmUtils.mergeDeep({}, { ...subject.entity! });
                 if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
                     delete partialEntity[subject.metadata.objectIdColumn.propertyName];
                 }

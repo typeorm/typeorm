@@ -70,11 +70,10 @@ export class OrmUtils {
         // Filters out Buffer and custom instances of classes
         const prototype = Object.getPrototypeOf(item);
         return prototype === null || prototype === Object.getPrototypeOf({});
-
     }
 
     /**
-     * Deep Object.assign.
+     * Deep Object.assign for simple objects.
      *
      * @see http://stackoverflow.com/a/34749873
      */
