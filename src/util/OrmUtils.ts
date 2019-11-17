@@ -58,8 +58,19 @@ export class OrmUtils {
         }, [] as T[]);
     }
 
-    static isObject(item: any) {
-        return (item && typeof item === "object" && !Array.isArray(item));
+    // Checks if it's an object made by Object.create(null), {} or new Object()
+    static isPlainObject(item: any) {
+        // Filters out undefined, null, function, and primitive array, number, string
+        // Less expensive call than toString
+        const isObject = item != null && typeof item === "object" && !Array.isArray(item);
+        if (!isObject) { return false; }
+        // Filters out Date, Set, Map, String, Math, Number and a few others
+        const isObjectObject = Object.prototype.toString.call(item) === "[object Object]";
+        if (!isObjectObject) { return false; }
+        // Filters out Buffer and custom instances of classes
+        const prototype = Object.getPrototypeOf(item);
+        return prototype === null || prototype === Object.getPrototypeOf({});
+
     }
 
     /**
@@ -71,7 +82,7 @@ export class OrmUtils {
         if (!sources.length) return target;
         const source = sources.shift();
 
-        if (this.isObject(target) && this.isObject(source)) {
+        if (this.isPlainObject(target) && this.isPlainObject(source)) {
             for (const key in source) {
                 let propertyKey = key;
                 if (source[key] instanceof Promise)
@@ -81,11 +92,7 @@ export class OrmUtils {
                 //     propertyKey = "__" + key + "__";
                 // }
 
-                if (this.isObject(source[propertyKey])
-                    && !(source[propertyKey] instanceof Map)
-                    && !(source[propertyKey] instanceof Set)
-                    && !(source[propertyKey] instanceof Date)
-                    && !(source[propertyKey] instanceof Buffer)) {
+                if (this.isPlainObject(source[propertyKey])) {
                     if (!target[key]) Object.assign(target, { [key]: Object.create(Object.getPrototypeOf(source[propertyKey])) });
                     this.mergeDeep(target[key], source[propertyKey]);
                 } else {
