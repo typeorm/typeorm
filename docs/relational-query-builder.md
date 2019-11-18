@@ -21,7 +21,7 @@ await getConnection()
 This code is equivalent to doing this:
        
 ```typescript
-import {getManager} from "typeorm";
+import {getRepository} from "typeorm";
 
 const postRepository = getRepository(Post);
 const post = await postRepository.findOne(1, { relations: ["categories"] });
