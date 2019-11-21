@@ -171,8 +171,7 @@ export class DateUtils {
 
     static stringToSimpleJson(value: any) {
         try {
-            const simpleJSON = JSON.parse(value); 
-            return (typeof simpleJSON === "object") ? simpleJSON : {};
+            return value ? JSON.parse(value) : {};
        } catch (err) {
             return {};
        }
