@@ -311,7 +311,7 @@ export class MigrationExecutor {
             .db(this.connection.driver.database!)
             .collection(this.migrationsTableName)
             .find<Migration>()
-            .sort("_id", -1)
+            .sort({"_id": -1})
             .toArray();
         } else {
             const migrationsRaw: ObjectLiteral[] = await this.connection.manager
