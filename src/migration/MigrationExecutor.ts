@@ -10,6 +10,7 @@ import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectio
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import { MongoDriver } from "../driver/mongodb/MongoDriver";
 import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner";
+import { RdbmsSchemaBuilder } from "../schema-builder/RdbmsSchemaBuilder";
 
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
@@ -197,6 +198,13 @@ export class MigrationExecutor {
 
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner);
+
+        // create the typeorm_metadata table if necessary
+        const schemaBuilder = this.connection.driver.createSchemaBuilder();
+
+        if (schemaBuilder instanceof RdbmsSchemaBuilder) {
+            await schemaBuilder.createMetadataTableIfNecessary();
+        }
 
         // get all migrations that are executed and saved in the database
         const executedMigrations = await this.loadExecutedMigrations(queryRunner);
