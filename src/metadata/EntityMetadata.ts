@@ -5,7 +5,7 @@ import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOp
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {OracleDriver} from "../driver/sqlserver/OracleDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
