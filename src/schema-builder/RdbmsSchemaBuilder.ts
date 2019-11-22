@@ -99,7 +99,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * If the schema contains views, create the typeorm_metadata table if it doesn't exist yet
      */
     async createMetadataTableIfNecessary(): Promise<void> {
-        if (!this.queryRunner) this.queryRunner = this.connection.createQueryRunner("master");
         if (this.viewEntityToSyncMetadatas.length > 0) {
             await this.createTypeormMetadataTable();
         }
