@@ -196,6 +196,77 @@ const userRepository = getMongoRepository(User); // or connection.getMongoManage
 const timber = await userRepository.findOne({ firstName: "Timber", lastName: "Saw" });
 ```
 
+Use Advanced options in find():
+
+Equal:
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+const timber = await userRepository.find({
+  where: {
+    firstName: {$eq: "Timber"},
+  }
+});
+```
+
+LessThan:
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+const timber = await userRepository.find({
+  where: {
+    age: {$lt: 60},
+  }
+});
+```
+
+In:
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+const timber = await userRepository.find({
+  where: {
+    firstName: {$in: ["Timber","Zhang"]},
+  }
+});
+```
+
+Not in:
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+const timber = await userRepository.find({
+  where: {
+firstName: {$not: {$in: ["Timber","Zhang"]}},
+}
+});
+```
+
+Or:
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+const timber = await userRepository.find({
+  where: {
+    $or: [
+        {firstName:"Timber"},
+        {firstName:"Zhang"}
+      ]
+  }
+});
+```
+
+
 Both `MongoEntityManager` and `MongoRepository` contain lot of useful MongoDB-specific methods:
 
 #### `createCursor`
