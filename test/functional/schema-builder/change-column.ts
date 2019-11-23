@@ -11,6 +11,7 @@ import {Post} from "./entity/Post";
 import {PostVersion} from "./entity/PostVersion";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
+import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
 
 describe("schema builder > change column", () => {
 
@@ -61,7 +62,7 @@ describe("schema builder > change column", () => {
         postTable!.findColumnByName("name")!.length.should.be.equal("500");
         postTable!.findColumnByName("text")!.length.should.be.equal("300");
 
-        if (connection.driver instanceof MysqlDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver) {
             postTable!.indices.length.should.be.equal(2);
         } else {
             postTable!.uniques.length.should.be.equal(2);

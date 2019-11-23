@@ -10,6 +10,8 @@ import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
 import {Photo} from "./entity/Photo";
+import {Book2, Book} from "./entity/Book";
+import {SqliteDriver} from "../../../src/driver/sqlite/SqliteDriver";
 
 describe("query runner > create table", () => {
 
@@ -326,5 +328,44 @@ describe("query runner > create table", () => {
 
         await queryRunner.release();
     })));
+
+    it("should correctly create table with different `withoutRowid` definitions", () => Promise.all(connections.map(async connection => {
+
+        if (connection.driver instanceof SqliteDriver) {
+            const queryRunner = connection.createQueryRunner();
+
+            // the table 'book' must contain a 'rowid' column
+            const metadataBook = connection.getMetadata(Book);
+            const newTableBook = Table.create(metadataBook, connection.driver);
+            await queryRunner.createTable(newTableBook);
+            const aBook = new Book();
+            aBook.ean = "asdf";
+            await connection.manager.save(aBook);
+    
+            const desc = await connection.manager.query("SELECT rowid FROM book WHERE ean = 'asdf'");
+            expect(desc[0].rowid).equals(1);
+
+            await queryRunner.dropTable("book");
+            const bookTableIsGone = await queryRunner.getTable("book");
+            expect(bookTableIsGone).to.be.undefined;
+    
+            // the table 'book2' must NOT contain a 'rowid' column
+            const metadataBook2 = connection.getMetadata(Book2);
+            const newTableBook2 = Table.create(metadataBook2, connection.driver);
+            await queryRunner.createTable(newTableBook2);
+    
+            try {
+                await connection.manager.query("SELECT rowid FROM book2");
+            } catch (e) {
+                expect(e.message).equal("SQLITE_ERROR: no such column: rowid");
+            }
+
+            await queryRunner.dropTable("book2");           
+            const book2TableIsGone = await queryRunner.getTable("book2");
+            expect(book2TableIsGone).to.be.undefined;            
+
+            await queryRunner.release();
+        }
+    })));    
 
 });

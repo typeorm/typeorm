@@ -120,7 +120,7 @@ export class PostCategory {
 }
 ```
 
-example using using QueryBuilder:
+example using QueryBuilder:
 
 ```typescript
 import {ViewEntity, ViewColumn} from "typeorm";

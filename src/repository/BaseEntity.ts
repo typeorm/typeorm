@@ -219,7 +219,7 @@ export class BaseEntity {
 
     /**
      * Deletes entities by a given criteria.
-     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Unlike remove method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
      */

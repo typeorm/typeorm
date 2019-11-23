@@ -154,6 +154,8 @@ Slight performance penalty for most calls. (Default: `true`)
 * `multipleStatements` - Allow multiple mysql statements per query. Be careful with this, it could increase the scope 
 of SQL injection attacks. (Default: `false`)
 
+* `legacySpatialSupport` - Use spatial functions like GeomFromText and AsText which are removed in MySQL 8. (Default: true)
+
 * `flags` - List of connection flags to use other than the default ones. It is also possible to blacklist default ones.
  For more information, check [Connection Flags](https://github.com/mysqljs/mysql#connection-flags).
  
@@ -179,6 +181,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 * `ssl` - Object with ssl parameters. See [TLS/SSL](https://node-postgres.com/features/ssl).
 
 * `uuidExtension` - The Postgres extension to use when generating UUIDs. Defaults to `uuid-ossp`. Can be changed to `pgcrypto` if the `uuid-ossp` extension is unavailable.
+
+* `poolErrorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
 
 ## `sqlite` connection options
 
@@ -257,6 +261,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
  
 * `pool.idleTimeoutMillis` -  the minimum amount of time that an object may sit idle in the pool before it is eligible for
  eviction due to idle time. Supersedes `softIdleTimeoutMillis`. Default: `30000`.
+ 
+ * `pool.errorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
  
 * `options.fallbackToDefaultDb` - By default, if the database requestion by `options.database` cannot be accessed, the connection
  will fail with an error. However, if `options.fallbackToDefaultDb` is set to `true`, then the user's default database will
@@ -460,6 +466,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 ## `sql.js` connection options
 
 * `database`: The raw UInt8Array database that should be imported.
+
+* `sqlJsConfig`: Optional initialize config for sql.js.
 
 * `autoSave`: Whether or not autoSave should be disabled. If set to true the database will be saved to the given file location (Node.js) or LocalStorage element (browser) when a change happens and `location` is specified. Otherwise `autoSaveCallback` can be used.
 

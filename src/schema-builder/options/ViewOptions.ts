@@ -19,4 +19,9 @@ export interface ViewOptions {
      */
     expression: string|((connection: Connection) => SelectQueryBuilder<any>);
 
+    /**
+     * Indicates if view is materialized
+     */
+
+    materialized?: boolean;
 }

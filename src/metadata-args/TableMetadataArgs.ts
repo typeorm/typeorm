@@ -56,4 +56,14 @@ export interface TableMetadataArgs {
      */
     expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
 
+    /**
+     * Indicates if view is materialized
+     */
+    materialized?: boolean;
+
+     /**
+     * If set to 'true' this option disables Sqlite's default behaviour of secretly creating
+     * an integer primary key column named 'rowid' on table creation. 
+     */
+    withoutRowid?: boolean;   
 }

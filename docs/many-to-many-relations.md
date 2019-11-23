@@ -1,5 +1,14 @@
 # Many-to-many relations
 
+ * [What are many-to-many relations](#what-are-many-to-many-relations)
+ * [Saving many-to-many relations](#saving-many-to-many-relations)
+ * [Deleting many-to-many relations](#deleting-many-to-many-relations)
+ * [Loading many-to-many relations](#loading-many-to-many-relations)
+ * [bi-directional relations](#bi-directional-relations)
+ * [many-to-many relations with custom properties](#many-to-many-relations-with-custom-properties)
+
+## What are many-to-many relations
+
 Many-to-many is a relation where A contains multiple instances of B, and B contain multiple instances of A.
 Let's take for example `Question` and `Category` entities.
 Question can have multiple categories, and each category can have multiple questions.
@@ -70,7 +79,9 @@ This example will produce following tables:
 +-------------+--------------+----------------------------+
 ```
 
-Example how to save such relation:
+## Saving many-to-many relations
+
+With [cascades](./relations.md#cascades) enabled you can save this relation with only one `save` call.
 
 ```typescript
 const category1 = new Category();
@@ -88,7 +99,23 @@ question.categories = [category1, category2];
 await connection.manager.save(question);
 ```
 
-With cascades enabled you can save this relation with only one `save` call.
+## Deleting many-to-many relations
+
+With [cascades](./relations.md#cascades) enabled you can delete this relation with only one `save` call.
+
+To delete a many-to-many relationship between two records, remove it from the corresponding field and save the record.
+
+```typescript
+const question = getRepository(Question);
+question.categories = question.categories.filter(category => {
+    category.id !== categoryToRemove.id
+})
+await connection.manager.save(question)
+```
+
+This will only remove the record in the join table. The `question` and `categoryToRemove` records will still exist.
+
+## Loading many-to-many relations
 
 To load question with categories inside you must specify relation in `FindOptions`:
 
@@ -108,6 +135,8 @@ const questions = await connection
 ```
 
 With eager loading enabled on a relation you don't have to specify relation or join it - it will ALWAYS be loaded automatically.
+
+## bi-directional relations
 
 Relations can be uni-directional and bi-directional.
 Uni-directional are relations with a relation decorator only on one side.
@@ -186,7 +215,10 @@ export class PostToCategory {
     @PrimaryGeneratedColumn()
     public postToCategoryId!: number;
 
+    @Column()
     public postId!: number;
+    
+    @Column()
     public categoryId!: number;
 
     @Column()
@@ -203,6 +235,13 @@ export class PostToCategory {
 Additionally you will have to add a relationship like the following to `Post` and `Category`:
 
 ```typescript
-@OneToMany((type) => PostToCategory, (postToCategory) => postToCategory.post)
+// category.ts
+...
+@OneToMany(type => PostToCategory, postToCategory => postToCategory.category)
+public postToCategories!: PostToCategory[];
+
+// post.ts
+...
+@OneToMany(type => PostToCategory, postToCategory => postToCategory.post)
 public postToCategories!: PostToCategory[];
 ```

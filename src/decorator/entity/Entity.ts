@@ -30,7 +30,8 @@ export function Entity(nameOrOptions?: string|EntityOptions, maybeOptions?: Enti
             engine: options.engine ? options.engine : undefined,
             database: options.database ? options.database : undefined,
             schema: options.schema ? options.schema : undefined,
-            synchronize: options.synchronize
+            synchronize: options.synchronize,
+            withoutRowid: options.withoutRowid
         } as TableMetadataArgs);
     };
 }

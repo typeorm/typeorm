@@ -172,7 +172,7 @@ describe("query runner > rename table", () => {
 
         await queryRunner.renameTable(categoryTableName, "renamedCategory");
         table = await queryRunner.getTable(renamedCategoryTableName);
-        const newForeignKeyName = connection.namingStrategy.foreignKeyName(table!, ["questionId"]);
+        const newForeignKeyName = connection.namingStrategy.foreignKeyName(table!, ["questionId"], "question", ["id"]);
         table!.foreignKeys[0].name!.should.be.equal(newForeignKeyName);
 
         await queryRunner.executeMemoryDownSql();

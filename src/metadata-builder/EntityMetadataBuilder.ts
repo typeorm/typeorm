@@ -21,6 +21,7 @@ import {CheckMetadata} from "../metadata/CheckMetadata";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {ExclusionMetadata} from "../metadata/ExclusionMetadata";
+import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -128,7 +129,7 @@ export class EntityMetadataBuilder {
                         entityMetadata.foreignKeys.push(foreignKey);
                     }
                     if (uniqueConstraint) {
-                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof SqlServerDriver) {
+                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver || this.connection.driver instanceof SqlServerDriver) {
                             const index = new IndexMetadata({
                                 entityMetadata: uniqueConstraint.entityMetadata,
                                 columns: uniqueConstraint.columns,
@@ -520,7 +521,7 @@ export class EntityMetadataBuilder {
         }
 
         // Mysql stores unique constraints as unique indices.
-        if (this.connection.driver instanceof MysqlDriver) {
+        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
             const indices = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
                 return new IndexMetadata({
                     entityMetadata: entityMetadata,

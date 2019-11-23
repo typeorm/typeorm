@@ -31,7 +31,7 @@ export class ConnectionMetadataBuilder {
      */
     buildMigrations(migrations: (Function|string)[]): MigrationInterface[] {
         const [migrationClasses, migrationDirectories] = OrmUtils.splitClassesAndStrings(migrations);
-        const allMigrationClasses = [...migrationClasses, ...importClassesFromDirectories(migrationDirectories)];
+        const allMigrationClasses = [...migrationClasses, ...importClassesFromDirectories(this.connection.logger, migrationDirectories)];
         return allMigrationClasses.map(migrationClass => getFromContainer<MigrationInterface>(migrationClass));
     }
 
@@ -40,7 +40,7 @@ export class ConnectionMetadataBuilder {
      */
     buildSubscribers(subscribers: (Function|string)[]): EntitySubscriberInterface<any>[] {
         const [subscriberClasses, subscriberDirectories] = OrmUtils.splitClassesAndStrings(subscribers || []);
-        const allSubscriberClasses = [...subscriberClasses, ...importClassesFromDirectories(subscriberDirectories)];
+        const allSubscriberClasses = [...subscriberClasses, ...importClassesFromDirectories(this.connection.logger, subscriberDirectories)];
         return getMetadataArgsStorage()
             .filterSubscribers(allSubscriberClasses)
             .map(metadata => getFromContainer<EntitySubscriberInterface<any>>(metadata.target));
@@ -56,7 +56,7 @@ export class ConnectionMetadataBuilder {
         const entityClasses: Function[] = entityClassesOrSchemas.filter(entityClass => (entityClass instanceof EntitySchema) === false) as any;
         const entitySchemas: EntitySchema<any>[] = entityClassesOrSchemas.filter(entityClass => entityClass instanceof EntitySchema) as any;
 
-        const allEntityClasses = [...entityClasses, ...importClassesFromDirectories(entityDirectories)];
+        const allEntityClasses = [...entityClasses, ...importClassesFromDirectories(this.connection.logger, entityDirectories)];
         allEntityClasses.forEach(entityClass => { // if we have entity schemas loaded from directories
             if (entityClass instanceof EntitySchema) {
                 entitySchemas.push(entityClass);

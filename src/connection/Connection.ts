@@ -37,6 +37,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {PromiseUtils} from "../";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
+import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -258,7 +259,7 @@ export class Connection {
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.createQueryRunner("master");
         try {
-            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
+            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver || this.driver instanceof AuroraDataApiDriver) {
                 const databases: string[] = this.driver.database ? [this.driver.database] : [];
                 this.entityMetadatas.forEach(metadata => {
                     if (metadata.database && databases.indexOf(metadata.database) === -1)
@@ -277,14 +278,13 @@ export class Connection {
      * Runs all pending migrations.
      * Can be used only after connection to the database is established.
      */
-    async runMigrations(options?: { transaction?: boolean }): Promise<Migration[]> {
+    async runMigrations(options?: { transaction?: "all" | "none" | "each" }): Promise<Migration[]> {
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
-        if (options && options.transaction === false) {
-            migrationExecutor.transaction = false;
-        }
+        migrationExecutor.transaction = (options && options.transaction) || "all";
+
         const successMigrations = await migrationExecutor.executePendingMigrations();
         return successMigrations;
     }
@@ -293,21 +293,20 @@ export class Connection {
      * Reverts last executed migration.
      * Can be used only after connection to the database is established.
      */
-    async undoLastMigration(options?: { transaction?: boolean }): Promise<void> {
+    async undoLastMigration(options?: { transaction?: "all" | "none" | "each" }): Promise<void> {
 
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
-        if (options && options.transaction === false) {
-            migrationExecutor.transaction = false;
-        }
+        migrationExecutor.transaction = (options && options.transaction) || "all";
+
         await migrationExecutor.undoLastMigration();
     }
 
     /**
      * Lists all migrations and whether they have been run.
-     * Returns true if there are no pending migrations
+     * Returns true if there are pending migrations
      */
     async showMigrations(): Promise<boolean> {
         if (!this.isConnected) {
@@ -480,8 +479,12 @@ export class Connection {
      */
     protected findMetadata(target: Function|EntitySchema<any>|string): EntityMetadata|undefined {
         return this.entityMetadatas.find(metadata => {
-            if (metadata.target === target)
+            if (typeof metadata.target === "function" && typeof target === "function" && metadata.target.name === target.name) {
                 return true;
+            }
+            if (metadata.target === target) {
+                return true;
+            }
             if (target instanceof EntitySchema) {
                 return metadata.name === target.options.name;
             }
@@ -517,8 +520,26 @@ export class Connection {
         const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
         ObjectUtils.assign(this, { migrations: migrations });
 
+        this.driver.database = this.getDatabaseName();
+
         // validate all created entity metadatas to make sure user created entities are valid and correct
         entityMetadataValidator.validateMany(this.entityMetadatas.filter(metadata => metadata.tableType !== "view"), this.driver);
     }
+
+    // This database name property is nested for replication configs.
+    protected getDatabaseName(): string {
+    const options = this.options;
+    switch (options.type) {
+        case "mysql" :
+        case "mariadb" :
+        case "postgres":
+        case "cockroachdb":
+        case "mssql":
+        case "oracle":
+            return (options.replication ? options.replication.master.database : options.database) as string;
+        default:
+            return options.database as string;
+    }
+}
 
 }

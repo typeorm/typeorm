@@ -79,7 +79,7 @@ export function Index(nameOrFieldsOrOptions?: string|string[]|((object: any) => 
             fulltext: options && options.fulltext ? true : false,
             sparse: options && options.sparse ? true : false,
             background: options && options.background ? true : false,
-            expireAfterSeconds: options && options.expireAfterSeconds ? options.expireAfterSeconds : undefined
+            expireAfterSeconds: options ? options.expireAfterSeconds : undefined
         } as IndexMetadataArgs);
     };
 }

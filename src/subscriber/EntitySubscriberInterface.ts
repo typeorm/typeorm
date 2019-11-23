@@ -12,7 +12,7 @@ export interface EntitySubscriberInterface<Entity = any> {
      * Returns the class of the entity to which events will listen.
      * If this method is omitted, then subscriber will listen to events of all entities.
      */
-    listenTo?(): Function;
+    listenTo?(): Function | string;
 
     /**
      * Called after entity is loaded from the database.

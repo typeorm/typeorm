@@ -148,7 +148,8 @@ export class PostgresDriver implements Driver {
         "tstzrange",
         "daterange",
         "geometry",
-        "geography"
+        "geography",
+        "cube"
     ];
 
     /**
@@ -301,13 +302,16 @@ export class PostgresDriver implements Driver {
         const hasHstoreColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.columns.filter(column => column.type === "hstore").length > 0;
         });
+        const hasCubeColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.columns.filter(column => column.type === "cube").length > 0;
+        });
         const hasGeometryColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.columns.filter(column => this.spatialTypes.indexOf(column.type) >= 0).length > 0;
         });
         const hasExclusionConstraints = this.connection.entityMetadatas.some(metadata => {
             return metadata.exclusions.length > 0;
         });
-        if (hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns || hasExclusionConstraints) {
+        if (hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns || hasCubeColumns || hasExclusionConstraints) {
             await Promise.all([this.master, ...this.slaves].map(pool => {
                 return new Promise((ok, fail) => {
                     pool.connect(async (err: any, connection: any, release: Function) => {
@@ -336,6 +340,12 @@ export class PostgresDriver implements Driver {
                                 await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "postgis"`);
                             } catch (_) {
                                 logger.log("warn", "At least one of the entities has a geometry column, but the 'postgis' extension cannot be installed automatically. Please install it manually using superuser rights");
+                            }
+                        if (hasCubeColumns)
+                            try {
+                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "cube"`);
+                            } catch (_) {
+                                logger.log("warn", "At least one of the entities has a cube column, but the 'cube' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         if (hasExclusionConstraints)
                             try {
@@ -414,9 +424,18 @@ export class PostgresDriver implements Driver {
             if (typeof value === "string") {
                 return value;
             } else {
-                return Object.keys(value).map(key => {
-                    return `"${key}"=>"${value[key]}"`;
-                }).join(", ");
+                // https://www.postgresql.org/docs/9.0/hstore.html
+                const quoteString = (value: unknown) => {
+                    // If a string to be quoted is `null` or `undefined`, we return a literal unquoted NULL.
+                    // This way, NULL values can be stored in the hstore object.
+                    if (value === null || typeof value === "undefined") {
+                        return "NULL";
+                    }
+                    // Convert non-null values to string since HStore only stores strings anyway.
+                    // To include a double quote or a backslash in a key or value, escape it with a backslash.
+                    return `"${`${value}`.replace(/(?=["\\])/g, "\\")}"`;
+                };
+                return Object.keys(value).map(key => quoteString(key) + "=>" + quoteString(value[key])).join(",");
             }
 
         } else if (columnMetadata.type === "simple-array") {
@@ -424,6 +443,12 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
+
+        } else if (columnMetadata.type === "cube") {
+            if (columnMetadata.isArray) {
+                return `{${value.map((cube: number[]) => `"(${cube.join(",")})"`).join(",")}}`;
+            }
+            return `(${value.join(",")})`;
 
         } else if (
             (
@@ -463,13 +488,13 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
-                const regexp = /"(.*?)"=>"(.*?[^\\"])"/gi;
-                const matchValue = value.match(regexp);
+                const unescapeString = (str: string) => str.replace(/\\./g, (m) => m[1]);
+                const regexp = /"([^"\\]*(?:\\.[^"\\]*)*)"=>(?:(NULL)|"([^"\\]*(?:\\.[^"\\]*)*)")(?:,|$)/g;
                 const object: ObjectLiteral = {};
-                let match;
-                while (match = regexp.exec(matchValue)) {
-                    object[match[1].replace(`\\"`, `"`)] = match[2].replace(`\\"`, `"`);
-                }
+                `${value}`.replace(regexp, (_, key, nullValue, stringValue) => {
+                    object[unescapeString(key)] = nullValue ? null : unescapeString(stringValue);
+                    return "";
+                });
                 return object;
 
             } else {
@@ -481,6 +506,32 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
+
+        } else if (columnMetadata.type === "cube") {
+            value = value.replace(/[\(\)\s]+/g, ""); // remove whitespace
+            if (columnMetadata.isArray) {
+                /**
+                 * Strips these groups from `{"1,2,3","",NULL}`:
+                 * 1. ["1,2,3", undefined]  <- cube of arity 3
+                 * 2. ["", undefined]         <- cube of arity 0
+                 * 3. [undefined, "NULL"]     <- NULL
+                 */
+                const regexp = /(?:\"((?:[\d\s\.,])*)\")|(?:(NULL))/g;
+                const unparsedArrayString = value;
+
+                value = [];
+                let cube: RegExpExecArray | null = null;
+                // Iterate through all regexp matches for cubes/null in array
+                while ((cube = regexp.exec(unparsedArrayString)) !== null) {
+                    if (cube[1] !== undefined) {
+                        value.push(cube[1].split(",").filter(Boolean).map(Number));
+                    } else {
+                        value.push(undefined);
+                    }
+                }
+            } else {
+                value = value.split(",").filter(Boolean).map(Number);
+            }
 
         } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum" ) {
             if (columnMetadata.isArray) {
@@ -863,7 +914,7 @@ export class PostgresDriver implements Driver {
      */
     protected async createPool(options: PostgresConnectionOptions, credentials: PostgresConnectionCredentialsOptions): Promise<any> {
 
-        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+        credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
         // build connection options for the driver
         const connectionOptions = Object.assign({}, {
@@ -878,11 +929,14 @@ export class PostgresDriver implements Driver {
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions);
         const { logger } = this.connection;
+
+        const poolErrorHandler = options.poolErrorHandler || ((error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
+
         /*
           Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
           cause the hosting app to crash.
          */
-        pool.on("error", (error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
+        pool.on("error", poolErrorHandler);
 
         return new Promise((ok, fail) => {
             pool.connect((err: any, connection: any, release: Function) => {

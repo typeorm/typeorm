@@ -227,13 +227,13 @@ createConnection().then(connection => {
 
     app.put("/users/:id", async function(req: Request, res: Response) {
         const user = await userRepository.findOne(req.params.id);
-        await userRepository.merge(user, req.body);
+        userRepository.merge(user, req.body);
         const results = await userRepository.save(user);
         return res.send(results);
     });
 
     app.delete("/users/:id", async function(req: Request, res: Response) {
-        const results = await userRepository.remove(req.params.id);
+        const results = await userRepository.delete(req.params.id);
         return res.send(results);
     });
 

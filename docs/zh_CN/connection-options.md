@@ -98,6 +98,8 @@
 
 - `multipleStatements` - 每个查询允许多个 mysql 语句。请注意，它可能会增加 SQL 注入攻击的范围。 （默认值：`false`）
 
+- `legacySpatialSupport` - Use spatial functions like GeomFromText and AsText which are removed in MySQL 8. (Default: true)
+
 - `flags` - 使用非默认连接标志的连接标志列表。也可以将默认值列入黑名单。有关更多信息，请查看[Connection Flags](https://github.com/mysqljs/mysql#connection-flags)。
 
 - `ssl` - 带有 ssl 参数的对象或包含 ssl 配置文件名称的字符串。请参阅[SSL 选项](https://github.com/mysqljs/mysql#ssl-options)。
@@ -371,6 +373,8 @@
 ## `sql.js`
 
 - `database`: 应导入的原始 UInt8Array 数据库。
+
+- `sqlJsConfig`: sql.js可选启动配置
 
 - `autoSave`: 是否应禁用 autoSave。如果设置为 true，则在发生更改并指定`location`时，数据库将保存到给定的文件位置（Node.js）或 LocalStorage（浏览器）。否则可以使用`autoSaveCallback`。
 

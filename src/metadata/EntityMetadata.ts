@@ -102,6 +102,11 @@ export class EntityMetadata {
     expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
 
     /**
+     * Enables Sqlite "WITHOUT ROWID" modifier for the "CREATE TABLE" statement
+     */
+    withoutRowid?: boolean = false;    
+
+    /**
      * Original user-given table name (taken from schema or @Entity(tableName) decorator).
      * If user haven't specified a table name this property will be undefined.
      */
@@ -496,6 +501,7 @@ export class EntityMetadata {
         this.target = this.tableMetadataArgs.target;
         this.tableType = this.tableMetadataArgs.type;
         this.expression = this.tableMetadataArgs.expression;
+        this.withoutRowid = this.tableMetadataArgs.withoutRowid;
     }
 
     // -------------------------------------------------------------------------
@@ -794,6 +800,7 @@ export class EntityMetadata {
         this.target = this.target ? this.target : this.tableName;
         this.name = this.targetName ? this.targetName : this.tableName;
         this.expression = this.tableMetadataArgs.expression;
+        this.withoutRowid = this.tableMetadataArgs.withoutRowid === true ? true : false;
         this.tablePath = this.buildTablePath();
         this.schemaPath = this.buildSchemaPath();
         this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
@@ -839,8 +846,10 @@ export class EntityMetadata {
      */
     protected buildTablePath(): string {
         let tablePath = this.tableName;
-        if (this.schema)
+        if (this.schema && ((this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver))) {
             tablePath = this.schema + "." + tablePath;
+        }
+
         if (this.database && !(this.connection.driver instanceof PostgresDriver)) {
             if (!this.schema && this.connection.driver instanceof SqlServerDriver) {
                 tablePath = this.database + ".." + tablePath;

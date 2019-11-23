@@ -179,7 +179,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     } else {
                         switch (result.command) {
                             case "DELETE":
-                                // for DELETE query additionally return number of affected rows
+                            case "UPDATE":
+                                // for UPDATE and DELETE query additionally return number of affected rows
                                 ok([result.rows, result.rowCount]);
                                 break;
                             default:
@@ -469,7 +470,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         // rename foreign key constraints
         newTable.foreignKeys.forEach(foreignKey => {
             // build new constraint name
-            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames);
+            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
 
             // build queries
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`));
@@ -686,7 +687,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     // build new constraint name
                     foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
                     foreignKey.columnNames.push(newColumn.name);
-                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
+                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
 
                     // build queries
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`));
@@ -1173,7 +1174,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames);
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
 
         const up = this.createForeignKeySql(table, foreignKey);
         const down = this.dropForeignKeySql(table, foreignKey);
@@ -1701,7 +1702,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
                 if (!fk.name)
-                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
 
                 let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(fk.referencedTableName)} (${referencedColumnNames})`;
@@ -1738,10 +1739,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     protected createViewSql(view: View): Query {
+        const materializedClause = view.materialized ? "MATERIALIZED " : "";
+        const viewName = this.escapePath(view);
+
         if (typeof view.expression === "string") {
-            return new Query(`CREATE VIEW ${this.escapePath(view)} AS ${view.expression}`);
+            return new Query(`CREATE ${materializedClause}VIEW ${viewName} AS ${view.expression}`);
         } else {
-            return new Query(`CREATE VIEW ${this.escapePath(view)} AS ${view.expression(this.connection).getQuery()}`);
+            return new Query(`CREATE ${materializedClause}VIEW ${viewName} AS ${view.expression(this.connection).getQuery()}`);
         }
     }
 
@@ -1838,7 +1842,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     protected createEnumTypeSql(table: Table, column: TableColumn, enumName?: string): Query {
         if (!enumName)
             enumName = this.buildEnumName(table, column);
-        const enumValues = column.enum!.map(value => `'${value}'`).join(", ");
+        const enumValues = column.enum!.map(value => `'${value.replace("'", "''")}'`).join(", ");
         return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`);
     }
 
@@ -1985,6 +1989,15 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds ENUM type name from given table and column.
      */
     protected buildEnumName(table: Table, columnOrName: TableColumn|string, withSchema: boolean = true, disableEscape?: boolean, toOld?: boolean): string {
+        /**
+         * If enumName is specified in column options then use it instead
+         */
+        if (columnOrName instanceof TableColumn && columnOrName.enumName) {
+            let enumName = columnOrName.enumName;
+            if (toOld)
+                enumName = enumName + "_old";
+            return disableEscape ? enumName : `"${enumName}"`;
+        }
         const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
         const schema = table.name.indexOf(".") === -1 ? this.driver.options.schema : table.name.split(".")[0];
         const tableName = table.name.indexOf(".") === -1 ? table.name : table.name.split(".")[1];
