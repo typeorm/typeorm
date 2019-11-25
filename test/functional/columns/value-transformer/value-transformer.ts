@@ -96,7 +96,7 @@ describe("columns > value-transformer functionality", () => {
 
     })));
 
-    it.only("should marshal data using a complex value-transformer", () => Promise.all(connections.map(async connection => {
+    it("should marshal data using a complex value-transformer", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
 
