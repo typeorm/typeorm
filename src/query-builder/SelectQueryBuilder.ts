@@ -1918,7 +1918,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     return "";
                 }
             })
-            .filter(fieldName => fieldName != "" )
+            .filter(fieldName => fieldName !== "" )
             .join(", ");
 
         const orderByObject: OrderByCondition = {};
