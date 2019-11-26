@@ -192,7 +192,7 @@ Just like separate like `MongoEntityManager` there is a `MongoRepository` with e
 ```typescript
 import {getMongoRepository} from "typeorm";
 
-const userRepository = getMongoRepository(User); // or connection.getMongoManager
+const userRepository = getMongoRepository(User); // or connection.getMongoRepository
 const timber = await userRepository.findOne({ firstName: "Timber", lastName: "Saw" });
 ```
 
