@@ -202,7 +202,7 @@ export class Connection {
 
             // if option is set - automatically synchronize a schema
             if (this.options.migrationsRun)
-                await this.runMigrations();
+                await this.runMigrations({ transaction: this.options.migrationsTransaction });
 
         } catch (error) {
 

@@ -48,6 +48,11 @@ export interface BaseConnectionOptions {
     readonly migrationsTableName?: string;
 
     /**
+     * Transaction mode for migrations to run in
+     */
+    readonly migrationsTransaction?: "all" | "none" | "each";
+
+    /**
      * Naming strategy to be used to name tables and columns in the database.
      */
     readonly namingStrategy?: NamingStrategyInterface;
