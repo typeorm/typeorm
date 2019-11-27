@@ -50,7 +50,7 @@ export interface BaseConnectionOptions {
     /**
      * Transaction mode for migrations to run in
      */
-    readonly migrationsTransaction?: "all" | "none" | "each";
+    readonly migrationsTransactionMode?: "all" | "none" | "each";
 
     /**
      * Naming strategy to be used to name tables and columns in the database.
