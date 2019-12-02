@@ -1,5 +1,6 @@
 import {getMetadataArgsStorage, ObjectType, RelationOptions} from "../../";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
+import { PromiseUtils } from "../../util/PromiseUtils";
 
 /**
  * Many-to-one relation allows to create type of relation when Entity1 can have single instance of Entity2, but
@@ -41,7 +42,7 @@ export function ManyToOne<T>(typeFunctionOrTarget: string|((type?: any) => Objec
         let isLazy = options && options.lazy === true ? true : false;
         if (!isLazy && Reflect && (Reflect as any).getMetadata) { // automatic determination
             const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
-            if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise")
+            if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === PromiseUtils.getGlobalPromiseTypeName())
                 isLazy = true;
         }
 

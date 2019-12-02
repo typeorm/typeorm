@@ -12,6 +12,10 @@ export class PromiseUtils {
         return promise;
     }
 
+    static getGlobalPromiseTypeName() {
+        return global.Promise.name.toLowerCase();
+    }
+
     /**
      * If given value is a promise created by "create" method this method gets its value.
      * If given value is not a promise then given value is returned back.

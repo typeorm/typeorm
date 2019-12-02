@@ -1,5 +1,6 @@
 import {getMetadataArgsStorage} from "../../";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
+import { PromiseUtils } from "../../util/PromiseUtils";
 
 /**
  * Marks a entity property as a parent of the tree.
@@ -10,7 +11,7 @@ export function TreeParent(): Function {
 
         // now try to determine it its lazy relation
         const reflectedType = Reflect && (Reflect as any).getMetadata ? Reflect.getMetadata("design:type", object, propertyName) : undefined;
-        const isLazy = (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise") || false;
+        const isLazy = (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === PromiseUtils.getGlobalPromiseTypeName()) || false;
 
         getMetadataArgsStorage().relations.push({
             isTreeParent: true,

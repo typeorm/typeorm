@@ -1,5 +1,6 @@
 import {getMetadataArgsStorage, ObjectType, RelationOptions} from "../../";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
+import { PromiseUtils } from "../../util/PromiseUtils";
 
 /**
  * One-to-one relation allows to create direct relation between two entities. Entity1 have only one Entity2.
@@ -39,7 +40,7 @@ export function OneToOne<T>(typeFunctionOrTarget: string|((type?: any) => Object
         let isLazy = options && options.lazy === true ? true : false;
         if (!isLazy && Reflect && (Reflect as any).getMetadata) { // automatic determination
             const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
-            if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise")
+            if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === PromiseUtils.getGlobalPromiseTypeName())
                 isLazy = true;
         }
 

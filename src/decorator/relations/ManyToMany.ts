@@ -1,5 +1,6 @@
 import {getMetadataArgsStorage, ObjectType, RelationOptions} from "../../";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
+import { PromiseUtils } from "../../util/PromiseUtils";
 
 /**
  * Many-to-many is a type of relationship when Entity1 can have multiple instances of Entity2, and Entity2 can have
@@ -42,7 +43,7 @@ export function ManyToMany<T>(typeFunctionOrTarget: string|((type?: any) => Obje
         let isLazy = options.lazy === true;
         if (!isLazy && Reflect && (Reflect as any).getMetadata) { // automatic determination
             const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
-            if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise")
+            if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === PromiseUtils.getGlobalPromiseTypeName())
                 isLazy = true;
         }
 
