@@ -1853,7 +1853,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (metadata.hasMultiplePrimaryKeys) {
                     condition = rawResults.map((result, index) => {
                         return metadata.primaryColumns.map(primaryColumn => {
-                            const paramKey = `_ids_${index}_${primaryColumn.databaseName}`
+                            const paramKey = `_ids_${index}_${primaryColumn.databaseName}`;
                             parameters[paramKey] = result[`ids_${mainAliasName}_${primaryColumn.databaseName}`];
                             return `${mainAliasName}.${primaryColumn.propertyPath}=:${paramKey}`;
                         }).join(" AND ");

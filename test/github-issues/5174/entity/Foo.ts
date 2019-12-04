@@ -1,5 +1,5 @@
 import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryColumn, Column} from '../../../../src';
+import {PrimaryColumn, Column} from "../../../../src";
 
 @Entity()
 export class Foo {
