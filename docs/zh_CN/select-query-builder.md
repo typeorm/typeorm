@@ -819,6 +819,7 @@ const users = await getRepository(User)
     .getMany();
 
 Optimistic 锁定与`@Version`和`@UpdatedDate`装饰器一起使用。
+```
 
 ## 查询部分字段
 
