@@ -95,6 +95,14 @@ export class MigrationExecutor {
         const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner);
+
+        // create the typeorm_metadata table if necessary
+        const schemaBuilder = this.connection.driver.createSchemaBuilder();
+
+        if (schemaBuilder instanceof RdbmsSchemaBuilder) {
+            await schemaBuilder.createMetadataTableIfNecessary();
+        }
+
         // get all migrations that are executed and saved in the database
         const executedMigrations = await this.loadExecutedMigrations(queryRunner);
 
@@ -198,13 +206,6 @@ export class MigrationExecutor {
 
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner);
-
-        // create the typeorm_metadata table if necessary
-        const schemaBuilder = this.connection.driver.createSchemaBuilder();
-
-        if (schemaBuilder instanceof RdbmsSchemaBuilder) {
-            await schemaBuilder.createMetadataTableIfNecessary();
-        }
 
         // get all migrations that are executed and saved in the database
         const executedMigrations = await this.loadExecutedMigrations(queryRunner);
