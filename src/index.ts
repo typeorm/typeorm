@@ -84,6 +84,7 @@ export * from "./find-options/operator/IsNull";
 export * from "./find-options/operator/LessThan";
 export * from "./find-options/operator/LessThanOrEqual";
 export * from "./find-options/operator/Like";
+export * from "./find-options/operator/List";
 export * from "./find-options/operator/MoreThan";
 export * from "./find-options/operator/MoreThanOrEqual";
 export * from "./find-options/operator/Not";

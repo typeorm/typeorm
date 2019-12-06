@@ -10,6 +10,7 @@ import {
     LessThan,
     LessThanOrEqual,
     Like,
+    List,
     MoreThan,
     MoreThanOrEqual,
     Not,
@@ -532,6 +533,43 @@ describe("repository > find options > operators", () => {
             likes: Raw(columnAlias => "1 + " + columnAlias + " = 4")
         });
         loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+
+    })));
+
+    it("list", () => Promise.all(connections.map(async connection => {
+
+        // insert some fake data
+        const post1 = new Post();
+        post1.title = "About #1";
+        post1.likes = 12;
+        await connection.manager.save(post1);
+        const post2 = new Post();
+        post2.title = "About #2";
+        post2.likes = 3;
+        await connection.manager.save(post2);
+
+        // check operator
+        const loadedPostsQuery = connection.getRepository(Post).createQueryBuilder().where("(title, likes) = :target", {
+            target: List(["About #2", 3])
+        });
+        try {
+            const loadedPosts = await loadedPostsQuery.getMany();
+            loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        } catch (e) {
+            console.log(loadedPostsQuery.getSql());
+            throw e;
+        }
+
+        const otherLoadedPostsQuery = connection.getRepository(Post).createQueryBuilder().where("(title, likes) IN :target", {
+            target: List([List(["About #2", 3]), List(["About #1", 3])])
+        });
+        try {
+            const otherLoadedPosts = await otherLoadedPostsQuery.getMany();
+            otherLoadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        } catch (e) {
+            console.log(otherLoadedPostsQuery.getSql());
+            throw e;
+        }
 
     })));
 

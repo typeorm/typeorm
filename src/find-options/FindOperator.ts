@@ -108,6 +108,8 @@ export class FindOperator<T> {
                 return `${aliasPath} BETWEEN ${parameters[0]} AND ${parameters[1]}`;
             case "in":
                 return `${aliasPath} IN (${parameters.join(", ")})`;
+            case "list":
+                return `(${parameters.join(", ")})`;
             case "any":
                 return `${aliasPath} = ANY(${parameters[0]})`;
             case "isNull":
