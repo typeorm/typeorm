@@ -1,5 +1,6 @@
 import {RedisQueryResultCache} from "./RedisQueryResultCache";
 import {DbQueryResultCache} from "./DbQueryResultCache";
+import {InMemoryQueryResultCache} from "./InMemoryQueryResultCache";
 import {QueryResultCache} from "./QueryResultCache";
 import {Connection} from "../connection/Connection";
 
@@ -34,6 +35,9 @@ export class QueryResultCacheFactory {
 
         if ((this.connection.options.cache as any).type === "ioredis/cluster")
             return new RedisQueryResultCache(this.connection, "ioredis/cluster");
+        
+            if ((this.connection.options.cache as any).type === "memory")
+                return new InMemoryQueryResultCache();
 
         return new DbQueryResultCache(this.connection);
     }
