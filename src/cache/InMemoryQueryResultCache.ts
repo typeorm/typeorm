@@ -1,6 +1,6 @@
 import {QueryResultCache} from "./QueryResultCache";
-import { QueryResultCacheOptions } from './QueryResultCacheOptions';
-import { QueryRunner } from '..';
+import { QueryResultCacheOptions } from "./QueryResultCacheOptions";
+import { QueryRunner } from "..";
 
 /**
  * Caches query result into simple in-memory map.
@@ -14,7 +14,7 @@ export class InMemoryQueryResultCache implements QueryResultCache {
     /**
      * Map to store cached values.
      */
-    protected cache: Record<string, QueryResultCacheOptions>
+    protected cache: Record<string, QueryResultCacheOptions>;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -89,9 +89,9 @@ export class InMemoryQueryResultCache implements QueryResultCache {
     remove(identifiers: string[], queryRunner?: QueryRunner | undefined): Promise<void> {
         identifiers.forEach(identifier => {
             if (this.cache[identifier]) {
-                delete this.cache[identifier]
+                delete this.cache[identifier];
             } 
-        })
+        });
         return Promise.resolve();
     }
 }
