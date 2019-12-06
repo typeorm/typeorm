@@ -16,6 +16,12 @@ export class InMemoryQueryResultCache implements QueryResultCache {
      */
     protected cache: Record<string, QueryResultCacheOptions>;
 
+    /**
+     * Singleton instance of the cache.
+     */
+    protected static instance: InMemoryQueryResultCache;
+
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -93,5 +99,15 @@ export class InMemoryQueryResultCache implements QueryResultCache {
             } 
         });
         return Promise.resolve();
+    }
+
+    /**
+     * Get the singleton instance of the cache.
+     */
+    static getInstance(): InMemoryQueryResultCache {
+        if (!InMemoryQueryResultCache.instance) {
+            InMemoryQueryResultCache.instance = new InMemoryQueryResultCache();
+        }
+        return InMemoryQueryResultCache.instance;
     }
 }

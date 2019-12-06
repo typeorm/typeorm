@@ -37,7 +37,7 @@ export class QueryResultCacheFactory {
             return new RedisQueryResultCache(this.connection, "ioredis/cluster");
         
             if ((this.connection.options.cache as any).type === "memory")
-                return new InMemoryQueryResultCache();
+                return InMemoryQueryResultCache.getInstance();
 
         return new DbQueryResultCache(this.connection);
     }
