@@ -1,16 +1,17 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../src";
-import {Foo} from "./entity/Foo";
+import {User} from "./entity/User";
+import {Role} from "./entity/Role";
 import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../utils/test-utils";
 
-describe("github issues > #5174 `selectQueryBuilder.take` messes up the query when using the `ids` parameter", () => {
+describe.only("github issues > #5174 `selectQueryBuilder.take` messes up the query when using the `ids` parameter", () => {
 
     let connections: Connection[];
 
     before(async () => {
         connections = await createTestingConnections({
-            entities: [Foo],
+            entities: [User, Role],
             schemaCreate: true,
             dropSchema: true
         });
@@ -20,27 +21,32 @@ describe("github issues > #5174 `selectQueryBuilder.take` messes up the query wh
 
     it("should allow the 'ids' parameter without messing up the query when using .take", () =>
     Promise.all(connections.map(async (connection) => {
-        const repository = connection.getRepository(Foo);
+        const roleRepository = connection.getRepository(Role);
+        const userRepository = connection.getRepository(User);
 
-        await repository.save([
-            { id: 1, type: "a" },
-            { id: 2, type: "b" },
-            { id: 3, type: "a" },
-            { id: 4, type: "b" },
-            { id: 5, type: "b" },
-            { id: 6, type: "c" },
-            { id: 7, type: "c" },
-            { id: 8, type: "c" },
-            { id: 9, type: "b" },
-            { id: 10, type: "a" }
+        const userWithId = (id: number) => ({ id });
+
+        await roleRepository.save([
+            { id: "a", users: [1, 2, 3].map(userWithId) },
+            { id: "b", users: [9, 10, 11, 12, 13].map(userWithId) },
+            { id: "c", users: [14, 15, 16, 17].map(userWithId) }
         ]);
 
-        const results = await repository.createQueryBuilder("foo")
-            .where("foo.type IN (:...ids)", { ids: ["b", "c"] })
+
+        const results = await userRepository.createQueryBuilder("user")
+            .leftJoinAndSelect("user.role", "role")
+            .where("role.id IN (:...ids)", { ids: ["a", "c"] })
             .take(5)
+            .orderBy("user.id")
             .getMany();
 
-        expect(results).to.have.lengthOf(5);
+        expect(results).to.be.deep.equal([
+            { id: 1, role: { id: "a" } },
+            { id: 2, role: { id: "a" } },
+            { id: 3, role: { id: "a" } },
+            { id: 14, role: { id: "c" } },
+            { id: 15, role: { id: "c" } }
+        ]);
     })));
 
 });
