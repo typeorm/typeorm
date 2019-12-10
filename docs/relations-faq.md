@@ -110,7 +110,7 @@ export class User {
     @Column()
     name: string;
     
-    @Column({ nullable: true })
+    @RelationId((user: User) => user.profile)
     profileId: number;
     
     @OneToOne(type => Profile)
