@@ -80,7 +80,9 @@ repository.merge(user, { firstName: "Timber" }, { lastName: "Saw" }); // same as
 * `preload` - Creates a new entity from the given plain javascript object. If the entity already exists in the database, then
 it loads it (and everything related to it), replaces all values with the new ones from the given object,
 and returns the new entity. The new entity is actually an entity loaded from the database with all properties
-replaced from the new object.
+replaced from the new object. <br>
+Note that given entity-like object must have an entity id / primary key to find entity by.
+Returns undefined if entity with given id was not found.
 
 ```typescript
 const partialUser = {
