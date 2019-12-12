@@ -37,8 +37,7 @@ export class DriverUtils {
      * Builds column alias from given alias name and column name.
      * 
      * If alias length is greater than the limit (if any) allowed by the current
-     * driver, replaces either the alias or both the alias and the column name
-     * with hashed strings.
+     * driver, replaces it with a hashed string.
      *
      * @param driver Current `Driver`.
      * @param alias Alias part.
@@ -50,14 +49,7 @@ export class DriverUtils {
         const columnAliasName = alias + "_" + column;
 
         if (maxAliasLength && maxAliasLength > 0 && columnAliasName.length > maxAliasLength) {
-            const hashedAlias = hash(alias, { length: 8 });
-            const hashedColumnAliasName = hashedAlias + "_" + column;
-
-            if (hashedColumnAliasName.length > maxAliasLength) {
-                return hashedAlias + "_" + hash(column, { length: 8 });
-            }
-
-            return hashedColumnAliasName;
+            return hash(columnAliasName, { length: maxAliasLength });
         }
 
         return columnAliasName;
