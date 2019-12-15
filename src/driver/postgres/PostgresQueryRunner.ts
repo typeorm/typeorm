@@ -1504,7 +1504,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                       WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
 
                         const results: ObjectLiteral[] = await this.query(geometryColumnSql);
-                        tableColumn.spatialFeatureType = results[0].type;
+                        tableColumn.spatialFeatureType = results.filter(result => result.table_name === table.name && result.column_name === tableColumn.name)[0].type;
                         tableColumn.srid = results[0].srid;
                     }
 
@@ -1521,7 +1521,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                       WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
 
                         const results: ObjectLiteral[] = await this.query(geographyColumnSql);
-                        tableColumn.spatialFeatureType = results[0].type;
+                        tableColumn.spatialFeatureType = results.filter(result => result.table_name === table.name && result.column_name === tableColumn.name)[0].type;
                         tableColumn.srid = results[0].srid;
                     }
 
