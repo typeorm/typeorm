@@ -68,8 +68,8 @@ SELECT * FROM "user" WHERE ("firstName" = 'Timber' AND "lastName" = 'Saw') OR ("
 ```typescript
 userRepository.find({ 
     order: {
-        name: "ASC",
-        id: "DESC"
+        columnName: "ASC",
+        otherColumnName: "DESC"
     }
 });
 ```
