@@ -194,19 +194,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const schema = parsedTableName.schema === "SCHEMA_NAME()" ? parsedTableName.schema : `'${parsedTableName.schema}'`;
-        const sql = `SELECT * FROM "${parsedTableName.database}"."SYS"."TABLES" WHERE "TABLE_NAME" = '${parsedTableName.name}' AND "TABLE_SCHEMA" = ${schema}`;
+        const sql = `SELECT * FROM "TABLES" WHERE "SCHEMA_NAME" = ${parsedTableName.schema} AND "TABLE_NAME" = ${parsedTableName.tableName}`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
 
     /**
-     * Checks if column exist in the table.
+     * Checks if column with the given name exist in the given table.
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const schema = parsedTableName.schema === "SCHEMA_NAME()" ? parsedTableName.schema : `'${parsedTableName.schema}'`;
-        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = '${parsedTableName.name}' AND "COLUMN_NAME" = '${columnName}' AND "TABLE_SCHEMA" = ${schema}`;
+        const sql = `SELECT * FROM "TABLE_COLUMNS" WHERE "SCHEMA_NAME" = ${parsedTableName.schema} AND "TABLE_NAME" = ${parsedTableName.tableName} AND "COLUMN_NAME" = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -414,7 +412,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             oldTableName = splittedName[1];
         }
 
-        newTable.name = this.driver.buildTableName(newTableName, schemaName, dbName);
+        newTable.name = this.driver.buildTableName(newTableName, schemaName);
 
         // if we have tables with database which differs from database specified in config, we must change currently used database.
         // This need because we can not rename objects from another database.
@@ -501,7 +499,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
 
-        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(table, column, false, true)}`));
+        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(column)}`));
         downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${column.name}"`));
 
         // create or update primary key constraint
@@ -723,8 +721,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             if (this.isColumnChanged(oldColumn, newColumn)) {
-                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.buildCreateColumnSql(table, newColumn, true, false)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.buildCreateColumnSql(table, oldColumn, true, false)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.buildCreateColumnSql(newColumn)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.buildCreateColumnSql(oldColumn)}`));
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
@@ -876,7 +874,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${column.name}"`));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(table, column, false, false)}`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(column)}`));
 
         await this.executeQueries(upQueries, downQueries);
 
@@ -1184,42 +1182,32 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Removes all tables from the currently connected database.
      */
-    async clearDatabase(database?: string): Promise<void> {
-        if (database) {
-            const isDatabaseExist = await this.hasDatabase(database);
-            if (!isDatabaseExist)
-                return Promise.resolve();
-        }
+    async clearDatabase(): Promise<void> {
+        const schemas: string[] = [];
+        this.connection.entityMetadatas
+            .filter(metadata => metadata.schema)
+            .forEach(metadata => {
+                const isSchemaExist = !!schemas.find(schema => schema === metadata.schema);
+                if (!isSchemaExist)
+                    schemas.push(metadata.schema!);
+            });
+
+        schemas.push(this.driver.options.schema || "current_schema()");
+        const schemaNamesString = schemas.map(name => {
+            return name === "current_schema()" ? name : "'" + name + "'";
+        }).join(", ");
 
         await this.startTransaction();
         try {
-            let allViewsSql = database
-                ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."VIEWS"`
-                : `SELECT * FROM "INFORMATION_SCHEMA"."VIEWS"`;
-            const allViewsResults: ObjectLiteral[] = await this.query(allViewsSql);
+            // const selectViewDropsQuery = `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
+            //     `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`;
+            // const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
+            // await Promise.all(dropViewQueries.map(q => this.query(q["query"])));
 
-            await Promise.all(allViewsResults.map(viewResult => {
-                // 'DROP VIEW' does not allow specifying the database name as a prefix to the object name.
-                const dropTableSql = `DROP VIEW "${viewResult["TABLE_SCHEMA"]}"."${viewResult["TABLE_NAME"]}"`;
-                return this.query(dropTableSql);
-            }));
-
-            let allTablesSql = database
-                ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
-                : `SELECT * FROM "INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`;
-            const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
-            await Promise.all(allTablesResults.map(async tablesResult => {
-                // const tableName = database ? `"${tablesResult["TABLE_CATALOG"]}"."sys"."foreign_keys"` : `"sys"."foreign_keys"`;
-                const dropForeignKeySql = `SELECT 'ALTER TABLE "${tablesResult["TABLE_CATALOG"]}"."' + OBJECT_SCHEMA_NAME("fk"."parent_object_id", DB_ID('${tablesResult["TABLE_CATALOG"]}')) + '"."' + OBJECT_NAME("fk"."parent_object_id", DB_ID('${tablesResult["TABLE_CATALOG"]}')) + '" ` +
-                    `DROP CONSTRAINT "' + "fk"."name" + '"' as "query" FROM "${tablesResult["TABLE_CATALOG"]}"."sys"."foreign_keys" AS "fk" ` +
-                    `WHERE "fk"."referenced_object_id" = OBJECT_ID('"${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"')`;
-                const dropFkQueries: ObjectLiteral[] = await this.query(dropForeignKeySql);
-                return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => this.query(dropQuery)));
-            }));
-            await Promise.all(allTablesResults.map(tablesResult => {
-                const dropTableSql = `DROP TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`;
-                return this.query(dropTableSql);
-            }));
+            // ignore spatial_ref_sys; it's a special table supporting PostGIS
+            const selectTableDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schema_name || '"."' || table_name || '" CASCADE;' as "query" FROM "TABLES" WHERE "SCHEMA_NAME" IN (${schemaNamesString}) AND "TABLE_NAME" NOT IN ('SYS_AFL_GENERATOR_PARAMETERS') AND "IS_COLUMN_TABLE" = 'TRUE'`;
+            const dropTableQueries: ObjectLiteral[] = await this.query(selectTableDropsQuery);
+            await Promise.all(dropTableQueries.map(q => this.query(q["query"])));
 
             await this.commitTransaction();
 
@@ -1239,7 +1227,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Return current database.
      */
     protected async getCurrentDatabase(): Promise<string> {
-        const currentDBQuery = await this.query(`SELECT DB_NAME() AS "db_name"`);
+        const currentDBQuery = await this.query(`SELECT "VALUE" AS "db_name" FROM "SYS"."M_SYSTEM_OVERVIEW" WHERE "SECTION" = 'System' and "NAME" = 'Instance ID'`);
         return currentDBQuery[0]["db_name"];
     }
 
@@ -1247,7 +1235,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Return current schema.
      */
     protected async getCurrentSchema(): Promise<string> {
-        const currentSchemaQuery = await this.query(`SELECT SCHEMA_NAME() AS "schema_name"`);
+        const currentSchemaQuery = await this.query(`SELECT CURRENT_SCHEMA AS "schema_name" FROM DUMMY`);
         return currentSchemaQuery[0]["schema_name"];
     }
 
@@ -1257,7 +1245,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             return Promise.resolve([]);
 
         const currentSchema = await this.getCurrentSchema();
-        const currentDatabase = await this.getCurrentDatabase();
 
         const extractTableSchemaAndName = (tableName: string): string[] => {
             let [database, schema, name] = tableName.split(".");
@@ -1299,9 +1286,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
-            const db = dbView["TABLE_CATALOG"] === currentDatabase ? undefined : dbView["TABLE_CATALOG"];
             const schema = dbView["schema"] === currentSchema && /*!this.driver.options.schema ? undefined : */dbView["schema"];
-            view.name = this.driver.buildTableName(dbView["name"], schema, db);
+            view.name = this.driver.buildTableName(dbView["name"], schema);
             view.expression = dbView["value"];
             return view;
         });
@@ -1316,305 +1302,303 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!tableNames || !tableNames.length)
             return [];
 
-        const schemaNames: string[] = [];
         const currentSchema = await this.getCurrentSchema();
-        const currentDatabase = await this.getCurrentDatabase();
-
-        const extractTableSchemaAndName = (tableName: string): string[] => {
-            let [database, schema, name] = tableName.split(".");
-            // if name is empty, it means that tableName have only schema name and table name or only table name
-            if (!name) {
-                // if schema is empty, it means tableName have only name of a table. Otherwise it means that we have "schemaName"."tableName" string.
-                if (!schema) {
-                    name = database;
-                    schema = /*this.driver.options.schema || */currentSchema;
-
-                } else {
-                    name = schema;
-                    schema = database;
-                }
-            } else if (schema === "") {
-                schema = /*this.driver.options.schema || */currentSchema;
-            }
-
-            return [schema, name];
-        };
-
-        tableNames.filter(tablePath => tablePath.indexOf(".") !== -1)
-            .forEach(tablePath => {
-                if (tablePath.split(".").length === 3) {
-                    if (tablePath.split(".")[1] !== "")
-                        schemaNames.push(tablePath.split(".")[1]);
-                } else {
-                    schemaNames.push(tablePath.split(".")[0]);
-                }
-            });
-        schemaNames.push(/*this.driver.options.schema || */currentSchema);
-
-        const dbNames = tableNames
-            .filter(tablePath => tablePath.split(".").length === 3)
-            .map(tablePath => tablePath.split(".")[0]);
-        if (this.driver.database && !dbNames.find(dbName => dbName === this.driver.database))
-            dbNames.push(this.driver.database);
-
-        // load tables, columns, indices and foreign keys
-        const schemaNamesString = schemaNames.map(name => "'" + name + "'").join(", ");
-
         const tablesCondition = tableNames.map(tableName => {
-            const [schema, name] = extractTableSchemaAndName(tableName);
-            return `("TABLE_SCHEMA" = '${schema}' AND "TABLE_NAME" = '${name}')`;
+            let [schema, name] = tableName.split(".");
+            if (!name) {
+                name = schema;
+                schema = this.driver.options.schema || currentSchema;
+            }
+            return `("SCHEMA_NAME" = '${schema}' AND "TABLE_NAME" = '${name}')`;
         }).join(" OR ");
-
-        const tablesSql = dbNames.map(dbName => {
-            return `SELECT * FROM "${dbName}"."INFORMATION_SCHEMA"."TABLES" WHERE ` + tablesCondition;
-        }).join(" UNION ALL ");
-
-        const columnsSql = dbNames.map(dbName => {
-            return `SELECT * FROM "${dbName}"."INFORMATION_SCHEMA"."COLUMNS" WHERE ` + tablesCondition;
-        }).join(" UNION ALL ");
+        const tablesSql = `SELECT * FROM "TABLES" WHERE ` + tablesCondition;
+        const columnsSql = `SELECT * FROM "TABLE_COLUMNS" WHERE ` + tablesCondition;
 
         const constraintsCondition = tableNames.map(tableName => {
-            const [schema, name] = extractTableSchemaAndName(tableName);
-            return `("columnUsages"."TABLE_SCHEMA" = '${schema}' AND "columnUsages"."TABLE_NAME" = '${name}' ` +
-             `AND "tableConstraints"."TABLE_SCHEMA" = '${schema}' AND "tableConstraints"."TABLE_NAME" = '${name}')`;
+            let [schema, name] = tableName.split(".");
+            if (!name) {
+                name = schema;
+                schema = this.driver.options.schema || currentSchema;
+            }
+            return `("ns"."nspname" = '${schema}' AND "t"."relname" = '${name}')`;
         }).join(" OR ");
 
-        const constraintsSql = dbNames.map(dbName => {
-            return `SELECT "columnUsages".*, "tableConstraints"."CONSTRAINT_TYPE", "chk"."definition" ` +
-                `FROM "${dbName}"."INFORMATION_SCHEMA"."CONSTRAINT_COLUMN_USAGE" "columnUsages" ` +
-                `INNER JOIN "${dbName}"."INFORMATION_SCHEMA"."TABLE_CONSTRAINTS" "tableConstraints" ON "tableConstraints"."CONSTRAINT_NAME" = "columnUsages"."CONSTRAINT_NAME" ` +
-                `LEFT JOIN "${dbName}"."sys"."check_constraints" "chk" ON "chk"."name" = "columnUsages"."CONSTRAINT_NAME" ` +
-                `WHERE (${constraintsCondition}) AND "tableConstraints"."CONSTRAINT_TYPE" IN ('PRIMARY KEY', 'UNIQUE', 'CHECK')`;
-        }).join(" UNION ALL ");
+        const constraintsSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "cnst"."conname" AS "constraint_name", ` +
+            `pg_get_constraintdef("cnst"."oid") AS "expression", ` +
+            `CASE "cnst"."contype" WHEN 'p' THEN 'PRIMARY' WHEN 'u' THEN 'UNIQUE' WHEN 'c' THEN 'CHECK' WHEN 'x' THEN 'EXCLUDE' END AS "constraint_type", "a"."attname" AS "column_name" ` +
+            `FROM "pg_constraint" "cnst" ` +
+            `INNER JOIN "pg_class" "t" ON "t"."oid" = "cnst"."conrelid" ` +
+            `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "cnst"."connamespace" ` +
+            `LEFT JOIN "pg_attribute" "a" ON "a"."attrelid" = "cnst"."conrelid" AND "a"."attnum" = ANY ("cnst"."conkey") ` +
+            `WHERE "t"."relkind" = 'r' AND (${constraintsCondition})`;
 
-        const foreignKeysSql = dbNames.map(dbName => {
-            return `SELECT "fk"."name" AS "FK_NAME", '${dbName}' AS "TABLE_CATALOG", "s1"."name" AS "TABLE_SCHEMA", "t1"."name" AS "TABLE_NAME", ` +
-                `"col1"."name" AS "COLUMN_NAME", "s2"."name" AS "REF_SCHEMA", "t2"."name" AS "REF_TABLE", "col2"."name" AS "REF_COLUMN", ` +
-                `"fk"."delete_referential_action_desc" AS "ON_DELETE", "fk"."update_referential_action_desc" AS "ON_UPDATE" ` +
-                `FROM "${dbName}"."sys"."foreign_keys" "fk" ` +
-                `INNER JOIN "${dbName}"."sys"."foreign_key_columns" "fkc" ON "fkc"."constraint_object_id" = "fk"."object_id" ` +
-                `INNER JOIN "${dbName}"."sys"."tables" "t1" ON "t1"."object_id" = "fk"."parent_object_id" ` +
-                `INNER JOIN "${dbName}"."sys"."schemas" "s1" ON "s1"."schema_id" = "t1"."schema_id" ` +
-                `INNER JOIN "${dbName}"."sys"."tables" "t2" ON "t2"."object_id" = "fk"."referenced_object_id" ` +
-                `INNER JOIN "${dbName}"."sys"."schemas" "s2" ON "s2"."schema_id" = "t2"."schema_id" ` +
-                `INNER JOIN "${dbName}"."sys"."columns" "col1" ON "col1"."column_id" = "fkc"."parent_column_id" AND "col1"."object_id" = "fk"."parent_object_id" ` +
-                `INNER JOIN "${dbName}"."sys"."columns" "col2" ON "col2"."column_id" = "fkc"."referenced_column_id" AND "col2"."object_id" = "fk"."referenced_object_id"`;
-        }).join(" UNION ALL ");
+        const indicesSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
+            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
+            `"types"."typname" AS "type_name" ` +
+            `FROM "pg_class" "t" ` +
+            `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
+            `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
+            `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
+            `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
+            `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
+            `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
+            `WHERE "t"."relkind" = 'r' AND "cnst"."contype" IS NULL AND (${constraintsCondition})`;
 
-        const identityColumnsSql = dbNames.map(dbName => {
-            return `SELECT "TABLE_CATALOG", "TABLE_SCHEMA", "COLUMN_NAME", "TABLE_NAME" ` +
-                `FROM "${dbName}"."INFORMATION_SCHEMA"."COLUMNS" ` +
-                `WHERE COLUMNPROPERTY(object_id("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME"), "COLUMN_NAME", 'IsIdentity') = 1 AND "TABLE_SCHEMA" IN (${schemaNamesString})`;
-        }).join(" UNION ALL ");
-
-        const dbCollationsSql = `SELECT "NAME", "COLLATION_NAME" FROM "sys"."databases"`;
-
-        const indicesSql = dbNames.map(dbName => {
-            return `SELECT '${dbName}' AS "TABLE_CATALOG", "s"."name" AS "TABLE_SCHEMA", "t"."name" AS "TABLE_NAME", ` +
-                `"ind"."name" AS "INDEX_NAME", "col"."name" AS "COLUMN_NAME", "ind"."is_unique" AS "IS_UNIQUE", "ind"."filter_definition" as "CONDITION" ` +
-                `FROM "${dbName}"."sys"."indexes" "ind" ` +
-                `INNER JOIN "${dbName}"."sys"."index_columns" "ic" ON "ic"."object_id" = "ind"."object_id" AND "ic"."index_id" = "ind"."index_id" ` +
-                `INNER JOIN "${dbName}"."sys"."columns" "col" ON "col"."object_id" = "ic"."object_id" AND "col"."column_id" = "ic"."column_id" ` +
-                `INNER JOIN "${dbName}"."sys"."tables" "t" ON "t"."object_id" = "ind"."object_id" ` +
-                `INNER JOIN "${dbName}"."sys"."schemas" "s" ON "s"."schema_id" = "t"."schema_id" ` +
-                `WHERE "ind"."is_primary_key" = 0 AND "ind"."is_unique_constraint" = 0 AND "t"."is_ms_shipped" = 0`;
-        }).join(" UNION ALL ");
-
-        const [
-            dbTables,
-            dbColumns,
-            dbConstraints,
-            dbForeignKeys,
-            dbIdentityColumns,
-            dbCollations,
-            dbIndices
-        ]: ObjectLiteral[][] = await Promise.all([
+        const foreignKeysCondition = tableNames.map(tableName => {
+            let [schema, name] = tableName.split(".");
+            if (!name) {
+                name = schema;
+                schema = this.driver.options.schema || currentSchema;
+            }
+            return `("ns"."nspname" = '${schema}' AND "cl"."relname" = '${name}')`;
+        }).join(" OR ");
+        const foreignKeysSql = `SELECT "con"."conname" AS "constraint_name", "con"."nspname" AS "table_schema", "con"."relname" AS "table_name", "att2"."attname" AS "column_name", ` +
+            `"ns"."nspname" AS "referenced_table_schema", "cl"."relname" AS "referenced_table_name", "att"."attname" AS "referenced_column_name", "con"."confdeltype" AS "on_delete", ` +
+            `"con"."confupdtype" AS "on_update", "con"."condeferrable" AS "deferrable", "con"."condeferred" AS "deferred" ` +
+            `FROM ( ` +
+            `SELECT UNNEST ("con1"."conkey") AS "parent", UNNEST ("con1"."confkey") AS "child", "con1"."confrelid", "con1"."conrelid", "con1"."conname", "con1"."contype", "ns"."nspname", ` +
+            `"cl"."relname", "con1"."condeferrable", ` +
+            `CASE WHEN "con1"."condeferred" THEN 'INITIALLY DEFERRED' ELSE 'INITIALLY IMMEDIATE' END as condeferred, ` +
+            `CASE "con1"."confdeltype" WHEN 'a' THEN 'NO ACTION' WHEN 'r' THEN 'RESTRICT' WHEN 'c' THEN 'CASCADE' WHEN 'n' THEN 'SET NULL' WHEN 'd' THEN 'SET DEFAULT' END as "confdeltype", ` +
+            `CASE "con1"."confupdtype" WHEN 'a' THEN 'NO ACTION' WHEN 'r' THEN 'RESTRICT' WHEN 'c' THEN 'CASCADE' WHEN 'n' THEN 'SET NULL' WHEN 'd' THEN 'SET DEFAULT' END as "confupdtype" ` +
+            `FROM "pg_class" "cl" ` +
+            `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
+            `INNER JOIN "pg_constraint" "con1" ON "con1"."conrelid" = "cl"."oid" ` +
+            `WHERE "con1"."contype" = 'f' AND (${foreignKeysCondition}) ` +
+            `) "con" ` +
+            `INNER JOIN "pg_attribute" "att" ON "att"."attrelid" = "con"."confrelid" AND "att"."attnum" = "con"."child" ` +
+            `INNER JOIN "pg_class" "cl" ON "cl"."oid" = "con"."confrelid" ` +
+            `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
+            `INNER JOIN "pg_attribute" "att2" ON "att2"."attrelid" = "con"."conrelid" AND "att2"."attnum" = "con"."parent"`;
+        const [dbTables, dbColumns, dbConstraints, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
-            this.query(constraintsSql),
-            this.query(foreignKeysSql),
-            this.query(identityColumnsSql),
-            this.query(dbCollationsSql),
-            this.query(indicesSql),
+            // this.query(constraintsSql),
+            // this.query(indicesSql),
+            // this.query(foreignKeysSql),
         ]);
+        console.log(constraintsSql, indicesSql, foreignKeysSql);
 
         // if tables were not found in the db, no need to proceed
         if (!dbTables.length)
             return [];
 
-        // create table schemas for loaded tables
-        return await Promise.all(dbTables.map(async dbTable => {
+        // create tables for loaded tables
+        return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
 
-            // We do not need to join schema and database names, when db or schema is by default.
+            // We do not need to join schema name, when database is by default.
             // In this case we need local variable `tableFullName` for below comparision.
-            const db = dbTable["TABLE_CATALOG"] === currentDatabase ? undefined : dbTable["TABLE_CATALOG"];
-            const schema = dbTable["TABLE_SCHEMA"] === currentSchema && /*!this.driver.options.schema ? undefined : */dbTable["TABLE_SCHEMA"];
-            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema, db);
-            const tableFullName = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLE_SCHEMA"], dbTable["TABLE_CATALOG"]);
-            const defaultCollation = dbCollations.find(dbCollation => dbCollation["NAME"] === dbTable["TABLE_CATALOG"])!;
+            const schema = dbTable["table_schema"] === currentSchema && !this.driver.options.schema ? undefined : dbTable["table_schema"];
+            table.name = this.driver.buildTableName(dbTable["table_name"], schema);
+            const tableFullName = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
 
             // create columns from the loaded columns
-            table.columns = dbColumns
-                .filter(dbColumn => this.driver.buildTableName(dbColumn["TABLE_NAME"], dbColumn["TABLE_SCHEMA"], dbColumn["TABLE_CATALOG"]) === tableFullName)
-                .map(dbColumn => {
+            table.columns = await Promise.all(dbColumns
+                .filter(dbColumn => this.driver.buildTableName(dbColumn["table_name"], dbColumn["table_schema"]) === tableFullName)
+                .map(async dbColumn => {
+
                     const columnConstraints = dbConstraints.filter(dbConstraint => {
-                        return this.driver.buildTableName(dbConstraint["TABLE_NAME"], dbConstraint["CONSTRAINT_SCHEMA"], dbConstraint["CONSTRAINT_CATALOG"]) === tableFullName
-                            && dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
-                    });
-
-                    const uniqueConstraint = columnConstraints.find(constraint => constraint["CONSTRAINT_TYPE"] === "UNIQUE");
-                    const isConstraintComposite = uniqueConstraint
-                        ? !!dbConstraints.find(dbConstraint => dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE"
-                            && dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"]
-                            && dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
-                        : false;
-
-                    const isPrimary = !!columnConstraints.find(constraint =>  constraint["CONSTRAINT_TYPE"] === "PRIMARY KEY");
-                    const isGenerated = !!dbIdentityColumns.find(column => {
-                        return this.driver.buildTableName(column["TABLE_NAME"], column["TABLE_SCHEMA"], column["TABLE_CATALOG"]) === tableFullName
-                            && column["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
+                        return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName && dbConstraint["column_name"] === dbColumn["column_name"];
                     });
 
                     const tableColumn = new TableColumn();
-                    tableColumn.name = dbColumn["COLUMN_NAME"];
-                    tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase();
+                    tableColumn.name = dbColumn["column_name"];
+                    tableColumn.type = dbColumn["regtype"].toLowerCase();
+
+                    if (tableColumn.type === "numeric" || tableColumn.type === "decimal" || tableColumn.type === "float") {
+                        // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
+                        // we set 'undefined' in to unspecified property to avoid changing column on sync
+                        if (dbColumn["numeric_precision"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["numeric_precision"])) {
+                            tableColumn.precision = dbColumn["numeric_precision"];
+                        } else if (dbColumn["numeric_scale"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["numeric_scale"])) {
+                            tableColumn.precision = undefined;
+                        }
+                        if (dbColumn["numeric_scale"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["numeric_scale"])) {
+                            tableColumn.scale = dbColumn["numeric_scale"];
+                        } else if (dbColumn["numeric_precision"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["numeric_precision"])) {
+                            tableColumn.scale = undefined;
+                        }
+                    }
+
+                    if (dbColumn["data_type"].toLowerCase() === "array") {
+                        tableColumn.isArray = true;
+                        const type = tableColumn.type.replace("[]", "");
+                        tableColumn.type = this.connection.driver.normalizeType({type: type});
+                    }
+
+                    if (tableColumn.type === "interval"
+                        || tableColumn.type === "time without time zone"
+                        || tableColumn.type === "time with time zone"
+                        || tableColumn.type === "timestamp without time zone"
+                        || tableColumn.type === "timestamp with time zone") {
+                        tableColumn.precision = !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["datetime_precision"]) ? dbColumn["datetime_precision"] : undefined;
+                    }
+
+                    // if (tableColumn.type.indexOf("enum") !== -1) {
+                    //     tableColumn.type = "enum";
+                    //     const sql = `SELECT "e"."enumlabel" AS "value" FROM "pg_enum" "e" ` +
+                    //         `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
+                    //         `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+                    //         `WHERE "n"."nspname" = '${dbTable["table_schema"]}' AND "t"."typname" = '${this.buildEnumName(table, tableColumn.name, false, true)}'`;
+                    //     const results: ObjectLiteral[] = await this.query(sql);
+                    //     tableColumn.enum = results.map(result => result["value"]);
+                    // }
+
+                    if (tableColumn.type === "geometry") {
+                        const geometryColumnSql = `SELECT * FROM (
+                        SELECT
+                          "f_table_schema" "table_schema",
+                          "f_table_name" "table_name",
+                          "f_geometry_column" "column_name",
+                          "srid",
+                          "type"
+                        FROM "geometry_columns"
+                      ) AS _
+                      WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
+
+                        const results: ObjectLiteral[] = await this.query(geometryColumnSql);
+                        tableColumn.spatialFeatureType = results[0].type;
+                        tableColumn.srid = results[0].srid;
+                    }
+
+                    if (tableColumn.type === "geography") {
+                        const geographyColumnSql = `SELECT * FROM (
+                        SELECT
+                          "f_table_schema" "table_schema",
+                          "f_table_name" "table_name",
+                          "f_geography_column" "column_name",
+                          "srid",
+                          "type"
+                        FROM "geography_columns"
+                      ) AS _
+                      WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
+
+                        const results: ObjectLiteral[] = await this.query(geographyColumnSql);
+                        tableColumn.spatialFeatureType = results[0].type;
+                        tableColumn.srid = results[0].srid;
+                    }
 
                     // check only columns that have length property
-                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1 && dbColumn["CHARACTER_MAXIMUM_LENGTH"]) {
-                        const length = dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString();
-                        if (length === "-1") {
-                            tableColumn.length = "MAX";
-                        } else {
-                            tableColumn.length = !this.isDefaultColumnLength(table, tableColumn, length) ? length : "";
-                        }
+                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1 && dbColumn["character_maximum_length"]) {
+                        const length = dbColumn["character_maximum_length"].toString();
+                        tableColumn.length = !this.isDefaultColumnLength(table, tableColumn, length) ? length : "";
                     }
+                    tableColumn.isNullable = dbColumn["is_nullable"] === "YES";
+                    tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
 
-                    if (tableColumn.type === "decimal" || tableColumn.type === "numeric") {
-                        if (dbColumn["NUMERIC_PRECISION"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["NUMERIC_PRECISION"]))
-                            tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
-                        if (dbColumn["NUMERIC_SCALE"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["NUMERIC_SCALE"]))
-                            tableColumn.scale = dbColumn["NUMERIC_SCALE"];
-                    }
-
-                    if (tableColumn.type === "nvarchar") {
-                        // Check if this is an enum
-                        const columnCheckConstraints = columnConstraints.filter(constraint => constraint["CONSTRAINT_TYPE"] === "CHECK");
-                        if (columnCheckConstraints.length) {
-                            const isEnumRegexp = new RegExp("^\\(\\[" + tableColumn.name + "\\]='[^']+'(?: OR \\[" + tableColumn.name + "\\]='[^']+')*\\)$");
-                            for (const checkConstraint of columnCheckConstraints) {
-                                if (isEnumRegexp.test(checkConstraint["definition"])) {
-                                    // This is an enum constraint, make column into an enum
-                                    tableColumn.type = "simple-enum";
-                                    tableColumn.enum = [];
-                                    const enumValueRegexp = new RegExp("\\[" + tableColumn.name + "\\]='([^']+)'", "g");
-                                    let result;
-                                    while ((result = enumValueRegexp.exec(checkConstraint["definition"])) !== null) {
-                                        tableColumn.enum.unshift(result[1]);
-                                    }
-                                    // Skip other column constraints
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    tableColumn.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined
-                        ? this.removeParenthesisFromDefault(dbColumn["COLUMN_DEFAULT"])
-                        : undefined;
-                    tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
-                    tableColumn.isPrimary = isPrimary;
+                    const uniqueConstraint = columnConstraints.find(constraint => constraint["constraint_type"] === "UNIQUE");
+                    const isConstraintComposite = uniqueConstraint
+                        ? !!dbConstraints.find(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
+                            && dbConstraint["constraint_name"] === uniqueConstraint["constraint_name"]
+                            && dbConstraint["column_name"] !== dbColumn["column_name"])
+                        : false;
                     tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
-                    tableColumn.isGenerated = isGenerated;
-                    if (isGenerated)
-                        tableColumn.generationStrategy = "increment";
-                    if (tableColumn.default === "newsequentialid()") {
-                        tableColumn.isGenerated = true;
-                        tableColumn.generationStrategy = "uuid";
-                        tableColumn.default = undefined;
-                    }
 
-                    // todo: unable to get default charset
-                    // tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
-                    tableColumn.collation = dbColumn["COLLATION_NAME"] === defaultCollation["COLLATION_NAME"] ? undefined : dbColumn["COLLATION_NAME"];
+                    // if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
+                    //     if (dbColumn["column_default"].replace(/"/gi, "") === `nextval('${this.buildSequenceName(table, dbColumn["column_name"], currentSchema, true)}'::regclass)`) {
+                    //         tableColumn.isGenerated = true;
+                    //         tableColumn.generationStrategy = "increment";
+                    //     } else if (dbColumn["column_default"] === "gen_random_uuid()" || /^uuid_generate_v\d\(\)/.test(dbColumn["column_default"])) {
+                    //         tableColumn.isGenerated = true;
+                    //         tableColumn.generationStrategy = "uuid";
+                    //     } else {
+                    //         tableColumn.default = dbColumn["column_default"].replace(/::.*/, "");
+                    //     }
+                    // }
 
-                    if (tableColumn.type === "datetime2" || tableColumn.type === "time" || tableColumn.type === "datetimeoffset") {
-                        tableColumn.precision = !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["DATETIME_PRECISION"]) ? dbColumn["DATETIME_PRECISION"] : undefined;
-                    }
-
+                    tableColumn.comment = ""; // dbColumn["COLUMN_COMMENT"];
+                    if (dbColumn["character_set_name"])
+                        tableColumn.charset = dbColumn["character_set_name"];
+                    if (dbColumn["collation_name"])
+                        tableColumn.collation = dbColumn["collation_name"];
                     return tableColumn;
-                });
+                }));
 
             // find unique constraints of table, group them by constraint name and build TableUnique.
             const tableUniqueConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return this.driver.buildTableName(dbConstraint["TABLE_NAME"], dbConstraint["CONSTRAINT_SCHEMA"], dbConstraint["CONSTRAINT_CATALOG"]) === tableFullName
-                    && dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE";
-            }), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
+                return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName
+                    && dbConstraint["constraint_type"] === "UNIQUE";
+            }), dbConstraint => dbConstraint["constraint_name"]);
 
             table.uniques = tableUniqueConstraints.map(constraint => {
-                const uniques = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
+                const uniques = dbConstraints.filter(dbC => dbC["constraint_name"] === constraint["constraint_name"]);
                 return new TableUnique({
-                    name: constraint["CONSTRAINT_NAME"],
-                    columnNames: uniques.map(u => u["COLUMN_NAME"])
+                    name: constraint["constraint_name"],
+                    columnNames: uniques.map(u => u["column_name"])
                 });
             });
 
             // find check constraints of table, group them by constraint name and build TableCheck.
             const tableCheckConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return this.driver.buildTableName(dbConstraint["TABLE_NAME"], dbConstraint["CONSTRAINT_SCHEMA"], dbConstraint["CONSTRAINT_CATALOG"]) === tableFullName
-                    && dbConstraint["CONSTRAINT_TYPE"] === "CHECK";
-            }), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
+                return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName
+                    && dbConstraint["constraint_type"] === "CHECK";
+            }), dbConstraint => dbConstraint["constraint_name"]);
 
             table.checks = tableCheckConstraints.map(constraint => {
-                const checks = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
+                const checks = dbConstraints.filter(dbC => dbC["constraint_name"] === constraint["constraint_name"]);
                 return new TableCheck({
-                    name: constraint["CONSTRAINT_NAME"],
-                    columnNames: checks.map(c => c["COLUMN_NAME"]),
-                    expression: constraint["definition"]
+                    name: constraint["constraint_name"],
+                    columnNames: checks.map(c => c["column_name"]),
+                    expression: constraint["expression"].replace(/^\s*CHECK\s*\((.*)\)\s*$/i, "$1")
+                });
+            });
+
+            // find exclusion constraints of table, group them by constraint name and build TableExclusion.
+            const tableExclusionConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
+                return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName
+                    && dbConstraint["constraint_type"] === "EXCLUDE";
+            }), dbConstraint => dbConstraint["constraint_name"]);
+
+            table.exclusions = tableExclusionConstraints.map(constraint => {
+                return new TableExclusion({
+                    name: constraint["constraint_name"],
+                    expression: constraint["expression"].substring(8) // trim EXCLUDE from start of expression
                 });
             });
 
             // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
             const tableForeignKeyConstraints = OrmUtils.uniq(dbForeignKeys.filter(dbForeignKey => {
-                return this.driver.buildTableName(dbForeignKey["TABLE_NAME"], dbForeignKey["TABLE_SCHEMA"], dbForeignKey["TABLE_CATALOG"]) === tableFullName;
-            }), dbForeignKey => dbForeignKey["FK_NAME"]);
+                return this.driver.buildTableName(dbForeignKey["table_name"], dbForeignKey["table_schema"]) === tableFullName;
+            }), dbForeignKey => dbForeignKey["constraint_name"]);
 
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
-                const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["FK_NAME"] === dbForeignKey["FK_NAME"]);
+                const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["constraint_name"] === dbForeignKey["constraint_name"]);
 
-                // if referenced table located in currently used db and schema, we don't need to concat db and schema names to table name.
-                const db = dbForeignKey["TABLE_CATALOG"] === currentDatabase ? undefined : dbForeignKey["TABLE_CATALOG"];
-                const schema = dbForeignKey["REF_SCHEMA"] === currentSchema ? undefined : dbForeignKey["REF_SCHEMA"];
-                const referencedTableName = this.driver.buildTableName(dbForeignKey["REF_TABLE"], schema, db);
+                // if referenced table located in currently used schema, we don't need to concat schema name to table name.
+                const schema = dbForeignKey["referenced_table_schema"] === currentSchema ? undefined : dbTable["referenced_table_schema"];
+                const referencedTableName = this.driver.buildTableName(dbForeignKey["referenced_table_name"], schema);
 
                 return new TableForeignKey({
-                    name: dbForeignKey["FK_NAME"],
-                    columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    name: dbForeignKey["constraint_name"],
+                    columnNames: foreignKeys.map(dbFk => dbFk["column_name"]),
                     referencedTableName: referencedTableName,
-                    referencedColumnNames: foreignKeys.map(dbFk => dbFk["REF_COLUMN"]),
-                    onDelete: dbForeignKey["ON_DELETE"].replace("_", " "), // SqlServer returns NO_ACTION, instead of NO ACTION
-                    onUpdate: dbForeignKey["ON_UPDATE"].replace("_", " ") // SqlServer returns NO_ACTION, instead of NO ACTION
+                    referencedColumnNames: foreignKeys.map(dbFk => dbFk["referenced_column_name"]),
+                    onDelete: dbForeignKey["on_delete"],
+                    onUpdate: dbForeignKey["on_update"],
+                    deferrable: dbForeignKey["deferrable"] ? dbForeignKey["deferred"] : undefined,
                 });
             });
 
             // find index constraints of table, group them by constraint name and build TableIndex.
             const tableIndexConstraints = OrmUtils.uniq(dbIndices.filter(dbIndex => {
-                return this.driver.buildTableName(dbIndex["TABLE_NAME"], dbIndex["TABLE_SCHEMA"], dbIndex["TABLE_CATALOG"]) === tableFullName;
-            }), dbIndex => dbIndex["INDEX_NAME"]);
+                return this.driver.buildTableName(dbIndex["table_name"], dbIndex["table_schema"]) === tableFullName;
+            }), dbIndex => dbIndex["constraint_name"]);
 
             table.indices = tableIndexConstraints.map(constraint => {
                 const indices = dbIndices.filter(index => {
-                    return index["TABLE_CATALOG"] === constraint["TABLE_CATALOG"]
-                        && index["TABLE_SCHEMA"] === constraint["TABLE_SCHEMA"]
-                        && index["TABLE_NAME"] === constraint["TABLE_NAME"]
-                        && index["INDEX_NAME"] === constraint["INDEX_NAME"];
+                    return index["table_schema"] === constraint["table_schema"]
+                        && index["table_name"] === constraint["table_name"]
+                        && index["constraint_name"] === constraint["constraint_name"];
                 });
                 return new TableIndex(<TableIndexOptions>{
                     table: table,
-                    name: constraint["INDEX_NAME"],
-                    columnNames: indices.map(i => i["COLUMN_NAME"]),
-                    isUnique: constraint["IS_UNIQUE"],
-                    where: constraint["CONDITION"]
+                    name: constraint["constraint_name"],
+                    columnNames: indices.map(i => i["column_name"]),
+                    isUnique: constraint["is_unique"] === "TRUE",
+                    where: constraint["condition"],
+                    isSpatial: indices.every(i => this.driver.spatialTypes.indexOf(i["type_name"]) >= 0),
+                    isFulltext: false
                 });
             });
 
@@ -1626,7 +1610,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds and returns SQL for create table.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(table, column, false, true)).join(", ");
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`;
 
         table.columns
@@ -1707,13 +1691,21 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
-        const currentSchema = await this.getCurrentSchema();
-        const parsedTableName = this.parseTableName(view, currentSchema);
+        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
+        const currentSchema = currentSchemaQuery[0]["current_schema"];
+        const splittedName = view.name.split(".");
+        let schema = this.driver.options.schema || currentSchema;
+        let name = view.name;
+        if (splittedName.length === 2) {
+            schema = splittedName[0];
+            name = splittedName[1];
+        }
+
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
         const [query, parameters] = this.connection.createQueryBuilder()
             .insert()
             .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", database: parsedTableName.database, schema: parsedTableName.schema, name: parsedTableName.name, value: expression })
+            .values({ type: "VIEW", schema: schema, name: name, value: expression })
             .getQueryAndParameters();
 
         return new Query(query, parameters);
@@ -1730,16 +1722,23 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds remove view sql.
      */
     protected async deleteViewDefinitionSql(viewOrPath: View|string): Promise<Query> {
-        const currentSchema = await this.getCurrentSchema();
-        const parsedTableName = this.parseTableName(viewOrPath, currentSchema);
+        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
+        const currentSchema = currentSchemaQuery[0]["current_schema"];
+        const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
+        const splittedName = viewName.split(".");
+        let schema = this.driver.options.schema || currentSchema;
+        let name = viewName;
+        if (splittedName.length === 2) {
+            schema = splittedName[0];
+            name = splittedName[1];
+        }
 
         const qb = this.connection.createQueryBuilder();
         const [query, parameters] = qb.delete()
             .from(this.getTypeormMetadataTableName())
             .where(`${qb.escape("type")} = 'VIEW'`)
-            .andWhere(`${qb.escape("database")} = :database`, { database: parsedTableName.database })
-            .andWhere(`${qb.escape("schema")} = :schema`, { schema: parsedTableName.schema })
-            .andWhere(`${qb.escape("name")} = :name`, { name: parsedTableName.name })
+            .andWhere(`${qb.escape("schema")} = :schema`, { schema })
+            .andWhere(`${qb.escape("name")} = :name`, { name })
             .getQueryAndParameters();
 
         return new Query(query, parameters);
@@ -1835,48 +1834,31 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Escapes given table or View path.
+     * Escapes given table or view path.
      */
     protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
-        let name = target instanceof Table || target instanceof View ? target.name : target;
-        if (this.driver.options.schema) {
-            if (name.indexOf(".") === -1) {
-                name = `${this.driver.options.schema}.${name}`;
-            } else if (name.split(".").length === 3) {
-                const splittedName = name.split(".");
-                const dbName = splittedName[0];
-                const tableName = splittedName[2];
-                name = `${dbName}.${this.driver.options.schema}.${tableName}`;
-            }
-        }
+        let tableName = target instanceof Table || target instanceof View ? target.name : target;
+        tableName = tableName.indexOf(".") === -1 && this.driver.options.schema ? `${this.driver.options.schema}.${tableName}` : tableName;
 
-        return name.split(".").map(i => {
-            // this condition need because when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
-            if (i === "")
-                return i;
+        return tableName.split(".").map(i => {
             return disableEscape ? i : `"${i}"`;
         }).join(".");
     }
 
-    protected parseTableName(target: Table|View|string, schema?: string) {
-        const tableName = (target instanceof Table || target instanceof View) ? target.name : target;
-        if (tableName.split(".").length === 3) {
+    /**
+     * Returns object with table schema and table name.
+     */
+    protected parseTableName(target: Table|string) {
+        const tableName = target instanceof Table ? target.name : target;
+        if (tableName.indexOf(".") === -1) {
             return {
-                database: tableName.split(".")[0],
-                schema: tableName.split(".")[1] === "" ? schema || "SCHEMA_NAME()" : tableName.split(".")[1],
-                name: tableName.split(".")[2]
-            };
-        } else if (tableName.split(".").length === 2) {
-            return {
-                database: this.driver.database,
-                schema: tableName.split(".")[0],
-                name: tableName.split(".")[1]
+                schema: this.driver.options.schema ? `'${this.driver.options.schema}'` : "current_schema",
+                tableName: `'${tableName}'`
             };
         } else {
             return {
-                database: this.driver.database,
-                schema: this.driver.options.schema ? this.driver.options.schema : schema || "SCHEMA_NAME()",
-                name: tableName
+                schema: `'${tableName.split(".")[0]}'`,
+                tableName: `'${tableName.split(".")[1]}'`
             };
         }
     }
@@ -1912,32 +1894,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(table: Table, column: TableColumn, skipIdentity: boolean, createDefault: boolean) {
-        let c = `"${column.name}" ${this.connection.driver.createFullType(column)}`;
-
-        if (column.enum)
-            c += " CHECK( " + column.name + " IN (" + column.enum.map(val => "'" + val + "'").join(",") + ") )";
-
+    protected buildCreateColumnSql(column: TableColumn) {
+        let c = `"${column.name}" ` + this.connection.driver.createFullType(column);
+        if (column.charset)
+            c += " CHARACTER SET " + column.charset;
         if (column.collation)
             c += " COLLATE " + column.collation;
-
-        if (column.isNullable !== true)
+        if (column.default !== undefined && column.default !== null) // DEFAULT must be placed before NOT NULL
+            c += " DEFAULT " + column.default;
+        if (column.isNullable !== true && !column.isGenerated) // NOT NULL is not supported with GENERATED
             c += " NOT NULL";
+        if (column.isGenerated === true && column.generationStrategy === "increment")
+            c += " GENERATED ALWAYS AS IDENTITY";
 
-        if (column.isGenerated === true && column.generationStrategy === "increment" && !skipIdentity) // don't use skipPrimary here since updates can update already exist primary without auto inc.
-            c += " IDENTITY(1,1)";
-
-        if (column.default !== undefined && column.default !== null && createDefault) {
-            // we create named constraint to be able to delete this constraint when column been dropped
-            const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, column.name);
-            c += ` CONSTRAINT "${defaultName}" DEFAULT ${column.default}`;
-        }
-
-        if (column.isGenerated && column.generationStrategy === "uuid" && !column.default) {
-            // we create named constraint to be able to delete this constraint when column been dropped
-            const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, column.name);
-            c += ` CONSTRAINT "${defaultName}" DEFAULT NEWSEQUENTIALID()`;
-        }
         return c;
     }
 

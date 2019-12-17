@@ -11,7 +11,7 @@ const options: ConnectionOptions = {
     // sid: "xe.oracle.docker",
     "name": "sap",
     "type": "sap",
-    "host": "192.168.56.101",
+    "host": "192.168.56.102",
     "port": 39015,
     "username": "SYSTEM",
     "password": "MySuperHanaPwd123!",
