@@ -1,18 +1,18 @@
 import {Driver} from "../Driver";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {SapQueryRunner} from "./SapQueryRunner";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {ObjectLiteral} from "../..";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
+import {Connection} from "../..";
 import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
 import {SapConnectionOptions} from "./SapConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
-import {ColumnType} from "../types/ColumnTypes";
+import {ColumnType} from "../..";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/table/TableColumn";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {TableColumn} from "../..";
+import {EntityMetadata} from "../..";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 
@@ -69,62 +69,57 @@ export class SapDriver implements Driver {
     /**
      * Gets list of supported column data types by a driver.
      *
-     * @see https://docs.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql
+     * @see https://help.sap.com/viewer/4fe29514fd584807ac9f2a04f6754767/2.0.03/en-US/20a1569875191014b507cf392724b7eb.html
      */
     supportedDataTypes: ColumnType[] = [
-        "int",
-        "bigint",
-        "bit",
-        "decimal",
-        "money",
-        "numeric",
-        "smallint",
-        "smallmoney",
         "tinyint",
-        "float",
+        "smallint",
+        "int",
+        "integer",
+        "bigint",
+        "smalldecimal",
+        "decimal",
+        "dec",
         "real",
+        "double",
+        "float",
         "date",
-        "datetime2",
-        "datetime",
-        "datetimeoffset",
-        "smalldatetime",
         "time",
-        "char",
-        "varchar",
-        "text",
-        "nchar",
-        "nvarchar",
-        "ntext",
-        "binary",
-        "image",
-        "varbinary",
-        "hierarchyid",
-        "sql_variant",
+        "seconddate",
         "timestamp",
-        "uniqueidentifier",
-        "xml",
-        "geometry",
-        "geography",
-        "rowversion"
+        "boolean",
+        "char",
+        "nchar",
+        "varchar",
+        "nvarchar",
+        "text",
+        "alphanum",
+        "shorttext",
+        "array",
+        "varbinary",
+        "blob",
+        "clob",
+        "nclob",
+        "st_geometry",
+        "st_point",
     ];
 
     /**
      * Gets list of spatial column data types.
      */
     spatialTypes: ColumnType[] = [
-        "geometry",
-        "geography"
+        "st_geometry",
+        "st_point",
     ];
 
     /**
      * Gets list of column data types that support length by a driver.
      */
     withLengthColumnTypes: ColumnType[] = [
-        "char",
         "varchar",
-        "nchar",
         "nvarchar",
-        "binary",
+        "alphanum",
+        "shorttext",
         "varbinary"
     ];
 
@@ -133,10 +128,7 @@ export class SapDriver implements Driver {
      */
     withPrecisionColumnTypes: ColumnType[] = [
         "decimal",
-        "numeric",
-        "time",
-        "datetime2",
-        "datetimeoffset"
+        "float",
     ];
 
     /**
@@ -144,7 +136,6 @@ export class SapDriver implements Driver {
      */
     withScaleColumnTypes: ColumnType[] = [
         "decimal",
-        "numeric"
     ];
 
     /**
@@ -152,27 +143,27 @@ export class SapDriver implements Driver {
      * Column types are driver dependant.
      */
     mappedDataTypes: MappedColumnTypes = {
-        createDate: "datetime2",
-        createDateDefault: "getdate()",
-        updateDate: "datetime2",
-        updateDateDefault: "getdate()",
-        version: "int",
-        treeLevel: "int",
-        migrationId: "int",
-        migrationName: "varchar",
+        createDate: "timestamp",
+        createDateDefault: "CURRENT_TIMESTAMP",
+        updateDate: "timestamp",
+        updateDateDefault: "CURRENT_TIMESTAMP",
+        version: "integer",
+        treeLevel: "integer",
+        migrationId: "integer",
+        migrationName: "nvarchar",
         migrationTimestamp: "bigint",
-        cacheId: "int",
+        cacheId: "integer",
         cacheIdentifier: "nvarchar",
         cacheTime: "bigint",
-        cacheDuration: "int",
-        cacheQuery: "nvarchar(MAX)" as any,
-        cacheResult: "nvarchar(MAX)" as any,
-        metadataType: "varchar",
-        metadataDatabase: "varchar",
-        metadataSchema: "varchar",
-        metadataTable: "varchar",
-        metadataName: "varchar",
-        metadataValue: "nvarchar(MAX)" as any,
+        cacheDuration: "integer",
+        cacheQuery: "nvarchar",
+        cacheResult: "nvarchar",
+        metadataType: "nvarchar",
+        metadataDatabase: "nvarchar",
+        metadataSchema: "nvarchar",
+        metadataTable: "nvarchar",
+        metadataName: "nvarchar",
+        metadataValue: "nvarchar",
     };
 
     /**
@@ -184,13 +175,10 @@ export class SapDriver implements Driver {
         "nchar": { length: 1 },
         "varchar": { length: 255 },
         "nvarchar": { length: 255 },
-        "binary": { length: 1 },
-        "varbinary": { length: 1 },
+        "shorttext": { length: 255 },
+        "varbinary": { length: 255 },
         "decimal": { precision: 18, scale: 0 },
-        "numeric": { precision: 18, scale: 0 },
         "time": { precision: 7 },
-        "datetime2": { precision: 7 },
-        "datetimeoffset": { precision: 7 }
     };
 
     /**
@@ -330,19 +318,17 @@ export class SapDriver implements Driver {
             return value === true ? 1 : 0;
 
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDate(value);
+            return DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedTimeToDate(value);
+            return DateUtils.mixedDateToTimeString(value);
 
-        } else if (columnMetadata.type === "datetime"
-            || columnMetadata.type === "smalldatetime"
+        } else if (columnMetadata.type === "timestamp"
             || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToDate(value, false, false);
+            return DateUtils.mixedDateToDatetimeString(value, true);
 
-        } else if (columnMetadata.type === "datetime2"
-            || columnMetadata.type === "datetimeoffset") {
-            return DateUtils.mixedDateToDate(value, false, true);
+        } else if (columnMetadata.type === "seconddate") {
+            return DateUtils.mixedDateToDatetimeString(value, false);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
@@ -353,6 +339,8 @@ export class SapDriver implements Driver {
         } else if (columnMetadata.type === "simple-enum") {
             return DateUtils.simpleEnumToString(value);
 
+        } else if (columnMetadata.isArray) {
+            return () => `ARRAY(${value.map((it: any) => `'${it}'`)})`;
         }
 
         return value;
@@ -368,11 +356,9 @@ export class SapDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             value = value ? true : false;
 
-        } else if (columnMetadata.type === "datetime"
-            || columnMetadata.type === Date
-            || columnMetadata.type === "datetime2"
-            || columnMetadata.type === "smalldatetime"
-            || columnMetadata.type === "datetimeoffset") {
+        } else if (columnMetadata.type === "timestamp"
+            || columnMetadata.type === "seconddate"
+            || columnMetadata.type === Date) {
             value = DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
@@ -389,7 +375,6 @@ export class SapDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-enum") {
             value = DateUtils.stringToSimpleEnum(value, columnMetadata);
-
         }
 
         if (columnMetadata.transformer)
@@ -403,37 +388,31 @@ export class SapDriver implements Driver {
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {
         if (column.type === Number || column.type === "integer") {
-            return "int";
+            return "integer";
 
         } else if (column.type === String) {
             return "nvarchar";
 
         } else if (column.type === Date) {
-            return "datetime";
+            return "timestamp";
 
         } else if (column.type === Boolean) {
-            return "bit";
+            return "boolean";
 
         } else if ((column.type as any) === Buffer) {
-            return "binary";
+            return "blob";
 
         } else if (column.type === "uuid") {
-            return "uniqueidentifier";
+            return "varbinary";
 
         } else if (column.type === "simple-array" || column.type === "simple-json") {
-            return "ntext";
+            return "text";
 
         } else if (column.type === "simple-enum") {
             return "nvarchar";
 
         } else if (column.type === "dec") {
             return "decimal";
-
-        } else if (column.type === "double precision") {
-            return "float";
-
-        } else if (column.type === "rowversion") {
-            return "timestamp";  // the rowversion type's name in SQL server metadata is timestamp
 
         } else {
             return column.type as string || "";
@@ -477,8 +456,20 @@ export class SapDriver implements Driver {
         if (column.length)
             return column.length.toString();
 
-        if (column.type === "varchar" || column.type === "nvarchar" || column.type === String)
-            return "255";
+        if (column.generationStrategy === "uuid")
+            return "16";
+
+        switch (column.type) {
+            case "varchar":
+            case "nvarchar":
+            case "shorttext":
+            case String:
+                return "255";
+            case "alphanum":
+                return "127";
+            case "varbinary":
+                return "255";
+        }
 
         return "";
     }

@@ -1192,9 +1192,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     schemas.push(metadata.schema!);
             });
 
-        schemas.push(this.driver.options.schema || "current_schema()");
+        schemas.push(this.driver.options.schema || "current_schema");
         const schemaNamesString = schemas.map(name => {
-            return name === "current_schema()" ? name : "'" + name + "'";
+            return name === "current_schema" ? name : "'" + name + "'";
         }).join(", ");
 
         await this.startTransaction();
@@ -1205,7 +1205,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             // await Promise.all(dropViewQueries.map(q => this.query(q["query"])));
 
             // ignore spatial_ref_sys; it's a special table supporting PostGIS
-            const selectTableDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schema_name || '"."' || table_name || '" CASCADE;' as "query" FROM "TABLES" WHERE "SCHEMA_NAME" IN (${schemaNamesString}) AND "TABLE_NAME" NOT IN ('SYS_AFL_GENERATOR_PARAMETERS') AND "IS_COLUMN_TABLE" = 'TRUE'`;
+            const selectTableDropsQuery = `SELECT 'DROP TABLE "' || schema_name || '"."' || table_name || '" CASCADE;' as "query" FROM "TABLES" WHERE "SCHEMA_NAME" IN (${schemaNamesString}) AND "TABLE_NAME" NOT IN ('SYS_AFL_GENERATOR_PARAMETERS') AND "IS_COLUMN_TABLE" = 'TRUE'`;
             const dropTableQueries: ObjectLiteral[] = await this.query(selectTableDropsQuery);
             await Promise.all(dropTableQueries.map(q => this.query(q["query"])));
 
@@ -1370,7 +1370,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             `INNER JOIN "pg_class" "cl" ON "cl"."oid" = "con"."confrelid" ` +
             `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
             `INNER JOIN "pg_attribute" "att2" ON "att2"."attrelid" = "con"."conrelid" AND "att2"."attnum" = "con"."parent"`;
-        const [dbTables, dbColumns, dbConstraints, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
+        const [dbTables, dbColumns]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
             // this.query(constraintsSql),
@@ -1378,6 +1378,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             // this.query(foreignKeysSql),
         ]);
         console.log(constraintsSql, indicesSql, foreignKeysSql);
+        const dbConstraints: ObjectLiteral[] = [];
+        const dbIndices: ObjectLiteral[] = [];
+        const dbForeignKeys: ObjectLiteral[] = [];
 
         // if tables were not found in the db, no need to proceed
         if (!dbTables.length)
@@ -1395,7 +1398,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // create columns from the loaded columns
             table.columns = await Promise.all(dbColumns
-                .filter(dbColumn => this.driver.buildTableName(dbColumn["table_name"], dbColumn["table_schema"]) === tableFullName)
+                .filter(dbColumn => this.driver.buildTableName(dbColumn["table_name"], dbColumn["schema_name"]) === tableFullName)
                 .map(async dbColumn => {
 
                     const columnConstraints = dbConstraints.filter(dbConstraint => {
@@ -1403,10 +1406,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     });
 
                     const tableColumn = new TableColumn();
-                    tableColumn.name = dbColumn["column_name"];
-                    tableColumn.type = dbColumn["regtype"].toLowerCase();
+                    tableColumn.name = dbColumn["COLUMN_NAME"];
+                    tableColumn.type = dbColumn["DATA_TYPE_NAME"].toLowerCase();
 
-                    if (tableColumn.type === "numeric" || tableColumn.type === "decimal" || tableColumn.type === "float") {
+                    if (tableColumn.type === "decimal" || tableColumn.type === "float") {
                         // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
                         // we set 'undefined' in to unspecified property to avoid changing column on sync
                         if (dbColumn["numeric_precision"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["numeric_precision"])) {
@@ -1421,10 +1424,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         }
                     }
 
-                    if (dbColumn["data_type"].toLowerCase() === "array") {
+                    if (dbColumn["DATA_TYPE_NAME"].toLowerCase() === "array") {
                         tableColumn.isArray = true;
-                        const type = tableColumn.type.replace("[]", "");
-                        tableColumn.type = this.connection.driver.normalizeType({type: type});
+                        tableColumn.type = dbColumn["CS_DATA_TYPE_NAME"].toLowerCase();
                     }
 
                     if (tableColumn.type === "interval"
@@ -1691,8 +1693,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
-        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
-        const currentSchema = currentSchemaQuery[0]["current_schema"];
+        const currentSchema = await this.getCurrentSchema();
         const splittedName = view.name.split(".");
         let schema = this.driver.options.schema || currentSchema;
         let name = view.name;
@@ -1722,8 +1723,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds remove view sql.
      */
     protected async deleteViewDefinitionSql(viewOrPath: View|string): Promise<Query> {
-        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
-        const currentSchema = currentSchemaQuery[0]["current_schema"];
+        const currentSchema = await this.getCurrentSchema();
         const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
         const splittedName = viewName.split(".");
         let schema = this.driver.options.schema || currentSchema;
