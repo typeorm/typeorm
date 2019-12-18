@@ -1,5 +1,8 @@
-import {Column, PrimaryColumn} from "../../../../../../src";
+import {Entity} from "../../../../../../src";
+import {PrimaryColumn} from "../../../../../../src";
+import {Column} from "../../../../../../src";
 
+@Entity()
 export class PostWithOptions {
 
     @PrimaryColumn()
@@ -9,51 +12,26 @@ export class PostWithOptions {
     // Numeric Types
     // -------------------------------------------------------------------------
 
-    @Column("number", { precision: 10, scale: 5 })
-    number: number;
+    @Column("dec", { precision: 10, scale: 2 })
+    dec: string;
 
-    @Column("numeric", { precision: 10, scale: 5 })
-    numeric: number;
-
-    @Column("dec", { precision: 10, scale: 5 })
-    dec: number;
-
-    @Column("decimal", { precision: 10, scale: 5 })
-    decimal: number;
-
-    @Column("float", { precision: 24 })
-    float: number;
+    @Column("decimal", { precision: 10, scale: 3 })
+    decimal: string;
 
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
 
-    @Column("char", { length: 3 })
-    char: string;
+    @Column("varchar", { length: 50 })
+    varchar: string;
 
-    @Column("nchar", { length: 3 })
-    nchar: string;
+    @Column("nvarchar", { length: 50 })
+    nvarchar: string;
 
-    @Column("varchar2", { length: 50 })
-    varchar2: string;
+    @Column("alphanum", { length: 50 })
+    alphanum: string;
 
-    @Column("nvarchar2", { length: 40 })
-    nvarchar2: string;
-
-    @Column("raw", { length: 500 })
-    raw: Buffer;
-
-    // -------------------------------------------------------------------------
-    // Date Types
-    // -------------------------------------------------------------------------
-
-    @Column("timestamp", { precision: 5 })
-    timestamp: Date;
-
-    @Column("timestamp with time zone", { precision: 6 })
-    timestampWithTimeZone: Date;
-
-    @Column("timestamp with local time zone", { precision: 7 })
-    timestampWithLocalTimeZone: Date;
+    @Column("shorttext", { length: 50 })
+    shorttext: string;
 
 }

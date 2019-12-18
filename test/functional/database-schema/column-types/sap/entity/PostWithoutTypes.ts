@@ -1,5 +1,8 @@
-import {Column, PrimaryColumn} from "../../../../../../src";
+import {Entity} from "../../../../../../src";
+import {PrimaryColumn} from "../../../../../../src";
+import {Column} from "../../../../../../src";
 
+@Entity()
 export class PostWithoutTypes {
 
     @PrimaryColumn()
@@ -15,6 +18,6 @@ export class PostWithoutTypes {
     blob: Buffer;
 
     @Column()
-    datetime: Date;
+    timestamp: Date;
 
 }

@@ -1409,17 +1409,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     tableColumn.name = dbColumn["COLUMN_NAME"];
                     tableColumn.type = dbColumn["DATA_TYPE_NAME"].toLowerCase();
 
-                    if (tableColumn.type === "decimal" || tableColumn.type === "float") {
+                    if (tableColumn.type === "dec" || tableColumn.type === "decimal") {
                         // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
                         // we set 'undefined' in to unspecified property to avoid changing column on sync
-                        if (dbColumn["numeric_precision"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["numeric_precision"])) {
-                            tableColumn.precision = dbColumn["numeric_precision"];
-                        } else if (dbColumn["numeric_scale"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["numeric_scale"])) {
+                        if (dbColumn["LENGTH"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["LENGTH"])) {
+                            tableColumn.precision = dbColumn["LENGTH"];
+                        } else if (dbColumn["SCALE"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["SCALE"])) {
                             tableColumn.precision = undefined;
                         }
-                        if (dbColumn["numeric_scale"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["numeric_scale"])) {
-                            tableColumn.scale = dbColumn["numeric_scale"];
-                        } else if (dbColumn["numeric_precision"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["numeric_precision"])) {
+                        if (dbColumn["SCALE"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["SCALE"])) {
+                            tableColumn.scale = dbColumn["SCALE"];
+                        } else if (dbColumn["LENGTH"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["LENGTH"])) {
                             tableColumn.scale = undefined;
                         }
                     }
@@ -1427,14 +1427,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     if (dbColumn["DATA_TYPE_NAME"].toLowerCase() === "array") {
                         tableColumn.isArray = true;
                         tableColumn.type = dbColumn["CS_DATA_TYPE_NAME"].toLowerCase();
-                    }
-
-                    if (tableColumn.type === "interval"
-                        || tableColumn.type === "time without time zone"
-                        || tableColumn.type === "time with time zone"
-                        || tableColumn.type === "timestamp without time zone"
-                        || tableColumn.type === "timestamp with time zone") {
-                        tableColumn.precision = !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["datetime_precision"]) ? dbColumn["datetime_precision"] : undefined;
                     }
 
                     // if (tableColumn.type.indexOf("enum") !== -1) {
@@ -1447,46 +1439,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     //     tableColumn.enum = results.map(result => result["value"]);
                     // }
 
-                    if (tableColumn.type === "geometry") {
-                        const geometryColumnSql = `SELECT * FROM (
-                        SELECT
-                          "f_table_schema" "table_schema",
-                          "f_table_name" "table_name",
-                          "f_geometry_column" "column_name",
-                          "srid",
-                          "type"
-                        FROM "geometry_columns"
-                      ) AS _
-                      WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
-
-                        const results: ObjectLiteral[] = await this.query(geometryColumnSql);
-                        tableColumn.spatialFeatureType = results[0].type;
-                        tableColumn.srid = results[0].srid;
-                    }
-
-                    if (tableColumn.type === "geography") {
-                        const geographyColumnSql = `SELECT * FROM (
-                        SELECT
-                          "f_table_schema" "table_schema",
-                          "f_table_name" "table_name",
-                          "f_geography_column" "column_name",
-                          "srid",
-                          "type"
-                        FROM "geography_columns"
-                      ) AS _
-                      WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
-
-                        const results: ObjectLiteral[] = await this.query(geographyColumnSql);
-                        tableColumn.spatialFeatureType = results[0].type;
-                        tableColumn.srid = results[0].srid;
-                    }
 
                     // check only columns that have length property
-                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1 && dbColumn["character_maximum_length"]) {
-                        const length = dbColumn["character_maximum_length"].toString();
+                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1 && dbColumn["LENGTH"]) {
+                        const length = dbColumn["LENGTH"].toString();
                         tableColumn.length = !this.isDefaultColumnLength(table, tableColumn, length) ? length : "";
                     }
-                    tableColumn.isNullable = dbColumn["is_nullable"] === "YES";
+                    tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "TRUE";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
 
                     const uniqueConstraint = columnConstraints.find(constraint => constraint["constraint_type"] === "UNIQUE");

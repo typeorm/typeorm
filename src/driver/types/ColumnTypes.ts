@@ -29,7 +29,7 @@ export type SpatialColumnType = "geometry" // postgres
 /**
  * Column types where precision and scale properties are used.
  */
-export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite, sap
+export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
     |"double" // mysql, sqlite
     |"dec" // oracle, mssql, mysql
     |"decimal" // mysql, postgres, mssql, sqlite
@@ -98,6 +98,7 @@ export type SimpleColumnType =
     |"int8" // postgres, sqlite, cockroachdb
     |"int64" // cockroachdb
     |"unsigned big int" // sqlite
+    |"float" // mysql, mssql, oracle, sqlite, sap
     |"float4" // postgres, cockroachdb
     |"float8" // postgres, cockroachdb
     |"smallmoney" // mssql

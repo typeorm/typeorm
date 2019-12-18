@@ -6,7 +6,7 @@ import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 import {DateUtils} from "../../../../../src/util/DateUtils";
 
-describe.only("database schema > column types > sap", () => {
+describe("database schema > column types > sap", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -19,7 +19,7 @@ describe.only("database schema > column types > sap", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it.only("all types should work correctly - persist and hydrate", () => Promise.all(connections.map(async connection => {
+    it("all types should work correctly - persist and hydrate", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
         const queryRunner = connection.createQueryRunner();
@@ -142,68 +142,38 @@ describe.only("database schema > column types > sap", () => {
 
         const post = new PostWithOptions();
         post.id = 1;
-        post.number = 50;
-        post.numeric = 50;
-        post.float = 5.25;
-        post.dec = 60;
-        post.decimal = 70;
-        post.char = "AAA";
-        post.nchar = "AAA";
-        post.varchar2 = "This is varchar";
-        post.nvarchar2 = "This is nvarchar";
-        post.raw = new Buffer("This is raw");
-        post.timestamp = new Date();
-        post.timestampWithTimeZone = new Date();
-        post.timestampWithLocalTimeZone = new Date();
+        post.dec = "60.00";
+        post.decimal = "70.000";
+        post.varchar = "This is varchar";
+        post.nvarchar = "This is nvarchar";
+        post.alphanum = "This is alphanum";
+        post.shorttext = "This is shorttext";
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(post.id);
-        loadedPost.number.should.be.equal(post.number);
-        loadedPost.numeric.should.be.equal(post.numeric);
-        loadedPost.float.should.be.equal(post.float);
         loadedPost.dec.should.be.equal(post.dec);
         loadedPost.decimal.should.be.equal(post.decimal);
-        loadedPost.char.should.be.equal(post.char);
-        loadedPost.nchar.should.be.equal(post.nchar);
-        loadedPost.varchar2.should.be.equal(post.varchar2);
-        loadedPost.nvarchar2.should.be.equal(post.nvarchar2);
-        loadedPost.raw.should.be.eql(post.raw);
-        loadedPost.timestamp.getTime().should.be.equal(post.timestamp.getTime());
-        loadedPost.timestampWithTimeZone.getTime().should.be.equal(post.timestampWithTimeZone.getTime());
-        loadedPost.timestampWithLocalTimeZone.getTime().should.be.equal(post.timestampWithLocalTimeZone.getTime());
+        loadedPost.varchar.should.be.equal(post.varchar);
+        loadedPost.nvarchar.should.be.equal(post.nvarchar);
+        loadedPost.alphanum.should.be.equal(post.alphanum);
+        loadedPost.shorttext.should.be.equal(post.shorttext);
 
-        table!.findColumnByName("id")!.type.should.be.equal("number");
-        table!.findColumnByName("number")!.type.should.be.equal("number");
-        table!.findColumnByName("number")!.precision!.should.be.equal(10);
-        table!.findColumnByName("number")!.scale!.should.be.equal(5);
-        table!.findColumnByName("numeric")!.type.should.be.equal("number");
-        table!.findColumnByName("numeric")!.precision!.should.be.equal(10);
-        table!.findColumnByName("numeric")!.scale!.should.be.equal(5);
-        table!.findColumnByName("float")!.type.should.be.equal("float");
-        table!.findColumnByName("float")!.precision!.should.be.equal(24);
-        table!.findColumnByName("dec")!.type.should.be.equal("number");
+        table!.findColumnByName("id")!.type.should.be.equal("integer");
+        table!.findColumnByName("dec")!.type.should.be.equal("decimal");
         table!.findColumnByName("dec")!.precision!.should.be.equal(10);
-        table!.findColumnByName("dec")!.scale!.should.be.equal(5);
-        table!.findColumnByName("decimal")!.type.should.be.equal("number");
+        table!.findColumnByName("dec")!.scale!.should.be.equal(2);
+        table!.findColumnByName("decimal")!.type.should.be.equal("decimal");
         table!.findColumnByName("decimal")!.precision!.should.be.equal(10);
-        table!.findColumnByName("decimal")!.scale!.should.be.equal(5);
-        table!.findColumnByName("char")!.type.should.be.equal("char");
-        table!.findColumnByName("char")!.length!.should.be.equal("3");
-        table!.findColumnByName("nchar")!.type.should.be.equal("nchar");
-        table!.findColumnByName("nchar")!.length!.should.be.equal("3");
-        table!.findColumnByName("varchar2")!.type.should.be.equal("varchar2");
-        table!.findColumnByName("varchar2")!.length!.should.be.equal("50");
-        table!.findColumnByName("nvarchar2")!.type.should.be.equal("nvarchar2");
-        table!.findColumnByName("nvarchar2")!.length!.should.be.equal("40");
-        table!.findColumnByName("raw")!.type.should.be.equal("raw");
-        table!.findColumnByName("raw")!.length!.should.be.equal("500");
-        table!.findColumnByName("timestamp")!.type.should.be.equal("timestamp");
-        table!.findColumnByName("timestamp")!.precision!.should.be.equal(5);
-        table!.findColumnByName("timestampWithTimeZone")!.type.should.be.equal("timestamp with time zone");
-        table!.findColumnByName("timestampWithTimeZone")!.precision!.should.be.equal(6);
-        table!.findColumnByName("timestampWithLocalTimeZone")!.type.should.be.equal("timestamp with local time zone");
-        table!.findColumnByName("timestampWithLocalTimeZone")!.precision!.should.be.equal(7);
+        table!.findColumnByName("decimal")!.scale!.should.be.equal(3);
+        table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
+        table!.findColumnByName("varchar")!.length!.should.be.equal("50");
+        table!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
+        table!.findColumnByName("nvarchar")!.length!.should.be.equal("50");
+        table!.findColumnByName("alphanum")!.type.should.be.equal("alphanum");
+        table!.findColumnByName("alphanum")!.length!.should.be.equal("50");
+        table!.findColumnByName("shorttext")!.type.should.be.equal("shorttext");
+        table!.findColumnByName("shorttext")!.length!.should.be.equal("50");
 
     })));
 
@@ -219,7 +189,7 @@ describe.only("database schema > column types > sap", () => {
         post.name = "Post";
         post.boolean = true;
         post.blob = new Buffer("This is blob");
-        post.datetime = new Date();
+        post.timestamp = new Date();
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;
@@ -227,13 +197,13 @@ describe.only("database schema > column types > sap", () => {
         loadedPost.name.should.be.equal(post.name);
         loadedPost.boolean.should.be.equal(post.boolean);
         loadedPost.blob.toString().should.be.equal(post.blob.toString());
-        loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
+        loadedPost.timestamp.valueOf().should.be.equal(post.timestamp.valueOf());
 
-        table!.findColumnByName("id")!.type.should.be.equal("number");
-        table!.findColumnByName("name")!.type.should.be.equal("varchar2");
-        table!.findColumnByName("boolean")!.type.should.be.equal("number");
+        table!.findColumnByName("id")!.type.should.be.equal("integer");
+        table!.findColumnByName("name")!.type.should.be.equal("nvarchar");
+        table!.findColumnByName("boolean")!.type.should.be.equal("boolean");
         table!.findColumnByName("blob")!.type.should.be.equal("blob");
-        table!.findColumnByName("datetime")!.type.should.be.equal("timestamp");
+        table!.findColumnByName("timestamp")!.type.should.be.equal("timestamp");
 
     })));
 

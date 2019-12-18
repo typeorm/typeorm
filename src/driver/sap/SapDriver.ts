@@ -128,7 +128,6 @@ export class SapDriver implements Driver {
      */
     withPrecisionColumnTypes: ColumnType[] = [
         "decimal",
-        "float",
     ];
 
     /**
@@ -178,12 +177,11 @@ export class SapDriver implements Driver {
         "shorttext": { length: 255 },
         "varbinary": { length: 255 },
         "decimal": { precision: 18, scale: 0 },
-        "time": { precision: 7 },
     };
 
     /**
-     * Max length allowed by MSSQL Server for aliases (identifiers).
-     * @see https://docs.microsoft.com/en-us/sql/sql-server/maximum-capacity-specifications-for-sql-server
+     * Max length allowed by SAP HANA for aliases (identifiers).
+     * @see https://help.sap.com/viewer/4fe29514fd584807ac9f2a04f6754767/2.0.03/en-US/20a760537519101497e3cfe07b348f3c.html
      */
     maxAliasLength = 128;
 
@@ -410,9 +408,6 @@ export class SapDriver implements Driver {
 
         } else if (column.type === "simple-enum") {
             return "nvarchar";
-
-        } else if (column.type === "dec") {
-            return "decimal";
 
         } else {
             return column.type as string || "";
