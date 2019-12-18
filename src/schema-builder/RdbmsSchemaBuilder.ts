@@ -1,5 +1,6 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {SapDriver} from "../driver/sap/SapDriver";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {Table} from "./table/Table";
 import {TableColumn} from "./table/TableColumn";
@@ -367,7 +368,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             // check if table does not exist yet
             const existTable = this.queryRunner.loadedTables.find(table => {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
+                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver|SapDriver>this.connection.driver).options.schema;
                 const fullTableName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
 
                 return table.name === fullTableName;

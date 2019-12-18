@@ -13,7 +13,6 @@ describe("database schema > column types > sap", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sap"],
-            logging: true
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

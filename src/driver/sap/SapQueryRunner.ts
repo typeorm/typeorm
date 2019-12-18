@@ -499,8 +499,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
 
-        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(column)}`));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${column.name}"`));
+        upQueries.push(new Query(this.addColumnSql(table, column)));
+        downQueries.push(new Query(this.dropColumnSql(table, column)));
 
         // create or update primary key constraint
         if (column.isPrimary) {
@@ -873,8 +873,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${column.default} FOR "${column.name}"`));
         }
 
-        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${column.name}"`));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(column)}`));
+        upQueries.push(new Query(this.dropColumnSql(table, column)));
+        downQueries.push(new Query(this.addColumnSql(table, column)));
 
         await this.executeQueries(upQueries, downQueries);
 
@@ -1320,17 +1320,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 name = schema;
                 schema = this.driver.options.schema || currentSchema;
             }
-            return `("ns"."nspname" = '${schema}' AND "t"."relname" = '${name}')`;
+            return `("SCHEMA_NAME" = '${schema}' AND "TABLE_NAME" = '${name}')`;
         }).join(" OR ");
 
-        const constraintsSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "cnst"."conname" AS "constraint_name", ` +
-            `pg_get_constraintdef("cnst"."oid") AS "expression", ` +
-            `CASE "cnst"."contype" WHEN 'p' THEN 'PRIMARY' WHEN 'u' THEN 'UNIQUE' WHEN 'c' THEN 'CHECK' WHEN 'x' THEN 'EXCLUDE' END AS "constraint_type", "a"."attname" AS "column_name" ` +
-            `FROM "pg_constraint" "cnst" ` +
-            `INNER JOIN "pg_class" "t" ON "t"."oid" = "cnst"."conrelid" ` +
-            `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "cnst"."connamespace" ` +
-            `LEFT JOIN "pg_attribute" "a" ON "a"."attrelid" = "cnst"."conrelid" AND "a"."attnum" = ANY ("cnst"."conkey") ` +
-            `WHERE "t"."relkind" = 'r' AND (${constraintsCondition})`;
+        const constraintsSql = `SELECT * FROM "CONSTRAINTS" WHERE (${constraintsCondition})`;
 
         const indicesSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
@@ -1370,15 +1363,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             `INNER JOIN "pg_class" "cl" ON "cl"."oid" = "con"."confrelid" ` +
             `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
             `INNER JOIN "pg_attribute" "att2" ON "att2"."attrelid" = "con"."conrelid" AND "att2"."attnum" = "con"."parent"`;
-        const [dbTables, dbColumns]: ObjectLiteral[][] = await Promise.all([
+        const [dbTables, dbColumns, dbConstraints]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
-            // this.query(constraintsSql),
+            this.query(constraintsSql),
             // this.query(indicesSql),
             // this.query(foreignKeysSql),
         ]);
         console.log(constraintsSql, indicesSql, foreignKeysSql);
-        const dbConstraints: ObjectLiteral[] = [];
         const dbIndices: ObjectLiteral[] = [];
         const dbForeignKeys: ObjectLiteral[] = [];
 
@@ -1392,17 +1384,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // We do not need to join schema name, when database is by default.
             // In this case we need local variable `tableFullName` for below comparision.
-            const schema = dbTable["table_schema"] === currentSchema && !this.driver.options.schema ? undefined : dbTable["table_schema"];
-            table.name = this.driver.buildTableName(dbTable["table_name"], schema);
-            const tableFullName = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
+            const schema = dbTable["SCHEMA_NAME"] === currentSchema && !this.driver.options.schema ? undefined : dbTable["SCHEMA_NAME"];
+            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema);
+            const tableFullName = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["SCHEMA_NAME"]);
 
             // create columns from the loaded columns
             table.columns = await Promise.all(dbColumns
-                .filter(dbColumn => this.driver.buildTableName(dbColumn["table_name"], dbColumn["schema_name"]) === tableFullName)
+                .filter(dbColumn => this.driver.buildTableName(dbColumn["TABLE_NAME"], dbColumn["SCHEMA_NAME"]) === tableFullName)
                 .map(async dbColumn => {
 
                     const columnConstraints = dbConstraints.filter(dbConstraint => {
-                        return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName && dbConstraint["column_name"] === dbColumn["column_name"];
+                        return this.driver.buildTableName(dbConstraint["TABLE_NAME"], dbConstraint["SCHEMA_NAME"]) === tableFullName && dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
                     });
 
                     const tableColumn = new TableColumn();
@@ -1429,26 +1421,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.type = dbColumn["CS_DATA_TYPE_NAME"].toLowerCase();
                     }
 
-                    // if (tableColumn.type.indexOf("enum") !== -1) {
-                    //     tableColumn.type = "enum";
-                    //     const sql = `SELECT "e"."enumlabel" AS "value" FROM "pg_enum" "e" ` +
-                    //         `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
-                    //         `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-                    //         `WHERE "n"."nspname" = '${dbTable["table_schema"]}' AND "t"."typname" = '${this.buildEnumName(table, tableColumn.name, false, true)}'`;
-                    //     const results: ObjectLiteral[] = await this.query(sql);
-                    //     tableColumn.enum = results.map(result => result["value"]);
-                    // }
-
-
                     // check only columns that have length property
                     if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1 && dbColumn["LENGTH"]) {
                         const length = dbColumn["LENGTH"].toString();
                         tableColumn.length = !this.isDefaultColumnLength(table, tableColumn, length) ? length : "";
                     }
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "TRUE";
-                    tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
+                    tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["IS_PRIMARY_KEY"] === "TRUE");
 
-                    const uniqueConstraint = columnConstraints.find(constraint => constraint["constraint_type"] === "UNIQUE");
+                    const uniqueConstraint = columnConstraints.find(constraint => !tableColumn.isPrimary && constraint["IS_UNIQUE_KEY"] === "TRUE");
                     const isConstraintComposite = uniqueConstraint
                         ? !!dbConstraints.find(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
                             && dbConstraint["constraint_name"] === uniqueConstraint["constraint_name"]
@@ -1701,6 +1682,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             .getQueryAndParameters();
 
         return new Query(query, parameters);
+    }
+
+    protected addColumnSql(table: Table, column: TableColumn): string {
+        return `ALTER TABLE ${this.escapePath(table)} ADD (${this.buildCreateColumnSql(column)})`;
+    }
+
+    protected dropColumnSql(table: Table, column: TableColumn): string {
+        return `ALTER TABLE ${this.escapePath(table)} DROP ("${column.name}")`;
     }
 
     /**
