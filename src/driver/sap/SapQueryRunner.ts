@@ -525,17 +525,20 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (columnIndex) {
             upQueries.push(this.createIndexSql(table, columnIndex));
             downQueries.push(this.dropIndexSql(table, columnIndex));
-        }
 
-        // create unique constraint
-        if (column.isUnique) {
-            const uniqueConstraint = new TableUnique({
-               name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),
-               columnNames: [column.name]
+        } else if (column.isUnique) {
+            const uniqueIndex = new TableIndex({
+                name: this.connection.namingStrategy.indexName(table.name, [column.name]),
+                columnNames: [column.name],
+                isUnique: true
             });
-            clonedTable.uniques.push(uniqueConstraint);
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${column.name}")`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`));
+            clonedTable.indices.push(uniqueIndex);
+            clonedTable.uniques.push(new TableUnique({
+                name: uniqueIndex.name,
+                columnNames: uniqueIndex.columnNames
+            }));
+            upQueries.push(this.createIndexSql(table, uniqueIndex));
+            downQueries.push(this.dropIndexSql(table, uniqueIndex));
         }
 
         // remove default constraint
@@ -766,21 +769,30 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
-                    const uniqueConstraint = new TableUnique({
-                        name: this.connection.namingStrategy.uniqueConstraintName(table.name, [newColumn.name]),
-                        columnNames: [newColumn.name]
+                    const uniqueIndex = new TableIndex({
+                        name: this.connection.namingStrategy.indexName(table.name, [newColumn.name]),
+                        columnNames: [newColumn.name],
+                        isUnique: true
                     });
-                    clonedTable.uniques.push(uniqueConstraint);
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${newColumn.name}")`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`));
+                    clonedTable.indices.push(uniqueIndex);
+                    clonedTable.uniques.push(new TableUnique({
+                        name: uniqueIndex.name,
+                        columnNames: uniqueIndex.columnNames
+                    }));
+                    upQueries.push(this.createIndexSql(table, uniqueIndex));
+                    downQueries.push(this.dropIndexSql(table, uniqueIndex));
 
                 } else {
-                    const uniqueConstraint = clonedTable.uniques.find(unique => {
-                        return unique.columnNames.length === 1 && !!unique.columnNames.find(columnName => columnName === newColumn.name);
+                    const uniqueIndex = clonedTable.indices.find(index => {
+                        return index.columnNames.length === 1 && index.isUnique === true && !!index.columnNames.find(columnName => columnName === newColumn.name);
                     });
-                    clonedTable.uniques.splice(clonedTable.uniques.indexOf(uniqueConstraint!), 1);
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueConstraint!.name}"`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint!.name}" UNIQUE ("${newColumn.name}")`));
+                    clonedTable.indices.splice(clonedTable.indices.indexOf(uniqueIndex!), 1);
+
+                    const tableUnique = clonedTable.uniques.find(unique => unique.name === uniqueIndex!.name);
+                    clonedTable.uniques.splice(clonedTable.uniques.indexOf(tableUnique!), 1);
+
+                    upQueries.push(this.dropIndexSql(table, uniqueIndex!));
+                    downQueries.push(this.createIndexSql(table, uniqueIndex!));
                 }
             }
 
@@ -848,6 +860,21 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             clonedTable.indices.splice(clonedTable.indices.indexOf(columnIndex), 1);
             upQueries.push(this.dropIndexSql(table, columnIndex));
             downQueries.push(this.createIndexSql(table, columnIndex));
+
+        } else if (column.isUnique) {
+            // we splice constraints both from table uniques and indices.
+            const uniqueName = this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]);
+            const foundUnique = clonedTable.uniques.find(unique => unique.name === uniqueName);
+            if (foundUnique)
+                clonedTable.uniques.splice(clonedTable.uniques.indexOf(foundUnique), 1);
+
+            const indexName = this.connection.namingStrategy.indexName(table.name, [column.name]);
+            const foundIndex = clonedTable.indices.find(index => index.name === indexName);
+            if (foundIndex)
+                clonedTable.indices.splice(clonedTable.indices.indexOf(foundIndex), 1);
+
+            upQueries.push(this.dropIndexSql(table, indexName));
+            downQueries.push(new Query(`CREATE UNIQUE INDEX "${indexName}" ON ${this.escapePath(table)} ("${column.name}")`));
         }
 
         // drop column check
@@ -856,14 +883,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             clonedTable.checks.splice(clonedTable.checks.indexOf(columnCheck), 1);
             upQueries.push(this.dropCheckConstraintSql(table, columnCheck));
             downQueries.push(this.createCheckConstraintSql(table, columnCheck));
-        }
-
-        // drop column unique
-        const columnUnique = clonedTable.uniques.find(unique => unique.columnNames.length === 1 && unique.columnNames[0] === column.name);
-        if (columnUnique) {
-            clonedTable.uniques.splice(clonedTable.uniques.indexOf(columnUnique), 1);
-            upQueries.push(this.dropUniqueConstraintSql(table, columnUnique));
-            downQueries.push(this.createUniqueConstraintSql(table, columnUnique));
         }
 
         // drop default constraint
@@ -959,47 +978,28 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new unique constraint.
      */
     async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
-        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-
-        // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!uniqueConstraint.name)
-            uniqueConstraint.name = this.connection.namingStrategy.uniqueConstraintName(table.name, uniqueConstraint.columnNames);
-
-        const up = this.createUniqueConstraintSql(table, uniqueConstraint);
-        const down = this.dropUniqueConstraintSql(table, uniqueConstraint);
-        await this.executeQueries(up, down);
-        table.addUniqueConstraint(uniqueConstraint);
+        throw new Error(`SAP HANA does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Creates a new unique constraints.
      */
     async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        const promises = uniqueConstraints.map(uniqueConstraint => this.createUniqueConstraint(tableOrName, uniqueConstraint));
-        await Promise.all(promises);
+        throw new Error(`SAP HANA does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Drops unique constraint.
      */
     async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
-        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
-        if (!uniqueConstraint)
-            throw new Error(`Supplied unique constraint was not found in table ${table.name}`);
-
-        const up = this.dropUniqueConstraintSql(table, uniqueConstraint);
-        const down = this.createUniqueConstraintSql(table, uniqueConstraint);
-        await this.executeQueries(up, down);
-        table.removeUniqueConstraint(uniqueConstraint);
+        throw new Error(`SAP HANA does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Drops an unique constraints.
      */
     async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        const promises = uniqueConstraints.map(uniqueConstraint => this.dropUniqueConstraint(tableOrName, uniqueConstraint));
-        await Promise.all(promises);
+        throw new Error(`SAP HANA does not support unique constraints. Use unique index instead.`);
     }
 
     /**
@@ -1235,7 +1235,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Return current schema.
      */
     protected async getCurrentSchema(): Promise<string> {
-        const currentSchemaQuery = await this.query(`SELECT CURRENT_SCHEMA AS "schema_name" FROM DUMMY`);
+        const currentSchemaQuery = await this.query(`SELECT CURRENT_SCHEMA AS "schema_name" FROM "DUMMY"`);
         return currentSchemaQuery[0]["schema_name"];
     }
 
@@ -1325,17 +1325,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const constraintsSql = `SELECT * FROM "CONSTRAINTS" WHERE (${constraintsCondition})`;
 
-        const indicesSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
-            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
-            `"types"."typname" AS "type_name" ` +
-            `FROM "pg_class" "t" ` +
-            `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
-            `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
-            `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
-            `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
-            `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
-            `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
-            `WHERE "t"."relkind" = 'r' AND "cnst"."contype" IS NULL AND (${constraintsCondition})`;
+        const indicesCondition = tableNames.map(tableName => {
+            let [schema, name] = tableName.split(".");
+            if (!name) {
+                name = schema;
+                schema = this.driver.options.schema || currentSchema;
+            }
+            return `("I"."SCHEMA_NAME" = '${schema}' AND "I"."TABLE_NAME" = '${name}')`;
+        }).join(" OR ");
+        const indicesSql = `SELECT "I"."SCHEMA_NAME", "I"."TABLE_NAME", "I"."INDEX_NAME", "IC"."COLUMN_NAME", "I"."CONSTRAINT" ` +
+            `FROM "INDEXES" "I" INNER JOIN "INDEX_COLUMNS" "IC" ON "IC"."INDEX_OID" = "I"."INDEX_OID" ` +
+            `WHERE (${indicesCondition}) AND ("I"."CONSTRAINT" IS NULL OR "I"."CONSTRAINT" != 'PRIMARY KEY')`;
 
         const foreignKeysCondition = tableNames.map(tableName => {
             let [schema, name] = tableName.split(".");
@@ -1363,15 +1363,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             `INNER JOIN "pg_class" "cl" ON "cl"."oid" = "con"."confrelid" ` +
             `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
             `INNER JOIN "pg_attribute" "att2" ON "att2"."attrelid" = "con"."conrelid" AND "att2"."attnum" = "con"."parent"`;
-        const [dbTables, dbColumns, dbConstraints]: ObjectLiteral[][] = await Promise.all([
+        const [dbTables, dbColumns, dbConstraints, dbIndices]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
             this.query(constraintsSql),
-            // this.query(indicesSql),
+            this.query(indicesSql),
             // this.query(foreignKeysSql),
         ]);
         console.log(constraintsSql, indicesSql, foreignKeysSql);
-        const dbIndices: ObjectLiteral[] = [];
         const dbForeignKeys: ObjectLiteral[] = [];
 
         // if tables were not found in the db, no need to proceed
@@ -1396,6 +1395,28 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const columnConstraints = dbConstraints.filter(dbConstraint => {
                         return this.driver.buildTableName(dbConstraint["TABLE_NAME"], dbConstraint["SCHEMA_NAME"]) === tableFullName && dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
                     });
+
+                    const columnUniqueIndex = dbIndices.find(dbIndex => {
+                        const indexTableFullName = this.driver.buildTableName(dbIndex["TABLE_NAME"], dbIndex["SCHEMA_NAME"]);
+                        if (indexTableFullName !== tableFullName) {
+                            return false;
+                        }
+
+                        // Index is not for this column
+                        if (dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"]) {
+                            return false;
+                        }
+
+                        return dbIndex["CONSTRAINT"] && dbIndex["CONSTRAINT"].indexOf("UNIQUE") !== -1;
+                    });
+
+                    const tableMetadata = this.connection.entityMetadatas.find(metadata => metadata.tablePath === table.name);
+                    const hasIgnoredIndex = columnUniqueIndex && tableMetadata && tableMetadata.indices
+                        .some(index => index.name === columnUniqueIndex["INDEX_NAME"] && index.synchronize === false);
+
+                    const isConstraintComposite = columnUniqueIndex
+                        ? !!dbIndices.find(dbIndex => dbIndex["INDEX_NAME"] === columnUniqueIndex["INDEX_NAME"] && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
+                        : false;
 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];
@@ -1426,16 +1447,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         const length = dbColumn["LENGTH"].toString();
                         tableColumn.length = !this.isDefaultColumnLength(table, tableColumn, length) ? length : "";
                     }
+                    tableColumn.isUnique = !!columnUniqueIndex && !hasIgnoredIndex && !isConstraintComposite;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "TRUE";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["IS_PRIMARY_KEY"] === "TRUE");
-
-                    const uniqueConstraint = columnConstraints.find(constraint => !tableColumn.isPrimary && constraint["IS_UNIQUE_KEY"] === "TRUE");
-                    const isConstraintComposite = uniqueConstraint
-                        ? !!dbConstraints.find(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
-                            && dbConstraint["constraint_name"] === uniqueConstraint["constraint_name"]
-                            && dbConstraint["column_name"] !== dbColumn["column_name"])
-                        : false;
-                    tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
+                    tableColumn.isGenerated = dbColumn["GENERATION_TYPE"] === "ALWAYS AS IDENTITY";
+                    if (tableColumn.isGenerated)
+                        tableColumn.generationStrategy = "increment";
 
                     // if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
                     //     if (dbColumn["column_default"].replace(/"/gi, "") === `nextval('${this.buildSequenceName(table, dbColumn["column_name"], currentSchema, true)}'::regclass)`) {
@@ -1456,20 +1473,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.collation = dbColumn["collation_name"];
                     return tableColumn;
                 }));
-
-            // find unique constraints of table, group them by constraint name and build TableUnique.
-            const tableUniqueConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName
-                    && dbConstraint["constraint_type"] === "UNIQUE";
-            }), dbConstraint => dbConstraint["constraint_name"]);
-
-            table.uniques = tableUniqueConstraints.map(constraint => {
-                const uniques = dbConstraints.filter(dbC => dbC["constraint_name"] === constraint["constraint_name"]);
-                return new TableUnique({
-                    name: constraint["constraint_name"],
-                    columnNames: uniques.map(u => u["column_name"])
-                });
-            });
 
             // find check constraints of table, group them by constraint name and build TableCheck.
             const tableCheckConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
@@ -1524,22 +1527,20 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // find index constraints of table, group them by constraint name and build TableIndex.
             const tableIndexConstraints = OrmUtils.uniq(dbIndices.filter(dbIndex => {
-                return this.driver.buildTableName(dbIndex["table_name"], dbIndex["table_schema"]) === tableFullName;
-            }), dbIndex => dbIndex["constraint_name"]);
+                return this.driver.buildTableName(dbIndex["TABLE_NAME"], dbIndex["SCHEMA_NAME"]) === tableFullName;
+            }), dbIndex => dbIndex["INDEX_NAME"]);
 
             table.indices = tableIndexConstraints.map(constraint => {
                 const indices = dbIndices.filter(index => {
-                    return index["table_schema"] === constraint["table_schema"]
-                        && index["table_name"] === constraint["table_name"]
-                        && index["constraint_name"] === constraint["constraint_name"];
+                    return index["SCHEMA_NAME"] === constraint["SCHEMA_NAME"]
+                        && index["TABLE_NAME"] === constraint["TABLE_NAME"]
+                        && index["INDEX_NAME"] === constraint["INDEX_NAME"];
                 });
                 return new TableIndex(<TableIndexOptions>{
                     table: table,
-                    name: constraint["constraint_name"],
-                    columnNames: indices.map(i => i["column_name"]),
-                    isUnique: constraint["is_unique"] === "TRUE",
-                    where: constraint["condition"],
-                    isSpatial: indices.every(i => this.driver.spatialTypes.indexOf(i["type_name"]) >= 0),
+                    name: constraint["INDEX_NAME"],
+                    columnNames: indices.map(i => i["COLUMN_NAME"]),
+                    isUnique: constraint["CONSTRAINT"] && constraint["CONSTRAINT"].indexOf("UNIQUE") !== -1,
                     isFulltext: false
                 });
             });
@@ -1555,25 +1556,37 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`;
 
+        // we create unique indexes instead of unique constraints, because SAP HANA does not have unique constraints.
+        // if we mark column as Unique, it means that we create UNIQUE INDEX.
         table.columns
             .filter(column => column.isUnique)
             .forEach(column => {
-                const isUniqueExist = table.uniques.some(unique => unique.columnNames.length === 1 && unique.columnNames[0] === column.name);
-                if (!isUniqueExist)
-                    table.uniques.push(new TableUnique({
+                const isUniqueIndexExist = table.indices.some(index => {
+                    return index.columnNames.length === 1 && !!index.isUnique && index.columnNames.indexOf(column.name) !== -1;
+                });
+                const isUniqueConstraintExist = table.uniques.some(unique => {
+                    return unique.columnNames.length === 1 && unique.columnNames.indexOf(column.name) !== -1;
+                });
+                if (!isUniqueIndexExist && !isUniqueConstraintExist)
+                    table.indices.push(new TableIndex({
                         name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),
-                        columnNames: [column.name]
+                        columnNames: [column.name],
+                        isUnique: true
                     }));
             });
 
+        // as SAP HANA does not have unique constraints, we must create table indices from table uniques and mark them as unique.
         if (table.uniques.length > 0) {
-            const uniquesSql = table.uniques.map(unique => {
-                const uniqueName = unique.name ? unique.name : this.connection.namingStrategy.uniqueConstraintName(table.name, unique.columnNames);
-                const columnNames = unique.columnNames.map(columnName => `"${columnName}"`).join(", ");
-                return `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`;
-            }).join(", ");
-
-            sql += `, ${uniquesSql}`;
+            table.uniques.forEach(unique => {
+                const uniqueExist = table.indices.some(index => index.name === unique.name);
+                if (!uniqueExist) {
+                    table.indices.push(new TableIndex({
+                        name: unique.name,
+                        columnNames: unique.columnNames,
+                        isUnique: true
+                    }));
+                }
+            });
         }
 
         if (table.checks.length > 0) {
@@ -1705,7 +1718,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropIndexSql(table: Table, indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        return new Query(`DROP INDEX "${indexName}" ON ${this.escapePath(table)}`);
+        const parsedTableName = this.parseTableName(table);
+        if (parsedTableName.schema === "current_schema") {
+            return new Query(`DROP INDEX "${indexName}"`);
+        } else {
+            return new Query(`DROP INDEX "${parsedTableName.schema}"."${indexName}"`);
+        }
     }
 
     /**
@@ -1724,22 +1742,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const columnNames = table.primaryColumns.map(column => column.name);
         const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
         return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${primaryKeyName}"`);
-    }
-
-    /**
-     * Builds create unique constraint sql.
-     */
-    protected createUniqueConstraintSql(table: Table, uniqueConstraint: TableUnique): Query {
-        const columnNames = uniqueConstraint.columnNames.map(column => `"` + column + `"`).join(", ");
-        return new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`);
-    }
-
-    /**
-     * Builds drop unique constraint sql.
-     */
-    protected dropUniqueConstraintSql(table: Table, uniqueOrName: TableUnique|string): Query {
-        const uniqueName = uniqueOrName instanceof TableUnique ? uniqueOrName.name : uniqueOrName;
-        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueName}"`);
     }
 
     /**
