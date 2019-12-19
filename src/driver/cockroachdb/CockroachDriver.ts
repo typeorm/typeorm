@@ -479,7 +479,10 @@ export class CockroachDriver implements Driver {
         const defaultValue = columnMetadata.default;
         const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
 
-        if (typeof defaultValue === "number") {
+        if (columnMetadata.isArray && Array.isArray(defaultValue)) {
+            return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
+            
+        } else if (typeof defaultValue === "number") {
             return "" + defaultValue;
 
         } else if (typeof defaultValue === "boolean") {
