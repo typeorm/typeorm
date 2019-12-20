@@ -9,14 +9,12 @@ describe('github issues > #3534: store regexp', () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + '/entity/*{.js,.ts}'],
-            enabledDrivers: ['postgres'],
-            dropSchema: true,
         });
     });
+    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it('allows entities with regexp columns', () => PromiseUtils.runInSequence(connections, async connection => {
-        await connection.synchronize();
         const repository = connection.getRepository(Foo);
 
         const foo = new Foo();
