@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
+import {Connection} from "../../../src";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 
 describe("query runner > create and drop schema", () => {
@@ -8,7 +8,7 @@ describe("query runner > create and drop schema", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", "postgres"],
+            enabledDrivers: ["mssql", "postgres", "sap"],
             dropSchema: true,
         });
     });

@@ -213,80 +213,47 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new database.
      */
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
-        const up = ifNotExist ? `IF DB_ID('${database}') IS NULL CREATE DATABASE "${database}"` : `CREATE DATABASE "${database}"`;
-        const down = `DROP DATABASE "${database}"`;
-        await this.executeQueries(new Query(up), new Query(down));
+        return Promise.resolve();
     }
 
     /**
      * Drops database.
      */
     async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
-        const up = ifExist ? `IF DB_ID('${database}') IS NOT NULL DROP DATABASE "${database}"` : `DROP DATABASE "${database}"`;
-        const down = `CREATE DATABASE "${database}"`;
-        await this.executeQueries(new Query(up), new Query(down));
+        return Promise.resolve();
     }
 
     /**
-     * Creates table schema.
-     * If database name also specified (e.g. 'dbName.schemaName') schema will be created in specified database.
+     * Creates a new table schema.
      */
-    async createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void> {
-        const upQueries: Query[] = [];
-        const downQueries: Query[] = [];
-
-        if (schemaPath.indexOf(".") === -1) {
-            const upQuery = ifNotExist ? `IF SCHEMA_ID('${schemaPath}') IS NULL BEGIN EXEC ('CREATE SCHEMA "${schemaPath}"') END` : `CREATE SCHEMA "${schemaPath}"`;
-            upQueries.push(new Query(upQuery));
-            downQueries.push(new Query(`DROP SCHEMA "${schemaPath}"`));
-
-        } else {
-            const dbName = schemaPath.split(".")[0];
-            const schema = schemaPath.split(".")[1];
-            const currentDB = await this.getCurrentDatabase();
-            upQueries.push(new Query(`USE "${dbName}"`));
-            downQueries.push(new Query(`USE "${currentDB}"`));
-
-            const upQuery = ifNotExist ? `IF SCHEMA_ID('${schema}') IS NULL BEGIN EXEC ('CREATE SCHEMA "${schema}"') END` : `CREATE SCHEMA "${schema}"`;
-            upQueries.push(new Query(upQuery));
-            downQueries.push(new Query(`DROP SCHEMA "${schema}"`));
-
-            upQueries.push(new Query(`USE "${currentDB}"`));
-            downQueries.push(new Query(`USE "${dbName}"`));
+    async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
+        let exist = false;
+        if (ifNotExist) {
+            const result = await this.query(`SELECT * FROM "SCHEMAS" WHERE "SCHEMA_NAME" = '${schema}'`);
+            exist = !!result.length;
         }
-
-        await this.executeQueries(upQueries, downQueries);
+        if (!ifNotExist || (ifNotExist && !exist)) {
+            const up = `CREATE SCHEMA "${schema}"`;
+            const down = `DROP SCHEMA "${schema}" CASCADE`;
+            await this.executeQueries(new Query(up), new Query(down));
+        }
     }
 
     /**
-     * Drops table schema.
-     * If database name also specified (e.g. 'dbName.schemaName') schema will be dropped in specified database.
+     * Drops table schema
      */
-    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
-        const upQueries: Query[] = [];
-        const downQueries: Query[] = [];
-
-        if (schemaPath.indexOf(".") === -1) {
-            const upQuery = ifExist ? `IF SCHEMA_ID('${schemaPath}') IS NULL BEGIN EXEC ('DROP SCHEMA "${schemaPath}"') END` : `DROP SCHEMA "${schemaPath}"`;
-            upQueries.push(new Query(upQuery));
-            downQueries.push(new Query(`CREATE SCHEMA "${schemaPath}"`));
-
-        } else {
-            const dbName = schemaPath.split(".")[0];
-            const schema = schemaPath.split(".")[1];
-            const currentDB = await this.getCurrentDatabase();
-            upQueries.push(new Query(`USE "${dbName}"`));
-            downQueries.push(new Query(`USE "${currentDB}"`));
-
-            const upQuery = ifExist ? `IF SCHEMA_ID('${schema}') IS NULL BEGIN EXEC ('DROP SCHEMA "${schema}"') END` : `DROP SCHEMA "${schema}"`;
-            upQueries.push(new Query(upQuery));
-            downQueries.push(new Query(`CREATE SCHEMA "${schema}"`));
-
-            upQueries.push(new Query(`USE "${currentDB}"`));
-            downQueries.push(new Query(`USE "${dbName}"`));
+    async dropSchema(schemaPath: string, ifExist?: boolean, isCascade?: boolean): Promise<void> {
+        const schema = schemaPath.indexOf(".") === -1 ? schemaPath : schemaPath.split(".")[0];
+        let exist = false;
+        if (ifExist) {
+            const result = await this.query(`SELECT * FROM "SCHEMAS" WHERE "SCHEMA_NAME" = '${schema}'`);
+            exist = !!result.length;
         }
-
-        await this.executeQueries(upQueries, downQueries);
+        if (!ifExist || (ifExist && exist)) {
+            const up = `DROP SCHEMA "${schema}" ${isCascade ? "CASCADE" : ""}`;
+            const down = `CREATE SCHEMA "${schema}"`;
+            await this.executeQueries(new Query(up), new Query(down));
+        }
     }
 
     /**
@@ -394,61 +361,82 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
-        let newTable = oldTable.clone();
-
-        // we need database name and schema name to rename FK constraints
-        let dbName: string|undefined = undefined;
-        let schemaName: string|undefined = undefined;
-        let oldTableName: string = oldTable.name;
-        const splittedName = oldTable.name.split(".");
-        if (splittedName.length === 3) {
-            dbName = splittedName[0];
-            oldTableName = splittedName[2];
-            if (splittedName[1] !== "")
-                schemaName = splittedName[1];
-
-        } else if (splittedName.length === 2) {
-            schemaName = splittedName[0];
-            oldTableName = splittedName[1];
-        }
-
-        newTable.name = this.driver.buildTableName(newTableName, schemaName);
-
-        // if we have tables with database which differs from database specified in config, we must change currently used database.
-        // This need because we can not rename objects from another database.
-        const currentDB = await this.getCurrentDatabase();
-        if (dbName && dbName !== currentDB) {
-            upQueries.push(new Query(`USE "${dbName}"`));
-            downQueries.push(new Query(`USE "${currentDB}"`));
-        }
+        const newTable = oldTable.clone();
+        const oldTableName = oldTable.name.indexOf(".") === -1 ? oldTable.name : oldTable.name.split(".")[1];
+        const schemaName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
+        newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
 
         // rename table
-        upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(oldTable, true)}", "${newTableName}"`));
-        downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}", "${oldTableName}"`));
+        upQueries.push(new Query(`RENAME TABLE ${this.escapePath(oldTable.name)} TO ${this.escapePath(newTableName)}`));
+        downQueries.push(new Query(`RENAME TABLE ${this.escapePath(newTable.name)} TO ${this.escapePath(oldTableName)}`));
+
+        // drop old FK's. Foreign keys must be dropped before the primary keys are dropped
+        newTable.foreignKeys.forEach(foreignKey => {
+            upQueries.push(this.dropForeignKeySql(newTable, foreignKey));
+            downQueries.push(this.createForeignKeySql(newTable, foreignKey));
+        });
+
+        // SAP HANA does not allow to drop PK's which is referenced by foreign keys.
+        // To avoid this, we must drop all referential foreign keys and recreate them later
+        const referencedForeignKeySql = `SELECT * FROM "REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = '${schemaName}' AND "REFERENCED_TABLE_NAME" = '${oldTableName}'`;
+        const dbForeignKeys: ObjectLiteral[] = await this.query(referencedForeignKeySql);
+        let referencedForeignKeys: TableForeignKey[] = [];
+        const referencedForeignKeyTableMapping: { tableName: string, fkName: string }[] = [];
+        if (dbForeignKeys.length > 0) {
+            referencedForeignKeys = dbForeignKeys.map(dbForeignKey => {
+                const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
+
+                referencedForeignKeyTableMapping.push({ tableName: `${dbForeignKey["SCHEMA_NAME"]}.${dbForeignKey["TABLE_NAME"]}`, fkName: dbForeignKey["CONSTRAINT_NAME"] });
+                return new TableForeignKey({
+                    name: dbForeignKey["CONSTRAINT_NAME"],
+                    columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedTableName: newTable.name, // we use renamed table name
+                    referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
+                    onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
+                    onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                });
+            });
+
+            // drop referenced foreign keys
+            referencedForeignKeys.forEach(foreignKey => {
+                const mapping = referencedForeignKeyTableMapping.find(it => it.fkName === foreignKey.name);
+                upQueries.push(this.dropForeignKeySql(mapping!.tableName, foreignKey));
+                downQueries.push(this.createForeignKeySql(mapping!.tableName, foreignKey));
+            });
+        }
 
         // rename primary key constraint
         if (newTable.primaryColumns.length > 0) {
             const columnNames = newTable.primaryColumns.map(column => column.name);
+            const columnNamesString = columnNames.map(columnName => `"${columnName}"`).join(", ");
 
             const oldPkName = this.connection.namingStrategy.primaryKeyName(oldTable, columnNames);
             const newPkName = this.connection.namingStrategy.primaryKeyName(newTable, columnNames);
 
-            // rename primary constraint
-            upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}.${oldPkName}", "${newPkName}"`));
-            downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}.${newPkName}", "${oldPkName}"`));
+            // drop old PK
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP CONSTRAINT "${oldPkName}"`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} ADD CONSTRAINT "${oldPkName}" PRIMARY KEY (${columnNamesString})`));
+
+            // create new PK
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} ADD CONSTRAINT "${newPkName}" PRIMARY KEY (${columnNamesString})`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP CONSTRAINT "${newPkName}"`));
         }
 
-        // rename unique constraints
-        newTable.uniques.forEach(unique => {
-            // build new constraint name
-            const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(newTable, unique.columnNames);
-
-            // build queries
-            upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}.${unique.name}", "${newUniqueName}"`));
-            downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}.${newUniqueName}", "${unique.name}"`));
-
+        // recreate foreign keys with new constraint names
+        newTable.foreignKeys.forEach(foreignKey => {
             // replace constraint name
-            unique.name = newUniqueName;
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+
+            // create new FK's
+            upQueries.push(this.createForeignKeySql(newTable, foreignKey));
+            downQueries.push(this.dropForeignKeySql(newTable, foreignKey));
+        });
+
+        // restore referenced foreign keys
+        referencedForeignKeys.forEach(foreignKey => {
+            const mapping = referencedForeignKeyTableMapping.find(it => it.fkName === foreignKey.name);
+            upQueries.push(this.createForeignKeySql(mapping!.tableName, foreignKey));
+            downQueries.push(this.dropForeignKeySql(mapping!.tableName, foreignKey));
         });
 
         // rename index constraints
@@ -456,32 +444,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             // build new constraint name
             const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
-            // build queries
-            upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}.${index.name}", "${newIndexName}", "INDEX"`));
-            downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}.${newIndexName}", "${index.name}", "INDEX"`));
+            // drop old index
+            upQueries.push(this.dropIndexSql(newTable, index));
+            downQueries.push(this.createIndexSql(newTable, index));
 
             // replace constraint name
             index.name = newIndexName;
+
+            // create new index
+            upQueries.push(this.createIndexSql(newTable, index));
+            downQueries.push(this.dropIndexSql(newTable, index));
         });
-
-        // rename foreign key constraints
-        newTable.foreignKeys.forEach(foreignKey => {
-            // build new constraint name
-            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
-
-            // build queries
-            upQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(foreignKey.name!, schemaName, dbName)}", "${newForeignKeyName}"`));
-            downQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(newForeignKeyName, schemaName, dbName)}", "${foreignKey.name}"`));
-
-            // replace constraint name
-            foreignKey.name = newForeignKeyName;
-        });
-
-        // change currently used database back to default db.
-        if (dbName && dbName !== currentDB) {
-            upQueries.push(new Query(`USE "${currentDB}"`));
-            downQueries.push(new Query(`USE "${dbName}"`));
-        }
 
         await this.executeQueries(upQueries, downQueries);
 
@@ -539,12 +512,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             }));
             upQueries.push(this.createIndexSql(table, uniqueIndex));
             downQueries.push(this.dropIndexSql(table, uniqueIndex));
-        }
-
-        // remove default constraint
-        if (column.default !== null && column.default !== undefined) {
-            const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, column.name);
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -607,30 +574,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         } else {
             if (newColumn.name !== oldColumn.name) {
 
-                // we need database name and schema name to rename FK constraints
-                let dbName: string|undefined = undefined;
-                let schemaName: string|undefined = undefined;
-                const splittedName = table.name.split(".");
-                if (splittedName.length === 3) {
-                    dbName = splittedName[0];
-                    if (splittedName[1] !== "")
-                        schemaName = splittedName[1];
-
-                } else if (splittedName.length === 2) {
-                    schemaName = splittedName[0];
-                }
-
-                // if we have tables with database which differs from database specified in config, we must change currently used database.
-                // This need because we can not rename objects from another database.
-                const currentDB = await this.getCurrentDatabase();
-                if (dbName && dbName !== currentDB) {
-                    upQueries.push(new Query(`USE "${dbName}"`));
-                    downQueries.push(new Query(`USE "${currentDB}"`));
-                }
-
-                // rename the column
-                upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(table, true)}.${oldColumn.name}", "${newColumn.name}"`));
-                downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(table, true)}.${newColumn.name}", "${oldColumn.name}"`));
+                // rename column
+                upQueries.push(new Query(`RENAME COLUMN ${this.escapePath(table)}."${oldColumn.name}" TO "${newColumn.name}"`));
+                downQueries.push(new Query(`RENAME COLUMN ${this.escapePath(table)}."${newColumn.name}" TO "${oldColumn.name}"`));
 
                 if (oldColumn.isPrimary === true) {
                     const primaryColumns = clonedTable.primaryColumns;
@@ -642,13 +588,18 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     // replace old column name with new column name
                     columnNames.splice(columnNames.indexOf(oldColumn.name), 1);
                     columnNames.push(newColumn.name);
+                    const columnNamesString = columnNames.map(columnName => `"${columnName}"`).join(", ");
+
+                    // drop old PK
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} DROP CONSTRAINT "${oldPkName}"`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} ADD CONSTRAINT "${oldPkName}" PRIMARY KEY (${columnNamesString})`));
 
                     // build new primary constraint name
                     const newPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
 
-                    // rename primary constraint
-                    upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${oldPkName}", "${newPkName}"`));
-                    downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${newPkName}", "${oldPkName}"`));
+                    // create new PK
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} ADD CONSTRAINT "${newPkName}" PRIMARY KEY (${columnNamesString})`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} DROP CONSTRAINT "${newPkName}"`));
                 }
 
                 // rename index constraints
@@ -658,12 +609,16 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     index.columnNames.push(newColumn.name);
                     const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
-                    // build queries
-                    upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${index.name}", "${newIndexName}", "INDEX"`));
-                    downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${newIndexName}", "${index.name}", "INDEX"`));
+                    // drop old index
+                    upQueries.push(this.dropIndexSql(clonedTable, index));
+                    downQueries.push(this.createIndexSql(clonedTable, index));
 
                     // replace constraint name
                     index.name = newIndexName;
+
+                    // create new index
+                    upQueries.push(this.createIndexSql(clonedTable, index));
+                    downQueries.push(this.dropIndexSql(clonedTable, index));
                 });
 
                 // rename foreign key constraints
@@ -673,12 +628,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     foreignKey.columnNames.push(newColumn.name);
                     const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
 
-                    // build queries
-                    upQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(foreignKey.name!, schemaName, dbName)}", "${newForeignKeyName}"`));
-                    downQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(newForeignKeyName, schemaName, dbName)}", "${foreignKey.name}"`));
+                    upQueries.push(this.dropForeignKeySql(clonedTable, foreignKey));
+                    downQueries.push(this.createForeignKeySql(clonedTable, foreignKey));
 
                     // replace constraint name
                     foreignKey.name = newForeignKeyName;
+
+                    // create new FK's
+                    upQueries.push(this.createForeignKeySql(clonedTable, foreignKey));
+                    downQueries.push(this.dropForeignKeySql(clonedTable, foreignKey));
                 });
 
                 // rename check constraints
@@ -688,34 +646,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     check.columnNames!.push(newColumn.name);
                     const newCheckName = this.connection.namingStrategy.checkConstraintName(clonedTable, check.expression!);
 
-                    // build queries
-                    upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${check.name}", "${newCheckName}"`));
-                    downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${newCheckName}", "${check.name}"`));
+                    upQueries.push(this.dropCheckConstraintSql(clonedTable, check));
+                    downQueries.push(this.createCheckConstraintSql(clonedTable, check));
 
                     // replace constraint name
                     check.name = newCheckName;
+
+                    upQueries.push(this.createCheckConstraintSql(clonedTable, check));
+                    downQueries.push(this.dropCheckConstraintSql(clonedTable, check));
                 });
-
-                // rename unique constraints
-                clonedTable.findColumnUniques(oldColumn).forEach(unique => {
-                    // build new constraint name
-                    unique.columnNames.splice(unique.columnNames.indexOf(oldColumn.name), 1);
-                    unique.columnNames.push(newColumn.name);
-                    const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(clonedTable, unique.columnNames);
-
-                    // build queries
-                    upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${unique.name}", "${newUniqueName}"`));
-                    downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${newUniqueName}", "${unique.name}"`));
-
-                    // replace constraint name
-                    unique.name = newUniqueName;
-                });
-
-                // change currently used database back to default db.
-                if (dbName && dbName !== currentDB) {
-                    upQueries.push(new Query(`USE "${currentDB}"`));
-                    downQueries.push(new Query(`USE "${dbName}"`));
-                }
 
                 // rename old column in the Table object
                 const oldTableColumn = clonedTable.columns.find(column => column.name === oldColumn.name);
@@ -724,8 +663,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             if (this.isColumnChanged(oldColumn, newColumn)) {
-                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.buildCreateColumnSql(newColumn)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.buildCreateColumnSql(oldColumn)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER (${this.buildCreateColumnSql(newColumn)})`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER (${this.buildCreateColumnSql(oldColumn)})`));
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
@@ -798,14 +737,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             if (newColumn.default !== oldColumn.default) {
                 if (newColumn.default !== null && newColumn.default !== undefined) {
-                    const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, newColumn.name);
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${newColumn.default} FOR "${newColumn.name}"`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER ("${newColumn.name}" ${this.connection.driver.createFullType(newColumn)} DEFAULT ${newColumn.default})`));
+
+                    if (oldColumn.default !== null && oldColumn.default !== undefined) {
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER ("${oldColumn.name}" ${this.connection.driver.createFullType(oldColumn)} DEFAULT ${oldColumn.default})`));
+                    } else {
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER ("${oldColumn.name}" ${this.connection.driver.createFullType(oldColumn)} DEFAULT NULL)`));
+                    }
 
                 } else if (oldColumn.default !== null && oldColumn.default !== undefined) {
-                    const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, oldColumn.name);
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${oldColumn.default} FOR "${oldColumn.name}"`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER ("${newColumn.name}" ${this.connection.driver.createFullType(newColumn)} DEFAULT NULL)`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER ("${oldColumn.name}" ${this.connection.driver.createFullType(oldColumn)} DEFAULT ${oldColumn.default})`));
                 }
             }
 
@@ -883,13 +825,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             clonedTable.checks.splice(clonedTable.checks.indexOf(columnCheck), 1);
             upQueries.push(this.dropCheckConstraintSql(table, columnCheck));
             downQueries.push(this.createCheckConstraintSql(table, columnCheck));
-        }
-
-        // drop default constraint
-        if (column.default !== null && column.default !== undefined) {
-            const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, column.name);
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${column.default} FOR "${column.name}"`));
         }
 
         upQueries.push(new Query(this.dropColumnSql(table, column)));
@@ -1053,28 +988,28 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new exclusion constraint.
      */
     async createExclusionConstraint(tableOrName: Table|string, exclusionConstraint: TableExclusion): Promise<void> {
-        throw new Error(`SqlServer does not support exclusion constraints.`);
+        throw new Error(`SAP HANA does not support exclusion constraints.`);
     }
 
     /**
      * Creates a new exclusion constraints.
      */
     async createExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        throw new Error(`SqlServer does not support exclusion constraints.`);
+        throw new Error(`SAP HANA does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraint.
      */
     async dropExclusionConstraint(tableOrName: Table|string, exclusionOrName: TableExclusion|string): Promise<void> {
-        throw new Error(`SqlServer does not support exclusion constraints.`);
+        throw new Error(`SAP HANA does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraints.
      */
     async dropExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        throw new Error(`SqlServer does not support exclusion constraints.`);
+        throw new Error(`SAP HANA does not support exclusion constraints.`);
     }
 
     /**
@@ -1343,35 +1278,16 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 name = schema;
                 schema = this.driver.options.schema || currentSchema;
             }
-            return `("ns"."nspname" = '${schema}' AND "cl"."relname" = '${name}')`;
+            return `("SCHEMA_NAME" = '${schema}' AND "TABLE_NAME" = '${name}')`;
         }).join(" OR ");
-        const foreignKeysSql = `SELECT "con"."conname" AS "constraint_name", "con"."nspname" AS "table_schema", "con"."relname" AS "table_name", "att2"."attname" AS "column_name", ` +
-            `"ns"."nspname" AS "referenced_table_schema", "cl"."relname" AS "referenced_table_name", "att"."attname" AS "referenced_column_name", "con"."confdeltype" AS "on_delete", ` +
-            `"con"."confupdtype" AS "on_update", "con"."condeferrable" AS "deferrable", "con"."condeferred" AS "deferred" ` +
-            `FROM ( ` +
-            `SELECT UNNEST ("con1"."conkey") AS "parent", UNNEST ("con1"."confkey") AS "child", "con1"."confrelid", "con1"."conrelid", "con1"."conname", "con1"."contype", "ns"."nspname", ` +
-            `"cl"."relname", "con1"."condeferrable", ` +
-            `CASE WHEN "con1"."condeferred" THEN 'INITIALLY DEFERRED' ELSE 'INITIALLY IMMEDIATE' END as condeferred, ` +
-            `CASE "con1"."confdeltype" WHEN 'a' THEN 'NO ACTION' WHEN 'r' THEN 'RESTRICT' WHEN 'c' THEN 'CASCADE' WHEN 'n' THEN 'SET NULL' WHEN 'd' THEN 'SET DEFAULT' END as "confdeltype", ` +
-            `CASE "con1"."confupdtype" WHEN 'a' THEN 'NO ACTION' WHEN 'r' THEN 'RESTRICT' WHEN 'c' THEN 'CASCADE' WHEN 'n' THEN 'SET NULL' WHEN 'd' THEN 'SET DEFAULT' END as "confupdtype" ` +
-            `FROM "pg_class" "cl" ` +
-            `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
-            `INNER JOIN "pg_constraint" "con1" ON "con1"."conrelid" = "cl"."oid" ` +
-            `WHERE "con1"."contype" = 'f' AND (${foreignKeysCondition}) ` +
-            `) "con" ` +
-            `INNER JOIN "pg_attribute" "att" ON "att"."attrelid" = "con"."confrelid" AND "att"."attnum" = "con"."child" ` +
-            `INNER JOIN "pg_class" "cl" ON "cl"."oid" = "con"."confrelid" ` +
-            `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
-            `INNER JOIN "pg_attribute" "att2" ON "att2"."attrelid" = "con"."conrelid" AND "att2"."attnum" = "con"."parent"`;
-        const [dbTables, dbColumns, dbConstraints, dbIndices]: ObjectLiteral[][] = await Promise.all([
+        const foreignKeysSql = `SELECT * FROM "REFERENTIAL_CONSTRAINTS" WHERE (${foreignKeysCondition})`;
+        const [dbTables, dbColumns, dbConstraints, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
             this.query(constraintsSql),
             this.query(indicesSql),
-            // this.query(foreignKeysSql),
+            this.query(foreignKeysSql),
         ]);
-        console.log(constraintsSql, indicesSql, foreignKeysSql);
-        const dbForeignKeys: ObjectLiteral[] = [];
 
         // if tables were not found in the db, no need to proceed
         if (!dbTables.length)
@@ -1454,18 +1370,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     if (tableColumn.isGenerated)
                         tableColumn.generationStrategy = "increment";
 
-                    // if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
-                    //     if (dbColumn["column_default"].replace(/"/gi, "") === `nextval('${this.buildSequenceName(table, dbColumn["column_name"], currentSchema, true)}'::regclass)`) {
-                    //         tableColumn.isGenerated = true;
-                    //         tableColumn.generationStrategy = "increment";
-                    //     } else if (dbColumn["column_default"] === "gen_random_uuid()" || /^uuid_generate_v\d\(\)/.test(dbColumn["column_default"])) {
-                    //         tableColumn.isGenerated = true;
-                    //         tableColumn.generationStrategy = "uuid";
-                    //     } else {
-                    //         tableColumn.default = dbColumn["column_default"].replace(/::.*/, "");
-                    //     }
-                    // }
+                    if (dbColumn["DEFAULT_VALUE"] === null
+                        || dbColumn["DEFAULT_VALUE"] === undefined) {
+                        tableColumn.default = undefined;
 
+                    } else {
+                        tableColumn.default = dbColumn["DEFAULT_VALUE"] === "CURRENT_TIMESTAMP" ? dbColumn["DEFAULT_VALUE"] : `'${dbColumn["DEFAULT_VALUE"]}'`;
+                    }
                     tableColumn.comment = ""; // dbColumn["COLUMN_COMMENT"];
                     if (dbColumn["character_set_name"])
                         tableColumn.charset = dbColumn["character_set_name"];
@@ -1476,52 +1387,38 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // find check constraints of table, group them by constraint name and build TableCheck.
             const tableCheckConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName
-                    && dbConstraint["constraint_type"] === "CHECK";
-            }), dbConstraint => dbConstraint["constraint_name"]);
+                return this.driver.buildTableName(dbConstraint["TABLE_NAME"], dbConstraint["SCHEMA_NAME"]) === tableFullName
+                    && dbConstraint["CHECK_CONDITION"] !== null && dbConstraint["CHECK_CONDITION"] !== undefined;
+            }), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
 
             table.checks = tableCheckConstraints.map(constraint => {
-                const checks = dbConstraints.filter(dbC => dbC["constraint_name"] === constraint["constraint_name"]);
+                const checks = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
                 return new TableCheck({
-                    name: constraint["constraint_name"],
-                    columnNames: checks.map(c => c["column_name"]),
-                    expression: constraint["expression"].replace(/^\s*CHECK\s*\((.*)\)\s*$/i, "$1")
-                });
-            });
-
-            // find exclusion constraints of table, group them by constraint name and build TableExclusion.
-            const tableExclusionConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName
-                    && dbConstraint["constraint_type"] === "EXCLUDE";
-            }), dbConstraint => dbConstraint["constraint_name"]);
-
-            table.exclusions = tableExclusionConstraints.map(constraint => {
-                return new TableExclusion({
-                    name: constraint["constraint_name"],
-                    expression: constraint["expression"].substring(8) // trim EXCLUDE from start of expression
+                    name: constraint["CONSTRAINT_NAME"],
+                    columnNames: checks.map(c => c["COLUMN_NAME"]),
+                    expression: constraint["CHECK_CONDITION"],
                 });
             });
 
             // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
             const tableForeignKeyConstraints = OrmUtils.uniq(dbForeignKeys.filter(dbForeignKey => {
-                return this.driver.buildTableName(dbForeignKey["table_name"], dbForeignKey["table_schema"]) === tableFullName;
-            }), dbForeignKey => dbForeignKey["constraint_name"]);
+                return this.driver.buildTableName(dbForeignKey["TABLE_NAME"], dbForeignKey["SCHEMA_NAME"]) === tableFullName;
+            }), dbForeignKey => dbForeignKey["CONSTRAINT_NAME"]);
 
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
-                const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["constraint_name"] === dbForeignKey["constraint_name"]);
+                const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
 
                 // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                const schema = dbForeignKey["referenced_table_schema"] === currentSchema ? undefined : dbTable["referenced_table_schema"];
-                const referencedTableName = this.driver.buildTableName(dbForeignKey["referenced_table_name"], schema);
+                const schema = dbForeignKey["REFERENCED_SCHEMA_NAME"] === currentSchema ? undefined : dbForeignKey["REFERENCED_SCHEMA_NAME"];
+                const referencedTableName = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], schema);
 
                 return new TableForeignKey({
-                    name: dbForeignKey["constraint_name"],
-                    columnNames: foreignKeys.map(dbFk => dbFk["column_name"]),
+                    name: dbForeignKey["CONSTRAINT_NAME"],
+                    columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
                     referencedTableName: referencedTableName,
-                    referencedColumnNames: foreignKeys.map(dbFk => dbFk["referenced_column_name"]),
-                    onDelete: dbForeignKey["on_delete"],
-                    onUpdate: dbForeignKey["on_update"],
-                    deferrable: dbForeignKey["deferrable"] ? dbForeignKey["deferred"] : undefined,
+                    referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
+                    onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
+                    onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
                 });
             });
 
@@ -1606,10 +1503,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
 
                 let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(fk.referencedTableName)} (${referencedColumnNames})`;
-                if (fk.onDelete)
-                    constraint += ` ON DELETE ${fk.onDelete}`;
-                if (fk.onUpdate)
-                    constraint += ` ON UPDATE ${fk.onUpdate}`;
+                // SAP HANA does not have "NO ACTION" option for FK's
+                if (fk.onDelete) {
+                    const onDelete = fk.onDelete === "NO ACTION" ? "RESTRICT" : fk.onDelete;
+                    constraint += ` ON DELETE ${onDelete}`;
+                }
+                if (fk.onUpdate) {
+                    const onUpdate = fk.onDelete === "NO ACTION" ? "RESTRICT" : fk.onDelete;
+                    constraint += ` ON UPDATE ${onUpdate}`;
+                }
 
                 return constraint;
             }).join(", ");
@@ -1722,7 +1624,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (parsedTableName.schema === "current_schema") {
             return new Query(`DROP INDEX "${indexName}"`);
         } else {
-            return new Query(`DROP INDEX "${parsedTableName.schema}"."${indexName}"`);
+            return new Query(`DROP INDEX "${parsedTableName.schema.replace(/'/g, "")}"."${indexName}"`);
         }
     }
 
@@ -1762,15 +1664,21 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Builds create foreign key sql.
      */
-    protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): Query {
+    protected createForeignKeySql(tableOrName: Table|string, foreignKey: TableForeignKey): Query {
         const columnNames = foreignKey.columnNames.map(column => `"` + column + `"`).join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
-        let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${foreignKey.name}" FOREIGN KEY (${columnNames}) ` +
+        let sql = `ALTER TABLE ${this.escapePath(tableOrName)} ADD CONSTRAINT "${foreignKey.name}" FOREIGN KEY (${columnNames}) ` +
             `REFERENCES ${this.escapePath(foreignKey.referencedTableName)}(${referencedColumnNames})`;
-        if (foreignKey.onDelete)
-            sql += ` ON DELETE ${foreignKey.onDelete}`;
-        if (foreignKey.onUpdate)
-            sql += ` ON UPDATE ${foreignKey.onUpdate}`;
+
+        // SAP HANA does not have "NO ACTION" option for FK's
+        if (foreignKey.onDelete) {
+            const onDelete = foreignKey.onDelete === "NO ACTION" ? "RESTRICT" : foreignKey.onDelete;
+            sql += ` ON DELETE ${onDelete}`;
+        }
+        if (foreignKey.onUpdate) {
+            const onUpdate = foreignKey.onDelete === "NO ACTION" ? "RESTRICT" : foreignKey.onDelete;
+            sql += ` ON UPDATE ${onUpdate}`;
+        }
 
         return new Query(sql);
     }
@@ -1778,9 +1686,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Builds drop foreign key sql.
      */
-    protected dropForeignKeySql(table: Table, foreignKeyOrName: TableForeignKey|string): Query {
+    protected dropForeignKeySql(tableOrName: Table|string, foreignKeyOrName: TableForeignKey|string): Query {
         const foreignKeyName = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName.name : foreignKeyOrName;
-        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${foreignKeyName}"`);
+        return new Query(`ALTER TABLE ${this.escapePath(tableOrName)} DROP CONSTRAINT "${foreignKeyName}"`);
     }
 
     /**

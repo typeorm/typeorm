@@ -43,7 +43,7 @@ export class TableForeignKey {
     onUpdate?: string;
 
     /**
-     * Set this foreign key constraint as "DEFERRABLE" e.g. check constraints at start 
+     * Set this foreign key constraint as "DEFERRABLE" e.g. check constraints at start
      * or at the end of a transaction
      */
     deferrable?: string;
