@@ -401,7 +401,7 @@ export class SapDriver implements Driver {
             return "blob";
 
         } else if (column.type === "uuid") {
-            return "varbinary";
+            return "nvarchar";
 
         } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "text";
@@ -427,7 +427,7 @@ export class SapDriver implements Driver {
             return defaultValue === true ? "1" : "0";
 
         } else if (typeof defaultValue === "function") {
-            return /*"(" + */defaultValue()/* + ")"*/;
+            return defaultValue();
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;
@@ -452,7 +452,7 @@ export class SapDriver implements Driver {
             return column.length.toString();
 
         if (column.generationStrategy === "uuid")
-            return "16";
+            return "36";
 
         switch (column.type) {
             case "varchar":
@@ -585,7 +585,7 @@ export class SapDriver implements Driver {
      * Returns true if driver supports uuid values generation on its own.
      */
     isUUIDGenerationSupported(): boolean {
-        return true;
+        return false;
     }
 
     /**
