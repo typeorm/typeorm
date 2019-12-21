@@ -1,3 +1,4 @@
+import {SapDriver} from "../driver/sap/SapDriver";
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -1592,14 +1593,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             if (offset)
                 return prefix + " OFFSET " + offset + " ROWS";
 
-        } else if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
+        } else if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver || this.connection.driver instanceof SapDriver) {
 
             if (limit && offset)
                 return " LIMIT " + limit + " OFFSET " + offset;
             if (limit)
                 return " LIMIT " + limit;
             if (offset)
-                throw new OffsetWithoutLimitNotSupportedError("MySQL");
+                throw new OffsetWithoutLimitNotSupportedError();
 
         } else if (this.connection.driver instanceof AbstractSqliteDriver) {
 

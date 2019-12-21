@@ -1,7 +1,7 @@
 import {Driver} from "../Driver";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {SapQueryRunner} from "./SapQueryRunner";
-import {ObjectLiteral} from "../..";
+import {ObjectLiteral, QueryRunner} from "../..";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
@@ -38,9 +38,15 @@ export class SapDriver implements Driver {
     client: any;
 
     /**
-     * Master connection.
+     * Pool for master database.
      */
     master: any;
+
+    /**
+     * Pool for slave databases.
+     * Used in replication.
+     */
+    slaves: any[] = [];
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -162,7 +168,7 @@ export class SapDriver implements Driver {
         metadataSchema: "nvarchar",
         metadataTable: "nvarchar",
         metadataName: "nvarchar",
-        metadataValue: "nvarchar",
+        metadataValue: "nvarchar(5000)" as any,
     };
 
     /**
@@ -221,6 +227,7 @@ export class SapDriver implements Driver {
      */
     async disconnect(): Promise<void> {
         await this.closeConnection();
+        this.queryRunner = undefined;
         this.master = undefined;
     }
 
@@ -243,11 +250,16 @@ export class SapDriver implements Driver {
         return new RdbmsSchemaBuilder(this.connection);
     }
 
+    private queryRunner?: QueryRunner;
     /**
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: "master"|"slave" = "master") {
-        return new SapQueryRunner(this, mode);
+        if (!this.queryRunner)
+            this.queryRunner = new SapQueryRunner(this, mode);
+
+        return this.queryRunner;
+        // return new SapQueryRunner(this, mode); // TODO: uncomment after pool implementation
     }
 
     /**
@@ -617,6 +629,8 @@ export class SapDriver implements Driver {
         return new Promise<any>((ok, fail) => {
             try {
                 const master = new this.client.createConnection();
+                // we disable autocommit because ROLLBACK does not work in autocommit mode
+                master.setAutoCommit(false);
                 master.connect({
                     host: options.host,
                     port: options.port,

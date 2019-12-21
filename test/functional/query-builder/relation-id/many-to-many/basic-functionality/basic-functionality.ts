@@ -11,7 +11,7 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Image} from "./entity/Image";
 
-describe.only("query builder > relation-id > many-to-many > basic-functionality", () => {
+describe("query builder > relation-id > many-to-many > basic-functionality", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -125,7 +125,7 @@ describe.only("query builder > relation-id > many-to-many > basic-functionality"
 
     })));
 
-    it.only("should load ids when loadRelationIdAndMap used on ManyToMany owner side without inverse side", () => Promise.all(connections.map(async connection => {
+    it("should load ids when loadRelationIdAndMap used on ManyToMany owner side without inverse side", () => Promise.all(connections.map(async connection => {
 
         const category1 = new Category();
         category1.name = "kids";
@@ -140,8 +140,6 @@ describe.only("query builder > relation-id > many-to-many > basic-functionality"
 
         const post = new Post();
         post.title = "about kids";
-        console.log(category1.id);
-        console.log(category2.id);
         post.subcategories = [category1, category2];
         await connection.manager.save(post);
 

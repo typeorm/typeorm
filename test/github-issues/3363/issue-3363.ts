@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import {SapDriver} from "../../../src/driver/sap/SapDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
@@ -16,6 +17,9 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
     after(() => closeTestingConnections(connections));
 
     it("should execute operations in READ UNCOMMITED isolation level", () => Promise.all(connections.map(async function(connection) {
+        // SAP does not support READ UNCOMMITTED isolation level
+        if (connection.driver instanceof SapDriver)
+            return;
 
         let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
 

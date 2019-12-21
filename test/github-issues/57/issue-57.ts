@@ -20,6 +20,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
 
         // create
         const token = new AccessToken();
+        token.primaryKey = 1;
         const user = new User();
         user.email = "mwelnick@test.com";
         user.access_token = token; // this is not necessary at all

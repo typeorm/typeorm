@@ -25,7 +25,7 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
         profile.gender = "male";
         profile.photo = "me.jpg";
         await connection.manager.save(profile);
-        
+
         const user = new User();
         user.name = "Joe Smith";
         user.profile = profile;
@@ -44,17 +44,17 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
         }]);
 
     })));
-    
+
     it("should work with many-to-one/one-to-many relations", () => Promise.all(connections.map(async connection => {
 
         const photo1 = new Photo();
         photo1.url = "me.jpg";
         await connection.manager.save(photo1);
-        
+
         const photo2 = new Photo();
         photo2.url = "me-and-bears.jpg";
         await connection.manager.save(photo2);
-        
+
         const user = new User();
         user.name = "John";
         user.photos = [photo1, photo2];
@@ -102,12 +102,13 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
         const category1 = new Category();
         category1.name = "animals";
         await connection.manager.save(category1);
-        
+
         const category2 = new Category();
         category2.name = "zoo";
         await connection.manager.save(category2);
-        
+
         const question = new Question();
+        question.name = "About animals";
         question.categories = [category1, category2];
         await connection.manager.save(question);
 
