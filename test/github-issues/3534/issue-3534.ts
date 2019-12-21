@@ -4,17 +4,17 @@ import { Connection, PromiseUtils } from '../../../src';
 import { Foo } from './entity/Foo';
 import { closeTestingConnections, createTestingConnections } from '../../utils/test-utils';
 
-describe('github issues > #3534: store regexp', () => {
+describe("github issues > #3534: store regexp", () => {
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + '/entity/*{.js,.ts}'],
+            entities: [__dirname + "/entity/*{.js,.ts}"],
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it('allows entities with regexp columns', () => PromiseUtils.runInSequence(connections, async connection => {
+    it("allows entities with regexp columns", () => PromiseUtils.runInSequence(connections, async connection => {
         const repository = connection.getRepository(Foo);
 
         const foo = new Foo();
