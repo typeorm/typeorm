@@ -1,7 +1,7 @@
-import "reflect-metadata";
 import {expect} from "chai";
+import "reflect-metadata";
+import {Connection} from "../../../../src";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 
 describe("columns > readonly functionality", () => {

@@ -155,8 +155,8 @@ export class SapDriver implements Driver {
         cacheIdentifier: "nvarchar",
         cacheTime: "bigint",
         cacheDuration: "integer",
-        cacheQuery: "nvarchar",
-        cacheResult: "nvarchar",
+        cacheQuery: "nvarchar(5000)" as any,
+        cacheResult: "text",
         metadataType: "nvarchar",
         metadataDatabase: "nvarchar",
         metadataSchema: "nvarchar",
@@ -255,12 +255,15 @@ export class SapDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
+        const builtParameters: any[] = Object.keys(nativeParameters).map(key => {
+            return nativeParameters[key];
+        });
+
         if (!parameters || !Object.keys(parameters).length)
-            return [sql, escapedParameters];
+            return [sql, builtParameters];
 
         const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
+        sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
             let value: any;
             let isArray = false;
             if (key.substr(0, 4) === ":...") {
@@ -272,19 +275,21 @@ export class SapDriver implements Driver {
 
             if (isArray) {
                 return value.map((v: any) => {
-                    escapedParameters.push(v);
-                    return "?"; // "@" + (escapedParameters.length - 1);
+                    builtParameters.push(v);
+                    return "?";
+                    // return "$" + builtParameters.length;
                 }).join(", ");
 
             } else if (value instanceof Function) {
                 return value();
 
             } else {
-                escapedParameters.push(value);
-                return "?"; // "@" + (escapedParameters.length - 1);
+                builtParameters.push(value);
+                return "?";
+                // return "$" + builtParameters.length;
             }
         }); // todo: make replace only in value statements, otherwise problems
-        return [sql, escapedParameters];
+        return [sql, builtParameters];
     }
 
     /**
@@ -423,9 +428,6 @@ export class SapDriver implements Driver {
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
 
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
-
         } else if (typeof defaultValue === "function") {
             return defaultValue();
 
@@ -514,16 +516,19 @@ export class SapDriver implements Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: ObjectLiteral) {
-        if (!insertResult)
-            return undefined;
-
-        return Object.keys(insertResult).reduce((map, key) => {
-            const column = metadata.findColumnWithDatabaseName(key);
-            if (column) {
-                OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column)));
+        const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
+            let value: any;
+            if (generatedColumn.generationStrategy === "increment" && insertResult) {
+                value = insertResult;
+                // } else if (generatedColumn.generationStrategy === "uuid") {
+                //     console.log("getting db value:", generatedColumn.databaseName);
+                //     value = generatedColumn.getEntityValue(uuidMap);
             }
-            return map;
+
+            return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
         }, {} as ObjectLiteral);
+
+        return Object.keys(generatedMap).length > 0 ? generatedMap : undefined;
     }
 
     /**
@@ -557,7 +562,7 @@ export class SapDriver implements Driver {
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
-                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNessesary(this.normalizeDefault(columnMetadata)) !== this.lowerDefaultValueIfNessesary(tableColumn.default)) // we included check for generated here, because generated columns already can have default values
+                || (!tableColumn.isGenerated && this.normalizeDefault(columnMetadata) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
@@ -565,20 +570,11 @@ export class SapDriver implements Driver {
         });
     }
 
-    private lowerDefaultValueIfNessesary(value: string | undefined) {
-        // SqlServer saves function calls in default value as lowercase #2733
-        if (!value) {
-            return value;
-        }
-        return value.split(`'`).map((v, i) => {
-            return i % 2 === 1 ? v : v.toLowerCase();
-        }).join(`'`);
-    }
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
     isReturningSqlSupported(): boolean {
-        return true;
+        return false;
     }
 
     /**

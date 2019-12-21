@@ -1,4 +1,5 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
+import {SapDriver} from "../driver/sap/SapDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
@@ -373,7 +374,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         let parametersCount =   this.connection.driver instanceof MysqlDriver ||
                                 this.connection.driver instanceof AuroraDataApiDriver ||
                                 this.connection.driver instanceof OracleDriver ||
-                                this.connection.driver instanceof AbstractSqliteDriver
+                                this.connection.driver instanceof AbstractSqliteDriver ||
+                                this.connection.driver instanceof SapDriver
             ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
         if (metadata) {
             EntityMetadata.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
@@ -412,7 +414,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         if (this.connection.driver instanceof MysqlDriver ||
                             this.connection.driver instanceof AuroraDataApiDriver ||
                             this.connection.driver instanceof OracleDriver ||
-                            this.connection.driver instanceof AbstractSqliteDriver) {
+                            this.connection.driver instanceof AbstractSqliteDriver ||
+                            this.connection.driver instanceof SapDriver) {
                             newParameters[paramName] = value;
                         } else {
                             this.expressionMap.nativeParameters[paramName] = value;
@@ -463,7 +466,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     if (this.connection.driver instanceof MysqlDriver ||
                         this.connection.driver instanceof AuroraDataApiDriver ||
                         this.connection.driver instanceof OracleDriver ||
-                        this.connection.driver instanceof AbstractSqliteDriver) {
+                        this.connection.driver instanceof AbstractSqliteDriver ||
+                        this.connection.driver instanceof SapDriver) {
                         newParameters[key] = value;
                     } else {
                         this.expressionMap.nativeParameters[key] = value;
@@ -484,7 +488,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (this.connection.driver instanceof MysqlDriver ||
             this.connection.driver instanceof AuroraDataApiDriver ||
             this.connection.driver instanceof OracleDriver ||
-            this.connection.driver instanceof AbstractSqliteDriver) {
+            this.connection.driver instanceof AbstractSqliteDriver ||
+            this.connection.driver instanceof SapDriver) {
             this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
         }
 

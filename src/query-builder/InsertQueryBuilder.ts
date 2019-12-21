@@ -525,7 +525,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof AbstractSqliteDriver) {
+                        if (this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) {
                             expression += "NULL";
 
                         } else {
