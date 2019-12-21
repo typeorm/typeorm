@@ -46,6 +46,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected queryResponsibilityChain: Promise<any>[] = [];
 
+    /**
+     * Promise used to obtain a database connection from a pool for a first time.
+     */
+    protected databaseConnectionPromise: Promise<any>;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -66,8 +71,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates/uses database connection from the connection pool to perform further operations.
      * Returns obtained database connection.
      */
-    connect(): Promise<void> {
-        return Promise.resolve();
+    connect(): Promise<any> {
+        if (this.databaseConnection)
+            return Promise.resolve(this.databaseConnection);
+
+        if (this.databaseConnectionPromise)
+            return this.databaseConnectionPromise;
+
+        this.databaseConnectionPromise = this.driver.obtainMasterConnection().then(connection => {
+            this.databaseConnection = connection;
+            return this.databaseConnection;
+        });
+
+        return this.databaseConnectionPromise;
     }
 
     /**
@@ -75,10 +91,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * You cannot use query runner methods once its released.
      */
     release(): Promise<void> {
-        // this.isReleased = true; // TODO: uncomment after pool implementation
-        this.loadedTables = [];
-        this.clearSqlMemory();
-        return Promise.resolve();
+        return new Promise<void>((ok, fail) => {
+            this.isReleased = true;
+            if (!this.databaseConnection) return ok();
+            this.databaseConnection.close((err: any) => err ? fail(err) : ok());
+        });
     }
 
     /**
@@ -144,11 +161,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const promise = new Promise(async (ok, fail) => {
            try {
+               const databaseConnection = await this.connect();
+               // we disable autocommit because ROLLBACK does not work in autocommit mode
+               databaseConnection.setAutoCommit(!this.isTransactionActive);
                this.driver.connection.logger.logQuery(query, parameters, this);
                const queryStartTime = +new Date();
                const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
 
-               const statement = this.driver.master.prepare(query);
+               const statement = databaseConnection.prepare(query);
                statement.exec(parameters, (err: any, result: any) => {
 
                    // log slow queries if maxQueryExecution time is set
@@ -177,7 +197,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                        if (isInsertQuery) {
                            const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`;
                            this.driver.connection.logger.logQuery(lastIdQuery, [], this);
-                           this.driver.master.exec(lastIdQuery, (err: any, result: { "CURRENT_IDENTITY_VALUE()": number }[]) => {
+                           databaseConnection.exec(lastIdQuery, (err: any, result: { "CURRENT_IDENTITY_VALUE()": number }[]) => {
                                if (err) {
                                    this.driver.connection.logger.logQueryError(err, lastIdQuery, [], this);
                                    resolveChain();

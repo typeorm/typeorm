@@ -257,7 +257,7 @@ export class Connection {
      */
     // TODO rename
     async dropDatabase(): Promise<void> {
-        const queryRunner = await this.createQueryRunner("master");
+        const queryRunner = this.createQueryRunner("master");
         try {
             if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver || this.driver instanceof AuroraDataApiDriver) {
                 const databases: string[] = this.driver.database ? [this.driver.database] : [];

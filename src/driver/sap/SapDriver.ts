@@ -1,20 +1,16 @@
-import {Driver} from "../Driver";
+import {ColumnType, Connection, EntityMetadata, ObjectLiteral, TableColumn} from "../..";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {SapQueryRunner} from "./SapQueryRunner";
-import {ObjectLiteral, QueryRunner} from "../..";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../..";
 import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
-import {SapConnectionOptions} from "./SapConnectionOptions";
-import {MappedColumnTypes} from "../types/MappedColumnTypes";
-import {ColumnType} from "../..";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../..";
-import {EntityMetadata} from "../..";
-import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {DateUtils} from "../../util/DateUtils";
+import {OrmUtils} from "../../util/OrmUtils";
+import {Driver} from "../Driver";
+import {DataTypeDefaults} from "../types/DataTypeDefaults";
+import {MappedColumnTypes} from "../types/MappedColumnTypes";
+import {SapConnectionOptions} from "./SapConnectionOptions";
+import {SapQueryRunner} from "./SapQueryRunner";
 
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -211,7 +207,7 @@ export class SapDriver implements Driver {
      * either create a pool and create connection when needed.
      */
     async connect(): Promise<void> {
-        this.master = await this.createConnection(this.options);
+        // this.master = await this.createConnection(this.options);
         this.database = this.options.database;
     }
 
@@ -227,7 +223,6 @@ export class SapDriver implements Driver {
      */
     async disconnect(): Promise<void> {
         await this.closeConnection();
-        this.queryRunner = undefined;
         this.master = undefined;
     }
 
@@ -250,16 +245,11 @@ export class SapDriver implements Driver {
         return new RdbmsSchemaBuilder(this.connection);
     }
 
-    private queryRunner?: QueryRunner;
     /**
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: "master"|"slave" = "master") {
-        if (!this.queryRunner)
-            this.queryRunner = new SapQueryRunner(this, mode);
-
-        return this.queryRunner;
-        // return new SapQueryRunner(this, mode); // TODO: uncomment after pool implementation
+        return new SapQueryRunner(this, mode);
     }
 
     /**
@@ -512,7 +502,7 @@ export class SapDriver implements Driver {
      * If replication is not setup then returns default connection's database connection.
      */
     obtainMasterConnection(): Promise<any> {
-        return Promise.resolve(this.master);
+        return this.createConnection();
     }
 
     /**
@@ -521,7 +511,8 @@ export class SapDriver implements Driver {
      * If replication is not setup then returns master (default) connection's database connection.
      */
     obtainSlaveConnection(): Promise<any> {
-        return Promise.resolve(this.master);
+        // return Promise.resolve(this.master);
+        return this.createConnection();
     }
 
     /**
@@ -612,7 +603,7 @@ export class SapDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.client = PlatformTools.load("@sap/hana-client");
+            this.client = PlatformTools.load("@sap/hdbext");
 
         } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("SAP Hana", "hdb");
@@ -622,23 +613,22 @@ export class SapDriver implements Driver {
     /**
      * Creates a new connection pool for a given database credentials.
      */
-    protected createConnection(options: SapConnectionOptions): Promise<any> {
+    protected createConnection(): Promise<any> {
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
         return new Promise<any>((ok, fail) => {
             try {
-                const master = new this.client.createConnection();
-                // we disable autocommit because ROLLBACK does not work in autocommit mode
-                master.setAutoCommit(false);
-                master.connect({
-                    host: options.host,
-                    port: options.port,
-                    uid: options.username,
-                    pwd: options.password,
-                    databaseName: options.database,
-                    ...options.extra
-                }, (err: any) => {
+                // const master = ();
+                this.client.createConnection({
+                    host: this.options.host,
+                    port: this.options.port,
+                    uid: this.options.username,
+                    pwd: this.options.password,
+                    databaseName: this.options.database,
+                    pooling: true,
+                    ...this.options.extra
+                }, (err: any, master: any) => {
                     if (err) {
                         fail(err);
                         return;

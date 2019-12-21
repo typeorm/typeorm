@@ -49,8 +49,8 @@ export class PlatformTools {
                 /**
                 * hana
                 */
-                case "@sap/hana-client":
-                    return require("@sap/hana-client");
+                case "@sap/hdbext":
+                    return require("@sap/hdbext");
 
                 /**
                 * mysql
