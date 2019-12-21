@@ -468,6 +468,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async addColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const parsedTableName = this.parseTableName(table);
         const clonedTable = table.clone();
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
@@ -480,10 +481,46 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             const primaryColumns = clonedTable.primaryColumns;
             // if table already have primary key, me must drop it and recreate again
             if (primaryColumns.length > 0) {
+                // SAP HANA does not allow to drop PK's which is referenced by foreign keys.
+                // To avoid this, we must drop all referential foreign keys and recreate them later
+                const referencedForeignKeySql = `SELECT * FROM "REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = ${parsedTableName.schema} AND "REFERENCED_TABLE_NAME" = ${parsedTableName.tableName}`;
+                const dbForeignKeys: ObjectLiteral[] = await this.query(referencedForeignKeySql);
+                let referencedForeignKeys: TableForeignKey[] = [];
+                const referencedForeignKeyTableMapping: { tableName: string, fkName: string }[] = [];
+                if (dbForeignKeys.length > 0) {
+                    referencedForeignKeys = dbForeignKeys.map(dbForeignKey => {
+                        const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
+
+                        referencedForeignKeyTableMapping.push({ tableName: `${dbForeignKey["SCHEMA_NAME"]}.${dbForeignKey["TABLE_NAME"]}`, fkName: dbForeignKey["CONSTRAINT_NAME"] });
+                        return new TableForeignKey({
+                            name: dbForeignKey["CONSTRAINT_NAME"],
+                            columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                            referencedTableName: table.name,
+                            referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
+                            onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
+                            onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                        });
+                    });
+
+                    // drop referenced foreign keys
+                    referencedForeignKeys.forEach(foreignKey => {
+                        const mapping = referencedForeignKeyTableMapping.find(it => it.fkName === foreignKey.name);
+                        upQueries.push(this.dropForeignKeySql(mapping!.tableName, foreignKey));
+                        downQueries.push(this.createForeignKeySql(mapping!.tableName, foreignKey));
+                    });
+                }
+
                 const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
                 const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
+
+                // restore referenced foreign keys
+                referencedForeignKeys.forEach(foreignKey => {
+                    const mapping = referencedForeignKeyTableMapping.find(it => it.fkName === foreignKey.name);
+                    upQueries.push(this.createForeignKeySql(mapping!.tableName, foreignKey));
+                    downQueries.push(this.dropForeignKeySql(mapping!.tableName, foreignKey));
+                });
             }
 
             primaryColumns.push(column);
@@ -768,6 +805,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async dropColumn(tableOrName: Table|string, columnOrName: TableColumn|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const parsedTableName = this.parseTableName(table);
         const column = columnOrName instanceof TableColumn ? columnOrName : table.findColumnByName(columnOrName);
         if (!column)
             throw new Error(`Column "${columnOrName}" was not found in table "${table.name}"`);
@@ -778,6 +816,35 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // drop primary key constraint
         if (column.isPrimary) {
+            // SAP HANA does not allow to drop PK's which is referenced by foreign keys.
+            // To avoid this, we must drop all referential foreign keys and recreate them later
+            const referencedForeignKeySql = `SELECT * FROM "REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = ${parsedTableName.schema} AND "REFERENCED_TABLE_NAME" = ${parsedTableName.tableName}`;
+            const dbForeignKeys: ObjectLiteral[] = await this.query(referencedForeignKeySql);
+            let referencedForeignKeys: TableForeignKey[] = [];
+            const referencedForeignKeyTableMapping: { tableName: string, fkName: string }[] = [];
+            if (dbForeignKeys.length > 0) {
+                referencedForeignKeys = dbForeignKeys.map(dbForeignKey => {
+                    const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
+
+                    referencedForeignKeyTableMapping.push({ tableName: `${dbForeignKey["SCHEMA_NAME"]}.${dbForeignKey["TABLE_NAME"]}`, fkName: dbForeignKey["CONSTRAINT_NAME"] });
+                    return new TableForeignKey({
+                        name: dbForeignKey["CONSTRAINT_NAME"],
+                        columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                        referencedTableName: table.name,
+                        referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
+                        onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
+                        onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                    });
+                });
+
+                // drop referenced foreign keys
+                referencedForeignKeys.forEach(foreignKey => {
+                    const mapping = referencedForeignKeyTableMapping.find(it => it.fkName === foreignKey.name);
+                    upQueries.push(this.dropForeignKeySql(mapping!.tableName, foreignKey));
+                    downQueries.push(this.createForeignKeySql(mapping!.tableName, foreignKey));
+                });
+            }
+
             const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, clonedTable.primaryColumns.map(column => column.name));
             const columnNames = clonedTable.primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} DROP CONSTRAINT "${pkName}"`));
@@ -794,6 +861,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} DROP CONSTRAINT "${pkName}"`));
             }
+
+            // restore referenced foreign keys
+            referencedForeignKeys.forEach(foreignKey => {
+                const mapping = referencedForeignKeyTableMapping.find(it => it.fkName === foreignKey.name);
+                upQueries.push(this.createForeignKeySql(mapping!.tableName, foreignKey));
+                downQueries.push(this.dropForeignKeySql(mapping!.tableName, foreignKey));
+            });
         }
 
         // drop column index
@@ -868,10 +942,40 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async updatePrimaryKeys(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const parsedTableName = this.parseTableName(table);
         const clonedTable = table.clone();
         const columnNames = columns.map(column => column.name);
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
+
+        // SAP HANA does not allow to drop PK's which is referenced by foreign keys.
+        // To avoid this, we must drop all referential foreign keys and recreate them later
+        const referencedForeignKeySql = `SELECT * FROM "REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = ${parsedTableName.schema} AND "REFERENCED_TABLE_NAME" = ${parsedTableName.tableName}`;
+        const dbForeignKeys: ObjectLiteral[] = await this.query(referencedForeignKeySql);
+        let referencedForeignKeys: TableForeignKey[] = [];
+        const referencedForeignKeyTableMapping: { tableName: string, fkName: string }[] = [];
+        if (dbForeignKeys.length > 0) {
+            referencedForeignKeys = dbForeignKeys.map(dbForeignKey => {
+                const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
+
+                referencedForeignKeyTableMapping.push({ tableName: `${dbForeignKey["SCHEMA_NAME"]}.${dbForeignKey["TABLE_NAME"]}`, fkName: dbForeignKey["CONSTRAINT_NAME"] });
+                return new TableForeignKey({
+                    name: dbForeignKey["CONSTRAINT_NAME"],
+                    columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedTableName: table.name,
+                    referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
+                    onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
+                    onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                });
+            });
+
+            // drop referenced foreign keys
+            referencedForeignKeys.forEach(foreignKey => {
+                const mapping = referencedForeignKeyTableMapping.find(it => it.fkName === foreignKey.name);
+                upQueries.push(this.dropForeignKeySql(mapping!.tableName, foreignKey));
+                downQueries.push(this.createForeignKeySql(mapping!.tableName, foreignKey));
+            });
+        }
 
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns;
@@ -892,6 +996,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNamesString})`));
         downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
 
+        // restore referenced foreign keys
+        referencedForeignKeys.forEach(foreignKey => {
+            const mapping = referencedForeignKeyTableMapping.find(it => it.fkName === foreignKey.name);
+            upQueries.push(this.createForeignKeySql(mapping!.tableName, foreignKey));
+            downQueries.push(this.dropForeignKeySql(mapping!.tableName, foreignKey));
+        });
+
         await this.executeQueries(upQueries, downQueries);
         this.replaceCachedTable(table, clonedTable);
     }
@@ -901,9 +1012,50 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const up = this.dropPrimaryKeySql(table);
-        const down = this.createPrimaryKeySql(table, table.primaryColumns.map(column => column.name));
-        await this.executeQueries(up, down);
+        const parsedTableName = this.parseTableName(table);
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
+
+        // SAP HANA does not allow to drop PK's which is referenced by foreign keys.
+        // To avoid this, we must drop all referential foreign keys and recreate them later
+        const referencedForeignKeySql = `SELECT * FROM "REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = ${parsedTableName.schema} AND "REFERENCED_TABLE_NAME" = ${parsedTableName.tableName}`;
+        const dbForeignKeys: ObjectLiteral[] = await this.query(referencedForeignKeySql);
+        let referencedForeignKeys: TableForeignKey[] = [];
+        const referencedForeignKeyTableMapping: { tableName: string, fkName: string }[] = [];
+        if (dbForeignKeys.length > 0) {
+            referencedForeignKeys = dbForeignKeys.map(dbForeignKey => {
+                const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
+
+                referencedForeignKeyTableMapping.push({ tableName: `${dbForeignKey["SCHEMA_NAME"]}.${dbForeignKey["TABLE_NAME"]}`, fkName: dbForeignKey["CONSTRAINT_NAME"] });
+                return new TableForeignKey({
+                    name: dbForeignKey["CONSTRAINT_NAME"],
+                    columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedTableName: table.name,
+                    referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
+                    onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
+                    onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                });
+            });
+
+            // drop referenced foreign keys
+            referencedForeignKeys.forEach(foreignKey => {
+                const mapping = referencedForeignKeyTableMapping.find(it => it.fkName === foreignKey.name);
+                upQueries.push(this.dropForeignKeySql(mapping!.tableName, foreignKey));
+                downQueries.push(this.createForeignKeySql(mapping!.tableName, foreignKey));
+            });
+        }
+
+        upQueries.push(this.dropPrimaryKeySql(table));
+        downQueries.push(this.createPrimaryKeySql(table, table.primaryColumns.map(column => column.name)));
+
+        // restore referenced foreign keys
+        referencedForeignKeys.forEach(foreignKey => {
+            const mapping = referencedForeignKeyTableMapping.find(it => it.fkName === foreignKey.name);
+            upQueries.push(this.createForeignKeySql(mapping!.tableName, foreignKey));
+            downQueries.push(this.dropForeignKeySql(mapping!.tableName, foreignKey));
+        });
+
+        await this.executeQueries(upQueries, downQueries);
         table.primaryColumns.forEach(column => {
             column.isPrimary = false;
         });
