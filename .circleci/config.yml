@@ -30,7 +30,7 @@ jobs:
         name: hanaexpress
         container_name: "typeorm-hanaexpress"
         hostname: hxe
-        command: ['--passwords-url', 'file:////hana/hxe-config.json', '--agree-to-sap-license']
+        command: ['--passwords-url', 'https://raw.githubusercontent.com/typeorm/typeorm/b119f7c3b8748aea9c77c7bc42b8e1be209b43ec/docker/hana/hxe-config.json', '--agree-to-sap-license']
         ulimits:
           nofile: 1048576
         sysctls:
@@ -56,15 +56,6 @@ jobs:
 
     steps:
       - checkout
-      - run: |
-          # create a dummy container which will hold a volume with config
-          docker create -v /cfg --name configs alpine:3.4 /bin/true
-          # copy a config file into this volume
-          docker cp ./docker/hana/hxe-config.json configs:/cfg
-          # start an application container using this volume
-          docker run --volumes-from configs app-image:1.2.3
-          docker run --name app app-image:1.2.3
-
       - run: sudo npm install -g npm@latest
       - run: cp ormconfig.circleci.json ormconfig.json
 
