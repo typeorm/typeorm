@@ -38,9 +38,9 @@ jobs:
           - net.ipv4.ip_local_port_range=40000 60999
           - kernel.shmmni=524288
           - kernel.shmall=8388608
-        volumes:
-          - volume-hana-xe:/hana/mounts
-          - ./docker/hana/hxe-config.json:/hana/hxe-config.json
+#        volumes:
+#          - volume-hana-xe:/hana/mounts
+#          - ./docker/hana/hxe-config.json:/hana/hxe-config.json
         ports:
           - 39013:39013
           - 39017:39017
@@ -56,6 +56,15 @@ jobs:
 
     steps:
       - checkout
+      - run: |
+          # create a dummy container which will hold a volume with config
+          docker create -v /cfg --name configs alpine:3.4 /bin/true
+          # copy a config file into this volume
+          docker cp ./docker/hana/hxe-config.json configs:/cfg
+          # start an application container using this volume
+          docker run --volumes-from configs app-image:1.2.3
+          docker run --name app app-image:1.2.3
+
       - run: sudo npm install -g npm@latest
       - run: cp ormconfig.circleci.json ormconfig.json
 
