@@ -74,7 +74,7 @@
     "name": "sap",
     "type": "sap",
     "host": "localhost",
-    "port": 39013,
+    "port": 39015,
     "username": "SYSTEM",
     "password": "HXEHana1",
     "database": "HXE",
