@@ -24,6 +24,9 @@ jobs:
           POSTGRES_DB: "test"
       - image: circleci/mongo:3.4.18
       - image: "store/saplabs/hanaexpress:2.00.040.00.20190729.1"
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASSWORD
         name: hanaexpress
         container_name: "typeorm-hanaexpress"
         hostname: hxe
