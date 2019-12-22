@@ -1854,8 +1854,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (metadata.hasMultiplePrimaryKeys) {
                     condition = rawResults.map((result, index) => {
                         return metadata.primaryColumns.map(primaryColumn => {
-                            parameters[`ids_${index}_${primaryColumn.databaseName}`] = result[`ids_${mainAliasName}_${primaryColumn.databaseName}`];
-                            return `${mainAliasName}.${primaryColumn.propertyPath}=:ids_${index}_${primaryColumn.databaseName}`;
+                            const paramKey = `orm_distinct_ids_${index}_${primaryColumn.databaseName}`;
+                            parameters[paramKey] = result[`ids_${mainAliasName}_${primaryColumn.databaseName}`];
+                            return `${mainAliasName}.${primaryColumn.propertyPath}=:${paramKey}`;
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
@@ -1865,8 +1866,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         // fixes #190. if all numbers then its safe to perform query without parameter
                         condition = `${mainAliasName}.${metadata.primaryColumns[0].propertyPath} IN (${ids.join(", ")})`;
                     } else {
-                        parameters["ids"] = ids;
-                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyPath + " IN (:...ids)";
+                        parameters["orm_distinct_ids"] = ids;
+                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyPath + " IN (:...orm_distinct_ids)";
                     }
                 }
                 rawResults = await this.clone()
