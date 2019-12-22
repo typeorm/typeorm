@@ -27,25 +27,26 @@ jobs:
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASSWORD
-        container_name: "typeorm-hanaexpress"
-        hostname: hxe
+#        name: hanaexpress
+#        container_name: "typeorm-hanaexpress"
+#        hostname: hxe
         command: ['--passwords-url', 'https://raw.githubusercontent.com/typeorm/typeorm/b119f7c3b8748aea9c77c7bc42b8e1be209b43ec/docker/hana/hxe-config.json', '--agree-to-sap-license']
-        ulimits:
-          nofile: 1048576
-        sysctls:
-          - kernel.shmmax=1073741824
-          - net.ipv4.ip_local_port_range=40000 60999
-          - kernel.shmmni=524288
-          - kernel.shmall=8388608
+#        ulimits:
+#          nofile: 1048576
+#        sysctls:
+#          - kernel.shmmax=1073741824
+#          - net.ipv4.ip_local_port_range=40000 60999
+#          - kernel.shmmni=524288
+#          - kernel.shmall=8388608
 #        volumes:
 #          - volume-hana-xe:/hana/mounts
 #          - ./docker/hana/hxe-config.json:/hana/hxe-config.json
-        ports:
-          - 39013:39013
-          - 39017:39017
-          - 39041-39045:39041-39045
-          - 1128-1129:1128-1129
-          - 59013-59014:59013-59014
+#        ports:
+#          - 39013:39013
+#          - 39017:39017
+#          - 39041-39045:39041-39045
+#          - 1128-1129:1128-1129
+#          - 59013-59014:59013-59014
       # - image: mcr.microsoft.com/mssql/server:2017-GA-ubuntu
       #   environment:
       #     SA_PASSWORD: "Admin12345"
