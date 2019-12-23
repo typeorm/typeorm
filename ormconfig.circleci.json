@@ -70,7 +70,7 @@
     "database": "defaultdb"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "sap",
     "type": "sap",
     "host": "localhost",
@@ -78,7 +78,7 @@
     "username": "SYSTEM",
     "password": "HXEHana1",
     "database": "HXE",
-    "logging": true
+    "logging": false
   },
   {
     "skip": false,
