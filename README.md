@@ -70,7 +70,7 @@ Some TypeORM features:
 * supports closure table pattern
 * schema declaration in models or separate configuration files
 * connection configuration in json / xml / yml / env formats
-* supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / sql.js
+* supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js
 * supports MongoDB NoSQL database
 * works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms
 * TypeScript and JavaScript support
@@ -203,10 +203,15 @@ await timber.remove();
 
         `npm install oracledb --save`
 
-        Install only *one* of them, depending on which database you use.
-
         To make the Oracle driver work, you need to follow the installation instructions from
         [their](https://github.com/oracle/node-oracledb) site.
+
+    * for **SAP Hana**
+
+        ```
+        npm config set @sap:registry https://npm.sap.com
+        npm i @sap/hdbext
+        ```
 
     * for **MongoDB** (experimental)
 
@@ -216,11 +221,12 @@ await timber.remove();
 
         Check [documentation of supported platforms](./docs/supported-platforms.md)
 
+    Install only *one* of them, depending on which database you use.
 
 
 ##### TypeScript configuration
 
-Also, make sure you are using TypeScript compiler version **3.3** or greater,
+Also, make sure you are using TypeScript version **3.3** or higher,
 and you have enabled the following settings in `tsconfig.json`:
 
 ```json
