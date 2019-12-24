@@ -105,6 +105,7 @@
     "js-yaml": "^3.13.1",
     "mkdirp": "^0.5.1",
     "reflect-metadata": "^0.1.13",
+    "sha.js": "^2.4.11",
     "tslib": "^1.9.0",
     "xml2js": "^0.4.17",
     "yargonaut": "^1.1.2",
