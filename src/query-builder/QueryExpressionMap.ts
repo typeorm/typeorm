@@ -158,6 +158,11 @@ export class QueryExpressionMap {
     lockVersion?: number|Date;
 
     /**
+     * Table alias to apply pessimistic_write lock
+     */
+    tableName?: string;
+
+    /**
      * Parameters used to be escaped in final query.
      */
     parameters: ObjectLiteral = {};
@@ -405,6 +410,7 @@ export class QueryExpressionMap {
         map.take = this.take;
         map.lockMode = this.lockMode;
         map.lockVersion = this.lockVersion;
+        map.tableName = this.tableName;
         map.parameters = Object.assign({}, this.parameters);
         map.disableEscaping = this.disableEscaping;
         map.enableRelationIdValues = this.enableRelationIdValues;

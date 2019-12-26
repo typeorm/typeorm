@@ -967,14 +967,24 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Sets locking mode.
      */
+    setLock(lockMode: "pessimistic_write", tableName: string): this;
+
+    /**
+     * Sets locking mode.
+     */
     setLock(lockMode: "pessimistic_read"|"pessimistic_write"|"dirty_read"): this;
 
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read", lockVersion?: number|Date): this {
+    setLock(lockMode: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read", option?: number|Date|string): this {
         this.expressionMap.lockMode = lockMode;
-        this.expressionMap.lockVersion = lockVersion;
+        if (typeof option === "string") {
+            this.expressionMap.tableName = option;
+        }
+        else {
+            this.expressionMap.lockVersion = option;
+        }
         return this;
 
     }
@@ -1656,7 +1666,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 }
             case "pessimistic_write":
                 if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver || driver instanceof PostgresDriver || driver instanceof OracleDriver) {
-                    return " FOR UPDATE";
+                    if (this.expressionMap.tableName) {
+                        return ` FOR UPDATE OF "${this.expressionMap.tableName}"`;
+                    } else {
+                        return " FOR UPDATE";
+                    }
 
                 } else if (driver instanceof SqlServerDriver) {
                     return "";
