@@ -69,7 +69,7 @@ export class EntityMetadataValidator {
                 return metadata !== entityMetadata && metadata.discriminatorValue === entityMetadata.discriminatorValue;
             });
             if (sameDiscriminatorValueEntityMetadata)
-                throw new Error(`Entities ${entityMetadata.name} and ${sameDiscriminatorValueEntityMetadata.name} as equal discriminator values. Make sure their discriminator values are not equal using @DiscriminatorValue decorator.`);
+                throw new Error(`Entities ${entityMetadata.name} and ${sameDiscriminatorValueEntityMetadata.name} have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.`);
         }
 
         entityMetadata.relationCounts.forEach(relationCount => {
