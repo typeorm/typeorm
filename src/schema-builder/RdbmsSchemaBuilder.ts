@@ -104,6 +104,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         this.queryRunner = this.connection.createQueryRunner("master");
         try {
             const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
+            // TODO: typeorm_metadata table needs only for Views for now.
+            //  Remove condition or add new conditions if necessary (for CHECK constraints for example).
+            if (this.viewEntityToSyncMetadatas.length > 0)
+                await this.createTypeormMetadataTable();
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
             this.queryRunner.enableSqlMemory();
