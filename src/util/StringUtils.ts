@@ -102,7 +102,7 @@ interface IHashOptions {
  * @param options.length Optionally, shorten the output to desired length.
  */
 export function hash(input: string, options: IHashOptions = {}): string {
-    const hashFunction = shajs.createHash("sha256");
+    const hashFunction = shajs("sha256");
 
     hashFunction.update(input, "utf8");
 
