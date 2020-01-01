@@ -537,12 +537,19 @@ export class PostgresDriver implements Driver {
             if (columnMetadata.isArray) {
                 // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
                 value = value !== "{}" ? (value as string).substr(1, (value as string).length - 2).split(",") : [];
-                // convert to number if that exists in poosible enum options
+                // convert to number if that exists in possible enum options
                 value = value.map((val: string) => {
                     return !isNaN(+val) && columnMetadata.enum!.indexOf(parseInt(val)) >= 0 ? parseInt(val) : val;
                 });
+                // Remove extraneous delimiting quotes around enum strings with spaces.
+                value = value.map((val: string) => {
+                    // Returns an empty string if the length is negative.
+                    const stripped = val.substr(1, val.length - 2);
+                    
+                    return columnMetadata.enum!.indexOf(stripped) >= 0 ? stripped : val;
+                });
             } else {
-                // convert to number if that exists in poosible enum options
+                // convert to number if that exists in possible enum options
                 value = !isNaN(+value) && columnMetadata.enum!.indexOf(parseInt(value)) >= 0 ? parseInt(value) : value;
             }
         }
