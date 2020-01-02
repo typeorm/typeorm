@@ -1409,7 +1409,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropViewSql(viewOrPath: View|string): Query {
         const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
-        return new Query(`DROP VIEW "${viewName}"`);
+        const materializedClause: string = typeof viewOrPath === 'object' && viewOrPath.materialized ? 'MATERIALIZED': '';
+        return new Query(`DROP ${materializedClause} VIEW "${viewName}"`);
     }
 
     /**

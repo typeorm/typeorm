@@ -1774,7 +1774,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds drop view sql.
      */
     protected dropViewSql(viewOrPath: View|string): Query {
-        return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`);
+        const materializedClause: string = typeof viewOrPath === 'object' && viewOrPath.materialized ? 'MATERIALIZED': '';
+        return new Query(`DROP ${materializedClause} VIEW ${this.escapePath(viewOrPath)}`);
     }
 
     /**
