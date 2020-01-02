@@ -4,7 +4,7 @@ import { closeTestingConnections, createTestingConnections, reloadTestingDatabas
 import { User, Role } from "./entity/User";
 import { UserTwo } from "./entity/UserTwo";
 
-describe.only("github issues > #5275 Enums with spaces are not converted properly.", () => {
+describe("github issues > #5275 Enums with spaces are not converted properly.", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],

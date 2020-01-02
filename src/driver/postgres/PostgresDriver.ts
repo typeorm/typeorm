@@ -542,7 +542,7 @@ export class PostgresDriver implements Driver {
                     // Returns an empty string if the length is negative.
                     const stripped = val.substr(1, val.length - 2);
                     
-                    return columnMetadata.enum!.indexOf(stripped) >= 0 ? stripped : val;
+                    return stripped && columnMetadata.enum!.indexOf(stripped) >= 0 ? stripped : val;
                 });
                 // convert to number if that exists in possible enum options
                 value = value.map((val: string) => {
