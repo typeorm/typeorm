@@ -47,13 +47,13 @@
     "oracle-orm"
   ],
   "devDependencies": {
-    "@sap/hdbext": "^6.1.1",
     "@types/chai": "^4.1.2",
     "@types/chai-as-promised": "7.1.0",
     "@types/debug": "4.1.2",
     "@types/mocha": "^5.2.6",
     "@types/node": "^9.6.0",
     "@types/rimraf": "^2.0.2",
+    "@types/sha.js": "^2.4.0",
     "@types/sinon": "^7.0.8",
     "@types/source-map-support": "^0.4.2",
     "@types/yargs": "^12.0.9",
@@ -105,6 +105,7 @@
     "js-yaml": "^3.13.1",
     "mkdirp": "^0.5.1",
     "reflect-metadata": "^0.1.13",
+    "sha.js": "^2.4.11",
     "tslib": "^1.9.0",
     "xml2js": "^0.4.17",
     "yargonaut": "^1.1.2",

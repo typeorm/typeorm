@@ -1,4 +1,4 @@
-import * as crypto from "crypto";
+import * as shajs from "sha.js";
 
 /**
  * Converts string into camelCase.
@@ -102,7 +102,7 @@ interface IHashOptions {
  * @param options.length Optionally, shorten the output to desired length.
  */
 export function hash(input: string, options: IHashOptions = {}): string {
-    const hashFunction = crypto.createHash("sha256");
+    const hashFunction = shajs("sha256");
 
     hashFunction.update(input, "utf8");
 
