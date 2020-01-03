@@ -2,12 +2,10 @@
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 version: 2
 jobs:
-  build:
+  common:
     working_directory: ~/typeorm
     docker:
-      # specify pre-built docker images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      - image: circleci/node:10.15.0
+      - image: circleci/node:10.16.0
       - image: mysql:5.7.24
         environment:
           MYSQL_ROOT_PASSWORD: "admin"
@@ -23,58 +21,94 @@ jobs:
           POSTGRES_PASSWORD: "test"
           POSTGRES_DB: "test"
       - image: circleci/mongo:3.4.18
-#      - image: "store/saplabs/hanaexpress:2.00.040.00.20190729.1"
-#        auth:
-#          username: $DOCKER_USER
-#          password: $DOCKER_PASSWORD
-##       name: hanaexpress
-##       container_name: "typeorm-hanaexpress"
-##       hostname: hxe
-#        command: ['--passwords-url', 'https://raw.githubusercontent.com/typeorm/typeorm/b119f7c3b8748aea9c77c7bc42b8e1be209b43ec/docker/hana/hxe-config.json', '--agree-to-sap-license']
-##       ulimits:
-##         nofile: 1048576
-##       sysctls:
-##         - kernel.shmmax=1073741824
-##         - net.ipv4.ip_local_port_range=40000 60999
-##         - kernel.shmmni=524288
-##         - kernel.shmall=8388608
-##       volumes:
-##         - volume-hana-xe:/hana/mounts
-##         - ./docker/hana/hxe-config.json:/hana/hxe-config.json
-##       ports:
-##         - 39013:39013
-##         - 39017:39017
-##         - 39041-39045:39041-39045
-##         - 1128-1129:1128-1129
-##         - 59013-59014:59013-59014
-      # - image: mcr.microsoft.com/mssql/server:2017-GA-ubuntu
-      #   environment:
-      #     SA_PASSWORD: "Admin12345"
-      #     ACCEPT_EULA: "Y"
-      # - image: cockroachdb/cockroach-unstable:latest
-      #   command: start --insecure
+      - image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+        environment:
+          SA_PASSWORD: "Admin12345"
+          ACCEPT_EULA: "Y"
 
     steps:
       - checkout
-      - run: sudo npm install -g npm@latest
-      - run: cp ormconfig.circleci.json ormconfig.json
-
+      - run: cp ormconfig.circleci-common.json ormconfig.json
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
-
+            - v1-dependencies-{{ checksum "package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
       - run: npm install
-
       - save_cache:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
-
-      # - run: docker-compose up -d
-
-      # run tests
       - run: npm run lint
       - run: npm test
+
+  cockroachdb:
+    working_directory: ~/typeorm
+    docker:
+      - image: circleci/node:10.15.0
+      - image: cockroachdb/cockroach:latest
+        command: start --insecure
+    steps:
+      - checkout
+      - run: cp ormconfig.circleci-cockroach.json ormconfig.json
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+      - run: npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+      - run: npm run lint
+      - run:
+          npm test
+  oracle:
+    working_directory: ~/typeorm
+    docker:
+    - image: circleci/node:10.16.0
+    - image: "store/oracle/database-enterprise:12.2.0.1-slim"
+      auth:
+        username: $DOCKER_USER
+        password: $DOCKER_PASSWORD
+    environment:
+        DB_SID: "sys"
+        SYS_PASSWORD: "ORCLCDB"
+    steps:
+      - run: if [ -z "$DOCKER_USER" ]; then echo "DOCKER_USER is unset"; circleci step halt; fi
+      - checkout
+      - run: sudo npm install -g npm@latest
+      - run: cp ormconfig.circleci-oracle.json ormconfig.json
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+      - run: npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+      - run: wget https://download.oracle.com/otn_software/linux/instantclient/195000/instantclient-basiclite-linux.x64-19.5.0.0.0dbru.zip
+      - run: unzip instantclient-basiclite-linux.x64-19.5.0.0.0dbru.zip -d /tmp/oracle
+      - run: wget https://download.oracle.com/otn_software/linux/instantclient/195000/instantclient-sqlplus-linux.x64-19.5.0.0.0dbru.zip
+      - run: unzip instantclient-sqlplus-linux.x64-19.5.0.0.0dbru.zip -d /tmp/oracle
+      - run: echo "export LD_LIBRARY_PATH=/tmp/oracle/instantclient_19_5" >> $BASH_ENV
+      - run: sudo sh -c "echo /tmp/oracle/instantclient_19_5 > /etc/ld.so.conf.d/oracle-instantclient.conf";sudo ldconfig
+      - run: sh -c 'echo WHENEVER SQLERROR EXIT FAILURE > /tmp/user.sql; echo CREATE USER typeorm IDENTIFIED BY Passw0rd\; >> /tmp/user.sql;  echo GRANT CONNECT TO typeorm\; >> /tmp/user.sql;  echo GRANT UNLIMITED TABLESPACE TO typeorm\; >> /tmp/user.sql;  echo exit >> /tmp/user.sql'
+      - run: sudo apt install libaio1
+      - run: until  /tmp/oracle/instantclient_19_5/sqlplus -L -S sys/Oradoc_db1@//localhost:1521/orclpdb1.localdomain as sysdba @/tmp/user.sql ; do echo waiting for oracle; sleep 10; done;
+      - run: npm install oracledb --no-save
+      - run: npm run lint
+      - run: npm test
+workflows:
+  version: 2
+  test:
+    jobs:
+      - common
+      - cockroachdb
+      - oracle

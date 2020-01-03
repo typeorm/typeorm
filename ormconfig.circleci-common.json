@@ -41,33 +41,13 @@
     "type": "sqljs"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",
     "username": "sa",
     "password": "Admin12345",
     "database": "tempdb"
-  },
-  {
-    "skip": true,
-    "name": "oracle",
-    "type": "oracle",
-    "host": "localhost",
-    "username": "system",
-    "password": "oracle",
-    "port": 1521,
-    "sid": "xe.oracle.docker"
-  },
-  {
-    "skip": true,
-    "name": "cockroachdb",
-    "type": "cockroachdb",
-    "host": "localhost",
-    "port": 26257,
-    "username": "root",
-    "password": "",
-    "database": "defaultdb"
   },
   {
     "skip": true,
@@ -88,5 +68,25 @@
     "database": "test",
     "useNewUrlParser": true,
     "useUnifiedTopology": true
+  },
+  {
+    "skip": true,
+    "name": "cockroachdb",
+    "type": "cockroachdb",
+    "host": "localhost",
+    "port": 26257,
+    "username": "root",
+    "password": "",
+    "database": "defaultdb"
+  },
+  {
+    "skip": true,
+    "name": "oracle",
+    "type": "oracle",
+    "host": "localhost",
+    "username": "typeorm",
+    "password": "Passw0rd",
+    "port": 1521,
+    "sid": "orclpdb1.localdomain"
   }
 ]
