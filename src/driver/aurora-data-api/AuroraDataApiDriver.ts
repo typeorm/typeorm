@@ -761,6 +761,10 @@ export class AuroraDataApiDriver implements Driver {
      */
     protected loadDependencies(): void {
         this.DataApiDriver = PlatformTools.load("typeorm-aurora-data-api-driver");
+
+        // Driver uses rollup for publishing, which has issues when using typeorm in combination with webpack
+        // See https://github.com/webpack/webpack/issues/4742#issuecomment-295556787
+        this.DataApiDriver = this.DataApiDriver.default || this.DataApiDriver;
     }
 
     /**
