@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import {expect} from 'chai';
 import { Connection, PromiseUtils } from '../../../src';
 import { Foo } from './entity/Foo';
-import { closeTestingConnections, createTestingConnections } from '../../utils/test-utils';
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from '../../utils/test-utils';
 
 describe("github issues > #3534: store regexp", () => {
     let connections: Connection[];
