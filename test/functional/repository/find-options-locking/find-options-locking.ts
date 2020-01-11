@@ -27,7 +27,7 @@ describe("repository > find options > locking", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should throw error if pessimistic lock used without transaction", () => Promise.all(connections.map(async connection => {
+    it.only("should throw error if pessimistic lock used without transaction", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof AbstractSqliteDriver || connection.driver instanceof CockroachDriver)
             return;
 

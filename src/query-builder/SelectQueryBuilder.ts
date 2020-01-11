@@ -1023,12 +1023,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "optimistic", lockVersion: number): this;
-
-    /**
-     * Sets locking mode.
-     */
-    setLock(lockMode: "optimistic", lockVersion: Date): this;
+    setLock(lockMode: "optimistic", lockVersion: number | Date): this;
 
     /**
      * Sets locking mode.
@@ -1942,6 +1937,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 } else if (this.findOptions.options.loadRelationIds instanceof Object) {
                     this.loadAllRelationIds(this.findOptions.options.loadRelationIds as any);
+                }
+            }
+            if (this.findOptions.lock) {
+                if (this.findOptions.lock.mode==="optimistic") {
+                    this.setLock(this.findOptions.lock.mode,this.findOptions.lock.version)
+                } else {
+                    this.setLock(this.findOptions.lock.mode)
                 }
             }
         }

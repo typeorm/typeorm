@@ -4,8 +4,6 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Post} from "./entity/Post";
 import {Counters} from "./entity/Counters";
 import {Information} from "./entity/Information";
-import {ExtraInformation} from "./entity/ExtraInformation";
-import {EditHistory} from "./entity/EditHistory";
 import {expect} from "chai";
 
 describe("mongodb > embedded columns", () => {
