@@ -50,6 +50,7 @@ import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
+import { Connection } from '..';
 
 type QueryFindOptions<E> = // TODO: Think of better name
     Pick<FindOptions<E>, "select">
@@ -71,6 +72,22 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected conditions: string = "";
     protected orderBys: { alias: string, direction: "ASC"|"DESC", nulls?: "NULLS FIRST"|"NULLS LAST" }[] = [];
     protected relationMetadatas: RelationMetadata[] = [];
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    /**
+     * QueryBuilder can be initialized from given Connection and QueryRunner objects or from given other QueryBuilder.
+     */
+    constructor(connectionOrQueryBuilder: Connection | QueryBuilder<any>, queryRunner?: QueryRunner) {
+        // TODO: Proper clone of findOptions field(deep, no as any)
+        super(connectionOrQueryBuilder as any, queryRunner)
+        if (connectionOrQueryBuilder instanceof QueryBuilder) {
+            this.findOptions = (connectionOrQueryBuilder as  SelectQueryBuilder<Entity>).findOptions
+        }
+    }
+
 
     // -------------------------------------------------------------------------
     // Public Implemented Methods
@@ -1085,6 +1102,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 await queryRunner.startTransaction();
                 transactionStartedByUs = true;
             }
+            this.applyFindOptions();
 
             const results = await this.loadRawResults(queryRunner);
 
@@ -1850,7 +1868,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
     protected applyFindOptions() {
 
-        if (this.expressionMap.mainAlias!.metadata) {
+        if (this.expressionMap.mainAlias!.hasMetadata) {
 
             if (this.findOptions.select)
                 this.buildSelect(this.findOptions.select, this.expressionMap.mainAlias!.metadata, this.expressionMap.mainAlias!.name);
