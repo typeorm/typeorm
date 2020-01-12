@@ -1,5 +1,4 @@
 import {FindOperator} from "./FindOperator";
-import {QueryRunner} from "..";
 
 /**
  * Value of order by in find options.
@@ -140,11 +139,6 @@ export type FindExtraOptions = {
         disableMixedMap?: boolean;
     }; // todo: extract options into separate interface, reuse
 
-    /**
-     * Uses provided query runner for query execution.
-     */
-    queryRunner?: QueryRunner;
-
 };
 
 /**
@@ -162,6 +156,7 @@ export type FindCacheOptions = {
      */
     milliseconds?: number;
 };
+
 
 /**
  * Set of criteria and options to return entities by.
@@ -206,7 +201,7 @@ export type FindOptions<E> = {
     /**
      * Enables or disables query result caching.
      */
-    lock?: { mode: "optimistic", version: number|Date } | { mode: "pessimistic_read"|"pessimistic_write" };
+    lock?: { mode: "optimistic", version: number | Date } | { mode: "pessimistic_read" | "pessimistic_write" | "dirty_read" };
 
     /**
      * Offset (paginated) where from entities should be taken.

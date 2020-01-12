@@ -39,7 +39,8 @@ import {
     FindOptions,
     FindOptionsOrder, FindOptionsRelation,
     FindOptionsSelect,
-    FindOptionsWhere
+    FindOptionsWhere,
+    FindExtraOptions
 } from "../find-options/FindOptions";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {FindCriteriaNotFoundError} from "../error/FindCriteriaNotFoundError";
@@ -50,12 +51,21 @@ import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
 
+type QueryFindOptions<E> = // TODO: Think of better name
+    Pick<FindOptions<E>, "select">
+    & Pick<FindOptions<E>, "where">
+    & Pick<FindOptions<E>, "order">
+    & Pick<FindOptions<E>, "relations">
+    & Pick<FindOptions<E>, "skip">
+    & Pick<FindOptions<E>, "take">
+    & Pick<FindExtraOptions, "loadRelationIds">
+    & Pick<FindExtraOptions, "pagination">
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
 export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
 
-    protected findOptions: FindOptions<Entity> = {};
+    protected findOptions: QueryFindOptions<Entity> = {};
     protected selects: string[] = [];
     protected joins: { type: "inner"|"left", alias: string, parentAlias: string, relationMetadata: RelationMetadata, select: boolean }[] = [];
     protected conditions: string = "";
@@ -99,7 +109,18 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     setFindOptions(findOptions: FindOptions<Entity>) {
-        this.findOptions = normalizeFindOptions(findOptions);
+        const normalizedFindOptions = normalizeFindOptions(findOptions);
+        this.findOptions = {
+            select: normalizedFindOptions.select,
+            where: normalizedFindOptions.where,
+            relations: normalizedFindOptions.relations,
+            order: normalizedFindOptions.order,
+            skip: normalizedFindOptions.skip,
+            take: normalizedFindOptions.take,
+            pagination: normalizedFindOptions.options && normalizedFindOptions.options.pagination,
+            loadRelationIds: normalizedFindOptions.options && normalizedFindOptions.options.loadRelationIds
+        }
+        this.applyFindOptionsOrmOptions(normalizedFindOptions);
         return this;
     }
 
@@ -1870,7 +1891,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // apply offset
             if (this.findOptions.skip !== undefined) {
-                if (this.findOptions.options && this.findOptions.options.pagination === false) {
+                if (this.findOptions.pagination === false) {
                     this.offset(this.findOptions.skip);
                 } else {
                     this.skip(this.findOptions.skip);
@@ -1879,22 +1900,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // apply limit
             if (this.findOptions.take !== undefined) {
-                if (this.findOptions.options && this.findOptions.options.pagination === false) {
+                if (this.findOptions.pagination === false) {
                     this.limit(this.findOptions.take);
                 } else {
                     this.take(this.findOptions.take);
                 }
-            }
-
-            // apply caching options
-            if (typeof this.findOptions.cache === "number") {
-                this.cache(this.findOptions.cache);
-
-            } else if (typeof this.findOptions.cache === "boolean") {
-                this.cache(this.findOptions.cache);
-
-            } else if (typeof this.findOptions.cache === "object") {
-                this.cache(this.findOptions.cache.id, this.findOptions.cache.milliseconds);
             }
 
             if (this.orderBys.length) {
@@ -1904,8 +1914,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
 
             if (this.expressionMap.eagerRelations === true) {
-                if (!this.findOptions.options || this.findOptions.options.eagerRelations !== false) {
-                    // Create a list of all of the alias+propertyPaths that were manually joined, so we don't join them again
                     const manuallyJoinedRelations = this.expressionMap.joinAttributes
                                                         .filter(join => join.relationPropertyPath)
                                                         .map(join => join.parentAlias + "." + join.relationPropertyPath);
@@ -1921,34 +1929,56 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         });
                     };
                     joinEagerRelations(this.expressionMap.mainAlias!.name, this.expressionMap.mainAlias!.metadata);
-                }
             }
 
-            if (this.findOptions.options) {
+            if (this.findOptions.loadRelationIds === true) {
+                this.loadAllRelationIds();
 
-                if (this.findOptions.options.listeners === false)
-                    this.callListeners(false);
-
-                if (this.findOptions.options.observers === false)
-                    this.callObservers(false);
-
-                if (this.findOptions.options.loadRelationIds === true) {
-                    this.loadAllRelationIds();
-
-                } else if (this.findOptions.options.loadRelationIds instanceof Object) {
-                    this.loadAllRelationIds(this.findOptions.options.loadRelationIds as any);
-                }
-            }
-            if (this.findOptions.lock) {
-                if (this.findOptions.lock.mode==="optimistic") {
-                    this.setLock(this.findOptions.lock.mode,this.findOptions.lock.version)
-                } else {
-                    this.setLock(this.findOptions.lock.mode)
-                }
+            } else if (this.findOptions.loadRelationIds instanceof Object) {
+                this.loadAllRelationIds(this.findOptions.loadRelationIds as any);
             }
         }
 
     }
+    protected applyFindOptionsOrmOptions(findOptions:FindOptions<Entity>) {
+
+        if (this.expressionMap.mainAlias!.metadata) {
+
+            // apply caching options
+            if (typeof findOptions.cache === "number") {
+                this.cache(findOptions.cache);
+
+            } else if (typeof findOptions.cache === "boolean") {
+                this.cache(findOptions.cache);
+
+            } else if (typeof findOptions.cache === "object") {
+                this.cache(findOptions.cache.id, findOptions.cache.milliseconds);
+            }
+
+            if (findOptions.options) {
+
+                if (findOptions.options.listeners === false)
+                    this.callListeners(false);
+
+                if (findOptions.options.observers === false)
+                    this.callObservers(false);
+            }
+            if (findOptions.lock) {
+                if (findOptions.lock.mode === "optimistic") {
+                    this.setLock(findOptions.lock.mode, findOptions.lock.version)
+                } else {
+                    this.setLock(findOptions.lock.mode)
+                }
+            }
+
+            if (findOptions.options && findOptions.options.eagerRelations !== undefined) {
+                this.expressionMap.eagerRelations = findOptions.options.eagerRelations;
+            }
+
+        }
+
+    }
+
 
     protected async executeCountQuery(queryRunner: QueryRunner): Promise<number> {
 
