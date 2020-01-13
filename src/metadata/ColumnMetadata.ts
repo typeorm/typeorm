@@ -10,6 +10,7 @@ import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {FindOperator} from "../find-options/FindOperator";
 import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 
 /**
  * This metadata contains all information about entity's column.
@@ -656,10 +657,21 @@ export class ColumnMetadata {
      * Compares given entity's column value with a given value.
      */
     compareEntityValue(entity: any, valueToCompareWith: any) {
-        const columnValue = this.getEntityValue(entity);
+        let columnValue = this.getEntityValue(entity);
+
+        if (this.entityMetadata.connection.driver instanceof CockroachDriver && this.entityMetadata.connection.driver.normalizeType({type: this.type}) === "int8") {
+            if (typeof columnValue === "number") {
+                columnValue = columnValue.toString();
+            }
+            if (typeof valueToCompareWith === "number") {
+                valueToCompareWith = valueToCompareWith.toString();
+            }
+        }
+
         if (columnValue instanceof Object) {
             return columnValue.equals(valueToCompareWith);
         }
+
         return columnValue === valueToCompareWith;
     }
 
