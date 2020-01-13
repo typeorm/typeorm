@@ -199,15 +199,15 @@ describe("repository > find options > cache", () => {
         user4.name = "Ginny";
         await connection.manager.save(user4);
 
-        // without cache it must return really how many there entities are
-        const users2 = await connection.getRepository(User).find();
-
-        expect(users2.length).to.be.equal(4);
-
-        // but with cache enabled it must not return newly inserted entity since cache is not expired yet
+        // with the cache enabled (and not expired) we expect our previously cached results i.e. not the newly inserted entity
         const users3 = await connection.getRepository(User)
             .find({cache: true});
         expect(users3.length).to.be.equal(3);
+
+        // without the cache we should obtain the correct number
+        const users2 = await connection.getRepository(User).find();
+
+        expect(users2.length).to.be.equal(4);
 
         // give some time for cache to expire
         await sleep(1000);
