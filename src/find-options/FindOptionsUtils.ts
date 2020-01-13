@@ -92,7 +92,7 @@ export function normalizeFindOptions<T>(options: FindOptions<T>): FindOptions<T>
             return where.map((where: any) => recursivelyWhere(where));
 
         return Object.keys(where).reduce((newWhere, key) => {
-            if (where[key] instanceof Object && !(where[key] instanceof FindOperator)) {
+            if (where[key] instanceof Object && !(where[key] instanceof FindOperator) && !(where[key] instanceof Date)) {
                 newWhere[key] = recursively$FindOption(where[key]);
 
                 // in the case if $find operator was not found we'll have a false as a value
