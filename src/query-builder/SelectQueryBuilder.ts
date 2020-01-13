@@ -1105,7 +1105,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const queryRunner = this.obtainQueryRunner();
         let transactionStartedByUs: boolean = false;
         try {
-
             // start transaction if it was enabled
             if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
                 await queryRunner.startTransaction();
@@ -1113,7 +1112,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
 
             this.expressionMap.queryEntity = true;
-            this.applyFindOptions();
+
             const results = await this.executeEntitiesAndRawResults(queryRunner);
 
             // close transaction if we started it
@@ -1145,6 +1144,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Gets single entity returned by execution of generated query builder sql.
      */
     async getOne(): Promise<Entity|undefined> {
+        this.applyFindOptions();
+
         const results = await this.getRawAndEntities();
         const result = results.entities[0] as any;
 
@@ -1170,6 +1171,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Gets entities returned by execution of generated query builder sql.
      */
     async getMany(): Promise<Entity[]> {
+        this.applyFindOptions();
+
         if (this.expressionMap.lockMode === "optimistic")
             throw new OptimisticLockCanNotBeUsedError();
 
@@ -1182,6 +1185,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Count excludes all limitations set by setFirstResult and setMaxResults methods call.
      */
     async getCount(): Promise<number> {
+
+        this.applyFindOptions();
+
         if (this.expressionMap.lockMode === "optimistic")
             throw new OptimisticLockCanNotBeUsedError();
 
@@ -1196,7 +1202,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
 
             this.expressionMap.queryEntity = false;
-            this.applyFindOptions();
+
             const results = await this.executeCountQuery(queryRunner);
 
             // close transaction if we started it
@@ -1229,6 +1235,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * This method is useful to build pagination.
      */
     async getManyAndCount(): Promise<[Entity[], number]> {
+
+        this.applyFindOptions();
+
         if (this.expressionMap.lockMode === "optimistic")
             throw new OptimisticLockCanNotBeUsedError();
 
@@ -1242,7 +1251,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 transactionStartedByUs = true;
             }
 
-            this.applyFindOptions();
             this.expressionMap.queryEntity = true;
             const entitiesAndRaw = await this.executeEntitiesAndRawResults(queryRunner);
             this.expressionMap.queryEntity = false;
@@ -1926,6 +1934,16 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         });
                     };
                     joinEagerRelations(this.expressionMap.mainAlias!.name, this.expressionMap.mainAlias!.metadata);
+                }
+            }
+
+            if (this.findOptions.lock) {
+                if (this.findOptions.lock.mode === "optimistic") {
+                    this.setLock(this.findOptions.lock.mode, this.findOptions.lock.version as any);
+                } else if (this.findOptions.lock.mode === "pessimistic_read"
+                    || this.findOptions.lock.mode === "pessimistic_write"
+                    || this.findOptions.lock.mode === "dirty_read") {
+                    this.setLock(this.findOptions.lock.mode);
                 }
             }
 
