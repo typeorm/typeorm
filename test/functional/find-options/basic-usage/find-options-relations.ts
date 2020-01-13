@@ -3,7 +3,6 @@ import {Connection} from "../../../../src";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Post} from "./entity/Post";
 import {prepareData} from "./find-options-test-utils";
-import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
 
 describe("find options > relations", () => {
 
@@ -45,9 +44,6 @@ describe("find options > relations", () => {
 
     it("complex relation #1", () => Promise.all(connections.map(async connection => {
 
-        if (connection.driver instanceof PostgresDriver) // in postgres ordering works a bit different that's why we decided to skip it
-            return;
-
         await prepareData(connection.manager);
 
         const posts = await connection.createQueryBuilder(Post, "post").setFindOptions({
@@ -71,52 +67,25 @@ describe("find options > relations", () => {
                 }
             }
         }).getMany();
-        posts.should.be.eql([
-            {
-                id: 3,
-                title: "Post #3",
-                text: "About post #3",
-                counters: {
-                    likes: 1
-                },
-                author: {
-                    id: 2,
-                    age: 52,
-                    photos: []
-                }
+
+        posts.length.should.be.eql(3);
+        posts[0].should.be.eql({
+            id: 3,
+            title: "Post #3",
+            text: "About post #3",
+            counters: {
+                likes: 1
             },
-            {
-                id: 1,
-                title: "Post #1",
-                text: "About post #1",
-                counters: {
-                    likes: 1
-                },
-                author: {
-                    id: 1,
-                    age: 25,
-                    photos: [
-                        { id: 2, filename: "chain.jpg", description: "Me and chain" },
-                        { id: 1, filename: "saw.jpg", description: "Me and saw" }
-                    ]
-                }
-            },
-            {
+            author: {
                 id: 2,
-                title: "Post #2",
-                text: "About post #2",
-                counters: {
-                    likes: 2
-                },
-                author: {
-                    id: 1,
-                    age: 25,
-                    photos: [
-                        { id: 2, filename: "chain.jpg", description: "Me and chain" },
-                        { id: 1, filename: "saw.jpg", description: "Me and saw" }
-                    ]
-                }
+                age: 52,
+                photos: []
             }
+        });
+        posts[1].author.should.be.eql(posts[2].author);
+        posts[1].author.photos.should.be.eql([
+            { id: 2, filename: "chain.jpg", description: "Me and chain" },
+            { id: 1, filename: "saw.jpg", description: "Me and saw" }
         ]);
 
     })));
