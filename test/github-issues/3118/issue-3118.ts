@@ -41,24 +41,12 @@ describe("github issues > #3118 shorten alias names (for RDBMS with a limit) whe
             await connection.getRepository(CategoryWithVeryLongName).save(category);
         }
 
-        const loadedCategory = await connection.manager.findOne(CategoryWithVeryLongName, { relations: [
-            "postsWithVeryLongName",
-            // before: used to generate a SELECT "AS" alias like `CategoryWithVeryLongName__postsWithVeryLongName__authorWithVeryLongName_firstName`
-            // now: `CaWiVeLoNa__poWiVeLoNa__auWiVeLoNa_firstName`, which is acceptable by Postgres (limit to 63 characters)
-            "postsWithVeryLongName.authorWithVeryLongName",
-            // before:
-                // used to generate a JOIN "AS" alias like :
-                    // `CategoryWithVeryLongName__postsWithVeryLongName__authorWithVeryLongName_firstName`
-                    // `CategoryWithVeryLongName__postsWithVeryLongName__authorWithVeryLongName__groupWithVeryLongName_name`
-                // which was truncated automatically by the RDBMS to :
-                    // `CategoryWithVeryLongName__postsWithVeryLongName__authorWithVery`
-                    // `CategoryWithVeryLongName__postsWithVeryLongName__authorWithVery`
-                // resulting in: `ERROR:  table name "CategoryWithVeryLongName__postsWithVeryLongName__authorWithVery" specified more than once`
-            // now:
-                // `CaWiVeLoNa__poWiVeLoNa__auWiVeLoNa_firstName`
-                // `CaWiVeLoNa__poWiVeLoNa__auWiVeLoNa__grWiVeLoNa_name`
-            "postsWithVeryLongName.authorWithVeryLongName.groupWithVeryLongName"
-        ] });
+        const loadedCategory = await connection.manager.findOne(CategoryWithVeryLongName, { relations: {
+                postsWithVeryLongName: {
+                    authorWithVeryLongName: ["groupWithVeryLongName"]
+                }
+            }
+        });
         expect(loadedCategory).not.to.be.undefined;
         expect(loadedCategory!.postsWithVeryLongName).not.to.be.undefined;
         expect(loadedCategory!.postsWithVeryLongName).not.to.be.empty;
@@ -66,11 +54,12 @@ describe("github issues > #3118 shorten alias names (for RDBMS with a limit) whe
         expect(loadedCategory!.postsWithVeryLongName[0].authorWithVeryLongName.firstName).to.be.oneOf(authorFirstNames);
         expect(loadedCategory!.postsWithVeryLongName[0].authorWithVeryLongName.groupWithVeryLongName.name).to.equal(group.name);
 
-        const loadedCategories = await connection.manager.find(CategoryWithVeryLongName, { relations: [
-            "postsWithVeryLongName",
-            "postsWithVeryLongName.authorWithVeryLongName",
-            "postsWithVeryLongName.authorWithVeryLongName.groupWithVeryLongName"
-        ] });
+        const loadedCategories = await connection.manager.find(CategoryWithVeryLongName, { relations: {
+                postsWithVeryLongName: {
+                    authorWithVeryLongName: ["groupWithVeryLongName"]
+                }
+            }
+        });
         expect(loadedCategories).to.be.an("array").that.is.not.empty;
         for (const loadedCategory of loadedCategories) {
             expect(loadedCategory).not.to.be.undefined;
