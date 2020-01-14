@@ -839,17 +839,21 @@ export class EntityManager {
         if (!findOptions || findOptions.loadEagerRelations !== false)
             FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
 
-        findOptions = {
-            ...(findOptions || {}),
-            take: 1,
-        };
+        const passedId = typeof idOrOptionsOrConditions === "string" || typeof idOrOptionsOrConditions === "number" || (idOrOptionsOrConditions as any) instanceof Date;
+
+        if (!passedId) {
+            findOptions = {
+                ...(findOptions || {}),
+                take: 1,
+            };
+        }
 
         FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
 
         if (options) {
             qb.where(options);
 
-        } else if (typeof idOrOptionsOrConditions === "string" || typeof idOrOptionsOrConditions === "number" || (idOrOptionsOrConditions as any) instanceof Date) {
+        } else if (passedId) {
             qb.andWhereInIds(metadata.ensureEntityIdMap(idOrOptionsOrConditions));
         }
 
