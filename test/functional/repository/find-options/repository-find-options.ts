@@ -189,7 +189,7 @@ describe("repository > find options > distinct", () => {
 
       expect(results.length).to.be.equal(1);
     })));
-})
+});
 
 describe("repository > find options > cache", () => {
     let connections: Connection[];
