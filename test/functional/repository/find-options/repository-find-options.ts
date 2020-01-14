@@ -163,6 +163,33 @@ describe("repository > find options", () => {
 
 });
 
+describe("repository > find options > distinct", () => {
+    let connections: Connection[];
+    before(async () => connections = await createTestingConnections({
+        entities: [__dirname + "/entity/*{.js,.ts}"]
+    }));
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
+
+    it("should select distinct", () => Promise.all(connections.map(async connection => {
+      for (let i = 1; i < 10; i++) {
+          const photo = new Photo();
+          photo.name = `Me and Bears ${i}`;
+          photo.description = "I am near bears";
+          photo.filename = `photo-with-bears-${i}.jpg`;
+          photo.views = 10;
+          photo.isPublished = false;
+          await connection.manager.save(photo);
+      }
+
+      const results = await connection.getRepository(Photo).find({
+          select: ["views", "description"],
+          distinct: true
+      });
+
+      expect(results.length).to.be.equal(1);
+    })));
+})
 
 describe("repository > find options > cache", () => {
     let connections: Connection[];
