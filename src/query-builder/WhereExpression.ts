@@ -83,6 +83,12 @@ export interface WhereExpression {
     orWhere(subQuery: (qb: this) => string, parameters?: ObjectLiteral): this;
 
     /**
+     * Adds new WHERE OVERLAPS condition,
+     * for example WHERE (...columns) OVERLAPS (...values).
+     */
+    whereOverlaps(columns: string[], range: string[]): this;
+
+    /**
      * Adds new AND WHERE with conditions for the given ids.
      *
      * Ids are mixed.

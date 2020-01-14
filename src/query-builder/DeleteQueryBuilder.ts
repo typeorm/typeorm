@@ -170,6 +170,13 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (parameters) this.setParameters(parameters);
         return this;
     }
+    
+    /**
+     * Adds new WHERE OVERLAPS condition for given range.
+     */
+    whereOverlaps(columns: string[], range: string[]): this {
+        return this.where(this.createWhereOverlapsExpression(columns, range));
+    }
 
     /**
      * Adds new AND WHERE with conditions for the given ids.

@@ -734,6 +734,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Adds new WHERE OVERLAPS condition in the query builder,
+     * for example WHERE (...columns) OVERLAPS (...values).
+     */
+    whereOverlaps(columns: string[], range: string[]): this {
+        return this.where(this.createWhereOverlapsExpression(columns, range));
+    }
+
+    /**
      * Adds new AND WHERE with conditions for the given ids.
      *
      * Ids are mixed.

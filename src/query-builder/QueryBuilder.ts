@@ -721,6 +721,21 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
+     * Creates "WHERE" expression for overlapping column values.
+     */
+    protected createWhereOverlapsExpression(columns: string[], range: string[]): string {
+        const values = range.map(value => {
+            return `'${value}'`;
+        }).join(", ");
+
+        const fields = columns.map(column => {
+            return this.replacePropertyNames(column);
+        }).join(", ");
+
+        return `(${fields}) OVERLAPS (${values})`;
+    }
+
+    /**
      * Computes given where argument - transforms to a where string all forms it can take.
      */
     protected computeWhereParameter(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[]) {
