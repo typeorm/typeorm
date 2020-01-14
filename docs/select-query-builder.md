@@ -356,6 +356,19 @@ Note: be careful with `orWhere` - if you use complex expressions with both `AND`
 keep in mind that they are stacked without any pretences.
 Sometimes you'll need to create a where string instead, and avoid using `orWhere`.
 
+Adding a `WHERE (...columns) OVERLAPS (...values)` expression is as easy as:
+
+```typescript
+createQueryBuilder("user")
+    .whereOverlaps(["date_created", "date_updated"], ["2010-09-01", "2010-01-01"])
+```
+
+Which will produce:
+
+```sql
+SELECT ... FROM users user WHERE (date_created, date_updated) OVERLAPS ('2010-09-01', '2010-01-01')
+```
+
 ## Adding `HAVING` expression
 
 Adding a `HAVING` expression is easy as:
