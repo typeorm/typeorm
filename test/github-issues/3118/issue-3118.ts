@@ -14,7 +14,7 @@ import {CategoryWithVeryLongName} from "./entity/CategoryWithVeryLongName";
  * maximum identifier length is 63 bytes. If this limit is problematic, it can be raised
  * by changing the NAMEDATALEN constant in src/include/pg_config_manual.h."
  */
-describe.skip("github issues > #3118 shorten alias names (for RDBMS with a limit) when they are longer than 63 characters", () => {
+describe("github issues > #3118 shorten alias names (for RDBMS with a limit) when they are longer than 63 characters", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
