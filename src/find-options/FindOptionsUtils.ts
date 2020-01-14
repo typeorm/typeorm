@@ -99,6 +99,9 @@ export class FindOptionsUtils {
             });
         }
 
+        if (options.distinct)
+            qb.distinct(options.distinct);
+
         if (options.where)
             qb.where(options.where);
 

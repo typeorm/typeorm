@@ -1044,8 +1044,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 transactionStartedByUs = true;
             }
 
-            this.expressionMap.queryEntity = true;
+            if (!this.expressionMap.selectDistinct)
+                this.expressionMap.queryEntity = true;
+
             const results = await this.executeEntitiesAndRawResults(queryRunner);
+
+            // if entities is empty seed with raw
+            if (results.entities.length === 0)
+                results.entities = results.raw;
 
             // close transaction if we started it
             if (transactionStartedByUs) {

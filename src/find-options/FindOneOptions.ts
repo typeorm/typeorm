@@ -13,6 +13,11 @@ export interface FindOneOptions<Entity = any> {
     select?: (keyof Entity)[];
 
     /**
+     * Specifies whether SELECT is DISTINCT.
+     */
+    distinct?: boolean;
+
+    /**
      * Simple condition that should be applied to match entities.
      */
     where?: FindConditions<Entity>[]|FindConditions<Entity>|ObjectLiteral|string;
