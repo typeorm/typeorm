@@ -335,7 +335,7 @@ export class CockroachDriver implements Driver {
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         // unique_rowid() generates bigint value and should not be converted to number
-        if (([Number, "int4", "smallint","int2"].some(v=>v === columnMetadata.type)
+        if (([Number, "int4", "smallint", "int2"].some(v => v === columnMetadata.type)
             && !columnMetadata.isArray) || columnMetadata.generationStrategy === "increment") {
             value = parseInt(value);
 
