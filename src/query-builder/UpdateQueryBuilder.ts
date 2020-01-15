@@ -74,21 +74,36 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
             }
 
+            let declareSql: string | null = null;
+            let selectOutputSql: string | null = null;
+
             // if update entity mode is enabled we may need extra columns for the returning statement
             const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(queryRunner, this.expressionMap);
             if (this.expressionMap.updateEntity === true &&
                 this.expressionMap.mainAlias!.hasMetadata &&
                 this.expressionMap.whereEntities.length > 0) {
                 this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getUpdationReturningColumns();
+
+                if (this.expressionMap.extraReturningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
+                    const outputColumns = this.expressionMap.extraReturningColumns.map(column => {
+                        return `${this.escape(column.databaseName)} ${this.connection.driver.normalizeType(column)}`;
+                    });
+
+                    declareSql = `DECLARE @OutputTable TABLE (${outputColumns.join(", ")})`;
+                    selectOutputSql = `SELECT * FROM @OutputTable`;
+                }
             }
 
             // execute update query
-            const [sql, parameters] = this.getQueryAndParameters();
+            const [updateSql, parameters] = this.getQueryAndParameters();
             const updateResult = new UpdateResult();
-            const result = await queryRunner.query(sql, parameters);
+            const statements = [declareSql, updateSql, selectOutputSql];
+            const result = await queryRunner.query(
+                statements.filter(sql => sql != null).join(";\n\n"),
+                parameters,
+            );
 
-            const driver = queryRunner.connection.driver;
-            if (driver instanceof PostgresDriver) {
+            if (this.connection.driver instanceof PostgresDriver) {
                 updateResult.raw = result[0];
                 updateResult.affected = result[1];
             }

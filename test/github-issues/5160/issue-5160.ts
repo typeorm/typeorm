@@ -3,7 +3,7 @@ import {expect} from "chai";
 import {Connection} from "../../../src";
 import {Post} from "./entity/Post";
 import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../utils/test-utils";
-import { SqlServerDriver } from "../../../src/driver/sqlserver/SqlServerDriver";
+import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 
 describe("github issues > #5160 (MSSQL) DML statement cannot have any enabled triggers if the statement contains an OUTPUT clause without INTO clause", () => {
 

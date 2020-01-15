@@ -635,6 +635,13 @@ export abstract class QueryBuilder<Entity> {
                     return this.connection.driver.createParameter(parameterName, Object.keys(this.expressionMap.nativeParameters).length);
                 }).join(", ");
             }
+
+            if (driver instanceof SqlServerDriver) {
+                if (this.expressionMap.queryType === "insert" || this.expressionMap.queryType === "update") {
+                    columnsExpression += " INTO @OutputTable";
+                }
+            }
+
             return columnsExpression;
 
         } else if (typeof this.expressionMap.returning === "string") {
