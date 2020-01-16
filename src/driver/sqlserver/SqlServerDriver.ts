@@ -700,6 +700,20 @@ export class SqlServerDriver implements Driver {
         }, {} as ObjectLiteral);
     }
 
+    buildTableVariableDeclaration(identifier: string, columns: ColumnMetadata[]): string {
+        const outputColumns = columns.map(column => {
+            return `${this.escape(column.databaseName)} ${this.createFullType(new TableColumn({
+                name: column.databaseName,
+                type: this.normalizeType(column),
+                length: column.length,
+                isNullable: column.isNullable,
+                isArray: column.isArray,
+            }))}`;
+        });
+
+        return `DECLARE ${identifier} TABLE (${outputColumns.join(", ")})`;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

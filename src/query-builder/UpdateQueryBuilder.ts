@@ -23,7 +23,6 @@ import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import {TableColumn} from "../schema-builder/table/TableColumn";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -86,17 +85,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getUpdationReturningColumns();
 
                 if (this.expressionMap.extraReturningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
-                    const outputColumns = this.expressionMap.extraReturningColumns.map(column => {
-                        return `${this.escape(column.databaseName)} ${this.connection.driver.createFullType(new TableColumn({
-                            name: column.databaseName,
-                            type: this.connection.driver.normalizeType(column),
-                            length: column.length,
-                            isNullable: column.isNullable,
-                            isArray: column.isArray,
-                        }))}`;
-                    });
-
-                    declareSql = `DECLARE @OutputTable TABLE (${outputColumns.join(", ")})`;
+                    declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", this.expressionMap.extraReturningColumns);
                     selectOutputSql = `SELECT * FROM @OutputTable`;
                 }
             }

@@ -17,7 +17,6 @@ import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriv
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../entity-schema/EntitySchema";
-import {TableColumn} from "../schema-builder/table/TableColumn";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
@@ -79,17 +78,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getInsertionReturningColumns();
 
                 if (this.expressionMap.extraReturningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
-                    const outputColumns = this.expressionMap.extraReturningColumns.map(column => {
-                        return `${this.escape(column.databaseName)} ${this.connection.driver.createFullType(new TableColumn({
-                            name: column.databaseName,
-                            type: this.connection.driver.normalizeType(column),
-                            length: column.length,
-                            isNullable: column.isNullable,
-                            isArray: column.isArray,
-                        }))}`;
-                    });
-
-                    declareSql = `DECLARE @OutputTable TABLE (${outputColumns.join(", ")})`;
+                    declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", this.expressionMap.extraReturningColumns);
                     selectOutputSql = `SELECT * FROM @OutputTable`;
                 }
             }
