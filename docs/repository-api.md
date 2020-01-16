@@ -225,7 +225,7 @@ await repository.clear();
 ```
 ### Additional Options
 
-Optional `SaveOptions` can be passed as parameter for `save` and `update`.
+Optional `SaveOptions` can be passed as parameter for `save`.
 
 * `data` -  Additional data to be passed with persist method. This data can be used in subscribers then.
 * `listeners`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
