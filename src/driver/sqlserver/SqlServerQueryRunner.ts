@@ -1370,6 +1370,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => this.query(dropQuery)));
             }));
             await Promise.all(allTablesResults.map(tablesResult => {
+                if (tablesResult["TABLE_NAME"].startsWith("#")) {
+                    // don't try to drop temporary tables
+                    return;
+                }
+
                 const dropTableSql = `DROP TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`;
                 return this.query(dropTableSql);
             }));
