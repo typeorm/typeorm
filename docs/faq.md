@@ -179,7 +179,7 @@ make sure to use the `outDir` compiler option to prevent
 Also, if you want to use the ts-node CLI, you can execute TypeORM the following way:
 
 ```
-ts-node ./node_modules/bin/typeorm schema:sync
+ts-node ./node_modules/.bin/typeorm schema:sync
 ```
 
 ## How to use Webpack for the backend?
