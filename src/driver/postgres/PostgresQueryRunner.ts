@@ -438,6 +438,20 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`));
         }
 
+        // rename sequences
+        newTable.columns.map(col => {
+            if (col.isGenerated) {
+                const seqName = this.buildSequenceName(oldTable, col.name, undefined, true, true);
+                const newSeqName = this.buildSequenceName(newTable, col.name, undefined, true, true);
+
+                const up = schemaName ? `ALTER SEQUENCE "${schemaName}"."${seqName}" RENAME TO "${newSeqName}"` : `ALTER SEQUENCE "${seqName}" RENAME TO "${newSeqName}"`;
+                const down = schemaName ? `ALTER SEQUENCE "${schemaName}"."${newSeqName}" RENAME TO "${seqName}"` : `ALTER SEQUENCE "${newSeqName}" RENAME TO "${seqName}"`;
+
+                upQueries.push(new Query(up));
+                downQueries.push(new Query(down));
+            }
+        });
+
         // rename unique constraints
         newTable.uniques.forEach(unique => {
             // build new constraint name

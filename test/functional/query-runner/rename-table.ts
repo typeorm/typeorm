@@ -8,6 +8,8 @@ import {Table} from "../../../src/schema-builder/table/Table";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+// import { SequenceTask } from 'gulpclass';
+// import { PostgresQueryRunner } from '../../../src/driver/postgres/PostgresQueryRunner';
 
 describe("query runner > rename table", () => {
 
@@ -30,7 +32,7 @@ describe("query runner > rename table", () => {
 
         const queryRunner = connection.createQueryRunner();
 
-        let table = await queryRunner.getTable("post");
+        let table = await queryRunner.getTable("faculty");
 
         await queryRunner.renameTable(table!, "question");
         table = await queryRunner.getTable("question");
@@ -39,6 +41,11 @@ describe("query runner > rename table", () => {
         await queryRunner.renameTable("question", "user");
         table = await queryRunner.getTable("user");
         table!.should.be.exist;
+
+        if (connection.driver instanceof PostgresDriver) {
+            let result = await queryRunner.query(`SELECT COUNT(*) FROM "pg_class" "c" WHERE "c"."relkind" = 'S' and "c"."relname" = 'user_id_seq'`);
+            result[0].count.should.be.equal('1');
+        }
 
         await queryRunner.executeMemoryDownSql();
 
