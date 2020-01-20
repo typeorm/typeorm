@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../../src";
-import {closeTestingConnections, createTestingConnections} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {expect} from "chai";
 import { Post } from "./entity/Post";
 
@@ -15,6 +15,7 @@ describe("indices > fulltext index", () => {
             dropSchema: true,
         });
     });
+    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should correctly create fulltext indices", () => Promise.all(connections.map(async connection => {
