@@ -350,10 +350,8 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
                 indexType += "SPATIAL ";
             if (index.isFulltext)
                 indexType += "FULLTEXT ";
-            const indexParser = index.isFulltext && index.parser ? ` WITH PARSER ${index.parser}` : "";
-
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})${indexParser}`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})${indexParser}`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`));
 
             // replace constraint name
             index.name = newIndexName;
@@ -541,10 +539,8 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
                         indexType += "SPATIAL ";
                     if (index.isFulltext)
                         indexType += "FULLTEXT ";
-                    const indexParser = index.isFulltext && index.parser ? ` WITH PARSER ${index.parser}` : "";
-                    
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})${indexParser}`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})${indexParser}`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`));
 
                     // replace constraint name
                     index.name = newIndexName;
@@ -1420,9 +1416,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
                     indexType += "SPATIAL ";
                 if (index.isFulltext)
                     indexType += "FULLTEXT ";
-                const indexParser = index.isFulltext && index.parser ? ` WITH PARSER ${index.parser}` : "";
-
-                return `${indexType}INDEX \`${index.name}\` (${columnNames})${indexParser}`;
+                return `${indexType}INDEX \`${index.name}\` (${columnNames})`;
             }).join(", ");
 
             sql += `, ${indicesSql}`;
@@ -1520,9 +1514,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
             indexType += "SPATIAL ";
         if (index.isFulltext)
             indexType += "FULLTEXT ";
-        const indexParser = index.isFulltext && index.parser ? ` WITH PARSER ${index.parser}` : "";
-        
-        return new Query(`CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapePath(table)} (${columns})${indexParser}`);
+        return new Query(`CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapePath(table)} (${columns})`);
     }
 
     /**

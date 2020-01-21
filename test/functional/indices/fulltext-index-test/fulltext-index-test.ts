@@ -10,7 +10,7 @@ describe("indices > fulltext index", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["aurora-data-api", "mysql"],
+            enabledDrivers: ["mysql"],
             schemaCreate: true,
             dropSchema: true,
         });
