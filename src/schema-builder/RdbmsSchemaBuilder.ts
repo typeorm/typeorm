@@ -278,6 +278,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
                         if (indexMetadata.isFulltext !== tableIndex.isFulltext)
                             return true;
+                            
+                        if (indexMetadata.parser !== tableIndex.parser)
+                            return true;
 
                         if (indexMetadata.columns.length !== tableIndex.columnNames.length)
                             return true;
