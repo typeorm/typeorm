@@ -398,10 +398,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (index.isFulltext)
                 indexType += "FULLTEXT ";
             const indexParser = index.isFulltext && index.parser ? ` WITH PARSER ${index.parser}` : "";
-            const indexComment = index.isFulltext && index.parser ? ` COMMENT 'typeorm_index_parser ${index.parser}'` : "";
 
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})${indexParser}${indexComment}`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})${indexParser}${indexComment}`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})${indexParser}`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})${indexParser}`));
 
             // replace constraint name
             index.name = newIndexName;
@@ -590,10 +589,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     if (index.isFulltext)
                         indexType += "FULLTEXT ";
                     const indexParser = index.isFulltext && index.parser ? ` WITH PARSER ${index.parser}` : "";
-                    const indexComment = index.isFulltext && index.parser ? ` COMMENT 'typeorm_index_parser ${index.parser}'` : "";
 
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})${indexParser}${indexComment}`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})${indexParser}${indexComment}`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})${indexParser}`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})${indexParser}`));
 
                     // replace constraint name
                     index.name = newIndexName;
@@ -1413,18 +1411,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 const nonUnique = parseInt(constraint["NON_UNIQUE"], 10);
 
-                const indexComment: string = constraint["INDEX_COMMENT"];
-                const indexCommentEntries = indexComment.split(",").map(entry => entry.split(" "));
-                const indexParser = indexCommentEntries.find(indexCommentEntry => indexCommentEntry[0] === "typeorm_index_parser");
-
                 return new TableIndex(<TableIndexOptions>{
                     table: table,
                     name: constraint["INDEX_NAME"],
                     columnNames: indices.map(i => i["COLUMN_NAME"]),
                     isUnique: nonUnique === 0,
                     isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
-                    isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT",
-                    parser: indexParser ? indexParser[1] : undefined
+                    isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT"
                 });
             });
 
@@ -1486,9 +1479,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 if (index.isFulltext)
                     indexType += "FULLTEXT ";
                 const indexParser = index.isFulltext && index.parser ? ` WITH PARSER ${index.parser}` : "";
-                const indexComment = index.isFulltext && index.parser ? ` COMMENT 'typeorm_index_parser ${index.parser}'` : "";
 
-                return `${indexType}INDEX \`${index.name}\` (${columnNames})${indexParser}${indexComment}`;
+                return `${indexType}INDEX \`${index.name}\` (${columnNames})${indexParser}`;
             }).join(", ");
 
             sql += `, ${indicesSql}`;
@@ -1587,9 +1579,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (index.isFulltext)
             indexType += "FULLTEXT ";
         const indexParser = index.isFulltext && index.parser ? ` WITH PARSER ${index.parser}` : "";
-        const indexComment = index.isFulltext && index.parser ? ` COMMENT 'typeorm_index_parser ${index.parser}'` : "";
 
-        return new Query(`CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapePath(table)} (${columns})${indexParser}${indexComment}`);
+        return new Query(`CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapePath(table)} (${columns})${indexParser}`);
     }
 
     /**

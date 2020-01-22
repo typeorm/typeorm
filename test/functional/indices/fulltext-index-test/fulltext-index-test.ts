@@ -76,37 +76,5 @@ describe("indices > fulltext index", () => {
             .getOne();
         expect(loadedPost2).to.be.exist;
     })));
-    
-    it("synchronize parser", () => Promise.all(connections.map(async connection => {
-        const postRepository = connection.getRepository(Post);
-
-        const text = "This is text";
-        const post = new Post();
-        post.default = text;
-        post.ngram = text;
-        await postRepository.save(post);
-
-        const metadata = connection.getMetadata(Post);
-        const indexMetadata = metadata.indices.find(index => index.parser === undefined);
-
-        const query = postRepository
-            .createQueryBuilder("post")
-            .where("MATCH(post.default) AGAINST (:token)", { token: "te" });
-
-        const loadedPost1 = await query.getOne();
-        expect(loadedPost1).to.be.undefined;
-
-        indexMetadata!.parser = "ngram";
-        await connection.synchronize();
-        
-        const loadedPost2 = await query.getOne();
-        expect(loadedPost2).to.be.exist;
-
-        indexMetadata!.parser = undefined;
-        await connection.synchronize();
-        
-        const loadedPost3 = await query.getOne();
-        expect(loadedPost3).to.be.undefined;
-    })));
 
 });
