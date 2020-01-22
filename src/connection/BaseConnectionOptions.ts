@@ -126,7 +126,7 @@ export interface BaseConnectionOptions {
         /**
          * Factory function for custom cache providers that implement QueryResultCache.
          */
-        readonly cacheProvider?: (connection: Connection) => QueryResultCache;
+        readonly provider?: (connection: Connection) => QueryResultCache;
 
         /**
          * Configurable table name for "database" type cache.
