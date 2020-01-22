@@ -10,7 +10,6 @@ export class Post {
 
     @Column({
         type: "json",
-        default: "{}"
     })
     data: any;
 
