@@ -217,6 +217,13 @@ Note that, you can still use options as first argument of IORedis's cluster cons
 If none of the built-in cache providers satisfy your demands, then you can also specify your own cache provider by using a `provider` factory function which needs to return a new object that implements the `QueryResultCache` interface:
 
 ```typescript
+class CustomQueryResultCache implements QueryResultCache {
+    constructor(private connection: Connection) {}
+    ...
+}
+```
+
+```typescript
 {
     ...
     cache: {
