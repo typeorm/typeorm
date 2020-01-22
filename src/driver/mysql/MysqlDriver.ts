@@ -537,6 +537,14 @@ export class MysqlDriver implements Driver {
         } else if (column.type === "uuid") {
             return "varchar";
 
+        } else if (column.type === "json" && this.options.type === "mariadb") {
+            /*
+             * MariaDB implements this as a LONGTEXT rather, as the JSON data type contradicts the SQL standard,
+             * and MariaDB's benchmarks indicate that performance is at least equivalent.
+             * @see https://mariadb.com/kb/en/json-data-type/
+             */
+            return "longtext";
+
         } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "text";
 
