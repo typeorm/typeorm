@@ -541,6 +541,7 @@ export class MysqlDriver implements Driver {
             /*
              * MariaDB implements this as a LONGTEXT rather, as the JSON data type contradicts the SQL standard,
              * and MariaDB's benchmarks indicate that performance is at least equivalent.
+             *
              * @see https://mariadb.com/kb/en/json-data-type/
              */
             return "longtext";
