@@ -2,6 +2,7 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
+import {NotImplementedError} from "../../error/NotImplementedError";
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {Table} from "../../schema-builder/table/Table";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
@@ -251,7 +252,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Returns all available database names including system databases.
      */
     async getDatabases(): Promise<string[]> {
-        return Promise.resolve([]);
+        throw new NotImplementedError();
     }
 
     /**
@@ -259,7 +260,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * If database parameter specified, returns schemas of that database.
      */
     async getSchemas(database?: string): Promise<string[]> {
-        return Promise.resolve([]);
+        throw new NotImplementedError();
     }
 
     /**
