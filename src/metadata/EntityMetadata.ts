@@ -746,6 +746,16 @@ export class EntityMetadata {
         if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
             return false;
 
+        // Optimized version for the common case
+        if (
+          typeof firstId.id === "string" &&
+          typeof secondId.id === "string" &&
+          Object.keys(firstId).length === 1 &&
+          Object.keys(secondId).length === 1
+        ) {
+            return firstId.id === secondId.id;
+        }
+
         return OrmUtils.deepCompare(firstId, secondId);
     }
 
