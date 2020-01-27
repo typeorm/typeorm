@@ -2,7 +2,6 @@ import {Subject} from "../Subject";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Builds operations needs to be executed for many-to-many relations of the given subjects.
@@ -150,7 +149,7 @@ export class ManyToManySubjectBuilder {
             // try to find related entity in the database
             // by example: find post's category in the database post's categories
             const relatedEntityExistInDatabase = databaseRelatedEntityIds.find(databaseRelatedEntityRelationId => {
-                return EntityMetadata.compareIds(databaseRelatedEntityRelationId, relatedEntityRelationIdMap);
+                return OrmUtils.compareIds(databaseRelatedEntityRelationId, relatedEntityRelationIdMap);
             });
 
             // if entity is found then don't do anything - it means binding in junction table already exist, we don't need to add anything
@@ -207,7 +206,7 @@ export class ManyToManySubjectBuilder {
         // now from all entities in the persisted entity find only those which aren't found in the db
         const removedJunctionEntityIds = databaseRelatedEntityIds.filter(existRelationId => {
             return !changedInverseEntityRelationIds.find(changedRelationId => {
-                return EntityMetadata.compareIds(changedRelationId, existRelationId);
+                return OrmUtils.compareIds(changedRelationId, existRelationId);
             });
         });
 
