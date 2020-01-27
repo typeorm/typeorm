@@ -7,7 +7,7 @@ import { Connection } from "../../../src/connection/Connection";
 import { EntitySchema } from "../../../src";
 import { Post, PostSchema } from "./entity/Post";
 
-describe.only("github issues > #4147 `SQLITE_ERROR: near \"-\": syntax error` when use sqlite, simple-enum", () => {
+describe("github issues > #4147 `SQLITE_ERROR: near \"-\": syntax error` when use sqlite, simple-enum", () => {
     let connections: Connection[];
     before(
         async () =>
