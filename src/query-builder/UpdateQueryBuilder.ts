@@ -1,28 +1,28 @@
-import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
-import {SapDriver} from "../driver/sap/SapDriver";
-import {QueryBuilder} from "./QueryBuilder";
-import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Connection} from "../connection/Connection";
-import {QueryRunner} from "../query-runner/QueryRunner";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {WhereExpression} from "./WhereExpression";
-import {Brackets} from "./Brackets";
-import {EntityMetadata} from "../metadata/EntityMetadata";
-import {UpdateResult} from "./result/UpdateResult";
-import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
-import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
-import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {BroadcasterResult} from "../subscriber/BroadcasterResult";
-import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
-import {OrderByCondition} from "../find-options/OrderByCondition";
-import {LimitOnUpdateNotSupportedError} from "../error/LimitOnUpdateNotSupportedError";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
-import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
-import {QueryDeepPartialEntity} from "./QueryPartialEntity";
-import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { CockroachDriver } from "../driver/cockroachdb/CockroachDriver";
+import { SapDriver } from "../driver/sap/SapDriver";
+import { QueryBuilder } from "./QueryBuilder";
+import { ObjectLiteral } from "../common/ObjectLiteral";
+import { Connection } from "../connection/Connection";
+import { QueryRunner } from "../query-runner/QueryRunner";
+import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver";
+import { PostgresDriver } from "../driver/postgres/PostgresDriver";
+import { WhereExpression } from "./WhereExpression";
+import { Brackets } from "./Brackets";
+import { EntityMetadata } from "../metadata/EntityMetadata";
+import { UpdateResult } from "./result/UpdateResult";
+import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError";
+import { ReturningResultsEntityUpdator } from "./ReturningResultsEntityUpdator";
+import { SqljsDriver } from "../driver/sqljs/SqljsDriver";
+import { MysqlDriver } from "../driver/mysql/MysqlDriver";
+import { BroadcasterResult } from "../subscriber/BroadcasterResult";
+import { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver";
+import { OrderByCondition } from "../find-options/OrderByCondition";
+import { LimitOnUpdateNotSupportedError } from "../error/LimitOnUpdateNotSupportedError";
+import { OracleDriver } from "../driver/oracle/OracleDriver";
+import { UpdateValuesMissingError } from "../error/UpdateValuesMissingError";
+import { EntityColumnNotFound } from "../error/EntityColumnNotFound";
+import { QueryDeepPartialEntity } from "./QueryPartialEntity";
+import { AuroraDataApiDriver } from "../driver/aurora-data-api/AuroraDataApiDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -33,7 +33,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOrQueryBuilder: Connection|QueryBuilder<any>, queryRunner?: QueryRunner) {
+    constructor(connectionOrQueryBuilder: Connection | QueryBuilder<any>, queryRunner?: QueryRunner) {
         super(connectionOrQueryBuilder as any, queryRunner);
         this.expressionMap.aliasNamePrefixingEnabled = false;
     }
@@ -70,7 +70,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             // call before updation methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
                 const broadcastResult = new BroadcasterResult();
-                queryRunner.broadcaster.broadcastBeforeUpdateEvent(broadcastResult, this.expressionMap.mainAlias!.metadata);
+                queryRunner.broadcaster.broadcastBeforeUpdateEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, this.expressionMap.valuesSet);
                 if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
             }
 
@@ -165,7 +165,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
-    where(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
+    where(where: string | ((qb: this) => string) | Brackets | ObjectLiteral | ObjectLiteral[], parameters?: ObjectLiteral): this {
         this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
         const condition = this.computeWhereParameter(where);
         if (condition)
@@ -179,7 +179,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(where: string|((qb: this) => string)|Brackets, parameters?: ObjectLiteral): this {
+    andWhere(where: string | ((qb: this) => string) | Brackets, parameters?: ObjectLiteral): this {
         this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
         if (parameters) this.setParameters(parameters);
         return this;
@@ -189,7 +189,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    orWhere(where: string|((qb: this) => string)|Brackets, parameters?: ObjectLiteral): this {
+    orWhere(where: string | ((qb: this) => string) | Brackets, parameters?: ObjectLiteral): this {
         this.expressionMap.wheres.push({ type: "or", condition: this.computeWhereParameter(where) });
         if (parameters) this.setParameters(parameters);
         return this;
@@ -198,21 +198,21 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Adds new AND WHERE with conditions for the given ids.
      */
-    whereInIds(ids: any|any[]): this {
+    whereInIds(ids: any | any[]): this {
         return this.where(this.createWhereIdsExpression(ids));
     }
 
     /**
      * Adds new AND WHERE with conditions for the given ids.
      */
-    andWhereInIds(ids: any|any[]): this {
+    andWhereInIds(ids: any | any[]): this {
         return this.andWhere(this.createWhereIdsExpression(ids));
     }
 
     /**
      * Adds new OR WHERE with conditions for the given ids.
      */
-    orWhereInIds(ids: any|any[]): this {
+    orWhereInIds(ids: any | any[]): this {
         return this.orWhere(this.createWhereIdsExpression(ids));
     }
     /**
@@ -230,12 +230,12 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Optional returning/output clause.
      */
-    output(output: string|string[]): this;
+    output(output: string | string[]): this;
 
     /**
      * Optional returning/output clause.
      */
-    output(output: string|string[]): this {
+    output(output: string | string[]): this {
         return this.returning(output);
     }
 
@@ -254,12 +254,12 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Optional returning/output clause.
      */
-    returning(returning: string|string[]): this;
+    returning(returning: string | string[]): this;
 
     /**
      * Optional returning/output clause.
      */
-    returning(returning: string|string[]): this {
+    returning(returning: string | string[]): this {
 
         // not all databases support returning/output cause
         if (!this.connection.driver.isReturningSqlSupported())
@@ -283,7 +283,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    orderBy(sort: string, order?: "ASC"|"DESC", nulls?: "NULLS FIRST"|"NULLS LAST"): this;
+    orderBy(sort: string, order?: "ASC" | "DESC", nulls?: "NULLS FIRST" | "NULLS LAST"): this;
 
     /**
      * Sets ORDER BY condition in the query builder.
@@ -297,7 +297,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    orderBy(sort?: string|OrderByCondition, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
+    orderBy(sort?: string | OrderByCondition, order: "ASC" | "DESC" = "ASC", nulls?: "NULLS FIRST" | "NULLS LAST"): this {
         if (sort) {
             if (sort instanceof Object) {
                 this.expressionMap.orderBys = sort as OrderByCondition;
@@ -317,7 +317,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Adds ORDER BY condition in the query builder.
      */
-    addOrderBy(sort: string, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
+    addOrderBy(sort: string, order: "ASC" | "DESC" = "ASC", nulls?: "NULLS FIRST" | "NULLS LAST"): this {
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls };
         } else {
@@ -339,7 +339,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
      * Enabled by default.
      */
-    whereEntity(entity: Entity|Entity[]): this {
+    whereEntity(entity: Entity | Entity[]): this {
         if (!this.expressionMap.mainAlias!.hasMetadata)
             throw new Error(`.whereEntity method can only be used on queries which update real entity table.`);
 
@@ -382,11 +382,11 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = [];
         const newParameters: ObjectLiteral = {};
-        let parametersCount =   this.connection.driver instanceof MysqlDriver ||
-                                this.connection.driver instanceof AuroraDataApiDriver ||
-                                this.connection.driver instanceof OracleDriver ||
-                                this.connection.driver instanceof AbstractSqliteDriver ||
-                                this.connection.driver instanceof SapDriver
+        let parametersCount = this.connection.driver instanceof MysqlDriver ||
+            this.connection.driver instanceof AuroraDataApiDriver ||
+            this.connection.driver instanceof OracleDriver ||
+            this.connection.driver instanceof AbstractSqliteDriver ||
+            this.connection.driver instanceof SapDriver
             ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
         if (metadata) {
             EntityMetadata.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
@@ -420,8 +420,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         if (this.connection.driver instanceof SqlServerDriver) {
                             value = this.connection.driver.parametrizeValue(column, value);
 
-                        // } else if (value instanceof Array) {
-                        //     value = new ArrayParameter(value);
+                            // } else if (value instanceof Array) {
+                            //     value = new ArrayParameter(value);
                         }
 
                         if (this.connection.driver instanceof MysqlDriver ||
@@ -445,9 +445,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                             }
                         } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             if (column.srid != null) {
-                              expression = `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)}), ${column.srid})::${column.type}`;
+                                expression = `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)}), ${column.srid})::${column.type}`;
                             } else {
-                              expression = `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)})::${column.type}`;
+                                expression = `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)})::${column.type}`;
                             }
                         } else {
                             expression = this.connection.driver.createParameter(paramName, parametersCount);
@@ -531,14 +531,14 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const orderBys = this.expressionMap.orderBys;
         if (Object.keys(orderBys).length > 0)
             return " ORDER BY " + Object.keys(orderBys)
-                    .map(columnName => {
-                        if (typeof orderBys[columnName] === "string") {
-                            return this.replacePropertyNames(columnName) + " " + orderBys[columnName];
-                        } else {
-                            return this.replacePropertyNames(columnName) + " " + (orderBys[columnName] as any).order + " " + (orderBys[columnName] as any).nulls;
-                        }
-                    })
-                    .join(", ");
+                .map(columnName => {
+                    if (typeof orderBys[columnName] === "string") {
+                        return this.replacePropertyNames(columnName) + " " + orderBys[columnName];
+                    } else {
+                        return this.replacePropertyNames(columnName) + " " + (orderBys[columnName] as any).order + " " + (orderBys[columnName] as any).nulls;
+                    }
+                })
+                .join(", ");
 
         return "";
     }
@@ -547,7 +547,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Creates "LIMIT" parts of SQL query.
      */
     protected createLimitExpression(): string {
-        let limit: number|undefined = this.expressionMap.limit;
+        let limit: number | undefined = this.expressionMap.limit;
 
         if (limit) {
             if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
