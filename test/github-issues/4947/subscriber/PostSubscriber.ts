@@ -9,13 +9,13 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
 
     beforeUpdate(event: UpdateEvent<Post>) {
         if (event.entity) {
-            event.entity.title = "set in subscriber when updated";
+            event.entity["title"] = "set in subscriber when updated";
         }
     }
 
     beforeInsert(event: InsertEvent<Post>) {
         if (event.entity) {
-            event.entity.title = "set in subscriber when created";
+            event.entity["title"]  = "set in subscriber when created";
         }
     }
 }

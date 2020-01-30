@@ -4,7 +4,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 
-describe.only("github issues > #4947 beforeUpdate subscriber entity argument is undefined", () => {
+describe("github issues > #4947 beforeUpdate subscriber entity argument is undefined", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -26,9 +26,7 @@ describe.only("github issues > #4947 beforeUpdate subscriber entity argument is 
         expect(createdPost!.title).to.equal("set in subscriber when created");
 
         // change the entity
-        createdPost!.colToUpdate = 1;
-
-        await repo.update(createdPost!.id, createdPost!);
+        await repo.update(createdPost!.id, {colToUpdate: 1});
 
         const updatedPost = await repo.findOne();
 
