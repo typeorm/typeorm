@@ -8,6 +8,7 @@ import {LimitOnUpdateNotSupportedError} from "../../../../src/error/LimitOnUpdat
 import {Not, IsNull} from "../../../../src";
 import {MissingDeleteDateColumnError} from "../../../../src/error/MissingDeleteDateColumnError";
 import {UserWithoutDeleteDateColumn} from "./entity/UserWithoutDeleteDateColumn";
+import {Photo} from "./entity/Photo";
 
 describe("query builder > soft-delete", () => {
 
@@ -46,6 +47,78 @@ describe("query builder > soft-delete", () => {
         const loadedUser2 = await connection.getRepository(User).findOne({ name: "Alex Messer" });
         expect(loadedUser2).to.exist;
         expect(loadedUser2!.deletedAt).to.be.equals(null);
+
+    })));
+
+    it("should soft-delete and restore properties inside embeds as well", () => Promise.all(connections.map(async connection => {
+
+        // save few photos
+        await connection.manager.save(Photo, {
+            url: "1.jpg",
+            counters: {
+                likes: 2,
+                favorites: 1,
+                comments: 1,
+            }
+        });
+        await connection.manager.save(Photo, {
+            url: "2.jpg",
+            counters: {
+                likes: 0,
+                favorites: 1,
+                comments: 1,
+            }
+        });
+
+        // soft-delete photo now
+        await connection.getRepository(Photo)
+            .createQueryBuilder("photo")
+            .softDelete()
+            .where({
+                counters: {
+                    likes: 2
+                }
+            })
+            .execute();
+        
+        const loadedPhoto1 = await connection.getRepository(Photo).findOne({ url: "1.jpg" });
+        expect(loadedPhoto1).to.be.undefined;
+
+        const loadedPhoto2 = await connection.getRepository(Photo).findOne({ url: "2.jpg" });
+        loadedPhoto2!.should.be.eql({
+            id: 2,
+            url: "2.jpg",
+            counters: {
+                likes: 0,
+                favorites: 1,
+                comments: 1,
+                deletedAt: null
+            }
+        });
+
+        // restore photo now
+        await connection.getRepository(Photo)
+        .createQueryBuilder("photo")
+        .restore()
+        .where({
+            counters: {
+                likes: 2
+            }
+        })
+        .execute();
+
+        const restoredPhoto2 = await connection.getRepository(Photo).findOne({ url: "1.jpg" });
+        restoredPhoto2!.should.be.eql({
+            id: 1,
+            url: "1.jpg",
+            counters: {
+                likes: 2,
+                favorites: 1,
+                comments: 1,
+                deletedAt: null
+            }
+        });
+
 
     })));
 
