@@ -567,7 +567,7 @@ export class EntityManager {
         if (entity instanceof Array && entity.length === 0)
             return Promise.resolve(entity);
 
-        // execute soft-remove operation
+        // execute recover operation
         return new EntityPersistExecutor(this.connection, this.queryRunner, "recover", target, entity, options)
             .execute()
             .then(() => entity);
