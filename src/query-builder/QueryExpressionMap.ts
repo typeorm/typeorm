@@ -153,6 +153,12 @@ export class QueryExpressionMap {
     lockVersion?: number|Date;
 
     /**
+     * Indicates if soft-deleted rows should be included in entity result.
+     * By default the soft-deleted rows are not included.
+     */
+    withDeleted: boolean = false;
+
+    /**
      * Parameters used to be escaped in final query.
      */
     parameters: ObjectLiteral = {};
@@ -399,6 +405,7 @@ export class QueryExpressionMap {
         map.take = this.take;
         map.lockMode = this.lockMode;
         map.lockVersion = this.lockVersion;
+        map.withDeleted = this.withDeleted;
         map.parameters = Object.assign({}, this.parameters);
         map.disableEscaping = this.disableEscaping;
         map.enableRelationIdValues = this.enableRelationIdValues;
