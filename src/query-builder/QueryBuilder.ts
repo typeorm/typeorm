@@ -597,10 +597,17 @@ export abstract class QueryBuilder<Entity> {
      * Creates "WHERE" expression.
      */
     protected createWhereExpression() {
-        const conditions = this.createWhereExpressionString();
+        let conditions = this.createWhereExpressionString();
 
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata;
+            // Adds the global condition of "non-deleted" for the entity with delete date columns in select query.
+            if (this.expressionMap.queryType === "select" && !this.expressionMap.withDeleted && metadata.deleteDateColumn) {
+                const column = metadata.deleteDateColumn.databaseName;
+                const condition = `${this.replacePropertyNames(column)} IS NULL`;
+                conditions = `${ conditions.length ? "(" + conditions + ") AND" : "" } ${condition}`;
+            }
+
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
                 const column = this.expressionMap.aliasNamePrefixingEnabled
                     ? this.expressionMap.mainAlias!.name + "." + metadata.discriminatorColumn.databaseName
