@@ -33,7 +33,8 @@ export class FindOptionsUtils {
                     possibleOptions.lock instanceof Object ||
                     possibleOptions.loadRelationIds instanceof Object ||
                     typeof possibleOptions.loadRelationIds === "boolean" ||
-                    typeof possibleOptions.loadEagerRelations === "boolean"
+                    typeof possibleOptions.loadEagerRelations === "boolean" ||
+                    typeof possibleOptions.withDeleted === "boolean"
                 );
     }
 
@@ -178,6 +179,10 @@ export class FindOptionsUtils {
             } else if (options.lock.mode === "pessimistic_read" || options.lock.mode === "pessimistic_write" || options.lock.mode === "dirty_read") {
                 qb.setLock(options.lock.mode);
             }
+        }
+        
+        if (options.withDeleted) {
+            qb.withDeleted();
         }
 
         if (options.loadRelationIds === true) {
