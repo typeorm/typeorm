@@ -3,7 +3,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../../src/connection/Connection";
 import {PostWithRelation} from "./entity/PostWithRelation";
 
-// This test is neccessary because finding with eager relation will run the different 
+// This test is neccessary because finding with eager relation will be run in the different way
 describe(`query builder > find with the global condition of "non-deleted" and eager relation`, () => {
 
     let connections: Connection[];
