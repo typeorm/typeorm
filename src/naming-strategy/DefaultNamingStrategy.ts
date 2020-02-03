@@ -31,7 +31,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const name = customName || propertyName;
         
         if (embeddedPrefixes.length)
-            return camelCase(embeddedPrefixes.join("_")) + titleCase(name));
+            return camelCase(embeddedPrefixes.join("_")) + titleCase(name);
 
         return name;
     }
