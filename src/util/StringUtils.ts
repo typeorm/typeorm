@@ -14,7 +14,7 @@ export function camelCase(str: string, firstCapital: boolean = false): string {
 }
 
 /**
- * Converts string into snake-case.
+ * Converts string into snake_case.
  *
  * @see https://regex101.com/r/QeSm2I/1
  */
@@ -23,7 +23,7 @@ export function snakeCase(str: string) {
 }
 
 /**
- * Converts string into title-case.
+ * Converts string into Title Case.
  *
  * @see http://stackoverflow.com/questions/196972/convert-string-to-title-case-with-javascript
  */
