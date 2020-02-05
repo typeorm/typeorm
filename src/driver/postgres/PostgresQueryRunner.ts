@@ -1841,7 +1841,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Builds create ENUM type sql.
      */
-    protected createEnumTypeSql(table: Table, column: TableColumn, enumName: string): Query {
+    protected createEnumTypeSql(table: Table, column: TableColumn, enumName?: string): Query {
+        if (!enumName)
+            enumName = this.buildEnumName(table, column);
         const enumValues = column.enum!.map(value => `'${value.replace("'", "''")}'`).join(", ");
         return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`);
     }
@@ -1849,7 +1851,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Builds create ENUM type sql.
      */
-    protected dropEnumTypeSql(table: Table, column: TableColumn, enumName: string): Query {
+    protected dropEnumTypeSql(table: Table, column: TableColumn, enumName?: string): Query {
+        if (!enumName)
+            enumName = this.buildEnumName(table, column);
         return new Query(`DROP TYPE ${enumName}`);
     }
 
