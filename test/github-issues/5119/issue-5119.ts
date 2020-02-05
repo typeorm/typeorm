@@ -8,7 +8,7 @@ import {
 import { Connection, createConnection } from "../../../src";
 import { fail } from "assert";
 
-describe("migration with foreign key that changes target", () => {
+describe("github issues > #5119 migration with foreign key that changes target", () => {
     let connections: Connection[];
     before(
         async () =>
