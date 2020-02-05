@@ -321,8 +321,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const hasEnum = await this.hasEnumType(table, column);
                 // TODO: Should also check if values of existing type matches expected ones
                 if (!hasEnum) {
-                    upQueries.push(this.createEnumTypeSql(table, column));
-                    downQueries.push(this.dropEnumTypeSql(table, column));
+                    const enumName = this.buildEnumName(table, column);
+                    upQueries.push(this.createEnumTypeSql(table, column, enumName));
+                    downQueries.push(this.dropEnumTypeSql(table, column, enumName));
                 }
                 return Promise.resolve();
             }));
@@ -502,8 +503,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (column.type === "enum" || column.type === "simple-enum") {
             const hasEnum = await this.hasEnumType(table, column);
             if (!hasEnum) {
-                upQueries.push(this.createEnumTypeSql(table, column));
-                downQueries.push(this.dropEnumTypeSql(table, column));
+                const enumName = this.buildEnumName(table, column);
+                upQueries.push(this.createEnumTypeSql(table, column, enumName));
+                downQueries.push(this.dropEnumTypeSql(table, column, enumName));
             }
         }
 
@@ -724,8 +726,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 downQueries.push(new Query(`ALTER TYPE ${oldEnumName} RENAME TO  "${enumTypeBeforeColumnChange.enumTypeName}"`));
 
                 // create new ENUM
-                upQueries.push(this.createEnumTypeSql(table, newColumn));
-                downQueries.push(this.dropEnumTypeSql(table, oldColumn));
+                upQueries.push(this.createEnumTypeSql(table, newColumn, this.buildEnumName(table, newColumn)));
+                downQueries.push(this.dropEnumTypeSql(table, oldColumn, this.buildEnumName(table, oldColumn)));
 
                 // if column have default value, we must drop it to avoid issues with type casting
                 if (newColumn.default !== null && newColumn.default !== undefined) {
