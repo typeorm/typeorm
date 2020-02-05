@@ -355,7 +355,7 @@ export class ColumnMetadata {
             this.default = options.args.options.default;
         if (options.args.options.onUpdate)
             this.onUpdate = options.args.options.onUpdate;
-        if (options.args.options.scale !== null && options.args.options.scale !== undefined)
+        if (options.args.options.scale !== undefined)
             this.scale = options.args.options.scale;
         if (options.args.options.zerofill) {
             this.zerofill = options.args.options.zerofill;
@@ -363,7 +363,7 @@ export class ColumnMetadata {
         }
         if (options.args.options.unsigned)
             this.unsigned = options.args.options.unsigned;
-        if (options.args.options.precision !== null && options.args.options.precision !== undefined)
+        if (options.args.options.precision !== undefined)
             this.precision = options.args.options.precision;
         if (options.args.options.enum) {
             if (options.args.options.enum instanceof Object && !Array.isArray(options.args.options.enum)) {
