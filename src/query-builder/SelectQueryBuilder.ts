@@ -806,14 +806,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(where: string|Brackets|((qb: this) => string)|FindOptionsWhere<Entity>, parameters?: ObjectLiteral): this {
+    andWhere(where: string|Brackets|((qb: this) => string), parameters?: ObjectLiteral): this {
 
-        if (where && typeof where === "object" && !(where instanceof Brackets)) {
-            this.findOptions.where = where; // todo: implement "AND"
-
-        } else {
-            this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
-        }
+        this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
 
         if (parameters)
             this.setParameters(parameters);
@@ -827,12 +822,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     orWhere(where: Brackets|string|((qb: this) => string)|FindOptionsWhere<Entity>, parameters?: ObjectLiteral): this {
 
-        if (where && typeof where === "object" && !(where instanceof Brackets)) {
-            this.findOptions.where = where; // todo: implement "OR"
-
-        } else {
-            this.expressionMap.wheres.push({ type: "or", condition: this.computeWhereParameter(where) });
-        }
+        this.expressionMap.wheres.push({ type: "or", condition: this.computeWhereParameter(where) });
 
         if (parameters) this.setParameters(parameters);
         return this;
