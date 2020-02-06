@@ -144,6 +144,12 @@ export class Repository<Entity extends ObjectLiteral> {
     save<T extends DeepPartial<Entity>>(entity: T, options?: SaveOptions): Promise<T & Entity>;
 
     /**
+     * Saves one or many given entities in the database.
+     * If entity or entities do not exist in the database then inserts, otherwise updates.
+     */
+    save<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]>;
+
+    /**
      * Saves one or many given entities.
      */
     save<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
@@ -159,6 +165,11 @@ export class Repository<Entity extends ObjectLiteral> {
      * Removes a given entity from the database.
      */
     remove(entity: Entity, options?: RemoveOptions): Promise<Entity>;
+
+    /**
+     * Removes one or many given entities from the database.
+     */
+    remove(entityOrEntities: Entity|Entity[], options?: RemoveOptions): Promise<Entity|Entity[]>;
 
     /**
      * Removes one or many given entities.
@@ -210,6 +221,11 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Counts entities that match given find options or conditions.
      */
+    count(optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<number>;
+
+    /**
+     * Counts entities that match given find options or conditions.
+     */
     count(optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<number> {
         return this.manager.count(this.metadata.target as any, optionsOrConditions as any);
     }
@@ -223,6 +239,11 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entities that match given conditions.
      */
     find(conditions?: FindConditions<Entity>): Promise<Entity[]>;
+
+    /**
+     * Finds entities that match given options or conditions.
+     */
+    find(optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities that match given find options or conditions.
@@ -250,6 +271,13 @@ export class Repository<Entity extends ObjectLiteral> {
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
+    findAndCount(optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<[ Entity[], number ]>;
+
+    /**
+     * Finds entities that match given find options or conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (from and take options).
+     */
     findAndCount(optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<[ Entity[], number ]> {
         return this.manager.findAndCount(this.metadata.target as any, optionsOrConditions as any);
     }
@@ -265,6 +293,12 @@ export class Repository<Entity extends ObjectLiteral> {
      * Optionally conditions can be applied.
      */
     findByIds(ids: any[], conditions?: FindConditions<Entity>): Promise<Entity[]>;
+
+    /**
+     * Finds entities by ids.
+     * Optionally find options can be applied.
+     */
+    findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities by ids.
@@ -292,6 +326,11 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given conditions.
      */
+    findOne(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|FindConditions<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+
+    /**
+     * Finds first entity that matches given conditions.
+     */
     findOne(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|FindConditions<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
         return this.manager.findOne(this.metadata.target as any, optionsOrConditions as any, maybeOptions);
     }
@@ -310,6 +349,11 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds first entity that matches given conditions.
      */
     findOneOrFail(conditions?: FindConditions<Entity>, options?: FindOneOptions<Entity>): Promise<Entity>;
+
+    /**
+     * Finds first entity that matches given conditions.
+     */
+    findOneOrFail(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|FindConditions<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity>;
 
     /**
      * Finds first entity that matches given conditions.
