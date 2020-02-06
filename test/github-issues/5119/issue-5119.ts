@@ -22,17 +22,8 @@ describe("github issues > #5119 migration with foreign key that changes target",
     after(() => closeTestingConnections([...connections]));
 
     it("should generate a drop and create step", async () => {
-        // v2Connections = await createTestingConnections({
-        //     entities: [__dirname + "/entity/v2/*{.js,.ts}"],
-        //     enabledDrivers: ["postgres"],
-        //     logging: true,
-        //     dropSchema: false,
-        //     schemaCreate: false
-        // });
-        console.log(`connections length: ${connections.length}`);
         return Promise.all(
             connections.map(async function(_connection) {
-                console.log("creating options");
                 const options = setupSingleTestingConnection(
                     _connection.options.type,
                     {
@@ -43,43 +34,33 @@ describe("github issues > #5119 migration with foreign key that changes target",
                         schemaCreate: false
                     }
                 );
-                console.log("created options");
                 if (!options) {
                     fail();
-                    return Promise.resolve();
+                    return;
                 }
-                console.log("creating connection");
                 const connection = await createConnection(options);
-                console.log("created connection");
                 try {
-                    console.log("in test");
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
                         .log();
-                    console.log("UP:");
-                    console.log(sqlInMemory.upQueries);
-                    console.log("DOWN:");
-                    console.log(sqlInMemory.downQueries);
 
+                    const upQueries = sqlInMemory.upQueries.map(
+                        query => query.query
+                    );
                     const downQueries = sqlInMemory.downQueries.map(
                         query => query.query
                     );
-                    const upQueries = sqlInMemory.downQueries.map(
-                        query => query.query
-                    );
-
-                    upQueries.should.equal([
-                        `CREATE TABLE "account" ("id" SERIAL NOT NULL, "userId" integer, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`,
-                        `ALTER TABLE "account" ADD CONSTRAINT "FK_60328bf27019ff5498c4b977421" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
-                        `TODO alter table to drop FK from post to user`,
-                        `TODO alter tale to create FK from post to account`
+                    upQueries.should.eql([
+                        'ALTER TABLE "post" DROP CONSTRAINT "FK_4490d00e1925ca046a1f52ddf04"',
+                        'CREATE TABLE "account" ("id" SERIAL NOT NULL, "userId" integer, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))',
+                        'ALTER TABLE "account" ADD CONSTRAINT "FK_60328bf27019ff5498c4b977421" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+                        'ALTER TABLE "post" ADD CONSTRAINT "FK_4490d00e1925ca046a1f52ddf04" FOREIGN KEY ("ownerId") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION'
                     ]);
-
-                    downQueries.should.equal([
-                        `DROP TABLE "account"`,
-                        `ALTER TABLE "account" DROP CONSTRAINT "FK_60328bf27019ff5498c4b977421"`,
-                        `TODO alter table to drop FK from post to account`,
-                        `TODO alter table to create FK from post to user`
+                    downQueries.should.eql([
+                        'ALTER TABLE "post" ADD CONSTRAINT "FK_4490d00e1925ca046a1f52ddf04" FOREIGN KEY ("ownerId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+                        'DROP TABLE "account"',
+                        'ALTER TABLE "account" DROP CONSTRAINT "FK_60328bf27019ff5498c4b977421"',
+                        'ALTER TABLE "post" DROP CONSTRAINT "FK_4490d00e1925ca046a1f52ddf04"'
                     ]);
                 } finally {
                     connection.close();
