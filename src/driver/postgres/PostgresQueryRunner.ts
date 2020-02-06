@@ -711,21 +711,24 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             if (
                 (newColumn.type === "enum" || newColumn.type === "simple-enum")
                 && (oldColumn.type === "enum" || oldColumn.type === "simple-enum")
-                && !OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!)
+                && (!OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!)
+                    || oldColumn.enumName !== newColumn.enumName)
             ) {
-                const enumName = this.buildEnumName(table, newColumn);
                 const arraySuffix = newColumn.isArray ? "[]" : "";
-                const oldEnumName = this.buildEnumName(table, newColumn, true, false, true);
-                const oldEnumNameWithoutSchema = this.buildEnumName(table, newColumn, false, false, true);
-                const enumTypeBeforeColumnChange = await this.getEnumTypeName(table, oldColumn);
+                const {enumTypeSchema: prevEnumSchema, enumTypeName: prevEnumName } = await this.getEnumTypeName(table, oldColumn);
+                const prevEnumNameWithOldSuffix = this.buildEnumName(table, oldColumn, false, false, true);
+                const prevEnumNameWithOldSuffixAndSchema = this.buildEnumName(table, oldColumn, true, false, true);
+                const newEnumName = this.buildEnumName(table, newColumn);
+                const newEnumNameWithOldSuffix = this.buildEnumName(table, newColumn, false, false);
+                const newEnumNameWithOldSuffixAndSchema = this.buildEnumName(table, newColumn, true, false, true);
 
                 // rename old ENUM
-                upQueries.push(new Query(`ALTER TYPE "${enumTypeBeforeColumnChange.enumTypeSchema}"."${enumTypeBeforeColumnChange.enumTypeName}" RENAME TO ${oldEnumNameWithoutSchema}`));
-                downQueries.push(new Query(`ALTER TYPE ${oldEnumName} RENAME TO  "${enumTypeBeforeColumnChange.enumTypeName}"`));
+                upQueries.push(new Query(`ALTER TYPE "${prevEnumSchema}"."${prevEnumName}" RENAME TO ${prevEnumNameWithOldSuffix}`));
+                downQueries.push(new Query(`ALTER TYPE ${newEnumName} RENAME TO ${newEnumNameWithOldSuffix}`));
 
                 // create new ENUM
                 upQueries.push(this.createEnumTypeSql(table, newColumn));
-                downQueries.push(this.dropEnumTypeSql(table, oldColumn));
+                downQueries.push(this.createEnumTypeSql(table, oldColumn));
 
                 // if column have default value, we must drop it to avoid issues with type casting
                 if (newColumn.default !== null && newColumn.default !== undefined) {
@@ -734,8 +737,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
 
                 // build column types
-                const upType = `${enumName}${arraySuffix} USING "${newColumn.name}"::"text"::${enumName}${arraySuffix}`;
-                const downType = `${oldEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumName}${arraySuffix}`;
+                const upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`;
+                const downType = `${prevEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${prevEnumName}${arraySuffix}`;
 
                 // update column to use new type
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`));
@@ -748,8 +751,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
 
                 // remove old ENUM
-                upQueries.push(this.dropEnumTypeSql(table, newColumn, oldEnumName));
-                downQueries.push(this.createEnumTypeSql(table, oldColumn, oldEnumName));
+                upQueries.push(this.dropEnumTypeSql(table, newColumn, prevEnumNameWithOldSuffixAndSchema));
+                downQueries.push(this.createEnumTypeSql(table, oldColumn, newEnumNameWithOldSuffixAndSchema));
             }
 
             if (oldColumn.isNullable !== newColumn.isNullable) {
@@ -2001,7 +2004,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
         const schema = table.name.indexOf(".") === -1 ? this.driver.options.schema : table.name.split(".")[0];
         const tableName = table.name.indexOf(".") === -1 ? table.name : table.name.split(".")[1];
-        let enumName = schema && withSchema ? `${schema}.${tableName}_${columnName.toLowerCase()}_enum` : `${tableName}_${columnName.toLowerCase()}_enum`;
+        const enumNameWithoutSchema = `${tableName}_${columnName.toLowerCase()}_enum`;
+        let enumName = schema && withSchema ? `${schema}.${enumNameWithoutSchema}` : enumNameWithoutSchema;
         if (toOld)
             enumName = enumName + "_old";
         return enumName.split(".").map(i => {
