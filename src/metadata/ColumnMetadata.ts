@@ -407,7 +407,7 @@ export class ColumnMetadata {
                 this.type = options.connection.driver.mappedDataTypes.createDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.createDateDefault;
-            if ((this.precision === null || this.precision === undefined) && options.connection.driver.mappedDataTypes.createDatePrecision)
+            if (this.precision === undefined && options.connection.driver.mappedDataTypes.createDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.createDatePrecision;
         }
         if (this.isUpdateDate) {
@@ -415,7 +415,7 @@ export class ColumnMetadata {
                 this.type = options.connection.driver.mappedDataTypes.updateDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
-            if ((this.precision === null || this.precision === undefined) && options.connection.driver.mappedDataTypes.updateDatePrecision)
+            if (this.precision === undefined && options.connection.driver.mappedDataTypes.updateDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
         }
         if (this.isVersion)
