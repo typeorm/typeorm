@@ -418,7 +418,7 @@ export class Photo {
 Now `id`, `name`, `description`, `filename`, `views` and `isPublished` columns will be added to the `photo` table.
 Column types in the database are inferred from the property types you used, e.g.
 `number` will be converted into `integer`, `string` into `varchar`, `boolean` into `bool`, etc.
-But you can use any column type your database supports by implicitly specifying a column type into the `@Column` decorator.
+But you can use any column type your database supports by explicitly specifying a column type into the `@Column` decorator.
 
 We generated a database table with columns, but there is one thing left.
 Each database table must have a column with a primary key.
