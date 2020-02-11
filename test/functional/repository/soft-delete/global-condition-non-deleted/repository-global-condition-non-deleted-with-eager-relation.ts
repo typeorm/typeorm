@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import {expect} from "chai";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Connection} from "../../../../../src/connection/Connection";
 import {PostWithRelation} from "./entity/PostWithRelation";
@@ -32,13 +33,14 @@ describe(`repository > the global condtion of "non-deleted" with eager relation`
             .getRepository(PostWithRelation)
             .find();
         loadedPosts!.length.should.be.equal(2);
-        loadedPosts![0].title.should.be.equals("title#2");
-        loadedPosts![1].title.should.be.equals("title#3");
-
-        const loadedPost = await connection
-            .getRepository(PostWithRelation)
-            .findOne();
-        loadedPost!.title.should.be.equals("title#2");
+        const loadedPost2 = loadedPosts.find(p => p.id === 2);
+        expect(loadedPost2).to.exist;
+        expect(loadedPost2!.deletedAt).to.equals(null);
+        expect(loadedPost2!.title).to.equals("title#2");
+        const loadedPost3 = loadedPosts.find(p => p.id === 3);
+        expect(loadedPost3).to.exist;
+        expect(loadedPost3!.deletedAt).to.equals(null);
+        expect(loadedPost3!.title).to.equals("title#3");
 
     })));
 
@@ -55,6 +57,8 @@ describe(`repository > the global condtion of "non-deleted" with eager relation`
         await connection.manager.save(post2);
         await connection.manager.save(post3);
 
+        await connection.manager.softRemove(post1);
+
         const loadedPosts = await connection
             .getRepository(PostWithRelation)
             .find({
@@ -62,16 +66,26 @@ describe(`repository > the global condtion of "non-deleted" with eager relation`
             });
 
         loadedPosts!.length.should.be.equal(3);
-        loadedPosts![0].title.should.be.equals("title#1");
-        loadedPosts![1].title.should.be.equals("title#2");
-        loadedPosts![2].title.should.be.equals("title#3");
+        const loadedPost1 = loadedPosts.find(p => p.id === 1);
+        expect(loadedPost1).to.exist;
+        expect(loadedPost1!.deletedAt).to.be.instanceof(Date);
+        expect(loadedPost1!.title).to.equals("title#1");
+        const loadedPost2 = loadedPosts.find(p => p.id === 2);
+        expect(loadedPost2).to.exist;
+        expect(loadedPost2!.deletedAt).to.equals(null);
+        expect(loadedPost2!.title).to.equals("title#2");
+        const loadedPost3 = loadedPosts.find(p => p.id === 3);
+        expect(loadedPost3).to.exist;
+        expect(loadedPost3!.deletedAt).to.equals(null);
+        expect(loadedPost3!.title).to.equals("title#3");
 
         const loadedPost = await connection
             .getRepository(PostWithRelation)
-            .findOne({
+            .findOne(1, {
                 withDeleted: true,
             });
-        loadedPost!.title.should.be.equals("title#1");
+        expect(loadedPost).to.exist;
+        expect(loadedPost!.title).to.equals("title#1");
 
     })));
 });
