@@ -234,6 +234,17 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     }
 
     /**
+     * Indicates if all columns of the entity must be updated.
+     * Only works if updateEntity is enabled.
+     *
+     * Disabled by default.
+     */
+    updateAllColumns(enabled: boolean): this {
+        this.expressionMap.updateAllColumns = enabled;
+        return this;
+    }
+
+    /**
      * Adds additional ON CONFLICT statement supported in postgres and cockroach.
      */
     onConflict(statement: string): this {

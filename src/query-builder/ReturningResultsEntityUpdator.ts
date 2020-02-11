@@ -156,6 +156,9 @@ export class ReturningResultsEntityUpdator {
         // for other databases we don't need to return id column since its returned by a driver already
         const needToCheckGenerated = this.queryRunner.connection.driver.isReturningSqlSupported();
 
+        // Do not filter if user wants all columns returned
+        if (this.expressionMap.updateAllColumns === true) return this.expressionMap.mainAlias!.metadata.columns;
+
         // filter out the columns of which we need database inserted values to update our entity
         return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
             return  column.default !== undefined ||
@@ -170,6 +173,9 @@ export class ReturningResultsEntityUpdator {
      * Columns we need to be returned from the database when we update entity.
      */
     getUpdationReturningColumns(): ColumnMetadata[] {
+        // Do not filter if user wants all columns returned
+        if (this.expressionMap.updateAllColumns === true) return this.expressionMap.mainAlias!.metadata.columns;
+
         return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
             return column.isUpdateDate || column.isVersion;
         });

@@ -250,6 +250,14 @@ export class QueryExpressionMap {
     updateEntity: boolean = true;
 
     /**
+     * Indicates if all columns of the entity must be updated.
+     * Only works if updateEntity is enabled.
+     *
+     * Disabled by default.
+     */
+    updateAllColumns: boolean = false;
+
+    /**
      * Indicates if listeners and subscribers must be called before and after query execution.
      */
     callListeners: boolean = true;

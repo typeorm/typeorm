@@ -285,6 +285,7 @@ export class SubjectExecutor {
                         .into(subjects[0].metadata.target)
                         .values(bulkInsertMaps)
                         .updateEntity(this.options && this.options.reload === false ? false : true)
+                        .updateAllColumns(this.options && this.options.updateAllColumns === true ? true : false)
                         .callListeners(false)
                         .execute();
 
@@ -311,6 +312,7 @@ export class SubjectExecutor {
                             .into(subject.metadata.target)
                             .values(subject.insertedValueSet)
                             .updateEntity(this.options && this.options.reload === false ? false : true)
+                            .updateAllColumns(this.options && this.options.updateAllColumns === true ? true : false)
                             .callListeners(false)
                             .execute()
                             .then(insertResult => {
@@ -385,6 +387,7 @@ export class SubjectExecutor {
                     .update(subject.metadata.target)
                     .set(updateMap)
                     .updateEntity(this.options && this.options.reload === false ? false : true)
+                    .updateAllColumns(this.options && this.options.updateAllColumns === true ? true : false)
                     .callListeners(false);
 
                 if (subject.entity) {

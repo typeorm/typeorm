@@ -368,6 +368,17 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         return this;
     }
 
+    /**
+     * Indicates if all columns of the entity must be updated.
+     * Only works if updateEntity is enabled.
+     *
+     * Disabled by default.
+     */
+    updateAllColumns(enabled: boolean): this {
+        this.expressionMap.updateAllColumns = enabled;
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

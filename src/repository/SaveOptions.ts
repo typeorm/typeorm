@@ -2,7 +2,6 @@
  * Special options passed to Repository#save, Repository#insert and Repository#update methods.
  */
 export interface SaveOptions {
-
     /**
      * Additional data to be passed with persist method.
      * This data can be used in subscribers then.
@@ -38,4 +37,9 @@ export interface SaveOptions {
      */
     reload?: boolean;
 
+    /**
+     * Indicates if all columns should be updated (Depends on reload to work).
+     * Disabled by default.
+     */
+    updateAllColumns?: boolean;
 }
