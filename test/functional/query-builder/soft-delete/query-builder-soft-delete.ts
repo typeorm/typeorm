@@ -33,7 +33,10 @@ describe("query builder > soft-delete", () => {
             .where("name = :name", { name: "Alex Messer" })
             .execute();
 
-        const loadedUser1 = await connection.getRepository(User).findOne({ name: "Alex Messer" }, { withDeleted: true });
+        const loadedUser1 = await connection.getRepository(User).findOne(
+            { name: "Alex Messer" },
+            { withDeleted: true }
+        );
         expect(loadedUser1).to.exist;
         expect(loadedUser1!.deletedAt).to.be.instanceof(Date);
 

@@ -31,6 +31,7 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
             .createQueryBuilder()
             .select("post")
             .from(Post, "post")
+            .orderBy("post.id")
             .getMany();
 
         loadedPosts!.length.should.be.equal(2);
@@ -41,6 +42,7 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
             .createQueryBuilder()
             .select("post")
             .from(Post, "post")
+            .orderBy("post.id")
             .getOne();
             loadedPost!.title.should.be.equals("title#2");
 
@@ -66,6 +68,7 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
             .select("post")
             .from(Post, "post")
             .withDeleted()
+            .orderBy("post.id")
             .getMany();
 
         loadedPosts!.length.should.be.equal(3);
@@ -78,6 +81,7 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
             .select("post")
             .from(Post, "post")
             .withDeleted()
+            .orderBy("post.id")
             .getOne();
             loadedPost!.title.should.be.equals("title#1");
 

@@ -33,6 +33,7 @@ describe(`query builder > find with the global condition of "non-deleted" and ea
                 .createQueryBuilder()
                 .select("post")
                 .from(PostWithRelation, "post")
+                .orderBy("post.id")
                 .getMany();
             loadedWithPosts!.length.should.be.equal(2);
             loadedWithPosts![0].title.should.be.equals("title#2");
@@ -42,6 +43,7 @@ describe(`query builder > find with the global condition of "non-deleted" and ea
                 .createQueryBuilder()
                 .select("post")
                 .from(PostWithRelation, "post")
+                .orderBy("post.id")
                 .getOne();
             loadedWithPost!.title.should.be.equals("title#2");
 
@@ -64,23 +66,25 @@ describe(`query builder > find with the global condition of "non-deleted" and ea
 
         await connection.manager.softRemove(post1);
 
-        const loadedWithoutScopePosts = await connection
+        const loadedPosts = await connection
             .createQueryBuilder()
             .select("post")
             .from(PostWithRelation, "post")
             .withDeleted()
+            .orderBy("post.id")
             .getMany();
 
-        loadedWithoutScopePosts!.length.should.be.equal(3);
-        loadedWithoutScopePosts![0].title.should.be.equals("title#1");
-        loadedWithoutScopePosts![1].title.should.be.equals("title#2");
-        loadedWithoutScopePosts![2].title.should.be.equals("title#3");
+        loadedPosts!.length.should.be.equal(3);
+        loadedPosts![0].title.should.be.equals("title#1");
+        loadedPosts![1].title.should.be.equals("title#2");
+        loadedPosts![2].title.should.be.equals("title#3");
 
         const loadedWithoutScopePost = await connection
             .createQueryBuilder()
             .select("post")
             .from(PostWithRelation, "post")
             .withDeleted()
+            .orderBy("post.id")
             .getOne();
         loadedWithoutScopePost!.title.should.be.equals("title#1");
 
