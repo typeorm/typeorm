@@ -1046,6 +1046,8 @@ createConnection(options).then(async connection => {
 }).catch(error => console.log(error));
 ```
 
+Notice that we now set the photo's `metadata` property, instead of the metadata's `photo` property as before. The `cascade` feature only works if you connect the photo to its metadata from the photo's side. If you set the metadata's side, the metadata would not be saved automatically.
+
 ### Creating a many-to-one / one-to-many relation
 
 Let's create a many-to-one / one-to-many relation.
