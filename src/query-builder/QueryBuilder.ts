@@ -604,8 +604,8 @@ export abstract class QueryBuilder<Entity> {
             // Adds the global condition of "non-deleted" for the entity with delete date columns in select query.
             if (this.expressionMap.queryType === "select" && !this.expressionMap.withDeleted && metadata.deleteDateColumn) {
                 const column = this.expressionMap.aliasNamePrefixingEnabled
-                ? `"${this.expressionMap.mainAlias!.name}"."${metadata.deleteDateColumn.databaseName}"`
-                : `"${metadata.deleteDateColumn.databaseName}"`;
+                    ? this.expressionMap.mainAlias!.name + "." + metadata.deleteDateColumn.propertyName
+                    : metadata.deleteDateColumn.propertyName;
 
                 const condition = `${this.replacePropertyNames(column)} IS NULL`;
                 conditions = `${ conditions.length ? "(" + conditions + ") AND" : "" } ${condition}`;
