@@ -590,7 +590,7 @@ export class MysqlDriver implements Driver {
             return `'${defaultValue}'`;
 
         } else if (defaultValue === null) {
-            return `null`;
+            return `NULL`;
 
         } else {
             return defaultValue;
