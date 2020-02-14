@@ -221,15 +221,15 @@ export class SapDriver implements Driver {
 
         if (this.options.database) dbParams.databaseName = this.options.database;
         if (this.options.encrypt) dbParams.encrypt = this.options.encrypt;
-        if (this.options.encrypt) dbParams.validateCertificate = this.options.validateCertificate;
-        if (this.options.encrypt) dbParams.key = this.options.key;
-        if (this.options.encrypt) dbParams.cert = this.options.cert;
-        if (this.options.encrypt) dbParams.ca = this.options.ca;
+        if (this.options.validateCertificate) dbParams.validateCertificate = this.options.validateCertificate;
+        if (this.options.key) dbParams.key = this.options.key;
+        if (this.options.cert) dbParams.cert = this.options.cert;
+        if (this.options.ca) dbParams.ca = this.options.ca;
 
         // pool options
         const options: any = {
-            min: this.options.pool && this.options.pool.min ? this.options.pool && this.options.pool.min : 1,
-            max: this.options.pool && this.options.pool.max ? this.options.pool && this.options.pool.max : 1,
+            min: this.options.pool && this.options.pool.min ? this.options.pool.min : 1,
+            max: this.options.pool && this.options.pool.max ? this.options.pool.max : 1,
         };
 
         if (this.options.pool && this.options.pool.checkInterval) options.checkInterval = this.options.pool.checkInterval;
@@ -239,7 +239,7 @@ export class SapDriver implements Driver {
 
         const { logger } = this.connection;
 
-        const poolErrorHandler = options.poolErrorHandler || ((error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
+        const poolErrorHandler = options.poolErrorHandler || ((error: any) => logger.log("warn", `SAP Hana pool raised an error. ${error}`));
         this.client.eventEmitter.on("poolError", poolErrorHandler);
 
         // create the pool

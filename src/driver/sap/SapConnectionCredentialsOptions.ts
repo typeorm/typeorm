@@ -41,16 +41,16 @@ export interface SapConnectionCredentialsOptions {
     /**
      * Key for encrypted connection
      */
-    readonly key?: boolean;
+    readonly key?: string;
 
     /**
      * Cert for encrypted connection
      */
-    readonly cert?: boolean;
+    readonly cert?: string;
 
     /**
      * Ca for encrypted connection
      */
-    readonly ca?: boolean;
+    readonly ca?: string;
 
 }
