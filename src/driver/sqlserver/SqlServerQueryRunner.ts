@@ -2077,7 +2077,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         let c = `"${column.name}" ${this.connection.driver.createFullType(column)}`;
 
         if (column.enum)
-            c += " CHECK( " + column.name + " IN (" + column.enum.map(val => "'" + val + "'").join(",") + ") )";
+            c += " CHECK( \"" + column.name + "\" IN (" + column.enum.map(val => "'" + val + "'").join(",") + ") )";
 
         if (column.collation)
             c += " COLLATE " + column.collation;
