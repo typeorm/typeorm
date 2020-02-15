@@ -206,7 +206,7 @@ For example if you would like entities `Post` and `Category` to have a many-to-m
 associated to it you have to create entity `PostToCategory` like the following:
 
 ```typescript
-import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, ManyToOne, PrimaryGeneratedColumn, CreateDateColumn } from "typeorm";
 import { Post } from "./post";
 import { Category } from "./category";
 
@@ -221,8 +221,8 @@ export class PostToCategory {
     @Column()
     public categoryId!: number;
 
-    @Column()
-    public order!: number;
+    @CreateDateColumn({ type: 'timestamptz' })
+    public createdAt!: Date;
 
     @ManyToOne(type => Post, post => post.postToCategories)
     public post!: Post;
