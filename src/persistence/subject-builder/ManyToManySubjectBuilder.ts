@@ -110,7 +110,7 @@ export class ManyToManySubjectBuilder {
         let relatedEntities: ObjectLiteral[] = relation.getEntityValue(subject.entity!);
         if (relatedEntities === null) // if value set to null its equal if we set it to empty array - all items must be removed from the database
             relatedEntities = [];
-        if (!(relatedEntities instanceof Array))
+        if (!(Array.isArray(relatedEntities)))
             return;
 
         // from all related entities find only those which aren't found in the db - for them we will create operation subjects

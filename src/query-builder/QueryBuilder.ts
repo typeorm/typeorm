@@ -144,7 +144,7 @@ export abstract class QueryBuilder<Entity> {
      */
     select(selection?: string|string[], selectionAliasName?: string): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select";
-        if (selection instanceof Array) {
+        if (Array.isArray(selection)) {
             this.expressionMap.selects = selection.map(selection => ({ selection: selection }));
         } else if (selection) {
             this.expressionMap.selects = [{ selection: selection, aliasName: selectionAliasName }];
@@ -297,7 +297,7 @@ export abstract class QueryBuilder<Entity> {
      */
     hasRelation<T>(target: ObjectType<T>|string, relation: string|string[]): boolean {
         const entityMetadata = this.connection.getMetadata(target);
-        const relations = relation instanceof Array ? relation : [relation];
+        const relations = Array.isArray(relation) ? relation : [relation];
         return relations.every(relation => {
             return !!entityMetadata.findRelationWithPropertyPath(relation);
         });
@@ -657,7 +657,7 @@ export abstract class QueryBuilder<Entity> {
      */
     protected getReturningColumns(): ColumnMetadata[] {
         const columns: ColumnMetadata[] = [];
-        if (this.expressionMap.returning instanceof Array) {
+        if (Array.isArray(this.expressionMap.returning)) {
             (this.expressionMap.returning as string[]).forEach(columnName => {
                 if (this.expressionMap.mainAlias!.hasMetadata) {
                     columns.push(...this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(columnName));

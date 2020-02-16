@@ -138,7 +138,7 @@ export class ConnectionOptionsReader {
      * Normalize connection options.
      */
     protected normalizeConnectionOptions(connectionOptions: ConnectionOptions|ConnectionOptions[]): ConnectionOptions[] {
-        if (!(connectionOptions instanceof Array))
+        if (!(Array.isArray(connectionOptions)))
             connectionOptions = [connectionOptions];
 
         connectionOptions.forEach(options => {

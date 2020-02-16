@@ -344,7 +344,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             throw new Error(`.whereEntity method can only be used on queries which update real entity table.`);
 
         this.expressionMap.wheres = [];
-        const entities: Entity[] = entity instanceof Array ? entity : [entity];
+        const entities: Entity[] = Array.isArray(entity) ? entity : [entity];
         entities.forEach(entity => {
 
             const entityIdMap = this.expressionMap.mainAlias!.metadata.getEntityIdMap(entity);

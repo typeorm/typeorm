@@ -60,7 +60,7 @@ export class EntityPersistExecutor {
             try {
 
                 // collect all operate subjects
-                const entities: ObjectLiteral[] = this.entity instanceof Array ? this.entity : [this.entity];
+                const entities: ObjectLiteral[] = Array.isArray(this.entity) ? this.entity : [this.entity];
                 const entitiesInChunks = this.options && this.options.chunk && this.options.chunk > 0 ? OrmUtils.chunk(entities, this.options.chunk) : [entities];
 
                 // console.time("building subject executors...");

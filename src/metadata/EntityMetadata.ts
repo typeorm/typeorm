@@ -694,7 +694,7 @@ export class EntityMetadata {
         const relationsAndValues: [RelationMetadata, any, EntityMetadata][] = [];
         relations.forEach(relation => {
             const value = relation.getEntityValue(entity);
-            if (value instanceof Array) {
+            if (Array.isArray(value)) {
                 value.forEach(subValue => relationsAndValues.push([relation, subValue, relation.inverseEntityMetadata]));
             } else if (value) {
                 relationsAndValues.push([relation, value, relation.inverseEntityMetadata]);

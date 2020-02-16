@@ -37,8 +37,8 @@ export class RelationIdLoader {
         let relation: RelationMetadata|undefined, entities: ObjectLiteral[], relatedEntities: ObjectLiteral[]|undefined;
         if (relationOrTarget instanceof RelationMetadata) {
             relation = relationOrTarget;
-            entities = relationNameOrEntities instanceof Array ? relationNameOrEntities as ObjectLiteral[] : [relationNameOrEntities as ObjectLiteral];
-            relatedEntities = entitiesOrRelatedEntities instanceof Array ? entitiesOrRelatedEntities as ObjectLiteral[] : (entitiesOrRelatedEntities ? [entitiesOrRelatedEntities as ObjectLiteral] : undefined);
+            entities = Array.isArray(relationNameOrEntities) ? relationNameOrEntities as ObjectLiteral[] : [relationNameOrEntities as ObjectLiteral];
+            relatedEntities = Array.isArray(entitiesOrRelatedEntities) ? entitiesOrRelatedEntities as ObjectLiteral[] : (entitiesOrRelatedEntities ? [entitiesOrRelatedEntities as ObjectLiteral] : undefined);
 
         } else {
             const entityMetadata = this.connection.getMetadata(relationOrTarget);
@@ -46,8 +46,8 @@ export class RelationIdLoader {
             if (!relation)
                 throw new Error(`Relation "${relation}" was not found in "${entityMetadata.name}".`);
 
-            entities = entitiesOrRelatedEntities instanceof Array ? entitiesOrRelatedEntities as ObjectLiteral[] : [entitiesOrRelatedEntities as ObjectLiteral];
-            relatedEntities = maybeRelatedEntities instanceof Array ? maybeRelatedEntities as ObjectLiteral[] : (maybeRelatedEntities ? [maybeRelatedEntities as ObjectLiteral] : undefined);
+            entities = Array.isArray(entitiesOrRelatedEntities) ? entitiesOrRelatedEntities as ObjectLiteral[] : [entitiesOrRelatedEntities as ObjectLiteral];
+            relatedEntities = Array.isArray(maybeRelatedEntities) ? maybeRelatedEntities as ObjectLiteral[] : (maybeRelatedEntities ? [maybeRelatedEntities as ObjectLiteral] : undefined);
         }
 
         // load relation ids depend of relation type
@@ -76,7 +76,7 @@ export class RelationIdLoader {
         // console.log("relation:", relation.propertyName);
         // console.log("entitiesOrEntities", entitiesOrEntities);
         const isMany = relation.isManyToMany || relation.isOneToMany;
-        const entities: E1[] = entitiesOrEntities instanceof Array ? entitiesOrEntities : [entitiesOrEntities];
+        const entities: E1[] = Array.isArray(entitiesOrEntities) ? entitiesOrEntities : [entitiesOrEntities];
 
         if (!relatedEntityOrEntities) {
             relatedEntityOrEntities = await this.connection.relationLoader.load(relation, entitiesOrEntities);
@@ -87,7 +87,7 @@ export class RelationIdLoader {
         const relationIds = await this.load(relation, entitiesOrEntities, relatedEntityOrEntities);
         // console.log("relationIds", relationIds);
 
-        const relatedEntities: E2[] = relatedEntityOrEntities instanceof Array ? relatedEntityOrEntities : [relatedEntityOrEntities!];
+        const relatedEntities: E2[] = Array.isArray(relatedEntityOrEntities) ? relatedEntityOrEntities : [relatedEntityOrEntities!];
 
         let columns: ColumnMetadata[], inverseColumns: ColumnMetadata[];
         if (relation.isManyToManyOwner) {
