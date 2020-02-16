@@ -33,6 +33,12 @@ export interface TableIndexOptions {
      * Works only in MySQL.
      */
     isFulltext?: boolean;
+    
+    /**
+     * Fulltext parser.
+     * Works only in MySQL.
+     */
+    parser?: string;
 
     /**
      * Index filter condition.

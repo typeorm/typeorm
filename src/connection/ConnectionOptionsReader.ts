@@ -108,10 +108,10 @@ export class ConnectionOptionsReader {
             connectionOptions = new ConnectionOptionsEnvReader().read();
 
         } else if (foundFileFormat === "js") {
-            connectionOptions = PlatformTools.load(configFile);
+            connectionOptions = await PlatformTools.load(configFile);
 
         } else if (foundFileFormat === "ts") {
-            connectionOptions = PlatformTools.load(configFile);
+            connectionOptions = await PlatformTools.load(configFile);
 
         } else if (foundFileFormat === "json") {
             connectionOptions = PlatformTools.load(configFile);

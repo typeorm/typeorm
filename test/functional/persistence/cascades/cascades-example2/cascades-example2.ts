@@ -44,26 +44,31 @@ describe("persistence > cascades > example 2", () => {
 
         loadedQuestion!.should.be.eql({
             id: 1,
+            name: "My question",
             answers: [{
                 id: 1,
                 photo: {
-                    id: 1
+                    id: 1,
+                    name: "My photo"
                 },
                 user: {
                     id: 1,
                     question: {
-                        id: 1
+                        id: 1,
+                        name: "My question"
                     }
                 }
             }, {
                 id: 2,
                 photo: {
-                    id: 1
+                    id: 1,
+                    name: "My photo"
                 },
                 user: {
                     id: 1,
                     question: {
-                        id: 1
+                        id: 1,
+                        name: "My question"
                     }
                 }
             }]

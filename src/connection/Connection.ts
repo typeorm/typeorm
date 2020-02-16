@@ -202,7 +202,7 @@ export class Connection {
 
             // if option is set - automatically synchronize a schema
             if (this.options.migrationsRun)
-                await this.runMigrations();
+                await this.runMigrations({ transaction: this.options.migrationsTransactionMode });
 
         } catch (error) {
 
@@ -257,7 +257,7 @@ export class Connection {
      */
     // TODO rename
     async dropDatabase(): Promise<void> {
-        const queryRunner = await this.createQueryRunner("master");
+        const queryRunner = this.createQueryRunner("master");
         try {
             if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver || this.driver instanceof AuroraDataApiDriver) {
                 const databases: string[] = this.driver.database ? [this.driver.database] : [];
@@ -479,12 +479,8 @@ export class Connection {
      */
     protected findMetadata(target: Function|EntitySchema<any>|string): EntityMetadata|undefined {
         return this.entityMetadatas.find(metadata => {
-            if (typeof metadata.target === "function" && typeof target === "function" && metadata.target.name === target.name) {
+            if (metadata.target === target)
                 return true;
-            }
-            if (metadata.target === target) {
-                return true;
-            }
             if (target instanceof EntitySchema) {
                 return metadata.name === target.options.name;
             }

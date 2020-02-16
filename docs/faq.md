@@ -179,7 +179,7 @@ make sure to use the `outDir` compiler option to prevent
 Also, if you want to use the ts-node CLI, you can execute TypeORM the following way:
 
 ```
-ts-node ./node_modules/bin/typeorm schema:sync
+ts-node ./node_modules/.bin/typeorm schema:sync
 ```
 
 ## How to use Webpack for the backend?
@@ -194,7 +194,7 @@ module.exports = {
     plugins: [
         //ignore the drivers you don't want. This is the complete list of all drivers -- remove the suppressions for drivers you want to use.
         new FilterWarningsPlugin({
-            exclude: [/mongodb/, /mssql/, /mysql/, /mysql2/, /oracledb/, /pg/, /pg-native/, /pg-query-stream/, /redis/, /sqlite3/]
+            exclude: [/mongodb/, /mssql/, /mysql/, /mysql2/, /oracledb/, /pg/, /pg-native/, /pg-query-stream/, /react-native-sqlite-storage/, /redis/, /sqlite3/, /sql.js/, /typeorm-aurora-data-api-driver/]
         })
     ]
 };

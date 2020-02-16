@@ -2,6 +2,7 @@ import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../src";
 import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
+import {SapDriver} from "../../../src/driver/sap/SapDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {Table} from "../../../src";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
@@ -76,8 +77,8 @@ describe("query runner > rename column", () => {
         expect(table!.findColumnByName("id")).to.be.undefined;
         table!.findColumnByName("id2")!.should.be.exist;
 
-        // MySql does not support unique constraints
-        if (!(connection.driver instanceof MysqlDriver)) {
+        // MySql and SAP does not support unique constraints
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof SapDriver)) {
             const oldUniqueConstraintName = connection.namingStrategy.uniqueConstraintName(table!, ["text", "tag"]);
             let tableUnique = table!.uniques.find(unique => {
                 return !!unique.columnNames.find(columnName => columnName === "tag");

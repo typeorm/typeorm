@@ -1,3 +1,4 @@
+import {SapDriver} from "../driver/sap/SapDriver";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Subject} from "./Subject";
 import {PromiseUtils} from "../util/PromiseUtils";
@@ -249,7 +250,8 @@ export class SubjectExecutor {
                     // - when oracle is used, since oracle's bulk insertion is very bad
                     if (subject.changeMaps.length === 0 ||
                         subject.metadata.treeType ||
-                        this.queryRunner.connection.driver instanceof OracleDriver) {
+                        this.queryRunner.connection.driver instanceof OracleDriver ||
+                        this.queryRunner.connection.driver instanceof SapDriver) {
                         singleInsertSubjects.push(subject);
 
                     } else {

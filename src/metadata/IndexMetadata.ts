@@ -41,6 +41,12 @@ export class IndexMetadata {
     isFulltext: boolean = false;
 
     /**
+     * Fulltext parser.
+     * Works only in MySQL.
+     */
+    parser?: string;
+
+    /**
      * Indicates if this index must synchronize with database index.
      */
     synchronize: boolean = true;
@@ -124,6 +130,7 @@ export class IndexMetadata {
             this.isUnique = !!options.args.unique;
             this.isSpatial = !!options.args.spatial;
             this.isFulltext = !!options.args.fulltext;
+            this.parser = options.args.parser;
             this.where = options.args.where;
             this.isSparse = options.args.sparse;
             this.isBackground = options.args.background;

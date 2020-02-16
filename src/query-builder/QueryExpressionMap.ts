@@ -52,6 +52,11 @@ export class QueryExpressionMap {
     selectDistinct: boolean = false;
 
     /**
+     * SELECT DISTINCT ON query (postgres).
+     */
+    selectDistinctOn: string[] = [];
+
+    /**
      * FROM-s to be selected.
      */
     // froms: { target: string, alias: string }[] = [];
@@ -80,7 +85,7 @@ export class QueryExpressionMap {
     /**
      * Optional on ignore statement used in insertion query in databases.
      */
-    onIgnore: string | boolean = false;
+    onIgnore: string|boolean = false;
 
     /**
      * Optional on update statement used in insertion query in databases.
@@ -379,6 +384,7 @@ export class QueryExpressionMap {
         map.queryType = this.queryType;
         map.selects = this.selects.map(select => select);
         map.selectDistinct = this.selectDistinct;
+        map.selectDistinctOn = this.selectDistinctOn;
         this.aliases.forEach(alias => map.aliases.push(new Alias(alias)));
         map.mainAlias = this.mainAlias;
         map.valuesSet = this.valuesSet;

@@ -1,9 +1,10 @@
-import "reflect-metadata";
 import {expect} from "chai";
+import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import {SapDriver} from "../../../src/driver/sap/SapDriver";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 
 describe("schema builder > create table", () => {
 
@@ -36,7 +37,7 @@ describe("schema builder > create table", () => {
         const nameColumn = postTable!.findColumnByName("name");
         postTable!.should.exist;
 
-        if (connection.driver instanceof MysqlDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
             postTable!.indices.length.should.be.equal(2);
         } else {
             postTable!.uniques.length.should.be.equal(2);

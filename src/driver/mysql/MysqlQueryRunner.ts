@@ -187,10 +187,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             try {
                 const databaseConnection = await this.connect();
                 this.driver.connection.logger.logQuery(query, parameters, this);
-                const stream = databaseConnection.query(query, parameters);
-                if (onEnd) stream.on("end", onEnd);
-                if (onError) stream.on("error", onError);
-                ok(stream);
+                const databaseQuery = databaseConnection.query(query, parameters);
+                if (onEnd) databaseQuery.on("end", onEnd);
+                if (onError) databaseQuery.on("error", onError);
+                ok(databaseQuery.stream());
 
             } catch (err) {
                 fail(err);
@@ -397,8 +397,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 indexType += "SPATIAL ";
             if (index.isFulltext)
                 indexType += "FULLTEXT ";
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`));
+            const indexParser = index.isFulltext && index.parser ? ` WITH PARSER ${index.parser}` : "";
+
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})${indexParser}`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})${indexParser}`));
 
             // replace constraint name
             index.name = newIndexName;
@@ -586,8 +588,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         indexType += "SPATIAL ";
                     if (index.isFulltext)
                         indexType += "FULLTEXT ";
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`));
+                    const indexParser = index.isFulltext && index.parser ? ` WITH PARSER ${index.parser}` : "";
+
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})${indexParser}`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})${indexParser}`));
 
                     // replace constraint name
                     index.name = newIndexName;
@@ -1474,8 +1478,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     indexType += "SPATIAL ";
                 if (index.isFulltext)
                     indexType += "FULLTEXT ";
+                const indexParser = index.isFulltext && index.parser ? ` WITH PARSER ${index.parser}` : "";
 
-                return `${indexType}INDEX \`${index.name}\` (${columnNames})`;
+                return `${indexType}INDEX \`${index.name}\` (${columnNames})${indexParser}`;
             }).join(", ");
 
             sql += `, ${indicesSql}`;
@@ -1573,7 +1578,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             indexType += "SPATIAL ";
         if (index.isFulltext)
             indexType += "FULLTEXT ";
-        return new Query(`CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapePath(table)} (${columns})`);
+        const indexParser = index.isFulltext && index.parser ? ` WITH PARSER ${index.parser}` : "";
+
+        return new Query(`CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapePath(table)} (${columns})${indexParser}`);
     }
 
     /**

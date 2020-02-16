@@ -97,6 +97,31 @@ describe("cube-postgres", () => {
             })
         ));
 
+    it("should persist cube of arity 0 correctly", () =>
+        Promise.all(
+            connections.map(async connection => {
+                // Get Postgres version because zero-length cubes are not legal
+                // on all Postgres versions. Zero-length cubes are only tested
+                // to be working on Postgres version >=10.6.
+                const [{ server_version }] = await connection.query(
+                    "SHOW server_version"
+                );
+                const semverArray = server_version.split(".").map(Number);
+                if (!(semverArray[0] >= 10 && semverArray[1] >= 6)) {
+                    return;
+                }
+
+                const color: number[] = [];
+                const postRepo = connection.getRepository(Post);
+                const post = new Post();
+                post.mainColor = color;
+                const persistedPost = await postRepo.save(post);
+                const foundPost = await postRepo.findOne(persistedPost.id);
+                expect(foundPost).to.exist;
+                expect(foundPost!.mainColor).to.deep.equal(color);
+            })
+        ));
+
     it("should be able to order cube by euclidean distance", () =>
         Promise.all(
             connections.map(async connection => {

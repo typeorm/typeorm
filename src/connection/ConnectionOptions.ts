@@ -11,6 +11,7 @@ import {ReactNativeConnectionOptions} from "../driver/react-native/ReactNativeCo
 import {NativescriptConnectionOptions} from "../driver/nativescript/NativescriptConnectionOptions";
 import {ExpoConnectionOptions} from "../driver/expo/ExpoConnectionOptions";
 import {AuroraDataApiConnectionOptions} from "../driver/aurora-data-api/AuroraDataApiConnectionOptions";
+import {SapConnectionOptions} from "../driver/sap/SapConnectionOptions";
 
 
 /**
@@ -24,6 +25,7 @@ export type ConnectionOptions =
     CockroachConnectionOptions|
     SqliteConnectionOptions|
     SqlServerConnectionOptions|
+    SapConnectionOptions|
     OracleConnectionOptions|
     CordovaConnectionOptions|
     NativescriptConnectionOptions|

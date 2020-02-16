@@ -1,3 +1,4 @@
+import {SapDriver} from "../driver/sap/SapDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryExpressionMap} from "./QueryExpressionMap";
@@ -117,7 +118,7 @@ export class RelationUpdater {
 
             if (!bulkInserted.length) return;
 
-            if (this.queryBuilder.connection.driver instanceof  OracleDriver) {
+            if (this.queryBuilder.connection.driver instanceof OracleDriver || this.queryBuilder.connection.driver instanceof SapDriver) {
                 await Promise.all(bulkInserted.map(value => {
                     return this.queryBuilder
                         .createQueryBuilder()
