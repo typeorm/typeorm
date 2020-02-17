@@ -479,7 +479,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 ## `expo` connection options
 
-* `database` - Name of the database. For example "mydb".
+* `database` - Name of the database. For example, "mydb".
+* `driver` - The Expo SQLite module. For example, `require('expo-sqlite')`.
 
 ## Connection options example
 

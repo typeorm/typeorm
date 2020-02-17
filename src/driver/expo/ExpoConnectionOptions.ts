@@ -14,4 +14,9 @@ export interface ExpoConnectionOptions extends BaseConnectionOptions {
      * Database name.
      */
     readonly database: string;
+
+    /**
+    * Driver module
+    */
+    readonly driver: any;
 }
