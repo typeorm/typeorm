@@ -202,11 +202,10 @@ const categoriesWithQuestions = await connection
 ## many-to-many relations with custom properties
 
 In case you need to have additional properties to your many-to-many relationship you have to create a new entity yourself. 
-For example if you would like entities `Post` and `Category` to have a many-to-many relationship with a `createdAt` property 
-associated to it you have to create entity `PostToCategory` like the following:
+For example if you would like entities `Post` and `Category` to have a many-to-many relationship with additional `order` column, you need to create entity `PostToCategory` with two `ManyToOne` relations pointing in both directions and custom columns in it:
 
 ```typescript
-import { Entity, Column, ManyToOne, PrimaryGeneratedColumn, CreateDateColumn } from "typeorm";
+import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Post } from "./post";
 import { Category } from "./category";
 
@@ -220,9 +219,9 @@ export class PostToCategory {
     
     @Column()
     public categoryId!: number;
-
-    @CreateDateColumn({ type: 'timestamptz' })
-    public createdAt!: Date;
+   
+    @Column()
+    public order!: number;
 
     @ManyToOne(type => Post, post => post.postToCategories)
     public post!: Post;
