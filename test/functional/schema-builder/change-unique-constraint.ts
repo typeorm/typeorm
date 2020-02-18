@@ -1,13 +1,14 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {PromiseUtils} from "../../../src";
-import {Teacher} from "./entity/Teacher";
-import {UniqueMetadata} from "../../../src/metadata/UniqueMetadata";
+import {Connection} from "../../../src";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import {Post} from "./entity/Post";
+import {SapDriver} from "../../../src/driver/sap/SapDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {IndexMetadata} from "../../../src/metadata/IndexMetadata";
+import {UniqueMetadata} from "../../../src/metadata/UniqueMetadata";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {Post} from "./entity/Post";
+import {Teacher} from "./entity/Teacher";
 
 describe("schema builder > change unique constraint", () => {
 
@@ -28,8 +29,8 @@ describe("schema builder > change unique constraint", () => {
         let uniqueIndexMetadata: IndexMetadata|undefined = undefined;
         let uniqueMetadata: UniqueMetadata|undefined = undefined;
 
-        // Mysql stores unique constraints as unique indices.
-        if (connection.driver instanceof MysqlDriver) {
+        // Mysql and SAP stores unique constraints as unique indices.
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
             uniqueIndexMetadata = new IndexMetadata({
                 entityMetadata: teacherMetadata,
                 columns: [nameColumn],
@@ -60,7 +61,7 @@ describe("schema builder > change unique constraint", () => {
         const table = await queryRunner.getTable("teacher");
         await queryRunner.release();
 
-        if (connection.driver instanceof MysqlDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
             table!.indices.length.should.be.equal(1);
             table!.indices[0].isUnique!.should.be.true;
 
@@ -82,8 +83,8 @@ describe("schema builder > change unique constraint", () => {
 
         const postMetadata = connection.getMetadata(Post);
 
-        // Mysql stores unique constraints as unique indices.
-        if (connection.driver instanceof MysqlDriver) {
+        // Mysql and SAP stores unique constraints as unique indices.
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
             const uniqueIndexMetadata = postMetadata.indices.find(i => i.columns.length === 2 && i.isUnique === true);
             uniqueIndexMetadata!.name = "changed_unique";
 
@@ -98,7 +99,7 @@ describe("schema builder > change unique constraint", () => {
         const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
-        if (connection.driver instanceof MysqlDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
             const tableIndex = table!.indices.find(index => index.columnNames.length === 2 && index.isUnique === true);
             tableIndex!.name!.should.be.equal("changed_unique");
 
@@ -120,8 +121,8 @@ describe("schema builder > change unique constraint", () => {
     it("should correctly drop removed unique constraint", () => PromiseUtils.runInSequence(connections, async connection => {
         const postMetadata = connection.getMetadata(Post);
 
-        // Mysql stores unique constraints as unique indices.
-        if (connection.driver instanceof MysqlDriver) {
+        // Mysql and SAP stores unique constraints as unique indices.
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
             const index = postMetadata!.indices.find(i => i.columns.length === 2 && i.isUnique === true);
             postMetadata!.indices.splice(postMetadata!.indices.indexOf(index!), 1);
 
@@ -136,7 +137,7 @@ describe("schema builder > change unique constraint", () => {
         const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
-        if (connection.driver instanceof MysqlDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
             table!.indices.length.should.be.equal(1);
 
         } else {

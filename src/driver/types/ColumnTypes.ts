@@ -1,17 +1,18 @@
 /**
  * Column types used for @PrimaryGeneratedColumn() decorator.
  */
-export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite
+export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite, sap
     |"int2" // postgres, sqlite, cockroachdb
     |"int4" // postgres, cockroachdb
     |"int8" // postgres, sqlite, cockroachdb
-    |"integer" // postgres, oracle, sqlite, mysql, cockroachdb
-    |"tinyint" // mysql, mssql, sqlite
-    |"smallint" // mysql, postgres, mssql, oracle, sqlite, cockroachdb
+    |"integer" // postgres, oracle, sqlite, mysql, cockroachdb, sap
+    |"tinyint" // mysql, mssql, sqlite, sap
+    |"smallint" // mysql, postgres, mssql, oracle, sqlite, cockroachdb, sap
     |"mediumint" // mysql, sqlite
-    |"bigint" // mysql, postgres, mssql, sqlite, cockroachdb
-    |"dec" // oracle, mssql
-    |"decimal" // mysql, postgres, mssql, sqlite
+    |"bigint" // mysql, postgres, mssql, sqlite, cockroachdb, sap
+    |"dec" // oracle, mssql, sap
+    |"decimal" // mysql, postgres, mssql, sqlite, sap
+    |"smalldecimal" // sap
     |"fixed" // mysql
     |"numeric" // postgres, mssql, sqlite
     |"number" // oracle
@@ -21,7 +22,9 @@ export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite
  * Column types where spatial properties are used.
  */
 export type SpatialColumnType = "geometry" // postgres
-    |"geography"; // postgres
+    |"geography" // postgres
+    |"st_geometry" // sap
+    |"st_point"; // sap
 
 /**
  * Column types where precision and scale properties are used.
@@ -30,9 +33,10 @@ export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
     |"double" // mysql, sqlite
     |"dec" // oracle, mssql, mysql
     |"decimal" // mysql, postgres, mssql, sqlite
+    |"smalldecimal" // sap
     |"fixed" // mysql
     |"numeric" // postgres, mssql, sqlite, mysql
-    |"real" // mysql, postgres, mssql, oracle, sqlite, cockroachdb
+    |"real" // mysql, postgres, mssql, oracle, sqlite, cockroachdb, sap
     |"double precision" // postgres, oracle, sqlite, mysql, cockroachdb
     |"number" // oracle
     |"datetime" // mssql, mysql, sqlite
@@ -57,14 +61,16 @@ export type WithLengthColumnType = "character varying" // postgres, cockroachdb
     |"character" // mysql, postgres, sqlite, cockroachdb
     |"native character" // sqlite
     |"varchar" // mysql, postgres, mssql, sqlite, cockroachdb
-    |"char" // mysql, postgres, mssql, oracle, cockroachdb
-    |"nchar" // mssql, oracle, sqlite, mysql
+    |"char" // mysql, postgres, mssql, oracle, cockroachdb, sap
+    |"nchar" // mssql, oracle, sqlite, mysql, sap
     |"national char" // mysql
     |"varchar2" // oracle
     |"nvarchar2" // oracle, sqlite
+    |"alphanum" // sap
+    |"shorttext" // sap
     |"raw" // oracle
     |"binary" // mssql
-    |"varbinary" // mssql
+    |"varbinary" // mssql, sap
     |"string"; // cockroachdb
 
 export type WithWidthColumnType = "tinyint" // mysql
@@ -86,13 +92,13 @@ export type SimpleColumnType =
     |"simple-enum" // typeorm-specific, automatically mapped to string
 
     // numeric types
-    |"bit" // mssql
     |"int2" // postgres, sqlite, cockroachdb
     |"integer" // postgres, oracle, sqlite, cockroachdb
     |"int4" // postgres, cockroachdb
     |"int8" // postgres, sqlite, cockroachdb
     |"int64" // cockroachdb
     |"unsigned big int" // sqlite
+    |"float" // mysql, mssql, oracle, sqlite, sap
     |"float4" // postgres, cockroachdb
     |"float8" // postgres, cockroachdb
     |"smallmoney" // mssql
@@ -107,21 +113,23 @@ export type SimpleColumnType =
     |"tinytext" // mysql
     |"mediumblob" // mysql
     |"mediumtext" // mysql
-    |"blob" // mysql, oracle, sqlite, cockroachdb
-    |"text" // mysql, postgres, mssql, sqlite, cockroachdb
+    |"blob" // mysql, oracle, sqlite, cockroachdb, sap
+    |"text" // mysql, postgres, mssql, sqlite, cockroachdb, sap
     |"ntext" // mssql
     |"citext" // postgres
     |"hstore" // postgres
     |"longblob" // mysql
     |"longtext" // mysql
+    |"alphanum" // sap
+    |"shorttext" // sap
     |"bytes" // cockroachdb
     |"bytea" // postgres, cockroachdb
     |"long" // oracle
     |"raw" // oracle
     |"long raw" // oracle
     |"bfile" // oracle
-    |"clob" // oracle, sqlite
-    |"nclob" // oracle
+    |"clob" // oracle, sqlite, sap
+    |"nclob" // oracle, sap
     |"image" // mssql
 
     // date types
@@ -134,6 +142,7 @@ export type SimpleColumnType =
     |"interval day to second" // oracle
     |"interval" // postgres, cockroachdb
     |"year" // mysql
+    |"seconddate" // sap
 
     // geometric types
     |"point" // postgres, mysql
@@ -150,6 +159,8 @@ export type SimpleColumnType =
     |"multilinestring" // mysql
     |"multipolygon" // mysql
     |"geometrycollection" // mysql
+    |"st_geometry" // sap
+    |"st_point" // sap
 
     // range types
     |"int4range" // postgres
@@ -165,7 +176,7 @@ export type SimpleColumnType =
     |"cidr" // postgres
     |"inet" // postgres, cockroachdb
     |"macaddr"// postgres
-    |"bit" // postgres
+    |"bit" // postgres, mssql
     |"bit varying" // postgres
     |"varbit"// postgres
     |"tsvector" // postgres
@@ -174,14 +185,14 @@ export type SimpleColumnType =
     |"xml" // mssql, postgres
     |"json" // mysql, postgres, cockroachdb
     |"jsonb" // postgres, cockroachdb
-    |"varbinary" // mssql
+    |"varbinary" // mssql, sap
     |"hierarchyid" // mssql
     |"sql_variant" // mssql
     |"rowid" // oracle
     |"urowid" // oracle
     |"uniqueidentifier" // mssql
     |"rowversion" // mssql
-    |"array" // cockroachdb
+    |"array" // cockroachdb, sap
     |"cube"; // postgres
 
 /**

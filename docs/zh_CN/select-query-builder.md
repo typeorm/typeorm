@@ -817,6 +817,7 @@ const users = await getRepository(User)
     .createQueryBuilder("user")
     .setLock("dirty_read")
     .getMany();
+```
 
 Optimistic 锁定与`@Version`和`@UpdatedDate`装饰器一起使用。
 

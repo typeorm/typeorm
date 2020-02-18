@@ -180,3 +180,5 @@ export class PostSubscriber implements EntitySubscriberInterface {
 
 }
 ```
+
+Make sure your `subscribers` property is set in your [Connection Options](./connection-options.md#common-connection-options) so TypeORM loads your subscriber.

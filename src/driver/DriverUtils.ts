@@ -1,5 +1,5 @@
 import { Driver } from "./Driver";
-import { shorten } from "../util/StringUtils";
+import { hash } from "../util/StringUtils";
 
     /**
  * Common driver utility functions.
@@ -34,10 +34,10 @@ export class DriverUtils {
     }
 
     /**
-     * Builds column alias from given alias name and column name,
+     * Builds column alias from given alias name and column name.
+     * 
      * If alias length is greater than the limit (if any) allowed by the current
-     * driver, abbreviates the longest part (alias or column name) in the resulting
-     * alias.
+     * driver, replaces it with a hashed string.
      *
      * @param driver Current `Driver`.
      * @param alias Alias part.
@@ -48,10 +48,9 @@ export class DriverUtils {
     static buildColumnAlias({ maxAliasLength }: Driver, alias: string, column: string): string {
         const columnAliasName = alias + "_" + column;
 
-        if (maxAliasLength && maxAliasLength > 0 && columnAliasName.length > maxAliasLength)
-            return alias.length > column.length
-                ? `${shorten(alias)}_${column}`
-                : `${alias}_${shorten(column)}`;
+        if (maxAliasLength && maxAliasLength > 0 && columnAliasName.length > maxAliasLength) {
+            return hash(columnAliasName, { length: maxAliasLength });
+        }
 
         return columnAliasName;
     }

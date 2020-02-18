@@ -875,7 +875,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 oldColumn.name = newColumn.name;
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn)) {
+            if (this.isColumnChanged(oldColumn, newColumn, false)) {
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.buildCreateColumnSql(table, newColumn, true, false)}`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.buildCreateColumnSql(table, oldColumn, true, false)}`));
             }
@@ -940,15 +940,18 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             }
 
             if (newColumn.default !== oldColumn.default) {
+
+                // (note) if there is a previous default, we need to drop its constraint first
+                if (oldColumn.default !== null && oldColumn.default !== undefined) {
+                    const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, oldColumn.name);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${oldColumn.default} FOR "${oldColumn.name}"`));
+                }
+
                 if (newColumn.default !== null && newColumn.default !== undefined) {
                     const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, newColumn.name);
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${newColumn.default} FOR "${newColumn.name}"`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
-
-                } else if (oldColumn.default !== null && oldColumn.default !== undefined) {
-                    const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, oldColumn.name);
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${oldColumn.default} FOR "${oldColumn.name}"`));
                 }
             }
 
@@ -1370,6 +1373,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => this.query(dropQuery)));
             }));
             await Promise.all(allTablesResults.map(tablesResult => {
+                if (tablesResult["TABLE_NAME"].startsWith("#")) {
+                    // don't try to drop temporary tables
+                    return;
+                }
+
                 const dropTableSql = `DROP TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`;
                 return this.query(dropTableSql);
             }));

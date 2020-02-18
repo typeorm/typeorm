@@ -5,7 +5,6 @@ import {PromiseUtils} from "../../../src";
 import {Teacher} from "./entity/Teacher";
 import {Post} from "./entity/Post";
 import {ExclusionMetadata} from "../../../src/metadata/ExclusionMetadata";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 
 describe("schema builder > change exclusion constraint", () => {
 
@@ -13,6 +12,7 @@ describe("schema builder > change exclusion constraint", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"], // Only PostgreSQL supports exclusion constraints.
             schemaCreate: true,
             dropSchema: true,
         });
@@ -21,9 +21,6 @@ describe("schema builder > change exclusion constraint", () => {
     after(() => closeTestingConnections(connections));
 
     it("should correctly add new exclusion constraint", () => PromiseUtils.runInSequence(connections, async connection => {
-        // Only PostgreSQL supports exclusion constraints.
-        if (!(connection.driver instanceof PostgresDriver))
-            return;
 
         const teacherMetadata = connection.getMetadata(Teacher);
         const exclusionMetadata = new ExclusionMetadata({
@@ -46,9 +43,6 @@ describe("schema builder > change exclusion constraint", () => {
     }));
 
     it("should correctly change exclusion", () => PromiseUtils.runInSequence(connections, async connection => {
-        // Only PostgreSQL supports exclusion constraints.
-        if (!(connection.driver instanceof PostgresDriver))
-            return;
 
         const postMetadata = connection.getMetadata(Post);
         postMetadata.exclusions[0].expression = `USING gist ("tag" WITH =)`;
@@ -64,9 +58,6 @@ describe("schema builder > change exclusion constraint", () => {
     }));
 
     it("should correctly drop removed exclusion", () => PromiseUtils.runInSequence(connections, async connection => {
-        // Only PostgreSQL supports exclusion constraints.
-        if (!(connection.driver instanceof PostgresDriver))
-            return;
 
         const postMetadata = connection.getMetadata(Post);
         postMetadata.exclusions = [];

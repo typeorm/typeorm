@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
-import {Connection} from "../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {Connection} from "../../../../../src/connection/Connection";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 
 describe("database schema > column width", () => {
 
@@ -31,7 +31,7 @@ describe("database schema > column width", () => {
     })));
 
     it("should update data type display width", () => Promise.all(connections.map(async connection => {
-        
+
         let metadata = connection.getMetadata(Post);
         metadata.findColumnWithPropertyName("int")!.width = 5;
         metadata.findColumnWithPropertyName("tinyint")!.width = 3;
@@ -50,7 +50,7 @@ describe("database schema > column width", () => {
         expect(table!.findColumnByName("smallint")!.width).to.be.equal(4);
         expect(table!.findColumnByName("mediumint")!.width).to.be.equal(10);
         expect(table!.findColumnByName("bigint")!.width).to.be.equal(11);
-        
+
     })));
 
 });

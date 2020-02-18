@@ -1,4 +1,5 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
+import {SapDriver} from "../driver/sap/SapDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
@@ -15,7 +16,7 @@ import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
-import {EntitySchema} from "../";
+import {EntitySchema} from "../entity-schema/EntitySchema";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
@@ -67,21 +68,33 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
             }
 
+            let declareSql: string | null = null;
+            let selectOutputSql: string | null = null;
+
             // if update entity mode is enabled we may need extra columns for the returning statement
             // console.time(".prepare returning statement");
             const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(queryRunner, this.expressionMap);
             if (this.expressionMap.updateEntity === true && this.expressionMap.mainAlias!.hasMetadata) {
                 this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getInsertionReturningColumns();
+
+                if (this.expressionMap.extraReturningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
+                    declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", this.expressionMap.extraReturningColumns);
+                    selectOutputSql = `SELECT * FROM @OutputTable`;
+                }
             }
             // console.timeEnd(".prepare returning statement");
 
             // execute query
             // console.time(".getting query and parameters");
-            const [sql, parameters] = this.getQueryAndParameters();
+            const [insertSql, parameters] = this.getQueryAndParameters();
             // console.timeEnd(".getting query and parameters");
             const insertResult = new InsertResult();
             // console.time(".query execution by database");
-            insertResult.raw = await queryRunner.query(sql, parameters);
+            const statements = [declareSql, insertSql, selectOutputSql];
+            insertResult.raw = await queryRunner.query(
+                statements.filter(sql => sql != null).join(";\n\n"),
+                parameters,
+            );
             // console.timeEnd(".query execution by database");
 
             // load returning results and set them to the entity if entity updation is enabled
@@ -402,8 +415,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         value = column.referencedColumn.getEntityValue(value);
                     }*/
 
-                    // make sure our value is normalized by a driver
-                    value = this.connection.driver.preparePersistentValue(value, column);
+
+                    if (!(value instanceof Function)) {
+                      // make sure our value is normalized by a driver
+                      value = this.connection.driver.preparePersistentValue(value, column);
+                    }
 
                     // newly inserted entities always have a version equal to 1 (first version)
                     if (column.isVersion) {
@@ -444,7 +460,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof AbstractSqliteDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
+                        if (this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
                             if (column.default !== undefined) { // try to use default defined in the column
                                 expression += this.connection.driver.normalizeDefault(column);
                             } else {
@@ -470,7 +486,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                         this.expressionMap.nativeParameters[paramName] = value;
                         if ((this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                            expression += `GeomFromText(${this.connection.driver.createParameter(paramName, parametersCount)})`;
+                            const useLegacy = this.connection.driver.options.legacySpatialSupport;
+                            const geomFromText = useLegacy ? "GeomFromText" : "ST_GeomFromText";
+                            if (column.srid != null) {
+                                expression += `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount)}, ${column.srid})`;
+                            } else {
+                                expression += `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount)})`;
+                            }
                         } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             if (column.srid != null) {
                               expression += `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)}), ${column.srid})::${column.type}`;
@@ -518,7 +540,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof AbstractSqliteDriver) {
+                        if (this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) {
                             expression += "NULL";
 
                         } else {

@@ -1,4 +1,5 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
+import {SapDriver} from "../driver/sap/SapDriver";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
@@ -129,7 +130,8 @@ export class EntityMetadataBuilder {
                         entityMetadata.foreignKeys.push(foreignKey);
                     }
                     if (uniqueConstraint) {
-                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver || this.connection.driver instanceof SqlServerDriver) {
+                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver
+                            || this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof SapDriver) {
                             const index = new IndexMetadata({
                                 entityMetadata: uniqueConstraint.entityMetadata,
                                 columns: uniqueConstraint.columns,
@@ -520,8 +522,8 @@ export class EntityMetadataBuilder {
             });
         }
 
-        // Mysql stores unique constraints as unique indices.
-        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
+        // Mysql and SAP HANA stores unique constraints as unique indices.
+        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver || this.connection.driver instanceof SapDriver) {
             const indices = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
                 return new IndexMetadata({
                     entityMetadata: entityMetadata,

@@ -237,11 +237,11 @@ Additionally you will have to add a relationship like the following to `Post` an
 ```typescript
 // category.ts
 ...
-@OneToMany((type) => PostToCategory, (postToCategory) => postToCategory.category)
+@OneToMany(type => PostToCategory, postToCategory => postToCategory.category)
 public postToCategories!: PostToCategory[];
 
 // post.ts
 ...
-@OneToMany((type) => PostToCategory, (postToCategory) => postToCategory.post)
+@OneToMany(type => PostToCategory, postToCategory => postToCategory.post)
 public postToCategories!: PostToCategory[];
 ```

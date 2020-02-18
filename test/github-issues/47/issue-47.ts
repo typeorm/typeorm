@@ -24,6 +24,7 @@ describe("github issues > #47 wrong sql syntax when loading lazy relation", () =
         const post1 = new Post();
         post1.title = "Hello Post #1";
         post1.category = Promise.resolve(category1);
+        expect(await post1.category).to.equal(category1);
 
         const category2 = new Category();
         category2.name = "category #2";
@@ -63,6 +64,12 @@ describe("github issues > #47 wrong sql syntax when loading lazy relation", () =
         loadedPosts2![0].id.should.equal(2);
         loadedPosts2![0].title.should.equal("Hello Post #2");
 
+        const reloadedPost = await connection.manager.findOne(Post, {id: post1.id});
+
+        const promise = reloadedPost!.category;
+        reloadedPost!.category = Promise.resolve(category2);
+        (await promise).id.should.equal(category1.id);
+        (await reloadedPost!.category).id.should.equal(category2.id);
         // todo: need to test somehow how query is being generated, or how many raw data is returned
 
     })));

@@ -47,6 +47,12 @@ export class PlatformTools {
                     return require("mongodb");
 
                 /**
+                * hana
+                */
+                case "@sap/hdbext":
+                    return require("@sap/hdbext");
+
+                /**
                 * mysql
                 */
                 case "mysql":

@@ -3,6 +3,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {SapDriver} from "../driver/sap/SapDriver";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
@@ -851,7 +852,7 @@ export class EntityMetadata {
      */
     protected buildTablePath(): string {
         let tablePath = this.tableName;
-        if (this.schema && ((this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver))) {
+        if (this.schema && ((this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
             tablePath = this.schema + "." + tablePath;
         }
 

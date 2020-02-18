@@ -52,6 +52,78 @@ export class MigrationExecutor {
     // -------------------------------------------------------------------------
 
     /**
+     * Tries to execute a single migration given.
+     */
+    public async executeMigration(migration: Migration): Promise<Migration> {
+        return this.withQueryRunner(async (queryRunner) => {
+            await this.createMigrationsTableIfNotExist(queryRunner);
+            await (migration.instance as any).up(queryRunner);
+            await this.insertExecutedMigration(queryRunner, migration);
+
+            return migration;
+        });
+    }
+
+    /**
+     * Returns an array of all migrations.
+     */
+    public async getAllMigrations(): Promise<Migration[]> {
+        return Promise.resolve(this.getMigrations());
+    }
+
+    /**
+     * Returns an array of all executed migrations.
+     */
+    public async getExecutedMigrations(): Promise<Migration[]> {
+        return this.withQueryRunner(async queryRunner => {
+            await this.createMigrationsTableIfNotExist(queryRunner);
+
+            return await this.loadExecutedMigrations(queryRunner);
+        });
+    }
+
+    /**
+     * Returns an array of all pending migrations.
+     */
+    public async getPendingMigrations(): Promise<Migration[]> {
+        const allMigrations = await this.getAllMigrations();
+        const executedMigrations = await this.getExecutedMigrations();
+
+        return allMigrations.filter(migration =>
+            executedMigrations.find(
+                executedMigration =>
+                    executedMigration.name === migration.name
+            )
+        );
+    }
+
+    /**
+     * Inserts an executed migration.
+     */
+    public insertMigration(migration: Migration): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.withQueryRunner(queryRunner => {
+                this.insertExecutedMigration(queryRunner, migration)
+                    .then(resolve)
+                    .catch(reject);
+            });
+        });
+    }
+
+    /**
+     * Deletes an executed migration.
+     */
+    public deleteMigration(migration: Migration): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.withQueryRunner(queryRunner => {
+                this.deleteExecutedMigration(queryRunner, migration)
+                    .then(resolve)
+                    .catch(reject);
+            });
+        });
+    }
+
+    /**
      * Lists all migrations and whether they have been executed or not
      * returns true if there are unapplied migrations
      */
@@ -311,13 +383,13 @@ export class MigrationExecutor {
             .db(this.connection.driver.database!)
             .collection(this.migrationsTableName)
             .find<Migration>()
-            .sort("_id", -1)
+            .sort({"_id": -1})
             .toArray();
         } else {
             const migrationsRaw: ObjectLiteral[] = await this.connection.manager
             .createQueryBuilder(queryRunner)
             .select()
-            .orderBy("id", "DESC")
+            .orderBy(this.connection.driver.escape("id"), "DESC")
             .from(this.migrationsTable, this.migrationsTableName)
             .getRawMany();
             return migrationsRaw.map(migrationRaw => {
@@ -332,9 +404,10 @@ export class MigrationExecutor {
     protected getMigrations(): Migration[] {
         const migrations = this.connection.migrations.map(migration => {
             const migrationClassName = migration.name || (migration.constructor as any).name;
-            const migrationTimestamp = parseInt(migrationClassName.substr(-13));
-            if (!migrationTimestamp)
+            const migrationTimestamp = parseInt(migrationClassName.substr(-13), 10);
+            if (!migrationTimestamp || isNaN(migrationTimestamp)) {
                 throw new Error(`${migrationClassName} migration name is wrong. Migration class name should have a JavaScript timestamp appended.`);
+            }
 
             return new Migration(undefined, migrationTimestamp, migrationClassName, migration);
         });
@@ -420,5 +493,17 @@ export class MigrationExecutor {
                 .execute();
         }
 
+    }
+
+    protected async withQueryRunner<T extends any>(callback: (queryRunner: QueryRunner) => T) {
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+
+        try {
+            return callback(queryRunner);
+        } finally {
+            if (!this.queryRunner) {
+                await queryRunner.release();
+            }
+        }
     }
 }

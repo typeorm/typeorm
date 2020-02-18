@@ -38,6 +38,12 @@ export class TableIndex {
     isFulltext: boolean;
 
     /**
+     * Fulltext parser.
+     * Works only in MySQL.
+     */
+    parser?: string;
+
+    /**
      * Index filter condition.
      */
     where: string;
@@ -52,6 +58,7 @@ export class TableIndex {
         this.isUnique = !!options.isUnique;
         this.isSpatial = !!options.isSpatial;
         this.isFulltext = !!options.isFulltext;
+        this.parser = options.parser;
         this.where = options.where ? options.where : "";
     }
 
@@ -69,6 +76,7 @@ export class TableIndex {
             isUnique: this.isUnique,
             isSpatial: this.isSpatial,
             isFulltext: this.isFulltext,
+            parser: this.parser,
             where: this.where
         });
     }
@@ -87,6 +95,7 @@ export class TableIndex {
             isUnique: indexMetadata.isUnique,
             isSpatial: indexMetadata.isSpatial,
             isFulltext: indexMetadata.isFulltext,
+            parser: indexMetadata.parser,
             where: indexMetadata.where
         });
     }

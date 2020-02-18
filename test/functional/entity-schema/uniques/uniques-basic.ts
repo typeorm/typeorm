@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import {SapDriver} from "../../../../src/driver/sap/SapDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {expect} from "chai";
@@ -21,7 +22,7 @@ describe("entity-schema > uniques", () => {
         const table = await queryRunner.getTable("person");
         await queryRunner.release();
 
-        if (connection.driver instanceof MysqlDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
             expect(table!.indices.length).to.be.equal(1);
             expect(table!.indices[0].name).to.be.equal("UNIQUE_TEST");
             expect(table!.indices[0].isUnique).to.be.true;

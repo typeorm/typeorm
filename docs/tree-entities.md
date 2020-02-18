@@ -123,6 +123,9 @@ export class Category {
 }
 ```
 
+### Note:
+Updating or removing a component's parent has not been implemented yet ([see this issue](https://github.com/typeorm/typeorm/issues/2032)). The closure table will need to be explicitly updated to do either of these operations.
+
 ## Working with tree entities
 
 To make bind tree entities to each other its important to set to children entities their parent and save them,
@@ -186,7 +189,7 @@ const trees = await manager.getTreeRepository(Category).findTrees();
 }]
 ```
 
-There are other special methods to work with tree entities thought `TreeRepository`:
+There are other special methods to work with tree entities through `TreeRepository`:
 
 * `findTrees` - Returns all trees in the database with all their children, children of children, etc.
 

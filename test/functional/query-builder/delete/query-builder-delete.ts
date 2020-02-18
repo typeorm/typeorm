@@ -95,7 +95,7 @@ describe("query builder > delete", () => {
     it("should return correct delete result", () => Promise.all(connections.map(async connection => {
 
         // don't run test for sqlite and sqljs as they don't return affected rows
-        if (connection.name === "sqlite" || connection.name === "sqljs")
+        if (connection.name === "sqlite" || connection.name === "sqljs" || connection.name === "sap")
             return;
 
         // save some users

@@ -4,10 +4,10 @@
 export class OffsetWithoutLimitNotSupportedError extends Error {
     name = "OffsetWithoutLimitNotSupportedError";
 
-    constructor(driverName: string) {
+    constructor() {
         super();
         Object.setPrototypeOf(this, OffsetWithoutLimitNotSupportedError.prototype);
-        this.message = `${driverName} does not support OFFSET without LIMIT in SELECT statements. You must use limit in conjunction with offset function (or take in conjunction with skip function if you are using pagination).`;
+        this.message = `RDBMS does not support OFFSET without LIMIT in SELECT statements. You must use limit in conjunction with offset function (or take in conjunction with skip function if you are using pagination).`;
     }
 
 }

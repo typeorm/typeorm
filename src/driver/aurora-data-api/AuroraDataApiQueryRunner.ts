@@ -1416,7 +1416,6 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
                     indexType += "SPATIAL ";
                 if (index.isFulltext)
                     indexType += "FULLTEXT ";
-
                 return `${indexType}INDEX \`${index.name}\` (${columnNames})`;
             }).join(", ");
 

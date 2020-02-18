@@ -47,6 +47,12 @@ export class SqlServerDriver {}
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
+export class SapDriver {}
+
+/**
+ * DO NOT IMPORT THIS CLASS -
+ * This is a dummy class for replacement via `package.json` in browser builds
+ */
 export class MysqlDriver {}
 
 /**
