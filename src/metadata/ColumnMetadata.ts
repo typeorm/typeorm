@@ -405,7 +405,7 @@ export class ColumnMetadata {
             this.transformer = options.args.options.transformer;
         if (options.args.options.spatialFeatureType)
             this.spatialFeatureType = options.args.options.spatialFeatureType;
-        if (options.args.options.srid)
+        if (options.args.options.srid !== undefined)
             this.srid = options.args.options.srid;
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;

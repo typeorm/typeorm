@@ -254,13 +254,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     orUpdate(statement?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] }): this {
       this.expressionMap.onUpdate = {};
-      if (statement && statement.conflict_target instanceof Array)
+      if (statement && Array.isArray(statement.conflict_target))
           this.expressionMap.onUpdate.conflict = ` ( ${statement.conflict_target.join(", ")} ) `;
       if (statement && typeof statement.conflict_target === "string")
           this.expressionMap.onUpdate.conflict = ` ON CONSTRAINT ${statement.conflict_target} `;
-      if (statement && statement.columns instanceof Array)
+      if (statement && Array.isArray(statement.columns))
           this.expressionMap.onUpdate.columns = statement.columns.map(column => `${column} = :${column}`).join(", ");
-      if (statement && statement.overwrite instanceof Array) {
+      if (statement && Array.isArray(statement.overwrite)) {
         if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = VALUES(${column})`).join(", ");
         } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
@@ -576,7 +576,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Gets array of values need to be inserted into the target table.
      */
     protected getValueSets(): ObjectLiteral[] {
-        if (this.expressionMap.valuesSet instanceof Array && this.expressionMap.valuesSet.length > 0)
+        if (Array.isArray(this.expressionMap.valuesSet) && this.expressionMap.valuesSet.length > 0)
             return this.expressionMap.valuesSet;
 
         if (this.expressionMap.valuesSet instanceof Object)

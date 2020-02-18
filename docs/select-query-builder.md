@@ -332,6 +332,20 @@ Which will produce the following SQL query:
 SELECT ... FROM users user WHERE user.firstName = 'Timber' OR user.lastName = 'Saw'
 ```
 
+You can do an `IN` query with the `WHERE` expression:
+
+```typescript
+createQueryBuilder("user")
+    .where("user.id IN (:...ids)", { ids: [1, 2, 3, 4] })
+```
+
+Which will produce the following SQL query:
+
+```sql
+SELECT ... FROM users user WHERE user.firstName IN (1, 2, 3, 4)
+```
+
+
 You can add a complex `WHERE` expression into an existing `WHERE` using `Brackets`
 
 ```typescript

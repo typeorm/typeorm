@@ -70,7 +70,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             // call before updation methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
                 const broadcastResult = new BroadcasterResult();
-                queryRunner.broadcaster.broadcastBeforeUpdateEvent(broadcastResult, this.expressionMap.mainAlias!.metadata);
+                queryRunner.broadcaster.broadcastBeforeUpdateEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, this.expressionMap.valuesSet);
                 if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
             }
 
@@ -344,7 +344,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             throw new Error(`.whereEntity method can only be used on queries which update real entity table.`);
 
         this.expressionMap.wheres = [];
-        const entities: Entity[] = entity instanceof Array ? entity : [entity];
+        const entities: Entity[] = Array.isArray(entity) ? entity : [entity];
         entities.forEach(entity => {
 
             const entityIdMap = this.expressionMap.mainAlias!.metadata.getEntityIdMap(entity);

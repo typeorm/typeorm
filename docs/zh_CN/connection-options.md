@@ -387,6 +387,7 @@
 ## `expo`
 
 - `database` - 数据库名， 例如 "mydb".
+- `driver` - Expo SQLite 模块. 例如，`require('expo-sqlite')`.
 
 ## 连接选项示例
 

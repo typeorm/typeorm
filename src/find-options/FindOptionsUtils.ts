@@ -21,10 +21,10 @@ export class FindOptionsUtils {
         const possibleOptions: FindOneOptions<any> = obj;
         return possibleOptions &&
                 (
-                    possibleOptions.select instanceof Array ||
+                    Array.isArray(possibleOptions.select) ||
                     possibleOptions.where instanceof Object ||
                     typeof possibleOptions.where === "string" ||
-                    possibleOptions.relations instanceof Array ||
+                    Array.isArray(possibleOptions.relations) ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
                     possibleOptions.cache instanceof Object ||

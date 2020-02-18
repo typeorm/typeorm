@@ -67,7 +67,7 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * For many-to-one and one-to-one use #set method instead.
      */
     async add(value: any|any[]): Promise<void> {
-        if (value instanceof Array && value.length === 0)
+        if (Array.isArray(value) && value.length === 0)
             return;
 
         const relation = this.expressionMap.relationMetadata;
@@ -98,7 +98,7 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * For many-to-one and one-to-one use #set method instead.
      */
     async remove(value: any|any[]): Promise<void> {
-        if (value instanceof Array && value.length === 0)
+        if (Array.isArray(value) && value.length === 0)
             return;
 
         const relation = this.expressionMap.relationMetadata;

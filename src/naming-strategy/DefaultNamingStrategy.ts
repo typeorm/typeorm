@@ -27,11 +27,13 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return originalClosureTableName + "_closure";
     }
 
-    columnName(propertyName: string, customName: string, embeddedPrefixes: string[]): string { // todo: simplify
+    columnName(propertyName: string, customName: string, embeddedPrefixes: string[]): string {
+        const name = customName || propertyName;
+        
         if (embeddedPrefixes.length)
-            return camelCase(embeddedPrefixes.join("_")) + (customName ? titleCase(customName) : titleCase(propertyName));
+            return camelCase(embeddedPrefixes.join("_")) + titleCase(name);
 
-        return customName ? customName : propertyName;
+        return name;
     }
 
     relationName(propertyName: string): string {
