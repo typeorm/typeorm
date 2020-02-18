@@ -148,6 +148,8 @@ export class SapDriver implements Driver {
         createDateDefault: "CURRENT_TIMESTAMP",
         updateDate: "timestamp",
         updateDateDefault: "CURRENT_TIMESTAMP",
+        deleteDate: "timestamp",
+        deleteDateNullable: true,
         version: "integer",
         treeLevel: "integer",
         migrationId: "integer",
