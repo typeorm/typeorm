@@ -728,7 +728,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                 // create new ENUM
                 upQueries.push(this.createEnumTypeSql(table, newColumn));
-                downQueries.push(this.createEnumTypeSql(table, oldColumn));
+                downQueries.push(this.dropEnumTypeSql(table, newColumn));
 
                 // if column have default value, we must drop it to avoid issues with type casting
                 if (newColumn.default !== null && newColumn.default !== undefined) {
