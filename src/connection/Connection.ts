@@ -137,9 +137,9 @@ export class Connection {
         this.options = options;
         this.relationLoader = new RelationLoader(this);
         this.relationIdLoader = new RelationIdLoader(this);
-        this.manager = this.createEntityManager();
         this.isConnected = false;
         this.setOptions(options);
+        this.manager = this.createEntityManager();
     }
 
     // -------------------------------------------------------------------------
