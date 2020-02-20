@@ -246,7 +246,12 @@ export async function createTestingConnections(options?: TestingOptions): Promis
         });
 
         const queryRunner = connection.createQueryRunner();
-        await PromiseUtils.runInSequence(databases, database => queryRunner.createDatabase(database, true));
+        await PromiseUtils.runInSequence(databases, database => {
+            if (!(connection.driver instanceof PostgresDriver))
+                return queryRunner.createDatabase(database, true);
+
+            return Promise.resolve();
+        });
 
         // create new schemas
         if (connection.driver instanceof PostgresDriver || connection.driver instanceof SqlServerDriver) {
