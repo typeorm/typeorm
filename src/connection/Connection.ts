@@ -135,11 +135,11 @@ export class Connection {
     constructor(options: ConnectionOptions) {
         this.name = options.name || "default";
         this.options = options;
-        this.setOptions(options);
-        this.manager = this.createEntityManager();
         this.relationLoader = new RelationLoader(this);
         this.relationIdLoader = new RelationIdLoader(this);
+        this.manager = this.createEntityManager();
         this.isConnected = false;
+        this.setOptions(options);
     }
 
     // -------------------------------------------------------------------------
