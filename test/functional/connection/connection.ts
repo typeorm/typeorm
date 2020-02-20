@@ -171,13 +171,6 @@ describe("Connection", () => {
             // expect(() => connection.getReactiveTreeRepository(Post)).to.throw(RepositoryNotTreeError);
         }));
 
-        it("should not be able to get repositories that are not registered", () => connections.forEach(connection => {
-            expect(() => connection.getRepository("SomeEntity")).to.throw(Error); // RepositoryNotTreeError
-            expect(() => connection.getTreeRepository("SomeEntity")).to.throw(Error); // RepositoryNotTreeError
-            // expect(() => connection.getReactiveRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
-            // expect(() => connection.getReactiveTreeRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
-        }));
-
     });
 
     describe("generate a schema when connection.syncSchema is called", function() {
