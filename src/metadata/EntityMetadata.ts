@@ -84,6 +84,14 @@ export class EntityMetadata {
     target: Function|string;
 
     /**
+     * If entity's metadata is bound to some specific instance (class or function),
+     * this property will contain it. It can be used to initiate new instances of that class or function.
+     * When entity is defined using entity schema without target,
+     * TypeORM will create a POJO, and this property will be undefined.
+     */
+    // instance: Function|string; // todo: implement later
+
+    /**
      * Gets the name of the target.
      */
     targetName: string;
