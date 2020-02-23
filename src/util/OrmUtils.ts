@@ -100,7 +100,7 @@ export class OrmUtils {
      *
      * @see http://stackoverflow.com/a/1144249
      */
-    static deepCompare(...args: any[]) {
+    static deepCompare(...args: any[]): boolean {
         let i: any, l: any, leftChain: any, rightChain: any;
 
         if (arguments.length < 1) {
@@ -124,7 +124,7 @@ export class OrmUtils {
     /**
      * Check if two entity-id-maps are the same
      */
-    static compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined) {
+    static compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined): boolean {
         if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
             return false;
 
