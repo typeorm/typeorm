@@ -130,8 +130,8 @@ export class OrmUtils {
 
         // Optimized version for the common case
         if (
-            typeof firstId.id === "string" &&
-            typeof secondId.id === "string" &&
+            (typeof firstId.id === "string" || typeof firstId.id === "number") &&
+            (typeof secondId.id === "string" || typeof secondId.id === "number") &&
             Object.keys(firstId).length === 1 &&
             Object.keys(secondId).length === 1
         ) {
