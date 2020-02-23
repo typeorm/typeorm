@@ -440,7 +440,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         // rename sequences
         newTable.columns.map(col => {
-            if (col.isGenerated) {
+            if (col.isGenerated && col.generationStrategy === "increment") {
                 const seqName = this.buildSequenceName(oldTable, col.name, undefined, true, true);
                 const newSeqName = this.buildSequenceName(newTable, col.name, undefined, true, true);
 
