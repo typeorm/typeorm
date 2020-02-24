@@ -226,6 +226,16 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
+     * Adds temporal clause
+     */
+    forSystemTime(time: string): this {
+
+        this.expressionMap.temporalClause = `FOR SYSTEM_TIME AS OF "${time}"`
+
+        return this
+    }
+
+    /**
      * Creates DELETE query.
      */
     delete(): DeleteQueryBuilder<Entity> {
