@@ -36,18 +36,18 @@ describe("query runner > rename table", () => {
         table = await queryRunner.getTable("question");
         table!.should.be.exist;
 
-        await queryRunner.renameTable("question", "user");
-        table = await queryRunner.getTable("user");
+        await queryRunner.renameTable("question", "answer");
+        table = await queryRunner.getTable("answer");
         table!.should.be.exist;
 
         if (connection.driver instanceof PostgresDriver) {
-            let result = await queryRunner.query(`SELECT COUNT(*) FROM "pg_class" "c" WHERE "c"."relkind" = 'S' and "c"."relname" = 'user_id_seq'`);
+            let result = await queryRunner.query(`SELECT COUNT(*) FROM "pg_class" "c" WHERE "c"."relkind" = 'S' and "c"."relname" = 'answer_id_seq'`);
             result[0].count.should.be.equal("1");
         }
 
         await queryRunner.executeMemoryDownSql();
 
-        table = await queryRunner.getTable("post");
+        table = await queryRunner.getTable("faculty");
         table!.should.be.exist;
 
         await queryRunner.release();
