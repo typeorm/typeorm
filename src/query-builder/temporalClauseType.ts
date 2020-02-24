@@ -1,0 +1,1 @@
+export type TemporalClauseType = 'AS OF' | 'FROM' | 'BETWEEN' | 'CONTAINED IN' | 'ALL'
