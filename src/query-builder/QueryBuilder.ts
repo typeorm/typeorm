@@ -226,11 +226,21 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
-     * Adds temporal clause
+     * Adds temporal clause to FROM statement
      */
-    forSystemTime(time: string): this {
+    forSystemTimeFrom(time: string): this {
 
-        this.expressionMap.temporalClause = `FOR SYSTEM_TIME AS OF "${time}"`
+        this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME AS OF "${time}"`
+
+        return this
+    }
+
+    /**
+     * Adds temporal clause to JOIN statement
+     */
+    forSystemTimeJoin(time: string): this {
+
+        this.expressionMap.joinTemporalClause = `FOR SYSTEM_TIME AS OF "${time}"`
 
         return this
     }
