@@ -1,24 +1,17 @@
-import {FindOperatorType} from "./FindOperatorType";
 import {Connection} from "../";
 
 /**
  * Find Operator used in Find Conditions.
  */
-export class FindOperator<T> {
-
+export abstract class FindOperator<T> {
     // -------------------------------------------------------------------------
     // Private Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Operator type.
-     */
-    private _type: FindOperatorType;
-
-    /**
      * Parameter value.
      */
-    private _value: T|FindOperator<T>;
+    private _value: T | FindOperator<T>;
 
     /**
      * Indicates if parameter is used or not for this operator.
@@ -34,8 +27,11 @@ export class FindOperator<T> {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(type: FindOperatorType, value: T|FindOperator<T>, useParameter: boolean = true, multipleParameters: boolean = false) {
-        this._type = type;
+    protected constructor(
+        value: T | FindOperator<T>,
+        useParameter: boolean = true,
+        multipleParameters: boolean = false
+    ) {
         this._value = value;
         this._useParameter = useParameter;
         this._multipleParameters = multipleParameters;
@@ -71,8 +67,7 @@ export class FindOperator<T> {
      * Gets the final value needs to be used as parameter value.
      */
     get value(): T {
-        if (this._value instanceof FindOperator)
-            return this._value.value;
+        if (this._value instanceof FindOperator) return this._value.value;
 
         return this._value;
     }
@@ -83,44 +78,16 @@ export class FindOperator<T> {
 
     /**
      * Gets SQL needs to be inserted into final query.
+     * Construct a string for the SQL engine to use in the query.
+     * This query must be made using the parameters to prevent SQL injection.
+     *
+     * Single parameter:
+     *    `${aliasPath} = ANY(${parameters[0]})`
+     *
+     * Multiple parameters:
+     *     `${aliasPath} IN (${parameters.join(", ")})`
+     *
+     * - Note: When using multiple parameters, remember to specify it in the constructor.
      */
-    toSql(connection: Connection, aliasPath: string, parameters: string[]): string {
-        switch (this._type) {
-            case "not":
-                if (this._value instanceof FindOperator) {
-                    return `NOT(${this._value.toSql(connection, aliasPath, parameters)})`;
-                } else {
-                    return `${aliasPath} != ${parameters[0]}`;
-                }
-            case "lessThan":
-                return `${aliasPath} < ${parameters[0]}`;
-            case "lessThanOrEqual":
-                return `${aliasPath} <= ${parameters[0]}`;
-            case "moreThan":
-                return `${aliasPath} > ${parameters[0]}`;
-            case "moreThanOrEqual":
-                return `${aliasPath} >= ${parameters[0]}`;
-            case "equal":
-                return `${aliasPath} = ${parameters[0]}`;
-            case "like":
-                return `${aliasPath} LIKE ${parameters[0]}`;
-            case "between":
-                return `${aliasPath} BETWEEN ${parameters[0]} AND ${parameters[1]}`;
-            case "in":
-                return `${aliasPath} IN (${parameters.join(", ")})`;
-            case "any":
-                return `${aliasPath} = ANY(${parameters[0]})`;
-            case "isNull":
-                return `${aliasPath} IS NULL`;
-            case "raw":
-                if (this.value instanceof Function) {
-                    return this.value(aliasPath);
-                } else {
-                    return `${aliasPath} = ${this.value}`;
-                }
-        }
-
-        return "";
-    }
-
+    abstract toSql(connection: Connection, aliasPath: string, parameters: string[]): string;
 }
