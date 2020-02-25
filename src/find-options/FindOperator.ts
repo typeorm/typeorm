@@ -3,7 +3,7 @@ import {Connection} from "../";
 /**
  * Find Operator used in Find Conditions.
  */
-export abstract class FindOperator<T> {
+export abstract class FindOperator<T = any> {
     // -------------------------------------------------------------------------
     // Private Properties
     // -------------------------------------------------------------------------
@@ -11,17 +11,17 @@ export abstract class FindOperator<T> {
     /**
      * Parameter value.
      */
-    private _value: T | FindOperator<T>;
+    protected _value: T | FindOperator<T>;
 
     /**
      * Indicates if parameter is used or not for this operator.
      */
-    private _useParameter: boolean;
+    protected _useParameter: boolean;
 
     /**
      * Indicates if multiple parameters must be used for this operator.
      */
-    private _multipleParameters: boolean;
+    protected _multipleParameters: boolean;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -91,42 +91,3 @@ export abstract class FindOperator<T> {
      */
     abstract toSql(connection: Connection, aliasPath: string, parameters: string[]): string;
 }
-
-/*
-switch (this._type) {
-            case "not":
-                if (this._value instanceof FindOperator) {
-                    return `NOT(${this._value.toSql(
-                        connection,
-                        aliasPath,
-                        parameters
-                    )})`;
-                } else {
-                    return `${aliasPath} != ${parameters[0]}`;
-                }
-            case "lessThan":
-                return `${aliasPath} < ${parameters[0]}`;
-            case "lessThanOrEqual":
-                return `${aliasPath} <= ${parameters[0]}`;
-            case "moreThan":
-                return `${aliasPath} > ${parameters[0]}`;
-            case "moreThanOrEqual":
-                return `${aliasPath} >= ${parameters[0]}`;
-            case "like":
-                return `${aliasPath} LIKE ${parameters[0]}`;
-            case "in":
-                return `${aliasPath} IN (${parameters.join(", ")})`;
-            case "any":
-                return `${aliasPath} = ANY(${parameters[0]})`;
-            case "isNull":
-                return `${aliasPath} IS NULL`;
-            case "raw":
-                if (this.value instanceof Function) {
-                    return this.value(aliasPath);
-                } else {
-                    return `${aliasPath} = ${this.value}`;
-                }
-        }
-
-        return "";
- */

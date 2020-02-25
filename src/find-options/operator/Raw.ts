@@ -7,7 +7,7 @@ type RawOperatorArgs = string|((columnAlias?: string) => string);
  * Find Options Operator.
  * Example: { someField: Raw([...]) }
  */
-class RawOperator extends FindOperator<any> {
+class RawOperator extends FindOperator {
 
     constructor(value: RawOperatorArgs) {
         super(value);
