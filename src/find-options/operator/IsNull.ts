@@ -5,7 +5,7 @@ import {Connection} from "../..";
  * Find Options Operator.
  * Example: { someField: IsNull() }
  */
-class IsNullOperator<T> extends FindOperator<T> {
+class IsNullOperator extends FindOperator {
     constructor() {
         super(undefined as any);
     }
