@@ -91,3 +91,42 @@ export abstract class FindOperator<T> {
      */
     abstract toSql(connection: Connection, aliasPath: string, parameters: string[]): string;
 }
+
+/*
+switch (this._type) {
+            case "not":
+                if (this._value instanceof FindOperator) {
+                    return `NOT(${this._value.toSql(
+                        connection,
+                        aliasPath,
+                        parameters
+                    )})`;
+                } else {
+                    return `${aliasPath} != ${parameters[0]}`;
+                }
+            case "lessThan":
+                return `${aliasPath} < ${parameters[0]}`;
+            case "lessThanOrEqual":
+                return `${aliasPath} <= ${parameters[0]}`;
+            case "moreThan":
+                return `${aliasPath} > ${parameters[0]}`;
+            case "moreThanOrEqual":
+                return `${aliasPath} >= ${parameters[0]}`;
+            case "like":
+                return `${aliasPath} LIKE ${parameters[0]}`;
+            case "in":
+                return `${aliasPath} IN (${parameters.join(", ")})`;
+            case "any":
+                return `${aliasPath} = ANY(${parameters[0]})`;
+            case "isNull":
+                return `${aliasPath} IS NULL`;
+            case "raw":
+                if (this.value instanceof Function) {
+                    return this.value(aliasPath);
+                } else {
+                    return `${aliasPath} = ${this.value}`;
+                }
+        }
+
+        return "";
+ */

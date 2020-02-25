@@ -1,9 +1,19 @@
 import {FindOperator} from "../FindOperator";
+import {Connection} from "../..";
 
 /**
  * Find Options Operator.
  * Example: { someField: IsNull() }
  */
-export function IsNull() {
-    return new FindOperator("isNull", undefined as any, false);
+class IsNullOperator<T> extends FindOperator<T> {
+    constructor() {
+        super(undefined as any);
+    }
+
+    toSql(connection: Connection, aliasPath: string, parameters: string[]): string {
+        return `${aliasPath} IS NULL`;
+    }
 }
+
+
+export const IsNull = () => new IsNullOperator();
