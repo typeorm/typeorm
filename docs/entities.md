@@ -289,6 +289,8 @@ or
 @Column({ type: "int", width: 200 })
 ```
 
+> Note about `bigint` type: `bigint` column type, used in SQL databases, doesn't fit into the regular `number` type and maps property to a `string` instead.
+
 ### Column types for `mysql` / `mariadb`
 
 `bit`, `int`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `float`, `double`,
