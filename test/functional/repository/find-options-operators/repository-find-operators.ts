@@ -156,7 +156,6 @@ describe("repository > find options > operators", () => {
                 title: Not("About #1")
             });
 
-            console.log({loadedPosts});
             loadedPosts.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
         })));
