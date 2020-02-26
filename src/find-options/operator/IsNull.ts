@@ -7,7 +7,7 @@ import {Connection} from "../..";
  */
 class IsNullOperator extends FindOperator {
     constructor() {
-        super(undefined as any);
+        super(undefined as any, false, false);
     }
 
     toSql(connection: Connection, aliasPath: string, parameters: string[]): string {

@@ -10,7 +10,7 @@ type RawOperatorArgs = string|((columnAlias?: string) => string);
 class RawOperator extends FindOperator {
 
     constructor(value: RawOperatorArgs) {
-        super(value);
+        super(value, false);
     }
 
     toSql(connection: Connection, aliasPath: string, parameters: string[]): string {
