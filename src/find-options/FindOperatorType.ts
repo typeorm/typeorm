@@ -1,5 +1,6 @@
 /**
  * List of types that FindOperator can be.
+ * @deprecated No longer required
  */
 export type FindOperatorType = "not"
     | "lessThan"
