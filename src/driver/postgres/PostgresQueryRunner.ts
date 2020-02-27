@@ -719,7 +719,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const prevEnumNameWithOldSuffix = this.buildEnumName(table, oldColumn, false, false, true);
                 const prevEnumNameWithOldSuffixAndSchema = this.buildEnumName(table, oldColumn, true, false, true);
                 const newEnumName = this.buildEnumName(table, newColumn);
-                const newEnumNameWithOldSuffix = this.buildEnumName(table, newColumn, false, false);
+                const newEnumNameWithOldSuffix = this.buildEnumName(table, newColumn, false, false, true);
                 const newEnumNameWithOldSuffixAndSchema = this.buildEnumName(table, newColumn, true, false, true);
 
                 // rename old ENUM
@@ -728,12 +728,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                 // create new ENUM
                 upQueries.push(this.createEnumTypeSql(table, newColumn));
-                downQueries.push(this.dropEnumTypeSql(table, newColumn));
+                downQueries.push(this.createEnumTypeSql(table, oldColumn));
 
                 // if column have default value, we must drop it to avoid issues with type casting
                 if (newColumn.default !== null && newColumn.default !== undefined) {
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`));
                 }
 
                 // build column types
@@ -742,25 +742,25 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                 // update column to use new type
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${downType}`));
 
                 // if column have default value and we dropped it before, we must bring it back
                 if (newColumn.default !== null && newColumn.default !== undefined) {
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`));
                 }
 
                 // remove old ENUM
                 upQueries.push(this.dropEnumTypeSql(table, newColumn, prevEnumNameWithOldSuffixAndSchema));
-                downQueries.push(this.createEnumTypeSql(table, oldColumn, newEnumNameWithOldSuffixAndSchema));
+                downQueries.push(this.dropEnumTypeSql(table, oldColumn, newEnumNameWithOldSuffixAndSchema));
             }
 
             if (oldColumn.isNullable !== newColumn.isNullable) {
                 if (newColumn.isNullable) {
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP NOT NULL`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP NOT NULL`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET NOT NULL`));
                 } else {
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET NOT NULL`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET NOT NULL`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP NOT NULL`));
                 }
             }
