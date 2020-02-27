@@ -837,7 +837,7 @@ export class PostgresDriver implements Driver {
                         || tableColumn.enumName !== columnMetadata.enumName))
                 || tableColumn.isGenerated !== columnMetadata.isGenerated
                 || (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase()
-                || tableColumn.srid !== columnMetadata.srid
+                || tableColumn.srid !== columnMetadata.srid;
         });
     }
 

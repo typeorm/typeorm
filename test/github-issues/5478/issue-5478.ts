@@ -49,19 +49,18 @@ describe.only("github issues > #5478 Setting enumName doesn't change how migrati
                     const downQueries = sqlInMemory.downQueries.map(
                         query => query.query
                     );
-                    console.log("UP:", upQueries)
-                    console.log("DOWN:", downQueries)
+
                     upQueries.should.eql([
-                        'ALTER TYPE "public"."user_usertype_enum" RENAME TO "user_usertype_enum_old"',
+                        `ALTER TYPE "public"."user_usertype_enum" RENAME TO "user_usertype_enum_old"`,
                         `CREATE TYPE "UserRoleEnum" AS ENUM('0', '1')`,
-                        'ALTER TABLE "user" ALTER COLUMN "userType" TYPE "UserRoleEnum" USING "userType"::"text"::"UserRoleEnum"',
-                        'DROP TYPE "user_usertype_enum_old"'
+                        `ALTER TABLE "user" ALTER COLUMN "userType" TYPE "UserRoleEnum" USING "userType"::"text"::"UserRoleEnum"`,
+                        `DROP TYPE "user_usertype_enum_old"`
                       ]);
                     downQueries.should.eql([
-                        'ALTER TYPE "UserRoleEnum" RENAME TO "UserRoleEnum_old"',
+                        `ALTER TYPE "UserRoleEnum" RENAME TO "UserRoleEnum_old"`,
                         `CREATE TYPE "user_usertype_enum" AS ENUM('0', '1')`,
-                        'ALTER TABLE "user" ALTER COLUMN "userType" TYPE user_usertype_enum USING "userType"::"text"::user_usertype_enum',
-                        'DROP TYPE "UserRoleEnum_old"'
+                        `ALTER TABLE "user" ALTER COLUMN "userType" TYPE user_usertype_enum USING "userType"::"text"::user_usertype_enum`,
+                        `DROP TYPE "UserRoleEnum_old"`
                       ]);
                 } finally {
                     connection.close();
