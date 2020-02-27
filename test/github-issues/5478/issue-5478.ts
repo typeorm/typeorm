@@ -54,19 +54,18 @@ describe.only("github issues > #5478 Setting enumName doesn't change how migrati
                     );
                     console.log("UP:", upQueries)
                     console.log("DOWN:", downQueries)
-                    fail();
-                    // upQueries.should.eql([
-                    //     'ALTER TYPE "public"."UserRoleEnum" RENAME TO "user_usertype_enum_old"',
-                    //     `CREATE TYPE "user_usertype_enum" AS ENUM('0', '1')`,
-                    //     'ALTER TABLE "user" ALTER COLUMN "userType" TYPE "user_usertype_enum" USING "userType"::"text"::"user_usertype_enum"',
-                    //     'DROP TYPE "user_usertype_enum_old"'
-                    // ]);
-                    // downQueries.should.eql([
-                    //     'ALTER TYPE "user_usertype_enum_old" RENAME TO  "UserRoleEnum"',
-                    //     'DROP TYPE "user_usertype_enum"',
-                    //     'ALTER TABLE "user" ALTER COLUMN "userType" TYPE "user_usertype_enum_old" USING "userType"::"text"::"user_usertype_enum_old"',
-                    //     'CREATE TYPE "user_usertype_enum_old" AS ENUM()'
-                    // ]);
+                    upQueries.should.eql([
+                        'ALTER TYPE "public"."user_usertype_enum" RENAME TO "user_usertype_enum_old"',
+                        `CREATE TYPE "UserRoleEnum" AS ENUM('0', '1')`,
+                        'ALTER TABLE "user" ALTER COLUMN "userType" TYPE "UserRoleEnum" USING "userType"::"text"::"UserRoleEnum"',
+                        'DROP TYPE "user_usertype_enum_old"'
+                      ]);
+                    downQueries.should.eql([
+                        'ALTER TYPE "UserRoleEnum" RENAME TO "UserRoleEnum_old"',
+                        `CREATE TYPE "user_usertype_enum" AS ENUM('0', '1')`,
+                        'ALTER TABLE "user" ALTER COLUMN "userType" TYPE user_usertype_enum USING "userType"::"text"::user_usertype_enum',
+                        'DROP TYPE "UserRoleEnum_old"'
+                      ]);
                 } finally {
                     connection.close();
                 }
