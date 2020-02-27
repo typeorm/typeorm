@@ -24,9 +24,6 @@ describe.only("github issues > #5478 Setting enumName doesn't change how migrati
     it("should generate an altered column type", async () => {
         return Promise.all(
             connections.map(async function(_connection) {
-                if (_connection.options.type !== "postgres") {
-                    return;
-                }
                 const options = setupSingleTestingConnection(
                     _connection.options.type,
                     {
