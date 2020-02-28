@@ -268,6 +268,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
  will fail with an error. However, if `options.fallbackToDefaultDb` is set to `true`, then the user's default database will
   be used instead (Default: `false`).
   
+* `options.instanceName` - The instance name to connect to. The SQL Server Browser service must be running on the database server, and UDP port 1434 on the database server must be reachable. Mutually exclusive with `port`. (no default).
+
 * `options.enableAnsiNullDefault` - If true, SET ANSI_NULL_DFLT_ON ON will be set in the initial sql. This means new
  columns will be nullable by default. See the [T-SQL documentation](https://msdn.microsoft.com/en-us/library/ms187375.aspx)
  for more details. (Default: `true`).
