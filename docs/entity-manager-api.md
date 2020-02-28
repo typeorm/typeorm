@@ -214,7 +214,7 @@ await manager.clear(User);
 ```
 
 * `getRepository` - Gets `Repository` to perform operations on a specific entity.
- Learn more about [Repositories](working-with-entity-manager.md).
+ Learn more about [Repositories](working-with-repository.md).
 
 ```typescript
 const userRepository = manager.getRepository(User);
