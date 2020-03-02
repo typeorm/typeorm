@@ -178,7 +178,7 @@ Default value is `true`.
 * `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
 * `default: string` - Adds database-level column's `DEFAULT` value.
 * `primary: boolean` - Marks column as primary. Same as using  `@PrimaryColumn`.
-* `unique: boolean` - Marks column as unique column (creates unique constraint).
+* `unique: boolean` - Marks column as unique column (creates unique constraint). Default value is false.
 * `comment: string` - Database's column comment. Not supported by all database types.
 * `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
  number of digits that are stored for the values. Used in some column types.
