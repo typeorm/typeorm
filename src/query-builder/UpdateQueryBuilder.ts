@@ -1,5 +1,6 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {SapDriver} from "../driver/sap/SapDriver";
+import { ColumnMetadata } from "../metadata/ColumnMetadata";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
@@ -381,6 +382,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = [];
+        const updatedColumns: ColumnMetadata[] = [];
         const newParameters: ObjectLiteral = {};
         let parametersCount =   this.connection.driver instanceof MysqlDriver ||
                                 this.connection.driver instanceof AuroraDataApiDriver ||
@@ -399,6 +401,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 columns.forEach(column => {
                     if (!column.isUpdate) { return; }
+                    updatedColumns.push(column);
 
                     const paramName = "upd_" + column.databaseName;
 
@@ -458,9 +461,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 });
             });
 
-            if (metadata.versionColumn)
+            if (metadata.versionColumn && updatedColumns.indexOf(metadata.versionColumn) === -1)
                 updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
-            if (metadata.updateDateColumn)
+            if (metadata.updateDateColumn && updatedColumns.indexOf(metadata.updateDateColumn) === -1)
                 updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
 
         } else {
