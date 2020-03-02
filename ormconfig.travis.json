@@ -89,5 +89,16 @@
     "database": "test",
     "useNewUrlParser": true,
     "useUnifiedTopology": true
+  },
+  {
+    "skip": false,
+    "name": "firebird",
+    "type": "firebird",
+    "host": "localhost",
+    "port": 3050,
+    "username": "SYSDBA",
+    "password": "masterkey",
+    "database": "/firebird/data/test.fdb",
+    "logging": false
   }
 ]

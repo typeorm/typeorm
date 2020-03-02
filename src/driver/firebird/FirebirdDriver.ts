@@ -77,6 +77,9 @@ export class FirebirdDriver implements Driver {
         updateDate: "timestamp",
         updateDatePrecision: 6,
         updateDateDefault: "NOW",
+        deleteDate: "timestamp",
+        deleteDatePrecision: 6,
+        deleteDateNullable: true,
         version: "int",
         treeLevel: "int",
         migrationId: "int",
@@ -193,7 +196,7 @@ export class FirebirdDriver implements Driver {
         return [sql, escapedParameters];
     }
     escape(columnName: string): string {
-        return "`" + columnName + "`";
+        return `${columnName}`;
     }
     buildTableName(tableName: string, schema?: string | undefined, database?: string | undefined): string {
         return `${tableName}`;
@@ -339,9 +342,6 @@ export class FirebirdDriver implements Driver {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
                 value = insertResult.insertId;
-            // } else if (generatedColumn.generationStrategy === "uuid") {
-            //     console.log("getting db value:", generatedColumn.databaseName);
-            //     value = generatedColumn.getEntityValue(uuidMap);
             }
 
             return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));

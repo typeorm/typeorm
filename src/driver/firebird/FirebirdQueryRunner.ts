@@ -50,7 +50,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: FirebirdDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: FirebirdDriver, mode: "master" | "slave" = "master") {
         super();
         this.driver = driver;
         this.connection = driver.connection;
@@ -245,7 +245,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const sql = `SELECT * FROM \`RDB$RELATIONS\` WHERE \`RDB$FLAGS\`= 1 AND \`RDB$RELATION_NAME\` = '${parsedTableName.tableName}'`;
+        const sql = `SELECT * FROM RDB$RELATIONS WHERE RDB$FLAGS= 1 AND RDB$RELATION_NAME = '${parsedTableName.tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -256,7 +256,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
     async hasColumn(tableOrName: Table|string, column: TableColumn|string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
         const columnName = column instanceof TableColumn ? column.name : column;
-        const sql = `SELECT * FROM \`rdb$relation_fields\` WHERE \`rdb$relation_name\` = '${parsedTableName.tableName}' AND \`rdb$field_name\` = '${columnName}'`;
+        const sql = `SELECT * FROM RDB$RELATION_FIELDS WHERE RDB$RELATION_NAME = '${parsedTableName.tableName}' AND RDB$FIELD_NAME = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -265,8 +265,8 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Creates a new database.
      */
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
-        const up = new Query(ifNotExist ? `CREATE DATABASE IF NOT EXISTS \`${database}\`` : `CREATE DATABASE \`${database}\``);
-        const down = new Query(`DROP DATABASE \`${database}\``);
+        const up = new Query(ifNotExist ? `CREATE DATABASE IF NOT EXISTS ${database}` : `CREATE DATABASE ${database}`);
+        const down = new Query(`DROP DATABASE ${database}`);
         await this.executeQueries(up, down);
     }
 
@@ -274,8 +274,8 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Drops database.
      */
     async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
-        const up = new Query(ifExist ? `DROP DATABASE IF EXISTS \`${database}\`` : `DROP DATABASE \`${database}\``);
-        const down = new Query(`CREATE DATABASE \`${database}\``);
+        const up = new Query(ifExist ? `DROP DATABASE IF EXISTS ${database}` : `DROP DATABASE ${database}`);
+        const down = new Query(`CREATE DATABASE ${database}`);
         await this.executeQueries(up, down);
     }
 
@@ -399,7 +399,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
         // rename index constraints
         newTable.indices.forEach(index => {
             // build new constraint name
-            const columnNames = index.columnNames.map(column => `\`${column}\``).join(", ");
+            const columnNames = index.columnNames.map(column => `${column}`).join(", ");
             const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
             // build queries
@@ -408,8 +408,8 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                 indexType += "UNIQUE ";
             if (index.isFulltext)
                 indexType += "FULLTEXT ";
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX ${index.name}, ADD ${indexType}INDEX ${newIndexName} (${columnNames})`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX ${newIndexName}, ADD ${indexType}INDEX ${index.name} (${columnNames})`));
 
             // replace constraint name
             index.name = newIndexName;
@@ -418,19 +418,19 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
         // rename foreign key constraint
         newTable.foreignKeys.forEach(foreignKey => {
             // build new constraint name
-            const columnNames = foreignKey.columnNames.map(column => `\`${column}\``).join(", ");
-            const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `\`${column}\``).join(",");
+            const columnNames = foreignKey.columnNames.map(column => `${column}`).join(", ");
+            const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `${column}`).join(",");
             const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames);
 
             // build queries
-            let up = `ALTER TABLE ${this.escapePath(newTable)} DROP FOREIGN KEY \`${foreignKey.name}\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
+            let up = `ALTER TABLE ${this.escapePath(newTable)} DROP FOREIGN KEY ${foreignKey.name}, ADD CONSTRAINT ${newForeignKeyName} FOREIGN KEY (${columnNames}) ` +
                 `REFERENCES ${this.escapePath(foreignKey.referencedTableName)}(${referencedColumnNames})`;
             if (foreignKey.onDelete)
                 up += ` ON DELETE ${foreignKey.onDelete}`;
             if (foreignKey.onUpdate)
                 up += ` ON UPDATE ${foreignKey.onUpdate}`;
 
-            let down = `ALTER TABLE ${this.escapePath(newTable)} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
+            let down = `ALTER TABLE ${this.escapePath(newTable)} DROP FOREIGN KEY ${newForeignKeyName}, ADD CONSTRAINT ${foreignKey.name} FOREIGN KEY (${columnNames}) ` +
                 `REFERENCES ${this.escapePath(foreignKey.referencedTableName)}(${referencedColumnNames})`;
             if (foreignKey.onDelete)
                 down += ` ON DELETE ${foreignKey.onDelete}`;
@@ -462,7 +462,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
         const skipColumnLevelPrimary = clonedTable.primaryColumns.length > 0;
 
         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(column, skipColumnLevelPrimary, false)}`));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN \`${column.name}\``));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN ${column.name}`));
 
         // create or update primary key constraint
         if (column.isPrimary && skipColumnLevelPrimary) {
@@ -472,17 +472,17 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const nonGeneratedColumn = generatedColumn.clone();
                 nonGeneratedColumn.isGenerated = false;
                 nonGeneratedColumn.generationStrategy = undefined;
-                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${column.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(column, true)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${column.name} ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${nonGeneratedColumn.name} ${this.buildCreateColumnSql(column, true)}`));
             }
 
             const primaryColumns = clonedTable.primaryColumns;
-            let columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
+            let columnNames = primaryColumns.map(column => `${column.name}`).join(", ");
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNames})`));
 
             primaryColumns.push(column);
-            columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
+            columnNames = primaryColumns.map(column => `${column.name}`).join(", ");
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNames})`));
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
 
@@ -491,8 +491,8 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const nonGeneratedColumn = generatedColumn.clone();
                 nonGeneratedColumn.isGenerated = false;
                 nonGeneratedColumn.generationStrategy = undefined;
-                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(column, true)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${column.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${nonGeneratedColumn.name} ${this.buildCreateColumnSql(column, true)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${column.name} ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
             }
         }
 
@@ -513,8 +513,8 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                 name: uniqueIndex.name,
                 columnNames: uniqueIndex.columnNames
             }));
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${column.name}\`)`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${uniqueIndex.name}\``));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX ${uniqueIndex.name} (${column.name})`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX ${uniqueIndex.name}`));
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -578,15 +578,15 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
         } else {
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.
-                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${newColumn.name}\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${oldColumn.name} ${newColumn.name} ${this.buildCreateColumnSql(oldColumn, true, true)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${newColumn.name} ${oldColumn.name} ${this.buildCreateColumnSql(oldColumn, true, true)}`));
 
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach(index => {
                     // build new constraint name
                     index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
                     index.columnNames.push(newColumn.name);
-                    const columnNames = index.columnNames.map(column => `\`${column}\``).join(", ");
+                    const columnNames = index.columnNames.map(column => `${column}`).join(", ");
                     const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
                     // build queries
@@ -597,8 +597,8 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                         indexType += "SPATIAL ";
                     if (index.isFulltext)
                         indexType += "FULLTEXT ";
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX ${index.name}, ADD ${indexType}INDEX ${newIndexName} (${columnNames})`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX ${newIndexName}, ADD ${indexType}INDEX ${index.name} (${columnNames})`));
 
                     // replace constraint name
                     index.name = newIndexName;
@@ -609,19 +609,19 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                     // build new constraint name
                     foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
                     foreignKey.columnNames.push(newColumn.name);
-                    const columnNames = foreignKey.columnNames.map(column => `\`${column}\``).join(", ");
-                    const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `\`${column}\``).join(",");
+                    const columnNames = foreignKey.columnNames.map(column => `${column}`).join(", ");
+                    const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `${column}`).join(",");
                     const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
 
                     // build queries
-                    let up = `ALTER TABLE ${this.escapePath(table)} DROP FOREIGN KEY \`${foreignKey.name}\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
+                    let up = `ALTER TABLE ${this.escapePath(table)} DROP FOREIGN KEY ${foreignKey.name}, ADD CONSTRAINT ${newForeignKeyName} FOREIGN KEY (${columnNames}) ` +
                         `REFERENCES ${this.escapePath(foreignKey.referencedTableName)}(${referencedColumnNames})`;
                     if (foreignKey.onDelete)
                         up += ` ON DELETE ${foreignKey.onDelete}`;
                     if (foreignKey.onUpdate)
                         up += ` ON UPDATE ${foreignKey.onUpdate}`;
 
-                    let down = `ALTER TABLE ${this.escapePath(table)} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
+                    let down = `ALTER TABLE ${this.escapePath(table)} DROP FOREIGN KEY ${newForeignKeyName}, ADD CONSTRAINT ${foreignKey.name} FOREIGN KEY (${columnNames}) ` +
                         `REFERENCES ${this.escapePath(foreignKey.referencedTableName)}(${referencedColumnNames})`;
                     if (foreignKey.onDelete)
                         down += ` ON DELETE ${foreignKey.onDelete}`;
@@ -642,8 +642,8 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
-                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${oldColumn.name} ${this.buildCreateColumnSql(newColumn, true)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${newColumn.name} ${this.buildCreateColumnSql(oldColumn, true)}`));
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
@@ -654,15 +654,15 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                     nonGeneratedColumn.isGenerated = false;
                     nonGeneratedColumn.generationStrategy = undefined;
 
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${generatedColumn.name} ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${nonGeneratedColumn.name} ${this.buildCreateColumnSql(generatedColumn, true)}`));
                 }
 
                 const primaryColumns = clonedTable.primaryColumns;
 
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
-                    const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
+                    const columnNames = primaryColumns.map(column => `${column.name}`).join(", ");
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNames})`));
                 }
@@ -672,7 +672,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                     // update column in table
                     const column = clonedTable.columns.find(column => column.name === newColumn.name);
                     column!.isPrimary = true;
-                    const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
+                    const columnNames = primaryColumns.map(column => `${column.name}`).join(", ");
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNames})`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
 
@@ -685,7 +685,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
-                        const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
+                        const columnNames = primaryColumns.map(column => `${column.name}`).join(", ");
                         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNames})`));
                         downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
                     }
@@ -697,8 +697,8 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                     nonGeneratedColumn.isGenerated = false;
                     nonGeneratedColumn.generationStrategy = undefined;
 
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${nonGeneratedColumn.name} ${this.buildCreateColumnSql(generatedColumn, true)}`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${generatedColumn.name} ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
                 }
             }
 
@@ -714,8 +714,8 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                         name: uniqueIndex.name,
                         columnNames: uniqueIndex.columnNames
                     }));
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${newColumn.name}\`)`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${uniqueIndex.name}\``));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX ${uniqueIndex.name} (${newColumn.name})`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX ${uniqueIndex.name}`));
 
                 } else {
                     const uniqueIndex = clonedTable.indices.find(index => {
@@ -726,8 +726,8 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                     const tableUnique = clonedTable.uniques.find(unique => unique.name === uniqueIndex!.name);
                     clonedTable.uniques.splice(clonedTable.uniques.indexOf(tableUnique!), 1);
 
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${uniqueIndex!.name}\``));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${uniqueIndex!.name}\` (\`${newColumn.name}\`)`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX ${uniqueIndex!.name}`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX ${uniqueIndex!.name} (${newColumn.name})`));
                 }
             }
         }
@@ -765,12 +765,12 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                 nonGeneratedColumn.isGenerated = false;
                 nonGeneratedColumn.generationStrategy = undefined;
 
-                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${generatedColumn.name} ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${nonGeneratedColumn.name} ${this.buildCreateColumnSql(generatedColumn, true)}`));
             }
 
             // dropping primary key constraint
-            const columnNames = clonedTable.primaryColumns.map(primaryColumn => `\`${primaryColumn.name}\``).join(", ");
+            const columnNames = clonedTable.primaryColumns.map(primaryColumn => `${primaryColumn.name}`).join(", ");
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} DROP PRIMARY KEY`));
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} ADD PRIMARY KEY (${columnNames})`));
 
@@ -780,7 +780,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
-                const columnNames = clonedTable.primaryColumns.map(primaryColumn => `\`${primaryColumn.name}\``).join(", ");
+                const columnNames = clonedTable.primaryColumns.map(primaryColumn => `${primaryColumn.name}`).join(", ");
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} ADD PRIMARY KEY (${columnNames})`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} DROP PRIMARY KEY`));
             }
@@ -791,8 +791,8 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                 nonGeneratedColumn.isGenerated = false;
                 nonGeneratedColumn.generationStrategy = undefined;
 
-                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${nonGeneratedColumn.name} ${this.buildCreateColumnSql(generatedColumn, true)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${generatedColumn.name} ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
             }
         }
 
@@ -815,11 +815,11 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
             if (foundIndex)
                 clonedTable.indices.splice(clonedTable.indices.indexOf(foundIndex), 1);
 
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${indexName}\``));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${indexName}\` (\`${column.name}\`)`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX ${indexName}`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX ${indexName} (${column.name})`));
         }
 
-        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN \`${column.name}\``));
+        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN ${column.name}`));
         downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(column, true)}`));
 
         await this.executeQueries(upQueries, downQueries);
@@ -870,14 +870,14 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
             nonGeneratedColumn.isGenerated = false;
             nonGeneratedColumn.generationStrategy = undefined;
 
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${generatedColumn.name} ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${nonGeneratedColumn.name} ${this.buildCreateColumnSql(generatedColumn, true)}`));
         }
 
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns;
         if (primaryColumns.length > 0) {
-            const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
+            const columnNames = primaryColumns.map(column => `${column.name}`).join(", ");
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNames})`));
         }
@@ -887,7 +887,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
             .filter(column => columnNames.indexOf(column.name) !== -1)
             .forEach(column => column.isPrimary = true);
 
-        const columnNamesString = columnNames.map(columnName => `\`${columnName}\``).join(", ");
+        const columnNamesString = columnNames.map(columnName => `${columnName}`).join(", ");
         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNamesString})`));
         downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
 
@@ -898,8 +898,8 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
             nonGeneratedColumn.isGenerated = false;
             nonGeneratedColumn.generationStrategy = undefined;
 
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(newOrExistGeneratedColumn, true)}`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${newOrExistGeneratedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${nonGeneratedColumn.name} ${this.buildCreateColumnSql(newOrExistGeneratedColumn, true)}`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE ${newOrExistGeneratedColumn.name} ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
 
             // if column changed to generated, we must update it in table
             const changedGeneratedColumn = clonedTable.columns.find(column => column.name === newOrExistGeneratedColumn.name);
@@ -1128,7 +1128,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
         await this.startTransaction();
         try {
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`;
+            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS ', table_schema, '.', table_name, '') AS query FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${dbName}'`;
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
             await this.query(disableForeignKeysCheckQuery);
@@ -1164,11 +1164,11 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         const viewsCondition = viewNames.map(tableName => {
             let [, name] = tableName.split(".");
-            return `(\`t\`.\`name\` = '${name}')`;
+            return `(t.name = '${name}')`;
         }).join(" OR ");
 
-        const query = `SELECT \`t\`.* FROM ${this.escapePath(this.getTypeormMetadataTableName())} \`t\` ` +
-            `INNER JOIN \`rdb$view_relations\` \`v\` ON \`v\`.\`rdb$relation_name\` = \`t\`.\`name\` WHERE \`t\`.\`type\` = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+        const query = `SELECT t.* FROM ${this.escapePath(this.getTypeormMetadataTableName())} t ` +
+            `INNER JOIN rdb$view_relations v ON v.rdb$relation_name = t.name WHERE t.type = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
@@ -1194,15 +1194,15 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                 name = database;
                 database = this.driver.database || currentDatabase;
             }
-            return `(\`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}')`;
+            return `(TABLE_SCHEMA = '${database}' AND TABLE_NAME = '${name}')`;
         }).join(" OR ");
-        const tablesSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE ` + tablesCondition;
+        const tablesSql = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE ` + tablesCondition;
 
-        const columnsSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE ` + tablesCondition;
+        const columnsSql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE ` + tablesCondition;
 
-        const primaryKeySql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` WHERE \`CONSTRAINT_NAME\` = 'PRIMARY' AND (${tablesCondition})`;
+        const primaryKeySql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE CONSTRAINT_NAME = 'PRIMARY' AND (${tablesCondition})`;
 
-        const collationsSql = `SELECT \`SCHEMA_NAME\`, \`DEFAULT_CHARACTER_SET_NAME\` as \`CHARSET\`, \`DEFAULT_COLLATION_NAME\` AS \`COLLATION\` FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\``;
+        const collationsSql = `SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME as CHARSET, DEFAULT_COLLATION_NAME AS COLLATION FROM INFORMATION_SCHEMA.SCHEMATA`;
 
         const indicesCondition = tableNames.map(tableName => {
             let [database, name] = tableName.split(".");
@@ -1210,11 +1210,11 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                 name = database;
                 database = this.driver.database || currentDatabase;
             }
-            return `(\`s\`.\`TABLE_SCHEMA\` = '${database}' AND \`s\`.\`TABLE_NAME\` = '${name}')`;
+            return `(s.TABLE_SCHEMA = '${database}' AND s.TABLE_NAME = '${name}')`;
         }).join(" OR ");
-        const indicesSql = `SELECT \`s\`.* FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\` \`s\` ` +
-            `LEFT JOIN \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` \`rc\` ON \`s\`.\`INDEX_NAME\` = \`rc\`.\`CONSTRAINT_NAME\` ` +
-            `WHERE (${indicesCondition}) AND \`s\`.\`INDEX_NAME\` != 'PRIMARY' AND \`rc\`.\`CONSTRAINT_NAME\` IS NULL`;
+        const indicesSql = `SELECT s.* FROM INFORMATION_SCHEMA.STATISTICS s ` +
+            `LEFT JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc ON s.INDEX_NAME = rc.CONSTRAINT_NAME ` +
+            `WHERE (${indicesCondition}) AND s.INDEX_NAME != 'PRIMARY' AND rc.CONSTRAINT_NAME IS NULL`;
 
         const foreignKeysCondition = tableNames.map(tableName => {
             let [database, name] = tableName.split(".");
@@ -1222,12 +1222,12 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                 name = database;
                 database = this.driver.database || currentDatabase;
             }
-            return `(\`kcu\`.\`TABLE_SCHEMA\` = '${database}' AND \`kcu\`.\`TABLE_NAME\` = '${name}')`;
+            return `(kcu.TABLE_SCHEMA = '${database}' AND kcu.TABLE_NAME = '${name}')`;
         }).join(" OR ");
-        const foreignKeysSql = `SELECT \`kcu\`.\`TABLE_SCHEMA\`, \`kcu\`.\`TABLE_NAME\`, \`kcu\`.\`CONSTRAINT_NAME\`, \`kcu\`.\`COLUMN_NAME\`, \`kcu\`.\`REFERENCED_TABLE_SCHEMA\`, ` +
-            `\`kcu\`.\`REFERENCED_TABLE_NAME\`, \`kcu\`.\`REFERENCED_COLUMN_NAME\`, \`rc\`.\`DELETE_RULE\` \`ON_DELETE\`, \`rc\`.\`UPDATE_RULE\` \`ON_UPDATE\` ` +
-            `FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` \`kcu\` ` +
-            `INNER JOIN \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` \`rc\` ON \`rc\`.\`constraint_name\` = \`kcu\`.\`constraint_name\` ` +
+        const foreignKeysSql = `SELECT kcu.TABLE_SCHEMA, kcu.TABLE_NAME, kcu.CONSTRAINT_NAME, kcu.COLUMN_NAME, kcu.REFERENCED_TABLE_SCHEMA, ` +
+            `kcu.REFERENCED_TABLE_NAME, kcu.REFERENCED_COLUMN_NAME, rc.DELETE_RULE ON_DELETE, rc.UPDATE_RULE ON_UPDATE ` +
+            `FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu ` +
+            `INNER JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc ON rc.constraint_name = kcu.constraint_name ` +
             `WHERE ` + foreignKeysCondition;
         const [dbTables, dbColumns, dbPrimaryKeys, dbCollations, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
@@ -1428,7 +1428,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         if (table.indices.length > 0) {
             const indicesSql = table.indices.map(index => {
-                const columnNames = index.columnNames.map(columnName => `\`${columnName}\``).join(", ");
+                const columnNames = index.columnNames.map(columnName => `${columnName}`).join(", ");
                 if (!index.name)
                     index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
 
@@ -1440,7 +1440,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                 if (index.isFulltext)
                     indexType += "FULLTEXT ";
 
-                return `${indexType}INDEX \`${index.name}\` (${columnNames})`;
+                return `${indexType}INDEX ${index.name} (${columnNames})`;
             }).join(", ");
 
             sql += `, ${indicesSql}`;
@@ -1448,12 +1448,12 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         if (table.foreignKeys.length > 0 && createForeignKeys) {
             const foreignKeysSql = table.foreignKeys.map(fk => {
-                const columnNames = fk.columnNames.map(columnName => `\`${columnName}\``).join(", ");
+                const columnNames = fk.columnNames.map(columnName => `${columnName}`).join(", ");
                 if (!fk.name)
                     fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames);
-                const referencedColumnNames = fk.referencedColumnNames.map(columnName => `\`${columnName}\``).join(", ");
+                const referencedColumnNames = fk.referencedColumnNames.map(columnName => `${columnName}`).join(", ");
 
-                let constraint = `CONSTRAINT \`${fk.name}\` FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(fk.referencedTableName)} (${referencedColumnNames})`;
+                let constraint = `CONSTRAINT ${fk.name} FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(fk.referencedTableName)} (${referencedColumnNames})`;
                 if (fk.onDelete)
                     constraint += ` ON DELETE ${fk.onDelete}`;
                 if (fk.onUpdate)
@@ -1466,7 +1466,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
         }
 
         if (table.primaryColumns.length > 0) {
-            const columnNames = table.primaryColumns.map(column => `\`${column.name}\``).join(", ");
+            const columnNames = table.primaryColumns.map(column => `${column.name}`).join(", ");
             sql += `, PRIMARY KEY (${columnNames})`;
         }
 
@@ -1531,13 +1531,13 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds create index sql.
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
-        const columns = index.columnNames.map(columnName => `\`${columnName}\``).join(", ");
+        const columns = index.columnNames.map(columnName => `${columnName}`).join(", ");
         let indexType = "";
         if (index.isUnique)
             indexType += "UNIQUE ";
         if (index.isFulltext)
             indexType += "FULLTEXT ";
-        return new Query(`CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapePath(table)}(${columns})`);
+        return new Query(`CREATE ${indexType}INDEX ${index.name} ON ${this.escapePath(table)}(${columns})`);
     }
 
     /**
@@ -1545,14 +1545,14 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected dropIndexSql(table: Table, indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        return new Query(`DROP INDEX \`${indexName}\` ON ${this.escapePath(table)}`);
+        return new Query(`DROP INDEX ${indexName} ON ${this.escapePath(table)}`);
     }
 
     /**
      * Builds create primary key sql.
      */
     protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
-        const columnNamesString = columnNames.map(columnName => `\`${columnName}\``).join(", ");
+        const columnNamesString = columnNames.map(columnName => `${columnName}`).join(", ");
         return new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNamesString})`);
     }
 
@@ -1567,9 +1567,9 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds create foreign key sql.
      */
     protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): Query {
-        const columnNames = foreignKey.columnNames.map(column => `\`${column}\``).join(", ");
-        const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `\`${column}\``).join(",");
-        let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
+        const columnNames = foreignKey.columnNames.map(column => `${column}`).join(", ");
+        const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `${column}`).join(",");
+        let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT ${foreignKey.name} FOREIGN KEY (${columnNames}) ` +
             `REFERENCES ${this.escapePath(foreignKey.referencedTableName)}(${referencedColumnNames})`;
         if (foreignKey.onDelete)
             sql += ` ON DELETE ${foreignKey.onDelete}`;
@@ -1584,7 +1584,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected dropForeignKeySql(table: Table, foreignKeyOrName: TableForeignKey|string): Query {
         const foreignKeyName = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName.name : foreignKeyOrName;
-        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP FOREIGN KEY \`${foreignKeyName}\``);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP FOREIGN KEY ${foreignKeyName}`);
     }
 
     protected parseTableName(target: Table|string) {
@@ -1601,9 +1601,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
     protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
         let tableName = target instanceof Table || target instanceof View ? target.name : target;
 
-        return tableName.split(".").map(i => {
-            return disableEscape ? i : `\`${i}\``;
-        }).join(".");
+        return tableName;
     }
 
     /**
@@ -1614,16 +1612,16 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (skipName) {
             c = this.connection.driver.createFullType(column);
         } else {
-            c = `\`${column.name}\` ${this.connection.driver.createFullType(column)}`;
+            c = `${column.name} ${this.connection.driver.createFullType(column)}`;
         }
         if (column.asExpression)
             c += ` AS (${column.asExpression}) ${column.generatedType ? column.generatedType : "VIRTUAL"}`;
 
         // if you specify ZEROFILL for a numeric column, Firebird automatically adds the UNSIGNED attribute to that column.
         if (column.zerofill) {
-            c += " ZEROFILL";
+            this.driver.connection.logger.log("warn", "Firebird doesn't support zerofill on column.");
         } else if (column.unsigned) {
-            c += " UNSIGNED";
+            this.driver.connection.logger.log("warn", "Firebird doesn't support unsigned integer on column.");
         }
         if (column.enum)
             c += ` (${column.enum.map(value => "'" + value + "'").join(", ")})`;
@@ -1637,14 +1635,18 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
             c += " NULL";
         if (column.isPrimary && !skipPrimary)
             c += " PRIMARY KEY";
-        if (column.isGenerated && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
-            c += " AUTO_INCREMENT";
+        if (column.isGenerated && column.generationStrategy === "increment") {
+            // don't use skipPrimary here since updates can update already exist primary without auto inc.
+            // TODO: Add support to create generator to increment +1 within before insert trigger.
+            // Eg. https://github.com/kerwynrg/knex/blob/firebird/src/dialects/firebird/schema/trigger.js#L20
+        }
         if (column.comment)
             c += ` COMMENT '${column.comment}'`;
         if (column.default !== undefined && column.default !== null)
             c += ` DEFAULT ${column.default}`;
-        if (column.onUpdate)
-            c += ` ON UPDATE ${column.onUpdate}`;
+        if (column.onUpdate) {
+            this.driver.connection.logger.log("warn", "Firebird doesn't support onUpdate on column.");
+        }
 
         return c;
     }

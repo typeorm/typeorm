@@ -99,7 +99,7 @@
     "port": 3050,
     "username": "SYSDBA",
     "password": "masterkey",
-    "database": "test",
+    "database": "/firebird/data/test.fdb",
     "logging": false
     "useNewUrlParser": true,
     "useUnifiedTopology": true

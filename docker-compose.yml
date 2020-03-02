@@ -108,5 +108,14 @@ services:
   #   container_name: "typeorm-redis"
   #   ports:
   #     - "6379:6379"
+
+  # firebird
+  firebird:
+    image: jacobalberty/firebird:3.0.5
+    container_name: typeorm-firebird
+    ports:
+      - 3050:3050
+    environment:
+      ISC_PASSWORD: masterkey
 #volumes:
 #  volume-hana-xe:
