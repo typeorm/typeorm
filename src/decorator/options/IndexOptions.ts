@@ -21,6 +21,12 @@ export interface IndexOptions {
     fulltext?: boolean;
 
     /**
+     * Fulltext parser.
+     * Works only in MySQL.
+     */
+    parser?: string;
+
+    /**
      * Index filter condition.
      */
     where?: string;

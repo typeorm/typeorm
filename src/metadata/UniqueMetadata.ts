@@ -93,7 +93,7 @@ export class UniqueMetadata {
         // if columns already an array of string then simply return it
         if (this.givenColumnNames) {
             let columnPropertyPaths: string[] = [];
-            if (this.givenColumnNames instanceof Array) {
+            if (Array.isArray(this.givenColumnNames)) {
                 columnPropertyPaths = this.givenColumnNames.map(columnName => {
                     if (this.embeddedMetadata)
                         return this.embeddedMetadata.propertyPath + "." + columnName;
@@ -104,7 +104,7 @@ export class UniqueMetadata {
             } else {
                 // if columns is a function that returns array of field names then execute it and get columns names from it
                 const columnsFnResult = this.givenColumnNames(this.entityMetadata.propertiesMap);
-                if (columnsFnResult instanceof Array) {
+                if (Array.isArray(columnsFnResult)) {
                     columnPropertyPaths = columnsFnResult.map((i: any) => String(i));
                     columnPropertyPaths.forEach(name => map[name] = 1);
                 } else {

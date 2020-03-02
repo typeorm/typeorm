@@ -94,6 +94,8 @@ export class MongoDriver implements Driver {
         createDateDefault: "",
         updateDate: "int",
         updateDateDefault: "",
+        deleteDate: "int",
+        deleteDateNullable: true,
         version: "int",
         treeLevel: "int",
         migrationId: "int",
@@ -192,7 +194,8 @@ export class MongoDriver implements Driver {
         "auto_reconnect",
         "minSize",
         "monitorCommands",
-        "useNewUrlParser"
+        "useNewUrlParser",
+        "useUnifiedTopology"
     ];
 
     // -------------------------------------------------------------------------

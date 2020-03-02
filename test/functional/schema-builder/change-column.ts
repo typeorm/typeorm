@@ -1,16 +1,17 @@
-import "reflect-metadata";
-import {Connection} from "../../../src";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {expect} from "chai";
-import {PromiseUtils} from "../../../src";
-import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
-import {Post} from "./entity/Post";
-import {PostVersion} from "./entity/PostVersion";
+import "reflect-metadata";
+import {Connection, PromiseUtils} from "../../../src";
+import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
+import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
+import {SapDriver} from "../../../src/driver/sap/SapDriver";
+import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
+import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {Post} from "./entity/Post";
+import {PostVersion} from "./entity/PostVersion";
 
 describe("schema builder > change column", () => {
 
@@ -61,7 +62,7 @@ describe("schema builder > change column", () => {
         postTable!.findColumnByName("name")!.length.should.be.equal("500");
         postTable!.findColumnByName("text")!.length.should.be.equal("300");
 
-        if (connection.driver instanceof MysqlDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver || connection.driver instanceof SapDriver) {
             postTable!.indices.length.should.be.equal(2);
         } else {
             postTable!.uniques.length.should.be.equal(2);

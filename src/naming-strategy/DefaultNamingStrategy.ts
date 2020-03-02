@@ -27,11 +27,13 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return originalClosureTableName + "_closure";
     }
 
-    columnName(propertyName: string, customName: string, embeddedPrefixes: string[]): string { // todo: simplify
+    columnName(propertyName: string, customName: string, embeddedPrefixes: string[]): string {
+        const name = customName || propertyName;
+        
         if (embeddedPrefixes.length)
-            return camelCase(embeddedPrefixes.join("_")) + (customName ? titleCase(customName) : titleCase(propertyName));
+            return camelCase(embeddedPrefixes.join("_")) + titleCase(name);
 
-        return customName ? customName : propertyName;
+        return name;
     }
 
     relationName(propertyName: string): string {
@@ -78,7 +80,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "DF_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
-    foreignKeyName(tableOrName: Table|string, columnNames: string[]): string {
+    foreignKeyName(tableOrName: Table|string, columnNames: string[], _referencedTablePath?: string, _referencedColumnNames?: string[]): string {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
         const clonedColumnNames = [...columnNames];
         clonedColumnNames.sort();

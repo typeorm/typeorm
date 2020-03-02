@@ -1,14 +1,14 @@
-import {QueryResultCache} from "./QueryResultCache";
-import {QueryResultCacheOptions} from "./QueryResultCacheOptions";
-import {Table} from "../schema-builder/table/Table";
-import {QueryRunner} from "../query-runner/QueryRunner";
-import {Connection} from "../connection/Connection";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {Connection} from "../connection/Connection";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {QueryRunner} from "../query-runner/QueryRunner";
+import {Table} from "../schema-builder/table/Table";
+import {QueryResultCache} from "./QueryResultCache";
+import {QueryResultCacheOptions} from "./QueryResultCacheOptions";
 
 /**
  * Caches query result into current database, into separate table called "query-result-cache".
@@ -28,7 +28,7 @@ export class DbQueryResultCache implements QueryResultCache {
     constructor(protected connection: Connection) {
 
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
-        const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};    
+        const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
         const cacheTableName = cacheOptions.tableName || "query-result-cache";
 
         this.queryResultCacheTable = this.connection.driver.buildTableName(cacheTableName, options.schema, options.database);

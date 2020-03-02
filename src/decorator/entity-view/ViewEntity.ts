@@ -30,6 +30,8 @@ export function ViewEntity(nameOrOptions?: string|ViewEntityOptions, maybeOption
             type: "view",
             database: options.database ? options.database : undefined,
             schema: options.schema ? options.schema : undefined,
+            synchronize: options.synchronize === false ? false : true,
+            materialized: !!options.materialized
         } as TableMetadataArgs);
     };
 }

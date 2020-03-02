@@ -31,7 +31,7 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
         if (typeof typeOrOptions === "string") {
             type = <ColumnType> typeOrOptions;
         } else {
-            options = <ColumnOptions> typeOrOptions;
+            options = Object.assign({}, <ColumnOptions> typeOrOptions);
         }
         if (!options) options = {} as ColumnOptions;
 

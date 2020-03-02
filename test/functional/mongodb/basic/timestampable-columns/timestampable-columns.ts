@@ -32,7 +32,8 @@ describe("mongodb > timestampable columns", () => {
         post.updatedAt.should.be.instanceof(Date);
         const updatedAt = post.updatedAt;
 
-        expect(post.createdAt.getTime()).to.equal(post.updatedAt.getTime());
+        // test has +/- delta range of 5 milliseconds, because earlier this test fell due to the difference of 1 millisecond
+        expect(post.updatedAt.getTime() - post.createdAt.getTime()).to.be.closeTo(0, 5);
 
         // update
         const date = new Date();

@@ -9,5 +9,8 @@ export class Dummy {
         primary: true,
     })
     id: number;
+
+    @Column({ default: "name" })
+    name: string;
 }
 

@@ -183,7 +183,7 @@ await connection.close();
 ```
 
 * `synchronize` - Synchronizes database schema. When `synchronize: true` is set in connection options it calls this method. 
-Usually, you call this method when your application is shutting down.
+Usually, you call this method when your application is starting.
 
 ```typescript
 await connection.synchronize();

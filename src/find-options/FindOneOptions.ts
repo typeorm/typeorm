@@ -43,6 +43,11 @@ export interface FindOneOptions<Entity = any> {
     lock?: { mode: "optimistic", version: number|Date } | { mode: "pessimistic_read"|"pessimistic_write"|"dirty_read" };
 
     /**
+     * Indicates if soft-deleted rows should be included in entity result.
+     */    
+    withDeleted?: boolean;
+
+    /**
      * If sets to true then loads all relation ids of the entity and maps them into relation values (not relation objects).
      * If array of strings is given then loads only relation ids of the given properties.
      */

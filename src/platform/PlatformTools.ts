@@ -47,6 +47,12 @@ export class PlatformTools {
                     return require("mongodb");
 
                 /**
+                * hana
+                */
+                case "@sap/hdbext":
+                    return require("@sap/hdbext");
+
+                /**
                 * mysql
                 */
                 case "mysql":
@@ -122,6 +128,8 @@ export class PlatformTools {
                 case "glob":
                     return require("glob");
 
+                case "typeorm-aurora-data-api-driver":
+                    return require("typeorm-aurora-data-api-driver");
                 /**
                 * default
                 */

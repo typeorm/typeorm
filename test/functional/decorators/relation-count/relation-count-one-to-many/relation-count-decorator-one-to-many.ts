@@ -7,7 +7,7 @@ import {Post} from "./entity/Post";
 import {Image} from "./entity/Image";
 
 describe("decorators > relation-count-decorator > one-to-many", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],

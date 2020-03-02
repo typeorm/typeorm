@@ -12,7 +12,7 @@ import {Category} from "./entity/Category";
 import {Image} from "./entity/Image";
 
 describe("query builder > relation-id > many-to-many > basic-functionality", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],

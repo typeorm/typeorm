@@ -172,6 +172,8 @@ export class CockroachDriver implements Driver {
         createDateDefault: "now()",
         updateDate: "timestamptz",
         updateDateDefault: "now()",
+        deleteDate: "timestamptz",
+        deleteDateNullable: true,
         version: Number,
         treeLevel: Number,
         migrationId: Number,
@@ -335,7 +337,8 @@ export class CockroachDriver implements Driver {
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         // unique_rowid() generates bigint value and should not be converted to number
-        if ((columnMetadata.type === Number && !columnMetadata.isArray) || columnMetadata.generationStrategy === "increment") {
+        if (([Number, "int4", "smallint", "int2"].some(v => v === columnMetadata.type)
+            && !columnMetadata.isArray) || columnMetadata.generationStrategy === "increment") {
             value = parseInt(value);
 
         } else if (columnMetadata.type === Boolean) {
@@ -695,7 +698,7 @@ export class CockroachDriver implements Driver {
      */
     protected async createPool(options: CockroachConnectionOptions, credentials: CockroachConnectionCredentialsOptions): Promise<any> {
 
-        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+        credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
         // build connection options for the driver
         const connectionOptions = Object.assign({}, {
@@ -710,11 +713,14 @@ export class CockroachDriver implements Driver {
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions);
         const { logger } = this.connection;
+
+        const poolErrorHandler = options.poolErrorHandler || ((error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
+
         /*
           Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
           cause the hosting app to crash.
          */
-        pool.on("error", (error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
+        pool.on("error", poolErrorHandler);
 
         return new Promise((ok, fail) => {
             pool.connect((err: any, connection: any, release: Function) => {
@@ -732,18 +738,6 @@ export class CockroachDriver implements Driver {
         await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
         return new Promise<void>((ok, fail) => {
             pool.end((err: any) => err ? fail(err) : ok());
-        });
-    }
-
-    /**
-     * Executes given query.
-     */
-    protected executeQuery(connection: any, query: string) {
-        return new Promise((ok, fail) => {
-            connection.query(query, (err: any, result: any) => {
-                if (err) return fail(err);
-                ok(result);
-            });
         });
     }
 

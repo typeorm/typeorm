@@ -1,4 +1,4 @@
-# ormconfig.json
+# Using Configuration Sources
 
   - [Creating a new connection from the configuration file](#creating-a-new-connection-from-the-configuration-file)
   - [Using `ormconfig.json`](#using-ormconfigjson)
@@ -96,7 +96,7 @@ TYPEORM_DATABASE = test
 TYPEORM_PORT = 3000
 TYPEORM_SYNCHRONIZE = true
 TYPEORM_LOGGING = true
-TYPEORM_ENTITIES = entity/.*js,modules/**/entity/.*js
+TYPEORM_ENTITIES = entity/*.js,modules/**/entity/*.js
 ```
 
 List of available env variables you can set:
@@ -113,6 +113,7 @@ List of available env variables you can set:
 * TYPEORM_SYNCHRONIZE
 * TYPEORM_DROP_SCHEMA
 * TYPEORM_MIGRATIONS_RUN
+* TYPEORM_MIGRATIONS_TRANSACTION_MODE
 * TYPEORM_ENTITIES
 * TYPEORM_MIGRATIONS
 * TYPEORM_MIGRATIONS_TABLE_NAME
@@ -140,6 +141,10 @@ On production you can set all these values in real ENVIRONMENT VARIABLES.
 You cannot define multiple connections using an `env` file or environment variables.
 If your app has multiple connections then use alternative configuration storage format.
 
+If you need to pass a driver-specific option, e.g. `charset` for MySQL, you could use the `TYPEORM_DRIVER_EXTRA` variable in JSON format, e.g.
+```
+TYPEORM_DRIVER_EXTRA='{"charset": "utf8mb4"}'
+```
 ## Using `ormconfig.yml`
 
 Create `ormconfig.yml` in the project root (near `package.json`). It should have the following content:

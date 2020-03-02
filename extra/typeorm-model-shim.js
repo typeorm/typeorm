@@ -14,7 +14,7 @@
 // }
 
 // for webpack this is resolved this way:
-// resolve: { // see: http://webpack.github.io/docs/configuration.html#resolve
+// resolve: { // see: https://webpack.js.org/configuration/resolve/
 //     alias: {
 //         typeorm: path.resolve(__dirname, "../node_modules/typeorm/typeorm-model-shim")
 //     }

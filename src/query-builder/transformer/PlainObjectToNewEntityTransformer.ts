@@ -49,7 +49,7 @@ export class PlainObjectToNewEntityTransformer {
                     return;
 
                 if (relation.isOneToMany || relation.isManyToMany) {
-                    if (!(objectRelatedValue instanceof Array))
+                    if (!Array.isArray(objectRelatedValue))
                         return;
 
                     if (!entityRelatedValue) {

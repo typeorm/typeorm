@@ -1,6 +1,5 @@
-version: '3'
+version: "3"
 services:
-
   # mysql-5.5
   #mysql5.5:
   #  image: "mysql:5.5"
@@ -27,7 +26,7 @@ services:
 
   # mariadb
   mariadb:
-    image: "mariadb:10.1.37"
+    image: "mariadb:10.4.8"
     container_name: "typeorm-mariadb"
     ports:
       - "3307:3306"
@@ -53,7 +52,7 @@ services:
 
   # mssql
   mssql:
-    image: "mcr.microsoft.com/mssql/server:2017-GA-ubuntu"
+    image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
     container_name: "typeorm-mssql"
     ports:
       - "1433:1433"
@@ -69,16 +68,45 @@ services:
     ports:
       - "26257:26257"
 
+  # sap hana (works only on linux)
+  # hanaexpress:
+  #   image: "store/saplabs/hanaexpress:2.00.040.00.20190729.1"
+  #   container_name: "typeorm-hanaexpress"
+  #   hostname: hxe
+  #   command:
+  #     [
+  #       "--passwords-url",
+  #       "file:////hana/hxe-config.json",
+  #       "--agree-to-sap-license",
+  #     ]
+  #   ulimits:
+  #     nofile: 1048576
+  #   sysctls:
+  #     - kernel.shmmax=1073741824
+  #     - net.ipv4.ip_local_port_range=40000 60999
+  #     - kernel.shmmni=524288
+  #     - kernel.shmall=8388608
+  #   volumes:
+  #     - volume-hana-xe:/hana/mounts
+  #     - ./docker/hana/hxe-config.json:/hana/hxe-config.json
+  #   ports:
+  #     - 39013:39013
+  #     - 39017:39017
+  #     - 39041-39045:39041-39045
+  #     - 1128-1129:1128-1129
+  #     - 59013-59014:59013-59014
+
   # mongodb
   mongodb:
     image: "mongo:3.4.18"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
-
   # redis
   # redis:
   #   image: "redis:3.0.3"
   #   container_name: "typeorm-redis"
   #   ports:
   #     - "6379:6379"
+#volumes:
+#  volume-hana-xe:

@@ -1,3 +1,4 @@
+import {SapDriver} from "../driver/sap/SapDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryExpressionMap} from "./QueryExpressionMap";
@@ -36,7 +37,7 @@ export class RelationUpdater {
                 return updateSet;
             }, {} as any);
 
-            if (!this.expressionMap.of || (this.expressionMap.of instanceof Array && !this.expressionMap.of.length)) return;
+            if (!this.expressionMap.of || (Array.isArray(this.expressionMap.of) && !this.expressionMap.of.length)) return;
 
             await this.queryBuilder
                 .createQueryBuilder()
@@ -52,7 +53,7 @@ export class RelationUpdater {
                 updateSet[column.propertyName] = null;
             });
 
-            const ofs = this.expressionMap.of instanceof Array ? this.expressionMap.of : [this.expressionMap.of];
+            const ofs = Array.isArray(this.expressionMap.of) ? this.expressionMap.of : [this.expressionMap.of];
             const parameters: ObjectLiteral = {};
             const conditions: string[] = [];
             ofs.forEach((of, ofIndex) => {
@@ -75,7 +76,7 @@ export class RelationUpdater {
 
         } else if (relation.isOneToOneNotOwner || relation.isOneToMany) {
 
-            if (this.expressionMap.of instanceof Array)
+            if (Array.isArray(this.expressionMap.of))
                 throw new Error(`You cannot update relations of multiple entities with the same related object. Provide a single entity into .of method.`);
 
             const of = this.expressionMap.of;
@@ -85,7 +86,7 @@ export class RelationUpdater {
                 return updateSet;
             }, {} as any);
 
-            if (!value || (value instanceof Array && !value.length)) return;
+            if (!value || (Array.isArray(value) && !value.length)) return;
 
             await this.queryBuilder
                 .createQueryBuilder()
@@ -96,8 +97,8 @@ export class RelationUpdater {
 
         } else { // many to many
             const junctionMetadata = relation.junctionEntityMetadata!;
-            const ofs = this.expressionMap.of instanceof Array ? this.expressionMap.of : [this.expressionMap.of];
-            const values = value instanceof Array ? value : [value];
+            const ofs = Array.isArray(this.expressionMap.of) ? this.expressionMap.of : [this.expressionMap.of];
+            const values = Array.isArray(value) ? value : [value];
             const firstColumnValues = relation.isManyToManyOwner ? ofs : values;
             const secondColumnValues = relation.isManyToManyOwner ? values : ofs;
 
@@ -117,7 +118,7 @@ export class RelationUpdater {
 
             if (!bulkInserted.length) return;
 
-            if (this.queryBuilder.connection.driver instanceof  OracleDriver) {
+            if (this.queryBuilder.connection.driver instanceof OracleDriver || this.queryBuilder.connection.driver instanceof SapDriver) {
                 await Promise.all(bulkInserted.map(value => {
                     return this.queryBuilder
                         .createQueryBuilder()

@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import {expect} from "chai";
+import {SapDriver} from "../../../../src/driver/sap/SapDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
@@ -9,7 +10,7 @@ import {AbstractSqliteDriver} from "../../../../src/driver/sqlite-abstract/Abstr
 import {OracleDriver} from "../../../../src/driver/oracle/OracleDriver";
 
 describe("query builder > insert", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -53,8 +54,8 @@ describe("query builder > insert", () => {
     })));
 
     it("should perform bulk insertion correctly", () => Promise.all(connections.map(async connection => {
-        // it is skipped for Oracle because it does not support bulk insertion
-        if (connection.driver instanceof OracleDriver)
+        // it is skipped for Oracle and SAP because it does not support bulk insertion
+        if (connection.driver instanceof OracleDriver || connection.driver instanceof SapDriver)
             return;
 
         await connection.createQueryBuilder()
@@ -94,8 +95,8 @@ describe("query builder > insert", () => {
 
     it("should be able to insert entities with different properties set even inside embeds", () => Promise.all(connections.map(async connection => {
         // this test is skipped for sqlite based drivers because it does not support DEFAULT values in insertions,
-        // also it is skipped for Oracle because it does not support bulk insertion
-        if (connection.driver instanceof AbstractSqliteDriver || connection.driver instanceof OracleDriver)
+        // also it is skipped for Oracle and SAP because it does not support bulk insertion
+        if (connection.driver instanceof AbstractSqliteDriver || connection.driver instanceof OracleDriver || connection.driver instanceof SapDriver)
             return;
 
         await connection

@@ -5011,9 +5011,10 @@ export declare class Cursor<T> extends Readable {
      * Iterates over all the documents for this cursor using the iterator, callback pattern.
      * @param iterator The iteration callback.
      * @param callback The end callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#forEach
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Cursor.html#forEach
      */
     forEach(iterator: IteratorCallback<T>, callback: EndCallback): void;
+    forEach(iterator: IteratorCallback<T>): Promise<void>;    
 
     /**
      * Check if there is any document still available in the cursor.

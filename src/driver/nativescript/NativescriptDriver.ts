@@ -91,10 +91,15 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     protected createDatabaseConnection() {
         return new Promise<void>((ok, fail) => {
             const options = Object.assign({}, {
-                name: this.options.database,
+                readOnly: this.options.readOnly,
+                key: this.options.key,
+                multithreading: this.options.multithreading,
+                migrate: this.options.migrate,
+                iosFlags: this.options.iosFlags,
+                androidFlags: this.options.androidFlags,
             }, this.options.extra || {});
 
-            new this.sqlite(options.name, (err: Error, db: any): any => {
+            new this.sqlite(this.options.database, options, (err: Error, db: any): any => {
                 if (err) return fail(err);
 
                 // use object mode to work with TypeORM

@@ -10,7 +10,9 @@ import {SqljsConnectionOptions} from "../driver/sqljs/SqljsConnectionOptions";
 import {ReactNativeConnectionOptions} from "../driver/react-native/ReactNativeConnectionOptions";
 import {NativescriptConnectionOptions} from "../driver/nativescript/NativescriptConnectionOptions";
 import {ExpoConnectionOptions} from "../driver/expo/ExpoConnectionOptions";
-import { FirebirdConnectionOptions } from "../driver/firebird/FirebirdConnectionOptions";
+import {AuroraDataApiConnectionOptions} from "../driver/aurora-data-api/AuroraDataApiConnectionOptions";
+import {SapConnectionOptions} from "../driver/sap/SapConnectionOptions";
+import {FirebirdConnectionOptions} from "../driver/firebird/FirebirdConnectionOptions";
 
 /**
  * ConnectionOptions is an interface with settings and options for specific connection.
@@ -23,11 +25,13 @@ export type ConnectionOptions =
     CockroachConnectionOptions|
     SqliteConnectionOptions|
     SqlServerConnectionOptions|
+    SapConnectionOptions|
     OracleConnectionOptions|
     CordovaConnectionOptions|
     NativescriptConnectionOptions|
     ReactNativeConnectionOptions|
     SqljsConnectionOptions|
     MongoConnectionOptions|
+    AuroraDataApiConnectionOptions|
     ExpoConnectionOptions|
     FirebirdConnectionOptions;

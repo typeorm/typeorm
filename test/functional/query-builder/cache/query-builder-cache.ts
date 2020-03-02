@@ -10,7 +10,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
 
 describe("query builder > cache", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],

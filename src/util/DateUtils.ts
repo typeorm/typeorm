@@ -100,25 +100,30 @@ export class DateUtils {
     /**
      * Converts given value into datetime string in a "YYYY-MM-DD HH-mm-ss" format.
      */
-    static mixedDateToDatetimeString(value: Date|any): string|any {
+    static mixedDateToDatetimeString(value: Date|any, useMilliseconds?: boolean): string|any {
         if (typeof value === "string") {
             value = new Date(value);
         }
         if (value instanceof Date) {
-            return this.formatZerolessValue(value.getFullYear()) + "-" +
+            let finalValue = this.formatZerolessValue(value.getFullYear()) + "-" +
                 this.formatZerolessValue(value.getMonth() + 1) + "-" +
                 this.formatZerolessValue(value.getDate()) + " " +
                 this.formatZerolessValue(value.getHours()) + ":" +
                 this.formatZerolessValue(value.getMinutes()) + ":" +
-                this.formatZerolessValue(value.getSeconds()) + "." +
-                this.formatMilliseconds(value.getMilliseconds());
+                this.formatZerolessValue(value.getSeconds());
+
+            if (useMilliseconds)
+                finalValue += `.${this.formatMilliseconds(value.getMilliseconds())}`;
+
+            value = finalValue;
         }
+
 
         return value;
     }
 
     /**
-     * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss" format.
+     * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss.sss" format.
      */
     static mixedDateToUtcDatetimeString(value: Date|any): string|any {
         if (typeof value === "string") {
@@ -170,7 +175,12 @@ export class DateUtils {
     }
 
     static stringToSimpleJson(value: any) {
-        return typeof value === "string" ? JSON.parse(value) : value;
+        try {
+            const simpleJSON = JSON.parse(value);
+            return (typeof simpleJSON === "object") ? simpleJSON : {};
+       } catch (err) {
+            return {};
+       }
     }
 
     static simpleEnumToString(value: any) {

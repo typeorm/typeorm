@@ -73,23 +73,21 @@ export class OrmUtils {
 
         if (this.isObject(target) && this.isObject(source)) {
             for (const key in source) {
-                let propertyKey = key;
-                if (source[key] instanceof Promise)
+                const value = source[key];
+                if (value instanceof Promise)
                     continue;
 
-                // if (source[key] instanceof Promise) {
-                //     propertyKey = "__" + key + "__";
-                // }
-
-                if (this.isObject(source[propertyKey])
-                    && !(source[propertyKey] instanceof Map)
-                    && !(source[propertyKey] instanceof Set)
-                    && !(source[propertyKey] instanceof Date)
-                    && !(source[propertyKey] instanceof Buffer)) {
-                    if (!target[key]) Object.assign(target, { [key]: Object.create(Object.getPrototypeOf(source[propertyKey])) });
-                    this.mergeDeep(target[key], source[propertyKey]);
+                if (this.isObject(value)
+                && !(value instanceof Map)
+                && !(value instanceof Set)
+                && !(value instanceof Date)
+                && !(value instanceof Buffer)
+                && !(value instanceof RegExp)) {
+                    if (!target[key])
+                        Object.assign(target, { [key]: Object.create(Object.getPrototypeOf(value)) });
+                    this.mergeDeep(target[key], value);
                 } else {
-                    Object.assign(target, { [key]: source[propertyKey] });
+                    Object.assign(target, { [key]: value });
                 }
             }
         }
@@ -168,7 +166,7 @@ export class OrmUtils {
 
         // remember that NaN === NaN returns false
         // and isNaN(undefined) returns true
-        if (isNaN(x) && isNaN(y) && typeof x === "number" && typeof y === "number")
+        if (Number.isNaN(x) && Number.isNaN(y))
             return true;
 
         // Compare primitives and functions.

@@ -1,3 +1,4 @@
+import {SapDriver} from "../driver/sap/SapDriver";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Subject} from "./Subject";
 import {PromiseUtils} from "../util/PromiseUtils";
@@ -67,6 +68,16 @@ export class SubjectExecutor {
      */
     protected removeSubjects: Subject[] = [];
 
+    /**
+     * Subjects that must be soft-removed.
+     */
+    protected softRemoveSubjects: Subject[] = [];
+
+    /**
+     * Subjects that must be recovered.
+     */
+    protected recoverSubjects: Subject[] = [];
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -106,6 +117,8 @@ export class SubjectExecutor {
             this.insertSubjects.forEach(subject => subject.recompute());
             this.updateSubjects.forEach(subject => subject.recompute());
             this.removeSubjects.forEach(subject => subject.recompute());
+            this.softRemoveSubjects.forEach(subject => subject.recompute());
+            this.recoverSubjects.forEach(subject => subject.recompute());
             this.recompute();
             // console.timeEnd(".recompute");
         }
@@ -134,6 +147,18 @@ export class SubjectExecutor {
         this.removeSubjects = new SubjectTopoligicalSorter(this.removeSubjects).sort("delete");
         await this.executeRemoveOperations();
         // console.timeEnd(".removal");
+
+        // recompute soft-remove operations
+        this.softRemoveSubjects = this.allSubjects.filter(subject => subject.mustBeSoftRemoved);
+
+        // execute soft-remove operations
+        await this.executeSoftRemoveOperations();
+
+        // recompute recover operations
+        this.recoverSubjects = this.allSubjects.filter(subject => subject.mustBeRecovered);
+
+        // execute recover operations
+        await this.executeRecoverOperations();
 
         // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
         // console.time(".updateSpecialColumnsInPersistedEntities");
@@ -172,7 +197,9 @@ export class SubjectExecutor {
         this.insertSubjects = this.allSubjects.filter(subject => subject.mustBeInserted);
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
         this.removeSubjects = this.allSubjects.filter(subject => subject.mustBeRemoved);
-        this.hasExecutableOperations = this.insertSubjects.length > 0 || this.updateSubjects.length > 0 || this.removeSubjects.length > 0;
+        this.softRemoveSubjects = this.allSubjects.filter(subject => subject.mustBeSoftRemoved);
+        this.recoverSubjects = this.allSubjects.filter(subject => subject.mustBeRecovered);
+        this.hasExecutableOperations = this.insertSubjects.length > 0 || this.updateSubjects.length > 0 || this.removeSubjects.length > 0 || this.softRemoveSubjects.length > 0 || this.recoverSubjects.length > 0;
     }
 
     /**
@@ -186,6 +213,10 @@ export class SubjectExecutor {
             this.updateSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         if (this.removeSubjects.length)
             this.removeSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
+        if (this.softRemoveSubjects.length)
+            this.softRemoveSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
+        if (this.recoverSubjects.length)
+            this.recoverSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         return result;
     }
 
@@ -202,6 +233,10 @@ export class SubjectExecutor {
             this.updateSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         if (this.removeSubjects.length)
             this.removeSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterRemoveEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
+        if (this.softRemoveSubjects.length)
+            this.softRemoveSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
+        if (this.recoverSubjects.length)
+            this.recoverSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         return result;
     }
 
@@ -249,7 +284,8 @@ export class SubjectExecutor {
                     // - when oracle is used, since oracle's bulk insertion is very bad
                     if (subject.changeMaps.length === 0 ||
                         subject.metadata.treeType ||
-                        this.queryRunner.connection.driver instanceof OracleDriver) {
+                        this.queryRunner.connection.driver instanceof OracleDriver ||
+                        this.queryRunner.connection.driver instanceof SapDriver) {
                         singleInsertSubjects.push(subject);
 
                     } else {
@@ -461,6 +497,166 @@ export class SubjectExecutor {
     }
 
     /**
+     * Soft-removes all given subjects in the database.
+     */
+    protected async executeSoftRemoveOperations(): Promise<void> {
+        await Promise.all(this.softRemoveSubjects.map(async subject => {
+
+            if (!subject.identifier)
+                throw new SubjectWithoutIdentifierError(subject);
+
+            // for mongodb we have a bit different updation logic
+            if (this.queryRunner instanceof MongoQueryRunner) {
+                const partialEntity = OrmUtils.mergeDeep({}, subject.entity!);
+                if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
+                    delete partialEntity[subject.metadata.objectIdColumn.propertyName];
+                }
+
+                if (subject.metadata.createDateColumn && subject.metadata.createDateColumn.propertyName) {
+                    delete partialEntity[subject.metadata.createDateColumn.propertyName];
+                }
+
+                if (subject.metadata.updateDateColumn && subject.metadata.updateDateColumn.propertyName) {
+                    partialEntity[subject.metadata.updateDateColumn.propertyName] = new Date();
+                }
+
+                if (subject.metadata.deleteDateColumn && subject.metadata.deleteDateColumn.propertyName) {
+                    partialEntity[subject.metadata.deleteDateColumn.propertyName] = new Date();
+                }
+
+                const manager = this.queryRunner.manager as MongoEntityManager;
+
+                await manager.update(subject.metadata.target, subject.identifier, partialEntity);
+
+            } else {
+
+                // here we execute our soft-deletion query
+                // we need to enable entity soft-deletion because we update a subject identifier
+                // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                // also, we disable listeners because we call them on our own in persistence layer
+                const softDeleteQueryBuilder = this.queryRunner
+                    .manager
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(subject.metadata.target)
+                    .updateEntity(this.options && this.options.reload === false ? false : true)
+                    .callListeners(false);
+
+                if (subject.entity) {
+                    softDeleteQueryBuilder.whereEntity(subject.identifier);
+
+                } else { // in this case identifier is just conditions object to update by
+                    softDeleteQueryBuilder.where(subject.identifier);
+                }
+
+                const updateResult = await softDeleteQueryBuilder.execute();
+                subject.generatedMap = updateResult.generatedMaps[0];
+                if (subject.generatedMap) {
+                    subject.metadata.columns.forEach(column => {
+                        const value = column.getEntityValue(subject.generatedMap!);
+                        if (value !== undefined && value !== null) {
+                            const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                            column.setEntityValue(subject.generatedMap!, preparedValue);
+                        }
+                    });
+                }
+
+                // experiments, remove probably, need to implement tree tables children removal
+                // if (subject.updatedRelationMaps.length > 0) {
+                //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
+                //         if (!updatedRelation.relation.isTreeParent) return;
+                //         if (!updatedRelation.value !== null) return;
+                //
+                //         if (subject.metadata.treeType === "closure-table") {
+                //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
+                //         }
+                //     }));
+                // }
+            }
+        }));
+    }
+
+    /**
+     * Recovers all given subjects in the database.
+     */
+    protected async executeRecoverOperations(): Promise<void> {
+        await Promise.all(this.recoverSubjects.map(async subject => {
+
+            if (!subject.identifier)
+                throw new SubjectWithoutIdentifierError(subject);
+
+            // for mongodb we have a bit different updation logic
+            if (this.queryRunner instanceof MongoQueryRunner) {
+                const partialEntity = OrmUtils.mergeDeep({}, subject.entity!);
+                if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
+                    delete partialEntity[subject.metadata.objectIdColumn.propertyName];
+                }
+
+                if (subject.metadata.createDateColumn && subject.metadata.createDateColumn.propertyName) {
+                    delete partialEntity[subject.metadata.createDateColumn.propertyName];
+                }
+
+                if (subject.metadata.updateDateColumn && subject.metadata.updateDateColumn.propertyName) {
+                    partialEntity[subject.metadata.updateDateColumn.propertyName] = new Date();
+                }
+
+                if (subject.metadata.deleteDateColumn && subject.metadata.deleteDateColumn.propertyName) {
+                    partialEntity[subject.metadata.deleteDateColumn.propertyName] = null;
+                }
+
+                const manager = this.queryRunner.manager as MongoEntityManager;
+
+                await manager.update(subject.metadata.target, subject.identifier, partialEntity);
+
+            } else {
+
+                // here we execute our restory query
+                // we need to enable entity restory because we update a subject identifier
+                // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                // also, we disable listeners because we call them on our own in persistence layer
+                const softDeleteQueryBuilder = this.queryRunner
+                    .manager
+                    .createQueryBuilder()
+                    .restore()
+                    .from(subject.metadata.target)
+                    .updateEntity(this.options && this.options.reload === false ? false : true)
+                    .callListeners(false);
+
+                if (subject.entity) {
+                    softDeleteQueryBuilder.whereEntity(subject.identifier);
+
+                } else { // in this case identifier is just conditions object to update by
+                    softDeleteQueryBuilder.where(subject.identifier);
+                }
+
+                const updateResult = await softDeleteQueryBuilder.execute();
+                subject.generatedMap = updateResult.generatedMaps[0];
+                if (subject.generatedMap) {
+                    subject.metadata.columns.forEach(column => {
+                        const value = column.getEntityValue(subject.generatedMap!);
+                        if (value !== undefined && value !== null) {
+                            const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                            column.setEntityValue(subject.generatedMap!, preparedValue);
+                        }
+                    });
+                }
+
+                // experiments, remove probably, need to implement tree tables children removal
+                // if (subject.updatedRelationMaps.length > 0) {
+                //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
+                //         if (!updatedRelation.relation.isTreeParent) return;
+                //         if (!updatedRelation.value !== null) return;
+                //
+                //         if (subject.metadata.treeType === "closure-table") {
+                //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
+                //         }
+                //     }));
+                // }
+            }
+        }));
+    }
+
+    /**
      * Updates all special columns of the saving entities (create date, update date, version, etc.).
      * Also updates nullable columns and columns with default values.
      */
@@ -473,6 +669,14 @@ export class SubjectExecutor {
         // update updated entity properties
         if (this.updateSubjects.length)
             this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.updateSubjects);
+
+        // update soft-removed entity properties
+        if (this.updateSubjects.length)
+            this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.softRemoveSubjects);
+
+        // update recovered entity properties
+        if (this.updateSubjects.length)
+            this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.recoverSubjects);
 
         // remove ids from the entities that were removed
         if (this.removeSubjects.length) {
