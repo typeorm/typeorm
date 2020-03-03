@@ -146,7 +146,7 @@ export class DateUtils {
      * Converts each item in the given array to string joined by "," separator.
      */
     static simpleArrayToString(value: any[]|any): string[]|any {
-        if (value instanceof Array) {
+        if (Array.isArray(value)) {
             return (value as any[])
                 .map(i => String(i))
                 .join(",");

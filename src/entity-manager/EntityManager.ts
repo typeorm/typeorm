@@ -511,7 +511,7 @@ export class EntityManager {
             target = target.options.name;
 
         // if user passed empty array of entities then we don't need to do anything
-        if (entity instanceof Array && entity.length === 0)
+        if (Array.isArray(entity) && entity.length === 0)
             return Promise.resolve(entity);
 
         // execute soft-remove operation
@@ -564,7 +564,7 @@ export class EntityManager {
             target = target.options.name;
 
         // if user passed empty array of entities then we don't need to do anything
-        if (entity instanceof Array && entity.length === 0)
+        if (Array.isArray(entity) && entity.length === 0)
             return Promise.resolve(entity);
 
         // execute recover operation
@@ -683,7 +683,7 @@ export class EntityManager {
         if (criteria === undefined ||
             criteria === null ||
             criteria === "" ||
-            (criteria instanceof Array && criteria.length === 0)) {
+            (Array.isArray(criteria) && criteria.length === 0)) {
 
             return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
         }
@@ -691,7 +691,7 @@ export class EntityManager {
         if (typeof criteria === "string" ||
             typeof criteria === "number" ||
             criteria instanceof Date ||
-            criteria instanceof Array) {
+            Array.isArray(criteria)) {
 
             return this.createQueryBuilder()
                 .softDelete()
@@ -721,7 +721,7 @@ export class EntityManager {
         if (criteria === undefined ||
             criteria === null ||
             criteria === "" ||
-            (criteria instanceof Array && criteria.length === 0)) {
+            (Array.isArray(criteria) && criteria.length === 0)) {
 
             return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
         }
@@ -729,7 +729,7 @@ export class EntityManager {
         if (typeof criteria === "string" ||
             typeof criteria === "number" ||
             criteria instanceof Date ||
-            criteria instanceof Array) {
+            Array.isArray(criteria)) {
 
             return this.createQueryBuilder()
                 .restore()

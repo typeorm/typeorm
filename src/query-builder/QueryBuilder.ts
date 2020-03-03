@@ -778,7 +778,7 @@ export abstract class QueryBuilder<Entity> {
             return where(this);
 
         } else if (where instanceof Object) {
-            const wheres: ObjectLiteral[] = where instanceof Array ? where : [where];
+            const wheres: ObjectLiteral[] = Array.isArray(where) ? where : [where];
             let andConditions: string[];
             let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
 
