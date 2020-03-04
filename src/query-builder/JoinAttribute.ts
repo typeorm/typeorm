@@ -45,6 +45,11 @@ export class JoinAttribute {
      */
     isMappingMany?: boolean;
 
+    /**
+     * Temporal clause used to access specific snapshots of data (JOIN statement)
+     */
+    temporalClause: string = ""
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

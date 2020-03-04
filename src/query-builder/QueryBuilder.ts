@@ -19,7 +19,7 @@ import { OracleDriver } from "../driver/oracle/OracleDriver";
 import { EntitySchema } from "../";
 import { FindOperator } from "../find-options/FindOperator";
 import { In } from "../find-options/operator/In";
-import { TemporalClauseType } from './TemporalClauseType';
+import { TemporalClauseConfig } from './TemporalClauseConfig';
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -224,110 +224,6 @@ export abstract class QueryBuilder<Entity> {
             return this as any;
 
         return new UpdateQueryBuilderCls(this);
-    }
-
-    /**
-     * Adds temporal clause to FROM statement
-     */
-    forSystemTimeFrom(type: 'AS OF', time: string): this
-
-    /**
-     * Adds temporal clause to FROM statement
-     */
-    forSystemTimeFrom(type: 'FROM', time: [string, string]): this
-
-    /**
-     * Adds temporal clause to FROM statement
-     */
-    forSystemTimeFrom(type: 'BETWEEN', time: [string, string]): this
-
-    /**
-     * Adds temporal clause to FROM statement
-     */
-    forSystemTimeFrom(type: 'CONTAINED IN', time: [string, string]): this
-
-    /**
-     * Adds temporal clause to FROM statement
-     */
-    forSystemTimeFrom(type: 'ALL'): this
-
-    /**
-     * Adds temporal clause to FROM statement
-     */
-    forSystemTimeFrom(type: TemporalClauseType, time?: any): this {
-        switch (type) {
-            case 'AS OF':
-                this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME AS OF "${time}"`
-                break
-            case 'BETWEEN':
-                this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME BETWEEN "${time[0]}" AND "${time[1]}"`
-                break
-            case 'FROM':
-                this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME FROM "${time[0]}" TO "${time[1]}"`
-                break
-            case 'CONTAINED IN':
-                this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME CONTAINED IN ("${time[0]}" , "${time[1]}")`
-                break
-            case 'ALL':
-                this.expressionMap.fromTemporalClause = 'FOR SYSTEM_TIME ALL'
-                break
-            default:
-                this.expressionMap.fromTemporalClause = 'FOR SYSTEM_TIME ALL'
-        }
-
-        return this
-    }
-    
-    /**
-     * Adds temporal clause to JOIN statement
-     */
-    forSystemTimeJoin(type: 'AS OF', time: string): this
-
-    /**
-     * Adds temporal clause to JOIN statement
-     */
-    forSystemTimeJoin(type: 'FROM', time: [string, string]): this
-
-    /**
-     * Adds temporal clause to JOIN statement
-     */
-    forSystemTimeJoin(type: 'BETWEEN', time: [string, string]): this
-
-    /**
-     * Adds temporal clause to JOIN statement
-     */
-    forSystemTimeJoin(type: 'CONTAINED IN', time: [string, string]): this
-
-    /**
-     * Adds temporal clause to JOIN statement
-     */
-    forSystemTimeJoin(type: 'ALL'): this
-
-    /**
-     * Adds temporal clause to JOIN statement
-     */
-    forSystemTimeJoin(type: TemporalClauseType, time?: any): this {
-        switch (type) {
-            case 'AS OF':
-                this.expressionMap.joinTemporalClause = `FOR SYSTEM_TIME AS OF "${time}"`
-                break
-            case 'BETWEEN':
-                this.expressionMap.joinTemporalClause = `FOR SYSTEM_TIME BETWEEN "${time[0]}" AND "${time[1]}"`
-                break
-            case 'FROM':
-                this.expressionMap.joinTemporalClause = `FOR SYSTEM_TIME FROM "${time[0]}" TO "${time[1]}"`
-                break
-            case 'CONTAINED IN':
-                this.expressionMap.joinTemporalClause = `FOR SYSTEM_TIME CONTAINED IN ("${time[0]}" , "${time[1]}")`
-                break
-            case 'ALL':
-                this.expressionMap.joinTemporalClause = 'FOR SYSTEM_TIME ALL'
-                break
-            default:
-                this.expressionMap.joinTemporalClause = 'FOR SYSTEM_TIME ALL'
-        }
-
-        return this
     }
 
     /**

@@ -42,11 +42,6 @@ export class QueryExpressionMap {
     fromTemporalClause: string = ""
 
     /**
-     * Temporal clause used to access specific snapshots of data (JOIN statement)
-     */
-    joinTemporalClause: string = ""
-
-    /**
      * Represents query type. QueryBuilder is able to build SELECT, UPDATE and DELETE queries.
      */
     queryType: "select"|"update"|"delete"|"insert"|"relation" = "select";

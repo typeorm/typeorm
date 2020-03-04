@@ -36,6 +36,7 @@ import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { TemporalClauseConfig } from './TemporalClauseConfig';
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -181,23 +182,47 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string): SelectQueryBuilder<T>;
+    from<T>(entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string, temporalConfig?: TemporalClauseConfig): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T>;
+    from<T>(entityTarget: ObjectType<T>|string, aliasName: string, temporalConfig?: TemporalClauseConfig): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
+    from<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string, temporalConfig?: TemporalClauseConfig): SelectQueryBuilder<T> {
         const mainAlias = this.createFromAlias(entityTarget, aliasName);
         this.expressionMap.setMainAlias(mainAlias);
+
+        if (temporalConfig) {
+            if (!temporalConfig.timeTwo) {
+                temporalConfig.timeTwo = temporalConfig.timeOne
+            }
+
+            switch (temporalConfig.type) {
+                case 'AS OF':
+                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME AS OF "${temporalConfig.timeOne}"`
+                    break
+                case 'BETWEEN':
+                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME BETWEEN "${temporalConfig.timeOne}" AND "${temporalConfig.timeTwo}"`
+                    break
+                case 'FROM':
+                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME FROM "${temporalConfig.timeOne}" TO "${temporalConfig.timeTwo}"`
+                    break
+                case 'CONTAINED IN':
+                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME CONTAINED IN ("${temporalConfig.timeOne}" , "${temporalConfig.timeTwo}")`
+                    break
+                default:
+                    this.expressionMap.fromTemporalClause = 'FOR SYSTEM_TIME ALL'
+            }
+        }
+
         return (this as any) as SelectQueryBuilder<T>;
     }
 
@@ -205,22 +230,46 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string): SelectQueryBuilder<T>;
+    addFrom<T>(entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string, temporalConfig?: TemporalClauseConfig): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T>;
+    addFrom<T>(entityTarget: ObjectType<T>|string, aliasName: string, temporalConfig?: TemporalClauseConfig): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
+    addFrom<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string, temporalConfig?: TemporalClauseConfig): SelectQueryBuilder<T> {
         const alias = this.createFromAlias(entityTarget, aliasName);
-        if (!this.expressionMap.mainAlias)
+        if (!this.expressionMap.mainAlias) {
             this.expressionMap.setMainAlias(alias);
+        }
+
+        if (temporalConfig) {
+            if (!temporalConfig.timeTwo) {
+                temporalConfig.timeTwo = temporalConfig.timeOne
+            }
+
+            switch (temporalConfig.type) {
+                case 'AS OF':
+                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME AS OF "${temporalConfig.timeOne}"`
+                    break
+                case 'BETWEEN':
+                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME BETWEEN "${temporalConfig.timeOne}" AND "${temporalConfig.timeTwo}"`
+                    break
+                case 'FROM':
+                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME FROM "${temporalConfig.timeOne}" TO "${temporalConfig.timeTwo}"`
+                    break
+                case 'CONTAINED IN':
+                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME CONTAINED IN ("${temporalConfig.timeOne}" , "${temporalConfig.timeTwo}")`
+                    break
+                default:
+                    this.expressionMap.fromTemporalClause = 'FOR SYSTEM_TIME ALL'
+            }
+        }
 
         return (this as any) as SelectQueryBuilder<T>;
     }
@@ -230,7 +279,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoin(subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    innerJoin(subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs (without selection) entity's property.
@@ -238,29 +287,30 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoin(property: string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    innerJoin(property: string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs (without selection) given entity's table.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoin(entity: Function|string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    innerJoin(entity: Function|string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs (without selection) given table.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoin(tableName: string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    innerJoin(tableName: string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs (without selection).
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoin(entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral): this {
-        this.join("INNER", entityOrProperty, alias, condition, parameters);
+    innerJoin(entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this {
+        this.join("INNER", entityOrProperty, alias, condition, parameters, undefined, undefined, temporalConfig);
+
         return this;
     }
 
@@ -269,7 +319,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoin(subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    leftJoin(subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs (without selection) entity's property.
@@ -277,29 +327,29 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoin(property: string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    leftJoin(property: string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs (without selection) entity's table.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoin(entity: Function|string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    leftJoin(entity: Function|string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs (without selection) given table.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoin(tableName: string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    leftJoin(tableName: string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs (without selection).
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoin(entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral): this {
-        this.join("LEFT", entityOrProperty, alias, condition, parameters);
+    leftJoin(entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this {
+        this.join("LEFT", entityOrProperty, alias, condition, parameters, undefined, undefined, temporalConfig);
         return this;
     }
 
@@ -308,7 +358,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndSelect(subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndSelect(subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs entity's property and adds all selection properties to SELECT.
@@ -316,30 +366,30 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndSelect(property: string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndSelect(property: string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs entity and adds all selection properties to SELECT.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndSelect(entity: Function|string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndSelect(entity: Function|string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs table and adds all selection properties to SELECT.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndSelect(tableName: string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndSelect(tableName: string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs and adds all selection properties to SELECT.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndSelect(entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral): this {
+    innerJoinAndSelect(entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this {
         this.addSelect(alias);
-        this.innerJoin(entityOrProperty, alias, condition, parameters);
+        this.innerJoin(entityOrProperty, alias, condition, parameters, temporalConfig);
         return this;
     }
 
@@ -348,7 +398,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndSelect(subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs entity's property and adds all selection properties to SELECT.
@@ -356,30 +406,30 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(property: string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndSelect(property: string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs entity and adds all selection properties to SELECT.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(entity: Function|string, alias: string, condition: string, parameters?: ObjectLiteral): this;
+    leftJoinAndSelect(entity: Function|string, alias: string, condition: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs table and adds all selection properties to SELECT.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(tableName: string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndSelect(tableName: string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs and adds all selection properties to SELECT.
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral): this {
+    leftJoinAndSelect(entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this {
         this.addSelect(alias);
-        this.leftJoin(entityOrProperty, alias, condition, parameters);
+        this.leftJoin(entityOrProperty, alias, condition, parameters, temporalConfig);
         return this;
     }
 
@@ -391,7 +441,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndMapMany(mapToProperty: string, subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -401,7 +451,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, property: string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndMapMany(mapToProperty: string, property: string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -410,7 +460,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, entity: Function|string, alias: string, condition: string, parameters?: ObjectLiteral): this;
+    innerJoinAndMapMany(mapToProperty: string, entity: Function|string, alias: string, condition: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -419,7 +469,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, tableName: string, alias: string, condition: string, parameters?: ObjectLiteral): this;
+    innerJoinAndMapMany(mapToProperty: string, tableName: string, alias: string, condition: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -428,9 +478,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral): this {
+    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this {
         this.addSelect(alias);
-        this.join("INNER", entityOrProperty, alias, condition, parameters, mapToProperty, true);
+        this.join("INNER", entityOrProperty, alias, condition, parameters, mapToProperty, true, temporalConfig);
         return this;
     }
 
@@ -442,7 +492,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndMapOne(mapToProperty: string, subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -452,7 +502,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, property: string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    innerJoinAndMapOne(mapToProperty: string, property: string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -461,7 +511,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, entity: Function|string, alias: string, condition: string, parameters?: ObjectLiteral): this;
+    innerJoinAndMapOne(mapToProperty: string, entity: Function|string, alias: string, condition: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -470,7 +520,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, tableName: string, alias: string, condition: string, parameters?: ObjectLiteral): this;
+    innerJoinAndMapOne(mapToProperty: string, tableName: string, alias: string, condition: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * INNER JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -479,9 +529,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral): this {
+    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this {
         this.addSelect(alias);
-        this.join("INNER", entityOrProperty, alias, condition, parameters, mapToProperty, false);
+        this.join("INNER", entityOrProperty, alias, condition, parameters, mapToProperty, false, temporalConfig);
         return this;
     }
 
@@ -493,7 +543,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndMapMany(mapToProperty: string, subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -503,7 +553,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, property: string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndMapMany(mapToProperty: string, property: string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -512,7 +562,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, entity: Function|string, alias: string, condition: string, parameters?: ObjectLiteral): this;
+    leftJoinAndMapMany(mapToProperty: string, entity: Function|string, alias: string, condition: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -521,7 +571,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, tableName: string, alias: string, condition: string, parameters?: ObjectLiteral): this;
+    leftJoinAndMapMany(mapToProperty: string, tableName: string, alias: string, condition: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -530,9 +580,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral): this {
+    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this {
         this.addSelect(alias);
-        this.join("LEFT", entityOrProperty, alias, condition, parameters, mapToProperty, true);
+        this.join("LEFT", entityOrProperty, alias, condition, parameters, mapToProperty, true, temporalConfig);
         return this;
     }
 
@@ -544,7 +594,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndMapOne(mapToProperty: string, subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -554,7 +604,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, property: string, alias: string, condition?: string, parameters?: ObjectLiteral): this;
+    leftJoinAndMapOne(mapToProperty: string, property: string, alias: string, condition?: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -563,7 +613,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, entity: Function|string, alias: string, condition: string, parameters?: ObjectLiteral): this;
+    leftJoinAndMapOne(mapToProperty: string, entity: Function|string, alias: string, condition: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -572,7 +622,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, tableName: string, alias: string, condition: string, parameters?: ObjectLiteral): this;
+    leftJoinAndMapOne(mapToProperty: string, tableName: string, alias: string, condition: string, parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this;
 
     /**
      * LEFT JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -581,9 +631,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral): this {
+    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), alias: string, condition: string = "", parameters?: ObjectLiteral, temporalConfig?: TemporalClauseConfig): this {
         this.addSelect(alias);
-        this.join("LEFT", entityOrProperty, alias, condition, parameters, mapToProperty, false);
+        this.join("LEFT", entityOrProperty, alias, condition, parameters, mapToProperty, false, temporalConfig);
         return this;
     }
 
@@ -1301,7 +1351,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                    condition?: string,
                    parameters?: ObjectLiteral,
                    mapToProperty?: string,
-                   isMappingMany?: boolean): void {
+                   isMappingMany?: boolean,
+                   temporalConfig?: TemporalClauseConfig): void {
 
         this.setParameters(parameters || {});
 
@@ -1312,6 +1363,30 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         joinAttribute.entityOrProperty = entityOrProperty; // relationName
         joinAttribute.condition = condition; // joinInverseSideCondition
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
+
+        if (temporalConfig) {
+            if (!temporalConfig.timeTwo) {
+                temporalConfig.timeTwo = temporalConfig.timeOne
+            }
+
+            switch (temporalConfig.type) {
+                case 'AS OF':
+                    joinAttribute.temporalClause = `FOR SYSTEM_TIME AS OF "${temporalConfig.timeOne}"`
+                    break
+                case 'BETWEEN':
+                    joinAttribute.temporalClause = `FOR SYSTEM_TIME BETWEEN "${temporalConfig.timeOne}" AND "${temporalConfig.timeTwo}"`
+                    break
+                case 'FROM':
+                    joinAttribute.temporalClause = `FOR SYSTEM_TIME FROM "${temporalConfig.timeOne}" TO "${temporalConfig.timeTwo}"`
+                    break
+                case 'CONTAINED IN':
+                    joinAttribute.temporalClause = `FOR SYSTEM_TIME CONTAINED IN ("${temporalConfig.timeOne}" , "${temporalConfig.timeTwo}")`
+                    break
+                default:
+                    joinAttribute.temporalClause = 'FOR SYSTEM_TIME ALL'
+            }
+        }
+
         this.expressionMap.joinAttributes.push(joinAttribute);
 
         if (joinAttribute.metadata) {
