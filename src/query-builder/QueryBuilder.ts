@@ -19,7 +19,6 @@ import { OracleDriver } from "../driver/oracle/OracleDriver";
 import { EntitySchema } from "../";
 import { FindOperator } from "../find-options/FindOperator";
 import { In } from "../find-options/operator/In";
-import { TemporalClauseConfig } from './TemporalClauseConfig';
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
