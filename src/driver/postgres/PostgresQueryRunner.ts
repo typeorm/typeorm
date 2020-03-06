@@ -722,13 +722,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const newEnumNameWithOldSuffix = this.buildEnumName(table, newColumn, false, false, true);
                 const newEnumNameWithOldSuffixAndSchema = this.buildEnumName(table, newColumn, true, false, true);
 
-                // rename old ENUM
+                // up: create new enum type and rename old enum type
+                // down: delete new renamed enum
                 upQueries.push(new Query(`ALTER TYPE "${prevEnumSchema}"."${prevEnumName}" RENAME TO ${prevEnumNameWithOldSuffix}`));
-                downQueries.push(new Query(`ALTER TYPE ${newEnumName} RENAME TO ${newEnumNameWithOldSuffix}`));
-
-                // create new ENUM
                 upQueries.push(this.createEnumTypeSql(table, newColumn));
-                downQueries.push(this.createEnumTypeSql(table, oldColumn));
+                downQueries.push(this.dropEnumTypeSql(table, newColumn, newEnumNameWithOldSuffixAndSchema));
 
                 // if column have default value, we must drop it to avoid issues with type casting
                 if (newColumn.default !== null && newColumn.default !== undefined) {
@@ -750,9 +748,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`));
                 }
 
-                // remove old ENUM
+                // up: remove old renamed enum type
+                // down: rename new enum type and create old enum type
                 upQueries.push(this.dropEnumTypeSql(table, newColumn, prevEnumNameWithOldSuffixAndSchema));
-                downQueries.push(this.dropEnumTypeSql(table, oldColumn, newEnumNameWithOldSuffixAndSchema));
+                downQueries.push(this.createEnumTypeSql(table, oldColumn));
+                downQueries.push(new Query(`ALTER TYPE ${newEnumName} RENAME TO ${newEnumNameWithOldSuffix}`));
             }
 
             if (oldColumn.isNullable !== newColumn.isNullable) {
