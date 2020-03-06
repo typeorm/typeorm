@@ -8,7 +8,7 @@ import {
 import { Connection, createConnection } from "../../../src";
 import { fail } from "assert";
 
-describe.only("github issues > #5478 Setting enumName doesn't change how migrations get generated", () => {
+describe("github issues > #5478 Setting enumName doesn't change how migrations get generated", () => {
     let connections: Connection[];
     before(
         async () =>
