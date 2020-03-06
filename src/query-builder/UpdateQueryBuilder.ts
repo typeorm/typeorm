@@ -104,6 +104,10 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 updateResult.raw = result[0];
                 updateResult.affected = result[1];
             }
+            else if (this.connection.driver instanceof MysqlDriver) {
+                updateResult.raw = result;
+                updateResult.affected = result.affectedRows;
+            }
             else {
                 updateResult.raw = result;
             }
