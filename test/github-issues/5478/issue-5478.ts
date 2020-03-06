@@ -57,10 +57,10 @@ describe.only("github issues > #5478 Setting enumName doesn't change how migrati
                         `DROP TYPE "user_usertype_enum_old"`
                       ]);
                     downQueries.should.eql([
-                        `ALTER TYPE "UserRoleEnum" RENAME TO "UserRoleEnum_old"`,
-                        `CREATE TYPE "user_usertype_enum" AS ENUM('0', '1')`,
+                        `DROP TYPE "UserRoleEnum_old"`,
                         `ALTER TABLE "user" ALTER COLUMN "userType" TYPE user_usertype_enum USING "userType"::"text"::user_usertype_enum`,
-                        `DROP TYPE "UserRoleEnum_old"`
+                        `CREATE TYPE "user_usertype_enum" AS ENUM('0', '1')`,
+                        `ALTER TYPE "UserRoleEnum" RENAME TO "UserRoleEnum_old"`
                       ]);
                 } finally {
                     connection.close();
