@@ -19,16 +19,16 @@ export class Post {
     integer: string;
 
     @Column("int4")
-    int4: string;
+    int4: number;
 
     @Column("int")
     int: string;
 
     @Column("smallint")
-    smallint: string;
+    smallint: number;
 
     @Column("int2")
-    int2: string;
+    int2: number;
 
     @Column("bigint")
     bigint: string;

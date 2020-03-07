@@ -1,4 +1,4 @@
-import {getConnection, getMetadataArgsStorage, EntityManager} from "../../";
+import {EntityManager, getConnection, getMetadataArgsStorage} from "../../";
 import {TransactionOptions} from "../options/TransactionOptions";
 import {IsolationLevel} from "../../driver/types/IsolationLevel";
 

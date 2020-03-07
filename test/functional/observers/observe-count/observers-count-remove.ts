@@ -9,13 +9,13 @@ describe("observers > count > on remove", function() {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mysql"]
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should dispatch event with new value when entity is removed", ok => {
+        if (!connections.length) ok();
         connections.filter((connection, index) => index === 0).map(async connection => {
 
             let time: number = 0, lastCount: number;

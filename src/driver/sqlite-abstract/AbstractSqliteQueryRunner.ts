@@ -2,6 +2,7 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
+import {NotImplementedError} from "../../error/NotImplementedError";
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Table} from "../../schema-builder/table/Table";
@@ -138,7 +139,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * Returns all available database names including system databases.
      */
     async getDatabases(): Promise<string[]> {
-        return Promise.resolve([]);
+        throw new NotImplementedError();
     }
 
     /**
@@ -146,14 +147,14 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * If database parameter specified, returns schemas of that database.
      */
     async getSchemas(database?: string): Promise<string[]> {
-        return Promise.resolve([]);
+        throw new NotImplementedError();
     }
 
     /**
      * Checks if database with the given name exist.
      */
     async hasDatabase(database: string): Promise<boolean> {
-        return Promise.resolve(false);
+        throw new NotImplementedError();
     }
 
     /**

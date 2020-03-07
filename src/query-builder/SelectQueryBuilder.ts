@@ -26,7 +26,6 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {QueryExpressionMap} from "./QueryExpressionMap";
-import {ObjectType} from "../common/ObjectType";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {WhereExpression} from "./WhereExpression";
 import {Brackets} from "./Brackets";
@@ -36,11 +35,12 @@ import {OffsetWithoutLimitNotSupportedError} from "../error/OffsetWithoutLimitNo
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {
+    FindExtraOptions,
     FindOptions,
-    FindOptionsOrder, FindOptionsRelation,
+    FindOptionsOrder,
+    FindOptionsRelation,
     FindOptionsSelect,
-    FindOptionsWhere,
-    FindExtraOptions
+    FindOptionsWhere
 } from "../find-options/FindOptions";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {FindCriteriaNotFoundError} from "../error/FindCriteriaNotFoundError";
@@ -50,7 +50,7 @@ import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
-import { Connection } from "..";
+import {Connection, EntityTarget} from "..";
 
 type QueryFindOptions<E> = // TODO: Think of better name
     Pick<FindOptions<E>, "select">
@@ -269,14 +269,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T>;
+    from<T>(entityTarget: EntityTarget<T>, aliasName: string): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
+    from<T>(entityTarget: EntityTarget<T>|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
         const mainAlias = this.createFromAlias(entityTarget, aliasName);
         this.expressionMap.setMainAlias(mainAlias);
         return (this as any) as SelectQueryBuilder<T>;
@@ -292,13 +292,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T>;
+    addFrom<T>(entityTarget: EntityTarget<T>, aliasName: string): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
+    addFrom<T>(entityTarget: EntityTarget<T>|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
         const alias = this.createFromAlias(entityTarget, aliasName);
         if (!this.expressionMap.mainAlias)
             this.expressionMap.setMainAlias(alias);

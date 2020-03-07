@@ -24,6 +24,11 @@ export type Repository<Entity extends ObjectLiteral> = {
     // -------------------------------------------------------------------------
 
     /**
+     * Can be used to determine what object type is used.
+     */
+    readonly typeof: "Repository"
+
+    /**
      * Entity Manager used by this repository.
      */
     readonly manager: EntityManager;
@@ -39,6 +44,14 @@ export type Repository<Entity extends ObjectLiteral> = {
      * then it returns a name of that schema instead.
      */
     readonly target: Function | string
+
+    /**
+     * If entity's metadata is bound to some specific instance (class or function),
+     * this property will contain it. It can be used to initiate new instances of that class or function.
+     * When entity is defined using entity schema without target,
+     * TypeORM will create a POJO, and this property will be undefined.
+     */
+    // readonly instance?: Function // todo: implement later
 
     // -------------------------------------------------------------------------
     // Public Methods

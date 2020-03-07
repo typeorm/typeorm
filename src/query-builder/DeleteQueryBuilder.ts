@@ -2,7 +2,6 @@ import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {ObjectType} from "../common/ObjectType";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -14,7 +13,7 @@ import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNo
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
-import {EntitySchema} from "../index";
+import {EntitySchema, EntityTarget} from "../index";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {ObserverExecutor} from "../observer/ObserverExecutor";
 
@@ -137,8 +136,8 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    from<T>(entityTarget: ObjectType<T>|EntitySchema<T>|string, aliasName?: string): DeleteQueryBuilder<T> {
-        entityTarget = entityTarget instanceof EntitySchema ? entityTarget.options.name : entityTarget;
+    from<T>(entityTarget: EntityTarget<T>, aliasName?: string): DeleteQueryBuilder<T> {
+        entityTarget = entityTarget instanceof EntitySchema ? entityTarget.options.name!! : entityTarget;
         const mainAlias = this.createFromAlias(entityTarget, aliasName);
         this.expressionMap.setMainAlias(mainAlias);
         return (this as any) as DeleteQueryBuilder<T>;

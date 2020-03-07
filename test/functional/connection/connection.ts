@@ -11,7 +11,6 @@ import {closeTestingConnections, createTestingConnections, setupSingleTestingCon
 import {Connection} from "../../../src/connection/Connection";
 import {getConnectionManager} from "../../../src/index";
 import {NoConnectionForRepositoryError} from "../../../src/error/NoConnectionForRepositoryError";
-import {EntityManager} from "../../../src/entity-manager/EntityManager";
 import {CannotGetEntityManagerNotConnectedError} from "../../../src/error/CannotGetEntityManagerNotConnectedError";
 import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {PostgresConnectionOptions} from "../../../src/driver/postgres/PostgresConnectionOptions";
@@ -123,11 +122,6 @@ describe("Connection", () => {
             connection.isConnected.should.be.true;
         }));
 
-        it("entity manager and reactive entity manager should be accessible", () => connections.forEach(connection => {
-            expect(connection.manager).to.be.instanceOf(EntityManager);
-            // expect(connection.reactiveEntityManager).to.be.instanceOf(ReactiveEntityManager);
-        }));
-
         it("should not be able to connect again", () => connections.forEach(connection => {
             return connection.connect().should.be.rejected; // CannotConnectAlreadyConnectedError
         }));
@@ -169,13 +163,6 @@ describe("Connection", () => {
         it("should not be able to get tree entity repository of the non-tree entities", () => connections.forEach(connection => {
             // expect(() => connection.getTreeRepository(Post)).to.throw(Error); // RepositoryNotTreeError
             // expect(() => connection.getReactiveTreeRepository(Post)).to.throw(RepositoryNotTreeError);
-        }));
-
-        it("should not be able to get repositories that are not registered", () => connections.forEach(connection => {
-            expect(() => connection.getRepository("SomeEntity")).to.throw(Error); // RepositoryNotTreeError
-            expect(() => connection.getTreeRepository("SomeEntity")).to.throw(Error); // RepositoryNotTreeError
-            // expect(() => connection.getReactiveRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
-            // expect(() => connection.getReactiveTreeRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
         }));
 
     });

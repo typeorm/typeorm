@@ -22,7 +22,8 @@ import {
     InsertWriteOpResult,
     MapReduceOptions,
     MongoCountPreferences,
-    MongodbIndexOptions, ObjectID,
+    MongodbIndexOptions,
+    ObjectID,
     OrderedBulkOperation,
     ParallelCollectionScanOptions,
     ReadPreference,
@@ -39,6 +40,11 @@ import {FindExtraOptions, FindOptions, FindOptionsWhere} from "../find-options/F
  * Repository used to manage mongodb documents of a single entity type.
  */
 export type MongoRepository<Entity extends ObjectLiteral> = Repository<Entity> & {
+
+    /**
+     * Can be used to determine what object type is used.
+     */
+    readonly typeof: "MongoRepository"
 
     // -------------------------------------------------------------------------
     // Public Properties

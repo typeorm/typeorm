@@ -65,7 +65,7 @@ export class ConnectionMetadataBuilder {
         });
         const decoratorEntityMetadatas = new EntityMetadataBuilder(this.connection, getMetadataArgsStorage()).build(allEntityClasses);
 
-        const metadataArgsStorageFromSchema = new EntitySchemaTransformer().transform(entitySchemas);
+        const metadataArgsStorageFromSchema = new EntitySchemaTransformer().transform(this.connection, entitySchemas);
         const schemaEntityMetadatas = new EntityMetadataBuilder(this.connection, metadataArgsStorageFromSchema).build();
 
         return [...decoratorEntityMetadatas, ...schemaEntityMetadatas];

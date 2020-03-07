@@ -10,13 +10,13 @@ describe("observers > count > on insert", function() {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mysql"]
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should observe entities when new entity is inserted", ok => {
+        if (!connections.length) ok();
         connections.filter((connection, index) => index === 0).map(async connection => {
             let time: number = 0;
 
@@ -50,6 +50,7 @@ describe("observers > count > on insert", function() {
     });
 
     it("should observe entities when new entity is inserted with conditional query", ok => {
+        if (!connections.length) ok();
         connections.filter((connection, index) => index === 0).map(async connection => {
             let time: number = 0, lastCount = 0;
 

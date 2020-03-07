@@ -1,4 +1,4 @@
-import { ColumnMetadata } from "../metadata/ColumnMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
 
 /**
  * Provides utilities to transform hydrated and persisted data.
@@ -171,7 +171,7 @@ export class DateUtils {
 
     static stringToSimpleJson(value: any) {
         try {
-            const simpleJSON = JSON.parse(value); 
+            const simpleJSON = JSON.parse(value);
             return (typeof simpleJSON === "object") ? simpleJSON : {};
        } catch (err) {
             return {};

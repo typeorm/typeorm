@@ -1,4 +1,4 @@
-import { ObjectLiteral } from "../common/ObjectLiteral";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 export class OrmUtils {
 

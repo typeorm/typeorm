@@ -1,7 +1,7 @@
-import { Driver } from "./Driver";
-import { shorten } from "../util/StringUtils";
+import {Driver} from "./Driver";
+import {shorten} from "../util/StringUtils";
 
-    /**
+/**
  * Common driver utility functions.
  */
 export class DriverUtils {

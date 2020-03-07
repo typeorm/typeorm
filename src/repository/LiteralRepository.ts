@@ -24,9 +24,24 @@ export function createLiteralRepository<Entity>({ manager, target, queryRunner }
 }): Repository<Entity> {
 
     return {
+        typeof: "Repository",
         manager: manager,
         queryRunner: queryRunner,
-        target: target as any, // todo: fix any later
+        // get instance() { // todo: implement it later
+        //     return this.getMetadata().instance
+        // },
+
+        get target(): Function | string {
+            // if there is a metadata for this object, first we see if
+            // this creates unpredictable result (and its a source of bugs), when before initialization target has one value,
+            // and after initialization it has another value
+            // todo: later we need to refactor this part to prevent confusion (maybe better to separate "target" from "instance")
+            // todo: to make it, we need to replace all places where .target used as instance
+            if (this.manager.connection.hasMetadata(target)) {
+                return this.manager.connection.getMetadata(target).target;
+            }
+            return target as any;
+        },
 
         getMetadata() {
             return this.manager.connection.getMetadata(target);

@@ -16,7 +16,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {EntitySchema} from "../";
+import {EntitySchema, EntityTarget} from "../";
 import {FindOperator} from "../find-options/FindOperator";
 import {In} from "../find-options/operator/In";
 
@@ -195,7 +195,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update(entity: Function|EntitySchema<Entity>|string, updateSet?: QueryDeepPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
+    update(entity: EntityTarget<Entity>, updateSet?: QueryDeepPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query for the given table name and applies given update values.
@@ -517,7 +517,7 @@ export abstract class QueryBuilder<Entity> {
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    protected createFromAlias(entityTarget: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName?: string): Alias {
+    protected createFromAlias(entityTarget: EntityTarget<any>|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName?: string): Alias {
 
         // if table has a metadata then find it to properly escape its properties
         // const metadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === tableName);
@@ -538,10 +538,10 @@ export abstract class QueryBuilder<Entity> {
                 this.setParameters(subQueryBuilder.getParameters());
                 subQuery = subQueryBuilder.getQuery();
 
-            } else {
+            } else if (typeof entityTarget === "string") {
                 subQuery = entityTarget;
             }
-            const isSubQuery = entityTarget instanceof Function || entityTarget.substr(0, 1) === "(" && entityTarget.substr(-1) === ")";
+            const isSubQuery = entityTarget instanceof Function || (typeof entityTarget === "string" && entityTarget.substr(0, 1) === "(" && entityTarget.substr(-1) === ")");
             return this.expressionMap.createAlias({
                 type: "from",
                 name: aliasName,

@@ -9,13 +9,13 @@ describe("observers > many > on update", function() {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mysql"]
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should dispatch event with new value when entity is updated", ok => {
+        if (!connections.length) ok();
         connections.filter((connection, index) => index === 0).map(async connection => {
             let time: number = 0;
             const post1 = await connection.manager.save(new Post("Hello #1"));

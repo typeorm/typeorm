@@ -2,6 +2,7 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
+import {NotImplementedError} from "../../error/NotImplementedError";
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {Table} from "../../schema-builder/table/Table";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
@@ -21,7 +22,7 @@ import {ColumnType, PromiseUtils} from "../../index";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
-import { VersionUtils } from "../../util/VersionUtils";
+import {VersionUtils} from "../../util/VersionUtils";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -202,7 +203,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Returns all available database names including system databases.
      */
     async getDatabases(): Promise<string[]> {
-        return Promise.resolve([]);
+        throw new NotImplementedError();
     }
 
     /**

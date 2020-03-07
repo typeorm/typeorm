@@ -18,7 +18,7 @@ import {PromiseUtils} from "./util/PromiseUtils";
 import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
 import {SelectQueryBuilder} from "./query-builder/SelectQueryBuilder";
-import {EntitySchema} from "./entity-schema/EntitySchema";
+import {EntityTarget} from "./common/EntityTarget";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -120,6 +120,7 @@ export * from "./schema-builder/table/Table";
 export * from "./driver/mongodb/typings";
 export * from "./driver/types/DatabaseType";
 export * from "./driver/sqlserver/MssqlParameter";
+export * from "./typed-entity-schema";
 
 export {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 export {Connection} from "./connection/Connection";
@@ -285,7 +286,7 @@ export function getSqljsManager(connectionName: string = "default"): SqljsEntity
 /**
  * Gets repository for the given entity class.
  */
-export function getRepository<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, connectionName: string = "default"): Repository<Entity> {
+export function getRepository<Entity>(entityClass: EntityTarget<Entity>, connectionName: string = "default"): Repository<Entity> {
     return getConnectionManager().get(connectionName).getRepository<Entity>(entityClass);
 }
 
@@ -299,7 +300,7 @@ export function connection(options: ConnectionOptions) {
 /**
  * Gets tree repository for the given entity class.
  */
-export function getTreeRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): TreeRepository<Entity> {
+export function getTreeRepository<Entity>(entityClass: EntityTarget<Entity>, connectionName: string = "default"): TreeRepository<Entity> {
     return getConnectionManager().get(connectionName).getTreeRepository<Entity>(entityClass);
 }
 
@@ -313,14 +314,14 @@ export function getCustomRepository<T>(customRepository: ObjectType<T>, connecti
 /**
  * Gets mongodb repository for the given entity class or name.
  */
-export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): MongoRepository<Entity> {
+export function getMongoRepository<Entity>(entityClass: EntityTarget<Entity>, connectionName: string = "default"): MongoRepository<Entity> {
     return getConnectionManager().get(connectionName).getMongoRepository<Entity>(entityClass);
 }
 
 /**
  * Creates a new query builder.
  */
-export function createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|string, alias?: string, connectionName: string = "default"): SelectQueryBuilder<Entity> {
+export function createQueryBuilder<Entity>(entityClass?: EntityTarget<Entity>, alias?: string, connectionName: string = "default"): SelectQueryBuilder<Entity> {
     if (entityClass) {
         return getRepository(entityClass, connectionName).createQueryBuilder(alias);
     }

@@ -63,7 +63,7 @@ services:
 
   # cockroachdb
   cockroachdb:
-    image: "cockroachdb/cockroach-unstable:v19.1.0-rc.2"
+    image: "cockroachdb/cockroach:v19.2.4"
     container_name: "typeorm-cockroachdb"
     command: start --insecure
     ports:
@@ -71,7 +71,6 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:3.7.9"
     image: "mongo:3.4.18"
     container_name: "typeorm-mongodb"
     ports:

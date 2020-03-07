@@ -1,4 +1,4 @@
-import { EntityFactoryInterface } from "./EntityFactoryInterface";
+import {EntityFactoryInterface} from "./EntityFactoryInterface";
 
 export class DefaultEntityFactory implements EntityFactoryInterface {
 
