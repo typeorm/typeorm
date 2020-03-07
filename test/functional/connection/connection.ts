@@ -139,13 +139,12 @@ describe("Connection", () => {
         after(() => closeTestingConnections(connections));
 
         it("should be able to get simple entity repository", () => connections.forEach(connection => {
-            // connection.getRepository(Post).should.be.instanceOf(Repository); // todo
-            // connection.getRepository(Post).should.not.be.instanceOf(TreeRepository);
+            connection.getRepository(Post).should.have.property("typeof","Repository");
             connection.getRepository(Post).target.should.be.eql(Post);
         }));
 
         it("should be able to get tree entity repository", () => connections.forEach(connection => {
-            // connection.getTreeRepository(Category).should.be.instanceOf(TreeRepository); // todo
+            connection.getTreeRepository(Category).should.have.property("typeof", "TreeRepository")
             connection.getTreeRepository(Category).target.should.be.eql(Category);
         }));
 
