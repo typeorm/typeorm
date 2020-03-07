@@ -820,7 +820,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    orWhere(where: Brackets|string|((qb: this) => string)|FindOptionsWhere<Entity>, parameters?: ObjectLiteral): this {
+    orWhere(where: Brackets|string|((qb: this) => string), parameters?: ObjectLiteral): this {
 
         this.expressionMap.wheres.push({ type: "or", condition: this.computeWhereParameter(where) });
 
