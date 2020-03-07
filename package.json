@@ -55,6 +55,7 @@
     "@types/sinon": "^7.0.8",
     "@types/source-map-support": "^0.4.2",
     "@types/yargs": "^12.0.9",
+    "@types/zen-observable": "^0.8.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "class-transformer": "^0.2.3",
@@ -93,7 +94,6 @@
     "typescript": "^3.3.3333"
   },
   "dependencies": {
-    "@types/zen-observable": "^0.8.0",
     "app-root-path": "^3.0.0",
     "buffer": "^5.1.0",
     "chalk": "^2.4.2",
