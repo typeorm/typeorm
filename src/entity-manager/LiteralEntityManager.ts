@@ -394,18 +394,23 @@ export function createLiteralEntityManager<Entity>({ connection, queryRunner }: 
             // if (!findOptions || findOptions.loadEagerRelations !== false)
             //     FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
 
-            if (findOptions) {
+            const findById = typeof idOrOptionsOrConditions === "string" || typeof idOrOptionsOrConditions === "number" || idOrOptionsOrConditions instanceof Date;
+
+            if (!findById) {
                 findOptions = {
                     ...(findOptions || {}),
                     take: 1,
                 };
+            }
+
+            if (findOptions) {
                 qb.setFindOptions(findOptions);
             }
 
             if (options) {
                 qb.where(options);
 
-            } else if (typeof idOrOptionsOrConditions === "string" || typeof idOrOptionsOrConditions === "number" || idOrOptionsOrConditions instanceof Date) {
+            } else if (findById) {
                 qb.andWhereInIds(metadata.ensureEntityIdMap(idOrOptionsOrConditions));
             }
 
