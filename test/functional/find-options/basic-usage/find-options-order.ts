@@ -149,11 +149,15 @@ describe("find options > order", () => {
                 }
             }
         }).getMany();
-        posts.should.be.eql([
+        posts.should.have.deep.members([
             { id: 3, title: "Post #3", text: "About post #3", counters: { likes: 1 } },
             { id: 1, title: "Post #1", text: "About post #1", counters: { likes: 1 } },
             { id: 2, title: "Post #2", text: "About post #2", counters: { likes: 2 } },
         ]);
+        expect(posts[0].id).to.be.eql(3);
+        expect(posts[1].id).to.be.oneOf([1, 2]);
+        expect(posts[2].id).to.be.oneOf([1, 2]);
+        expect(posts[1].id).to.not.be.eql(posts[2].id);
     })));
 
     it("order by relation with where relation applied", () => Promise.all(connections.map(async connection => {
