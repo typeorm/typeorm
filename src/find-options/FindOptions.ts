@@ -214,3 +214,16 @@ export type FindOptions<E> = {
     take?: number;
 
 };
+
+/**
+ * Find options which are applicable to single sql query.
+ */
+export type QueryFindOptions<E> =
+    Pick<FindOptions<E>, "select">
+    & Pick<FindOptions<E>, "where">
+    & Pick<FindOptions<E>, "order">
+    & Pick<FindOptions<E>, "relations">
+    & Pick<FindOptions<E>, "skip">
+    & Pick<FindOptions<E>, "take">
+    & Pick<FindExtraOptions, "loadRelationIds">
+    & Pick<FindExtraOptions, "pagination">;

@@ -35,12 +35,12 @@ import {OffsetWithoutLimitNotSupportedError} from "../error/OffsetWithoutLimitNo
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {
-    FindExtraOptions,
     FindOptions,
     FindOptionsOrder,
     FindOptionsRelation,
     FindOptionsSelect,
-    FindOptionsWhere
+    FindOptionsWhere,
+    QueryFindOptions
 } from "../find-options/FindOptions";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {FindCriteriaNotFoundError} from "../error/FindCriteriaNotFoundError";
@@ -51,16 +51,6 @@ import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
 import {Connection, EntityTarget} from "..";
-
-type QueryFindOptions<E> = // TODO: Think of better name
-    Pick<FindOptions<E>, "select">
-    & Pick<FindOptions<E>, "where">
-    & Pick<FindOptions<E>, "order">
-    & Pick<FindOptions<E>, "relations">
-    & Pick<FindOptions<E>, "skip">
-    & Pick<FindOptions<E>, "take">
-    & Pick<FindExtraOptions, "loadRelationIds">
-    & Pick<FindExtraOptions, "pagination">;
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
