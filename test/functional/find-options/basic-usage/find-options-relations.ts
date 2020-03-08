@@ -117,8 +117,8 @@ describe("find options > relations", () => {
             }
         ]);
         expect(posts[0].id).to.be.eql(3);
-        expect(posts[1].id).to.be.oneOf([1,2]);
-        expect(posts[2].id).to.be.oneOf([1,2]);
+        expect(posts[1].id).to.be.oneOf([1, 2]);
+        expect(posts[2].id).to.be.oneOf([1, 2]);
         expect(posts[1].id).to.not.be.eql(posts[2].id);
 
     })));
