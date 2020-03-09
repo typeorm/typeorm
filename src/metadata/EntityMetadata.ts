@@ -25,6 +25,7 @@ import {RelationMetadata} from "./RelationMetadata";
 import {TableType} from "./types/TableTypes";
 import {TreeType} from "./types/TreeTypes";
 import {UniqueMetadata} from "./UniqueMetadata";
+import {AuroraDataApiPostgresDriver} from "../driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 /**
  * Contains all entity metadata.
@@ -852,11 +853,11 @@ export class EntityMetadata {
      */
     protected buildTablePath(): string {
         let tablePath = this.tableName;
-        if (this.schema && ((this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
+        if (this.schema && ((this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof AuroraDataApiPostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
             tablePath = this.schema + "." + tablePath;
         }
 
-        if (this.database && !(this.connection.driver instanceof PostgresDriver)) {
+        if (this.database && !(this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver)) {
             if (!this.schema && this.connection.driver instanceof SqlServerDriver) {
                 tablePath = this.database + ".." + tablePath;
             } else {
@@ -874,7 +875,7 @@ export class EntityMetadata {
         if (!this.schema)
             return undefined;
 
-        return this.database && !(this.connection.driver instanceof PostgresDriver) ? this.database + "." + this.schema : this.schema;
+        return this.database && !(this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver) ? this.database + "." + this.schema : this.schema;
     }
 
 }

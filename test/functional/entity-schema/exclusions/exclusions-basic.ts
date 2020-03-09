@@ -3,6 +3,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../src/connection/Connection";
 import {MeetingSchema} from "./entity/Meeting";
 import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
+import { AuroraDataApiPostgresDriver } from "../../../../src/driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 describe("entity-schema > exclusions", () => {
 
@@ -15,7 +16,7 @@ describe("entity-schema > exclusions", () => {
 
     it("should create an exclusion constraint", () => Promise.all(connections.map(async connection => {
         // Only PostgreSQL supports exclusion constraints.
-        if (!(connection.driver instanceof PostgresDriver))
+        if (!(connection.driver instanceof PostgresDriver || connection.driver instanceof AuroraDataApiPostgresDriver))
             return;
 
         const queryRunner = connection.createQueryRunner();

@@ -16,4 +16,5 @@ export type DatabaseType =
     "mssql"|
     "mongodb"|
     "aurora-data-api"|
+    "aurora-data-api-pg"|
     "expo";

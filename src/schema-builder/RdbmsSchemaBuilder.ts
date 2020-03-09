@@ -24,6 +24,7 @@ import {TableExclusion} from "./table/TableExclusion";
 import {View} from "./view/View";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata";
+import {AuroraDataApiPostgresDriver} from "../driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -339,7 +340,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     protected async dropOldExclusions(): Promise<void> {
         // Only PostgreSQL supports exclusion constraints
-        if (!(this.connection.driver instanceof PostgresDriver))
+        if (!(this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver))
             return;
 
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
@@ -618,7 +619,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async createNewExclusions(): Promise<void> {
         // Only PostgreSQL supports exclusion constraints
-        if (!(this.connection.driver instanceof PostgresDriver))
+        if (!(this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver))
             return;
 
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {

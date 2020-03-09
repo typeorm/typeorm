@@ -24,6 +24,7 @@ import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {AuroraDataApiPostgresDriver} from "../driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -100,7 +101,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 parameters,
             );
 
-            if (this.connection.driver instanceof PostgresDriver) {
+            if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver) {
                 updateResult.raw = result[0];
                 updateResult.affected = result[1];
             }
@@ -446,7 +447,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                             } else {
                                 expression = `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount)})`;
                             }
-                        } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                        } else if ((this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver) && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             if (column.srid != null) {
                               expression = `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)}), ${column.srid})::${column.type}`;
                             } else {
@@ -516,7 +517,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const returningExpression = this.createReturningExpression();
 
         // generate and return sql update query
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
             return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${returningExpression}`;
 
         } else if (returningExpression && this.connection.driver instanceof SqlServerDriver) {

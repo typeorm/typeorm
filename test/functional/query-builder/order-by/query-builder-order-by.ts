@@ -5,6 +5,7 @@ import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
+import { AuroraDataApiPostgresDriver } from "../../../../src/driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 describe("query builder > order-by", () => {
 
@@ -51,7 +52,7 @@ describe("query builder > order-by", () => {
     })));
 
     it("should be always in right order(custom order)", () => Promise.all(connections.map(async connection => {
-        if (!(connection.driver instanceof PostgresDriver)) // NULLS FIRST / LAST only supported by postgres
+        if (!(connection.driver instanceof PostgresDriver || connection.driver instanceof AuroraDataApiPostgresDriver)) // NULLS FIRST / LAST only supported by postgres
             return;
 
         const post1 = new Post();

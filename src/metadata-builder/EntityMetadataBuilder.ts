@@ -23,6 +23,7 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {ExclusionMetadata} from "../metadata/ExclusionMetadata";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {AuroraDataApiPostgresDriver} from "../driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -489,7 +490,7 @@ export class EntityMetadataBuilder {
         });
 
         // Only PostgreSQL supports exclusion constraints.
-        if (this.connection.driver instanceof PostgresDriver) {
+        if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver) {
             entityMetadata.exclusions = this.metadataArgsStorage.filterExclusions(entityMetadata.inheritanceTree).map(args => {
                 return new ExclusionMetadata({ entityMetadata, args });
             });

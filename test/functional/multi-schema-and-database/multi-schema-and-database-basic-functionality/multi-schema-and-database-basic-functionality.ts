@@ -11,6 +11,7 @@ import {Person} from "./entity/Person";
 import {Question} from "./entity/Question";
 import {Answer} from "./entity/Answer";
 import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
+import { AuroraDataApiPostgresDriver } from "../../../../src/driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 describe("multi-schema-and-database > basic-functionality", () => {
 
@@ -41,7 +42,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                 .where("post.id = :id", {id: 1})
                 .getSql();
 
-            if (connection.driver instanceof PostgresDriver)
+            if (connection.driver instanceof PostgresDriver || connection.driver instanceof AuroraDataApiPostgresDriver)
                 sql.should.be.equal(`SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "custom"."post" "post" WHERE "post"."id" = $1`);
 
             if (connection.driver instanceof SqlServerDriver)
@@ -64,7 +65,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                 .where("user.id = :id", {id: 1})
                 .getSql();
 
-            if (connection.driver instanceof PostgresDriver)
+            if (connection.driver instanceof PostgresDriver || connection.driver instanceof AuroraDataApiPostgresDriver)
                 sql.should.be.equal(`SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = $1`);
 
             if (connection.driver instanceof SqlServerDriver)
@@ -102,7 +103,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                 .where("category.id = :id", {id: 1})
                 .getSql();
 
-            if (connection.driver instanceof PostgresDriver)
+            if (connection.driver instanceof PostgresDriver || connection.driver instanceof AuroraDataApiPostgresDriver)
                 sql.should.be.equal(`SELECT "category"."id" AS "category_id", "category"."name" AS "category_name",` +
                     ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
                     ` FROM "guest"."category" "category" INNER JOIN "custom"."post" "post" ON "post"."id"="category"."postId" WHERE "category"."id" = $1`);
@@ -140,7 +141,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
             (await query.getRawOne())!.should.be.not.empty;
 
-            if (connection.driver instanceof PostgresDriver)
+            if (connection.driver instanceof PostgresDriver || connection.driver instanceof AuroraDataApiPostgresDriver)
                 query.getSql().should.be.equal(`SELECT * FROM "guest"."category" "category", "userSchema"."user" "user",` +
                     ` "custom"."post" "post" WHERE "category"."id" = $1 AND "post"."id" = "category"."postId"`);
 

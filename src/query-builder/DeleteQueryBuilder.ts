@@ -16,6 +16,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../index";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { AuroraDataApiPostgresDriver } from "../driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -75,7 +76,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 deleteResult.raw = result;
                 deleteResult.affected = result.affectedRows;
 
-            } else if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
+            } else if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof AuroraDataApiPostgresDriver || driver instanceof CockroachDriver) {
                 deleteResult.raw = result[0] ? result[0] : null;
                 // don't return 0 because it could confuse. null means that we did not receive this value
                 deleteResult.affected = typeof result[1] === "number" ? result[1] : null;
@@ -257,7 +258,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const whereExpression = this.createWhereExpression();
         const returningExpression = this.createReturningExpression();
 
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof CockroachDriver)) {
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver || this.connection.driver instanceof CockroachDriver)) {
             return `DELETE FROM ${tableName}${whereExpression} RETURNING ${returningExpression}`;
 
         } else if (returningExpression !== "" && this.connection.driver instanceof SqlServerDriver) {
