@@ -184,7 +184,18 @@ category: Category;
 ```
 
 The relation now refers to `name` of the `Category` entity, instead of `id`.
-Column name for that relation will become `categoryName`
+Column name for that relation will become `categoryName`.
+
+You can also join multiple columns. Note that they do not reference the primary column of the related entity by default: you must provide the referenced column name.
+
+```typescript
+@ManyToOne(type => Category)
+@JoinColumn([
+    { name: "category_id", referencedColumnName: "id" },
+    { name: "locale_id", referencedColumnName: "locale_id" }
+])
+category: Category;
+```
 
 ## `@JoinTable` options
 
