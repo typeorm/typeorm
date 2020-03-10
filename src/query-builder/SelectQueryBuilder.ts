@@ -201,7 +201,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         this.expressionMap.setMainAlias(mainAlias);
 
         if (temporalConfig) {
-            if (!temporalConfig.timeTwo) {
+            if (temporalConfig.timeOne instanceof Date) {
+                temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeOne.getUTCMilliseconds(); 
+            }
+
+            if (temporalConfig.timeTwo && temporalConfig.timeTwo instanceof Date) {
+                temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeTwo.getUTCMilliseconds(); 
+            } else {
                 temporalConfig.timeTwo = temporalConfig.timeOne
             }
 
@@ -249,7 +255,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         }
 
         if (temporalConfig) {
-            if (!temporalConfig.timeTwo) {
+            if (temporalConfig.timeOne instanceof Date) {
+                temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeOne.getUTCMilliseconds(); 
+            }
+
+            if (temporalConfig.timeTwo && temporalConfig.timeTwo instanceof Date) {
+                temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeTwo.getUTCMilliseconds(); 
+            } else {
                 temporalConfig.timeTwo = temporalConfig.timeOne
             }
 
@@ -1365,7 +1377,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
 
         if (temporalConfig) {
-            if (!temporalConfig.timeTwo) {
+            if (temporalConfig.timeOne instanceof Date) {
+                temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeOne.getUTCMilliseconds(); 
+            }
+
+            if (temporalConfig.timeTwo && temporalConfig.timeTwo instanceof Date) {
+                temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeTwo.getUTCMilliseconds(); 
+            } else {
                 temporalConfig.timeTwo = temporalConfig.timeOne
             }
 
