@@ -2021,6 +2021,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Builds the correct temporal clause based on the temporal config 
      */
     protected buildTemporalClause(temporalConfig: TemporalClauseConfig, clauseHolder: QueryExpressionMap | JoinAttribute) {
+        const expressionMap = this.expressionMap
+
         if (temporalConfig.timeOne instanceof Date) {
             temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeOne.getUTCMilliseconds(); 
         }
@@ -2033,10 +2035,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         if (!Number.isNaN(Date.parse(temporalConfig.timeOne))) {
             temporalConfig.timeOne = `"${temporalConfig.timeOne}"`
+        } else {
+            temporalConfig.timeOne = findPropertyName(temporalConfig.timeOne, expressionMap)
         }
 
         if (!Number.isNaN(Date.parse(temporalConfig.timeTwo))) {
             temporalConfig.timeTwo = `"${temporalConfig.timeTwo}"`
+        } else {
+            temporalConfig.timeTwo = findPropertyName(temporalConfig.timeTwo, expressionMap)
         }
 
         switch (temporalConfig.type) {
@@ -2054,6 +2060,16 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 break
             default:
                 clauseHolder.temporalClause = 'FOR SYSTEM_TIME ALL'
+        }
+
+        function findPropertyName(property: string, expressionMap: QueryExpressionMap): string {
+            const column = expressionMap.mainAlias!.metadata.columns.find(column => `${expressionMap.mainAlias!.name}.${column.propertyPath}` === property)
+            
+            if (column) {
+                return "`" + expressionMap.mainAlias!.name + "`" + "." + "`" + column.databaseName + "`"
+            }
+
+            return property
         }
     }
 }
