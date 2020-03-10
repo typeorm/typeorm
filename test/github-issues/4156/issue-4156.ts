@@ -44,12 +44,12 @@ describe("github issues > #4156 QueryExpressionMap doesn't clone all values corr
                     qb.clone().where({ id: In([1]) }).getOne(),
                 ]);
 
-                loadedPost1!.should.be.eql({
+                (loadedPost1 as Post).should.be.eql({
                     id: 1,
                     title: "Post 1"
                 });
 
-                loadedPost2!.should.be.eql({
+                (loadedPost2 as Post).should.be.eql({
                     id: 1,
                     title: "Post 1"
                 });
@@ -71,12 +71,12 @@ describe("github issues > #4156 QueryExpressionMap doesn't clone all values corr
                     qb.clone().getOne(),
                 ]);
 
-                loadedPost1!.should.be.eql({
+                (loadedPost1 as Post).should.be.eql({
                     id: 1,
                     title: "Post 1"
                 });
 
-                loadedPost2!.should.be.eql({
+                (loadedPost2 as Post).should.be.eql({
                     id: 1,
                     title: "Post 1"
                 });

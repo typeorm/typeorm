@@ -77,8 +77,8 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             } else if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                 deleteResult.raw = result[0] ? result[0] : null;
-                // don't return 0 because it could confuse. null means that we did not receive this value
-                deleteResult.affected = typeof result[1] === "number" ? result[1] : null;
+                // don't return 0 because it could confuse. undefined means that we did not receive this value
+                deleteResult.affected = typeof result[1] === "number" ? result[1] : undefined;
 
             } else if (driver instanceof OracleDriver) {
                 deleteResult.affected = result;

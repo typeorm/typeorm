@@ -46,7 +46,7 @@ export function createLiteralMongoRepository<Entity>({ manager, target, queryRun
 }): MongoRepository<Entity> {
     return {
         ...createLiteralRepository({ manager, target, queryRunner }),
-        typeof: "MongoRepository" as any,
+        typeof: "MongoRepository",
 
         manager: manager,
 

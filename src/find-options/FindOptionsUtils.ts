@@ -88,7 +88,7 @@ export function normalizeFindOptions<T>(options: FindOptions<T>): FindOptions<T>
 
     const recursivelyWhere = <T extends any>(where: T): T => {
 
-        if (where instanceof Array)
+        if ((where as any) instanceof Array)
             return where.map((where: any) => recursivelyWhere(where));
 
         return Object.keys(where).reduce((newWhere, key) => {

@@ -346,7 +346,7 @@ describe("find options > where", () => {
             where: {
                 author: {
                     id: undefined,
-                    name: undefined
+                    firstName: undefined
                 }
             }
         }).getMany();
