@@ -2031,18 +2031,26 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             temporalConfig.timeTwo = temporalConfig.timeOne
         }
 
+        if (!Number.isNaN(Date.parse(temporalConfig.timeOne))) {
+            temporalConfig.timeOne = `"${temporalConfig.timeOne}"`
+        }
+
+        if (!Number.isNaN(Date.parse(temporalConfig.timeTwo))) {
+            temporalConfig.timeTwo = `"${temporalConfig.timeTwo}"`
+        }
+
         switch (temporalConfig.type) {
             case 'AS OF':
-                clauseHolder.temporalClause = `FOR SYSTEM_TIME AS OF "${temporalConfig.timeOne}"`
+                clauseHolder.temporalClause = `FOR SYSTEM_TIME AS OF ${temporalConfig.timeOne}`
                 break
             case 'BETWEEN':
-                clauseHolder.temporalClause = `FOR SYSTEM_TIME BETWEEN "${temporalConfig.timeOne}" AND "${temporalConfig.timeTwo}"`
+                clauseHolder.temporalClause = `FOR SYSTEM_TIME BETWEEN ${temporalConfig.timeOne} AND ${temporalConfig.timeTwo}`
                 break
             case 'FROM':
-                clauseHolder.temporalClause = `FOR SYSTEM_TIME FROM "${temporalConfig.timeOne}" TO "${temporalConfig.timeTwo}"`
+                clauseHolder.temporalClause = `FOR SYSTEM_TIME FROM ${temporalConfig.timeOne} TO ${temporalConfig.timeTwo}`
                 break
             case 'CONTAINED IN':
-                clauseHolder.temporalClause = `FOR SYSTEM_TIME CONTAINED IN ("${temporalConfig.timeOne}" , "${temporalConfig.timeTwo}")`
+                clauseHolder.temporalClause = `FOR SYSTEM_TIME CONTAINED IN (${temporalConfig.timeOne} , ${temporalConfig.timeTwo})`
                 break
             default:
                 clauseHolder.temporalClause = 'FOR SYSTEM_TIME ALL'
