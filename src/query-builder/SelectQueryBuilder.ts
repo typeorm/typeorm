@@ -201,32 +201,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         this.expressionMap.setMainAlias(mainAlias);
 
         if (temporalConfig) {
-            if (temporalConfig.timeOne instanceof Date) {
-                temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeOne.getUTCMilliseconds(); 
-            }
-
-            if (temporalConfig.timeTwo && temporalConfig.timeTwo instanceof Date) {
-                temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeTwo.getUTCMilliseconds(); 
-            } else {
-                temporalConfig.timeTwo = temporalConfig.timeOne
-            }
-
-            switch (temporalConfig.type) {
-                case 'AS OF':
-                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME AS OF "${temporalConfig.timeOne}"`
-                    break
-                case 'BETWEEN':
-                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME BETWEEN "${temporalConfig.timeOne}" AND "${temporalConfig.timeTwo}"`
-                    break
-                case 'FROM':
-                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME FROM "${temporalConfig.timeOne}" TO "${temporalConfig.timeTwo}"`
-                    break
-                case 'CONTAINED IN':
-                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME CONTAINED IN ("${temporalConfig.timeOne}" , "${temporalConfig.timeTwo}")`
-                    break
-                default:
-                    this.expressionMap.fromTemporalClause = 'FOR SYSTEM_TIME ALL'
-            }
+            this.buildTemporalClause(temporalConfig, this.expressionMap)
         }
 
         return (this as any) as SelectQueryBuilder<T>;
@@ -255,32 +230,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         }
 
         if (temporalConfig) {
-            if (temporalConfig.timeOne instanceof Date) {
-                temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeOne.getUTCMilliseconds(); 
-            }
-
-            if (temporalConfig.timeTwo && temporalConfig.timeTwo instanceof Date) {
-                temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeTwo.getUTCMilliseconds(); 
-            } else {
-                temporalConfig.timeTwo = temporalConfig.timeOne
-            }
-
-            switch (temporalConfig.type) {
-                case 'AS OF':
-                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME AS OF "${temporalConfig.timeOne}"`
-                    break
-                case 'BETWEEN':
-                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME BETWEEN "${temporalConfig.timeOne}" AND "${temporalConfig.timeTwo}"`
-                    break
-                case 'FROM':
-                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME FROM "${temporalConfig.timeOne}" TO "${temporalConfig.timeTwo}"`
-                    break
-                case 'CONTAINED IN':
-                    this.expressionMap.fromTemporalClause = `FOR SYSTEM_TIME CONTAINED IN ("${temporalConfig.timeOne}" , "${temporalConfig.timeTwo}")`
-                    break
-                default:
-                    this.expressionMap.fromTemporalClause = 'FOR SYSTEM_TIME ALL'
-            }
+            this.buildTemporalClause(temporalConfig, this.expressionMap)
         }
 
         return (this as any) as SelectQueryBuilder<T>;
@@ -1377,32 +1327,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
 
         if (temporalConfig) {
-            if (temporalConfig.timeOne instanceof Date) {
-                temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeOne.getUTCMilliseconds(); 
-            }
-
-            if (temporalConfig.timeTwo && temporalConfig.timeTwo instanceof Date) {
-                temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeTwo.getUTCMilliseconds(); 
-            } else {
-                temporalConfig.timeTwo = temporalConfig.timeOne
-            }
-
-            switch (temporalConfig.type) {
-                case 'AS OF':
-                    joinAttribute.temporalClause = `FOR SYSTEM_TIME AS OF "${temporalConfig.timeOne}"`
-                    break
-                case 'BETWEEN':
-                    joinAttribute.temporalClause = `FOR SYSTEM_TIME BETWEEN "${temporalConfig.timeOne}" AND "${temporalConfig.timeTwo}"`
-                    break
-                case 'FROM':
-                    joinAttribute.temporalClause = `FOR SYSTEM_TIME FROM "${temporalConfig.timeOne}" TO "${temporalConfig.timeTwo}"`
-                    break
-                case 'CONTAINED IN':
-                    joinAttribute.temporalClause = `FOR SYSTEM_TIME CONTAINED IN ("${temporalConfig.timeOne}" , "${temporalConfig.timeTwo}")`
-                    break
-                default:
-                    joinAttribute.temporalClause = 'FOR SYSTEM_TIME ALL'
-            }
+            this.buildTemporalClause(temporalConfig, joinAttribute)
         }
 
         this.expressionMap.joinAttributes.push(joinAttribute);
@@ -1509,7 +1434,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (alias.subQuery)
                     return alias.subQuery + " " + this.escape(alias.name);
 
-                return this.getTableName(alias.tablePath!) + " " + this.expressionMap.fromTemporalClause + " " + this.escape(alias.name);
+                return this.getTableName(alias.tablePath!) + " " + this.expressionMap.temporalClause + " " + this.escape(alias.name);
             });
 
         const select = this.createSelectDistinctExpression();
@@ -2092,4 +2017,35 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         return this.queryRunner || this.connection.createQueryRunner("slave");
     }
 
+    /**
+     * Builds the correct temporal clause based on the temporal config 
+     */
+    protected buildTemporalClause(temporalConfig: TemporalClauseConfig, clauseHolder: QueryExpressionMap | JoinAttribute) {
+        if (temporalConfig.timeOne instanceof Date) {
+            temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeOne.getUTCMilliseconds(); 
+        }
+
+        if (temporalConfig.timeTwo && temporalConfig.timeTwo instanceof Date) {
+            temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeTwo.getUTCMilliseconds(); 
+        } else {
+            temporalConfig.timeTwo = temporalConfig.timeOne
+        }
+
+        switch (temporalConfig.type) {
+            case 'AS OF':
+                clauseHolder.temporalClause = `FOR SYSTEM_TIME AS OF "${temporalConfig.timeOne}"`
+                break
+            case 'BETWEEN':
+                clauseHolder.temporalClause = `FOR SYSTEM_TIME BETWEEN "${temporalConfig.timeOne}" AND "${temporalConfig.timeTwo}"`
+                break
+            case 'FROM':
+                clauseHolder.temporalClause = `FOR SYSTEM_TIME FROM "${temporalConfig.timeOne}" TO "${temporalConfig.timeTwo}"`
+                break
+            case 'CONTAINED IN':
+                clauseHolder.temporalClause = `FOR SYSTEM_TIME CONTAINED IN ("${temporalConfig.timeOne}" , "${temporalConfig.timeTwo}")`
+                break
+            default:
+                clauseHolder.temporalClause = 'FOR SYSTEM_TIME ALL'
+        }
+    }
 }

@@ -39,7 +39,7 @@ export class QueryExpressionMap {
     /**
      * Temporal clause used to access specific snapshots of data (FROM statement)
      */
-    fromTemporalClause: string = ""
+    temporalClause: string = ""
 
     /**
      * Represents query type. QueryBuilder is able to build SELECT, UPDATE and DELETE queries.
