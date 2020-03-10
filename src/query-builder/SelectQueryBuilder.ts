@@ -2034,13 +2034,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (!Number.isNaN(Date.parse(temporalConfig.timeOne))) {
             temporalConfig.timeOne = `"${temporalConfig.timeOne}"`
         } else {
-            temporalConfig.timeOne = findPropertyName(temporalConfig.timeOne, clauseHolder)
+            temporalConfig.timeOne = findDatabaseColumnName(temporalConfig.timeOne, clauseHolder)
         }
 
         if (!Number.isNaN(Date.parse(temporalConfig.timeTwo))) {
             temporalConfig.timeTwo = `"${temporalConfig.timeTwo}"`
         } else {
-            temporalConfig.timeTwo = findPropertyName(temporalConfig.timeTwo, clauseHolder)
+            temporalConfig.timeTwo = findDatabaseColumnName(temporalConfig.timeTwo, clauseHolder)
         }
 
         switch (temporalConfig.type) {
@@ -2060,7 +2060,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 clauseHolder.temporalClause = 'FOR SYSTEM_TIME ALL'
         }
 
-        function findPropertyName(property: string, clauseHolder: QueryExpressionMap | JoinAttribute): string {
+        function findDatabaseColumnName(property: string, clauseHolder: QueryExpressionMap | JoinAttribute): string {
             if (clauseHolder instanceof QueryExpressionMap) {
                 const column = clauseHolder.mainAlias!.metadata.columns.find(column => `${clauseHolder.mainAlias!.name}.${column.propertyPath}` === property)
                 
