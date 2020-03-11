@@ -36,7 +36,7 @@ import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption";
 import { ObjectUtils } from "../util/ObjectUtils";
 import { DriverUtils } from "../driver/DriverUtils";
 import { AuroraDataApiDriver } from "../driver/aurora-data-api/AuroraDataApiDriver";
-import { TemporalClauseConfig } from './TemporalClauseConfig';
+import { TemporalClauseConfig } from "./TemporalClauseConfig";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -2030,7 +2030,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     protected buildTemporalClause(temporalConfig: TemporalClauseConfig, clauseHolder: QueryExpressionMap | JoinAttribute) {
         const findDatabaseColumnName = (property: string): string => {
-            const alias = property.split('.')[0];
+            const alias = property.split(".")[0];
 
             if (this.expressionMap.mainAlias!.name === alias) {
                 const column = this.expressionMap.mainAlias!.metadata.columns.find(column => `${this.expressionMap.mainAlias!.name}.${column.propertyPath}` === property);
