@@ -17,8 +17,6 @@
         "pretty": true,
         "strictNullChecks": true,
         "noUnusedLocals": true,
-        "downlevelIteration": true,
-
     },
     "exclude": [
         "tmp",
