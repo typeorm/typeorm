@@ -2038,7 +2038,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (column) {
 
                     return "`" + this.expressionMap.mainAlias!.name + "`" + "." + "`" + column.databaseName + "`";
-                };
+                }
             } else {
                 for (const join of this.expressionMap.joinAttributes) {
                     if (join.alias.name === alias) {
@@ -2047,51 +2047,51 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         if (column) {
                             
                             return "`" + join.alias!.name + "`" + "." + "`" + column.databaseName + "`";
-                        };
-                    };
-                };
-            };
+                        }
+                    }
+                }
+            }
 
             return property;
         };
 
         if (temporalConfig.timeOne instanceof Date) {
-            temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeOne.getUTCMilliseconds();
-        };
+            temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace("T", " ") + temporalConfig.timeOne.getUTCMilliseconds();
+        }
 
         if (temporalConfig.timeTwo && temporalConfig.timeTwo instanceof Date) {
-            temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeTwo.getUTCMilliseconds();
+            temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace("T", " ") + temporalConfig.timeTwo.getUTCMilliseconds();
         } else {
             temporalConfig.timeTwo = temporalConfig.timeOne;
-        };
+        }
 
         if (!Number.isNaN(Date.parse(temporalConfig.timeOne))) {
             temporalConfig.timeOne = `"${temporalConfig.timeOne}"`;
         } else {
             temporalConfig.timeOne = findDatabaseColumnName(temporalConfig.timeOne);
-        };
+        }
 
         if (!Number.isNaN(Date.parse(temporalConfig.timeTwo))) {
             temporalConfig.timeTwo = `"${temporalConfig.timeTwo}"`;
         } else {
             temporalConfig.timeTwo = findDatabaseColumnName(temporalConfig.timeTwo);
-        };
+        }
 
         switch (temporalConfig.type) {
-            case 'AS OF':
+            case "AS OF":
                 clauseHolder.temporalClause = `FOR SYSTEM_TIME AS OF ${temporalConfig.timeOne}`;
                 break;
-            case 'BETWEEN':
+            case "BETWEEN":
                 clauseHolder.temporalClause = `FOR SYSTEM_TIME BETWEEN ${temporalConfig.timeOne} AND ${temporalConfig.timeTwo}`;
                 break;
-            case 'FROM':
+            case "FROM":
                 clauseHolder.temporalClause = `FOR SYSTEM_TIME FROM ${temporalConfig.timeOne} TO ${temporalConfig.timeTwo}`;
                 break;
-            case 'CONTAINED IN':
+            case "CONTAINED IN":
                 clauseHolder.temporalClause = `FOR SYSTEM_TIME CONTAINED IN (${temporalConfig.timeOne} , ${temporalConfig.timeTwo})`;
                 break;
             default:
-                clauseHolder.temporalClause = 'FOR SYSTEM_TIME ALL';
-        };
-    };
+                clauseHolder.temporalClause = "FOR SYSTEM_TIME ALL";
+        }
+    }
 }

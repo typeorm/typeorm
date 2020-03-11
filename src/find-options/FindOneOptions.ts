@@ -1,7 +1,7 @@
 import {JoinOptions} from "./JoinOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindConditions} from "./FindConditions";
-import { TemporalClauseConfig } from '../query-builder/TemporalClauseConfig';
+import {TemporalClauseConfig} from "../query-builder/TemporalClauseConfig";
 
 /**
  * Defines a special criteria to find specific entity.

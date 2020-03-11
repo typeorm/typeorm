@@ -3,7 +3,7 @@ import {FindOneOptions} from "./FindOneOptions";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import { TemporalClauseConfig } from '../query-builder/TemporalClauseConfig';
+import {TemporalClauseConfig} from "../query-builder/TemporalClauseConfig";
 import {shorten} from "../util/StringUtils";
 
 /**
@@ -231,8 +231,8 @@ export class FindOptionsUtils {
             let config: TemporalClauseConfig | undefined;
 
             if (temporalConfigs) {
-                const relationString = selection.replace(/__/gi, '.');
-                const firstDotIndex = relationString.indexOf('.') + 1;
+                const relationString = selection.replace(/__/gi, ".");
+                const firstDotIndex = relationString.indexOf(".") + 1;
                 const stringForMatch = relationString.substring(firstDotIndex);
 
                 config = temporalConfigs.find(config => config.property === stringForMatch);
