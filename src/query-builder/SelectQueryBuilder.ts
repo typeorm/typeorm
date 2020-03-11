@@ -2021,12 +2021,38 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Builds the correct temporal clause based on the temporal config 
      */
     protected buildTemporalClause(temporalConfig: TemporalClauseConfig, clauseHolder: QueryExpressionMap | JoinAttribute) {
+        const findDatabaseColumnName = (property: string): string => {
+            const alias = property.split('.')[0]
+
+            if (this.expressionMap.mainAlias!.name === alias) {
+                const column = this.expressionMap.mainAlias!.metadata.columns.find(column => `${this.expressionMap.mainAlias!.name}.${column.propertyPath}` === property)
+
+                if (column) {
+
+                    return "`" + this.expressionMap.mainAlias!.name + "`" + "." + "`" + column.databaseName + "`"
+                }
+            } else {
+                for (const join of this.expressionMap.joinAttributes) {
+                    if (join.alias.name === alias) {
+                        const column = join.metadata!.columns.find(column => `${join.alias!.name}.${column.propertyPath}` === property)
+
+                        if (column) {
+                            
+                            return "`" + join.alias!.name + "`" + "." + "`" + column.databaseName + "`"
+                        }
+                    }
+                }
+            }
+
+            return property
+        }
+
         if (temporalConfig.timeOne instanceof Date) {
-            temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeOne.getUTCMilliseconds(); 
+            temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeOne.getUTCMilliseconds();
         }
 
         if (temporalConfig.timeTwo && temporalConfig.timeTwo instanceof Date) {
-            temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeTwo.getUTCMilliseconds(); 
+            temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeTwo.getUTCMilliseconds();
         } else {
             temporalConfig.timeTwo = temporalConfig.timeOne
         }
@@ -2034,13 +2060,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (!Number.isNaN(Date.parse(temporalConfig.timeOne))) {
             temporalConfig.timeOne = `"${temporalConfig.timeOne}"`
         } else {
-            temporalConfig.timeOne = findDatabaseColumnName(temporalConfig.timeOne, clauseHolder)
+            temporalConfig.timeOne = findDatabaseColumnName(temporalConfig.timeOne)
         }
 
         if (!Number.isNaN(Date.parse(temporalConfig.timeTwo))) {
             temporalConfig.timeTwo = `"${temporalConfig.timeTwo}"`
         } else {
-            temporalConfig.timeTwo = findDatabaseColumnName(temporalConfig.timeTwo, clauseHolder)
+            temporalConfig.timeTwo = findDatabaseColumnName(temporalConfig.timeTwo)
         }
 
         switch (temporalConfig.type) {
@@ -2058,24 +2084,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 break
             default:
                 clauseHolder.temporalClause = 'FOR SYSTEM_TIME ALL'
-        }
-
-        function findDatabaseColumnName(property: string, clauseHolder: QueryExpressionMap | JoinAttribute): string {
-            if (clauseHolder instanceof QueryExpressionMap) {
-                const column = clauseHolder.mainAlias!.metadata.columns.find(column => `${clauseHolder.mainAlias!.name}.${column.propertyPath}` === property)
-                
-                if (column) {
-                    return "`" + clauseHolder.mainAlias!.name + "`" + "." + "`" + column.databaseName + "`"
-                }
-            } else {
-                const column = clauseHolder.metadata!.columns.find(column => `${clauseHolder.alias!.name}.${column.propertyPath}` === property)
-                
-                if (column) {
-                    return "`" + clauseHolder.alias!.name + "`" + "." + "`" + column.databaseName + "`"
-                }
-            }
-
-            return property
         }
     }
 }
