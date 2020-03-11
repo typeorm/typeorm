@@ -1,6 +1,7 @@
 import {JoinOptions} from "./JoinOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindConditions} from "./FindConditions";
+import { TemporalClauseConfig } from '../query-builder/TemporalClauseConfig';
 
 /**
  * Defines a special criteria to find specific entity.
@@ -21,6 +22,12 @@ export interface FindOneOptions<Entity = any> {
      * Indicates what relations of entity should be loaded (simplified left join form).
      */
     relations?: string[];
+
+    /**
+     * Specify temporal config objects for relations
+     * (The "property" on the object MUST match one of the strings in the relations array)
+     */
+    temporalConfigs?: TemporalClauseConfig[]
 
     /**
      * Specifies what relations should be loaded.

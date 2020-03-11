@@ -9,9 +9,11 @@ type TemporalClauseType = 'AS OF' | 'FROM' | 'BETWEEN' | 'CONTAINED IN' | 'ALL'
  * If passed will add "FOR SYSTEM TIME" clause to line of query
  * NOTE: passing in a Date object will only give 3 digits of precision for milliseconds;
  * if you are on mariadb you will need to pass in a full string for complete accuracy
+ * NOTE: The "property" property is only used for the .find methods
  */
 export interface TemporalClauseConfig {
         type: TemporalClauseType
         timeOne: Date | string
         timeTwo?: Date | string
+        property?: string
 }

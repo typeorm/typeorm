@@ -3,6 +3,7 @@ import {FindOneOptions} from "./FindOneOptions";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import { TemporalClauseConfig } from '../query-builder/TemporalClauseConfig';
 import {shorten} from "../util/StringUtils";
 
 /**
@@ -133,7 +134,7 @@ export class FindOptionsUtils {
 
         if (options.relations) {
             const allRelations = options.relations.map(relation => relation);
-            this.applyRelationsRecursively(qb, allRelations, qb.expressionMap.mainAlias!.name, qb.expressionMap.mainAlias!.metadata, "");
+            this.applyRelationsRecursively(qb, allRelations, qb.expressionMap.mainAlias!.name, qb.expressionMap.mainAlias!.metadata, "", options.temporalConfigs);
             // recursive removes found relations from allRelations array
             // if there are relations left in this array it means those relations were not found in the entity structure
             // so, we give an exception about not found relations
@@ -197,8 +198,7 @@ export class FindOptionsUtils {
     /**
      * Adds joins for all relations and sub-relations of the given relations provided in the find options.
      */
-    protected static applyRelationsRecursively(qb: SelectQueryBuilder<any>, allRelations: string[], alias: string, metadata: EntityMetadata, prefix: string): void {
-
+    protected static applyRelationsRecursively(qb: SelectQueryBuilder<any>, allRelations: string[], alias: string, metadata: EntityMetadata, prefix: string, temporalConfigs?: TemporalClauseConfig[]): void {
         // find all relations that match given prefix
         let matchedBaseRelations: string[] = [];
         if (prefix) {
@@ -213,7 +213,6 @@ export class FindOptionsUtils {
 
         // go through all matched relations and add join for them
         matchedBaseRelations.forEach(relation => {
-
             // generate a relation alias
             let relationAlias: string = alias + "__" + relation;
             // shorten it if needed by the driver
@@ -223,7 +222,18 @@ export class FindOptionsUtils {
 
             // add a join for the found relation
             const selection = alias + "." + relation;
-            qb.leftJoinAndSelect(selection, relationAlias);
+
+            let config: TemporalClauseConfig | undefined
+
+            if (temporalConfigs) {
+                const relationString = selection.replace(/__/gi, '.')
+                const firstDotIndex = relationString.indexOf('.') + 1
+                const stringForMatch = relationString.substring(firstDotIndex)
+
+                config = temporalConfigs.find(config => config.property === stringForMatch)
+            }
+
+            qb.leftJoinAndSelect(selection, relationAlias, undefined, undefined, config);
 
             // join the eager relations of the found relation
             const relMetadata = metadata.relations.find(metadata => metadata.propertyName === relation);
@@ -236,7 +246,7 @@ export class FindOptionsUtils {
 
             // try to find sub-relations
             const join = qb.expressionMap.joinAttributes.find(join => join.entityOrProperty === selection);
-            this.applyRelationsRecursively(qb, allRelations, join!.alias.name, join!.metadata!, prefix ? prefix + "." + relation : relation);
+            this.applyRelationsRecursively(qb, allRelations, join!.alias.name, join!.metadata!, prefix ? prefix + "." + relation : relation, temporalConfigs);
         });
     }
 
