@@ -35,7 +35,7 @@ npm install -g ts-node
 
 Add typeorm command under scripts section in package.json
 ```
-"script" {
+"scripts" {
     ...
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js"    
 }

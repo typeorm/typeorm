@@ -26,7 +26,7 @@ export class EntityPersistExecutor {
 
     constructor(protected connection: Connection,
                 protected queryRunner: QueryRunner|undefined,
-                protected mode: "save"|"remove",
+                protected mode: "save"|"remove"|"soft-remove"|"recover",
                 protected target: Function|string|undefined,
                 protected entity: ObjectLiteral|ObjectLiteral[],
                 protected options?: SaveOptions & RemoveOptions) {
@@ -78,7 +78,9 @@ export class EntityPersistExecutor {
                             entity: entity,
                             canBeInserted: this.mode === "save",
                             canBeUpdated: this.mode === "save",
-                            mustBeRemoved: this.mode === "remove"
+                            mustBeRemoved: this.mode === "remove",
+                            canBeSoftRemoved: this.mode === "soft-remove",
+                            canBeRecovered: this.mode === "recover"
                         }));
                     });
 
@@ -88,7 +90,7 @@ export class EntityPersistExecutor {
                     subjects.forEach(subject => {
                         // next step we build list of subjects we will operate with
                         // these subjects are subjects that we need to insert or update alongside with main persisted entity
-                        cascadesSubjectBuilder.build(subject);
+                        cascadesSubjectBuilder.build(subject, this.mode);
                     });
                     // console.timeEnd("building cascades...");
 
@@ -100,7 +102,7 @@ export class EntityPersistExecutor {
 
                     // console.time("other subjects...");
                     // build all related subjects and change maps
-                    if (this.mode === "save") {
+                    if (this.mode === "save" || this.mode === "soft-remove" || this.mode === "recover") {
                         new OneToManySubjectBuilder(subjects).build();
                         new OneToOneInverseSideSubjectBuilder(subjects).build();
                         new ManyToManySubjectBuilder(subjects).build();

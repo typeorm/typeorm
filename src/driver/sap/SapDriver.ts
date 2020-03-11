@@ -148,6 +148,8 @@ export class SapDriver implements Driver {
         createDateDefault: "CURRENT_TIMESTAMP",
         updateDate: "timestamp",
         updateDateDefault: "CURRENT_TIMESTAMP",
+        deleteDate: "timestamp",
+        deleteDateNullable: true,
         version: "integer",
         treeLevel: "integer",
         migrationId: "integer",
@@ -207,9 +209,6 @@ export class SapDriver implements Driver {
      * either create a pool and create connection when needed.
      */
     async connect(): Promise<void> {
-        // this.master = await this.createConnection(this.options);
-
-
         // HANA connection info
         const dbParams = {
             hostName: this.options.host,
@@ -233,9 +232,9 @@ export class SapDriver implements Driver {
         };
 
         if (this.options.pool && this.options.pool.checkInterval) options.checkInterval = this.options.pool.checkInterval;
-        if (this.options.pool && this.options.pool.checkInterval) options.maxWaitingRequests = this.options.pool.maxWaitingRequests;
-        if (this.options.pool && this.options.pool.checkInterval) options.requestTimeout = this.options.pool.requestTimeout;
-        if (this.options.pool && this.options.pool.checkInterval) options.idleTimeout = this.options.pool.idleTimeout;
+        if (this.options.pool && this.options.pool.maxWaitingRequests) options.maxWaitingRequests = this.options.pool.maxWaitingRequests;
+        if (this.options.pool && this.options.pool.requestTimeout) options.requestTimeout = this.options.pool.requestTimeout;
+        if (this.options.pool && this.options.pool.idleTimeout) options.idleTimeout = this.options.pool.idleTimeout;
 
         const { logger } = this.connection;
 

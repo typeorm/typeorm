@@ -172,6 +172,8 @@ export class CockroachDriver implements Driver {
         createDateDefault: "now()",
         updateDate: "timestamptz",
         updateDateDefault: "now()",
+        deleteDate: "timestamptz",
+        deleteDateNullable: true,
         version: Number,
         treeLevel: Number,
         migrationId: Number,

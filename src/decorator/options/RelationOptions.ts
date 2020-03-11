@@ -12,9 +12,9 @@ export interface RelationOptions {
      * If set to true then it means that related object can be allowed to be inserted or updated in the database.
      * You can separately restrict cascades to insertion or updation using following syntax:
      *
-     * cascade: ["insert", "update"] // include or exclude one of them
+     * cascade: ["insert", "update", "remove", "soft-remove", "recover"] // include or exclude one of them
      */
-    cascade?: boolean|("insert"|"update"|"remove")[];
+    cascade?: boolean|("insert"|"update"|"remove"|"soft-remove"|"recover")[];
 
     /**
      * Indicates if relation column value can be nullable or not.

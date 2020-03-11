@@ -270,6 +270,11 @@ export class EntityMetadata {
     updateDateColumn?: ColumnMetadata;
 
     /**
+     * Gets entity column which contains a delete date value.
+     */
+    deleteDateColumn?: ColumnMetadata;
+
+    /**
      * Gets entity column which contains an entity version.
      */
     versionColumn?: ColumnMetadata;

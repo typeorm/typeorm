@@ -162,6 +162,7 @@ export class ReturningResultsEntityUpdator {
                     (needToCheckGenerated && column.isGenerated)  ||
                     column.isCreateDate ||
                     column.isUpdateDate ||
+                    column.isDeleteDate ||
                     column.isVersion;
         });
     }

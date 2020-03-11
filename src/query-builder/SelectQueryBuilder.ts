@@ -992,6 +992,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Disables the global condition of "non-deleted" for the entity with delete date columns.
+     */
+    withDeleted(): this {
+        this.expressionMap.withDeleted = true;
+        return this;
+    }
+
+    /**
      * Gets first raw result returned by execution of generated query builder sql.
      */
     async getRawOne<T = any>(): Promise<T> {

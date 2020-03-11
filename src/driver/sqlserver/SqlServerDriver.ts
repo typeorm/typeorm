@@ -164,6 +164,8 @@ export class SqlServerDriver implements Driver {
         createDateDefault: "getdate()",
         updateDate: "datetime2",
         updateDateDefault: "getdate()",
+        deleteDate: "datetime2",
+        deleteDateNullable: true,
         version: "int",
         treeLevel: "int",
         migrationId: "int",

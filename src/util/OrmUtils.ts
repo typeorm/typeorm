@@ -166,7 +166,7 @@ export class OrmUtils {
 
         // remember that NaN === NaN returns false
         // and isNaN(undefined) returns true
-        if (isNaN(x) && isNaN(y) && typeof x === "number" && typeof y === "number")
+        if (Number.isNaN(x) && Number.isNaN(y))
             return true;
 
         // Compare primitives and functions.
