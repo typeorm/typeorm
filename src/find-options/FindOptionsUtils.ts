@@ -223,14 +223,14 @@ export class FindOptionsUtils {
             // add a join for the found relation
             const selection = alias + "." + relation;
 
-            let config: TemporalClauseConfig | undefined
+            let config: TemporalClauseConfig | undefined;
 
             if (temporalConfigs) {
-                const relationString = selection.replace(/__/gi, '.')
-                const firstDotIndex = relationString.indexOf('.') + 1
-                const stringForMatch = relationString.substring(firstDotIndex)
+                const relationString = selection.replace(/__/gi, '.');
+                const firstDotIndex = relationString.indexOf('.') + 1;
+                const stringForMatch = relationString.substring(firstDotIndex);
 
-                config = temporalConfigs.find(config => config.property === stringForMatch)
+                config = temporalConfigs.find(config => config.property === stringForMatch);
             }
 
             qb.leftJoinAndSelect(selection, relationAlias, undefined, undefined, config);

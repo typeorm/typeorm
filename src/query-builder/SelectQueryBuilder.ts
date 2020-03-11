@@ -201,7 +201,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         this.expressionMap.setMainAlias(mainAlias);
 
         if (temporalConfig) {
-            this.buildTemporalClause(temporalConfig, this.expressionMap)
+            this.buildTemporalClause(temporalConfig, this.expressionMap);
         }
 
         return (this as any) as SelectQueryBuilder<T>;
@@ -230,7 +230,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         }
 
         if (temporalConfig) {
-            this.buildTemporalClause(temporalConfig, this.expressionMap)
+            this.buildTemporalClause(temporalConfig, this.expressionMap);
         }
 
         return (this as any) as SelectQueryBuilder<T>;
@@ -1364,7 +1364,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         }
 
         if (temporalConfig) {
-            this.buildTemporalClause(temporalConfig, joinAttribute)
+            this.buildTemporalClause(temporalConfig, joinAttribute);
         }
     }
 
@@ -2022,68 +2022,68 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     protected buildTemporalClause(temporalConfig: TemporalClauseConfig, clauseHolder: QueryExpressionMap | JoinAttribute) {
         const findDatabaseColumnName = (property: string): string => {
-            const alias = property.split('.')[0]
+            const alias = property.split('.')[0];
 
             if (this.expressionMap.mainAlias!.name === alias) {
-                const column = this.expressionMap.mainAlias!.metadata.columns.find(column => `${this.expressionMap.mainAlias!.name}.${column.propertyPath}` === property)
+                const column = this.expressionMap.mainAlias!.metadata.columns.find(column => `${this.expressionMap.mainAlias!.name}.${column.propertyPath}` === property);
 
                 if (column) {
 
-                    return "`" + this.expressionMap.mainAlias!.name + "`" + "." + "`" + column.databaseName + "`"
-                }
+                    return "`" + this.expressionMap.mainAlias!.name + "`" + "." + "`" + column.databaseName + "`";
+                };
             } else {
                 for (const join of this.expressionMap.joinAttributes) {
                     if (join.alias.name === alias) {
-                        const column = join.metadata!.columns.find(column => `${join.alias!.name}.${column.propertyPath}` === property)
+                        const column = join.metadata!.columns.find(column => `${join.alias!.name}.${column.propertyPath}` === property);
 
                         if (column) {
                             
-                            return "`" + join.alias!.name + "`" + "." + "`" + column.databaseName + "`"
-                        }
-                    }
-                }
-            }
+                            return "`" + join.alias!.name + "`" + "." + "`" + column.databaseName + "`";
+                        };
+                    };
+                };
+            };
 
-            return property
-        }
+            return property;
+        };
 
         if (temporalConfig.timeOne instanceof Date) {
             temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeOne.getUTCMilliseconds();
-        }
+        };
 
         if (temporalConfig.timeTwo && temporalConfig.timeTwo instanceof Date) {
             temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace('T', ' ') + temporalConfig.timeTwo.getUTCMilliseconds();
         } else {
-            temporalConfig.timeTwo = temporalConfig.timeOne
-        }
+            temporalConfig.timeTwo = temporalConfig.timeOne;
+        };
 
         if (!Number.isNaN(Date.parse(temporalConfig.timeOne))) {
-            temporalConfig.timeOne = `"${temporalConfig.timeOne}"`
+            temporalConfig.timeOne = `"${temporalConfig.timeOne}"`;
         } else {
-            temporalConfig.timeOne = findDatabaseColumnName(temporalConfig.timeOne)
-        }
+            temporalConfig.timeOne = findDatabaseColumnName(temporalConfig.timeOne);
+        };
 
         if (!Number.isNaN(Date.parse(temporalConfig.timeTwo))) {
-            temporalConfig.timeTwo = `"${temporalConfig.timeTwo}"`
+            temporalConfig.timeTwo = `"${temporalConfig.timeTwo}"`;
         } else {
-            temporalConfig.timeTwo = findDatabaseColumnName(temporalConfig.timeTwo)
-        }
+            temporalConfig.timeTwo = findDatabaseColumnName(temporalConfig.timeTwo);
+        };
 
         switch (temporalConfig.type) {
             case 'AS OF':
-                clauseHolder.temporalClause = `FOR SYSTEM_TIME AS OF ${temporalConfig.timeOne}`
-                break
+                clauseHolder.temporalClause = `FOR SYSTEM_TIME AS OF ${temporalConfig.timeOne}`;
+                break;
             case 'BETWEEN':
-                clauseHolder.temporalClause = `FOR SYSTEM_TIME BETWEEN ${temporalConfig.timeOne} AND ${temporalConfig.timeTwo}`
-                break
+                clauseHolder.temporalClause = `FOR SYSTEM_TIME BETWEEN ${temporalConfig.timeOne} AND ${temporalConfig.timeTwo}`;
+                break;
             case 'FROM':
-                clauseHolder.temporalClause = `FOR SYSTEM_TIME FROM ${temporalConfig.timeOne} TO ${temporalConfig.timeTwo}`
-                break
+                clauseHolder.temporalClause = `FOR SYSTEM_TIME FROM ${temporalConfig.timeOne} TO ${temporalConfig.timeTwo}`;
+                break;
             case 'CONTAINED IN':
-                clauseHolder.temporalClause = `FOR SYSTEM_TIME CONTAINED IN (${temporalConfig.timeOne} , ${temporalConfig.timeTwo})`
-                break
+                clauseHolder.temporalClause = `FOR SYSTEM_TIME CONTAINED IN (${temporalConfig.timeOne} , ${temporalConfig.timeTwo})`;
+                break;
             default:
-                clauseHolder.temporalClause = 'FOR SYSTEM_TIME ALL'
-        }
-    }
+                clauseHolder.temporalClause = 'FOR SYSTEM_TIME ALL';
+        };
+    };
 }

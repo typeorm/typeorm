@@ -48,7 +48,7 @@ export class JoinAttribute {
     /**
      * Temporal clause used to access specific snapshots of data (JOIN statement)
      */
-    temporalClause: string = ""
+    temporalClause: string = "";
 
     // -------------------------------------------------------------------------
     // Constructor

@@ -27,7 +27,7 @@ export interface FindOneOptions<Entity = any> {
      * Specify temporal config objects for relations
      * (The "property" on the object MUST match one of the strings in the relations array)
      */
-    temporalConfigs?: TemporalClauseConfig[]
+    temporalConfigs?: TemporalClauseConfig[];
 
     /**
      * Specifies what relations should be loaded.
