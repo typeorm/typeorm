@@ -28,7 +28,7 @@ export interface PostgresConnectionCredentialsOptions {
     /**
      * Database password.
      */
-    readonly password?: string;
+    readonly password?: string | (() => string) | (() => Promise<string>);
 
     /**
      * Database name to connect to.
