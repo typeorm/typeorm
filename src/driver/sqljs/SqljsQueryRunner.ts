@@ -41,7 +41,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    query(query: string, parameters: any[] = []): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
