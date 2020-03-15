@@ -129,7 +129,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
      */
     protected static queryParams(parameters: any[] | undefined): string {
       if (!parameters || !parameters.length) {
-        return '';
+        return "";
       }
 
       return `, ${JSON.stringify(parameters)}`;
