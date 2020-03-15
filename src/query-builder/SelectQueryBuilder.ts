@@ -2028,7 +2028,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Builds the correct temporal clause based on the temporal config 
      */
     protected buildTemporalClause(temporalConfig: TemporalClauseConfig, clauseHolder: QueryExpressionMap | JoinAttribute) {
-        const driver = this.connection.driver
+        const driver = this.connection.driver;
         /**
          * This appears to be the current database types that I was able to find with evidence of Temporal Table support 
          */
