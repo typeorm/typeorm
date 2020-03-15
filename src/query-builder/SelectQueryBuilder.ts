@@ -2028,69 +2028,89 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Builds the correct temporal clause based on the temporal config 
      */
     protected buildTemporalClause(temporalConfig: TemporalClauseConfig, clauseHolder: QueryExpressionMap | JoinAttribute) {
-        const findDatabaseColumnName = (property: string): string => {
-            const alias = property.split(".")[0];
+        const driver = this.connection.driver
+        /**
+         * This appears to be the current database types that I was able to find with evidence of Temporal Table support 
+         */
+        if (driver.options.type === "mariadb" || driver.options.type === "mssql" || driver.options.type === "cockroachdb" || driver.options.type === "sap") {
+            const findDatabaseColumnName = (property: string): string => {
+                const alias = property.split(".")[0];
 
-            if (this.expressionMap.mainAlias!.name === alias) {
-                const column = this.expressionMap.mainAlias!.metadata.columns.find(column => `${this.expressionMap.mainAlias!.name}.${column.propertyPath}` === property);
+                if (this.expressionMap.mainAlias!.name === alias) {
+                    const column = this.expressionMap.mainAlias!.metadata.columns.find(column => `${this.expressionMap.mainAlias!.name}.${column.propertyPath}` === property);
 
-                if (column) {
+                    if (column) {
 
-                    return "`" + this.expressionMap.mainAlias!.name + "`" + "." + "`" + column.databaseName + "`";
-                }
-            } else {
-                for (const join of this.expressionMap.joinAttributes) {
-                    if (join.alias.name === alias) {
-                        const column = join.metadata!.columns.find(column => `${join.alias!.name}.${column.propertyPath}` === property);
+                        return "`" + this.expressionMap.mainAlias!.name + "`" + "." + "`" + column.databaseName + "`";
+                    }
+                } else {
+                    for (const join of this.expressionMap.joinAttributes) {
+                        if (join.alias.name === alias) {
+                            const column = join.metadata!.columns.find(column => `${join.alias!.name}.${column.propertyPath}` === property);
 
-                        if (column) {
-                            
-                            return "`" + join.alias!.name + "`" + "." + "`" + column.databaseName + "`";
+                            if (column) {
+
+                                return "`" + join.alias!.name + "`" + "." + "`" + column.databaseName + "`";
+                            }
                         }
                     }
                 }
+
+                return property;
+            };
+
+            if (temporalConfig.timeOne instanceof Date) {
+                temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace("T", " ") + temporalConfig.timeOne.getUTCMilliseconds();
             }
 
-            return property;
-        };
+            if (temporalConfig.timeTwo && temporalConfig.timeTwo instanceof Date) {
+                temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace("T", " ") + temporalConfig.timeTwo.getUTCMilliseconds();
+            } else {
+                temporalConfig.timeTwo = temporalConfig.timeOne;
+            }
 
-        if (temporalConfig.timeOne instanceof Date) {
-            temporalConfig.timeOne = temporalConfig.timeOne.toISOString().slice(0, 19).replace("T", " ") + temporalConfig.timeOne.getUTCMilliseconds();
-        }
+            if (!Number.isNaN(Date.parse(temporalConfig.timeOne))) {
+                temporalConfig.timeOne = `"${temporalConfig.timeOne}"`;
+            } else {
+                if (driver.options.type === "cockroachdb") {
+                    throw new Error("CockroachDB requires an exact timestamp string and cannot accept variables or placeholders.");
+                }
 
-        if (temporalConfig.timeTwo && temporalConfig.timeTwo instanceof Date) {
-            temporalConfig.timeTwo = temporalConfig.timeTwo.toISOString().slice(0, 19).replace("T", " ") + temporalConfig.timeTwo.getUTCMilliseconds();
+                temporalConfig.timeOne = findDatabaseColumnName(temporalConfig.timeOne);
+            }
+
+            if (!Number.isNaN(Date.parse(temporalConfig.timeTwo))) {
+                temporalConfig.timeTwo = `"${temporalConfig.timeTwo}"`;
+            } else {
+                if (driver.options.type === "cockroachdb") {
+                    throw new Error("CockroachDB requires an exact timestamp string and cannot accept variables or placeholders.");
+                }
+
+                temporalConfig.timeTwo = findDatabaseColumnName(temporalConfig.timeTwo);
+            }
+
+            switch (temporalConfig.type) {
+                case "AS OF":
+                    clauseHolder.temporalClause = `FOR SYSTEM_TIME AS OF ${temporalConfig.timeOne}`;
+                    break;
+                case "BETWEEN":
+                    clauseHolder.temporalClause = `FOR SYSTEM_TIME BETWEEN ${temporalConfig.timeOne} AND ${temporalConfig.timeTwo}`;
+                    break;
+                case "FROM":
+                    clauseHolder.temporalClause = `FOR SYSTEM_TIME FROM ${temporalConfig.timeOne} TO ${temporalConfig.timeTwo}`;
+                    break;
+                case "CONTAINED IN":
+                    if (driver.options.type === "mssql") {
+                        clauseHolder.temporalClause = `FOR SYSTEM_TIME CONTAINED IN (${temporalConfig.timeOne} , ${temporalConfig.timeTwo})`;
+                    } else {
+                        throw new Error("The CONTAINED IN variant of the temporal clause is currently only supported in SQLServer.");
+                    }
+                    break;
+                default:
+                    clauseHolder.temporalClause = "FOR SYSTEM_TIME ALL";
+            }
         } else {
-            temporalConfig.timeTwo = temporalConfig.timeOne;
-        }
-
-        if (!Number.isNaN(Date.parse(temporalConfig.timeOne))) {
-            temporalConfig.timeOne = `"${temporalConfig.timeOne}"`;
-        } else {
-            temporalConfig.timeOne = findDatabaseColumnName(temporalConfig.timeOne);
-        }
-
-        if (!Number.isNaN(Date.parse(temporalConfig.timeTwo))) {
-            temporalConfig.timeTwo = `"${temporalConfig.timeTwo}"`;
-        } else {
-            temporalConfig.timeTwo = findDatabaseColumnName(temporalConfig.timeTwo);
-        }
-
-        switch (temporalConfig.type) {
-            case "AS OF":
-                clauseHolder.temporalClause = `FOR SYSTEM_TIME AS OF ${temporalConfig.timeOne}`;
-                break;
-            case "BETWEEN":
-                clauseHolder.temporalClause = `FOR SYSTEM_TIME BETWEEN ${temporalConfig.timeOne} AND ${temporalConfig.timeTwo}`;
-                break;
-            case "FROM":
-                clauseHolder.temporalClause = `FOR SYSTEM_TIME FROM ${temporalConfig.timeOne} TO ${temporalConfig.timeTwo}`;
-                break;
-            case "CONTAINED IN":
-                clauseHolder.temporalClause = `FOR SYSTEM_TIME CONTAINED IN (${temporalConfig.timeOne} , ${temporalConfig.timeTwo})`;
-                break;
-            default:
-                clauseHolder.temporalClause = "FOR SYSTEM_TIME ALL";
+            throw new Error(`Temporal tables are currently not supported in ${driver.options.type}`);
         }
     }
 }
