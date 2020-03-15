@@ -231,11 +231,15 @@ export class FindOptionsUtils {
             let config: TemporalClauseConfig | undefined;
 
             if (temporalConfigs) {
+                if (temporalConfigs.find(config => config.property === undefined)) {
+                    throw new Error("All temporal configs must specify a property parameter when used in find operator");
+                }
+
                 const relationString = selection.replace(/__/gi, ".");
                 const firstDotIndex = relationString.indexOf(".") + 1;
                 const stringForMatch = relationString.substring(firstDotIndex);
 
-                config = temporalConfigs.find(config => config.property === stringForMatch);
+                config = temporalConfigs.find(config => config.property!.find(string => string === stringForMatch) ? true : false);
             }
 
             qb.leftJoinAndSelect(selection, relationAlias, undefined, undefined, config);

@@ -15,5 +15,5 @@ export interface TemporalClauseConfig {
         type: TemporalClauseType;
         timeOne: Date | string;
         timeTwo?: Date | string;
-        property?: string;
+        property?: string[];
 }
