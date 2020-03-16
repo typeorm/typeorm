@@ -1,7 +1,7 @@
 import {Connection, SelectQueryBuilder} from "..";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {TableType} from "../metadata/types/TableTypes";
-import {TemporalMetadataArgs} from "../metadata-args/TemporalMetadaArgs";
+import {TemporalMetadataArgs} from "../metadata-args/TemporalMetadataArgs";
 
 /**
  * Arguments for TableMetadata class, helps to construct an TableMetadata object.
