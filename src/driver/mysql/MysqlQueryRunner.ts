@@ -324,7 +324,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             table.foreignKeys.forEach(foreignKey => downQueries.push(this.dropForeignKeySql(table, foreignKey)));
         }
 
-        if (table.temporal) {
+        if (this.driver.options.type === "mariadb" && table.temporal) {
             downQueries.push(this.dropTableSql(this.getHistoricalTableName(table)));
             downQueries.push(this.disableTemporalTableSql(table));
         }
@@ -356,8 +356,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         table.indices.forEach(index => upQueries.push(this.dropIndexSql(table, index)));
 
-        let isTemporal: boolean = await this.isTemporalTable(table);
-        if (isTemporal) {
+        if (this.driver.options.type === "mariadb" && await this.isTemporalTable(table)) {
             upQueries.push(this.disableTemporalTableSql(table));
             upQueries.push(await this.dropHistoricalTable(table));
         }
@@ -368,11 +367,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.executeQueries(upQueries, downQueries);
     }
 
-        /**
+    /**
      * return metadata for a given temporal table
      * @param tableOrName
      */
-
     async temporalTableMetadata(tableOrName: Table | string): Promise<ObjectLiteral[]> {
         const parsedTableName = this.parseTableName(tableOrName);
         let sql = this.findTemporalTableSql(parsedTableName.database);
@@ -384,7 +382,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * returns sql query that lists all temporal table pairs in current database
      * @param database options parameter
      */
-
     protected findTemporalTableSql(database?: string): string {
         let sql: string;
         database = database === undefined ? "" : `${database}.`;
@@ -404,7 +401,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param tableOrName table or name of persisted table
      * @param ifExist boolean
      */
-
     protected async dropHistoricalTable(tableOrName: Table|string, ifExist?: boolean): Promise<Query> {
         const temporalTableInfo: ObjectLiteral[] = await this.temporalTableMetadata(tableOrName);
         let tableName = temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_SCHEMA" ] ?
@@ -416,7 +412,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Disable temporal table
      */
-
     async disableTemporalTable(tableOrName: Table | string): Promise<void> {
         const upQueries: Query[] = [], downQueries: Query[] = [];
         let isTemporal: boolean = await this.isTemporalTable(tableOrName);
@@ -433,7 +428,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Disable all temporal tables in database
      * @param database
      */
-
     async disableAllTemporalTables(database?: string): Promise<void> {
         const upQueries: Query[] = [], downQueries: Query[] = [];
         const allTemporalTablesResults: ObjectLiteral[] = await this.getTemporalTables(database);
@@ -1237,7 +1231,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
             await Promise.all(dropViewQueries.map(q => this.query(q["query"])));
 
-            await this.disableAllTemporalTables(database);
+            if (this.driver.options.type === "mariadb") {
+                await this.disableAllTemporalTables(database);
+            }
 
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
             const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`;
@@ -1544,7 +1540,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
         const columnDefinitions = table.columns.filter(column => {
-            if (table.temporal) {
+            if (this.driver.options.type === "mariadb" && table.temporal) {
                 return column.name !== table.temporal.sysStartTimeColumnName && column.name !== table.temporal.sysEndTimeColumnName;
             } else {
                 return true;
@@ -1552,7 +1548,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }).map(column => this.buildCreateColumnSql(column, true)).join(", ");
 
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`;
-        if (table.temporal) {
+        if (this.driver.options.type === "mariadb" && table.temporal) {
             sql += this.addTemporalColumnsSql(table);
         }
 
@@ -1636,8 +1632,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         sql += `) ENGINE=${table.engine || "InnoDB"}`;
 
-        if (table.temporal) {
+        if (this.driver.options.type === "mariadb" && table.temporal) {
+            if (this.getHistoricalTableName(table).length === 0) {
+            sql += ` WITH SYSTEM_VERSIONING`;
+            } else {
             sql += ` WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ${this.getHistoricalTableName(table)}))`;
+            }
         }
 
         return new Query(sql);
@@ -1846,9 +1846,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const parsedTableName = this.parseTableName(table.temporal.historicalTableName);
             historicalTableName = `${parsedTableName.tableName}`;
         } else {
-            const parsedTableName = this.parseTableName(table);
-            historicalTableName = `${parsedTableName.tableName}_historical`;
+            historicalTableName = ""
         }
+
         if (table.temporal)
             table.temporal.historicalTableName = historicalTableName;
 
@@ -1858,23 +1858,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Build temporal table sql
      */
-
     protected addTemporalColumnsSql(table: Table): string {
         let sql: string = "" ;
         if (table.temporal) {
-            let precision = 3;
-            if (table.temporal.precision !== undefined) {
-                precision = table.temporal.precision;
-            }
-            sql += ` , "${table.temporal.sysStartTimeColumnName}" datetime2 (${precision}) GENERATED ALWAYS AS ROW START NOT NULL`;
+            sql += ` , "${table.temporal.sysStartTimeColumnName}" TIMESTAMP(6) GENERATED ALWAYS AS ROW START NOT NULL`;
+
             if (table.temporal.getDateFunction) {
                 let constraintName = this.connection.namingStrategy.uniqueConstraintName(table.name, [ table.temporal.sysStartTimeColumnName ]);
                 sql += ` CONSTRAINT ${constraintName} DEFAULT ${table.temporal.getDateFunction}`;
             }
-            sql += `, "${table.temporal.sysEndTimeColumnName}" datetime2 (${precision}) GENERATED ALWAYS AS ROW END NOT NULL`;
+
+            sql += `, "${table.temporal.sysEndTimeColumnName}" TIMESTAMP(6) GENERATED ALWAYS AS ROW END NOT NULL`;
             sql += `, PERIOD FOR SYSTEM_TIME (${table.temporal.sysStartTimeColumnName}, ${table.temporal.sysEndTimeColumnName})`;
         }
         return sql;
     }
-
 }
