@@ -1,6 +1,7 @@
 import {Connection, SelectQueryBuilder} from "..";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {TableType} from "../metadata/types/TableTypes";
+import {TemporalMetadataArgs} from "../metadata-args/TemporalMetadaArgs";
 
 /**
  * Arguments for TableMetadata class, helps to construct an TableMetadata object.
@@ -66,4 +67,9 @@ export interface TableMetadataArgs {
      * an integer primary key column named 'rowid' on table creation. 
      */
     withoutRowid?: boolean;   
+
+    /**
+     * Indicates if table is temporal table, used for Sql Server
+     */
+    temporal?: TemporalMetadataArgs;
 }

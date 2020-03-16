@@ -4,6 +4,7 @@ import {TableForeignKeyOptions} from "./TableForeignKeyOptions";
 import {TableUniqueOptions} from "./TableUniqueOptions";
 import {TableCheckOptions} from "./TableCheckOptions";
 import {TableExclusionOptions} from "./TableExclusionOptions";
+import {TableTemporalOptions} from "./TableTemporalOptions";
 
 /**
  * Table options.
@@ -61,4 +62,9 @@ export interface TableOptions {
      */
     engine?: string;
 
+    /**
+     * System Versioned table
+     * Pass system versioned parameters
+     */
+    temporal?: TableTemporalOptions;
 }

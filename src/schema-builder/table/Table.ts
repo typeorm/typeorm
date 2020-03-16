@@ -8,6 +8,7 @@ import {TableUtils} from "../util/TableUtils";
 import {TableUnique} from "./TableUnique";
 import {TableCheck} from "./TableCheck";
 import {TableExclusion} from "./TableExclusion";
+import {TableTemporal} from "./TableTemporal";
 
 /**
  * Table in the database represented in this class.
@@ -66,6 +67,9 @@ export class Table {
      */
     engine?: string;
 
+    temporal?: TableTemporal;
+
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -96,6 +100,10 @@ export class Table {
                 this.justCreated = options.justCreated;
 
             this.engine = options.engine;
+
+            if (options.temporal !== undefined) {
+                this.temporal = new TableTemporal(options.temporal);
+            }
         }
     }
 
@@ -314,6 +322,7 @@ export class Table {
             uniques: entityMetadata.uniques.map(unique => TableUnique.create(unique)),
             checks: entityMetadata.checks.map(check => TableCheck.create(check)),
             exclusions: entityMetadata.exclusions.map(exclusion => TableExclusion.create(exclusion)),
+            temporal: entityMetadata.temporal
         };
 
         return new Table(options);

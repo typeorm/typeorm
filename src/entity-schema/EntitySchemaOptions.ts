@@ -1,5 +1,6 @@
 import {Connection, SelectQueryBuilder} from "..";
 import {EntitySchemaIndexOptions} from "./EntitySchemaIndexOptions";
+import {EntitySchemaTemporalOptions} from "./EntitySchemaTemporalOptions";
 import {EntitySchemaColumnOptions} from "./EntitySchemaColumnOptions";
 import {EntitySchemaRelationOptions} from "./EntitySchemaRelationOptions";
 import {OrderByCondition} from "../find-options/OrderByCondition";
@@ -99,4 +100,8 @@ export class EntitySchemaOptions<T> {
      */
     expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
 
+    /**
+     * Entity temporal options
+     */
+    temporal?: EntitySchemaTemporalOptions;
 }

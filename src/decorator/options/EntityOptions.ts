@@ -1,4 +1,5 @@
 import {OrderByCondition} from "../../find-options/OrderByCondition";
+import {TemporalOptions} from "./TemporalOptions";
 
 /**
  * Describes all entity's options.
@@ -47,4 +48,9 @@ export interface EntityOptions {
      * @see https://www.sqlite.org/withoutrowid.html. 
      */
     withoutRowid?: boolean;
+
+    /**
+     * Provice temporal options
+     */
+    temporal?: TemporalOptions;
 }
