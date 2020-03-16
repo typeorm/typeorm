@@ -199,6 +199,22 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * returns list of temporal tables from database if given
+     */
+    async getTemporalTables(database?: string): Promise<ObjectLiteral[]> {
+        return await this.query(this.findTemporalTableSql(database));
+    }
+
+    /**
+     * Checks if a table with the given name is temporal
+     */
+
+    async isTemporalTable(tableOrName: Table|string): Promise<boolean> {
+        const results = await this.temporalTableMetadata(tableOrName);
+        return results.length !== 0;
+    }
+
+    /**
      * Returns all available database names including system databases.
      */
     async getDatabases(): Promise<string[]> {
@@ -304,8 +320,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // if createForeignKeys is true, we must drop created foreign keys in down query.
         // createTable does not need separate method to create foreign keys, because it create fk's in the same query with table creation.
-        if (createForeignKeys)
+        if (createForeignKeys) {
             table.foreignKeys.forEach(foreignKey => downQueries.push(this.dropForeignKeySql(table, foreignKey)));
+        }
+
+        if (table.temporal) {
+            downQueries.push(this.dropTableSql(this.getHistoricalTableName(table)));
+            downQueries.push(this.disableTemporalTableSql(table));
+        }
 
         return this.executeQueries(upQueries, downQueries);
     }
@@ -328,16 +350,106 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
 
-        if (dropForeignKeys)
+        if (dropForeignKeys) {
             table.foreignKeys.forEach(foreignKey => upQueries.push(this.dropForeignKeySql(table, foreignKey)));
+        }
 
         table.indices.forEach(index => upQueries.push(this.dropIndexSql(table, index)));
+
+        let isTemporal: boolean = await this.isTemporalTable(table);
+        if (isTemporal) {
+            upQueries.push(this.disableTemporalTableSql(table));
+            upQueries.push(await this.dropHistoricalTable(table));
+        }
 
         upQueries.push(this.dropTableSql(table));
         downQueries.push(this.createTableSql(table, createForeignKeys));
 
         await this.executeQueries(upQueries, downQueries);
     }
+
+        /**
+     * return metadata for a given temporal table
+     * @param tableOrName
+     */
+
+    async temporalTableMetadata(tableOrName: Table | string): Promise<ObjectLiteral[]> {
+        const parsedTableName = this.parseTableName(tableOrName);
+        let sql = this.findTemporalTableSql(parsedTableName.database);
+        sql += ` AND t.name = '${parsedTableName.tableName}'`;
+        return this.query(sql);
+    }
+
+    /**
+     * returns sql query that lists all temporal table pairs in current database
+     * @param database options parameter
+     */
+
+    protected findTemporalTableSql(database?: string): string {
+        let sql: string;
+        database = database === undefined ? "" : `${database}.`;
+        sql = `SELECT SCHEMA_NAME(t.schema_id) AS TABLE_SCHEMA,
+            t.name AS TABLE_NAME,
+            SCHEMA_NAME(h.schema_id) AS TEMPORAL_TABLE_SCHEMA,
+            h.name AS TEMPORAL_TABLE_NAME
+        FROM ${database}sys.tables t
+        LEFT OUTER JOIN ${database}sys.tables h
+            ON t.history_table_id = h.object_id
+        WHERE t.temporal_type = 2`;
+        return sql;
+    }
+
+    /**
+     * returns query to drop a historical table based on the name of persistent table
+     * @param tableOrName table or name of persisted table
+     * @param ifExist boolean
+     */
+
+    protected async dropHistoricalTable(tableOrName: Table|string, ifExist?: boolean): Promise<Query> {
+        const temporalTableInfo: ObjectLiteral[] = await this.temporalTableMetadata(tableOrName);
+        let tableName = temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_SCHEMA" ] ?
+            `${temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_SCHEMA" ]}.${temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_NAME" ]}` :
+            temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_NAME" ];
+        return this.dropTableSql(tableName);
+    }
+
+    /**
+     * Disable temporal table
+     */
+
+    async disableTemporalTable(tableOrName: Table | string): Promise<void> {
+        const upQueries: Query[] = [], downQueries: Query[] = [];
+        let isTemporal: boolean = await this.isTemporalTable(tableOrName);
+        if (isTemporal) {
+            upQueries.push(this.disableTemporalTableSql(tableOrName));
+            downQueries.push(this.enableTemporalTableSql(tableOrName));
+            await this.executeQueries(upQueries, downQueries);
+        } else {
+            return Promise.resolve();
+        }
+    }
+
+    /**
+     * Disable all temporal tables in database
+     * @param database
+     */
+
+    async disableAllTemporalTables(database?: string): Promise<void> {
+        const upQueries: Query[] = [], downQueries: Query[] = [];
+        const allTemporalTablesResults: ObjectLiteral[] = await this.getTemporalTables(database);
+        database = database === undefined ? "" : `${database}.`;
+        if (allTemporalTablesResults.length > 0) {
+            allTemporalTablesResults.map(async temporalTable => {
+                let tableName = `${database}${temporalTable[ "TABLE_SCHEMA" ]}.${temporalTable[ "TABLE_NAME" ]}`;
+                upQueries.push(this.disableTemporalTableSql(tableName));
+                downQueries.push(this.enableTemporalTableSql(tableName));
+            });
+            await this.executeQueries(upQueries, downQueries);
+        } else {
+            return Promise.resolve();
+        }
+    }
+
 
     /**
      * Creates a new view.
@@ -1125,6 +1237,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
             await Promise.all(dropViewQueries.map(q => this.query(q["query"])));
 
+            await this.disableAllTemporalTables(database);
+
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
             const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`;
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
@@ -1429,8 +1543,18 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds create table sql
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, true)).join(", ");
+        const columnDefinitions = table.columns.filter(column => {
+            if (table.temporal) {
+                return column.name !== table.temporal.sysStartTimeColumnName && column.name !== table.temporal.sysEndTimeColumnName;
+            } else {
+                return true;
+            }
+        }).map(column => this.buildCreateColumnSql(column, true)).join(", ");
+
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`;
+        if (table.temporal) {
+            sql += this.addTemporalColumnsSql(table);
+        }
 
         // we create unique indexes instead of unique constraints, because MySql does not have unique constraints.
         // if we mark column as Unique, it means that we create UNIQUE INDEX.
@@ -1512,6 +1636,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         sql += `) ENGINE=${table.engine || "InnoDB"}`;
 
+        if (table.temporal) {
+            sql += ` WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ${this.getHistoricalTableName(table)}))`;
+        }
+
         return new Query(sql);
     }
 
@@ -1589,6 +1717,24 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected dropIndexSql(table: Table, indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
         return new Query(`DROP INDEX \`${indexName}\` ON ${this.escapePath(table)}`);
+    }
+
+    /**
+     * Build disable temporal table sql
+     */
+
+    protected disableTemporalTableSql(tableOrName: Table|string): Query {
+        const query = `ALTER TABLE ${this.escapePath(tableOrName)} SET (SYSTEM_VERSIONING = OFF)`;
+        return new Query(query);
+    }
+
+        /**
+     * Build enable temporal table sql
+     */
+
+    protected enableTemporalTableSql(tableOrName: Table|string): Query {
+        const query = `ALTER TABLE ${this.escapePath(tableOrName)} SET (SYSTEM_VERSIONING = ON)`;
+        return new Query(query);
     }
 
     /**
@@ -1692,6 +1838,43 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected async getVersion(): Promise<string> {
         const result = await this.query(`SELECT VERSION() AS \`version\``);
         return result[0]["version"];
+    }
+
+    protected getHistoricalTableName(table: Table): string {
+        let historicalTableName;
+        if (table.temporal && table.temporal.historicalTableName !== undefined) {
+            const parsedTableName = this.parseTableName(table.temporal.historicalTableName);
+            historicalTableName = `${parsedTableName.tableName}`;
+        } else {
+            const parsedTableName = this.parseTableName(table);
+            historicalTableName = `${parsedTableName.tableName}_historical`;
+        }
+        if (table.temporal)
+            table.temporal.historicalTableName = historicalTableName;
+
+        return historicalTableName;
+    }
+
+    /**
+     * Build temporal table sql
+     */
+
+    protected addTemporalColumnsSql(table: Table): string {
+        let sql: string = "" ;
+        if (table.temporal) {
+            let precision = 3;
+            if (table.temporal.precision !== undefined) {
+                precision = table.temporal.precision;
+            }
+            sql += ` , "${table.temporal.sysStartTimeColumnName}" datetime2 (${precision}) GENERATED ALWAYS AS ROW START NOT NULL`;
+            if (table.temporal.getDateFunction) {
+                let constraintName = this.connection.namingStrategy.uniqueConstraintName(table.name, [ table.temporal.sysStartTimeColumnName ]);
+                sql += ` CONSTRAINT ${constraintName} DEFAULT ${table.temporal.getDateFunction}`;
+            }
+            sql += `, "${table.temporal.sysEndTimeColumnName}" datetime2 (${precision}) GENERATED ALWAYS AS ROW END NOT NULL`;
+            sql += `, PERIOD FOR SYSTEM_TIME (${table.temporal.sysStartTimeColumnName}, ${table.temporal.sysEndTimeColumnName})`;
+        }
+        return sql;
     }
 
 }
