@@ -164,6 +164,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     if (err) {
                         this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        console.log(query)
                         return fail(new QueryFailedError(query, parameters, err));
                     }
 
@@ -384,15 +385,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected findTemporalTableSql(database?: string): string {
         let sql: string;
-        database = database === undefined ? "" : `${database}.`;
-        sql = `SELECT SCHEMA_NAME(t.schema_id) AS TABLE_SCHEMA,
-            t.name AS TABLE_NAME,
-            SCHEMA_NAME(h.schema_id) AS TEMPORAL_TABLE_SCHEMA,
-            h.name AS TEMPORAL_TABLE_NAME
-        FROM ${database}sys.tables t
-        LEFT OUTER JOIN ${database}sys.tables h
-            ON t.history_table_id = h.object_id
-        WHERE t.temporal_type = 2`;
+        database = database === undefined ? "" : `${database}`;
+        sql = `SELECT t.table_name AS TABLE_NAME
+                FROM information_schema.tables t
+                WHERE t.TABLE_TYPE = "SYSTEM VERSIONED"
+                AND t.TABLE_SCHEMA = "${database}"`;
         return sql;
     }
 
@@ -432,9 +429,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: Query[] = [], downQueries: Query[] = [];
         const allTemporalTablesResults: ObjectLiteral[] = await this.getTemporalTables(database);
         database = database === undefined ? "" : `${database}.`;
+        console.log(allTemporalTablesResults)
         if (allTemporalTablesResults.length > 0) {
             allTemporalTablesResults.map(async temporalTable => {
-                let tableName = `${database}${temporalTable[ "TABLE_SCHEMA" ]}.${temporalTable[ "TABLE_NAME" ]}`;
+                let tableName = `${database}${temporalTable[ "TABLE_NAME" ]}`;
                 upQueries.push(this.disableTemporalTableSql(tableName));
                 downQueries.push(this.enableTemporalTableSql(tableName));
             });
