@@ -239,7 +239,7 @@ export class FindOptionsUtils {
                 const firstDotIndex = relationString.indexOf(".") + 1;
                 const stringForMatch = relationString.substring(firstDotIndex);
 
-                config = temporalConfigs.find(config => config.property!.find(string => string === stringForMatch) ? true : false);
+                config = temporalConfigs.find(config => config.property!.find(name => name === stringForMatch) ? true : false);
             }
 
             qb.leftJoinAndSelect(selection, relationAlias, undefined, undefined, config);
