@@ -1846,7 +1846,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const parsedTableName = this.parseTableName(table.temporal.historicalTableName);
             historicalTableName = `${parsedTableName.tableName}`;
         } else {
-            historicalTableName = ""
+            historicalTableName = "";
         }
 
         if (table.temporal)
