@@ -38,7 +38,7 @@ export interface FindOneOptions<Entity = any> {
     cache?: boolean | number | { id: any, milliseconds: number };
 
     /**
-     * Enables or disables query result caching.
+     * Indicates what locking mode should be used.
      */
     lock?: { mode: "optimistic", version: number|Date } | { mode: "pessimistic_read"|"pessimistic_write"|"dirty_read" };
 
