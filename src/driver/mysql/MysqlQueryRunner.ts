@@ -163,7 +163,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
                     if (err) {
-                        console.log(query);
                         this.driver.connection.logger.logQueryError(err, query, parameters, this);
                         return fail(new QueryFailedError(query, parameters, err));
                     }
@@ -1526,7 +1525,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         sql += `) ENGINE=${table.engine || "InnoDB"}`;
 
         if (this.driver.options.type === "mariadb" && table.temporal) {
-            sql += ` WITH SYSTEM VERSIONING`;
+            sql += ` WITH SYSTEM VERSIONING;`;
         }
 
         return new Query(sql);
