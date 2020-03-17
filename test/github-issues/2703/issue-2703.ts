@@ -5,25 +5,22 @@ import {Dummy} from "./entity/Dummy";
 import {WrappedNumber} from "./wrapped-number";
 import {MemoryLogger} from "./memory-logger";
 
-describe("github issues > #2703 Column with transformer is not normalized for update", () => {
+describe.only("github issues > #2703 Column with transformer is not normalized for update", () => {
     let connections: Connection[];
-    let logger: MemoryLogger;
 
-    before(async () => {
-        logger = new MemoryLogger(false);
-        connections = await createTestingConnections({
-            entities: [`${__dirname}/entity/*{.js,.ts}`],
-            schemaCreate: true,
-            dropSchema: true,
-            logger,
-        });
-    });
+    before(async () => connections = await createTestingConnections({
+        entities: [`${__dirname}/entity/*{.js,.ts}`],
+        schemaCreate: true,
+        dropSchema: true,
+        createLogger: () => new MemoryLogger(false),
+    }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
-    afterEach(() => {
+    afterEach(() => connections.forEach(connection => {
+        const logger = connection.logger as MemoryLogger;
         logger.enabled = false;
         logger.clear();
-    });
+    }));
 
     it("should transform values when computing changed columns", () => Promise.all(connections.map(async connection => {
         const repository = connection.getRepository(Dummy);
@@ -33,6 +30,7 @@ describe("github issues > #2703 Column with transformer is not normalized for up
         });
         await repository.save(dummy);
 
+        const logger = connection.logger as MemoryLogger;
         logger.enabled = true;
 
         await repository.save(dummy);
