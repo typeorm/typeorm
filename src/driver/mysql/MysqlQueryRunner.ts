@@ -375,7 +375,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     async temporalTableMetadata(tableOrName: Table | string): Promise<ObjectLiteral[]> {
         const parsedTableName = this.parseTableName(tableOrName);
         let sql = this.findTemporalTableSql(parsedTableName.database);
-        sql += ` AND t.name = '${parsedTableName.tableName}'`;
+        sql += ` AND t.table_name = '${parsedTableName.tableName}'`;
         return this.query(sql);
     }
 
@@ -429,7 +429,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: Query[] = [], downQueries: Query[] = [];
         const allTemporalTablesResults: ObjectLiteral[] = await this.getTemporalTables(database);
         database = database === undefined ? "" : `${database}.`;
-        console.log(allTemporalTablesResults)
         if (allTemporalTablesResults.length > 0) {
             allTemporalTablesResults.map(async temporalTable => {
                 let tableName = `${database}${temporalTable[ "TABLE_NAME" ]}`;
