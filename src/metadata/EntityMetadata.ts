@@ -820,7 +820,7 @@ export class EntityMetadata {
         this.schemaPath = this.buildSchemaPath();
         this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
 
-        if (this.connection.driver instanceof SqlServerDriver && this.tableMetadataArgs.temporal) {
+        if ((this.connection.driver instanceof SqlServerDriver || this.connection.driver.options.type === "mariadb") && this.tableMetadataArgs.temporal) {
             this.temporal = new TemporalMetadata(this, this.tableMetadataArgs.temporal);
         }
 

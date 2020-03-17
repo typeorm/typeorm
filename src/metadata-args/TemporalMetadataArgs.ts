@@ -5,6 +5,7 @@ export interface TemporalMetadataArgs {
 
   /**
    * Historical table name. The default would be table name + '_historical' suffix.
+   * NOTE: seperate historical tables are NOT supported in mariaDB
    */
   historicalTableName?: string;
 

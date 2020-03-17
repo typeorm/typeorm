@@ -50,7 +50,6 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
       await queryRunner.createTable(new Table({
         name: "dbo.article",
         temporal: {
-          historicalTableName: "article_temporal",
           sysStartTimeColumnName: "valid_from",
           sysEndTimeColumnName: "valid_to"
         },
@@ -63,12 +62,10 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
     );
 
       const table = await queryRunner.getTable("article");
-      const historicalTable1 = await queryRunner.getTable("article_temporal");
       const idColumn = table!.findColumnByName("id")!;
       expect(idColumn.isPrimary).to.be.true;
       expect(idColumn.isNullable).to.be.false;
       expect(idColumn.type).to.be.eq("int");
-      expect(historicalTable1).to.exist;
 
       expect(table!.findColumnByName("body")).to.be.exist;
       expect(table!.findColumnByName("title")).to.be.exist;
@@ -80,31 +77,6 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
       expect(validToColumn.type).to.be.equal("datetime");
       expect(table!.findColumnByName("ValidTo")).to.be.undefined;
       expect(table!.findColumnByName("ValidFrom")).to.be.undefined;
-      await queryRunner.executeMemoryDownSql();
-    }
-    await queryRunner.release();
-  })));
-
-  it("should create historical table", () => Promise.all(connections.map(async connection => {
-    const queryRunner = connection.createQueryRunner();
-    if (connection.driver instanceof MysqlDriver) {
-      let temporalTable = new Table({
-        name: "new_temporal",
-        temporal: {
-          sysStartTimeColumnName: "ValidTo",
-          sysEndTimeColumnName: "ValidFrom"
-        },
-        columns: [
-          { name: "id", type: "int", isPrimary: true, isGenerated: true },
-          { name: "title", type: "varchar(512)", isNullable: false },
-        ]
-      });
-      await queryRunner.createTable(temporalTable);
-
-      let table = await queryRunner.getTable("new_temporal");
-      let historicalTable = await queryRunner.getTable("new_temporal_historical");
-      expect(table).to.exist;
-      expect(historicalTable).to.exist;
       await queryRunner.executeMemoryDownSql();
     }
     await queryRunner.release();
@@ -165,15 +137,11 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
       await queryRunner.createTable(temporalTable);
 
       let table = await queryRunner.getTable("table_to_drop");
-      let historicalTable = await queryRunner.getTable("table_to_drop_historical");
       expect(table).to.exist;
-      expect(historicalTable).to.exist;
 
       await queryRunner.dropTable(temporalTable);
       table = await queryRunner.getTable("table_to_drop");
-      historicalTable = await queryRunner.getTable("table_to_drop_historical");
       expect(table).not.to.exist;
-      expect(historicalTable).not.to.exist;
       await queryRunner.executeMemoryDownSql();
     }
     await queryRunner.release();
@@ -197,14 +165,10 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
       await queryRunner.createTable(temporalTable);
 
       let table = await queryRunner.getTable("hist_table");
-      let historicalTable = await queryRunner.getTable("hist_table_historical");
       expect(table).to.exist;
-      expect(historicalTable).to.exist;
       await queryRunner.dropTable("dbo.hist_table");
       table = await queryRunner.getTable("hist_table");
-      historicalTable = await queryRunner.getTable("hist_table_historical");
       expect(table).not.to.exist;
-      expect(historicalTable).not.to.exist;
       await queryRunner.executeMemoryDownSql();
       await queryRunner.release();
     }
@@ -228,7 +192,6 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
       const temporalTable2 = new Table({
         name: "dbo.temporal_2",
         temporal: {
-          historicalTableName: "temp2_historical",
           sysStartTimeColumnName: "ValidTo",
           sysEndTimeColumnName: "ValidFrom"
         },
@@ -242,14 +205,10 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
 
       expect(await queryRunner.getTemporalTables()).not.to.be.empty;
       const table1 = await queryRunner.getTable("temporal_1");
-      const historicalTable1 = await queryRunner.getTable("temporal_1_historical");
       expect(table1).to.exist;
-      expect(historicalTable1).to.exist;
 
       const table2 = await queryRunner.getTable("temporal_2");
-      const historicalTable2 = await queryRunner.getTable("temp2_historical");
       expect(table2).to.exist;
-      expect(historicalTable2).to.exist;
 
       await queryRunner.disableTemporalTable(temporalTable1);
       await queryRunner.disableTemporalTable(temporalTable2);
@@ -280,7 +239,6 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
       const temporalTable2 = new Table({
         name: "dbo.temporal_2",
         temporal: {
-          historicalTableName: "temp2_historical",
           sysStartTimeColumnName: "ValidTo",
           sysEndTimeColumnName: "ValidFrom"
         },
@@ -294,14 +252,10 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
       expect(await queryRunner.getTemporalTables()).to.not.be.empty;
 
       const table1 = await queryRunner.getTable("temporal_1");
-      const historicalTable1 = await queryRunner.getTable("temporal_1_historical");
       expect(table1).to.exist;
-      expect(historicalTable1).to.exist;
 
       const table2 = await queryRunner.getTable("temporal_2");
-      const historicalTable2 = await queryRunner.getTable("temp2_historical");
       expect(table2).to.exist;
-      expect(historicalTable2).to.exist;
       await queryRunner.disableAllTemporalTables();
       const temporalTables = await queryRunner.getTemporalTables();
       expect(temporalTables.length).to.be.lessThan(2);
@@ -353,7 +307,6 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
       const siteMetadata = connection.getMetadata(Site);
 
       expect(siteMetadata.temporal!).not.to.be.undefined;
-      expect(siteMetadata.temporal!.historicalTableName).to.be.equal("sites_temporal");
       expect(siteMetadata.temporal!.sysStartTimeColumnName).to.be.equal("ValidFrom");
       expect(siteMetadata.temporal!.sysEndTimeColumnName).to.be.equal("ValidTo");
       connection.createQueryRunner().executeMemoryDownSql();
@@ -378,8 +331,7 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
   it("should contain tableMetadataArgs", () => Promise.all(connections.map(async connection => {
       const siteMetadata = connection.getMetadata(Site);
       expect(siteMetadata.tableMetadataArgs.temporal!).to.be.deep
-        .equal( { historicalTableName:    "sites_temporal",
-                  sysStartTimeColumnName: "ValidFrom",
+        .equal( { sysStartTimeColumnName: "ValidFrom",
                   sysEndTimeColumnName:   "ValidTo" });
     })
   ));
@@ -402,7 +354,6 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
       const commentsTable = new Table({
         name: "comments",
         temporal: {
-          historicalTableName: "commentsHistorical",
           sysStartTimeColumnName: "sysStartTimeColumnName",
           sysEndTimeColumnName: "sysEndTimeColumnName"
         },
@@ -446,12 +397,10 @@ describe("github issues > #5663 Add support for mariadb temporal tables includin
       expect(await queryRunner.getTemporalTables()).to.not.be.empty;
 
       const table1 = await queryRunner.getTable("temporal_1");
-      const historicalTable1 = await queryRunner.getTable("temporal_1_historical");
       expect(table1).to.exist;
       const match = table1!.columns.filter(c => c.default === "getdate()");
       expect(match).to.not.be.empty;
       expect(match[ 0 ].name).to.be.equal("ValidTo");
-      expect(historicalTable1).to.exist;
 
       await queryRunner.executeMemoryDownSql();
       await queryRunner.release();

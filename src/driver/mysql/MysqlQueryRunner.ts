@@ -357,7 +357,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (this.driver.options.type === "mariadb" && await this.isTemporalTable(table)) {
             upQueries.push(this.disableTemporalTableSql(table));
-            upQueries.push(await this.dropHistoricalTable(table));
         }
 
         upQueries.push(this.dropTableSql(table));

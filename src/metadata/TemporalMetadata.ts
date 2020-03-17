@@ -1,6 +1,6 @@
-import {EntityMetadata} from "./EntityMetadata";
-import {ColumnMetadata} from "./ColumnMetadata";
-import {TemporalMetadataArgs} from "../metadata-args/TemporalMetadataArgs";
+import { EntityMetadata } from "./EntityMetadata";
+import { ColumnMetadata } from "./ColumnMetadata";
+import { TemporalMetadataArgs } from "../metadata-args/TemporalMetadataArgs";
 
 /**
  * Index metadata contains all information about table's index.
@@ -17,6 +17,7 @@ export class TemporalMetadata {
 
     /**
      * Historical table name. The default would be table name + '_historical' suffix.
+     * NOTE: Seperate historical tables are NOT supported in mariaDB
      */
     historicalTableName?: string;
 
@@ -41,7 +42,7 @@ export class TemporalMetadata {
     /**
      * what precision use for sysStart/End columns
     */
-   precision?: number;
+    precision?: number;
 
 
     defaultColumnSettings: object = {
@@ -64,6 +65,20 @@ export class TemporalMetadata {
         this.sysEndTimeColumnName = args.sysEndTimeColumnName;
         this.getDateFunction = args.getDateFunction;
         this.precision = args.precision;
+
+        if (this.entityMetadata.connection.driver.options.type === "mariadb") {
+            const mariaDbDefaultColumnSettings = this.defaultColumnSettings as {
+                type: string,
+                nullable: false,
+                select: true,
+                insert: true,
+                update: true,
+                precision: number
+            }
+            
+            mariaDbDefaultColumnSettings.type = "datetime"
+            this.defaultColumnSettings = mariaDbDefaultColumnSettings
+        }
     }
 
     // ---------------------------------------------------------------------

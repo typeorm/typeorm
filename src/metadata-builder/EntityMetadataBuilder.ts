@@ -278,7 +278,7 @@ export class EntityMetadataBuilder {
 
         });
 
-        if (this.connection.driver instanceof SqlServerDriver) {
+        if (this.connection.driver instanceof SqlServerDriver || this.connection.driver.options.type === "mariadb") {
             entityMetadatas.forEach(entityMetadata => {
                 if (entityMetadata.temporal instanceof TemporalMetadata)
                     entityMetadata.temporal.build();

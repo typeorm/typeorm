@@ -2,6 +2,7 @@ export interface EntitySchemaTemporalOptions {
 
   /**
    * Historical table name. The default would be table name + '_historical' suffix.
+   * NOTE: Seperate historical tables are not supported in mariaDB
    */
   historicalTableName?: string;
 
