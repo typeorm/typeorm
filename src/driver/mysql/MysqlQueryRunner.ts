@@ -164,6 +164,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     if (err) {
                         this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        console.log(query)
                         return fail(new QueryFailedError(query, parameters, err));
                     }
 
@@ -196,22 +197,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 fail(err);
             }
         });
-    }
-
-    /**
-     * returns list of temporal tables from database if given
-     */
-    async getTemporalTables(database?: string): Promise<ObjectLiteral[]> {
-        return await this.query(this.findTemporalTableSql(database));
-    }
-
-    /**
-     * Checks if a table with the given name is temporal
-     */
-
-    async isTemporalTable(tableOrName: Table|string): Promise<boolean> {
-        const results = await this.temporalTableMetadata(tableOrName);
-        return results.length !== 0;
     }
 
     /**
@@ -324,10 +309,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             table.foreignKeys.forEach(foreignKey => downQueries.push(this.dropForeignKeySql(table, foreignKey)));
         }
 
-        if (this.driver.options.type === "mariadb" && table.temporal) {
-            downQueries.push(this.disableTemporalTableSql(table));
-        }
-
         return this.executeQueries(upQueries, downQueries);
     }
 
@@ -355,76 +336,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         table.indices.forEach(index => upQueries.push(this.dropIndexSql(table, index)));
 
-        if (this.driver.options.type === "mariadb" && await this.isTemporalTable(table)) {
-            upQueries.push(this.disableTemporalTableSql(table));
-        }
-
         upQueries.push(this.dropTableSql(table));
         downQueries.push(this.createTableSql(table, createForeignKeys));
 
         await this.executeQueries(upQueries, downQueries);
     }
-
-    /**
-     * return metadata for a given temporal table
-     * @param tableOrName
-     */
-    async temporalTableMetadata(tableOrName: Table | string): Promise<ObjectLiteral[]> {
-        const parsedTableName = this.parseTableName(tableOrName);
-        let sql = this.findTemporalTableSql(parsedTableName.database);
-        sql += ` AND t.table_name = '${parsedTableName.tableName}'`;
-        return this.query(sql);
-    }
-
-    /**
-     * returns sql query that lists all temporal table pairs in current database
-     * @param database options parameter
-     */
-    protected findTemporalTableSql(database?: string): string {
-        let sql: string;
-        database = database === undefined ? "" : `${database}`;
-        sql = `SELECT t.table_name AS TABLE_NAME
-                FROM information_schema.tables t
-                WHERE t.TABLE_TYPE = "SYSTEM VERSIONED"
-                AND t.TABLE_SCHEMA = "${database}"`;
-        return sql;
-    }
-
-    /**
-     * Disable temporal table
-     */
-    async disableTemporalTable(tableOrName: Table | string): Promise<void> {
-        const upQueries: Query[] = [], downQueries: Query[] = [];
-        let isTemporal: boolean = await this.isTemporalTable(tableOrName);
-        if (isTemporal) {
-            upQueries.push(this.disableTemporalTableSql(tableOrName));
-            downQueries.push(this.enableTemporalTableSql(tableOrName));
-            await this.executeQueries(upQueries, downQueries);
-        } else {
-            return Promise.resolve();
-        }
-    }
-
-    /**
-     * Disable all temporal tables in database
-     * @param database
-     */
-    async disableAllTemporalTables(database?: string): Promise<void> {
-        const upQueries: Query[] = [], downQueries: Query[] = [];
-        const allTemporalTablesResults: ObjectLiteral[] = await this.getTemporalTables(database);
-        database = database === undefined ? "" : `${database}.`;
-        if (allTemporalTablesResults.length > 0) {
-            allTemporalTablesResults.map(async temporalTable => {
-                let tableName = `${database}${temporalTable[ "TABLE_NAME" ]}`;
-                upQueries.push(this.disableTemporalTableSql(tableName));
-                downQueries.push(this.enableTemporalTableSql(tableName));
-            });
-            await this.executeQueries(upQueries, downQueries);
-        } else {
-            return Promise.resolve();
-        }
-    }
-
 
     /**
      * Creates a new view.
@@ -1212,10 +1128,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
             await Promise.all(dropViewQueries.map(q => this.query(q["query"])));
 
-            if (this.driver.options.type === "mariadb") {
-                await this.disableAllTemporalTables(database);
-            }
-
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
             const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`;
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
@@ -1614,9 +1526,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         sql += `) ENGINE=${table.engine || "InnoDB"}`;
 
         if (this.driver.options.type === "mariadb" && table.temporal) {
-            sql += ` WITH SYSTEM_VERSIONING`;
+            sql += ` WITH SYSTEM VERSIONING`;
         }
-        console.log(sql)
+
         return new Query(sql);
     }
 
@@ -1694,24 +1606,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected dropIndexSql(table: Table, indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
         return new Query(`DROP INDEX \`${indexName}\` ON ${this.escapePath(table)}`);
-    }
-
-    /**
-     * Build disable temporal table sql
-     */
-
-    protected disableTemporalTableSql(tableOrName: Table|string): Query {
-        const query = `ALTER TABLE ${this.escapePath(tableOrName)} SET (SYSTEM_VERSIONING = OFF)`;
-        return new Query(query);
-    }
-
-        /**
-     * Build enable temporal table sql
-     */
-
-    protected enableTemporalTableSql(tableOrName: Table|string): Query {
-        const query = `ALTER TABLE ${this.escapePath(tableOrName)} SET (SYSTEM_VERSIONING = ON)`;
-        return new Query(query);
     }
 
     /**
