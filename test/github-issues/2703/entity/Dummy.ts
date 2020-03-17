@@ -8,6 +8,6 @@ export class Dummy {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column("int", {transformer: wrappedNumberTransformer})
+    @Column("int4", {transformer: wrappedNumberTransformer})
     value: WrappedNumber;
 }
