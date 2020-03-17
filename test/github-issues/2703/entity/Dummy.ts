@@ -8,6 +8,6 @@ export class Dummy {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column("string", {transformer: wrappedStringTransformer})
+    @Column({type: String, transformer: wrappedStringTransformer})
     value: WrappedString;
 }
