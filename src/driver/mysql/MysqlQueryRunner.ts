@@ -164,7 +164,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     if (err) {
                         this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                        console.log(query);
                         return fail(new QueryFailedError(query, parameters, err));
                     }
 
