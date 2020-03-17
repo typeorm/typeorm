@@ -3,6 +3,7 @@ import {DateUtils} from "../util/DateUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {OrmUtils} from "../util/OrmUtils";
+import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
 
 /**
  * Finds what columns are changed in the subject entities.
@@ -62,7 +63,7 @@ export class SubjectChangedColumnsComputer {
             if (subject.databaseEntity) {
 
                 // get database value of the column
-                let databaseValue = column.getEntityValue(subject.databaseEntity);
+                let databaseValue = column.getEntityValue(subject.databaseEntity, true);
 
                 // filter out "relational columns" only in the case if there is a relation object in entity
                 if (column.relationMetadata) {
@@ -117,6 +118,10 @@ export class SubjectChangedColumnsComputer {
                             normalizedValue = DateUtils.simpleJsonToString(entityValue);
                             databaseValue = DateUtils.simpleJsonToString(databaseValue);
                             break;
+                    }
+
+                    if (column.transformer) {
+                        normalizedValue = ApplyValueTransformers.transformTo(column.transformer, entityValue);
                     }
                 }
 

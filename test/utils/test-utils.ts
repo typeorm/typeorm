@@ -8,6 +8,7 @@ import {createConnections} from "../../src/index";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
 import {PromiseUtils} from "../../src/util/PromiseUtils";
 import {QueryResultCache} from "../../src/cache/QueryResultCache";
+import {Logger} from "../../src/logger/Logger";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -133,6 +134,11 @@ export interface TestingOptions {
      * They are passed down to the enabled drivers.
      */
     driverSpecific?: Object;
+
+    /**
+     * Logger instance used to log queries and events in the ORM.
+     */
+    logger?: "advanced-console"|"simple-console"|"file"|"debug"|Logger;
 }
 
 /**
@@ -219,6 +225,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.schema = options.schema;
             if (options && options.logging !== undefined)
                 newOptions.logging = options.logging;
+            if (options && options.logger !== undefined)
+                newOptions.logger = options.logger;
             if (options && options.__dirname)
                 newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"];
             if (options && options.__dirname)
