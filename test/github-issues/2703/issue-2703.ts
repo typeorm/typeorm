@@ -2,7 +2,7 @@ import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../utils/test-utils";
 import {Dummy} from "./entity/Dummy";
-import {WrappedNumber} from "./wrapped-number";
+import {WrappedString} from "./wrapped-string";
 import {MemoryLogger} from "./memory-logger";
 
 describe.only("github issues > #2703 Column with transformer is not normalized for update", () => {
@@ -26,7 +26,7 @@ describe.only("github issues > #2703 Column with transformer is not normalized f
         const repository = connection.getRepository(Dummy);
 
         const dummy = repository.create({
-            value: new WrappedNumber(1),
+            value: new WrappedString("test"),
         });
         await repository.save(dummy);
 
