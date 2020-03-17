@@ -325,7 +325,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         if (this.driver.options.type === "mariadb" && table.temporal) {
-            downQueries.push(this.dropTableSql(this.getHistoricalTableName(table)));
             downQueries.push(this.disableTemporalTableSql(table));
         }
 
@@ -390,19 +389,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 WHERE t.TABLE_TYPE = "SYSTEM VERSIONED"
                 AND t.TABLE_SCHEMA = "${database}"`;
         return sql;
-    }
-
-    /**
-     * returns query to drop a historical table based on the name of persistent table
-     * @param tableOrName table or name of persisted table
-     * @param ifExist boolean
-     */
-    protected async dropHistoricalTable(tableOrName: Table|string, ifExist?: boolean): Promise<Query> {
-        const temporalTableInfo: ObjectLiteral[] = await this.temporalTableMetadata(tableOrName);
-        let tableName = temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_SCHEMA" ] ?
-            `${temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_SCHEMA" ]}.${temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_NAME" ]}` :
-            temporalTableInfo[ 0 ][ "TEMPORAL_TABLE_NAME" ];
-        return this.dropTableSql(tableName);
     }
 
     /**
@@ -1629,13 +1615,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         sql += `) ENGINE=${table.engine || "InnoDB"}`;
 
         if (this.driver.options.type === "mariadb" && table.temporal) {
-            if (this.getHistoricalTableName(table).length === 0) {
             sql += ` WITH SYSTEM_VERSIONING`;
-            } else {
-            sql += ` WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ${this.getHistoricalTableName(table)}))`;
-            }
         }
-
+        console.log(sql)
         return new Query(sql);
     }
 
@@ -1836,35 +1818,20 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         return result[0]["version"];
     }
 
-    protected getHistoricalTableName(table: Table): string {
-        let historicalTableName;
-        if (table.temporal && table.temporal.historicalTableName !== undefined) {
-            const parsedTableName = this.parseTableName(table.temporal.historicalTableName);
-            historicalTableName = `${parsedTableName.tableName}`;
-        } else {
-            historicalTableName = "";
-        }
-
-        if (table.temporal)
-            table.temporal.historicalTableName = historicalTableName;
-
-        return historicalTableName;
-    }
-
     /**
      * Build temporal table sql
      */
     protected addTemporalColumnsSql(table: Table): string {
         let sql: string = "" ;
         if (table.temporal) {
-            sql += ` , "${table.temporal.sysStartTimeColumnName}" TIMESTAMP(6) GENERATED ALWAYS AS ROW START NOT NULL`;
+            sql += ` , \`${table.temporal.sysStartTimeColumnName}\` TIMESTAMP(6) GENERATED ALWAYS AS ROW START NOT NULL`;
 
             if (table.temporal.getDateFunction) {
                 let constraintName = this.connection.namingStrategy.uniqueConstraintName(table.name, [ table.temporal.sysStartTimeColumnName ]);
                 sql += ` CONSTRAINT ${constraintName} DEFAULT ${table.temporal.getDateFunction}`;
             }
 
-            sql += `, "${table.temporal.sysEndTimeColumnName}" TIMESTAMP(6) GENERATED ALWAYS AS ROW END NOT NULL`;
+            sql += `, \`${table.temporal.sysEndTimeColumnName}\` TIMESTAMP(6) GENERATED ALWAYS AS ROW END NOT NULL`;
             sql += `, PERIOD FOR SYSTEM_TIME (${table.temporal.sysStartTimeColumnName}, ${table.temporal.sysEndTimeColumnName})`;
         }
         return sql;
