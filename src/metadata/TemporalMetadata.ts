@@ -74,10 +74,10 @@ export class TemporalMetadata {
                 insert: true,
                 update: true,
                 precision: number
-            }
+            };
             
-            mariaDbDefaultColumnSettings.type = "datetime"
-            this.defaultColumnSettings = mariaDbDefaultColumnSettings
+            mariaDbDefaultColumnSettings.type = "datetime";
+            this.defaultColumnSettings = mariaDbDefaultColumnSettings;
         }
     }
 
