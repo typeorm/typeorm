@@ -148,14 +148,16 @@ export class JunctionEntityMetadataBuilder {
                 referencedEntityMetadata: relation.entityMetadata,
                 columns: junctionColumns,
                 referencedColumns: referencedColumns,
-                onDelete: relation.onDelete || "CASCADE"
+                onDelete: relation.onDelete || "CASCADE",
+                onUpdate: relation.onUpdate || "CASCADE"
             }),
             new ForeignKeyMetadata({
                 entityMetadata: entityMetadata,
                 referencedEntityMetadata: relation.inverseEntityMetadata,
                 columns: inverseJunctionColumns,
                 referencedColumns: inverseReferencedColumns,
-                onDelete: relation.onDelete || "CASCADE"
+                onDelete: relation.inverseRelation ? relation.inverseRelation.onDelete : "CASCADE",
+                onUpdate: relation.inverseRelation ? relation.inverseRelation.onUpdate : "CASCADE",
             }),
         ] : [];
 
