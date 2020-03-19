@@ -165,7 +165,7 @@ export class OneToManySubjectBuilder {
                 const removedRelatedEntitySubject = new Subject({
                     metadata: relation.inverseEntityMetadata,
                     parentSubject: subject,
-                    canBeUpdated: true,
+                    mustBeRemoved: true,
                     identifier: removedRelatedEntityRelationId,
                     changeMaps: [{
                         relation: relation.inverseRelation!,
