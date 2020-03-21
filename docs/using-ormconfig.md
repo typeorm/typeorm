@@ -211,7 +211,7 @@ Note that Typeorm will use the first valid method found and will not load the ot
 ## Overriding options defined in ormconfig
 
 Sometimes you want to override values defined in your ormconfig file,
-or you might to append some TypeScript / JavaScript logic to your configuration.
+or you might want to append some TypeScript / JavaScript logic to your configuration.
 
 In such cases you can load options from ormconfig and get `ConnectionOptions` built,
 then you can do whatever you want with those options, before passing them to `createConnection` function:
