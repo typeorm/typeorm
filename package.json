@@ -103,7 +103,7 @@
     "dotenv": "^6.2.0",
     "glob": "^7.1.2",
     "js-yaml": "^3.13.1",
-    "mkdirp": "^0.5.1",
+    "mkdirp": "^1.0.3",
     "reflect-metadata": "^0.1.13",
     "sha.js": "^2.4.11",
     "tslib": "^1.9.0",
