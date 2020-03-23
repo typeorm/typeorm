@@ -4,7 +4,7 @@ import {createTestingConnections, closeTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 
-describe.only("github issues > #2651 set shouldn't have update statements twice when UpdateDate is in use", () => {
+describe("github issues > #2651 set shouldn't have update statements twice when UpdateDate is in use", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -14,7 +14,7 @@ describe.only("github issues > #2651 set shouldn't have update statements twice 
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it.only("should add and remove relations of an entity if given a mix of ids and objects", () => Promise.all(connections.map(async connection => {
+    it("should add and remove relations of an entity if given a mix of ids and objects", () => Promise.all(connections.map(async connection => {
 
         const post1 = new Post();
         post1.title = "post #1";

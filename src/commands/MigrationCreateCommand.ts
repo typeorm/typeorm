@@ -82,10 +82,10 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
 export class ${camelCase(name, true)}${timestamp} implements MigrationInterface {
 
-    public async up(queryRunner: QueryRunner): Promise<any> {
+    public async up(queryRunner: QueryRunner): Promise<void> {
     }
 
-    public async down(queryRunner: QueryRunner): Promise<any> {
+    public async down(queryRunner: QueryRunner): Promise<void> {
     }
 
 }

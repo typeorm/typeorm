@@ -26,10 +26,12 @@ plugins: [
         result.request = result.request.replace(/typeorm/, "typeorm/browser");
     }),
     new webpack.ProvidePlugin({
-      'window.SQL': 'sql.js/js/sql.js'
+      'window.SQL': 'sql.js/dist/sql-wasm.js'
     })
 ]
 ```
+
+and make sure (sql-wasm.wasm)[https://github.com/sql-js/sql.js/blob/master/README.md#downloadingusing] file exists in your public path.
 
 **Example of configuration**
 
