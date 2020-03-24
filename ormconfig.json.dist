@@ -90,5 +90,18 @@
     "logging": false,
     "useNewUrlParser": true,
     "useUnifiedTopology": true
+  },
+  {
+    "skip": false,
+    "name": "aurora-data-api",
+    "type": "aurora-data-api",
+    "region": "us-east-1",
+    "secretArn": "mysecret",
+    "resourceArn": "app-dbcluster",
+    "database": "app-dbcluster-mine",
+    "serviceConfigOptions": {
+      "maxRetries": 3
+    },
+    "logging": false
   }
 ]
