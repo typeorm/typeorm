@@ -92,7 +92,7 @@
     "useUnifiedTopology": true
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "aurora-data-api",
     "type": "aurora-data-api",
     "region": "us-east-1",
