@@ -153,7 +153,7 @@ describe.only('your describe test', ....)
 
 The `npm test` script works by deleting built TypeScript code, rebuilding the codebase, and then running tests. This can take a long time.
 
-Instead, for a quicker feedback cycle, you can run `npm run compile --watch` to make a fresh build and instruct TypeScript to watch for changes and only compile what code you've changed.
+Instead, for a quicker feedback cycle, you can run `npm run compile -- --watch` to make a fresh build and instruct TypeScript to watch for changes and only compile what code you've changed.
 
 Once TypeScript finishes compiling your changes, you can run `npm run test-fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
 
