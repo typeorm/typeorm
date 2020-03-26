@@ -23,7 +23,7 @@ describe("github issues > #5762 `Using URL as a rich column type breaks", () => 
     Promise.all(connections.map(async (connection) => {
         const userRepository = connection.getRepository(User);
 
-        const url = new URL("https://typeorm.io")
+        const url = new URL("https://typeorm.io");
 
         const user = new User();
         user.id = 1;
