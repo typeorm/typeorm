@@ -32,17 +32,34 @@ export class RelationIdLoader {
                 if (relationIdAttr.queryBuilderFactory)
                     throw new Error("Additional condition can not be used with ManyToOne or OneToOne owner relations.");
 
+                const duplicates: Array<string> = [];
                 const results = rawEntities.map(rawEntity => {
                     const result: ObjectLiteral = {};
+                    const duplicateParts: Array<string> = [];
                     relationIdAttr.relation.joinColumns.forEach(joinColumn => {
                         result[joinColumn.databaseName] = this.connection.driver.prepareHydratedValue(rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.databaseName)], joinColumn.referencedColumn!);
+                        const duplicatePart = `${joinColumn.databaseName}:${result[joinColumn.databaseName]}`;
+                        if (duplicateParts.indexOf(duplicatePart) === -1) {
+                            duplicateParts.push(duplicatePart);
+                        }
                     });
 
                     relationIdAttr.relation.entityMetadata.primaryColumns.forEach(primaryColumn => {
                         result[primaryColumn.databaseName] = this.connection.driver.prepareHydratedValue(rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, primaryColumn.databaseName)], primaryColumn);
+                        const duplicatePart = `${primaryColumn.databaseName}:${result[primaryColumn.databaseName]}`;
+                        if (duplicateParts.indexOf(duplicatePart) === -1) {
+                            duplicateParts.push(duplicatePart);
+                        }
                     });
+
+                    duplicateParts.sort();
+                    const duplicate = duplicateParts.join("::");
+                    if (duplicates.indexOf(duplicate) !== -1) {
+                        return null;
+                    }
+                    duplicates.push(duplicate);
                     return result;
-                });
+                }).filter(v => v);
 
                 return {
                     relationIdAttribute: relationIdAttr,
@@ -60,14 +77,31 @@ export class RelationIdLoader {
                 const tableName = relation.inverseEntityMetadata.tableName; // category
                 const tableAlias = relationIdAttr.alias || tableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
 
+                const duplicates: Array<string> = [];
                 const parameters: ObjectLiteral = {};
                 const condition = rawEntities.map((rawEntity, index) => {
-                    return joinColumns.map(joinColumn => {
+                    const duplicateParts: Array<string> = [];
+                    const parameterParts: ObjectLiteral = {};
+                    const queryPart = joinColumns.map(joinColumn => {
                         const parameterName = joinColumn.databaseName + index;
-                        parameters[parameterName] = rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
+                        const parameterValue = rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
+                        const duplicatePart = `${tableAlias}:${joinColumn.propertyPath}:${parameterValue}`;
+                        if (duplicateParts.indexOf(duplicatePart) !== -1) {
+                            return "";
+                        }
+                        duplicateParts.push(duplicatePart);
+                        parameterParts[parameterName] = parameterValue;
                         return tableAlias + "." + joinColumn.propertyPath + " = :" + parameterName;
-                    }).join(" AND ");
-                }).map(condition => "(" + condition + ")")
+                    }).filter(v => v).join(" AND ");
+                    duplicateParts.sort();
+                    const duplicate = duplicateParts.join("::");
+                    if (duplicates.indexOf(duplicate) !== -1) {
+                        return "";
+                    }
+                    duplicates.push(duplicate);
+                    Object.assign(parameters, parameterParts);
+                    return queryPart;
+                }).filter(v => v).map(condition => "(" + condition + ")")
                     .join(" OR ");
 
                 // ensure we won't perform redundant queries for joined data which was not found in selection
@@ -139,13 +173,30 @@ export class RelationIdLoader {
                     return { relationIdAttribute: relationIdAttr, results: [] };
 
                 const parameters: ObjectLiteral = {};
+                const duplicates: Array<string> = [];
                 const joinColumnConditions = mappedColumns.map((mappedColumn, index) => {
-                    return Object.keys(mappedColumn).map(key => {
+                    const duplicateParts: Array<string> = [];
+                    const parameterParts: ObjectLiteral = {};
+                    const queryPart = Object.keys(mappedColumn).map(key => {
                         const parameterName = key + index;
-                        parameters[parameterName] = mappedColumn[key];
+                        const parameterValue = mappedColumn[key];
+                        const duplicatePart = `${junctionAlias}:${key}:${parameterValue}`;
+                        if (duplicateParts.indexOf(duplicatePart) !== -1) {
+                            return "";
+                        }
+                        duplicateParts.push(duplicatePart);
+                        parameterParts[parameterName] = parameterValue;
                         return junctionAlias + "." + key + " = :" + parameterName;
-                    }).join(" AND ");
-                });
+                    }).filter(s => s).join(" AND ");
+                    duplicateParts.sort();
+                    const duplicate = duplicateParts.join("::");
+                    if (duplicates.indexOf(duplicate) !== -1) {
+                        return "";
+                    }
+                    duplicates.push(duplicate);
+                    Object.assign(parameters, parameterParts);
+                    return queryPart;
+                }).filter(s => s);
 
                 const inverseJoinColumnCondition = inverseJoinColumns.map(joinColumn => {
                     return junctionAlias + "." + joinColumn.propertyPath + " = " + inverseSideTableAlias + "." + joinColumn.referencedColumn!.propertyPath;
