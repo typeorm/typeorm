@@ -113,7 +113,7 @@ export class FindOperator<T> {
             case "isNull":
                 return `${aliasPath} IS NULL`;
             case "Regexp":
-                return `${aliasPath} REGEXP '${parameters[0]}'`;
+                return `${aliasPath} REGEXP ${parameters[0]}`;
             case "raw":
                 if (this.value instanceof Function) {
                     return this.value(aliasPath);
