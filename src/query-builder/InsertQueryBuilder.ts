@@ -360,7 +360,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 && !(this.connection.driver instanceof OracleDriver)
                 && !(this.connection.driver instanceof AbstractSqliteDriver)
                 && !(this.connection.driver instanceof MysqlDriver)
-                && !(this.connection.driver instanceof AuroraDataApiDriver))
+                && !(this.connection.driver instanceof AuroraDataApiDriver)
+                && !(this.connection.driver instanceof PostgresDriver))
                 return false;
 
             return true;

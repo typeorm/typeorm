@@ -39,7 +39,7 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
             expect(sql).to.equal("INSERT INTO user(name) OUTPUT inserted.* VALUES (@0)");
 
         } else if (connection.driver instanceof PostgresDriver) {
-            expect(sql).to.equal("INSERT INTO user(name) VALUES ($1) RETURNING *");
+            expect(sql).to.equal("INSERT INTO user(id, name) VALUES (DEFAULT, $1) RETURNING *");
         }
     })));
 
@@ -47,7 +47,7 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
 
         const user = new User();
         user.name = "Tim Merrison";
-    
+
         if (connection.driver instanceof SqlServerDriver || connection.driver instanceof PostgresDriver) {
             const returning = await connection.createQueryBuilder()
                 .insert()
@@ -55,7 +55,7 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
                 .values(user)
                 .returning(connection.driver instanceof PostgresDriver ? "*" : "inserted.*")
                 .execute();
-    
+
             returning.raw.should.be.eql([
                 { id: 1, name: user.name }
             ]);
@@ -75,7 +75,7 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
                 .returning(connection.driver instanceof PostgresDriver ? "*" : "inserted.*")
                 .disableEscaping()
                 .getSql();
-    
+
             if (connection.driver instanceof SqlServerDriver) {
                 expect(sql).to.equal("UPDATE user SET name = @0 OUTPUT inserted.* WHERE name = @1");
             } else if (connection.driver instanceof PostgresDriver) {
@@ -100,7 +100,7 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
                 .where("name = :name", { name: user.name })
                 .returning(connection.driver instanceof PostgresDriver ? "*" : "inserted.*")
                 .execute();
-    
+
             returning.raw.should.be.eql([
                 { id: 1, name: "Joe Bloggs" }
             ]);
@@ -112,7 +112,7 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
         try {
             const user = new User();
             user.name = "Tim Merrison";
-    
+
             const sql = connection.createQueryBuilder()
                 .delete()
                 .from(User)
@@ -120,7 +120,7 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
                 .returning(connection.driver instanceof PostgresDriver ? "*" : "deleted.*")
                 .disableEscaping()
                 .getSql();
-    
+
             if (connection.driver instanceof SqlServerDriver) {
                 expect(sql).to.equal("DELETE FROM user OUTPUT deleted.* WHERE name = @0");
             } else if (connection.driver instanceof PostgresDriver) {
@@ -145,7 +145,7 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
                 .where("name = :name", { name: user.name })
                 .returning(connection.driver instanceof PostgresDriver ? "*" : "deleted.*")
                 .execute();
-    
+
             returning.raw.should.be.eql([
                 { id: 1, name: user.name }
             ]);
