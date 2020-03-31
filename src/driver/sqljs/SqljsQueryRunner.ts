@@ -52,7 +52,9 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             let statement: any;
             try {
                 statement = databaseConnection.prepare(query);
-                statement.bind(parameters);
+                if (parameters) {
+                    statement.bind(parameters);
+                }
                 
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
