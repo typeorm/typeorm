@@ -2569,8 +2569,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }
 
                         const condition = this.buildWhere(where[key], relation.inverseEntityMetadata, joinAlias);
-                        if (condition)
+                        if (condition) {
                             andConditions.push(condition);
+                            parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
+                        }
                     }
                 }
             }
