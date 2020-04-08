@@ -104,6 +104,8 @@ export class FindOperator<T> {
                 return `${aliasPath} = ${parameters[0]}`;
             case "like":
                 return `${aliasPath} LIKE ${parameters[0]}`;
+            case "ilike":
+                return `${aliasPath} ILIKE ${parameters[0]}`;
             case "between":
                 return `${aliasPath} BETWEEN ${parameters[0]} AND ${parameters[1]}`;
             case "in":

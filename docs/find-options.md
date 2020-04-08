@@ -268,6 +268,22 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" LIKE '%out #%'
 ```
 
+* `ILike`
+
+```ts
+import {ILike} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    title: ILike("%out #%")
+});
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "title" ILIKE '%out #%'
+```
+
 * `Between`
 
 ```ts
