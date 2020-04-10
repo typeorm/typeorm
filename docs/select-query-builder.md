@@ -204,7 +204,7 @@ const photosSums = await getRepository(User)
     .createQueryBuilder("user")
     .select("user.id")
     .addSelect("SUM(user.photosCount)", "sum")
-    .where("user.id = :id", { id: 1 })
+    .groupBy("user.id")
     .getRawMany();
 
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
@@ -776,7 +776,7 @@ const photosSums = await getRepository(User)
     .createQueryBuilder("user")
     .select("user.id")
     .addSelect("SUM(user.photosCount)", "sum")
-    .where("user.id = :id", { id: 1 })
+    .groupBy("user.id")
     .getRawMany();
 
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
