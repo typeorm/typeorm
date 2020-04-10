@@ -534,6 +534,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${uniqueIndex.name}\``));
         }
 
+        // create column check constraints
+        const columnCheck = clonedTable.checks.find(check => !!check.columnNames && check.columnNames.length === 1 && check.columnNames[0] === column.name);
+        if (columnCheck) {
+            clonedTable.checks.splice(clonedTable.checks.indexOf(columnCheck), 1);
+            upQueries.push(this.createCheckConstraintSql(table, columnCheck));
+            downQueries.push(this.dropCheckConstraintSql(table, columnCheck));
+        }
+
         await this.executeQueries(upQueries, downQueries);
 
         clonedTable.addColumn(column);
@@ -981,28 +989,60 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new check constraint.
      */
     async createCheckConstraint(tableOrName: Table|string, checkConstraint: TableCheck): Promise<void> {
-        throw new Error(`MySql does not support check constraints.`);
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // new unique constraint may be passed without name. In this case we generate unique name manually.
+        if (!checkConstraint.name)
+            checkConstraint.name = this.connection.namingStrategy.checkConstraintName(table.name, checkConstraint.expression!);
+
+        const up = this.createCheckConstraintSql(table, checkConstraint);
+        const down = this.dropCheckConstraintSql(table, checkConstraint);
+        await this.executeQueries(up, down);
+        table.addCheckConstraint(checkConstraint);
     }
 
     /**
      * Creates a new check constraints.
      */
     async createCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
-        throw new Error(`MySql does not support check constraints.`);
+        const dbVersion = await this.getVersion();
+        if (!VersionUtils.isGreaterOrEqual(dbVersion, "8.0.16")) {
+            throw new Error(`MySql check constraints are supported since version 8.0.16`);
+        }
+
+        const promises = checkConstraints.map(checkConstraint => this.createCheckConstraint(tableOrName, checkConstraint));
+        await Promise.all(promises);
     }
 
     /**
      * Drops check constraint.
      */
     async dropCheckConstraint(tableOrName: Table|string, checkOrName: TableCheck|string): Promise<void> {
-        throw new Error(`MySql does not support check constraints.`);
+        const dbVersion = await this.getVersion();
+        if (!VersionUtils.isGreaterOrEqual(dbVersion, "8.0.16")) {
+            throw new Error(`MySql check constraints are supported since version 8.0.16`);
+        }
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const checkConstraint = checkOrName instanceof TableCheck ? checkOrName : table.checks.find(c => c.name === checkOrName);
+        if (!checkConstraint)
+            throw new Error(`Supplied check constraint was not found in table ${table.name}`);
+
+        const up = this.dropCheckConstraintSql(table, checkConstraint);
+        const down = this.createCheckConstraintSql(table, checkConstraint);
+        await this.executeQueries(up, down);
+        table.removeCheckConstraint(checkConstraint);
     }
 
     /**
      * Drops check constraints.
      */
     async dropCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
-        throw new Error(`MySql does not support check constraints.`);
+        const dbVersion = await this.getVersion();
+        if (!VersionUtils.isGreaterOrEqual(dbVersion, "8.0.16")) {
+            throw new Error(`MySql check constraints are supported since version 8.0.16`);
+        }
+        const promises = checkConstraints.map(checkConstraint => this.dropCheckConstraint(tableOrName, checkConstraint));
+        await Promise.all(promises);
     }
 
     /**
@@ -1680,6 +1720,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             sql += `, PRIMARY KEY (${columnNames})`;
         }
 
+        if (table.checks.length > 0) {
+            const checksSql = table.checks.map(check => {
+                return `CONSTRAINT \`${check.name}\` CHECK (${check.expression})`;
+            }).join(", ");
+            sql += `, ${checksSql}`;
+        }
+
         sql += `) ENGINE=${table.engine || "InnoDB"}`;
 
         return new Query(sql);
@@ -1873,6 +1920,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += ` ON UPDATE ${column.onUpdate}`;
 
         return c;
+    }
+
+    protected createCheckConstraintSql(table: Table, checkConstraint: TableCheck): Query {
+        return new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT \`${checkConstraint.name}\` CHECK (${checkConstraint.expression})`);
+    }
+
+    protected dropCheckConstraintSql(table: Table, checkOrName: TableCheck|string): Query {
+        const checkName = checkOrName instanceof TableCheck ? checkOrName.name : checkOrName;
+        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CHECK \`"${checkName}"\``);
     }
 
     protected async getVersion(): Promise<string> {

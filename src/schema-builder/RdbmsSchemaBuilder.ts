@@ -575,8 +575,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     protected async createNewChecks(): Promise<void> {
-        // Mysql does not support check constraints
-        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
+        // Mysql supports check constraints since v8.0.16
+        if (this.connection.driver instanceof AuroraDataApiDriver)
             return;
 
         for (const metadata of this.entityToSyncMetadatas) {
