@@ -58,6 +58,20 @@ export class BaseEntity {
     }
 
     /**
+     * Records the delete date of current entity.
+     */
+    softRemove(options?: SaveOptions): Promise<this> {
+        return (this.constructor as any).getRepository().softRemove(this, options);
+    }
+
+    /**
+     * Recovers a given entity in the database.
+     */
+    recover(options?: SaveOptions): Promise<this> {
+        return (this.constructor as any).getRepository().recover(this, options);
+    }
+
+    /**
      * Reloads entity data from the database.
      */
     async reload(): Promise<void> {
@@ -195,6 +209,23 @@ export class BaseEntity {
      */
     static remove<T extends BaseEntity>(this: ObjectType<T>, entityOrEntities: T|T[], options?: RemoveOptions): Promise<T|T[]> {
         return (this as any).getRepository().remove(entityOrEntities as any, options);
+    }
+
+    /**
+     * Records the delete date of all given entities.
+     */
+    static softRemove<T extends BaseEntity>(this: ObjectType<T>, entities: T[], options?: SaveOptions): Promise<T[]>;
+
+    /**
+     * Records the delete date of a given entity.
+     */
+    static softRemove<T extends BaseEntity>(this: ObjectType<T>, entity: T, options?: SaveOptions): Promise<T>;
+
+    /**
+     * Records the delete date of one or many given entities.
+     */
+    static softRemove<T extends BaseEntity>(this: ObjectType<T>, entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
+        return (this as any).getRepository().softRemove(entityOrEntities as any, options);
     }
 
     /**
