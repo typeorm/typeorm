@@ -994,8 +994,26 @@ export class EntityManager {
 
     /**
      * Finds first entity that matches given conditions.
+     * @param entityClass
+     * @param {string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|any} [idOrOptionsOrConditions]
+     * @param {FindOneOptions<Entity>} [maybeOptions]
      */
-    async findOne<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|any, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+    async findOne<Entity>(
+        entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
+        ...args: (string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|any)[]
+    ): Promise<Entity|undefined> {
+        if (args.length > 2) {
+            throw new Error("Too many arguments.");
+        }
+
+        const idOrOptionsOrConditions = args[0];
+        const maybeOptions = args[1];
+
+        if (args.length >= 1) {
+            if (idOrOptionsOrConditions === undefined || idOrOptionsOrConditions === null || idOrOptionsOrConditions === false) {
+                return;
+            }
+        }
 
         let findOptions: FindManyOptions<any>|FindOneOptions<any>|undefined = undefined;
         if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions)) {

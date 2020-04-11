@@ -96,9 +96,11 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
 
     /**
      * Finds first entity that matches given conditions and/or find options.
+     * @param {string|number|Date|ObjectID|FindOneOptions<Entity>|Partial<Entity>} [optionsOrConditions]
+     * @param {FindOneOptions<Entity>} [maybeOptions]
      */
-    findOne(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|Partial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
-        return this.manager.findOne(this.metadata.target, optionsOrConditions as any, maybeOptions as any);
+    findOne(...args: (string|number|Date|ObjectID|FindOneOptions<Entity>|Partial<Entity>|undefined)[]): Promise<Entity|undefined> {
+        return this.manager.findOne(this.metadata.target, ...args);
     }
 
     /**

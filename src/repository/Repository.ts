@@ -365,9 +365,11 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Finds first entity that matches given conditions.
+     * @param {string|number|Date|ObjectID|FindOneOptions<Entity>|FindConditions<Entity>} [optionsOrConditions]
+     * @param {FindOneOptions<Entity>} [maybeOptions]
      */
-    findOne(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|FindConditions<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
-        return this.manager.findOne(this.metadata.target as any, optionsOrConditions as any, maybeOptions);
+    findOne(...args: (string|number|Date|ObjectID|FindOneOptions<Entity>|FindConditions<Entity>|undefined)[]): Promise<Entity|undefined> {
+        return this.manager.findOne(this.metadata.target as any, ...args as any);
     }
 
     /**
