@@ -10,6 +10,7 @@
     * [`@ObjectIdColumn`](#objectidcolumn)
     * [`@CreateDateColumn`](#createdatecolumn)
     * [`@UpdateDateColumn`](#updatedatecolumn)
+    * [`@DeleteDateColumn`](#deletedatecolumn)
     * [`@VersionColumn`](#versioncolumn)
     * [`@Generated`](#generated)
 * [Relation decorators](#relation-decorators)
@@ -93,7 +94,7 @@ View entity is a class that maps to a database view.
 `expression` can be string with properly escaped columns and tables, depend on database used (postgres in example):
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: `
         SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
         FROM "post" "post"
@@ -106,7 +107,7 @@ export class PostCategory {
 or an instance of QueryBuilder
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -120,7 +121,7 @@ export class PostCategory {
 **Note:** parameter binding is not supported due to drivers limitations. Use the literal parameters instead.
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -240,7 +241,7 @@ There are two generation strategies:
 
 * `increment` - uses AUTO_INCREMENT / SERIAL / SEQUENCE (depend on database type) to generate incremental number.
 * `uuid` - generates unique `uuid` string.
-* `rowid` - only for [CockroachDB](https://www.cockroachlabs.com/docs/stable/serial.html). Value is automatically generated using the `unique_rowid()` 
+* `rowid` - only for [CockroachDB](https://www.cockroachlabs.com/docs/stable/serial.html). Value is automatically generated using the `unique_rowid()`
 function. This produces a 64-bit integer from the current timestamp and ID of the node executing the `INSERT` or `UPSERT` operation.
 > Note: property with a `rowid` generation strategy must be a `string` data type
 
@@ -305,6 +306,24 @@ export class User {
 
     @UpdateDateColumn()
     updatedDate: Date;
+
+}
+```
+
+#### `@DeleteDateColumn`
+
+Special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set.
+
+TypeORM's own soft delete functionality utilizes global scopes to only pull "non-deleted" entities from the database.
+
+If the @DeleteDateColumn is set, the default scope will be "non-deleted".
+
+```typescript
+@Entity()
+export class User {
+
+    @DeleteDateColumn()
+    deletedDate: Date;
 
 }
 ```
