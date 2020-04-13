@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 
-describe.only("other issues > mongodb entity change in subscribers should affect persistence", () => {
+describe("other issues > mongodb entity change in subscribers should affect persistence", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
