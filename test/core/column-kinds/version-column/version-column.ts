@@ -9,13 +9,11 @@ import {
 } from "../../../utils/test-utils";
 import { Post } from "./entity/Post";
 
-describe.only("column kinds > version column", () => {
+describe("column kinds > version column", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["sqlite"],
-        logging: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
