@@ -422,7 +422,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     }
 
                     // newly inserted entities always have a version equal to 1 (first version)
-                    if (column.isVersion) {
+                    // also, user-specified version must be empty
+                    if (column.isVersion && value === undefined) {
                         expression += "1";
 
                     // } else if (column.isNestedSetLeft) {

@@ -122,6 +122,7 @@
     "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
     "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
     "compile": "rimraf ./build && tsc",
+    "watch": "./node_modules/.bin/tsc -w",
     "package": "gulp package",
     "lint": "tslint -p .",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 2"
