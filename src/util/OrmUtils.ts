@@ -1,5 +1,4 @@
-import { ObjectLiteral } from "../common/ObjectLiteral";
-import { URL } from "url";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 export class OrmUtils {
 
@@ -157,6 +156,17 @@ export class OrmUtils {
         return arr1.every(element => {
             return arr2.indexOf(element) !== -1;
         });
+    }
+
+    /**
+     * Gets deeper value of object.
+     */
+    static deepValue(obj: ObjectLiteral, path: string) {
+        const segments = path.split(".");
+        for (let i = 0, len = segments.length; i < len; i++) {
+            obj = obj[segments[i]];
+        }
+        return obj;
     }
 
     // -------------------------------------------------------------------------
