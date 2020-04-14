@@ -62,9 +62,17 @@ export class RawSqlResultsToEntityTransformer {
         } else {
             keys.push(...alias.metadata.primaryColumns.map(column => DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName)));
         }
+
+        const comparable = (o: { [key: string]: any }): object => (typeof o !== "object" || !o) ? o :
+            Object.keys(o).sort().reduce((c: { [key: string]: any }, key: string) => (c[key] = comparable(o[key]), c), {});
+
         rawResults.forEach(rawResult => {
             const id = keys.map(key => {
                 const keyValue = rawResult[key];
+
+                if (typeof keyValue === "object") {
+                    return JSON.stringify(comparable(keyValue));
+                }
 
                 if (Buffer.isBuffer(keyValue)) {
                     return keyValue.toString("hex");
