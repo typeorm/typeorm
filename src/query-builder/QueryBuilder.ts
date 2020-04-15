@@ -568,7 +568,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Replaces all entity's propertyName to name in the given statement.
      */
-    protected replacePropertyNames(statement: string) {
+    protected replacePropertyNames(statement: string): string {
         this.expressionMap.aliases.forEach(alias => {
             if (!alias.hasMetadata) return;
             const replaceAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? alias.name + "\\." : "";
@@ -763,7 +763,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Computes given where argument - transforms to a where string all forms it can take.
      */
-    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[]) {
+    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[]): string {
         if (typeof where === "string")
             return where;
 
@@ -851,7 +851,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates a query builder used to execute sql queries inside this query builder.
      */
-    protected obtainQueryRunner() {
+    protected obtainQueryRunner(): QueryRunner {
         return this.queryRunner || this.connection.createQueryRunner("master");
     }
 

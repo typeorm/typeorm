@@ -715,7 +715,7 @@ export class EntityMetadata {
     /**
      * Creates a property paths for a given entity.
      */
-    static createPropertyPath(metadata: EntityMetadata, entity: ObjectLiteral, prefix: string = "") {
+    static createPropertyPath(metadata: EntityMetadata, entity: ObjectLiteral, prefix: string = ""): string[] {
         const paths: string[] = [];
         Object.keys(entity).forEach(key => {
 
@@ -818,7 +818,7 @@ export class EntityMetadata {
     /**
      * Registers a new column in the entity and recomputes all depend properties.
      */
-    registerColumn(column: ColumnMetadata) {
+    registerColumn(column: ColumnMetadata): void {
         if (this.ownColumns.indexOf(column) !== -1)
             return;
 
