@@ -5,6 +5,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import { PostWithoutDeleteDateColumn } from "./entity/PostWithoutDeleteDateColumn";
 import { MissingDeleteDateColumnError } from "../../../../src/error/MissingDeleteDateColumnError";
+import { PromiseUtils } from "../../../../src";
 
 describe("entity > soft-remove", () => {
 
@@ -15,7 +16,7 @@ describe("entity > soft-remove", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should perform soft removal and recovery correctly", () => Promise.all(connections.map(async connection => {
+    it("should perform soft removal and recovery correctly", () => PromiseUtils.runInSequence(connections, async connection => {
         Post.useConnection(connection); // change connection each time because of AR specifics
 
         const postRepository = connection.getRepository(Post);
@@ -68,9 +69,9 @@ describe("entity > soft-remove", () => {
         expect(recoveredPost2!.deletedAt).to.equals(null);
         expect(recoveredPost2!.name).to.equals("post#2");
 
-    })));
+    }));
 
-    it("should throw error when delete date column is missing", () => Promise.all(connections.map(async connection => {
+    it("should throw error when delete date column is missing", () => PromiseUtils.runInSequence(connections, async connection => {
         PostWithoutDeleteDateColumn.useConnection(connection); // change connection each time because of AR specifics
 
         const postRepository = connection.getRepository(PostWithoutDeleteDateColumn);
@@ -101,5 +102,5 @@ describe("entity > soft-remove", () => {
         }
         expect(error2).to.be.an.instanceof(MissingDeleteDateColumnError);
 
-    })));
+    }));
 });
