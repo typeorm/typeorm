@@ -36,6 +36,7 @@ import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -586,6 +587,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         this.join("LEFT", entityOrProperty, alias, condition, parameters, mapToProperty, false);
         return this;
     }
+
+    /**
+    * Recursively leftJoinAndSelect's entity's eager relations.
+    */
+    joinEagerRelations(): this {
+        FindOptionsUtils.joinEagerRelations(this, this.alias, this.expressionMap.mainAlias!.metadata);
+        return this;
+    };
 
     /**
      */
