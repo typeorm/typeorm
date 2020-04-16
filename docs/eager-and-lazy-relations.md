@@ -60,7 +60,7 @@ const questions = await questionRepository.find();
 ```
 
 Eager relations only work when you use `find*` methods.
-If you use `QueryBuilder` eager relations are disabled and have to use `leftJoinAndSelect` to load the relation.
+If you use `QueryBuilder` eager relations are disabled and have to use `leftJoinAndSelect` or `joinEagerRelations` to load the relation.
 Eager relations can only be used on one side of the relationship,
 using `eager: true` on both sides of relationship is disallowed.
 
