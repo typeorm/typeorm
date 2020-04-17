@@ -218,23 +218,23 @@ export class SapDriver implements Driver {
             ...this.options.extra
         };
 
-        if (this.options.database) dbParams.databaseName = this.options.database;
-        if (this.options.encrypt) dbParams.encrypt = this.options.encrypt;
-        if (this.options.validateCertificate) dbParams.validateCertificate = this.options.validateCertificate;
-        if (this.options.key) dbParams.key = this.options.key;
-        if (this.options.cert) dbParams.cert = this.options.cert;
-        if (this.options.ca) dbParams.ca = this.options.ca;
+        if (typeof this.options.database !== "undefined") dbParams.databaseName = this.options.database;
+        if (typeof this.options.encrypt !== "undefined") dbParams.encrypt = this.options.encrypt;
+        if (typeof this.options.sslValidateCertificate !== "undefined") dbParams.sslValidateCertificate = this.options.sslValidateCertificate;
+        if (typeof this.options.key !== "undefined") dbParams.key = this.options.key;
+        if (typeof this.options.cert !== "undefined") dbParams.cert = this.options.cert;
+        if (typeof this.options.ca !== "undefined") dbParams.ca = this.options.ca;
 
         // pool options
         const options: any = {
-            min: this.options.pool && this.options.pool.min ? this.options.pool.min : 1,
-            max: this.options.pool && this.options.pool.max ? this.options.pool.max : 1,
+            min: typeof this.options.pool !== "undefined" && typeof this.options.pool.min !== "undefined" ? this.options.pool.min : 1,
+            max: typeof this.options.pool !== "undefined" && typeof this.options.pool !== "undefined" ? this.options.pool.max : 1,
         };
 
-        if (this.options.pool && this.options.pool.checkInterval) options.checkInterval = this.options.pool.checkInterval;
-        if (this.options.pool && this.options.pool.maxWaitingRequests) options.maxWaitingRequests = this.options.pool.maxWaitingRequests;
-        if (this.options.pool && this.options.pool.requestTimeout) options.requestTimeout = this.options.pool.requestTimeout;
-        if (this.options.pool && this.options.pool.idleTimeout) options.idleTimeout = this.options.pool.idleTimeout;
+        if (typeof this.options.pool !== "undefined" && this.options.pool.checkInterval) options.checkInterval = this.options.pool.checkInterval;
+        if (typeof this.options.pool !== "undefined" && this.options.pool.maxWaitingRequests) options.maxWaitingRequests = this.options.pool.maxWaitingRequests;
+        if (typeof this.options.pool !== "undefined" && this.options.pool.requestTimeout) options.requestTimeout = this.options.pool.requestTimeout;
+        if (typeof this.options.pool !== "undefined" && this.options.pool.idleTimeout) options.idleTimeout = this.options.pool.idleTimeout;
 
         const { logger } = this.connection;
 
