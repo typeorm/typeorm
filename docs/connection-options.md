@@ -34,23 +34,18 @@ If connection name is not given then it will be called "default".
 * `extra` - Extra connection options to be passed to the underlying driver. 
 Use it if you want to pass extra settings to underlying database driver.
 
-* `entities` - Entities to be loaded and used for this connection.
-Accepts both entity classes and directories paths to load from.
+* `entities` - Entities, or Entity Schemas, to be loaded and used for this connection.
+Accepts both entity classes, entity schema classes, and directories paths to load from.
 Directories support glob patterns.
 Example: `entities: [Post, Category, "entity/*.js", "modules/**/entity/*.js"]`.
-Learn more about [Entities](./entities.md).
+Learn more about [Entities](./entities.md). 
+Learn more about [Entity Schemas](separating-entity-definition.md).
 
 * `subscribers` - Subscribers to be loaded and used for this connection.
 Accepts both entity classes and directories to load from.
 Directories support glob patterns.
 Example: `subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`.
 Learn more about [Subscribers](listeners-and-subscribers.md).
-
-* `entitySchemas` - Entity schemas to be loaded and used for this connection.
-Accepts both entity schema classes and directories to load from.
-Directories support glob patterns.
-Example: `entitySchemas: [PostSchema, CategorySchema, "entity-schema/*.json", "modules/**/entity-schema/*.json"]`.
-Learn more about [Entity Schemas](separating-entity-definition.md).
 
 * `migrations` - Migrations to be loaded and used for this connection.
 Accepts both migration classes and directories to load from.
