@@ -472,12 +472,27 @@ export function createLiteralEntityManager<Entity>({ connection, queryRunner }: 
             // console.log("results", results);
             // return results;
         },
-
+        /**
+         * @param entityClass
+         * @param {string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOptions<Entity> | any} [idOrOptionsOrConditions]
+         * @param {FindOptions<Entity>} [maybeOptions]
+         */
         findOne<Entity>(
             entityClass: EntityTarget<Entity>,
-            idOrOptionsOrConditions?: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOptions<Entity> | any,
-            maybeOptions?: FindOptions<Entity>
+            ...args: (string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOptions<Entity> | any)[]
         ): Promise<Entity | undefined> {
+            if (args.length > 2) {
+                throw new Error("Too many arguments.");
+            }
+
+            const idOrOptionsOrConditions = args[0];
+            const maybeOptions = args[1];
+
+            if (args.length >= 1) {
+                if (idOrOptionsOrConditions === undefined || idOrOptionsOrConditions === null || idOrOptionsOrConditions === false) {
+                    return Promise.resolve(undefined);
+                }
+            }
 
             let findOptions: FindOptions<any> | undefined = undefined;
             if (FindOptionsUtils.isFindOptions(idOrOptionsOrConditions)) {

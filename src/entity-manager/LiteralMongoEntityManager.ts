@@ -300,9 +300,27 @@ export function createLiteralMongoEntityManager<Entity>({ connection }: {
             return await cursor.toArray();
         },
 
+        /**
+         * @param entityClassOrName
+         * @param {string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOptions<Entity> | FindOptionsWhere<Entity>} [optionsOrConditions]
+         * @param {FindOptions<Entity>} [maybeOptions]
+         */
         async findOne<Entity>(entityClassOrName: EntityTarget<Entity>,
-                              optionsOrConditions?: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOptions<Entity> | FindOptionsWhere<Entity>,
-                              maybeOptions?: FindOptions<Entity>): Promise<Entity | undefined> {
+                             ...args: (string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOptions<Entity> | FindOptionsWhere<Entity> | undefined)[]
+                             ): Promise<Entity | undefined> {
+            if (args.length > 2) {
+                throw new Error("Too many arguments.");
+            }
+
+            const optionsOrConditions = args[0];
+            const maybeOptions = args[1];
+
+            if (args.length >= 1) {
+                if (optionsOrConditions === undefined || optionsOrConditions === null || optionsOrConditions === false) {
+                    return Promise.resolve(undefined);
+                }
+            }
+
             const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
             const id = (optionsOrConditions instanceof objectIdInstance) || typeof optionsOrConditions === "string" ? optionsOrConditions : undefined;
             const findOneOptionsOrConditions = (id ? maybeOptions : optionsOrConditions) as any;

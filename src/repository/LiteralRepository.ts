@@ -123,8 +123,12 @@ export function createLiteralRepository<Entity>({ manager, target, queryRunner }
             return this.manager.findByIds(this.getMetadata().target as any, ids, optionsOrConditions as any);
         },
 
-        findOne(optionsOrConditions?: string | number | Date | ObjectID | FindOptions<Entity> | FindOptionsWhere<Entity>, maybeOptions?: FindOptions<Entity>): Promise<Entity | undefined> {
-            return this.manager.findOne(this.getMetadata().target as any, optionsOrConditions as any, maybeOptions);
+        /**
+         * @param {string | number | Date | ObjectID | FindOptions<Entity> | FindOptionsWhere<Entity>} [optionsOrConditions]
+         * @param {FindOptions<Entity>} [maybeOptions]
+         */
+        findOne(...args: (string | number | Date | ObjectID | FindOptions<Entity> | FindOptionsWhere<Entity> | undefined)[]): Promise<Entity | undefined> {
+            return this.manager.findOne(this.getMetadata().target as any, ...args);
         },
 
         findOneOrFail(optionsOrConditions?: string | number | Date | ObjectID | FindOptions<Entity> | FindOptionsWhere<Entity>, maybeOptions?: FindOptions<Entity>): Promise<Entity> {

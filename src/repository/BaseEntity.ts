@@ -320,9 +320,11 @@ export class BaseEntity {
 
     /**
      * Finds first entity that matches given conditions.
+     * @param {string|number|Date|ObjectID|FindOptions<T>|FindOptionsWhere<T>} [optionsOrConditions]
+     * @param {FindOptions<T>} [maybeOptions]
      */
-    static findOne<T extends BaseEntity>(this: ObjectType<T>, optionsOrConditions?: string|number|Date|ObjectID|FindOptions<T>|FindOptionsWhere<T>, maybeOptions?: FindOptions<T>): Promise<T|undefined> {
-        return (this as any).getRepository().findOne(optionsOrConditions as any, maybeOptions);
+    static findOne<T extends BaseEntity>(this: ObjectType<T>, ...args: (string|number|Date|ObjectID|FindOptions<T>|FindOptionsWhere<T>|undefined)[]): Promise<T|undefined> {
+        return (this as any).getRepository().findOne(...args);
     }
 
     /**

@@ -70,8 +70,12 @@ export function createLiteralMongoRepository<Entity>({ manager, target, queryRun
             return this.manager.findByIds(this.getMetadata().target, ids, optionsOrConditions);
         },
 
-        findOne(optionsOrConditions?: string | number | Date | ObjectID | FindOptions<Entity> | FindOptionsWhere<Entity>, maybeOptions?: FindOptions<Entity>): Promise<Entity | undefined> {
-            return this.manager.findOne(this.getMetadata().target, optionsOrConditions as any, maybeOptions as any);
+        /**
+         * @param {string | number | Date | ObjectID | FindOptions<Entity> | FindOptionsWhere<Entity>} [optionsOrConditions]
+         * @param {FindOptions<Entity>} [maybeOptions]
+         */
+        findOne(...args: (string | number | Date | ObjectID | FindOptions<Entity> | FindOptionsWhere<Entity> | undefined)[]): Promise<Entity | undefined> {
+            return this.manager.findOne(this.getMetadata().target, ...args);
         },
 
         createCursor<T = any>(query?: ObjectLiteral): Cursor<T> {
