@@ -18,7 +18,6 @@ import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver"
 import {AbstractSqliteDriver} from "../../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {OracleDriver} from "../../../../src/driver/oracle/OracleDriver";
 import {LockNotSupportedOnGivenDriverError} from "../../../../src/error/LockNotSupportedOnGivenDriverError";
-import { AuroraDataApiPostgresDriver } from "../../../../src/driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 describe("query builder > locking", () => {
 
@@ -133,7 +132,7 @@ describe("query builder > locking", () => {
             .where("post.id = :id", { id: 1 })
             .getSql();
 
-        if (connection.driver instanceof MysqlDriver || connection.driver instanceof PostgresDriver || connection.driver instanceof AuroraDataApiPostgresDriver || connection.driver instanceof OracleDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof PostgresDriver || connection.driver instanceof OracleDriver) {
             expect(sql.indexOf("FOR UPDATE") !== -1).to.be.true;
 
         } else if (connection.driver instanceof SqlServerDriver) {

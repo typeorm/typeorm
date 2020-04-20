@@ -19,7 +19,6 @@ import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import {AuroraDataApiPostgresDriver} from "../driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -264,7 +263,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
       if (statement && Array.isArray(statement.overwrite)) {
         if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = VALUES(${column})`).join(", ");
-        } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
+        } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = EXCLUDED.${column}`).join(", ");
         }
       }
@@ -315,7 +314,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 query += ` DEFAULT VALUES`;
             }
         }
-        if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
+        if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
           query += `${this.expressionMap.onIgnore ? " ON CONFLICT DO NOTHING " : ""}`;
           query += `${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
           if (this.expressionMap.onUpdate) {
@@ -332,7 +331,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         // add RETURNING expression
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
             query += ` RETURNING ${returningExpression}`;
         }
 
@@ -494,7 +493,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                             } else {
                                 expression += `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount)})`;
                             }
-                        } else if ((this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver) && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                        } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             if (column.srid != null) {
                               expression += `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)}), ${column.srid})::${column.type}`;
                             } else {

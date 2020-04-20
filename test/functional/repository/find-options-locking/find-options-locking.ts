@@ -18,7 +18,6 @@ import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver"
 import {AbstractSqliteDriver} from "../../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {OracleDriver} from "../../../../src/driver/oracle/OracleDriver";
 import {LockNotSupportedOnGivenDriverError} from "../../../../src/error/LockNotSupportedOnGivenDriverError";
-import { AuroraDataApiPostgresDriver } from "../../../../src/driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 describe("repository > find options > locking", () => {
 
@@ -86,7 +85,7 @@ describe("repository > find options > locking", () => {
         if (connection.driver instanceof MysqlDriver) {
             expect(executedSql[0].indexOf("LOCK IN SHARE MODE") !== -1).to.be.true;
 
-        } else if (connection.driver instanceof PostgresDriver || connection.driver instanceof AuroraDataApiPostgresDriver) {
+        } else if (connection.driver instanceof PostgresDriver) {
             expect(executedSql[0].indexOf("FOR SHARE") !== -1).to.be.true;
 
         } else if (connection.driver instanceof OracleDriver) {
@@ -116,7 +115,7 @@ describe("repository > find options > locking", () => {
                 .findOne(1, {lock: {mode: "pessimistic_write"}});
         });
 
-        if (connection.driver instanceof MysqlDriver || connection.driver instanceof PostgresDriver || connection.driver instanceof AuroraDataApiPostgresDriver || connection.driver instanceof OracleDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof PostgresDriver || connection.driver instanceof OracleDriver) {
             expect(executedSql[0].indexOf("FOR UPDATE") !== -1).to.be.true;
 
         } else if (connection.driver instanceof SqlServerDriver) {

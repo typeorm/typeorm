@@ -36,7 +36,6 @@ import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import {AuroraDataApiPostgresDriver} from "../driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1442,7 +1441,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const {driver} = this.connection;
 
         let select = "SELECT ";
-        if ((driver instanceof PostgresDriver || driver instanceof AuroraDataApiPostgresDriver) && selectDistinctOn.length > 0) {
+        if (driver instanceof PostgresDriver && selectDistinctOn.length > 0) {
             const selectDistinctOnMap = selectDistinctOn.map(
               (on) => this.replacePropertyNames(on)
             ).join(", ");
@@ -1651,7 +1650,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver) {
                     return " LOCK IN SHARE MODE";
 
-                } else if (driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver ) {
+                } else if (driver instanceof PostgresDriver) {
                     return " FOR SHARE";
 
                 } else if (driver instanceof OracleDriver) {
@@ -1664,7 +1663,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     throw new LockNotSupportedOnGivenDriverError();
                 }
             case "pessimistic_write":
-                if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver || driver instanceof PostgresDriver || driver instanceof AuroraDataApiPostgresDriver || driver instanceof OracleDriver) {
+                if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver || driver instanceof PostgresDriver || driver instanceof OracleDriver) {
                     return " FOR UPDATE";
 
                 } else if (driver instanceof SqlServerDriver) {
@@ -1728,7 +1727,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     selectionPath = `${asText}(${selectionPath})`;
                 }
 
-                if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AuroraDataApiPostgresDriver )
+                if (this.connection.driver instanceof PostgresDriver)
                     // cast to JSON to trigger parsing in the driver
                     selectionPath = `ST_AsGeoJSON(${selectionPath})::json`;
 

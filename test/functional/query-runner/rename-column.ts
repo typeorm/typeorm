@@ -9,7 +9,6 @@ import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import { AuroraDataApiPostgresDriver } from "../../../src/driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 describe("query runner > rename column", () => {
 
@@ -124,7 +123,7 @@ describe("query runner > rename column", () => {
             await queryRunner.createDatabase("testDB", true);
             await queryRunner.createSchema("testDB.testSchema", true);
 
-        } else if (connection.driver instanceof PostgresDriver || connection.driver instanceof AuroraDataApiPostgresDriver) {
+        } else if (connection.driver instanceof PostgresDriver) {
             questionTableName = "testSchema.question";
             categoryTableName = "testSchema.category";
             await queryRunner.createSchema("testSchema", true);

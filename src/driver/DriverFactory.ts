@@ -15,7 +15,7 @@ import {AuroraDataApiDriver} from "./aurora-data-api/AuroraDataApiDriver";
 import {Driver} from "./Driver";
 import {Connection} from "../connection/Connection";
 import {SapDriver} from "./sap/SapDriver";
-import {AuroraDataApiPostgresDriver} from "./aurora-data-api-pg/AuroraDataApiPostgresDriver";
+import {AuroraDataApiPostgresDriver} from "./postgres/PostgresDriver";
 
 /**
  * Helps to create drivers.

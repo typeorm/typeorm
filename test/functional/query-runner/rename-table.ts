@@ -8,7 +8,6 @@ import {Table} from "../../../src/schema-builder/table/Table";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import { AuroraDataApiPostgresDriver } from "../../../src/driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
 
 describe("query runner > rename table", () => {
 
@@ -106,7 +105,7 @@ describe("query runner > rename table", () => {
             await queryRunner.createDatabase("testDB", true);
             await queryRunner.createSchema("testDB.testSchema", true);
 
-        } else if (connection.driver instanceof PostgresDriver || connection.driver instanceof SapDriver || connection.driver instanceof AuroraDataApiPostgresDriver) {
+        } else if (connection.driver instanceof PostgresDriver || connection.driver instanceof SapDriver) {
             questionTableName = "testSchema.question";
             renamedQuestionTableName = "testSchema.renamedQuestion";
             categoryTableName = "testSchema.category";
