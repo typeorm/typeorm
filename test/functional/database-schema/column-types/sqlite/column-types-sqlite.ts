@@ -42,7 +42,7 @@ describe("database schema > column types > sqlite", () => {
         post.nchar = "This is nchar";
         post.nativeCharacter = "This is native character";
         post.nvarchar = "This is nvarchar";
-        post.blob = new Buffer("This is blob");
+        post.blob = Buffer.from("This is blob");
         post.clob = "This is clob";
         post.text = "This is text";
         post.real = 10.5;
@@ -150,7 +150,7 @@ describe("database schema > column types > sqlite", () => {
         post.id = 1;
         post.name = "Post";
         post.boolean = true;
-        post.blob = new Buffer("A");
+        post.blob = Buffer.from("A");
         post.datetime = new Date();
         post.datetime.setMilliseconds(0);
         await postRepository.save(post);

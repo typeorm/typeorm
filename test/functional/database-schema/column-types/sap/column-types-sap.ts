@@ -54,12 +54,12 @@ describe("database schema > column types > sap", () => {
         post.timestamp.setMilliseconds(0);
         post.seconddate = new Date();
         post.seconddate.setMilliseconds(0);
-        post.blob = new Buffer("This is blob");
+        post.blob = Buffer.from("This is blob");
         post.clob = "This is clob";
         post.nclob = "This is nclob";
         post.boolean = true;
         // post.array = ["A", "B", "C"]; // TODO
-        post.varbinary = new Buffer("This is varbinary");
+        post.varbinary = Buffer.from("This is varbinary");
         post.simpleArray = ["A", "B", "C"];
         await postRepository.save(post);
 
@@ -187,7 +187,7 @@ describe("database schema > column types > sap", () => {
         post.id = 1;
         post.name = "Post";
         post.boolean = true;
-        post.blob = new Buffer("This is blob");
+        post.blob = Buffer.from("This is blob");
         post.timestamp = new Date();
         await postRepository.save(post);
 
