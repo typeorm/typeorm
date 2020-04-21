@@ -1372,6 +1372,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.precision = parseInt(dbColumn["DATETIME_PRECISION"]);
                     }
 
+                    if (tableColumn.type === "geomcollection" && !isMariaDb && VersionUtils.isGreaterOrEqual(dbVersion, "8.0.0")) {
+                        // MySQL 8 GeomCollection and GeometryCollection are synonymous, with GeomCollection the preferred type name.
+                        // See https://dev.mysql.com/doc/refman/8.0/en/gis-class-geometrycollection.html
+                        tableColumn.type = "geometrycollection";
+                    }
+
                     return tableColumn;
                 });
 
