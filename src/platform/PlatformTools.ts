@@ -113,9 +113,6 @@ export class PlatformTools {
                 /**
                 * other modules
                 */
-                case "mkdirp":
-                    return require("mkdirp");
-
                 case "path":
                     return require("path");
 

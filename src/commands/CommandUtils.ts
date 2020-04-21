@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-const mkdirp = require("mkdirp");
+import * as util from "util";
 
 /**
  * Command line utils functions.
@@ -11,7 +11,8 @@ export class CommandUtils {
      * Creates directories recursively.
      */
     static createDirectories(directory: string) {
-        return mkdirp(directory);
+        const mkdir = util.promisify(fs.mkdir);
+        return mkdir(directory, { recursive: true });
     }
 
     /**

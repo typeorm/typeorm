@@ -1,3 +1,5 @@
+import * as fs from "fs";
+import * as util from "util";
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
 import { SqliteQueryRunner } from "./SqliteQueryRunner";
 import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
@@ -133,9 +135,9 @@ export class SqliteDriver extends AbstractSqliteDriver {
      * Auto creates database directory if it does not exist.
      */
     protected createDatabaseDirectory(fullPath: string): Promise<void> {
-        const mkdirp = PlatformTools.load("mkdirp");
+        const mkdir = util.promisify(fs.mkdir);
         const path = PlatformTools.load("path");
-        return mkdirp(path.dirname(fullPath));
+        return mkdir(path.dirname(fullPath), { recursive: true });
     }
 
 }

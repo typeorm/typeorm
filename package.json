@@ -51,7 +51,7 @@
     "@types/chai-as-promised": "7.1.0",
     "@types/debug": "4.1.2",
     "@types/mocha": "^5.2.6",
-    "@types/node": "^9.6.0",
+    "@types/node": "^10.17.20",
     "@types/rimraf": "^2.0.2",
     "@types/sha.js": "^2.4.0",
     "@types/sinon": "^7.0.8",
@@ -103,13 +103,15 @@
     "dotenv": "^6.2.0",
     "glob": "^7.1.2",
     "js-yaml": "^3.13.1",
-    "mkdirp": "^1.0.3",
     "reflect-metadata": "^0.1.13",
     "sha.js": "^2.4.11",
     "tslib": "^1.9.0",
     "xml2js": "^0.4.17",
     "yargonaut": "^1.1.2",
     "yargs": "^13.2.1"
+  },
+  "engines": {
+    "node": ">=10.12.0"
   },
   "lint-staged": {
     "*.ts": [
