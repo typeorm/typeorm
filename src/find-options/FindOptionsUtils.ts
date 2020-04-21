@@ -176,11 +176,11 @@ export class FindOptionsUtils {
         if (options.lock) {
             if (options.lock.mode === "optimistic") {
                 qb.setLock(options.lock.mode, options.lock.version as any);
-            } else if (options.lock.mode === "pessimistic_read" || options.lock.mode === "pessimistic_write" || options.lock.mode === "dirty_read") {
+            } else if (options.lock.mode === "pessimistic_read" || options.lock.mode === "pessimistic_write" || options.lock.mode === "dirty_read" || options.lock.mode === "pessimistic_partial_write" || options.lock.mode === "pessimistic_write_or_fail") {
                 qb.setLock(options.lock.mode);
             }
         }
-        
+
         if (options.withDeleted) {
             qb.withDeleted();
         }

@@ -40,11 +40,11 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Enables or disables query result caching.
      */
-    lock?: { mode: "optimistic", version: number|Date } | { mode: "pessimistic_read"|"pessimistic_write"|"dirty_read" };
+    lock?: { mode: "optimistic", version: number|Date } | { mode: "pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail" };
 
     /**
      * Indicates if soft-deleted rows should be included in entity result.
-     */    
+     */
     withDeleted?: boolean;
 
     /**
