@@ -1,10 +1,15 @@
 import {createConnection} from "../index";
 import {Connection} from "../connection/Connection";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
-import {highlight} from "cli-highlight";
 import * as yargs from "yargs";
 
 const chalk = require("chalk");
+
+let highlight = (s: string) => s;
+try {
+    highlight = require("cli-highlight").highlight;
+} catch (e) {}
+
 
 /**
  * Shows sql to be executed by schema:sync command.
