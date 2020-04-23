@@ -220,7 +220,7 @@ export class SapDriver implements Driver {
 
         if (this.options.database) dbParams.databaseName = this.options.database;
         if (this.options.encrypt) dbParams.encrypt = this.options.encrypt;
-        if (this.options.validateCertificate) dbParams.validateCertificate = this.options.validateCertificate;
+        if (this.options.sslValidateCertificate) dbParams.validateCertificate = this.options.sslValidateCertificate;
         if (this.options.key) dbParams.key = this.options.key;
         if (this.options.cert) dbParams.cert = this.options.cert;
         if (this.options.ca) dbParams.ca = this.options.ca;
@@ -573,15 +573,15 @@ export class SapDriver implements Driver {
 
             // console.log("table:", columnMetadata.entityMetadata.tableName);
             // console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            // console.log("length:", tableColumn.length, columnMetadata.length);
+            // console.log("type:", tableColumn.type, _this.normalizeType(columnMetadata));
+            // console.log("length:", tableColumn.length, _this.getColumnLength(columnMetadata));
             // console.log("width:", tableColumn.width, columnMetadata.width);
             // console.log("precision:", tableColumn.precision, columnMetadata.precision);
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
             // console.log("default:", tableColumn.default, columnMetadata.default);
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            // console.log("isUnique:", tableColumn.isUnique, _this.normalizeIsUnique(columnMetadata));
             // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
             // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
             // console.log("==========================================");
@@ -589,9 +589,9 @@ export class SapDriver implements Driver {
             const normalizeDefault = this.normalizeDefault(columnMetadata);
             const hanaNullComapatibleDefault = normalizeDefault == null ? undefined : normalizeDefault;
 
-            return  tableColumn.name !== columnMetadata.databaseName
+            return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadata.length
+                || columnMetadata.length && tableColumn.length !== this.getColumnLength(columnMetadata)
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
@@ -599,7 +599,7 @@ export class SapDriver implements Driver {
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || tableColumn.isGenerated !== columnMetadata.isGenerated;
+                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
         });
     }
 
