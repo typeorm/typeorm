@@ -456,7 +456,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                             } else {
                               expression = `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)})::${column.type}`;
                             }
-                        } else {
+						} else if (this.connection.driver instanceof SqlServerDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+							expression = column.type + "::STGeomFromText(" + this.connection.driver.createParameter(paramName, parametersCount) + ", " + (column.srid || "0") + ")";
+						} else {
                             expression = this.connection.driver.createParameter(paramName, parametersCount);
                         }
                         updateColumnAndValues.push(this.escape(column.databaseName) + " = " + expression);
