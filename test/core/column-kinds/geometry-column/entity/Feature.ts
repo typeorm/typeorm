@@ -9,7 +9,7 @@ export class FeatureWithoutSRID {
     @Column()
     name: string;
 
-    @Column({ type: 'geometry' })
+    @Column({ type: "geometry" })
     shape: string;
 
 }
@@ -23,7 +23,7 @@ export class FeatureWithSRID {
     @Column()
     name: string;
 
-    @Column({ type: 'geometry', srid: 2326 })
+    @Column({ type: "geometry", srid: 2326 })
     shape: string;
 
 }
