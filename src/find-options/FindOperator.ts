@@ -108,7 +108,7 @@ export class FindOperator<T> {
             case "between":
                 return `${aliasPath} BETWEEN ${parameters[0]} AND ${parameters[1]}`;
             case "in":
-                if (connection.driver instanceof OracleDriver && parameters.length == 0) {
+                if (connection.driver instanceof OracleDriver && parameters.length === 0) {
                     return `${aliasPath} IN (null)`;
                 }                
                 return `${aliasPath} IN (${parameters.join(", ")})`;
