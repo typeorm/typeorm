@@ -54,6 +54,8 @@ export class EntitySchemaTransformer {
                     mode = "createDate";
                 if (column.updateDate)
                     mode = "updateDate";
+                if (column.deleteDate)
+                    mode = "deleteDate";
                 if (column.version)
                     mode = "version";
                 if (column.treeChildrenCount)
@@ -192,6 +194,7 @@ export class EntitySchemaTransformer {
                         unique: index.unique === true ? true : false,
                         spatial: index.spatial === true ? true : false,
                         fulltext: index.fulltext === true ? true : false,
+                        parser: index.parser,
                         synchronize: index.synchronize === false ? false : true,
                         where: index.where,
                         sparse: index.sparse,

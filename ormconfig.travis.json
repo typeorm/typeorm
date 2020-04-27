@@ -71,6 +71,17 @@
     "database": "defaultdb"
   },
   {
+    "skip": true,
+    "name": "sap",
+    "type": "sap",
+    "host": "localhost",
+    "port": 39015,
+    "username": "SYSTEM",
+    "password": "HXEHana1",
+    "database": "HXE",
+    "logging": false
+  },
+  {
     "skip": false,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",

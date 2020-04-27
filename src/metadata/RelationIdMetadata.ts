@@ -76,7 +76,7 @@ export class RelationIdMetadata {
     setValue(entity: ObjectLiteral) {
         const inverseEntity = this.relation.getEntityValue(entity);
 
-        if (inverseEntity instanceof Array) {
+        if (Array.isArray(inverseEntity)) {
             entity[this.propertyName] = inverseEntity.map(item => {
                return this.relation.inverseEntityMetadata.getEntityIdMixedMap(item);
             }).filter(item => item !== null && item !== undefined);

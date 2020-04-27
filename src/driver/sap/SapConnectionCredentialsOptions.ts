@@ -28,4 +28,29 @@ export interface SapConnectionCredentialsOptions {
      */
     readonly database?: string;
 
+    /**
+     * Encrypt database connection
+     */
+    readonly encrypt?: boolean;
+
+    /**
+     * Validate database certificate
+     */
+    readonly validateCertificate?: boolean;
+
+    /**
+     * Key for encrypted connection
+     */
+    readonly key?: string;
+
+    /**
+     * Cert for encrypted connection
+     */
+    readonly cert?: string;
+
+    /**
+     * Ca for encrypted connection
+     */
+    readonly ca?: string;
+
 }

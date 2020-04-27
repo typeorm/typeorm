@@ -11,7 +11,7 @@ describe("github issues > #1308 Raw Postgresql Update query result is always an 
       (connections = await createTestingConnections({
         entities: [new EntitySchema<Author>(AuthorSchema), new EntitySchema<Post>(PostSchema)],
         dropSchema: true,
-        enabledDrivers: ["postgres"],
+        enabledDrivers: ["postgres", "mysql", "mariadb"],
       }))
   );
   beforeEach(() => reloadTestingDatabases(connections));

@@ -25,6 +25,11 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     updateDate?: boolean;
 
     /**
+     * Indicates if this column is a delete date column.
+     */
+    deleteDate?: boolean;
+
+    /**
      * Indicates if this column is a version column.
      */
     version?: boolean;

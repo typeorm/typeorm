@@ -258,6 +258,11 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
          * The versions are available from require('tedious').TDS_VERSION. (default: 7_4).
          */
         readonly tdsVersion?: string;
+
+        /**
+         * A boolean, that when true will abort a query when an overflow or divide-by-zero error occurs during query execution.
+         */
+        readonly enableArithAbort?: boolean
     };
 
     /**

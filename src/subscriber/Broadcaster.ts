@@ -287,7 +287,7 @@ export class Broadcaster {
 
                     const value = relation.getEntityValue(entity);
                     if (value instanceof Object)
-                        this.broadcastLoadEventsForAll(result, relation.inverseEntityMetadata, value instanceof Array ? value : [value]);
+                        this.broadcastLoadEventsForAll(result, relation.inverseEntityMetadata, Array.isArray(value) ? value : [value]);
                 });
             }
 

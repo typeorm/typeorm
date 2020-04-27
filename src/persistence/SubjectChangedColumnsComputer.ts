@@ -40,10 +40,11 @@ export class SubjectChangedColumnsComputer {
 
             // ignore special columns
             if (column.isVirtual ||
-                column.isDiscriminator ||
-                column.isUpdateDate ||
-                column.isVersion ||
-                column.isCreateDate)
+                column.isDiscriminator // ||
+                // column.isUpdateDate ||
+                // column.isVersion ||
+                // column.isCreateDate
+            )
                 return;
 
             const changeMap = subject.changeMaps.find(changeMap => changeMap.column === column);

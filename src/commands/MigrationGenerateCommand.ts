@@ -135,12 +135,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 export class ${migrationName} implements MigrationInterface {
     name = '${migrationName}'
 
-    public async up(queryRunner: QueryRunner): Promise<any> {
+    public async up(queryRunner: QueryRunner): Promise<void> {
 ${upSqls.join(`
 `)}
     }
 
-    public async down(queryRunner: QueryRunner): Promise<any> {
+    public async down(queryRunner: QueryRunner): Promise<void> {
 ${downSqls.join(`
 `)}
     }

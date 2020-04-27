@@ -29,7 +29,7 @@ export class SapDriver implements Driver {
     connection: Connection;
 
     /**
-     * Hana client instance.
+     * Hana Pool instance.
      */
     client: any;
 
@@ -148,6 +148,8 @@ export class SapDriver implements Driver {
         createDateDefault: "CURRENT_TIMESTAMP",
         updateDate: "timestamp",
         updateDateDefault: "CURRENT_TIMESTAMP",
+        deleteDate: "timestamp",
+        deleteDateNullable: true,
         version: "integer",
         treeLevel: "integer",
         migrationId: "integer",
@@ -207,7 +209,41 @@ export class SapDriver implements Driver {
      * either create a pool and create connection when needed.
      */
     async connect(): Promise<void> {
-        // this.master = await this.createConnection(this.options);
+        // HANA connection info
+        const dbParams = {
+            hostName: this.options.host,
+            port: this.options.port,
+            userName: this.options.username,
+            password: this.options.password,
+            ...this.options.extra
+        };
+
+        if (this.options.database) dbParams.databaseName = this.options.database;
+        if (this.options.encrypt) dbParams.encrypt = this.options.encrypt;
+        if (this.options.validateCertificate) dbParams.validateCertificate = this.options.validateCertificate;
+        if (this.options.key) dbParams.key = this.options.key;
+        if (this.options.cert) dbParams.cert = this.options.cert;
+        if (this.options.ca) dbParams.ca = this.options.ca;
+
+        // pool options
+        const options: any = {
+            min: this.options.pool && this.options.pool.min ? this.options.pool.min : 1,
+            max: this.options.pool && this.options.pool.max ? this.options.pool.max : 1,
+        };
+
+        if (this.options.pool && this.options.pool.checkInterval) options.checkInterval = this.options.pool.checkInterval;
+        if (this.options.pool && this.options.pool.maxWaitingRequests) options.maxWaitingRequests = this.options.pool.maxWaitingRequests;
+        if (this.options.pool && this.options.pool.requestTimeout) options.requestTimeout = this.options.pool.requestTimeout;
+        if (this.options.pool && this.options.pool.idleTimeout) options.idleTimeout = this.options.pool.idleTimeout;
+
+        const { logger } = this.connection;
+
+        const poolErrorHandler = options.poolErrorHandler || ((error: any) => logger.log("warn", `SAP Hana pool raised an error. ${error}`));
+        this.client.eventEmitter.on("poolError", poolErrorHandler);
+
+        // create the pool
+        this.master = this.client.createPool(dbParams, options);
+
         this.database = this.options.database;
     }
 
@@ -222,21 +258,10 @@ export class SapDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        await this.closeConnection();
+        const promise = this.master.clear();
         this.master = undefined;
+        return promise;
     }
-
-
-    /**
-     * Closes connection pool.
-     */
-    protected async closeConnection(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            if (!this.master) return ok();
-            this.master.disconnect((err: any) => err ? fail(err) : ok());
-        });
-    }
-
 
     /**
      * Creates a schema builder used to build and sync a schema.
@@ -392,7 +417,7 @@ export class SapDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {
-        if (column.type === Number || column.type === "integer") {
+        if (column.type === Number || column.type === "int") {
             return "integer";
 
         } else if (column.type === String) {
@@ -429,6 +454,9 @@ export class SapDriver implements Driver {
 
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
+
+        } else if (typeof defaultValue === "boolean") {
+            return defaultValue === true ? "true" : "false";
 
         } else if (typeof defaultValue === "function") {
             return defaultValue();
@@ -487,7 +515,7 @@ export class SapDriver implements Driver {
             type += `(${column.precision},${column.scale})`;
 
         } else if (column.precision !== null && column.precision !== undefined) {
-            type +=  `(${column.precision})`;
+            type += `(${column.precision})`;
         }
 
         if (column.isArray)
@@ -502,7 +530,7 @@ export class SapDriver implements Driver {
      * If replication is not setup then returns default connection's database connection.
      */
     obtainMasterConnection(): Promise<any> {
-        return this.createConnection();
+        return this.master.getConnection();
     }
 
     /**
@@ -511,8 +539,7 @@ export class SapDriver implements Driver {
      * If replication is not setup then returns master (default) connection's database connection.
      */
     obtainSlaveConnection(): Promise<any> {
-        // return Promise.resolve(this.master);
-        return this.createConnection();
+        return this.obtainMasterConnection();
     }
 
     /**
@@ -559,13 +586,16 @@ export class SapDriver implements Driver {
             // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
             // console.log("==========================================");
 
+            const normalizeDefault = this.normalizeDefault(columnMetadata);
+            const hanaNullComapatibleDefault = normalizeDefault == null ? undefined : normalizeDefault;
+
             return  tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
-                || (!tableColumn.isGenerated && this.normalizeDefault(columnMetadata) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
+                || (!tableColumn.isGenerated && (hanaNullComapatibleDefault !== tableColumn.default)) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
@@ -603,43 +633,18 @@ export class SapDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.client = PlatformTools.load("@sap/hdbext");
+            this.client = PlatformTools.load("hdb-pool");
 
         } catch (e) { // todo: better error for browser env
-            throw new DriverPackageNotInstalledError("SAP Hana", "hdb");
+            throw new DriverPackageNotInstalledError("SAP Hana", "hdb-pool");
         }
-    }
 
-    /**
-     * Creates a new connection pool for a given database credentials.
-     */
-    protected createConnection(): Promise<any> {
+        try {
+            PlatformTools.load("@sap/hana-client");
 
-        // pooling is enabled either when its set explicitly to true,
-        // either when its not defined at all (e.g. enabled by default)
-        return new Promise<any>((ok, fail) => {
-            try {
-                // const master = ();
-                this.client.createConnection({
-                    host: this.options.host,
-                    port: this.options.port,
-                    uid: this.options.username,
-                    pwd: this.options.password,
-                    databaseName: this.options.database,
-                    pooling: true,
-                    ...this.options.extra
-                }, (err: any, master: any) => {
-                    if (err) {
-                        fail(err);
-                        return;
-                    }
-                    ok(master);
-                });
-
-            } catch (err) {
-                fail(err);
-            }
-        });
+        } catch (e) { // todo: better error for browser env
+            throw new DriverPackageNotInstalledError("SAP Hana", "@sap/hana-client");
+        }
     }
 
 }

@@ -164,7 +164,7 @@ await manager.increment(User, { firstName: "Timber" }, "age", 3);
 - `decrement` - 减少符合条件的实体某些列值。
 
 ```typescript
-await manager.count(User, { firstName: "Timber" }, "age", 3);
+await manager.decrement(User, { firstName: "Timber" }, "age", 3);
 ```
 
 - `find` - 查找指定条件的实体。

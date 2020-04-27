@@ -210,7 +210,8 @@ await timber.remove();
 
         ```
         npm config set @sap:registry https://npm.sap.com
-        npm i @sap/hdbext
+        npm i @sap/hana-client
+		npm i hdb-pool
         ```
 
     * for **MongoDB** (experimental)
@@ -417,7 +418,7 @@ export class Photo {
 Now `id`, `name`, `description`, `filename`, `views` and `isPublished` columns will be added to the `photo` table.
 Column types in the database are inferred from the property types you used, e.g.
 `number` will be converted into `integer`, `string` into `varchar`, `boolean` into `bool`, etc.
-But you can use any column type your database supports by implicitly specifying a column type into the `@Column` decorator.
+But you can use any column type your database supports by explicitly specifying a column type into the `@Column` decorator.
 
 We generated a database table with columns, but there is one thing left.
 Each database table must have a column with a primary key.
@@ -1044,6 +1045,8 @@ createConnection(options).then(async connection => {
 
 }).catch(error => console.log(error));
 ```
+
+Notice that we now set the photo's `metadata` property, instead of the metadata's `photo` property as before. The `cascade` feature only works if you connect the photo to its metadata from the photo's side. If you set the metadata's side, the metadata would not be saved automatically.
 
 ### Creating a many-to-one / one-to-many relation
 

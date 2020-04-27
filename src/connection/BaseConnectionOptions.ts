@@ -3,6 +3,8 @@ import {LoggerOptions} from "../logger/LoggerOptions";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {DatabaseType} from "../driver/types/DatabaseType";
 import {Logger} from "../logger/Logger";
+import {Connection} from "./Connection";
+import {QueryResultCache} from "../cache/QueryResultCache";
 
 /**
  * BaseConnectionOptions is set of connection options shared by all database types.
@@ -120,6 +122,11 @@ export interface BaseConnectionOptions {
          * - "redis" means cached values will be stored inside redis. You must provide redis connection options.
          */
         readonly type?: "database" | "redis" | "ioredis" | "ioredis/cluster"; // todo: add mongodb and other cache providers as well in the future
+
+        /**
+         * Factory function for custom cache providers that implement QueryResultCache.
+         */
+        readonly provider?: (connection: Connection) => QueryResultCache;
 
         /**
          * Configurable table name for "database" type cache.

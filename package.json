@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.2.22",
+  "version": "0.2.24",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -103,7 +103,7 @@
     "dotenv": "^6.2.0",
     "glob": "^7.1.2",
     "js-yaml": "^3.13.1",
-    "mkdirp": "^0.5.1",
+    "mkdirp": "^1.0.3",
     "reflect-metadata": "^0.1.13",
     "sha.js": "^2.4.11",
     "tslib": "^1.9.0",
@@ -122,6 +122,7 @@
     "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
     "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
     "compile": "rimraf ./build && tsc",
+    "watch": "./node_modules/.bin/tsc -w",
     "package": "gulp package",
     "lint": "tslint -p .",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 2"

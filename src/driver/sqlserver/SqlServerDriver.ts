@@ -164,6 +164,8 @@ export class SqlServerDriver implements Driver {
         createDateDefault: "getdate()",
         updateDate: "datetime2",
         updateDateDefault: "getdate()",
+        deleteDate: "datetime2",
+        deleteDateNullable: true,
         version: "int",
         treeLevel: "int",
         migrationId: "int",
@@ -698,6 +700,20 @@ export class SqlServerDriver implements Driver {
             newMap[key] = this.parametrizeValue(column, value);
             return newMap;
         }, {} as ObjectLiteral);
+    }
+
+    buildTableVariableDeclaration(identifier: string, columns: ColumnMetadata[]): string {
+        const outputColumns = columns.map(column => {
+            return `${this.escape(column.databaseName)} ${this.createFullType(new TableColumn({
+                name: column.databaseName,
+                type: this.normalizeType(column),
+                length: column.length,
+                isNullable: column.isNullable,
+                isArray: column.isArray,
+            }))}`;
+        });
+
+        return `DECLARE ${identifier} TABLE (${outputColumns.join(", ")})`;
     }
 
     // -------------------------------------------------------------------------

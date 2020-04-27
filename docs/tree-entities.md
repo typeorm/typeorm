@@ -189,7 +189,7 @@ const trees = await manager.getTreeRepository(Category).findTrees();
 }]
 ```
 
-There are other special methods to work with tree entities thought `TreeRepository`:
+There are other special methods to work with tree entities through `TreeRepository`:
 
 * `findTrees` - Returns all trees in the database with all their children, children of children, etc.
 

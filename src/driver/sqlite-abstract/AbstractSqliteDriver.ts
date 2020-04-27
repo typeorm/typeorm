@@ -146,6 +146,8 @@ export abstract class AbstractSqliteDriver implements Driver {
         createDateDefault: "datetime('now')",
         updateDate: "datetime",
         updateDateDefault: "datetime('now')",
+        deleteDate: "datetime",
+        deleteDateNullable: true,
         version: "integer",
         treeLevel: "integer",
         migrationId: "integer",
@@ -465,7 +467,9 @@ export abstract class AbstractSqliteDriver implements Driver {
      */
     createFullType(column: TableColumn): string {
         let type = column.type;
-
+        if (column.enum) {
+            return "varchar";
+        }
         if (column.length) {
             type += "(" + column.length + ")";
 

@@ -1,5 +1,6 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {SapDriver} from "../driver/sap/SapDriver";
+import { ColumnMetadata } from "../metadata/ColumnMetadata";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
@@ -70,9 +71,12 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             // call before updation methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
                 const broadcastResult = new BroadcasterResult();
-                queryRunner.broadcaster.broadcastBeforeUpdateEvent(broadcastResult, this.expressionMap.mainAlias!.metadata);
+                queryRunner.broadcaster.broadcastBeforeUpdateEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, this.expressionMap.valuesSet);
                 if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
             }
+
+            let declareSql: string | null = null;
+            let selectOutputSql: string | null = null;
 
             // if update entity mode is enabled we may need extra columns for the returning statement
             const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(queryRunner, this.expressionMap);
@@ -80,17 +84,29 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 this.expressionMap.mainAlias!.hasMetadata &&
                 this.expressionMap.whereEntities.length > 0) {
                 this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getUpdationReturningColumns();
+
+                if (this.expressionMap.extraReturningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
+                    declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", this.expressionMap.extraReturningColumns);
+                    selectOutputSql = `SELECT * FROM @OutputTable`;
+                }
             }
 
             // execute update query
-            const [sql, parameters] = this.getQueryAndParameters();
+            const [updateSql, parameters] = this.getQueryAndParameters();
             const updateResult = new UpdateResult();
-            const result = await queryRunner.query(sql, parameters);
+            const statements = [declareSql, updateSql, selectOutputSql];
+            const result = await queryRunner.query(
+                statements.filter(sql => sql != null).join(";\n\n"),
+                parameters,
+            );
 
-            const driver = queryRunner.connection.driver;
-            if (driver instanceof PostgresDriver) {
+            if (this.connection.driver instanceof PostgresDriver) {
                 updateResult.raw = result[0];
                 updateResult.affected = result[1];
+            }
+            else if (this.connection.driver instanceof MysqlDriver) {
+                updateResult.raw = result;
+                updateResult.affected = result.affectedRows;
             }
             else {
                 updateResult.raw = result;
@@ -333,7 +349,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             throw new Error(`.whereEntity method can only be used on queries which update real entity table.`);
 
         this.expressionMap.wheres = [];
-        const entities: Entity[] = entity instanceof Array ? entity : [entity];
+        const entities: Entity[] = Array.isArray(entity) ? entity : [entity];
         entities.forEach(entity => {
 
             const entityIdMap = this.expressionMap.mainAlias!.metadata.getEntityIdMap(entity);
@@ -370,6 +386,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = [];
+        const updatedColumns: ColumnMetadata[] = [];
         const newParameters: ObjectLiteral = {};
         let parametersCount =   this.connection.driver instanceof MysqlDriver ||
                                 this.connection.driver instanceof AuroraDataApiDriver ||
@@ -388,6 +405,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 columns.forEach(column => {
                     if (!column.isUpdate) { return; }
+                    updatedColumns.push(column);
 
                     const paramName = "upd_" + column.databaseName;
 
@@ -447,9 +465,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 });
             });
 
-            if (metadata.versionColumn)
+            if (metadata.versionColumn && updatedColumns.indexOf(metadata.versionColumn) === -1)
                 updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
-            if (metadata.updateDateColumn)
+            if (metadata.updateDateColumn && updatedColumns.indexOf(metadata.updateDateColumn) === -1)
                 updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
 
         } else {

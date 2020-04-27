@@ -309,7 +309,7 @@ Delete a document on MongoDB.
 
 #### `distinct`
 
-The distinct command returns returns a list of distinct values for the given key across a collection.
+The distinct command returns a list of distinct values for the given key across a collection.
 
 #### `dropCollectionIndex`
 

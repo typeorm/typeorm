@@ -61,7 +61,7 @@ export class RedisQueryResultCache implements QueryResultCache {
                 this.client = new this.redis();
             }
         } else if (this.clientType === "ioredis/cluster") {
-            if (cacheOptions && cacheOptions.options && cacheOptions.options instanceof Array) {
+            if (cacheOptions && cacheOptions.options && Array.isArray(cacheOptions.options)) {
                 this.client = new this.redis.Cluster(cacheOptions.options);
             } else if (cacheOptions && cacheOptions.options && cacheOptions.options.startupNodes) {
                 this.client = new this.redis.Cluster(cacheOptions.options.startupNodes, cacheOptions.options.options);

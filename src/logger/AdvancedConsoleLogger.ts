@@ -24,7 +24,7 @@ export class AdvancedConsoleLogger implements Logger {
      * Logs query and parameters used in it.
      */
     logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("query") !== -1)) {
+        if (this.options === "all" || this.options === true || (Array.isArray(this.options) && this.options.indexOf("query") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             PlatformTools.logInfo("query:", PlatformTools.highlightSql(sql));
         }
@@ -34,7 +34,7 @@ export class AdvancedConsoleLogger implements Logger {
      * Logs query that is failed.
      */
     logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("error") !== -1)) {
+        if (this.options === "all" || this.options === true || (Array.isArray(this.options) && this.options.indexOf("error") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             PlatformTools.logError(`query failed:`, PlatformTools.highlightSql(sql));
             PlatformTools.logError(`error:`, error);
@@ -54,7 +54,7 @@ export class AdvancedConsoleLogger implements Logger {
      * Logs events from the schema build process.
      */
     logSchemaBuild(message: string, queryRunner?: QueryRunner) {
-        if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("schema") !== -1)) {
+        if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("schema") !== -1)) {
             PlatformTools.log(message);
         }
     }
@@ -73,15 +73,15 @@ export class AdvancedConsoleLogger implements Logger {
     log(level: "log"|"info"|"warn", message: any, queryRunner?: QueryRunner) {
         switch (level) {
             case "log":
-                if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("log") !== -1))
+                if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("log") !== -1))
                     PlatformTools.log(message);
                 break;
             case "info":
-                if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("info") !== -1))
+                if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("info") !== -1))
                     PlatformTools.logInfo("INFO:", message);
                 break;
             case "warn":
-                if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("warn") !== -1))
+                if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("warn") !== -1))
                     console.warn(PlatformTools.warn(message));
                 break;
         }

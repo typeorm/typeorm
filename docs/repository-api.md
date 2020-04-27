@@ -51,7 +51,7 @@ const users = await repository
  }
 ```
 
-* `getId` - Gets the primary column property values of the given entity. 
+* `getId` - Gets the primary column property values of the given entity.
 If entity has composite primary keys then the returned value will be an object with names and values of primary columns.
 
 ```typescript
@@ -80,7 +80,9 @@ repository.merge(user, { firstName: "Timber" }, { lastName: "Saw" }); // same as
 * `preload` - Creates a new entity from the given plain javascript object. If the entity already exists in the database, then
 it loads it (and everything related to it), replaces all values with the new ones from the given object,
 and returns the new entity. The new entity is actually an entity loaded from the database with all properties
-replaced from the new object.
+replaced from the new object. <br>
+Note that given entity-like object must have an entity id / primary key to find entity by.
+Returns undefined if entity with given id was not found.
 
 ```typescript
 const partialUser = {
@@ -133,12 +135,12 @@ await repository.insert({
 });
 
 
-await manager.insert(User, [{ 
-    firstName: "Foo", 
-    lastName: "Bar" 
-}, { 
-    firstName: "Rizz", 
-    lastName: "Rak" 
+await manager.insert(User, [{
+    firstName: "Foo",
+    lastName: "Bar"
+}, {
+    firstName: "Rizz",
+    lastName: "Rak"
 }]);
 ```
 
@@ -159,6 +161,27 @@ await repository.delete(1);
 await repository.delete([1, 2, 3]);
 await repository.delete({ firstName: "Timber" });
 ```
+
+* `softDelete` and `restore` - Soft deleting and restoring a row by id
+
+```typescript
+const repository = connection.getRepository(Entity);
+// Delete a entity
+await repository.softDelete(1);
+// And You can restore it using restore;
+await repository.restore(1);
+```
+
+* `softRemove` and `recover` - This is alternative to `softDelete` and `restore`.
+```typescript
+// You can soft-delete them using softRemove
+const entities = await repository.find();
+const entitiesAfterSoftRemove = await repository.softRemove(entities);
+
+// And You can recover them using recover;
+await repository.recover(entitiesAfterSoftRemove);
+```
+
 
 * `count` - Counts entities that match given options. Useful for pagination.
 
@@ -225,7 +248,7 @@ await repository.clear();
 ```
 ### Additional Options
 
-Optional `SaveOptions` can be passed as parameter for `save`, `insert` and `update`.
+Optional `SaveOptions` can be passed as parameter for `save`.
 
 * `data` -  Additional data to be passed with persist method. This data can be used in subscribers then.
 * `listeners`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
@@ -236,7 +259,7 @@ Optional `SaveOptions` can be passed as parameter for `save`, `insert` and `upda
 Example:
 ```typescript
 // users contains array of User Entities
-userRepository.insert(users, {chunk: users.length / 1000});
+userRepository.save(users, {chunk: users.length / 1000});
 ```
 
 Optional `RemoveOptions` can be passed as parameter for `remove` and `delete`.

@@ -270,6 +270,11 @@ export class EntityMetadata {
     updateDateColumn?: ColumnMetadata;
 
     /**
+     * Gets entity column which contains a delete date value.
+     */
+    deleteDateColumn?: ColumnMetadata;
+
+    /**
      * Gets entity column which contains an entity version.
      */
     versionColumn?: ColumnMetadata;
@@ -694,7 +699,7 @@ export class EntityMetadata {
         const relationsAndValues: [RelationMetadata, any, EntityMetadata][] = [];
         relations.forEach(relation => {
             const value = relation.getEntityValue(entity);
-            if (value instanceof Array) {
+            if (Array.isArray(value)) {
                 value.forEach(subValue => relationsAndValues.push([relation, subValue, relation.inverseEntityMetadata]));
             } else if (value) {
                 relationsAndValues.push([relation, value, relation.inverseEntityMetadata]);

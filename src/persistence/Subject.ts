@@ -101,6 +101,18 @@ export class Subject {
     mustBeRemoved: boolean = false;
 
     /**
+     * Indicates if this subject can be soft-removed from the database.
+     * This means that this subject either was soft-removed, either was soft-removed by cascades.
+     */
+    canBeSoftRemoved: boolean = false;
+
+    /**
+     * Indicates if this subject can be recovered from the database.
+     * This means that this subject either was recovered, either was recovered by cascades.
+     */
+    canBeRecovered: boolean = false;
+
+    /**
      * Relations updated by the change maps.
      */
     updatedRelationMaps: { relation: RelationMetadata, value: ObjectLiteral }[] = [];
@@ -126,6 +138,8 @@ export class Subject {
         canBeInserted?: boolean,
         canBeUpdated?: boolean,
         mustBeRemoved?: boolean,
+        canBeSoftRemoved?: boolean,
+        canBeRecovered?: boolean,
         identifier?: ObjectLiteral,
         changeMaps?: SubjectChangeMap[]
     }) {
@@ -138,6 +152,10 @@ export class Subject {
             this.canBeUpdated = options.canBeUpdated;
         if (options.mustBeRemoved !== undefined)
             this.mustBeRemoved = options.mustBeRemoved;
+        if (options.canBeSoftRemoved !== undefined)
+            this.canBeSoftRemoved = options.canBeSoftRemoved;
+        if (options.canBeRecovered !== undefined)
+            this.canBeRecovered = options.canBeRecovered;
         if (options.identifier !== undefined)
             this.identifier = options.identifier;
         if (options.changeMaps !== undefined)
@@ -170,6 +188,28 @@ export class Subject {
             (this.databaseEntityLoaded === false || (this.databaseEntityLoaded && this.databaseEntity)) &&
             // ((this.entity && this.databaseEntity) || (!this.entity && !this.databaseEntity)) &&
             this.changeMaps.length > 0;
+    }
+
+    /**
+     * Checks if this subject must be soft-removed into the database.
+     * Subject can be updated in the database if it is allowed to be soft-removed (explicitly persisted or by cascades)
+     * and if it does have differentiated columns or relations.
+     */
+    get mustBeSoftRemoved() {
+        return this.canBeSoftRemoved &&
+            this.identifier &&
+            (this.databaseEntityLoaded === false || (this.databaseEntityLoaded && this.databaseEntity));
+    }
+
+    /**
+     * Checks if this subject must be recovered into the database.
+     * Subject can be updated in the database if it is allowed to be recovered (explicitly persisted or by cascades)
+     * and if it does have differentiated columns or relations.
+     */
+    get mustBeRecovered() {
+        return this.canBeRecovered &&
+            this.identifier &&
+            (this.databaseEntityLoaded === false || (this.databaseEntityLoaded && this.databaseEntity));
     }
 
     // -------------------------------------------------------------------------
