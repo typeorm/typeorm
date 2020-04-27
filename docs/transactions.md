@@ -150,7 +150,7 @@ try {
     
 } catch (err) {
     
-    // since we have errors lets rollback changes we made
+    // since we have errors let's rollback changes we made
     await queryRunner.rollbackTransaction();
     
 } finally {
