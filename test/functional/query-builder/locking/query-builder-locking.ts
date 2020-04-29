@@ -82,19 +82,19 @@ describe("query builder > locking", () => {
             return connection.createQueryBuilder(PostWithVersion, "post")
                 .setLock("for_no_key_update")
                 .where("post.id = :id", { id: 1 })
-                .getOne().should.be.rejectedWith(PessimisticLockTransactionRequiredError)
+                .getOne().should.be.rejectedWith(PessimisticLockTransactionRequiredError);
         }
         return;
     })));
 
     it("should not throw error if for no key update lock used with transaction", () => Promise.all(connections.map(async connection => {
-        if(connection.driver instanceof PostgresDriver) {
+        if (connection.driver instanceof PostgresDriver) {
             return connection.manager.transaction(entityManager => {
                 return Promise.all([entityManager.createQueryBuilder(PostWithVersion, "post")
                     .setLock("for_no_key_update")
                     .where("post.id = :id", { id: 1})
                     .getOne().should.not.be.rejected]);
-            })
+            });
         }
         return;
     })));

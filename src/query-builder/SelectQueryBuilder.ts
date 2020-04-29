@@ -1674,7 +1674,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 }
             case "for_no_key_update":
                 if (driver instanceof PostgresDriver) {
-                    return " FOR NO KEY UPDATE"
+                    return " FOR NO KEY UPDATE";
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
                 }
