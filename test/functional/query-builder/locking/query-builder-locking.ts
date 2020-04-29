@@ -177,7 +177,7 @@ describe("query builder > locking", () => {
     it("should attach for no key update lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof PostgresDriver) {
             const sql = connection.createQueryBuilder(PostWithVersion, "post")
-                .setLock("pessimistic_write")
+                .setLock("for_no_key_update")
                 .where("post.id = :id", { id: 1 })
                 .getSql();
 
