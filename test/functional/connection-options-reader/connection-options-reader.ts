@@ -3,11 +3,6 @@ import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {ConnectionOptionsReader} from "../../../src/connection/ConnectionOptionsReader";
 
 describe("ConnectionOptionsReader", () => {
-  after(() => {
-    delete process.env.TYPEORM_CONNECTION;
-    delete process.env.TYPEORM_DATABASE;
-  });
-
   it("properly loads config with entities specified", async () => {
     type EntititesList = Function[] | string[];
     const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/class-entities" });
@@ -37,11 +32,27 @@ describe("ConnectionOptionsReader", () => {
     expect(fileOptions.database).to.have.string("/test-js-async");
   });
 
-  // TODO This test requires the configs/.env file be moved to the matching directory in build/compiled
-  it.skip("properly loads config from .env file", async () => {
-    const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/.env" });
-    const [ fileOptions ]: ConnectionOptions[] = await connectionOptionsReader.all();
-    expect(fileOptions.database).to.have.string("test-js");
-    expect(process.env.TYPEORM_DATABASE).to.equal("test-js");
+  describe("applies environment configuration", () => {
+    afterEach(() => {
+      delete process.env.TYPEORM_CONNECTION;
+      delete process.env.TYPEORM_DATABASE;
+      delete process.env.TYPEORM_PORT;
+    });
+
+    it("returns untouched config when no Typeorm variable is set", async () => {
+      const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/test-env-override.js" });
+      const connectionOptions: ConnectionOptions = await connectionOptionsReader.get("test-conn");
+      expect(connectionOptions).to.eql(require("./configs/test-env-override.js"));  
+    });
+
+    it("properly applies environment variables to loaded config", async () => {
+      const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/test-env-override.js" });
+      const connectionOptions: ConnectionOptions = await connectionOptionsReader.get("test-conn");
+      expect(connectionOptions).to.eql({
+        ...require("./configs/test-env-override.js"),
+        type: process.env.TYPEORM_CONNECTION,
+        port: process.env.TYPEORM_PORT,
+      });
+    });
   });
 });
