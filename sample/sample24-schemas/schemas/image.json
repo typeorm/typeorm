@@ -25,7 +25,7 @@
       "cascade": true,
       "inverseSide": "images"
     },
-    "secondaryImages": {
+    "secondaryPost": {
       "target": "Post",
       "type": "many-to-one",
       "cascade": true,
