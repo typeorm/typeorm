@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {createTestingConnections, closeTestingConnections} from "../../utils/test-utils";
 import {QueryFailedError, Connection} from "../../../src";
 import {Session} from "./entity/Session";
-import {expect} from 'chai';
+import {expect} from "chai";
 
 describe("github issues > #6066 Column comment string is not escaped during synchronization", () => {
 
