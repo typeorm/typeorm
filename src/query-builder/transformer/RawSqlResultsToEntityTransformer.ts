@@ -72,7 +72,6 @@ export class RawSqlResultsToEntityTransformer {
 
                 return keyValue;
             }).join("_"); // todo: check partial
-            if (!id) return;
 
             const items = map.get(id);
             if (!items) {
