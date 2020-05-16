@@ -77,6 +77,28 @@ describe("query builder > locking", () => {
         });
     })));
 
+    it("should throw error if for no key update lock used without transaction", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof PostgresDriver) {
+            return connection.createQueryBuilder(PostWithVersion, "post")
+                .setLock("for_no_key_update")
+                .where("post.id = :id", { id: 1 })
+                .getOne().should.be.rejectedWith(PessimisticLockTransactionRequiredError);
+        }
+        return;
+    })));
+
+    it("should not throw error if for no key update lock used with transaction", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof PostgresDriver) {
+            return connection.manager.transaction(entityManager => {
+                return Promise.all([entityManager.createQueryBuilder(PostWithVersion, "post")
+                    .setLock("for_no_key_update")
+                    .where("post.id = :id", { id: 1})
+                    .getOne().should.not.be.rejected]);
+            });
+        }
+        return;
+    })));
+
     it("should attach pessimistic read lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof AbstractSqliteDriver || connection.driver instanceof CockroachDriver || connection.driver instanceof SapDriver)
             return;
@@ -138,6 +160,30 @@ describe("query builder > locking", () => {
         } else if (connection.driver instanceof SqlServerDriver) {
             expect(sql.indexOf("WITH (UPDLOCK, ROWLOCK)") !== -1).to.be.true;
         }
+
+    })));
+
+    it("should not attach for no key update lock statement on query if locking is not used", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof PostgresDriver) {
+            const sql = connection.createQueryBuilder(PostWithVersion, "post")
+                .where("post.id = :id", { id: 1 })
+                .getSql();
+
+                expect(sql.indexOf("FOR NO KEY UPDATE") === -1).to.be.true;
+            }
+        return;
+    })));
+
+    it("should attach for no key update lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof PostgresDriver) {
+            const sql = connection.createQueryBuilder(PostWithVersion, "post")
+                .setLock("for_no_key_update")
+                .where("post.id = :id", { id: 1 })
+                .getSql();
+
+            expect(sql.indexOf("FOR NO KEY UPDATE") !== -1).to.be.true;
+        }
+        return;
 
     })));
 
@@ -287,6 +333,21 @@ describe("query builder > locking", () => {
                         .getOne().should.be.rejectedWith(LockNotSupportedOnGivenDriverError)
                 ]);
             });
+
+        return;
+    })));
+
+    it("should throw error if for no key update locking not supported by given driver", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof PostgresDriver)) {
+            return connection.manager.transaction(entityManager => {
+                return Promise.all([
+                    entityManager.createQueryBuilder(PostWithVersion, "post")
+                        .setLock("for_no_key_update")
+                        .where("post.id = :id", { id: 1 })
+                        .getOne().should.be.rejectedWith(LockNotSupportedOnGivenDriverError),
+                ]);
+            });
+        }
 
         return;
     })));

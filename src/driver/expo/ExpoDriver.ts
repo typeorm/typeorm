@@ -40,6 +40,7 @@ export class ExpoDriver extends AbstractSqliteDriver {
         return new Promise<void>((ok, fail) => {
             try {
                 this.queryRunner = undefined;
+                this.databaseConnection._db.close();
                 this.databaseConnection = undefined;
                 ok();
             } catch (error) {

@@ -38,7 +38,7 @@ export class ConnectionOptionsReader {
     async all(): Promise<ConnectionOptions[]> {
         const options = await this.load();
         if (!options)
-            throw new Error(`No connection options were found in any of configurations file.`);
+            throw new Error(`No connection options were found in any orm configuration files.`);
 
         return options;
     }
