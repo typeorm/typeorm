@@ -1682,6 +1682,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             case "pessimistic_write_or_fail":
                 if (driver instanceof PostgresDriver) {
                     return " FOR UPDATE NOWAIT";
+                } else {
+                    throw new LockNotSupportedOnGivenDriverError();
+                }
 
             case "for_no_key_update":
                 if (driver instanceof PostgresDriver) {
