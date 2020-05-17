@@ -280,6 +280,9 @@ export abstract class BaseQueryRunner {
             || oldColumn.collation !== newColumn.collation
             || oldColumn.precision !== newColumn.precision
             || oldColumn.scale !== newColumn.scale
+            || oldColumn.length !== newColumn.length
+            || oldColumn.type !== newColumn.type
+            || oldColumn.generatedType !== newColumn.generatedType
             || oldColumn.width !== newColumn.width // MySQL only
             || oldColumn.zerofill !== newColumn.zerofill // MySQL only
             || oldColumn.unsigned !== newColumn.unsigned // MySQL only
