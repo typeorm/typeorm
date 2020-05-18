@@ -309,7 +309,7 @@ export class EntityManager {
     }
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * Creates a new entity from the given plain javascript object. If entity already exist in the database, then
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
@@ -317,7 +317,7 @@ export class EntityManager {
     preload<Entity>(entityClass: ObjectType<Entity>, entityLike: DeepPartial<Entity>): Promise<Entity|undefined>;
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * Creates a new entity from the given plain javascript object. If entity already exist in the database, then
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
@@ -325,7 +325,7 @@ export class EntityManager {
     preload<Entity>(entitySchema: EntitySchema<Entity>, entityLike: DeepPartial<Entity>): Promise<Entity|undefined>;
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * Creates a new entity from the given plain javascript object. If entity already exist in the database, then
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
@@ -333,7 +333,7 @@ export class EntityManager {
     preload(entityName: string, entityLike: DeepPartial<any>): Promise<any|undefined>;
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * Creates a new entity from the given plain javascript object. If entity already exist in the database, then
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
@@ -583,12 +583,12 @@ export class EntityManager {
     async insert<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, entity: QueryDeepPartialEntity<Entity>|(QueryDeepPartialEntity<Entity>[])): Promise<InsertResult> {
 
         // If user passed empty array of entities then we don't need to do
-        // anything.  
+        // anything.
         //
         // Fixes GitHub issue #5734.  If we were to let this through we would
         // run into problems downstream, like subscribers getting invoked with
         // the empty array where they expect an entity, and SQL queries with an
-        // empty VALUES clause.  
+        // empty VALUES clause.
         if (Array.isArray(entity) && entity.length === 0)
             return Promise.resolve(new InsertResult());
 
