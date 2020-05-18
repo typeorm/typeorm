@@ -78,7 +78,7 @@ node src/app.js
 You should see the, "Application is up and running" message in your console right after you run the application.
 
 You must compile your files each time you make a change.
-Alternatively, you can setup watcher or install [ts-node](http://github.com/ts-node/ts-node) to avoid manual compilation each time.
+Alternatively, you can setup watcher or install [ts-node](https://github.com/TypeStrong/ts-node) to avoid manual compilation each time.
 
 ## Adding Express to the application
 
