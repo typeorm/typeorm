@@ -51,14 +51,14 @@ services:
       POSTGRES_DB: "test"
 
   # mssql
-  mssql:
-    image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
-    container_name: "typeorm-mssql"
-    ports:
-      - "1433:1433"
-    environment:
-      SA_PASSWORD: "Admin12345"
-      ACCEPT_EULA: "Y"
+#  mssql:
+#    image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
+#    container_name: "typeorm-mssql"
+#    ports:
+#      - "1433:1433"
+#    environment:
+#      SA_PASSWORD: "Admin12345"
+#      ACCEPT_EULA: "Y"
 
   # cockroachdb
 #  cockroachdb:
