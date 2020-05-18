@@ -61,12 +61,12 @@ services:
       ACCEPT_EULA: "Y"
 
   # cockroachdb
-  cockroachdb:
-    image: "cockroachdb/cockroach-unstable:v19.1.0-rc.2"
-    container_name: "typeorm-cockroachdb"
-    command: start --insecure
-    ports:
-      - "26257:26257"
+#  cockroachdb:
+#    image: "cockroachdb/cockroach-unstable:v19.1.0-rc.2"
+#    container_name: "typeorm-cockroachdb"
+#    command: start --insecure
+#    ports:
+#      - "26257:26257"
 
   # sap hana (works only on linux)
   hanaexpress:
