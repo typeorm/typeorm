@@ -10,7 +10,7 @@ services:
 before_script:
   - sudo service mysql stop
   - sudo service postgresql stop
-  - docker-compose create -d
+  - docker-compose up --force-recreate -d
   - npm config set @sap:registry https://npm.sap.com
   - npm i @sap/hana-client hdb-pool
   - cp ormconfig.travis.json ormconfig.json
