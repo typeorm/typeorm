@@ -12,6 +12,7 @@ import {NativescriptConnectionOptions} from "../driver/nativescript/Nativescript
 import {ExpoConnectionOptions} from "../driver/expo/ExpoConnectionOptions";
 import {AuroraDataApiConnectionOptions} from "../driver/aurora-data-api/AuroraDataApiConnectionOptions";
 import {SapConnectionOptions} from "../driver/sap/SapConnectionOptions";
+import {ArangoConnectionOptions} from "../driver/arangojs/ArangoConnectionOptions";
 
 
 /**
@@ -32,5 +33,6 @@ export type ConnectionOptions =
     ReactNativeConnectionOptions|
     SqljsConnectionOptions|
     MongoConnectionOptions|
+    ArangoConnectionOptions|
     AuroraDataApiConnectionOptions|
     ExpoConnectionOptions;

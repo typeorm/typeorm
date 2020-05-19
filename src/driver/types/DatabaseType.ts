@@ -15,5 +15,6 @@ export type DatabaseType =
     "oracle"|
     "mssql"|
     "mongodb"|
+    "arangojs"|
     "aurora-data-api"|
     "expo";
