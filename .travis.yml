@@ -12,6 +12,7 @@ before_script:
   - sudo service postgresql stop
   - docker-compose stop
   - docker-compose rm
+  - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
   - docker-compose create
   - docker-compose up -d
   - npm config set @sap:registry https://npm.sap.com
