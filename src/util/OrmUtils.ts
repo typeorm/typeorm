@@ -75,7 +75,7 @@ export class OrmUtils {
         if (this.isObject(target) && this.isObject(source)) {
             for (const key in source) {
                 const value = source[key];
-                if (value instanceof Promise)
+                if (key === "__proto__" || value instanceof Promise)
                     continue;
 
                 if (this.isObject(value)
