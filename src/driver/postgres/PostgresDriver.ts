@@ -1039,6 +1039,7 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper {
             this.options.resourceArn,
             this.options.database,
             (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
+            this.options.serviceConfigOptions
         );
     }
 

@@ -31,4 +31,6 @@ export interface AuroraDataApiPostgresConnectionOptions extends BaseConnectionOp
     * Defaults to logging error with `warn` level.
      */
     readonly poolErrorHandler?: (err: any) => any;
+
+    readonly serviceConfigOptions?: { [key: string]: any };
 }

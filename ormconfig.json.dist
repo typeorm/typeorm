@@ -103,5 +103,18 @@
       "maxRetries": 3
     },
     "logging": false
+  },
+  {
+    "skip": true,
+    "name": "aurora-data-api-pg",
+    "type": "aurora-data-api-pg",
+    "region": "us-east-1",
+    "secretArn": "mysecret",
+    "resourceArn": "app-dbcluster",
+    "database": "app-dbcluster-mine",
+    "serviceConfigOptions": {
+      "maxRetries": 3
+    },
+    "logging": false
   }
 ]
