@@ -466,7 +466,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
-                    deferrable: dbForeignKey["CHECK_TIME"].replace('_', ' '), // "CHECK_TIME" is "INITIALLY_IMMEDIATE" or "INITIALLY DEFERRED"
+                    deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "), // "CHECK_TIME" is "INITIALLY_IMMEDIATE" or "INITIALLY DEFERRED"
                 });
             });
 
@@ -572,7 +572,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                             referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                             onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                             onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
-                            deferrable: dbForeignKey["CHECK_TIME"].replace('_', ' '),
+                            deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                         });
                     });
 
@@ -908,7 +908,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                         onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                         onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
-                        deferrable: dbForeignKey["CHECK_TIME"].replace('_', ' '),
+                        deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                     });
                 });
 
@@ -1044,7 +1044,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
-                    deferrable: dbForeignKey["CHECK_TIME"].replace('_', ' '),
+                    deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                 });
             });
 
@@ -1113,7 +1113,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
-                    deferrable: dbForeignKey["CHECK_TIME"].replace('_', ' '),
+                    deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                 });
             });
 
@@ -1632,7 +1632,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
-                    deferrable: dbForeignKey["CHECK_TIME"].replace('_', ' '),
+                    deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                 });
             });
 
