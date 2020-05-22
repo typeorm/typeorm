@@ -41,6 +41,12 @@ export class PostgresDriver {}
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
+export class AuroraDataApiPostgresDriver {}
+
+/**
+ * DO NOT IMPORT THIS CLASS -
+ * This is a dummy class for replacement via `package.json` in browser builds
+ */
 export class SqlServerDriver {}
 
 /**
