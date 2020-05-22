@@ -1,6 +1,7 @@
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EntityMetadata} from "./EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
+import {DeferrableType} from "./types/DeferrableType";
 import {OnDeleteType} from "./types/OnDeleteType";
 import {OnUpdateType} from "./types/OnUpdateType";
 
@@ -44,6 +45,11 @@ export class ForeignKeyMetadata {
     onUpdate?: OnUpdateType;
 
     /**
+     * When to check the constraints of a foreign key.
+     */
+    deferrable?: DeferrableType;
+
+    /**
      * Gets the table name to which this foreign key is referenced.
      */
     referencedTablePath: string;
@@ -74,14 +80,16 @@ export class ForeignKeyMetadata {
         columns: ColumnMetadata[],
         referencedColumns: ColumnMetadata[],
         onDelete?: OnDeleteType,
-        onUpdate?: OnUpdateType
+        onUpdate?: OnUpdateType,
+        deferrable?: DeferrableType,
     }) {
         this.entityMetadata = options.entityMetadata;
         this.referencedEntityMetadata = options.referencedEntityMetadata;
         this.columns = options.columns;
         this.referencedColumns = options.referencedColumns;
-        this.onDelete = options.onDelete;
-        this.onUpdate = options.onUpdate;
+        this.onDelete = options.onDelete || "NO ACTION";
+        this.onUpdate = options.onUpdate || "NO ACTION";
+        this.deferrable = options.deferrable;
         if (options.namingStrategy)
             this.build(options.namingStrategy);
     }
@@ -98,7 +106,7 @@ export class ForeignKeyMetadata {
         this.columnNames = this.columns.map(column => column.databaseName);
         this.referencedColumnNames = this.referencedColumns.map(column => column.databaseName);
         this.referencedTablePath = this.referencedEntityMetadata.tablePath;
-        this.name = namingStrategy.foreignKeyName(this.entityMetadata.tablePath, this.columnNames);
+        this.name = namingStrategy.foreignKeyName(this.entityMetadata.tablePath, this.columnNames, this.referencedTablePath, this.referencedColumnNames);
     }
 
 }

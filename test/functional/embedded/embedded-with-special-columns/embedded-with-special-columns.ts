@@ -20,9 +20,10 @@ describe("embedded > embedded-with-special-columns", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should insert, load, update and remove entities with embeddeds when embeds contains special columns (e.g. CreateDateColumn, UpdateDateColumn, VersionColumn", () => Promise.all(connections.map(async connection => {
+    it("should insert, load, update and remove entities with embeddeds when embeds contains special columns (e.g. CreateDateColumn, UpdateDateColumn, DeleteDateColumn, VersionColumn", () => Promise.all(connections.map(async connection => {
 
         const post1 = new Post();
+        post1.id = 1;
         post1.title = "About cars";
         post1.counters = new Counters();
         post1.counters.comments = 1;
@@ -33,6 +34,7 @@ describe("embedded > embedded-with-special-columns", () => {
         await connection.getRepository(Post).save(post1);
 
         const post2 = new Post();
+        post2.id = 2;
         post2.title = "About airplanes";
         post2.counters = new Counters();
         post2.counters.comments = 2;
@@ -49,9 +51,11 @@ describe("embedded > embedded-with-special-columns", () => {
 
         expect(loadedPosts[0].counters.createdDate.should.be.instanceof(Date));
         expect(loadedPosts[0].counters.updatedDate.should.be.instanceof(Date));
+        expect(loadedPosts[0].counters.deletedDate).to.be.null;
         expect(loadedPosts[0].counters.subcounters.version.should.be.equal(1));
         expect(loadedPosts[1].counters.createdDate.should.be.instanceof(Date));
         expect(loadedPosts[1].counters.updatedDate.should.be.instanceof(Date));
+        expect(loadedPosts[1].counters.deletedDate).to.be.null;
         expect(loadedPosts[1].counters.subcounters.version.should.be.equal(1));
 
         let loadedPost = await connection.manager
@@ -62,6 +66,7 @@ describe("embedded > embedded-with-special-columns", () => {
 
         expect(loadedPost!.counters.createdDate.should.be.instanceof(Date));
         expect(loadedPost!.counters.updatedDate.should.be.instanceof(Date));
+        expect(loadedPost!.counters.deletedDate).to.be.null;
         expect(loadedPost!.counters.subcounters.version.should.be.equal(1));
 
         const prevUpdateDate = loadedPost!.counters.updatedDate;

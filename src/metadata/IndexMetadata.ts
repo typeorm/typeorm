@@ -41,6 +41,12 @@ export class IndexMetadata {
     isFulltext: boolean = false;
 
     /**
+     * Fulltext parser.
+     * Works only in MySQL.
+     */
+    parser?: string;
+
+    /**
      * Indicates if this index must synchronize with database index.
      */
     synchronize: boolean = true;
@@ -124,6 +130,7 @@ export class IndexMetadata {
             this.isUnique = !!options.args.unique;
             this.isSpatial = !!options.args.spatial;
             this.isFulltext = !!options.args.fulltext;
+            this.parser = options.args.parser;
             this.where = options.args.where;
             this.isSparse = options.args.sparse;
             this.isBackground = options.args.background;
@@ -152,7 +159,7 @@ export class IndexMetadata {
         // if columns already an array of string then simply return it
         if (this.givenColumnNames) {
             let columnPropertyPaths: string[] = [];
-            if (this.givenColumnNames instanceof Array) {
+            if (Array.isArray(this.givenColumnNames)) {
                 columnPropertyPaths = this.givenColumnNames.map(columnName => {
                     if (this.embeddedMetadata)
                         return this.embeddedMetadata.propertyPath + "." + columnName;
@@ -163,7 +170,7 @@ export class IndexMetadata {
             } else { // todo: indices in embeds are not implemented in this syntax. deprecate this syntax?
                 // if columns is a function that returns array of field names then execute it and get columns names from it
                 const columnsFnResult = this.givenColumnNames(this.entityMetadata.propertiesMap);
-                if (columnsFnResult instanceof Array) {
+                if (Array.isArray(columnsFnResult)) {
                     columnPropertyPaths = columnsFnResult.map((i: any) => String(i));
                     columnPropertyPaths.forEach(name => map[name] = 1);
                 } else {
@@ -181,7 +188,9 @@ export class IndexMetadata {
                 if (relationWithSameName) {
                     return relationWithSameName.joinColumns;
                 }
-                throw new Error(`Index ${this.givenName ? "\"" + this.givenName + "\" " : ""}contains column that is missing in the entity: ` + propertyPath);
+                const indexName = this.givenName ? "\"" + this.givenName + "\" " : "";
+                const entityName = this.entityMetadata.targetName;
+                throw new Error(`Index ${indexName}contains column that is missing in the entity (${entityName}): ` + propertyPath);
             })
             .reduce((a, b) => a.concat(b));
         }
@@ -193,6 +202,7 @@ export class IndexMetadata {
 
             return updatedMap;
         }, {} as { [key: string]: number });
+
         this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName), this.where);
         return this;
     }

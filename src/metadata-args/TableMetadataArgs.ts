@@ -1,5 +1,6 @@
-import {TableType} from "../metadata/types/TableTypes";
+import {Connection, SelectQueryBuilder} from "..";
 import {OrderByCondition} from "../find-options/OrderByCondition";
+import {TableType} from "../metadata/types/TableTypes";
 
 /**
  * Arguments for TableMetadata class, helps to construct an TableMetadata object.
@@ -50,4 +51,19 @@ export interface TableMetadataArgs {
      */
     synchronize?: boolean;
 
+    /**
+     * View expression.
+     */
+    expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
+
+    /**
+     * Indicates if view is materialized
+     */
+    materialized?: boolean;
+
+     /**
+     * If set to 'true' this option disables Sqlite's default behaviour of secretly creating
+     * an integer primary key column named 'rowid' on table creation. 
+     */
+    withoutRowid?: boolean;   
 }

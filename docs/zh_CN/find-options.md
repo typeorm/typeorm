@@ -110,6 +110,23 @@ userRepository.find({
 });
 ```
 
+* `lock` - 启用锁查询。 只能在`findOne`方法中使用。 `lock`是一个对象，可以定义为：
+```ts
+{ mode: "optimistic", version: number|Date }
+```
+或者
+```ts
+{ mode: "pessimistic_read"|"pessimistic_write"|"dirty_read" }
+```
+
+例如:
+
+```typescript
+userRepository.findOne(1, {
+    lock: { mode: "optimistic", version: 1 }
+})
+```
+
 find 选项的完整示例：
 
 ```typescript

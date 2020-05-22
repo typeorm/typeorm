@@ -73,7 +73,7 @@ const connections = await createConnections([
 这两种方式都根据你传递的连接选项创建`Connection`，并调用`connect`方法。另外你也可以在项目的根目录中创建一个`ormconfig.json`文件，`createConnection`和`createConnections`将自动从此文件中读取连接选项。项目的根目录与`node_modules`目录的级别相同。
 
 ```typescript
-import { createConnection, Connection } from "typeorm";
+import { createConnection, createConnections, Connection } from "typeorm";
 
 // createConnection将从ormconfig.json / ormconfig.js / ormconfig.yml / ormconfig.env / ormconfig.xml 文件或特殊环境变量中加载连接选项
 const connection: Connection = await createConnection();
@@ -87,7 +87,7 @@ const secondConnection: Connection = await createConnection("test2-connection");
 const connections: Connection[] = await createConnections();
 ```
 
-不同的连接必须具有不同的名称默。认情况下，如果未指定连接名称，则为`default`。
+不同的连接必须具有不同的名称。默认情况下，如果未指定连接名称，则为`default`。
 通常在你使用多个数据库或多个连接配置时才会使用多连接。
 
 创建连接后，你可以使用`getConnection`函数从应用程序中的任何位置使用它：

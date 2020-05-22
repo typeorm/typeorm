@@ -8,7 +8,7 @@ describe("other issues > entity listeners must work in embeddeds as well", () =>
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"]
+        entities: [__dirname + "/entity/*{.js,.ts}"],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -23,12 +23,12 @@ describe("other issues > entity listeners must work in embeddeds as well", () =>
         const loadedPost = await connection
             .manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", { id: post.id })
             .getOne();
 
-        expect(loadedPost).not.to.be.empty;
-        expect(loadedPost!.title).not.to.be.empty;
-        expect(loadedPost!.text).not.to.be.empty;
+        expect(loadedPost).not.to.be.undefined;
+        expect(loadedPost!.title).not.to.be.undefined;
+        expect(loadedPost!.text).not.to.be.undefined;
         loadedPost!.title.should.be.equal("Super title");
         loadedPost!.text.should.be.equal("About this post");
 

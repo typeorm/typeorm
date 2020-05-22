@@ -33,8 +33,8 @@ export class RelationRemover {
             //     throw new Error(`You cannot update relations of multiple entities with the same related object. Provide a single entity into .of method.`);
 
             // DELETE FROM post WHERE post.categoryId = of AND post.id = id
-            const ofs = this.expressionMap.of instanceof Array ? this.expressionMap.of : [this.expressionMap.of];
-            const values = value instanceof Array ? value : [value];
+            const ofs = Array.isArray(this.expressionMap.of) ? this.expressionMap.of : [this.expressionMap.of];
+            const values = Array.isArray(value) ? value : [value];
 
             const updateSet: ObjectLiteral = {};
             relation.inverseRelation!.joinColumns.forEach(column => {
@@ -73,8 +73,8 @@ export class RelationRemover {
         } else { // many to many
 
             const junctionMetadata = relation.junctionEntityMetadata!;
-            const ofs = this.expressionMap.of instanceof Array ? this.expressionMap.of : [this.expressionMap.of];
-            const values = value instanceof Array ? value : [value];
+            const ofs = Array.isArray(this.expressionMap.of) ? this.expressionMap.of : [this.expressionMap.of];
+            const values = Array.isArray(value) ? value : [value];
             const firstColumnValues = relation.isManyToManyOwner ? ofs : values;
             const secondColumnValues = relation.isManyToManyOwner ? values : ofs;
 
@@ -90,7 +90,7 @@ export class RelationRemover {
                         }),
                         ...junctionMetadata.inverseColumns.map((column, columnIndex) => {
                             const parameterName = "secondValue_" + firstColumnValIndex + "_" + secondColumnValIndex + "_" + columnIndex;
-                            parameters[parameterName] = firstColumnVal instanceof Object ? column.referencedColumn!.getEntityValue(secondColumnVal) : secondColumnVal;
+                            parameters[parameterName] = secondColumnVal instanceof Object ? column.referencedColumn!.getEntityValue(secondColumnVal) : secondColumnVal;
                             return `${column.databaseName} = :${parameterName}`;
                         })
                     ].join(" AND ");

@@ -1,12 +1,12 @@
-import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {SqliteQueryRunner} from "./SqliteQueryRunner";
-import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
-import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
-import {ColumnType} from "../types/ColumnTypes";
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver";
+import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
+import { SqliteQueryRunner } from "./SqliteQueryRunner";
+import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
+import { PlatformTools } from "../../platform/PlatformTools";
+import { Connection } from "../../connection/Connection";
+import { SqliteConnectionOptions } from "./SqliteConnectionOptions";
+import { ColumnType } from "../types/ColumnTypes";
+import { QueryRunner } from "../../query-runner/QueryRunner";
+import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -63,14 +63,14 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+    createQueryRunner(mode: "master" | "slave" = "master"): QueryRunner {
         if (!this.queryRunner)
             this.queryRunner = new SqliteQueryRunner(this);
 
         return this.queryRunner;
     }
 
-    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number | null, scale?: number }): string {
         if ((column.type as any) === Buffer) {
             return "blob";
         }
@@ -85,28 +85,36 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * Creates connection with the database.
      */
-    protected createDatabaseConnection() {
-        return new Promise<void>(async (ok, fail) => {
-            await this.createDatabaseDirectory(this.options.database);
-            const databaseConnection = new this.sqlite.Database(this.options.database, (err: any) => {
+    protected async createDatabaseConnection() {
+        await this.createDatabaseDirectory(this.options.database);
+
+        const databaseConnection: any = await new Promise((ok, fail) => {
+            const connection = new this.sqlite.Database(this.options.database, (err: any) => {
                 if (err) return fail(err);
-
-                // we need to enable foreign keys in sqlite to make sure all foreign key related features
-                // working properly. this also makes onDelete to work with sqlite.
-                databaseConnection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
-                    if (err) return fail(err);
-                    ok(databaseConnection);
-                });
-
-                // in the options, if encryption key for for SQLCipher is setted.
-                if (this.options.key) {
-                  databaseConnection.run(`PRAGMA key = ${this.options.key};`, (err: any, result: any) => {
-                    if (err) return fail(err);
-                    ok(databaseConnection);
-                  });
-                }
+                ok(connection);
             });
         });
+
+        // Internal function to run a command on the connection and fail if an error occured.
+        function run(line: string): Promise<void> {
+            return new Promise((ok, fail) => {
+                databaseConnection.run(line, (err: any) => {
+                    if (err) return fail(err);
+                    ok();
+                });
+            });
+        }
+
+        // we need to enable foreign keys in sqlite to make sure all foreign key related features
+        // working properly. this also makes onDelete to work with sqlite.
+        await run(`PRAGMA foreign_keys = ON;`);
+
+        // in the options, if encryption key for SQLCipher is setted.
+        if (this.options.key) {
+            await run(`PRAGMA key = ${JSON.stringify(this.options.key)};`);
+        }
+
+        return databaseConnection;
     }
 
     /**
@@ -125,11 +133,9 @@ export class SqliteDriver extends AbstractSqliteDriver {
      * Auto creates database directory if it does not exist.
      */
     protected createDatabaseDirectory(fullPath: string): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            const mkdirp = PlatformTools.load("mkdirp");
-            const path = PlatformTools.load("path");
-            mkdirp(path.dirname(fullPath), (err: any) => err ? reject(err) : resolve());
-        });
+        const mkdirp = PlatformTools.load("mkdirp");
+        const path = PlatformTools.load("path");
+        return mkdirp(path.dirname(fullPath));
     }
 
 }

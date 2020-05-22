@@ -18,6 +18,7 @@ describe("persistence > null and default behaviour", () => {
 
         // create category
         const post = new Post();
+        post.id = 1;
         post.title = "Category saved!";
         await connection.manager.save(post);
 
@@ -34,6 +35,7 @@ describe("persistence > null and default behaviour", () => {
 
         // create category
         const post = new Post();
+        post.id = 1;
         await connection.manager.save(post);
 
         const loadedPost = await connection.manager.findOne(Post, 1);
@@ -49,6 +51,7 @@ describe("persistence > null and default behaviour", () => {
 
         // create category
         const post = new Post();
+        post.id = 1;
         post.title = null;
         await connection.manager.save(post);
 
@@ -65,6 +68,7 @@ describe("persistence > null and default behaviour", () => {
 
         // create category
         const post = new Post();
+        post.id = 1;
         post.title = "Category saved!";
         await connection.manager.save(post);
 
@@ -82,8 +86,8 @@ describe("persistence > null and default behaviour", () => {
 
     it("should update to null when post.title is null", () => Promise.all(connections.map(async connection => {
 
-        // create category
         const post = new Post();
+        post.id = 1;
         post.title = "Category saved!";
         await connection.manager.save(post);
 

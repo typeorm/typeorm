@@ -15,7 +15,7 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Simple condition that should be applied to match entities.
      */
-    where?: FindConditions<Entity>|ObjectLiteral|string;
+    where?: FindConditions<Entity>[]|FindConditions<Entity>|ObjectLiteral|string;
 
     /**
      * Indicates what relations of entity should be loaded (simplified left join form).
@@ -36,6 +36,16 @@ export interface FindOneOptions<Entity = any> {
      * Enables or disables query result caching.
      */
     cache?: boolean | number | { id: any, milliseconds: number };
+
+    /**
+     * Indicates what locking mode should be used.
+     */
+    lock?: { mode: "optimistic", version: number|Date } | { mode: "pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail" };
+
+    /**
+     * Indicates if soft-deleted rows should be included in entity result.
+     */
+    withDeleted?: boolean;
 
     /**
      * If sets to true then loads all relation ids of the entity and maps them into relation values (not relation objects).

@@ -59,9 +59,10 @@ describe("query builder > update", () => {
         await connection.createQueryBuilder()
             .update(User)
             .set({ name: () => connection.driver instanceof SqlServerDriver ? "SUBSTRING('Dima Zotov', 1, 4)" : "SUBSTR('Dima Zotov', 1, 4)" })
-            .where("name = :name", { name: () => connection.driver instanceof SqlServerDriver ? "SUBSTRING('Alex Messer Dimovich', 1, 11)" : "SUBSTR('Alex Messer Dimovich', 1, 11)" })
+            .where("name = :name", {
+                name: "Alex Messer"
+            })
             .execute();
-
 
 
         const loadedUser1 = await connection.getRepository(User).findOne({ name: "Dima" });
@@ -240,6 +241,27 @@ describe("query builder > update", () => {
                 .update(User)
                 .set({ unknownProp: true } as any)
                 .where("name = :name", { name: "Alex Messer" })
+                .execute();
+        } catch (err) {
+            error = err;
+        }
+        expect(error).to.be.an.instanceof(EntityColumnNotFound);
+
+    })));
+
+    it("should throw error when unknown property in where criteria", () => Promise.all(connections.map(async connection => {
+
+        const user = new User();
+        user.name = "Alex Messer";
+
+        await connection.manager.save(user);
+
+        let error: Error | undefined;
+        try {
+            await connection.createQueryBuilder()
+                .update(User)
+                .set({ name: "John Doe" } as any)
+                .where( { unknownProp: "Alex Messer" })
                 .execute();
         } catch (err) {
             error = err;

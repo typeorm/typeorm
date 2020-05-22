@@ -16,6 +16,11 @@ export interface SqljsConnectionOptions extends BaseConnectionOptions {
     readonly database?: Uint8Array;
 
     /**
+     * Config that's used to initialize sql.js.
+     */
+    readonly sqlJsConfig?: any;
+
+    /**
      * Enables the autoSave mechanism which either saves to location
      * or calls autoSaveCallback every time a change to the database is made.
      */
@@ -34,4 +39,10 @@ export interface SqljsConnectionOptions extends BaseConnectionOptions {
      * location is used to automatically save the database.
      */
     readonly location?: string;
+
+    /**
+     * Enables the usage of the localforage library to save & load the database asynchronously from the
+     * indexedDB instead of using the synchron local storage methods in a browser environment.
+     */
+    readonly useLocalForage?: boolean;
 }

@@ -21,9 +21,12 @@ export class MigrationExecutor {
     // -------------------------------------------------------------------------
 
     /**
-     * Indicates if migrations must be executed in a transaction.
+     * Indicates how migrations should be run in transactions.
+     *   all: all migrations are run in a single transaction
+     *   none: all migrations are run without a transaction
+     *   each: each migration is run in a separate transaction
      */
-    transaction: boolean = true;
+    transaction: "all" | "none" | "each" = "all";
 
     // -------------------------------------------------------------------------
     // Private Properties
@@ -47,6 +50,112 @@ export class MigrationExecutor {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Tries to execute a single migration given.
+     */
+    public async executeMigration(migration: Migration): Promise<Migration> {
+        return this.withQueryRunner(async (queryRunner) => {
+            await this.createMigrationsTableIfNotExist(queryRunner);
+            await (migration.instance as any).up(queryRunner);
+            await this.insertExecutedMigration(queryRunner, migration);
+
+            return migration;
+        });
+    }
+
+    /**
+     * Returns an array of all migrations.
+     */
+    public async getAllMigrations(): Promise<Migration[]> {
+        return Promise.resolve(this.getMigrations());
+    }
+
+    /**
+     * Returns an array of all executed migrations.
+     */
+    public async getExecutedMigrations(): Promise<Migration[]> {
+        return this.withQueryRunner(async queryRunner => {
+            await this.createMigrationsTableIfNotExist(queryRunner);
+
+            return await this.loadExecutedMigrations(queryRunner);
+        });
+    }
+
+    /**
+     * Returns an array of all pending migrations.
+     */
+    public async getPendingMigrations(): Promise<Migration[]> {
+        const allMigrations = await this.getAllMigrations();
+        const executedMigrations = await this.getExecutedMigrations();
+
+        return allMigrations.filter(migration =>
+            executedMigrations.find(
+                executedMigration =>
+                    executedMigration.name === migration.name
+            )
+        );
+    }
+
+    /**
+     * Inserts an executed migration.
+     */
+    public insertMigration(migration: Migration): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.withQueryRunner(queryRunner => {
+                this.insertExecutedMigration(queryRunner, migration)
+                    .then(resolve)
+                    .catch(reject);
+            });
+        });
+    }
+
+    /**
+     * Deletes an executed migration.
+     */
+    public deleteMigration(migration: Migration): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.withQueryRunner(queryRunner => {
+                this.deleteExecutedMigration(queryRunner, migration)
+                    .then(resolve)
+                    .catch(reject);
+            });
+        });
+    }
+
+    /**
+     * Lists all migrations and whether they have been executed or not
+     * returns true if there are unapplied migrations
+     */
+    async showMigrations(): Promise<boolean> {
+        let hasUnappliedMigrations = false;
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+        // create migrations table if its not created yet
+        await this.createMigrationsTableIfNotExist(queryRunner);
+        // get all migrations that are executed and saved in the database
+        const executedMigrations = await this.loadExecutedMigrations(queryRunner);
+
+        // get all user's migrations in the source code
+        const allMigrations = this.getMigrations();
+
+        for (const migration of allMigrations) {
+            const executedMigration = executedMigrations.find(executedMigration => executedMigration.name === migration.name);
+
+            if (executedMigration) {
+                this.connection.logger.logSchemaBuild(` [X] ${migration.name}`);
+            } else {
+                hasUnappliedMigrations = true;
+                this.connection.logger.logSchemaBuild(` [ ] ${migration.name}`);
+            }
+        }
+
+        // if query runner was created by us then release it
+        if (!this.queryRunner) {
+            await queryRunner.release();
+        }
+
+        return hasUnappliedMigrations;
+    }
 
     /**
      * Executes all pending migrations. Pending migrations are migrations that are not yet executed,
@@ -102,17 +211,25 @@ export class MigrationExecutor {
 
         // start transaction if its not started yet
         let transactionStartedByUs = false;
-        if (this.transaction && !queryRunner.isTransactionActive) {
+        if (this.transaction === "all" && !queryRunner.isTransactionActive) {
             await queryRunner.startTransaction();
             transactionStartedByUs = true;
         }
 
         // run all pending migrations in a sequence
         try {
-            await PromiseUtils.runInSequence(pendingMigrations, migration => {
+            await PromiseUtils.runInSequence(pendingMigrations, async migration => {
+                if (this.transaction === "each" && !queryRunner.isTransactionActive) {
+                    await queryRunner.startTransaction();
+                    transactionStartedByUs = true;
+                }
+
                 return migration.instance!.up(queryRunner)
-                    .then(() => { // now when migration is executed we need to insert record about it into the database
-                        return this.insertExecutedMigration(queryRunner, migration);
+                    .then(async () => { // now when migration is executed we need to insert record about it into the database
+                        await this.insertExecutedMigration(queryRunner, migration);
+                        // commit transaction if we started it
+                        if (this.transaction === "each" && transactionStartedByUs)
+                            await queryRunner.commitTransaction();
                     })
                     .then(() => { // informative log about migration success
                         successMigrations.push(migration);
@@ -121,7 +238,7 @@ export class MigrationExecutor {
             });
 
             // commit transaction if we started it
-            if (transactionStartedByUs)
+            if (this.transaction === "all" && transactionStartedByUs)
                 await queryRunner.commitTransaction();
 
         } catch (err) { // rollback transaction if we started it
@@ -182,7 +299,7 @@ export class MigrationExecutor {
 
         // start transaction if its not started yet
         let transactionStartedByUs = false;
-        if (this.transaction && !queryRunner.isTransactionActive) {
+        if ((this.transaction !== "none") && !queryRunner.isTransactionActive) {
             await queryRunner.startTransaction();
             transactionStartedByUs = true;
         }
@@ -257,16 +374,22 @@ export class MigrationExecutor {
     }
 
     /**
-     * Loads all migrations that were executed and saved into the database.
+     * Loads all migrations that were executed and saved into the database (sorts by id).
      */
     protected async loadExecutedMigrations(queryRunner: QueryRunner): Promise<Migration[]> {
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            return await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).find().toArray();
+            return await mongoRunner.databaseConnection
+            .db(this.connection.driver.database!)
+            .collection(this.migrationsTableName)
+            .find<Migration>()
+            .sort({"_id": -1})
+            .toArray();
         } else {
             const migrationsRaw: ObjectLiteral[] = await this.connection.manager
             .createQueryBuilder(queryRunner)
             .select()
+            .orderBy(this.connection.driver.escape("id"), "DESC")
             .from(this.migrationsTable, this.migrationsTableName)
             .getRawMany();
             return migrationsRaw.map(migrationRaw => {
@@ -280,16 +403,27 @@ export class MigrationExecutor {
      */
     protected getMigrations(): Migration[] {
         const migrations = this.connection.migrations.map(migration => {
-            const migrationClassName = (migration.constructor as any).name;
-            const migrationTimestamp = parseInt(migrationClassName.substr(-13));
-            if (!migrationTimestamp)
+            const migrationClassName = migration.name || (migration.constructor as any).name;
+            const migrationTimestamp = parseInt(migrationClassName.substr(-13), 10);
+            if (!migrationTimestamp || isNaN(migrationTimestamp)) {
                 throw new Error(`${migrationClassName} migration name is wrong. Migration class name should have a JavaScript timestamp appended.`);
+            }
 
             return new Migration(undefined, migrationTimestamp, migrationClassName, migration);
         });
 
+        this.checkForDuplicateMigrations(migrations);
+
         // sort them by timestamp
         return migrations.sort((a, b) => a.timestamp - b.timestamp);
+    }
+
+    protected checkForDuplicateMigrations(migrations: Migration[]) {
+        const migrationNames = migrations.map(migration => migration.name);
+        const duplicates = Array.from(new Set(migrationNames.filter((migrationName, index) => migrationNames.indexOf(migrationName) < index)));
+        if (duplicates.length > 0) {
+            throw Error(`Duplicate migrations: ${duplicates.join(", ")}`);
+        }
     }
 
     /**
@@ -301,10 +435,10 @@ export class MigrationExecutor {
     }
 
     /**
-     * Finds the latest migration (sorts by id) in the given array of migrations.
+     * Finds the latest migration in the given array of migrations.
+     * PRE: Migration array must be sorted by descending id.
      */
-    protected getLatestExecutedMigration(migrations: Migration[]): Migration|undefined {
-        const sortedMigrations = migrations.map(migration => migration).sort((a, b) => ((a.id || 0) - (b.id || 0)) * -1);
+    protected getLatestExecutedMigration(sortedMigrations: Migration[]): Migration|undefined {
         return sortedMigrations.length > 0 ? sortedMigrations[0] : undefined;
     }
 
@@ -320,9 +454,9 @@ export class MigrationExecutor {
             values["timestamp"] = migration.timestamp;
             values["name"] = migration.name;
         }
-        if (this.connection.driver instanceof MongoDriver) {  
+        if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);               
+            await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.insert()
@@ -348,7 +482,7 @@ export class MigrationExecutor {
 
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).deleteOne(conditions);               
+            await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).deleteOne(conditions);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.delete()
@@ -361,4 +495,15 @@ export class MigrationExecutor {
 
     }
 
+    protected async withQueryRunner<T extends any>(callback: (queryRunner: QueryRunner) => T) {
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+
+        try {
+            return callback(queryRunner);
+        } finally {
+            if (!this.queryRunner) {
+                await queryRunner.release();
+            }
+        }
+    }
 }

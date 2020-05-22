@@ -1,10 +1,11 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
+import {Connection} from "../../../src";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
+import {SapDriver} from "../../../src/driver/sap/SapDriver";
+import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {ForeignKeyMetadata} from "../../../src/metadata/ForeignKeyMetadata";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 
 describe("schema builder > custom-db-and-schema-sync", () => {
 
@@ -12,7 +13,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mysql", "mssql", "postgres"],
+            enabledDrivers: ["mysql", "mssql", "postgres", "sap"],
             dropSchema: true,
         });
     });
@@ -43,7 +44,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
             await queryRunner.createSchema(photoMetadata.schemaPath, true);
             await queryRunner.createSchema(albumMetadata.schemaPath, true);
 
-        } else if (connection.driver instanceof PostgresDriver) {
+        } else if (connection.driver instanceof PostgresDriver || connection.driver instanceof SapDriver) {
             photoMetadata.schema = "photo-schema";
             photoMetadata.tablePath = "photo-schema.photo";
             photoMetadata.schemaPath = "photo-schema";

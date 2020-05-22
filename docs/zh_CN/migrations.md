@@ -40,7 +40,7 @@ export class Post {
 你需要使用以下 sql 查询（postgres dialect）创建新的迁移：
 
 ```sql
-ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name";
+ALTER TABLE "post" RENAME COLUMN "title" TO "name";
 ```
 
 运行此 sql 查询后，你的数据库架构就可以使用新的代码库了。
@@ -94,9 +94,9 @@ typeorm migration:create -n PostRefactoring
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
-  async up(queryRunner: QueryRunner): Promise<any> {}
+  async up(queryRunner: QueryRunner): Promise<void> {}
 
-  async down(queryRunner: QueryRunner): Promise<any> {}
+  async down(queryRunner: QueryRunner): Promise<void> {}
 }
 ```
 
@@ -115,11 +115,11 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
-  async up(queryRunner: QueryRunner): Promise<any> {
+  async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
   }
 
-  async down(queryRunner: QueryRunner): Promise<any> {
+  async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`); // 恢复"up"方法所做的事情
   }
 }
@@ -171,11 +171,11 @@ typeorm migration:generate -n PostRefactoring
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
-  async up(queryRunner: QueryRunner): Promise<any> {
+  async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
   }
 
-  async down(queryRunner: QueryRunner): Promise<any> {
+  async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`);
   }
 }
@@ -191,10 +191,10 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 例如:
 
 ```ts
-import { MigrationInterface, QueryRunner, Table } from "typeorm";
+import { MigrationInterface, QueryRunner, Table, TableIndex, TableColumn, TableForeignKey } from "typeorm";
 
 export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
-  async up(queryRunner: QueryRunner): Promise<any> {
+  async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
         name: "question",
@@ -258,7 +258,7 @@ export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
     );
   }
 
-  async down(queryRunner: QueryRunner): Promise<any> {
+  async down(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable("question");
     const foreignKey = table.foreignKeys.find(fk => fk.columnNames.indexOf("questionId") !== -1);
     await queryRunner.dropForeignKey("question", foreignKey);

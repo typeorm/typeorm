@@ -1,15 +1,17 @@
-import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {expect} from "chai";
-import {PromiseUtils} from "../../../src";
-import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
-import {Post} from "./entity/Post";
-import {PostVersion} from "./entity/PostVersion";
+import "reflect-metadata";
+import {Connection, PromiseUtils} from "../../../src";
+import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
+import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
+import {SapDriver} from "../../../src/driver/sap/SapDriver";
+import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
+import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {Post} from "./entity/Post";
+import {PostVersion} from "./entity/PostVersion";
 
 describe("schema builder > change column", () => {
 
@@ -60,7 +62,7 @@ describe("schema builder > change column", () => {
         postTable!.findColumnByName("name")!.length.should.be.equal("500");
         postTable!.findColumnByName("text")!.length.should.be.equal("300");
 
-        if (connection.driver instanceof MysqlDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver || connection.driver instanceof SapDriver) {
             postTable!.indices.length.should.be.equal(2);
         } else {
             postTable!.uniques.length.should.be.equal(2);
@@ -72,6 +74,7 @@ describe("schema builder > change column", () => {
     }));
 
     it("should correctly change column type", () => PromiseUtils.runInSequence(connections, async connection => {
+
         const postMetadata = connection.getMetadata(Post);
         const versionColumn = postMetadata.findColumnWithPropertyName("version")!;
         versionColumn.type = "int";
@@ -95,6 +98,10 @@ describe("schema builder > change column", () => {
     }));
 
     it("should correctly make column primary and generated", () => PromiseUtils.runInSequence(connections, async connection => {
+        // CockroachDB does not allow changing PK
+        if (connection.driver instanceof CockroachDriver)
+            return;
+
         const postMetadata = connection.getMetadata(Post);
         const idColumn = postMetadata.findColumnWithPropertyName("id")!;
         const versionColumn = postMetadata.findColumnWithPropertyName("version")!;
@@ -147,6 +154,10 @@ describe("schema builder > change column", () => {
     }));
 
     it("should correctly change non-generated column on to uuid-generated column", () => PromiseUtils.runInSequence(connections, async connection => {
+        // CockroachDB does not allow changing PK
+        if (connection.driver instanceof CockroachDriver)
+            return;
+
         const queryRunner = connection.createQueryRunner();
 
         if (connection.driver instanceof PostgresDriver)
@@ -158,7 +169,7 @@ describe("schema builder > change column", () => {
         idColumn.generationStrategy = "uuid";
 
         // depending on driver, we must change column and referenced column types
-        if (connection.driver instanceof PostgresDriver) {
+        if (connection.driver instanceof PostgresDriver || connection.driver instanceof CockroachDriver) {
             idColumn.type = "uuid";
         } else if (connection.driver instanceof SqlServerDriver) {
             idColumn.type = "uniqueidentifier";
@@ -171,7 +182,7 @@ describe("schema builder > change column", () => {
         const postTable = await queryRunner.getTable("post");
         await queryRunner.release();
 
-        if (connection.driver instanceof PostgresDriver || connection.driver instanceof SqlServerDriver) {
+        if (connection.driver instanceof PostgresDriver || connection.driver instanceof SqlServerDriver || connection.driver instanceof CockroachDriver) {
             postTable!.findColumnByName("id")!.isGenerated.should.be.true;
             postTable!.findColumnByName("id")!.generationStrategy!.should.be.equal("uuid");
 
@@ -191,6 +202,10 @@ describe("schema builder > change column", () => {
     }));
 
     it("should correctly change generated column generation strategy", () => PromiseUtils.runInSequence(connections, async connection => {
+        // CockroachDB does not allow changing PK
+        if (connection.driver instanceof CockroachDriver)
+            return;
+
         const teacherMetadata = connection.getMetadata("teacher");
         const studentMetadata = connection.getMetadata("student");
         const idColumn = teacherMetadata.findColumnWithPropertyName("id")!;
@@ -198,7 +213,7 @@ describe("schema builder > change column", () => {
         idColumn.generationStrategy = "uuid";
 
         // depending on driver, we must change column and referenced column types
-        if (connection.driver instanceof PostgresDriver) {
+        if (connection.driver instanceof PostgresDriver || connection.driver instanceof CockroachDriver) {
             idColumn.type = "uuid";
             teacherColumn.type = "uuid";
         } else if (connection.driver instanceof SqlServerDriver) {

@@ -41,8 +41,9 @@ export class TableColumn {
 
     /**
      * Specifies generation strategy if this column will use auto increment.
+     * `rowid` option supported only in CockroachDB.
      */
-    generationStrategy?: "uuid"|"increment";
+    generationStrategy?: "uuid"|"increment"|"rowid";
 
     /**
      * Indicates if column is a primary key.
@@ -112,7 +113,12 @@ export class TableColumn {
     /**
      * Array of possible enumerated values.
      */
-    enum?: any[];
+    enum?: string[];
+
+    /**
+     * Exact name of enum
+     */
+    enumName?: string;
 
     /**
      * Generated column expression. Supports only in MySQL.
@@ -160,6 +166,7 @@ export class TableColumn {
             this.isArray = options.isArray || false;
             this.comment = options.comment;
             this.enum = options.enum;
+            this.enumName = options.enumName;
             this.asExpression = options.asExpression;
             this.generatedType = options.generatedType;
             this.spatialFeatureType = options.spatialFeatureType;
@@ -187,6 +194,7 @@ export class TableColumn {
             zerofill: this.zerofill,
             unsigned: this.unsigned,
             enum: this.enum,
+            enumName: this.enumName,
             asExpression: this.asExpression,
             generatedType: this.generatedType,
             default: this.default,

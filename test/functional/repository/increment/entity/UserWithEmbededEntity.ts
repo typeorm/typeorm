@@ -1,13 +1,13 @@
 import { Column, Entity, PrimaryColumn } from "../../../../../src";
 
 class FriendStats {
-    @Column("int", { default: 0 })
+    @Column({ default: 0 })
     count: number;
 
-    @Column("int", { default: 0 })
+    @Column({ default: 0 })
     sent: number;
 
-    @Column("int", { default: 0 })
+    @Column({ default: 0 })
     received: number;
 }
 

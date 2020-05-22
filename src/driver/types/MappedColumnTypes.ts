@@ -37,6 +37,21 @@ export interface MappedColumnTypes {
     updateDateDefault: string;
 
     /**
+     * Column type for the delete date column.
+     */
+    deleteDate: ColumnType;
+
+    /**
+     * Precision of datetime column. Used in MySql to define milliseconds.
+     */
+    deleteDatePrecision?: number;
+
+    /**
+     * Nullable value should be used by a database for "deleted date" column.
+     */
+    deleteDateNullable: boolean;
+
+    /**
      * Column type for the version column.
      */
     version: ColumnType;
@@ -90,5 +105,36 @@ export interface MappedColumnTypes {
      * Column type for result column in query result cache table.
      */
     cacheResult: ColumnType;
+
+    /**
+     * Column type for metadata type column in typeorm metadata table.
+     * Stores type of metadata. E.g. 'VIEW' or 'CHECK'
+     */
+    metadataType: ColumnType;
+
+    /**
+     * Column type for metadata database name column in typeorm metadata table.
+     */
+    metadataDatabase: ColumnType;
+
+    /**
+     * Column type for metadata schema name column in typeorm metadata table.
+     */
+    metadataSchema: ColumnType;
+
+    /**
+     * Column type for metadata table name column in typeorm metadata table.
+     */
+    metadataTable: ColumnType;
+
+    /**
+     * Column type for metadata name column in typeorm metadata table.
+     */
+    metadataName: ColumnType;
+
+    /**
+     * Column type for metadata value column in typeorm metadata table.
+     */
+    metadataValue: ColumnType;
 
 }

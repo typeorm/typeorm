@@ -20,6 +20,7 @@ createConnection(options).then(connection => {
     category1.name = "category #1";
     
     let mainCategory = new Category();
+    mainCategory.manyCategories = [];
     mainCategory.name = "main category";
     mainCategory.oneCategory = category1;
     mainCategory.manyCategories.push(category1);

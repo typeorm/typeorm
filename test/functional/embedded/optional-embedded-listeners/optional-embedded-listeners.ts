@@ -42,17 +42,17 @@ describe("other issues > entity listeners must work in optional embeddeds as wel
             .orderBy("post.id")
             .getMany();
 
-        expect(loadedPosts[0]).not.to.be.empty;
-        expect(loadedPosts[0]!.title).not.to.be.empty;
-        expect(loadedPosts[0]!.text).not.to.be.empty;
+        expect(loadedPosts[0]).not.to.be.undefined;
+        expect(loadedPosts[0]!.title).not.to.be.undefined;
+        expect(loadedPosts[0]!.text).not.to.be.undefined;
         loadedPosts[0]!.title.should.be.equal("First title");
         loadedPosts[0]!.text.should.be.equal("About this post");
 
-        expect(loadedPosts[1]).not.to.be.empty;
+        expect(loadedPosts[1]).not.to.be.undefined;
         loadedPosts[1]!.title.should.be.equal("Second title");
         loadedPosts[1]!.information!.description!.should.be.equal("default post description");
 
-        expect(loadedPosts[2]).not.to.be.empty;
+        expect(loadedPosts[2]).not.to.be.undefined;
         loadedPosts[2]!.title.should.be.equal("Third title");
         loadedPosts[2]!.information!.counters!.likes!.should.be.equal(0);
 

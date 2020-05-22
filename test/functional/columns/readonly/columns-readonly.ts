@@ -1,7 +1,7 @@
-import "reflect-metadata";
 import {expect} from "chai";
+import "reflect-metadata";
+import {Connection} from "../../../../src";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 
 describe("columns > readonly functionality", () => {
@@ -31,10 +31,10 @@ describe("columns > readonly functionality", () => {
         await postRepository.save(post);
 
         // check if all columns are updated except for readonly columns
-        const loadedPost = await postRepository.findOne(1);
+        const loadedPost = await postRepository.findOne(post.id);
         expect(loadedPost!.title).to.be.equal("About columns1");
         expect(loadedPost!.text).to.be.equal("Some text about columns1");
-        expect(loadedPost!.authorName).to.be.equal("Umed1");
+        expect(loadedPost!.authorName).to.be.equal("Umed");  // blocked by readonly
 
     })));
 

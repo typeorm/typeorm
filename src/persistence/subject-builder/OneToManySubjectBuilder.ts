@@ -117,7 +117,7 @@ export class OneToManySubjectBuilder {
             // check if this binding really exist in the database
             // by example: find our category if its already bind in the database
             const relationIdInDatabaseSubjectRelation = relatedEntityDatabaseRelationIds.find(relatedDatabaseEntityRelationId => {
-                return OrmUtils.deepCompare(relationIdMap, relatedDatabaseEntityRelationId);
+                return OrmUtils.compareIds(relationIdMap, relatedDatabaseEntityRelationId);
             });
 
             // if relationIdMap DOES NOT exist in the subject's relation in the database it means its a new relation and we need to "bind" them

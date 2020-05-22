@@ -287,7 +287,7 @@ export class Broadcaster {
 
                     const value = relation.getEntityValue(entity);
                     if (value instanceof Object)
-                        this.broadcastLoadEventsForAll(result, relation.inverseEntityMetadata, value instanceof Array ? value : [value]);
+                        this.broadcastLoadEventsForAll(result, relation.inverseEntityMetadata, Array.isArray(value) ? value : [value]);
                 });
             }
 
@@ -305,7 +305,13 @@ export class Broadcaster {
             if (this.queryRunner.connection.subscribers.length) {
                 this.queryRunner.connection.subscribers.forEach(subscriber => {
                     if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterLoad) {
-                        const executionResult = subscriber.afterLoad!(entity);
+                        const executionResult = subscriber.afterLoad!(entity, {
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entity: entity,
+                            metadata: metadata
+                        });
                         if (executionResult instanceof Promise)
                             result.promises.push(executionResult);
                         result.count++;

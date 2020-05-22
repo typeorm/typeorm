@@ -106,6 +106,12 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
          * to idle time. Supercedes softIdleTimeoutMillis Default: 30000
          */
         readonly idleTimeoutMillis?: number;
+
+        /*
+        * Function handling errors thrown by drivers pool.
+        * Defaults to logging error with `warn` level.
+         */
+        readonly errorHandler?: (err: any) => any;
     };
 
     /**
@@ -252,6 +258,11 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
          * The versions are available from require('tedious').TDS_VERSION. (default: 7_4).
          */
         readonly tdsVersion?: string;
+
+        /**
+         * A boolean, that when true will abort a query when an overflow or divide-by-zero error occurs during query execution.
+         */
+        readonly enableArithAbort?: boolean
     };
 
     /**
@@ -270,5 +281,6 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
         readonly slaves: SqlServerConnectionCredentialsOptions[];
 
     };
+
 
 }

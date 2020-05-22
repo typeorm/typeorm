@@ -1,8 +1,10 @@
-import "reflect-metadata";
 import {expect} from "chai";
+import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import {SapDriver} from "../../../src/driver/sap/SapDriver";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 
 describe("schema builder > create table", () => {
 
@@ -35,7 +37,7 @@ describe("schema builder > create table", () => {
         const nameColumn = postTable!.findColumnByName("name");
         postTable!.should.exist;
 
-        if (connection.driver instanceof MysqlDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
             postTable!.indices.length.should.be.equal(2);
         } else {
             postTable!.uniques.length.should.be.equal(2);
@@ -51,8 +53,13 @@ describe("schema builder > create table", () => {
 
         studentTable = await queryRunner.getTable("student");
         studentTable!.should.exist;
-        studentTable!.indices.length.should.be.equal(1);
         studentTable!.foreignKeys.length.should.be.equal(2);
+        // CockroachDB also stores indices for relation columns
+        if (connection.driver instanceof CockroachDriver) {
+            studentTable!.indices.length.should.be.equal(3);
+        } else {
+            studentTable!.indices.length.should.be.equal(1);
+        }
 
         facultyTable = await queryRunner.getTable("faculty");
         facultyTable!.should.exist;

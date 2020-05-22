@@ -77,7 +77,7 @@ and connection options will be automatically read from this file by those method
 Root of your project is the same level where your `node_modules` directory is.
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import {createConnection, createConnections, Connection} from "typeorm";
 
 // here createConnection will load connection options from
 // ormconfig.json / ormconfig.js / ormconfig.yml / ormconfig.env / ormconfig.xml

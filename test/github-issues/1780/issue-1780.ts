@@ -45,12 +45,12 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                 .values(user2)
                 .execute();
              let loadedUser_1 = await UserRepository.find();
-            expect(loadedUser_1).not.to.be.empty;
+            expect(loadedUser_1).not.to.be.eql([]);
             loadedUser_1.length.should.be.equal(1);
              // remove all rows
             await UserRepository.remove(loadedUser_1);
              let loadedUser_2 = await UserRepository.find();
-            expect(loadedUser_2).to.be.empty;
+            expect(loadedUser_2).to.be.eql([]);
              // update while insertion duplicated row
             await UserRepository
                 .createQueryBuilder()
@@ -69,9 +69,9 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                 .values(user2)
                 .execute();
              let loadedUser_3 = await UserRepository.find();
-            expect(loadedUser_3).not.to.be.empty;
+            expect(loadedUser_3).not.to.be.eql([]);
             loadedUser_3.length.should.be.equal(1);
-            expect(loadedUser_3[0]).to.include({ first_name: "John", last_name: "Lenon", is_updated: "yes" });
+            expect(loadedUser_3[0]).to.deep.include({ first_name: "John", last_name: "Lenon", is_updated: "yes" });
         }
        } catch (err) {
            throw new Error(err);
@@ -98,12 +98,12 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                     .values(user2)
                     .execute();
                  let loadedUser_1 = await UserRepository.find();
-                expect(loadedUser_1).not.to.be.empty;
+                expect(loadedUser_1).not.to.be.eql([]);
                 loadedUser_1.length.should.be.equal(1);
                  // remove all rows
                 await UserRepository.remove(loadedUser_1);
                  let loadedUser_2 = await UserRepository.find();
-                expect(loadedUser_2).to.be.empty;
+                expect(loadedUser_2).to.be.eql([]);
                  // update while insertion duplicated row via unique columns
                 await UserRepository
                     .createQueryBuilder()
@@ -122,14 +122,14 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                     .values(user2)
                     .execute();
                  let loadedUser_3 = await UserRepository.find();
-                expect(loadedUser_3).not.to.be.empty;
+                expect(loadedUser_3).not.to.be.eql([]);
                 loadedUser_3.length.should.be.equal(1);
-                expect(loadedUser_3[0]).to.include({ first_name: "John", last_name: "Lenon", is_updated: "yes" });
+                expect(loadedUser_3[0]).to.deep.include({ first_name: "John", last_name: "Lenon", is_updated: "yes" });
                  // create unique constraint
                 await connection.manager.query("ALTER TABLE \"user\" ADD CONSTRAINT constraint_unique_idx UNIQUE USING INDEX unique_idx;");
                  await UserRepository.remove(loadedUser_3);
                  let loadedUser_4 = await UserRepository.find();
-                expect(loadedUser_4).to.be.empty;
+                expect(loadedUser_4).to.be.eql([]);
                  // update while insertion duplicated row via unique's constraint name
                 await UserRepository
                     .createQueryBuilder()
@@ -148,9 +148,9 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                     .values(user2)
                     .execute();
                  let loadedUser_5 = await UserRepository.find();
-                expect(loadedUser_5).not.to.be.empty;
+                expect(loadedUser_5).not.to.be.eql([]);
                 loadedUser_5.length.should.be.equal(1);
-                expect(loadedUser_3[0]).to.include({ first_name: "John", last_name: "Lenon", is_updated: "yes" });
+                expect(loadedUser_3[0]).to.deep.include({ first_name: "John", last_name: "Lenon", is_updated: "yes" });
             }
         }
         catch (err) {

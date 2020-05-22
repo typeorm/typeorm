@@ -20,6 +20,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
 
         // create
         const token = new AccessToken();
+        token.expireTime = 60000;
         const user = new User();
         user.email = "mwelnick@test.com";
         user.access_token = token; // this is not necessary at all
@@ -34,9 +35,10 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
             .innerJoinAndSelect("token.user", "user")
             .getMany();
 
-        expect(tokens).not.to.be.empty;
+        expect(tokens).not.to.be.undefined;
         tokens.should.be.eql([{
             primaryKey: 1,
+            expireTime: 60000,
             user: {
                 primaryKey: 1,
                 email: "mwelnick@test.com",
@@ -49,12 +51,13 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
             .innerJoinAndSelect("user.access_token", "token")
             .getMany();
 
-        expect(users).not.to.be.empty;
+        expect(users).not.to.be.undefined;
         users.should.be.eql([{
             primaryKey: 1,
             email: "mwelnick@test.com",
             access_token: {
-                primaryKey: 1
+                primaryKey: 1,
+                expireTime: 60000,
             }
         }]);
 

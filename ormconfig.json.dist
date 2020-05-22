@@ -62,11 +62,46 @@
   },
   {
     "skip": false,
+    "name": "cockroachdb",
+    "type": "cockroachdb",
+    "host": "localhost",
+    "port": 26257,
+    "username": "root",
+    "password": "",
+    "database": "defaultdb"
+  },
+  {
+    "skip": false,
+    "name": "sap",
+    "type": "sap",
+    "host": "192.168.56.102",
+    "port": 39015,
+    "username": "SYSTEM",
+    "password": "MySuperHanaPwd123!",
+    "database": "HXE",
+    "logging": false
+  },
+  {
+    "skip": false,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
     "database": "test",
     "logging": false,
-    "useNewUrlParser": true
+    "useNewUrlParser": true,
+    "useUnifiedTopology": true
+  },
+  {
+    "skip": true,
+    "name": "aurora-data-api",
+    "type": "aurora-data-api",
+    "region": "us-east-1",
+    "secretArn": "mysecret",
+    "resourceArn": "app-dbcluster",
+    "database": "app-dbcluster-mine",
+    "serviceConfigOptions": {
+      "maxRetries": 3
+    },
+    "logging": false
   }
 ]

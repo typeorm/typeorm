@@ -43,7 +43,7 @@ describe("database schema > column types > oracle", () => {
         post.varchar2 = "This is varchar2";
         post.nvarchar2 = "This is nvarchar2";
         post.long = "This is long";
-        post.raw = new Buffer("This is raw");
+        post.raw = Buffer.from("This is raw");
         post.dateObj = new Date();
         post.date = "2017-06-21";
         post.timestamp = new Date();
@@ -52,7 +52,7 @@ describe("database schema > column types > oracle", () => {
         post.timestampWithTimeZone.setMilliseconds(0);
         post.timestampWithLocalTimeZone = new Date();
         post.timestampWithLocalTimeZone.setMilliseconds(0);
-        post.blob = new Buffer("This is blob");
+        post.blob = Buffer.from("This is blob");
         post.clob = "This is clob";
         post.nclob = "This is nclob";
         post.simpleArray = ["A", "B", "C"];
@@ -137,7 +137,7 @@ describe("database schema > column types > oracle", () => {
         post.nchar = "AAA";
         post.varchar2 = "This is varchar";
         post.nvarchar2 = "This is nvarchar";
-        post.raw = new Buffer("This is raw");
+        post.raw = Buffer.from("This is raw");
         post.timestamp = new Date();
         post.timestampWithTimeZone = new Date();
         post.timestampWithLocalTimeZone = new Date();
@@ -204,7 +204,7 @@ describe("database schema > column types > oracle", () => {
         post.id = 1;
         post.name = "Post";
         post.boolean = true;
-        post.blob = new Buffer("This is blob");
+        post.blob = Buffer.from("This is blob");
         post.datetime = new Date();
         await postRepository.save(post);
 

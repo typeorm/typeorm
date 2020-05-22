@@ -7,10 +7,10 @@ import {Category} from "./Category";
 @Entity()
 export class Post {
 
-    @PrimaryColumn("int")
+    @PrimaryColumn()
     firstId: number;
 
-    @PrimaryColumn("int")
+    @PrimaryColumn()
     secondId: number;
 
     @Column()

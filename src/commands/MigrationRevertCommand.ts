@@ -39,8 +39,11 @@ export class MigrationRevertCommand implements yargs.CommandModule {
 
         let connection: Connection|undefined = undefined;
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: args.config });
-            const connectionOptions = await connectionOptionsReader.get(args.connection);
+            const connectionOptionsReader = new ConnectionOptionsReader({
+                root: process.cwd(),
+                configName: args.config as any
+            });
+            const connectionOptions = await connectionOptionsReader.get(args.connection as any);
             Object.assign(connectionOptions, {
                 subscribers: [],
                 synchronize: false,
@@ -49,9 +52,26 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                 logging: ["query", "error", "schema"]
             });
             connection = await createConnection(connectionOptions);
+
             const options = {
-                transaction: args["t"] === "false" ? false : true
+                transaction: "all" as "all" | "none" | "each",
             };
+
+            switch (args.t) {
+                case "all":
+                    options.transaction = "all";
+                    break;
+                case "none":
+                case "false":
+                    options.transaction = "none";
+                    break;
+                case "each":
+                    options.transaction = "each";
+                    break;
+                default:
+                    // noop
+            }
+
             await connection.undoLastMigration(options);
             await connection.close();
 

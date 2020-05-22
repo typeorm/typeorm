@@ -38,11 +38,11 @@ export class InitCommand implements yargs.CommandModule {
 
     async handler(args: yargs.Arguments) {
         try {
-            const database = args.database || "mysql";
+            const database: string = args.database as any || "mysql";
             const isExpress = args.express !== undefined ? true : false;
             const isDocker = args.docker !== undefined ? true : false;
             const basePath = process.cwd() + (args.name ? ("/" + args.name) : "");
-            const projectName = args.name ? path.basename(args.name) : undefined;
+            const projectName = args.name ? path.basename(args.name as any) : undefined;
             await CommandUtils.createFile(basePath + "/package.json", InitCommand.getPackageJsonTemplate(projectName), false);
             if (isDocker)
                 await CommandUtils.createFile(basePath + "/docker-compose.yml", InitCommand.getDockerComposeTemplate(database), false);
@@ -121,6 +121,16 @@ export class InitCommand implements yargs.CommandModule {
                     "username": "test",
                     "password": "test",
                     "database": "test",
+                });
+                break;
+            case "cockroachdb":
+                Object.assign(options, {
+                    "type": "cockroachdb",
+                    "host": "localhost",
+                    "port": 26257,
+                    "username": "root",
+                    "password": "",
+                    "database": "defaultdb",
                 });
                 break;
             case "mssql":
@@ -435,6 +445,17 @@ services:
       POSTGRES_DB: "test"
 
 `;
+            case "cockroachdb":
+                return `version: '3'
+services:
+
+  cockroachdb:
+    image: "cockroachdb/cockroach:v2.1.4"
+    command: start --insecure
+    ports:
+      - "26257:26257"
+
+`;
             case "sqlite":
                 return `version: '3'
 services:
@@ -460,7 +481,7 @@ services:
 services:
 
   mongodb:
-    image: "mongo:3.4.1"
+    image: "mongo:4.0.6"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
@@ -504,7 +525,7 @@ Steps to run this project:
         Object.assign(packageJson.devDependencies, {
             "ts-node": "3.3.0",
             "@types/node": "^8.0.29",
-            "typescript": "2.5.2"
+            "typescript": "3.3.3333"
         });
 
         if (!packageJson.dependencies) packageJson.dependencies = {};
@@ -519,6 +540,7 @@ Steps to run this project:
                 packageJson.dependencies["mysql"] = "^2.14.1";
                 break;
             case "postgres":
+            case "cockroachdb":
                 packageJson.dependencies["pg"] = "^7.3.0";
                 break;
             case "sqlite":

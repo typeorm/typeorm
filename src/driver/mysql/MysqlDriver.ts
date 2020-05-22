@@ -17,6 +17,7 @@ import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
+import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -119,6 +120,7 @@ export class MysqlDriver implements Driver {
         "longblob",
         "longtext",
         "enum",
+        "set",
         "binary",
         "varbinary",
         // json data type
@@ -234,6 +236,9 @@ export class MysqlDriver implements Driver {
         updateDate: "datetime",
         updateDatePrecision: 6,
         updateDateDefault: "CURRENT_TIMESTAMP(6)",
+        deleteDate: "datetime",
+        deleteDatePrecision: 6,
+        deleteDateNullable: true,
         version: "int",
         treeLevel: "int",
         migrationId: "int",
@@ -245,6 +250,12 @@ export class MysqlDriver implements Driver {
         cacheDuration: "int",
         cacheQuery: "text",
         cacheResult: "text",
+        metadataType: "varchar",
+        metadataDatabase: "varchar",
+        metadataSchema: "varchar",
+        metadataTable: "varchar",
+        metadataName: "varchar",
+        metadataValue: "text",
     };
 
     /**
@@ -264,6 +275,9 @@ export class MysqlDriver implements Driver {
         "fixed": { precision: 10, scale: 0 },
         "float": { precision: 12 },
         "double": { precision: 22 },
+        "time": { precision: 0 },
+        "datetime": { precision: 0 },
+        "timestamp": { precision: 0 },
         "bit": { width: 1 },
         "int": { width: 11 },
         "integer": { width: 11 },
@@ -273,13 +287,23 @@ export class MysqlDriver implements Driver {
         "bigint": { width: 20 }
     };
 
+
+    /**
+     * Max length allowed by MySQL for aliases.
+     * @see https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
+     */
+    maxAliasLength = 63;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(connection: Connection) {
         this.connection = connection;
-        this.options = connection.options as MysqlConnectionOptions;
+        this.options = {
+            legacySpatialSupport: true,
+            ...connection.options
+        } as MysqlConnectionOptions;
         this.isReplicated = this.options.replication ? true : false;
 
         // load mysql package
@@ -414,7 +438,7 @@ export class MysqlDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.to(value);
+            value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (value === null || value === undefined)
             return value;
@@ -439,8 +463,12 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
-        } else if (columnMetadata.type === "enum") {
+
+        } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") {
             return "" + value;
+
+        } else if (columnMetadata.type === "set") {
+            return DateUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -451,7 +479,7 @@ export class MysqlDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
+            return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "bool" || columnMetadata.type === "boolean") {
             value = value ? true : false;
@@ -474,18 +502,18 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
 
-        } else if (
-            columnMetadata.type === "enum"
+        } else if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum")
             && columnMetadata.enum
             && !isNaN(value)
-            && columnMetadata.enum.indexOf(parseInt(value)) >= 0
-        ) {
-            // convert to number if that exists in poosible enum options
+            && columnMetadata.enum.indexOf(parseInt(value)) >= 0) {
+            // convert to number if that exists in possible enum options
             value = parseInt(value);
+        } else if (columnMetadata.type === "set") {
+            value = DateUtils.stringToSimpleArray(value);
         }
 
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
+            value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
 
         return value;
     }
@@ -512,8 +540,20 @@ export class MysqlDriver implements Driver {
         } else if (column.type === "uuid") {
             return "varchar";
 
+        } else if (column.type === "json" && this.options.type === "mariadb") {
+            /*
+             * MariaDB implements this as a LONGTEXT rather, as the JSON data type contradicts the SQL standard,
+             * and MariaDB's benchmarks indicate that performance is at least equivalent.
+             *
+             * @see https://mariadb.com/kb/en/json-data-type/
+             */
+            return "longtext";
+
         } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "text";
+
+        } else if (column.type === "simple-enum") {
+            return "enum";
 
         } else if (column.type === "double precision" || column.type === "real") {
             return "double";
@@ -541,8 +581,12 @@ export class MysqlDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string {
         const defaultValue = columnMetadata.default;
 
-        if (columnMetadata.type === "enum" && defaultValue !== undefined) {
+        if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
             return `'${defaultValue}'`;
+        }
+
+        if ((columnMetadata.type === "set") && defaultValue !== undefined) {
+            return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
         }
 
         if (typeof defaultValue === "number") {
@@ -558,7 +602,7 @@ export class MysqlDriver implements Driver {
             return `'${defaultValue}'`;
 
         } else if (defaultValue === null) {
-            return `null`;
+            return `NULL`;
 
         } else {
             return defaultValue;
@@ -704,6 +748,7 @@ export class MysqlDriver implements Driver {
             // console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
             // console.log("comment:", tableColumn.comment, columnMetadata.comment);
             // console.log("default:", tableColumn.default, columnMetadata.default);
+            // console.log("enum:", tableColumn.enum, columnMetadata.enum);
             // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
             // console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
@@ -730,6 +775,7 @@ export class MysqlDriver implements Driver {
                 || tableColumn.generatedType !== columnMetadata.generatedType
                 // || tableColumn.comment !== columnMetadata.comment // todo
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
+                || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
                 || tableColumn.onUpdate !== columnMetadata.onUpdate
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
@@ -794,13 +840,12 @@ export class MysqlDriver implements Driver {
      */
     protected createConnectionOptions(options: MysqlConnectionOptions, credentials: MysqlConnectionCredentialsOptions): Promise<any> {
 
-        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+        credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
         // build connection options for the driver
         return Object.assign({}, {
             charset: options.charset,
             timezone: options.timezone,
-            acquireTimeout: options.acquireTimeout,
             connectTimeout: options.connectTimeout,
             insecureAuth: options.insecureAuth,
             supportBigNumbers: options.supportBigNumbers !== undefined ? options.supportBigNumbers : true,
@@ -817,7 +862,11 @@ export class MysqlDriver implements Driver {
             database: credentials.database,
             port: credentials.port,
             ssl: options.ssl
-        }, options.extra || {});
+        },
+        options.acquireTimeout === undefined
+          ? {}
+          : { acquireTimeout: options.acquireTimeout },
+        options.extra || {});
     }
 
     /**

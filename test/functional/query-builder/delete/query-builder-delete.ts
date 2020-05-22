@@ -4,9 +4,10 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {Photo} from "./entity/Photo";
+import {EntityColumnNotFound} from "../../../../src/error/EntityColumnNotFound";
 
 describe("query builder > delete", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -92,4 +93,45 @@ describe("query builder > delete", () => {
         expect(loadedPhoto4).to.exist;
     })));
 
+    it("should return correct delete result", () => Promise.all(connections.map(async connection => {
+
+        // don't run test for sqlite and sqljs as they don't return affected rows
+        if (connection.name === "sqlite" || connection.name === "sqljs" || connection.name === "sap")
+            return;
+
+        // save some users
+        const user1 = new User();
+        user1.name = "John Doe";
+        const user2 = new User();
+        user2.name = "Jane Doe";
+        await connection.manager.save([user1, user2]);
+
+        const result = await connection.createQueryBuilder()
+            .delete()
+            .from(User)
+            .execute();
+
+        expect(result.affected).to.equal(2);
+    })));
+
+    it("should throw error when unknown property in where criteria", () => Promise.all(connections.map(async connection => {
+
+        const user = new User();
+        user.name = "Alex Messer";
+
+        await connection.manager.save(user);
+
+        let error: Error | undefined;
+        try {
+            await connection.createQueryBuilder()
+                .delete()
+                .from(User)
+                .where( { unknownProp: "Alex Messer" })
+                .execute();
+        } catch (err) {
+            error = err;
+        }
+        expect(error).to.be.an.instanceof(EntityColumnNotFound);
+
+    })));
 });

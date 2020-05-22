@@ -1,9 +1,11 @@
 import "reflect-metadata";
+import {SapDriver} from "../../../src/driver/sap/SapDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 import { Category } from "./entity/Category";
+import { OracleDriver } from "../../../src/driver/oracle/OracleDriver";
 
 describe("github issues > #3363 Isolation Level in transaction() from Connection", () => {
 
@@ -16,6 +18,9 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
     after(() => closeTestingConnections(connections));
 
     it("should execute operations in READ UNCOMMITED isolation level", () => Promise.all(connections.map(async function(connection) {
+        // SAP, Oracle does not support READ UNCOMMITTED isolation level
+        if (connection.driver instanceof SapDriver || connection.driver instanceof OracleDriver)
+            return;
 
         let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
 
@@ -35,14 +40,14 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
         });
 
         const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
-        expect(post).not.to.be.empty;
+        expect(post).not.to.be.undefined;
         post!.should.be.eql({
             id: postId,
             title: "Post #1"
         });
 
         const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
-        expect(category).not.to.be.empty;
+        expect(category).not.to.be.undefined;
         category!.should.be.eql({
             id: categoryId,
             name: "Category #1"
@@ -70,14 +75,14 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
         });
 
         const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
-        expect(post).not.to.be.empty;
+        expect(post).not.to.be.undefined;
         post!.should.be.eql({
             id: postId,
             title: "Post #1"
         });
 
         const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
-        expect(category).not.to.be.empty;
+        expect(category).not.to.be.undefined;
         category!.should.be.eql({
             id: categoryId,
             name: "Category #1"

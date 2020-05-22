@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import * as assert from "assert";
 import {createConnection} from "../../../src/index";
-import * as rimraf from "rimraf";
+import rimraf from "rimraf";
 import {dirname} from "path";
 import {Connection} from "../../../src/connection/Connection";
 

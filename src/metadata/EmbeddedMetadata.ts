@@ -8,6 +8,7 @@ import {Connection} from "../connection/Connection";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {IndexMetadata} from "./IndexMetadata";
+import {UniqueMetadata} from "./UniqueMetadata";
 
 /**
  * Contains all information about entity's embedded property.
@@ -64,6 +65,11 @@ export class EmbeddedMetadata {
      * Indices applied to the embed columns.
      */
     indices: IndexMetadata[] = [];
+
+    /**
+     * Uniques applied to the embed columns.
+     */
+    uniques: UniqueMetadata[] = [];
 
     /**
      * Relation ids inside this embed.
@@ -147,6 +153,11 @@ export class EmbeddedMetadata {
     indicesFromTree: IndexMetadata[] = [];
 
     /**
+     * Uniques of this embed and all uniques from its child embeds.
+     */
+    uniquesFromTree: UniqueMetadata[] = [];
+
+    /**
      * Relation ids of this embed and all relation ids from its child embeds.
      */
     relationIdsFromTree: RelationIdMetadata[] = [];
@@ -197,6 +208,7 @@ export class EmbeddedMetadata {
         this.relationsFromTree = this.buildRelationsFromTree();
         this.listenersFromTree = this.buildListenersFromTree();
         this.indicesFromTree = this.buildIndicesFromTree();
+        this.uniquesFromTree = this.buildUniquesFromTree();
         this.relationIdsFromTree = this.buildRelationIdsFromTree();
         this.relationCountsFromTree = this.buildRelationCountsFromTree();
         return this;
@@ -264,6 +276,10 @@ export class EmbeddedMetadata {
 
     protected buildIndicesFromTree(): IndexMetadata[] {
         return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildIndicesFromTree()), this.indices);
+    }
+
+    protected buildUniquesFromTree(): UniqueMetadata[] {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildUniquesFromTree()), this.uniques);
     }
 
     protected buildRelationIdsFromTree(): RelationIdMetadata[] {

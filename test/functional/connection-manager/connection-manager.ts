@@ -1,12 +1,15 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {setupSingleTestingConnection} from "../../utils/test-utils";
-import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {ConnectionManager} from "../../../src/connection/ConnectionManager";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {PrimaryGeneratedColumn} from "../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../src/decorator/columns/Column";
 import {Entity} from "../../../src/decorator/entity/Entity";
+
+// Uncomment when testing the aurora data API driver
+// import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
+// import {AuroraDataApiConnectionOptions} from "../../../src/driver/aurora-data-api/AuroraDataApiConnectionOptions";
 
 describe("ConnectionManager", () => {
 
@@ -29,10 +32,12 @@ describe("ConnectionManager", () => {
 
         it("should create a mysql connection when mysql driver is specified", () => {
 
-            const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "default",
                 entities: []
             });
+            if (!options)
+                return;
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
             connection.name.should.be.equal("default");
@@ -67,6 +72,23 @@ describe("ConnectionManager", () => {
             connection.driver.should.be.instanceOf(MysqlDriver);
             connection.isConnected.should.be.true;
             await connection.close();
+
+        it("should create a aurora connection when aurora-data-api driver is specified", async () => {
+            const options = setupSingleTestingConnection("aurora-data-api", {
+                name: "aurora-data-api",
+                dropSchema: false,
+                schemaCreate: false,
+                enabledDrivers: ["aurora-data-api"]
+            });
+            const connectionManager = new ConnectionManager();
+            const connection = connectionManager.create(options!);
+            await connection.connect();
+            connection.name.should.contain("aurora-data-api");
+            connection.driver.should.be.instanceOf(AuroraDataApiDriver);
+            connection.isConnected.should.be.true;
+            const serviceConfigOptions = (connection.options as AuroraDataApiConnectionOptions).serviceConfigOptions;
+            expect(serviceConfigOptions).to.include({ maxRetries: 3, region: "us-east-1" });
+            await connection.close();
         });
 
     /!*    it("should create a postgres connection when postgres driver is specified AND connect to it", async () => {
@@ -87,10 +109,12 @@ describe("ConnectionManager", () => {
     describe("get", function() {
 
         it("should give connection with a requested name", () => {
-            const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "myMysqlConnection",
                 entities: []
             });
+            if (!options)
+                return;
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
             connection.driver.should.be.instanceOf(MysqlDriver);
@@ -98,10 +122,12 @@ describe("ConnectionManager", () => {
         });
 
         it("should throw an error if connection with the given name was not found", () => {
-            const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "myMysqlConnection",
                 entities: []
             });
+            if (!options)
+                return;
             const connectionManager = new ConnectionManager();
             const connection = connectionManager.create(options);
             connection.driver.should.be.instanceOf(MysqlDriver);
@@ -113,11 +139,14 @@ describe("ConnectionManager", () => {
     describe("create connection options", function() {
 
         it("should not drop the database if dropSchema was not specified", async () => {
-            const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "myMysqlConnection",
                 schemaCreate: true,
                 entities: [Post]
             });
+            if (!options)
+                return;
+
             const connectionManager = new ConnectionManager();
 
             // create connection, save post and close connection
@@ -135,12 +164,15 @@ describe("ConnectionManager", () => {
         });
 
         it("should drop the database if dropSchema was set to true (mysql)", async () => {
-            const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "myMysqlConnection",
                 schemaCreate: true,
                 dropSchema: true,
                 entities: [Post]
             });
+            if (!options)
+                return;
+
             const connectionManager = new ConnectionManager();
 
             // create connection, save post and close connection

@@ -26,7 +26,7 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
         await connection.manager.save(post1);
 
         const loadedPosts1 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
-        expect(loadedPosts1!).not.to.be.empty;
+        expect(loadedPosts1!).not.to.be.undefined;
 
         // loadedPosts1!.date.toISOString().should.be.equal("2017-01-10T17:38:06.000Z");
         // loadedPosts1!.localDate.toISOString().should.be.equal("2017-01-10T17:38:06.000Z");

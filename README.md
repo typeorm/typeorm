@@ -13,7 +13,10 @@
 	<a href="https://david-dm.org/typeorm/typeorm">
 		<img src="https://david-dm.org/typeorm/typeorm.svg">
 	</a>
-	<a href="https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTFiNDEyOGUxZGQyYWIwOTA0NDQxODdkOGQ0OTUxNzFjYjUwY2E0ZmFlODc5OTYyYzAzNGM3MGZjYzhjYTBiZTY">
+    <a href="https://codecov.io/gh/typeorm/typeorm">
+        <img alt="Codecov" src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg">
+    </a>
+	<a href="https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTUxNTZhM2Q4NDNhMjMzNjQ2NGM1ZjI1ZGRkNjJjYzI4OTZjMGYyYTc0MzAxYTdjMWE3ZDIxOWUzZTdlM2QxNTY">
 		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg">
 	</a>
   <br>
@@ -28,7 +31,7 @@ that help you to develop any kind of application that uses databases - from
 small applications with a few tables to large scale enterprise applications
 with multiple databases.
 
-TypeORM supports both Active Record and Data Mapper patterns,
+TypeORM supports both [Active Record](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) and [Data Mapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) patterns,
 unlike all other JavaScript ORMs currently in existence,
 which means you can write high quality, loosely coupled, scalable,
 maintainable applications the most productive way.
@@ -38,7 +41,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
 Some TypeORM features:
 
-* supports both DataMapper and ActiveRecord (your choice)
+* supports both [DataMapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice)
 * entities and columns
 * database-specific column types
 * entity manager
@@ -67,7 +70,7 @@ Some TypeORM features:
 * supports closure table pattern
 * schema declaration in models or separate configuration files
 * connection configuration in json / xml / yml / env formats
-* supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / sql.js
+* supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js
 * supports MongoDB NoSQL database
 * works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms
 * TypeScript and JavaScript support
@@ -180,7 +183,7 @@ await timber.remove();
 
         `npm install mysql --save` (you can install `mysql2` instead as well)
 
-    * for **PostgreSQL**
+    * for **PostgreSQL** or **CockroachDB**
 
         `npm install pg --save`
 
@@ -200,10 +203,16 @@ await timber.remove();
 
         `npm install oracledb --save`
 
-        Install only *one* of them, depending on which database you use.
-
         To make the Oracle driver work, you need to follow the installation instructions from
         [their](https://github.com/oracle/node-oracledb) site.
+
+    * for **SAP Hana**
+
+        ```
+        npm config set @sap:registry https://npm.sap.com
+        npm i @sap/hana-client
+		npm i hdb-pool
+        ```
 
     * for **MongoDB** (experimental)
 
@@ -211,13 +220,14 @@ await timber.remove();
 
     * for **NativeScript**, **react-native** and **Cordova**
 
-        Check [documentation of supported platforms](docs/supported-platforms.md)
+        Check [documentation of supported platforms](./docs/supported-platforms.md)
 
+    Install only *one* of them, depending on which database you use.
 
 
 ##### TypeScript configuration
 
-Also, make sure you are using TypeScript compiler version **2.3** or greater,
+Also, make sure you are using TypeScript version **3.3** or higher,
 and you have enabled the following settings in `tsconfig.json`:
 
 ```json
@@ -246,7 +256,7 @@ typeorm init --name MyProject --database mysql
 ```
 
 Where `name` is the name of your project and `database` is the database you'll use.
-Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`, `mongodb`,
+Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `mongodb`,
 `cordova`, `react-native`, `expo`, `nativescript`.
 
 This command will generate a new project in the `MyProject` directory with the following files:
@@ -338,6 +348,7 @@ export class Photo {
     description: string;
     filename: string;
     views: number;
+    isPublished: boolean;
 }
 ```
 
@@ -407,7 +418,7 @@ export class Photo {
 Now `id`, `name`, `description`, `filename`, `views` and `isPublished` columns will be added to the `photo` table.
 Column types in the database are inferred from the property types you used, e.g.
 `number` will be converted into `integer`, `string` into `varchar`, `boolean` into `bool`, etc.
-But you can use any column type your database supports by implicitly specifying a column type into the `@Column` decorator.
+But you can use any column type your database supports by explicitly specifying a column type into the `@Column` decorator.
 
 We generated a database table with columns, but there is one thing left.
 Each database table must have a column with a primary key.
@@ -542,7 +553,8 @@ createConnection({
 
 We are using MySQL in this example, but you can use any other supported database.
 To use another database, simply change the `type` in the options to the database type you are using:
-mysql, mariadb, postgres, sqlite, mssql, oracle, cordova, nativescript, react-native, expo, or mongodb.
+`mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `cordova`, `nativescript`, `react-native`,
+`expo`, or `mongodb`.
 Also make sure to use your own host, port, username, password and database settings.
 
 We added our Photo entity to the list of entities for this connection.
@@ -1034,6 +1046,8 @@ createConnection(options).then(async connection => {
 }).catch(error => console.log(error));
 ```
 
+Notice that we now set the photo's `metadata` property, instead of the metadata's `photo` property as before. The `cascade` feature only works if you connect the photo to its metadata from the photo's side. If you set the metadata's side, the metadata would not be saved automatically.
+
 ### Creating a many-to-one / one-to-many relation
 
 Let's create a many-to-one / one-to-many relation.
@@ -1256,6 +1270,8 @@ There are a few repositories which you can clone and start with:
 * [Example how to use TypeORM in a Cordova/PhoneGap app](https://github.com/typeorm/cordova-example)
 * [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
 * [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
+* [Example how to use TypeORM with Nativescript-Vue](https://github.com/typeorm/nativescript-vue-typeorm-sample)
+* [Example how to use TypeORM with Nativescript-Angular](https://github.com/betov18x/nativescript-angular-typeorm-example)
 * [Example how to use TypeORM with Electron using JavaScript](https://github.com/typeorm/electron-javascript-example)
 * [Example how to use TypeORM with Electron using TypeScript](https://github.com/typeorm/electron-typescript-example)
 

@@ -26,10 +26,12 @@ plugins: [
         result.request = result.request.replace(/typeorm/, "typeorm/browser");
     }),
     new webpack.ProvidePlugin({
-      'window.SQL': 'sql.js/js/sql.js'
+      'window.SQL': 'sql.js/dist/sql-wasm.js'
     })
 ]
 ```
+
+and make sure (sql-wasm.wasm)[https://github.com/sql-js/sql.js/blob/master/README.md#downloadingusing] file exists in your public path.
 
 **Example of configuration**
 
@@ -45,7 +47,7 @@ createConnection({
 
 **Don't forget to include reflect-metadata**
     
-In your main html page, you need to include refllect-metadata:
+In your main html page, you need to include reflect-metadata:
 
 ```html
 <script src="./node_modules/reflect-metadata/Reflect.js"></script>
@@ -63,13 +65,13 @@ TypeORM is able to on React Native apps using the [react-native-sqlite-storage](
 
 ## Expo
 
-TypeORM is able to run on Expo apps using the [Expo SQLite API](https://docs.expo.io/versions/latest/sdk/sqlite.html). For an example how to use TypeORM in Expo see [typeorm/react-native-example](https://github.com/typeorm/react-native-example).
+TypeORM is able to run on Expo apps using the [Expo SQLite API](https://docs.expo.io/versions/latest/sdk/sqlite/). For an example how to use TypeORM in Expo see [typeorm/expo-example](https://github.com/typeorm/expo-example).
 
 ## NativeScript
 
 1. `tns install webpack` (read below why webpack is required)
 2. `tns plugin add nativescript-sqlite`
-3. Create Database connetion in your app's entry point
+3. Create Database connection in your app's entry point
     ```typescript
     import driver from 'nativescript-sqlite'
 
@@ -78,7 +80,7 @@ TypeORM is able to run on Expo apps using the [Expo SQLite API](https://docs.exp
         type: 'nativescript',
         driver,
         entities: [
-            Todo //... whatver entities you have
+            Todo //... whatever entities you have
         ],
         logging: true
     })

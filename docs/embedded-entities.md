@@ -73,7 +73,7 @@ export class Student {
 What we can do is to reduce `firstName` and `lastName` duplication by creating a new class with those columns:
 
 ```typescript
-import {Entity, Column} from "typeorm";
+import {Column} from "typeorm";
 
 export class Name {
     

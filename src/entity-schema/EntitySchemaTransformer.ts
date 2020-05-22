@@ -41,7 +41,8 @@ export class EntitySchemaTransformer {
                 schema: options.schema,
                 type: options.type || "regular",
                 orderBy: options.orderBy,
-                synchronize: options.synchronize
+                synchronize: options.synchronize,
+                expression: options.expression
             };
             metadataArgsStorage.tables.push(tableMetadata);
 
@@ -53,6 +54,8 @@ export class EntitySchemaTransformer {
                     mode = "createDate";
                 if (column.updateDate)
                     mode = "updateDate";
+                if (column.deleteDate)
+                    mode = "deleteDate";
                 if (column.version)
                     mode = "version";
                 if (column.treeChildrenCount)
@@ -73,7 +76,9 @@ export class EntitySchemaTransformer {
                         width: column.width,
                         nullable: column.nullable,
                         readonly: column.readonly,
+                        update: column.update,
                         select: column.select,
+                        insert: column.insert,
                         primary: column.primary,
                         unique: column.unique,
                         comment: column.comment,
@@ -90,7 +95,9 @@ export class EntitySchemaTransformer {
                         generatedType: column.generatedType,
                         hstoreType: column.hstoreType,
                         array: column.array,
-                        transformer: column.transformer
+                        transformer: column.transformer,
+                        spatialFeatureType: column.spatialFeatureType,
+                        srid: column.srid
                     }
                 };
                 metadataArgsStorage.columns.push(columnAgrs);
@@ -103,6 +110,9 @@ export class EntitySchemaTransformer {
                     };
                     metadataArgsStorage.generations.push(generationArgs);
                 }
+
+                if (column.unique)
+                    metadataArgsStorage.uniques.push({ target: options.target || options.name, columns: [columnName] });
             });
 
             // add relation metadata args from the schema
@@ -124,6 +134,7 @@ export class EntitySchemaTransformer {
                             nullable: relationSchema.nullable,
                             onDelete: relationSchema.onDelete,
                             onUpdate: relationSchema.onUpdate,
+                            deferrable: relationSchema.deferrable,
                             primary: relationSchema.primary,
                             persistence: relationSchema.persistence
                         }
@@ -183,6 +194,7 @@ export class EntitySchemaTransformer {
                         unique: index.unique === true ? true : false,
                         spatial: index.spatial === true ? true : false,
                         fulltext: index.fulltext === true ? true : false,
+                        parser: index.parser,
                         synchronize: index.synchronize === false ? false : true,
                         where: index.where,
                         sparse: index.sparse,

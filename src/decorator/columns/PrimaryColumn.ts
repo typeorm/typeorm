@@ -31,7 +31,7 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
         if (typeof typeOrOptions === "string") {
             type = <ColumnType> typeOrOptions;
         } else {
-            options = <ColumnOptions> typeOrOptions;
+            options = Object.assign({}, <ColumnOptions> typeOrOptions);
         }
         if (!options) options = {} as ColumnOptions;
 
@@ -67,7 +67,7 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
             getMetadataArgsStorage().generations.push({
                 target: object.constructor,
                 propertyName: propertyName,
-                strategy: options.type === "uuid" ? "uuid" : "increment"
+                strategy: typeof options.generated === "string" ? options.generated : "increment"
             } as GeneratedMetadataArgs);
         }
     };

@@ -23,24 +23,30 @@ export class TableIndex {
     /**
      * Indicates if this index is unique.
      */
-    isUnique?: boolean;
+    isUnique: boolean;
 
     /**
      * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
      * Works only in MySQL.
      */
-    isSpatial?: boolean;
+    isSpatial: boolean;
 
     /**
      * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
      * Works only in MySQL.
      */
-    isFulltext?: boolean;
+    isFulltext: boolean;
+
+    /**
+     * Fulltext parser.
+     * Works only in MySQL.
+     */
+    parser?: string;
 
     /**
      * Index filter condition.
      */
-    where?: string;
+    where: string;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -49,10 +55,11 @@ export class TableIndex {
     constructor(options: TableIndexOptions) {
         this.name = options.name;
         this.columnNames = options.columnNames;
-        this.isUnique = options.isUnique;
-        this.isSpatial = options.isSpatial;
-        this.isFulltext = options.isFulltext;
-        this.where = options.where;
+        this.isUnique = !!options.isUnique;
+        this.isSpatial = !!options.isSpatial;
+        this.isFulltext = !!options.isFulltext;
+        this.parser = options.parser;
+        this.where = options.where ? options.where : "";
     }
 
     // -------------------------------------------------------------------------
@@ -69,6 +76,7 @@ export class TableIndex {
             isUnique: this.isUnique,
             isSpatial: this.isSpatial,
             isFulltext: this.isFulltext,
+            parser: this.parser,
             where: this.where
         });
     }
@@ -87,6 +95,7 @@ export class TableIndex {
             isUnique: indexMetadata.isUnique,
             isSpatial: indexMetadata.isSpatial,
             isFulltext: indexMetadata.isFulltext,
+            parser: indexMetadata.parser,
             where: indexMetadata.where
         });
     }

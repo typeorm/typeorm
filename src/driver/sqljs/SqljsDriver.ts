@@ -13,6 +13,7 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 // This is needed to satisfy the typescript compiler.
 interface Window {
     SQL: any;
+    localforage: any;
 }
 declare var window: Window;
 
@@ -74,12 +75,12 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
         return this.queryRunner;
     }
-    
+
     /**
      * Loads a database from a given file (Node.js), local storage key (browser) or array.
      * This will delete the current database!
      */
-    load(fileNameOrLocalStorageOrData: string | Uint8Array, checkIfFileOrLocalStorageExists: boolean = true): Promise<any> {
+    async load(fileNameOrLocalStorageOrData: string | Uint8Array, checkIfFileOrLocalStorageExists: boolean = true): Promise<any> {
         if (typeof fileNameOrLocalStorageOrData === "string") {
             // content has to be loaded
             if (PlatformTools.type === "node") {
@@ -98,12 +99,21 @@ export class SqljsDriver extends AbstractSqliteDriver {
                     // File will be written on first write operation.
                     return this.createDatabaseConnectionWithImport();
                 }
-            } 
+            }
             else {
                 // browser
-                // fileNameOrLocalStorageOrData should be a local storage key
-                const localStorageContent = PlatformTools.getGlobalVariable().localStorage.getItem(fileNameOrLocalStorageOrData);
-                
+                // fileNameOrLocalStorageOrData should be a local storage / indexedDB key
+                let localStorageContent = null;
+                if (this.options.useLocalForage) {
+                    if (window.localforage) {
+                        localStorageContent = await window.localforage.getItem(fileNameOrLocalStorageOrData);
+                    } else {
+                        throw new Error(`localforage is not defined - please import localforage.js into your site`);
+                    }
+                } else {
+                    localStorageContent = PlatformTools.getGlobalVariable().localStorage.getItem(fileNameOrLocalStorageOrData);
+                }
+
                 if (localStorageContent != null) {
                     // localStorage value exists.
                     return this.createDatabaseConnectionWithImport(JSON.parse(localStorageContent));
@@ -125,14 +135,15 @@ export class SqljsDriver extends AbstractSqliteDriver {
     }
 
     /**
-     * Saved the current database to the given file (Node.js) or local storage key (browser).
+     * Saved the current database to the given file (Node.js), local storage key (browser) or
+     * indexedDB key (browser with enabled useLocalForage option).
      * If no location path is given, the location path in the options (if specified) will be used.
      */
     async save(location?: string) {
         if (!location && !this.options.location) {
             throw new Error(`No location is set, specify a location parameter or add the location option to your configuration`);
         }
-        
+
         let path = "";
         if (location) {
             path = location;
@@ -143,7 +154,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
         if (PlatformTools.type === "node") {
             try {
-                const content = new Buffer(this.databaseConnection.export());
+                const content = Buffer.from(this.databaseConnection.export());
                 await PlatformTools.writeFile(path, content);
             }
             catch (e) {
@@ -154,14 +165,23 @@ export class SqljsDriver extends AbstractSqliteDriver {
             const database: Uint8Array = this.databaseConnection.export();
             // convert Uint8Array to number array to improve local-storage storage
             const databaseArray = [].slice.call(database);
-            PlatformTools.getGlobalVariable().localStorage.setItem(path, JSON.stringify(databaseArray));
+            if (this.options.useLocalForage) {
+                if (window.localforage) {
+                    await window.localforage.setItem(path, JSON.stringify(databaseArray));
+                } else {
+                    throw new Error(`localforage is not defined - please import localforage.js into your site`);
+                }
+            } else {
+                PlatformTools.getGlobalVariable().localStorage.setItem(path, JSON.stringify(databaseArray));
+            }
         }
     }
 
     /**
      * This gets called by the QueryRunner when a change to the database is made.
      * If a custom autoSaveCallback is specified, it get's called with the database as Uint8Array,
-     * otherwise the save method is called which saves it to file (Node.js) or localstorage (browser).
+     * otherwise the save method is called which saves it to file (Node.js), local storage (browser)
+     * or indexedDB (browser with enabled useLocalForage option).
      */
     async autoSave() {
         if (this.options.autoSave) {
@@ -173,7 +193,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
             }
         }
     }
-    
+
     /**
      * Returns the current database as Uint8Array.
      */
@@ -226,11 +246,14 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * If database is specified it is loaded, otherwise a new empty database is created.
      */
     protected async createDatabaseConnectionWithImport(database?: Uint8Array): Promise<any> {
+        // sql.js < 1.0 exposes an object with a `Database` method.
+        const isLegacyVersion = typeof this.sqlite.Database === "function";
+        const sqlite = isLegacyVersion ? this.sqlite : await this.sqlite(this.options.sqlJsConfig);
         if (database && database.length > 0) {
-            this.databaseConnection = new this.sqlite.Database(database);
+            this.databaseConnection = new sqlite.Database(database);
         }
         else {
-            this.databaseConnection = new this.sqlite.Database();
+            this.databaseConnection = new sqlite.Database();
         }
 
         // Enable foreign keys for database

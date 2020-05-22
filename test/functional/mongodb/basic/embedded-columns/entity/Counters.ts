@@ -1,5 +1,6 @@
 import {Column} from "../../../../../../src/decorator/columns/Column";
 import {Information} from "./Information";
+import {ExtraInformation} from "./ExtraInformation";
 
 export class Counters {
 
@@ -15,4 +16,6 @@ export class Counters {
     @Column(type => Information)
     information: Information;
 
+    @Column(type => ExtraInformation)
+    extraInformation: ExtraInformation;
 }

@@ -47,13 +47,13 @@ describe("query builder > relational with many > add and remove many to many", (
             .add(image1);
 
         let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
-        expect(loadedPost1!.images).to.contain({ id: 1, url: "image #1" });
+        expect(loadedPost1!.images).to.deep.include({ id: 1, url: "image #1" });
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
-        expect(loadedPost2!.images).to.be.empty;
+        expect(loadedPost2!.images).to.be.eql([]);
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
-        expect(loadedPost3!.images).to.be.empty;
+        expect(loadedPost3!.images).to.be.eql([]);
 
         await connection
             .createQueryBuilder()
@@ -65,10 +65,10 @@ describe("query builder > relational with many > add and remove many to many", (
         expect(loadedPost1!.images).to.not.contain({ id: 1, url: "image #1" });
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
-        expect(loadedPost2!.images).to.be.empty;
+        expect(loadedPost2!.images).to.be.eql([]);
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
-        expect(loadedPost3!.images).to.be.empty;
+        expect(loadedPost3!.images).to.be.eql([]);
     })));
 
     it("should add entity relation of a given entity by entity id", () => Promise.all(connections.map(async connection => {
@@ -104,13 +104,13 @@ describe("query builder > relational with many > add and remove many to many", (
             .add(2); // image id
 
         let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
-        expect(loadedPost1!.images).to.be.empty;
+        expect(loadedPost1!.images).to.be.eql([]);
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
-        expect(loadedPost2!.images).to.contain({ id: 2, url: "image #2" });
+        expect(loadedPost2!.images).to.deep.include({ id: 2, url: "image #2" });
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
-        expect(loadedPost3!.images).to.be.empty;
+        expect(loadedPost3!.images).to.be.eql([]);
 
         await connection
             .createQueryBuilder()
@@ -119,13 +119,13 @@ describe("query builder > relational with many > add and remove many to many", (
             .remove(2); // image id
 
         loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
-        expect(loadedPost1!.images).to.be.empty;
+        expect(loadedPost1!.images).to.be.eql([]);
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.not.contain({ id: 2, url: "image #2" });
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
-        expect(loadedPost3!.images).to.be.empty;
+        expect(loadedPost3!.images).to.be.eql([]);
     })));
 
     it("should add entity relation of a given entity by entity id map", () => Promise.all(connections.map(async connection => {
@@ -161,13 +161,13 @@ describe("query builder > relational with many > add and remove many to many", (
             .add({ id: 3 }); // image id
 
         let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
-        expect(loadedPost1!.images).to.be.empty;
+        expect(loadedPost1!.images).to.be.eql([]);
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
-        expect(loadedPost2!.images).to.be.empty;
+        expect(loadedPost2!.images).to.be.eql([]);
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
-        expect(loadedPost3!.images).to.contain({ id: 3, url: "image #3" });
+        expect(loadedPost3!.images).to.deep.include({ id: 3, url: "image #3" });
 
         await connection
             .createQueryBuilder()
@@ -176,10 +176,10 @@ describe("query builder > relational with many > add and remove many to many", (
             .remove({ id: 3 }); // image id
 
         loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
-        expect(loadedPost1!.images).to.be.empty;
+        expect(loadedPost1!.images).to.be.eql([]);
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
-        expect(loadedPost2!.images).to.be.empty;
+        expect(loadedPost2!.images).to.be.eql([]);
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.not.contain({ id: 3, url: "image #3" });
@@ -218,13 +218,13 @@ describe("query builder > relational with many > add and remove many to many", (
             .add({ id: 3 }); // image
 
         let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
-        expect(loadedPost1!.images).to.contain({ id: 3, url: "image #3" });
+        expect(loadedPost1!.images).to.deep.include({ id: 3, url: "image #3" });
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
-        expect(loadedPost2!.images).to.be.empty;
+        expect(loadedPost2!.images).to.be.eql([]);
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
-        expect(loadedPost3!.images).to.contain({ id: 3, url: "image #3" });
+        expect(loadedPost3!.images).to.deep.include({ id: 3, url: "image #3" });
 
         await connection
             .createQueryBuilder()
@@ -236,7 +236,7 @@ describe("query builder > relational with many > add and remove many to many", (
         expect(loadedPost1!.images).to.not.contain({ id: 3, url: "image #3" });
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
-        expect(loadedPost2!.images).to.be.empty;
+        expect(loadedPost2!.images).to.be.eql([]);
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.not.not.contain({ id: 3, url: "image #3" });
@@ -275,14 +275,14 @@ describe("query builder > relational with many > add and remove many to many", (
             .add([{ id: 1 }, { id: 3 }]); // images
 
         let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
-        expect(loadedPost1!.images).to.be.empty;
+        expect(loadedPost1!.images).to.be.eql([]);
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
-        expect(loadedPost2!.images).to.be.empty;
+        expect(loadedPost2!.images).to.be.eql([]);
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
-        expect(loadedPost3!.images).to.contain({ id: 1, url: "image #1" });
-        expect(loadedPost3!.images).to.contain({ id: 3, url: "image #3" });
+        expect(loadedPost3!.images).to.deep.include({ id: 1, url: "image #1" });
+        expect(loadedPost3!.images).to.deep.include({ id: 3, url: "image #3" });
 
         await connection
             .createQueryBuilder()
@@ -291,10 +291,10 @@ describe("query builder > relational with many > add and remove many to many", (
             .remove([{ id: 1 }, { id: 3 }]); // images
 
         loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["images"] });
-        expect(loadedPost1!.images).to.be.empty;
+        expect(loadedPost1!.images).to.be.eql([]);
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["images"] });
-        expect(loadedPost2!.images).to.be.empty;
+        expect(loadedPost2!.images).to.be.eql([]);
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.not.contain({ id: 1, url: "image #1" });

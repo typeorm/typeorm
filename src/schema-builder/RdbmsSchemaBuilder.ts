@@ -1,3 +1,7 @@
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {SapDriver} from "../driver/sap/SapDriver";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {Table} from "./table/Table";
 import {TableColumn} from "./table/TableColumn";
 import {TableForeignKey} from "./table/TableForeignKey";
@@ -17,6 +21,9 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {TableUnique} from "./table/TableUnique";
 import {TableCheck} from "./table/TableCheck";
 import {TableExclusion} from "./table/TableExclusion";
+import {View} from "./view/View";
+import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -59,22 +66,32 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     async build(): Promise<void> {
         this.queryRunner = this.connection.createQueryRunner("master");
-        await this.queryRunner.startTransaction();
+        // CockroachDB implements asynchronous schema sync operations which can not been executed in transaction.
+        // E.g. if you try to DROP column and ADD it again in the same transaction, crdb throws error.
+        if (!(this.connection.driver instanceof CockroachDriver))
+            await this.queryRunner.startTransaction();
         try {
             const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
+            // TODO: typeorm_metadata table needs only for Views for now.
+            //  Remove condition or add new conditions if necessary (for CHECK constraints for example).
+            if (this.viewEntityToSyncMetadatas.length > 0)
+                await this.createTypeormMetadataTable();
             await this.queryRunner.getTables(tablePaths);
+            await this.queryRunner.getViews([]);
             await this.executeSchemaSyncOperationsInProperOrder();
 
             // if cache is enabled then perform cache-synchronization as well
             if (this.connection.queryResultCache)
                 await this.connection.queryResultCache.synchronize(this.queryRunner);
 
-            await this.queryRunner.commitTransaction();
+            if (!(this.connection.driver instanceof CockroachDriver))
+                await this.queryRunner.commitTransaction();
 
         } catch (error) {
 
             try { // we throw original error even if rollback thrown an error
-                await this.queryRunner.rollbackTransaction();
+                if (!(this.connection.driver instanceof CockroachDriver))
+                    await this.queryRunner.rollbackTransaction();
             } catch (rollbackError) { }
             throw error;
 
@@ -90,7 +107,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         this.queryRunner = this.connection.createQueryRunner("master");
         try {
             const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
+            // TODO: typeorm_metadata table needs only for Views for now.
+            //  Remove condition or add new conditions if necessary (for CHECK constraints for example).
+            if (this.viewEntityToSyncMetadatas.length > 0)
+                await this.createTypeormMetadataTable();
             await this.queryRunner.getTables(tablePaths);
+            await this.queryRunner.getViews([]);
             this.queryRunner.enableSqlMemory();
             await this.executeSchemaSyncOperationsInProperOrder();
 
@@ -117,7 +139,14 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Returns only entities that should be synced in the database.
      */
     protected get entityToSyncMetadatas(): EntityMetadata[] {
-        return this.connection.entityMetadatas.filter(metadata => metadata.synchronize && metadata.tableType !== "entity-child");
+        return this.connection.entityMetadatas.filter(metadata => metadata.synchronize && metadata.tableType !== "entity-child" && metadata.tableType !== "view");
+    }
+
+    /**
+     * Returns only entities that should be synced in the database.
+     */
+    protected get viewEntityToSyncMetadatas(): EntityMetadata[] {
+        return this.connection.entityMetadatas.filter(metadata => metadata.tableType === "view" && metadata.synchronize);
     }
 
     /**
@@ -125,6 +154,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Order of operations matter here.
      */
     protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
+        await this.dropOldViews();
         await this.dropOldForeignKeys();
         await this.dropOldIndices();
         await this.dropOldChecks();
@@ -142,6 +172,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.createNewExclusions();
         await this.createCompositeUniqueConstraints();
         await this.createForeignKeys();
+        await this.createViews();
     }
 
     /**
@@ -156,10 +187,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // find foreign keys that exist in the schemas but does not exist in the entity metadata
             const tableForeignKeysToDrop = table.foreignKeys.filter(tableForeignKey => {
-                const metadataFK = metadata.foreignKeys.find(metadataForeignKey => metadataForeignKey.name === tableForeignKey.name);
+                const metadataFK = metadata.foreignKeys.find(metadataForeignKey => foreignKeysMatch(tableForeignKey, metadataForeignKey));
                 return !metadataFK
-                    || metadataFK.onDelete && metadataFK.onDelete !== tableForeignKey.onDelete
-                    || metadataFK.onUpdate && metadataFK.onUpdate !== tableForeignKey.onUpdate;
+                    || (metadataFK.onDelete && metadataFK.onDelete !== tableForeignKey.onDelete)
+                    || (metadataFK.onUpdate && metadataFK.onUpdate !== tableForeignKey.onUpdate);
             });
             if (tableForeignKeysToDrop.length === 0)
                 return;
@@ -268,7 +299,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     protected async dropOldChecks(): Promise<void> {
         // Mysql does not support check constraints
-        if (this.connection.driver instanceof MysqlDriver)
+        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
             return;
 
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
@@ -338,7 +369,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             // check if table does not exist yet
             const existTable = this.queryRunner.loadedTables.find(table => {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
+                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver|SapDriver>this.connection.driver).options.schema;
                 const fullTableName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
 
                 return table.name === fullTableName;
@@ -352,6 +383,51 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const table = Table.create(metadata, this.connection.driver);
             await this.queryRunner.createTable(table, false, false);
             this.queryRunner.loadedTables.push(table);
+        });
+    }
+
+    protected async createViews(): Promise<void> {
+        await PromiseUtils.runInSequence(this.viewEntityToSyncMetadatas, async metadata => {
+            // check if view does not exist yet
+            const existView = this.queryRunner.loadedViews.find(view => {
+                const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
+                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
+                const fullViewName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
+                const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
+                const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
+                return view.name === fullViewName && viewExpression === metadataExpression;
+            });
+            if (existView)
+                return;
+
+            this.connection.logger.logSchemaBuild(`creating a new view: ${metadata.tablePath}`);
+
+            // create a new view and sync it in the database
+            const view = View.create(metadata, this.connection.driver);
+            await this.queryRunner.createView(view);
+            this.queryRunner.loadedViews.push(view);
+        });
+    }
+
+    protected async dropOldViews(): Promise<void> {
+        await PromiseUtils.runInSequence(this.queryRunner.loadedViews, async view => {
+            const existViewMetadata = this.viewEntityToSyncMetadatas.find(metadata => {
+                const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
+                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
+                const fullViewName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
+                const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
+                const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
+                return view.name === fullViewName && viewExpression === metadataExpression;
+            });
+
+            if (existViewMetadata)
+                return;
+
+            this.connection.logger.logSchemaBuild(`dropping an old view: ${view.name}`);
+
+            // drop an old view
+            await this.queryRunner.dropView(view);
+            this.queryRunner.loadedViews.splice(this.queryRunner.loadedViews.indexOf(view), 1);
         });
     }
 
@@ -449,7 +525,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // drop all composite uniques related to this column
             // Mysql does not support unique constraints.
-            if (!(this.connection.driver instanceof MysqlDriver)) {
+            if (!(this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)) {
                 await PromiseUtils.runInSequence(changedColumns, changedColumn => this.dropColumnCompositeUniques(metadata.tablePath, changedColumn.databaseName));
             }
 
@@ -496,7 +572,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     protected async createNewChecks(): Promise<void> {
         // Mysql does not support check constraints
-        if (this.connection.driver instanceof MysqlDriver)
+        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
             return;
 
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
@@ -572,7 +648,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 return;
 
             const newKeys = metadata.foreignKeys.filter(foreignKey => {
-                return !table.foreignKeys.find(dbForeignKey => dbForeignKey.name === foreignKey.name);
+                return !table.foreignKeys.find(dbForeignKey => foreignKeysMatch(dbForeignKey, foreignKey));
             });
             if (newKeys.length === 0)
                 return;
@@ -660,4 +736,57 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         return columns.map(columnMetadata => TableUtils.createTableColumnOptions(columnMetadata, this.connection.driver));
     }
 
+    /**
+     * Creates typeorm service table for storing user defined Views.
+     */
+    protected async createTypeormMetadataTable() {
+        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
+        const typeormMetadataTable = this.connection.driver.buildTableName("typeorm_metadata", options.schema, options.database);
+
+        await this.queryRunner.createTable(new Table(
+            {
+                name: typeormMetadataTable,
+                columns: [
+                    {
+                        name: "type",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataType}),
+                        isNullable: false
+                    },
+                    {
+                        name: "database",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataDatabase}),
+                        isNullable: true
+                    },
+                    {
+                        name: "schema",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataSchema}),
+                        isNullable: true
+                    },
+                    {
+                        name: "table",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataTable}),
+                        isNullable: true
+                    },
+                    {
+                        name: "name",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataName}),
+                        isNullable: true
+                    },
+                    {
+                        name: "value",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataValue}),
+                        isNullable: true
+                    },
+                ]
+            },
+        ), true);
+    }
+
+}
+
+function foreignKeysMatch(
+    tableForeignKey: TableForeignKey, metadataForeignKey: ForeignKeyMetadata
+): boolean {
+    return (tableForeignKey.name === metadataForeignKey.name)
+        && (tableForeignKey.referencedTableName === metadataForeignKey.referencedTablePath);
 }

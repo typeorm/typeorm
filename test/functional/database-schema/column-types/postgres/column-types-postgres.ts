@@ -48,7 +48,7 @@ describe("database schema > column types > postgres", () => {
         post.text = "This is text";
         post.citext = "This is text";
         post.hstore = "name => Alice, surname => A, age => 30";
-        post.bytea = new Buffer("This is bytea");
+        post.bytea = Buffer.from("This is bytea");
         post.date = "2017-06-21";
         post.interval = "1 year 2 months 3 days 4 hours 5 minutes 6 seconds";
         post.time = "15:30:00";
@@ -89,6 +89,7 @@ describe("database schema > column types > postgres", () => {
         post.array = [1, 2, 3];
         post.simpleArray = ["A", "B", "C"];
         post.simpleJson = { param: "VALUE" };
+        post.simpleEnum = "A";
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;
@@ -162,6 +163,7 @@ describe("database schema > column types > postgres", () => {
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
         loadedPost.simpleJson.param.should.be.equal(post.simpleJson.param);
+        loadedPost.simpleEnum.should.be.equal(post.simpleEnum);
 
         table!.findColumnByName("id")!.type.should.be.equal("integer");
         table!.findColumnByName("name")!.type.should.be.equal("character varying");
@@ -224,6 +226,7 @@ describe("database schema > column types > postgres", () => {
         table!.findColumnByName("array")!.isArray!.should.be.true;
         table!.findColumnByName("simpleArray")!.type.should.be.equal("text");
         table!.findColumnByName("simpleJson")!.type.should.be.equal("text");
+        table!.findColumnByName("simpleEnum")!.type.should.be.equal("enum");
 
     })));
 

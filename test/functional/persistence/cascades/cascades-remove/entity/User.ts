@@ -1,5 +1,5 @@
+import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
 import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {ManyToMany} from "../../../../../../src/decorator/relations/ManyToMany";
 import {Photo} from "./Photo";
 import {OneToMany} from "../../../../../../src/decorator/relations/OneToMany";
@@ -9,7 +9,7 @@ import {Column} from "../../../../../../src/decorator/columns/Column";
 @Entity()
 export class User { // todo: check one-to-one relation as well, but in another model or test
 
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number;
 
     @Column()

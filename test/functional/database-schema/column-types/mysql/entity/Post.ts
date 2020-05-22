@@ -192,4 +192,10 @@ export class Post {
 
     @Column("simple-json")
     simpleJson: { param: string };
+
+    @Column("simple-enum", { enum: ["A", "B", "C"] })
+    simpleEnum: string;
+
+    @Column("simple-enum", { enum: FruitEnum })
+    simpleClassEnum1: FruitEnum;
 }

@@ -5,6 +5,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 import {DateUtils} from "../../../../../src/util/DateUtils";
+import {FruitEnum} from "./enum/FruitEnum";
 
 describe("database schema > column types > mssql", () => { // https://github.com/tediousjs/tedious/issues/722
 
@@ -47,9 +48,9 @@ describe("database schema > column types > mssql", () => { // https://github.com
         post.nchar = "A";
         post.nvarchar = "This is nvarchar";
         post.ntext = "This is ntext";
-        post.binary = new Buffer("A");
-        post.varbinary = new Buffer("B");
-        post.image = new Buffer("This is image");
+        post.binary = Buffer.from("A");
+        post.varbinary = Buffer.from("B");
+        post.image = Buffer.from("This is image");
         post.dateObj = new Date();
         post.date = "2017-06-21";
         post.datetime = new Date();
@@ -66,6 +67,8 @@ describe("database schema > column types > mssql", () => { // https://github.com
         post.geometry3 = "GEOMETRYCOLLECTION (POINT (4 0), LINESTRING (4 2, 5 3), POLYGON ((0 0, 3 0, 3 3, 0 3, 0 0), (1 1, 1 2, 2 2, 2 1, 1 1)))";
         post.simpleArray = ["A", "B", "C"];
         post.simpleJson = { param: "VALUE" };
+        post.simpleEnum = "A";
+        post.simpleClassEnum1 = FruitEnum.Apple;
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;
@@ -112,6 +115,8 @@ describe("database schema > column types > mssql", () => { // https://github.com
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
         loadedPost.simpleJson.param.should.be.equal(post.simpleJson.param);
+        loadedPost.simpleEnum.should.be.equal(post.simpleEnum);
+        loadedPost.simpleClassEnum1.should.be.equal(post.simpleClassEnum1);
 
         table!.findColumnByName("id")!.type.should.be.equal("int");
         table!.findColumnByName("name")!.type.should.be.equal("nvarchar");
@@ -150,6 +155,14 @@ describe("database schema > column types > mssql", () => { // https://github.com
         table!.findColumnByName("geometry1")!.type.should.be.equal("geometry");
         table!.findColumnByName("simpleArray")!.type.should.be.equal("ntext");
         table!.findColumnByName("simpleJson")!.type.should.be.equal("ntext");
+        table!.findColumnByName("simpleEnum")!.type.should.be.equal("simple-enum");
+        table!.findColumnByName("simpleEnum")!.enum![0].should.be.equal("A");
+        table!.findColumnByName("simpleEnum")!.enum![1].should.be.equal("B");
+        table!.findColumnByName("simpleEnum")!.enum![2].should.be.equal("C");
+        table!.findColumnByName("simpleClassEnum1")!.type.should.be.equal("simple-enum");
+        table!.findColumnByName("simpleClassEnum1")!.enum![0].should.be.equal("apple");
+        table!.findColumnByName("simpleClassEnum1")!.enum![1].should.be.equal("pineapple");
+        table!.findColumnByName("simpleClassEnum1")!.enum![2].should.be.equal("banana");
 
     })));
 
@@ -169,8 +182,8 @@ describe("database schema > column types > mssql", () => { // https://github.com
         post.varchar = "This is varchar";
         post.nchar = "AAA";
         post.nvarchar = "This is nvarchar";
-        post.binary = new Buffer("AAAAA");
-        post.varbinary = new Buffer("BBBBB");
+        post.binary = Buffer.from("AAAAA");
+        post.varbinary = Buffer.from("BBBBB");
         post.datetime2 = new Date();
         post.time = new Date();
         post.datetimeoffset = new Date();
@@ -239,7 +252,7 @@ describe("database schema > column types > mssql", () => { // https://github.com
         post.id = 1;
         post.name = "Post";
         post.bit = true;
-        post.binary = new Buffer("A");
+        post.binary = Buffer.from("A");
         post.datetime = new Date();
         post.datetime.setMilliseconds(0); // set milliseconds to zero because the SQL Server datetime type only has a 1/300 ms (~3.33̅ ms) resolution
         await postRepository.save(post);

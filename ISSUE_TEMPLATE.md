@@ -13,6 +13,7 @@
 [ ] `mysql` / `mariadb`
 [ ] `oracle`
 [ ] `postgres`
+[ ] `cockroachdb`
 [ ] `sqlite`
 [ ] `sqljs`
 [ ] `react-native`
@@ -32,4 +33,4 @@
     [ ] `postgres`
 
     Also, please format your code properly (by taking code blocks into ```ts .... ```)
-!>
+--!>

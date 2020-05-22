@@ -4,13 +4,6 @@ import {ExpoQueryRunner} from "./ExpoQueryRunner";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {Connection} from "../../connection/Connection";
 import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
-import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-
-// needed for typescript compiler
-interface Window {
-    Expo: any;
-}
-declare const window: Window;
 
 export class ExpoDriver extends AbstractSqliteDriver {
     options: ExpoConnectionOptions;
@@ -27,9 +20,12 @@ export class ExpoDriver extends AbstractSqliteDriver {
         // validate options to make sure everything is set
         if (!this.options.database)
             throw new DriverOptionNotSetError("database");
+        
+        if (!this.options.driver)
+            throw new DriverOptionNotSetError("driver");
 
         // load sqlite package
-        this.loadDependencies();
+        this.sqlite = this.options.driver;
     }
     
 
@@ -44,6 +40,7 @@ export class ExpoDriver extends AbstractSqliteDriver {
         return new Promise<void>((ok, fail) => {
             try {
                 this.queryRunner = undefined;
+                this.databaseConnection._db.close();
                 this.databaseConnection = undefined;
                 ok();
             } catch (error) {
@@ -90,16 +87,5 @@ export class ExpoDriver extends AbstractSqliteDriver {
                 fail(error);
             }
         });
-    }
-
-    /**
-     * If driver dependency is not given explicitly, then try to load it via "require".
-     */
-    protected loadDependencies(): void {
-        try {
-            this.sqlite = window.Expo.SQLite;
-        } catch (e) {
-            throw new DriverPackageNotInstalledError("Expo", "expo");
-        }
     }
 }

@@ -10,6 +10,7 @@ import {ValueTransformer} from "../decorator/options/ValueTransformer";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {FindOperator} from "../find-options/FindOperator";
+import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
 
 /**
  * This metadata contains all information about entity's column.
@@ -96,14 +97,19 @@ export class ColumnMetadata {
     isSelect: boolean = true;
 
     /**
-     * Indicates if column is protected from updates or not.
+     * Indicates if column is inserted by default or not.
      */
-    isReadonly: boolean = false;
+    isInsert: boolean = true;
+
+    /**
+     * Indicates if column allows updates or not.
+     */
+    isUpdate: boolean = true;
 
     /**
      * Specifies generation strategy if this column will use auto increment.
      */
-    generationStrategy?: "uuid"|"increment";
+    generationStrategy?: "uuid"|"increment"|"rowid";
 
     /**
      * Column comment.
@@ -146,8 +152,16 @@ export class ColumnMetadata {
 
     /**
      * Array of possible enumerated values.
+     *
+     * `postgres` and `mysql` store enum values as strings but we want to keep support
+     * for numeric and heterogeneous based typescript enums, so we need (string|number)[]
      */
-    enum?: any[];
+    enum?: (string|number)[];
+
+    /**
+     * Exact name of enum
+     */
+    enumName?: string;
 
     /**
      * Generated column expression. Supports only in MySQL.
@@ -233,6 +247,11 @@ export class ColumnMetadata {
     isUpdateDate: boolean = false;
 
     /**
+     * Indicates if this column contains an entity delete date.
+     */
+    isDeleteDate: boolean = false;
+
+    /**
      * Indicates if this column contains an entity version.
      */
     isVersion: boolean = false;
@@ -252,7 +271,7 @@ export class ColumnMetadata {
      * Specifies a value transformer that is to be used to (un)marshal
      * this column when reading or writing to the database.
      */
-    transformer?: ValueTransformer;
+    transformer?: ValueTransformer|ValueTransformer[];
 
     /**
      * Column type in the case if this column is in the closure table.
@@ -330,8 +349,12 @@ export class ColumnMetadata {
             this.isNullable = options.args.options.nullable;
         if (options.args.options.select !== undefined)
             this.isSelect = options.args.options.select;
+        if (options.args.options.insert !== undefined)
+            this.isInsert = options.args.options.insert;
+        if (options.args.options.update !== undefined)
+            this.isUpdate = options.args.options.update;
         if (options.args.options.readonly !== undefined)
-            this.isReadonly = options.args.options.readonly;
+            this.isUpdate = !options.args.options.readonly;
         if (options.args.options.comment)
             this.comment = options.args.options.comment;
         if (options.args.options.default !== undefined)
@@ -358,6 +381,9 @@ export class ColumnMetadata {
                 this.enum = options.args.options.enum;
             }
         }
+        if (options.args.options.enumName) {
+            this.enumName = options.args.options.enumName;
+        }
         if (options.args.options.asExpression) {
             this.asExpression = options.args.options.asExpression;
             this.generatedType = options.args.options.generatedType ? options.args.options.generatedType : "VIRTUAL";
@@ -371,6 +397,7 @@ export class ColumnMetadata {
             this.isTreeLevel = options.args.mode === "treeLevel";
             this.isCreateDate = options.args.mode === "createDate";
             this.isUpdateDate = options.args.mode === "updateDate";
+            this.isDeleteDate = options.args.mode === "deleteDate";
             this.isVersion = options.args.mode === "version";
             this.isObjectId = options.args.mode === "objectId";
         }
@@ -378,7 +405,7 @@ export class ColumnMetadata {
             this.transformer = options.args.options.transformer;
         if (options.args.options.spatialFeatureType)
             this.spatialFeatureType = options.args.options.spatialFeatureType;
-        if (options.args.options.srid)
+        if (options.args.options.srid !== undefined)
             this.srid = options.args.options.srid;
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;
@@ -397,6 +424,14 @@ export class ColumnMetadata {
                 this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
             if (this.precision === undefined && options.connection.driver.mappedDataTypes.updateDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
+        }
+        if (this.isDeleteDate) {
+            if (!this.type)
+                this.type = options.connection.driver.mappedDataTypes.deleteDate;
+            if (!this.isNullable)
+                this.isNullable = options.connection.driver.mappedDataTypes.deleteDateNullable;
+            if (this.precision === undefined && options.connection.driver.mappedDataTypes.deleteDatePrecision)
+                this.precision = options.connection.driver.mappedDataTypes.deleteDatePrecision;
         }
         if (this.isVersion)
             this.type = options.connection.driver.mappedDataTypes.version;
@@ -443,7 +478,7 @@ export class ColumnMetadata {
                 }
 
                 // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-                if (this.generationStrategy === "increment" && this.type === "bigint")
+                if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
                     value = String(value);
 
                 map[useDatabaseName ? this.databaseName : this.propertyName] = value;
@@ -454,7 +489,7 @@ export class ColumnMetadata {
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
 
             // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-            if (this.generationStrategy === "increment" && this.type === "bigint")
+            if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
                 value = String(value);
 
             return { [useDatabaseName ? this.databaseName : this.propertyName]: value };
@@ -531,7 +566,7 @@ export class ColumnMetadata {
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
      */
-     getEntityValue(entity: ObjectLiteral, transform: boolean = false): any|undefined {
+    getEntityValue(entity: ObjectLiteral, transform: boolean = false): any|undefined {
         if (entity === undefined || entity === null) return undefined;
 
         // extract column value from embeddeds of entity if column is in embedded
@@ -597,7 +632,7 @@ export class ColumnMetadata {
         }
 
         if (transform && this.transformer)
-            value = this.transformer.to(value);
+            value = ApplyValueTransformers.transformTo(this.transformer, value);
 
         return value;
     }

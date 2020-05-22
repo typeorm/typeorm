@@ -2,8 +2,8 @@
 
   - [什么是`ConnectionOptions`](#什么是`ConnectionOptions`)
   - [常用的连接选项](#常用的连接选项)
-  - [`mysql`/`mariadb`](#mysql--mariadb)
-  - [`postgres`](#postgres)
+  - [`mysql`/`mariadb`](#mysql/mariadb)
+  - [`postgres`/`cockroachdb`连接选项](#postgres/cockroachdb连接选项)
   - [`sqlite`](#sqlite)
   - [`cordova`](#cordova)
   - [`react-native`](#react-native)
@@ -31,7 +31,7 @@
 
 - `subscribers` - 要加载并用于此连接的订阅者。接受要加载的实体类和目录。目录支持 glob 模式。示例：`subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`。了解有关[subscribers](listeners-and-subscribers.md)的更多信息。
 
-- `entitySchemas` - 要加载并用于此连接的实体架构。接受要加载的实体模式类和目录。目录支持 glob 模式。示例：`entitySchemas: [PostSchema, CategorySchema, "entity-schema/*.json"`。了解有关[Entity Schemas](./schema-in-files.md)的更多信息。
+- `entitySchemas` - 要加载并用于此连接的实体架构。接受要加载的实体模式类和目录。目录支持 glob 模式。示例：`entitySchemas: [PostSchema, CategorySchema, "entity-schema/*.json"`。了解有关[Entity Schemas](./schema-entity-definition.md)的更多信息。
 
 - `migrations` - 要加载和用于此连接的迁移。接受要加载的迁移类和目录。目录支持 glob 模式。
   示例: `migrations: [FirstMigration, SecondMigration, "migration/*.js", "modules/**/migration/*.js"]`.
@@ -98,11 +98,13 @@
 
 - `multipleStatements` - 每个查询允许多个 mysql 语句。请注意，它可能会增加 SQL 注入攻击的范围。 （默认值：`false`）
 
+- `legacySpatialSupport` - Use spatial functions like GeomFromText and AsText which are removed in MySQL 8. (Default: true)
+
 - `flags` - 使用非默认连接标志的连接标志列表。也可以将默认值列入黑名单。有关更多信息，请查看[Connection Flags](https://github.com/mysqljs/mysql#connection-flags)。
 
 - `ssl` - 带有 ssl 参数的对象或包含 ssl 配置文件名称的字符串。请参阅[SSL 选项](https://github.com/mysqljs/mysql#ssl-options)。
 
-## `postgres`
+## `postgres`/`cockroachdb`连接选项
 
 - `url` - 连接 URL
 
@@ -119,6 +121,8 @@
 - `schema` - Schema 名称，默认是 "public".
 
 - `ssl` - 带有 ssl 参数的对象。 详见 [TLS/SSL](https://node-postgres.com/features/ssl)。
+
+- `uuidExtension` - 生成UUID时使用的Postgres扩展。 默认为`uuid-ossp`。 如果`uuid-ossp`扩展不可用，可以更改为`pgcrypto`。
 
 ## `sqlite`
 
@@ -370,15 +374,20 @@
 
 - `database`: 应导入的原始 UInt8Array 数据库。
 
+- `sqlJsConfig`: sql.js可选启动配置
+
 - `autoSave`: 是否应禁用 autoSave。如果设置为 true，则在发生更改并指定`location`时，数据库将保存到给定的文件位置（Node.js）或 LocalStorage（浏览器）。否则可以使用`autoSaveCallback`。
 
 - `autoSaveCallback`: 在对数据库进行更改并启用`autoSave`时调用的函数。该函数获取表示数据库的`UInt8Array`。
 
 - `location`: 要加载和保存数据库的文件位置。
 
+- `useLocalForage`: 允许使用localforage库(https://github.com/localForage/localForage)从indexedDB异步保存和加载数据库，而不是在浏览器环境中使用synchron本地存储方法。 需要将localforage模块添加到项目中，并且应在页面中导入localforage.js。
+
 ## `expo`
 
 - `database` - 数据库名， 例如 "mydb".
+- `driver` - Expo SQLite 模块. 例如，`require('expo-sqlite')`.
 
 ## 连接选项示例
 

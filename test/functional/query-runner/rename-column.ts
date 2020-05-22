@@ -1,8 +1,10 @@
 import "reflect-metadata";
 import {expect} from "chai";
-import {Connection} from "../../../src/connection/Connection";
+import {Connection} from "../../../src";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
+import {SapDriver} from "../../../src/driver/sap/SapDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Table} from "../../../src/schema-builder/table/Table";
+import {Table} from "../../../src";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
@@ -21,6 +23,10 @@ describe("query runner > rename column", () => {
     after(() => closeTestingConnections(connections));
 
     it("should correctly rename column and revert rename", () => Promise.all(connections.map(async connection => {
+
+        // TODO: https://github.com/cockroachdb/cockroach/issues/32555
+        if (connection.driver instanceof CockroachDriver)
+            return;
 
         const queryRunner = connection.createQueryRunner();
 
@@ -52,6 +58,10 @@ describe("query runner > rename column", () => {
 
     it("should correctly rename column with all constraints and revert rename", () => Promise.all(connections.map(async connection => {
 
+        // TODO: https://github.com/cockroachdb/cockroach/issues/32555
+        if (connection.driver instanceof CockroachDriver)
+            return;
+
         const queryRunner = connection.createQueryRunner();
 
         let table = await queryRunner.getTable("post");
@@ -59,14 +69,16 @@ describe("query runner > rename column", () => {
         await queryRunner.renameColumn(table!, idColumn, "id2");
 
         // should successfully drop pk if pk constraint was correctly renamed.
-        await queryRunner.dropPrimaryKey(table!);
+        // CockroachDB does not allow to drop PK
+        if (!(connection.driver instanceof CockroachDriver))
+            await queryRunner.dropPrimaryKey(table!);
 
         table = await queryRunner.getTable("post");
         expect(table!.findColumnByName("id")).to.be.undefined;
         table!.findColumnByName("id2")!.should.be.exist;
 
-        // MySql does not support unique constraints
-        if (!(connection.driver instanceof MysqlDriver)) {
+        // MySql and SAP does not support unique constraints
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof SapDriver)) {
             const oldUniqueConstraintName = connection.namingStrategy.uniqueConstraintName(table!, ["text", "tag"]);
             let tableUnique = table!.uniques.find(unique => {
                 return !!unique.columnNames.find(columnName => columnName === "tag");
@@ -93,6 +105,10 @@ describe("query runner > rename column", () => {
     })));
 
     it("should correctly rename column with all constraints in custom table schema and database and revert rename", () => Promise.all(connections.map(async connection => {
+
+        // TODO: https://github.com/cockroachdb/cockroach/issues/32555
+        if (connection.driver instanceof CockroachDriver)
+            return;
 
         const queryRunner = connection.createQueryRunner();
         let table: Table|undefined;
@@ -171,7 +187,7 @@ describe("query runner > rename column", () => {
 
         await queryRunner.renameColumn(categoryTableName, "questionId", "questionId2");
         table = await queryRunner.getTable(categoryTableName);
-        const newForeignKeyName = connection.namingStrategy.foreignKeyName(table!, ["questionId2"]);
+        const newForeignKeyName = connection.namingStrategy.foreignKeyName(table!, ["questionId2"], "question", ["id"]);
         table!.foreignKeys[0].name!.should.be.equal(newForeignKeyName);
 
         await queryRunner.executeMemoryDownSql();
