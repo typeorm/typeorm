@@ -25,6 +25,7 @@ import {RelationMetadata} from "./RelationMetadata";
 import {TableType} from "./types/TableTypes";
 import {TreeType} from "./types/TreeTypes";
 import {UniqueMetadata} from "./UniqueMetadata";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 
 /**
  * Contains all entity metadata.
@@ -82,7 +83,7 @@ export class EntityMetadata {
      * Note, that when using table inheritance patterns target can be different rather then table's target.
      * For virtual tables which lack of real entity (like junction tables) target is equal to their table name.
      */
-    target: Function|string;
+    target: Function | string;
 
     /**
      * Gets the name of the target.
@@ -100,7 +101,7 @@ export class EntityMetadata {
      * View's expression.
      * Used in views
      */
-    expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
+    expression?: string | ((connection: Connection) => SelectQueryBuilder<any>);
 
     /**
      * Enables Sqlite "WITHOUT ROWID" modifier for the "CREATE TABLE" statement
@@ -521,7 +522,7 @@ export class EntityMetadata {
         // if target is set to a function (e.g. class) that can be created then create it
         let ret: any;
         if (this.target instanceof Function) {
-            ret = new (<any> this.target)();
+            ret = new (<any>this.target)();
             this.lazyRelations.forEach(relation => this.connection.relationLoader.enableLazyLoad(relation, ret, queryRunner));
             return ret;
         }
@@ -578,11 +579,11 @@ export class EntityMetadata {
      * For multiple primary keys it returns multiple keys in object.
      * For primary keys inside embeds it returns complex object literal with keys in them.
      */
-    getEntityIdMap(entity: ObjectLiteral|undefined): ObjectLiteral|undefined {
+    getEntityIdMap(entity: ObjectLiteral | undefined): ObjectLiteral | undefined {
         if (!entity)
             return undefined;
 
-        return EntityMetadata.getValueMap(entity, this.primaryColumns, { skipNulls: true });
+        return EntityMetadata.getValueMap(entity, this.primaryColumns, {skipNulls: true});
     }
 
     /**
@@ -591,7 +592,7 @@ export class EntityMetadata {
      * But if entity has a single primary key then it will return just value of the id column of the entity, just value.
      * This is called mixed id map.
      */
-    getEntityIdMixedMap(entity: ObjectLiteral|undefined): ObjectLiteral|undefined {
+    getEntityIdMixedMap(entity: ObjectLiteral | undefined): ObjectLiteral | undefined {
         if (!entity)
             return entity;
 
@@ -624,21 +625,21 @@ export class EntityMetadata {
     /**
      * Finds column with a given property name.
      */
-    findColumnWithPropertyName(propertyName: string): ColumnMetadata|undefined {
+    findColumnWithPropertyName(propertyName: string): ColumnMetadata | undefined {
         return this.columns.find(column => column.propertyName === propertyName);
     }
 
     /**
      * Finds column with a given database name.
      */
-    findColumnWithDatabaseName(databaseName: string): ColumnMetadata|undefined {
+    findColumnWithDatabaseName(databaseName: string): ColumnMetadata | undefined {
         return this.columns.find(column => column.databaseName === databaseName);
     }
 
     /**
      * Finds column with a given property path.
      */
-    findColumnWithPropertyPath(propertyPath: string): ColumnMetadata|undefined {
+    findColumnWithPropertyPath(propertyPath: string): ColumnMetadata | undefined {
         const column = this.columns.find(column => column.propertyPath === propertyPath);
         if (column)
             return column;
@@ -673,7 +674,7 @@ export class EntityMetadata {
     /**
      * Finds relation with the given property path.
      */
-    findRelationWithPropertyPath(propertyPath: string): RelationMetadata|undefined {
+    findRelationWithPropertyPath(propertyPath: string): RelationMetadata | undefined {
         return this.relations.find(relation => relation.propertyPath === propertyPath);
     }
 
@@ -687,7 +688,7 @@ export class EntityMetadata {
     /**
      * Finds embedded with a given property path.
      */
-    findEmbeddedWithPropertyPath(propertyPath: string): EmbeddedMetadata|undefined {
+    findEmbeddedWithPropertyPath(propertyPath: string): EmbeddedMetadata | undefined {
         return this.allEmbeddeds.find(embedded => embedded.propertyPath === propertyPath);
     }
 
@@ -747,7 +748,7 @@ export class EntityMetadata {
      * Creates value map from the given values and columns.
      * Examples of usages are primary columns map and join columns map.
      */
-    static getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[], options?: { skipNulls?: boolean }): ObjectLiteral|undefined {
+    static getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[], options?: { skipNulls?: boolean }): ObjectLiteral | undefined {
         return columns.reduce((map, column) => {
             const value = column.getEntityValueMap(entity, options);
 
@@ -756,7 +757,7 @@ export class EntityMetadata {
                 return undefined;
 
             return column.isObjectId ? Object.assign(map, value) : OrmUtils.mergeDeep(map, value);
-        }, {} as ObjectLiteral|undefined);
+        }, {} as ObjectLiteral | undefined);
     }
 
     // ---------------------------------------------------------------------
@@ -770,12 +771,10 @@ export class EntityMetadata {
         this.database = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.database : this.tableMetadataArgs.database;
         if (this.tableMetadataArgs.schema) {
             this.schema = this.tableMetadataArgs.schema;
-        }
-        else if ((this.tableMetadataArgs.type === "entity-child") && this.parentEntityMetadata) {
+        } else if ((this.tableMetadataArgs.type === "entity-child") && this.parentEntityMetadata) {
             this.schema = this.parentEntityMetadata.schema;
-        }
-        else {
-            this.schema = (this.connection.options as PostgresConnectionOptions|SqlServerConnectionOptions).schema;
+        } else {
+            this.schema = (this.connection.options as PostgresConnectionOptions | SqlServerConnectionOptions).schema;
         }
         this.givenTableName = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.givenTableName : this.tableMetadataArgs.name;
         this.synchronize = this.tableMetadataArgs.synchronize === false ? false : true;
@@ -788,7 +787,7 @@ export class EntityMetadata {
             this.tableNameWithoutPrefix = namingStrategy.tableName(this.targetName, this.givenTableName);
 
             if (this.connection.driver.maxAliasLength && this.connection.driver.maxAliasLength > 0 && this.tableNameWithoutPrefix.length > this.connection.driver.maxAliasLength) {
-                this.tableNameWithoutPrefix = shorten(this.tableNameWithoutPrefix, { separator: "_", segmentLength: 3 });
+                this.tableNameWithoutPrefix = shorten(this.tableNameWithoutPrefix, {separator: "_", segmentLength: 3});
             }
         }
         this.tableName = entityPrefix ? namingStrategy.prefixTableName(entityPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
@@ -829,8 +828,8 @@ export class EntityMetadata {
      * This method will create following object:
      * { id: "id", counterEmbed: { count: "counterEmbed.count" }, category: "category" }
      */
-    createPropertiesMap(): { [name: string]: string|any } {
-        const map: { [name: string]: string|any } = {};
+    createPropertiesMap(): { [name: string]: string | any } {
+        const map: { [name: string]: string | any } = {};
         this.columns.forEach(column => OrmUtils.mergeDeep(map, column.createValueMap(column.propertyPath)));
         this.relations.forEach(relation => OrmUtils.mergeDeep(map, relation.createValueMap(relation.propertyPath)));
         return map;
@@ -841,7 +840,7 @@ export class EntityMetadata {
      */
     protected buildTablePath(): string {
         let tablePath = this.tableName;
-        if (this.schema && ((this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
+        if (this.schema && ((this.connection.driver instanceof OracleDriver) || (this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
             tablePath = this.schema + "." + tablePath;
         }
 
@@ -859,7 +858,7 @@ export class EntityMetadata {
     /**
      * Builds table path using schema name and database name.
      */
-    protected buildSchemaPath(): string|undefined {
+    protected buildSchemaPath(): string | undefined {
         if (!this.schema)
             return undefined;
 
