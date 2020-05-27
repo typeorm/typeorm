@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 
-describe.only("query runner > has column", () => {
+describe("query runner > has column", () => {
 
     let connections: Connection[];
     before(async () => {
