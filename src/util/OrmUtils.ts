@@ -1,5 +1,4 @@
 import { ObjectLiteral } from "../common/ObjectLiteral";
-import { URL } from "url";
 
 export class OrmUtils {
 
@@ -83,8 +82,7 @@ export class OrmUtils {
                 && !(value instanceof Set)
                 && !(value instanceof Date)
                 && !(value instanceof Buffer)
-                && !(value instanceof RegExp)
-                && !(value instanceof URL)) {
+                && !(value instanceof RegExp)) {
                     if (!target[key])
                         Object.assign(target, { [key]: Object.create(Object.getPrototypeOf(value)) });
                     this.mergeDeep(target[key], value);
@@ -214,8 +212,7 @@ export class OrmUtils {
             (x instanceof Date && y instanceof Date) ||
             (x instanceof RegExp && y instanceof RegExp) ||
             (x instanceof String && y instanceof String) ||
-            (x instanceof Number && y instanceof Number) ||
-            (x instanceof URL && y instanceof URL))
+            (x instanceof Number && y instanceof Number))
             return x.toString() === y.toString();
 
         // At last checking prototypes as good as we can
