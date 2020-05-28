@@ -190,8 +190,20 @@ export class Post {
     @Column("simple-array")
     simpleArray: string[];
 
+    @Column("medium-simple-array")
+    mediumSimpleArray: string[];
+
+    @Column("long-simple-array")
+    longSimpleArray: string[];
+
     @Column("simple-json")
     simpleJson: { param: string };
+
+    @Column("medium-simple-json")
+    mediumSimpleJson: { param: string };
+
+    @Column("long-simple-json")
+    longSimpleJson: { param: string };
 
     @Column("simple-enum", { enum: ["A", "B", "C"] })
     simpleEnum: string;

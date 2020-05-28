@@ -458,10 +458,12 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "timestamp" || columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             return DateUtils.mixedDateToDate(value);
 
-        } else if (columnMetadata.type === "simple-array") {
+        } else if (columnMetadata.type === "simple-array" || columnMetadata.type === "medium-simple-array"
+            || columnMetadata.type === "long-simple-array") {
             return DateUtils.simpleArrayToString(value);
 
-        } else if (columnMetadata.type === "simple-json") {
+        } else if (columnMetadata.type === "simple-json" || columnMetadata.type === "medium-simple-json"
+            || columnMetadata.type === "long-simple-json") {
             return DateUtils.simpleJsonToString(value);
 
         } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") {
@@ -496,10 +498,12 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value);
 
-        } else if (columnMetadata.type === "simple-array") {
+        } else if (columnMetadata.type === "simple-array" || columnMetadata.type === "medium-simple-array"
+            || columnMetadata.type === "long-simple-array") {
             value = DateUtils.stringToSimpleArray(value);
 
-        } else if (columnMetadata.type === "simple-json") {
+        } else if (columnMetadata.type === "simple-json" || columnMetadata.type === "medium-simple-json"
+            || columnMetadata.type === "long-simple-json") {
             value = DateUtils.stringToSimpleJson(value);
 
         } else if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum")
@@ -551,6 +555,12 @@ export class MysqlDriver implements Driver {
 
         } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "text";
+
+        } else if (column.type === "medium-simple-array" || column.type === "medium-simple-json") {
+            return "mediumtext";
+
+        } else if (column.type === "long-simple-array" || column.type === "long-simple-json") {
+            return "longtext";
 
         } else if (column.type === "simple-enum") {
             return "enum";

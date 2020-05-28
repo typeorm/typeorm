@@ -85,9 +85,13 @@ export type WithWidthColumnType = "tinyint" // mysql
 export type SimpleColumnType =
 
     "simple-array" // typeorm-specific, automatically mapped to string
+    |"medium-simple-array" //  mysql, typeorm-specific, automatically mapped to mediumtext string
+    |"long-simple-array" //  mysql, typeorm-specific, automatically mapped to longtext string
     // |"string" // typeorm-specific, automatically mapped to varchar depend on platform
 
     |"simple-json" // typeorm-specific, automatically mapped to string
+    |"medium-simple-json" //  mysql, typeorm-specific, automatically mapped to mediumtext string
+    |"long-simple-json" //  mysql, typeorm-specific, automatically mapped to longtext string
 
     |"simple-enum" // typeorm-specific, automatically mapped to string
 

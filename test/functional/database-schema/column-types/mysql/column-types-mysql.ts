@@ -79,7 +79,11 @@ describe("database schema > column types > mysql", () => {
         post.classEnum1 = FruitEnum.Apple;
         post.json = { id: 1, name: "Post" };
         post.simpleArray = ["A", "B", "C"];
+        post.mediumSimpleArray = ["D", "E", "F"];
+        post.longSimpleArray = ["G", "H", "I"];
         post.simpleJson = { param: "VALUE" };
+        post.mediumSimpleJson = { param: "MEDIUM_VALUE" };
+        post.longSimpleJson = { param: "LONG_VALUE" };
         post.simpleEnum = "A";
         post.simpleClassEnum1 = FruitEnum.Apple;
         await postRepository.save(post);
@@ -137,7 +141,15 @@ describe("database schema > column types > mysql", () => {
         loadedPost.simpleArray[0].should.be.equal(post.simpleArray[0]);
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
+        loadedPost.mediumSimpleArray[0].should.be.equal(post.mediumSimpleArray[0]);
+        loadedPost.mediumSimpleArray[1].should.be.equal(post.mediumSimpleArray[1]);
+        loadedPost.mediumSimpleArray[2].should.be.equal(post.mediumSimpleArray[2]);
+        loadedPost.longSimpleArray[0].should.be.equal(post.longSimpleArray[0]);
+        loadedPost.longSimpleArray[1].should.be.equal(post.longSimpleArray[1]);
+        loadedPost.longSimpleArray[2].should.be.equal(post.longSimpleArray[2]);
         loadedPost.simpleJson.param.should.be.equal(post.simpleJson.param);
+        loadedPost.mediumSimpleJson.param.should.be.equal(post.mediumSimpleJson.param);
+        loadedPost.longSimpleJson.param.should.be.equal(post.longSimpleJson.param);
         loadedPost.simpleEnum.should.be.equal(post.simpleEnum);
         loadedPost.simpleClassEnum1.should.be.equal(post.simpleClassEnum1);
 
@@ -199,6 +211,7 @@ describe("database schema > column types > mysql", () => {
         table!.findColumnByName("json")!.type.should.be.equal("json");
         table!.findColumnByName("simpleArray")!.type.should.be.equal("text");
         table!.findColumnByName("simpleJson")!.type.should.be.equal("text");
+        table!.findColumnByName("longSimpleJson")!.type.should.be.equal("longtext");
         table!.findColumnByName("simpleEnum")!.type.should.be.equal("enum");
         table!.findColumnByName("simpleEnum")!.enum![0].should.be.equal("A");
         table!.findColumnByName("simpleEnum")!.enum![1].should.be.equal("B");
