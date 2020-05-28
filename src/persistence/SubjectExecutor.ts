@@ -499,6 +499,34 @@ export class SubjectExecutor {
             }
 
             subjects.forEach((subject) => {
+                if (subject.entity) {
+                    subject.metadata.columns.forEach((column) => {
+                        if (
+                            column.embeddedMetadata ||
+                            column.relationMetadata ||
+                            !column.transformer
+                        )
+                            return
+
+                        const value = column.getEntityValue(subject.entity!)
+                        if (value !== undefined && value !== null) {
+                            const persistedValue =
+                                this.queryRunner.connection.driver.preparePersistentValue(
+                                    value,
+                                    column,
+                                )
+                            const preparedValue =
+                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                    persistedValue,
+                                    column,
+                                )
+                            column.setEntityValue(
+                                subject.entity!,
+                                preparedValue,
+                            )
+                        }
+                    })
+                }
                 if (subject.generatedMap) {
                     subject.metadata.columns.forEach((column) => {
                         const value = column.getEntityValue(
@@ -613,6 +641,35 @@ export class SubjectExecutor {
                 } else {
                     // in this case identifier is just conditions object to update by
                     updateQueryBuilder.where(subject.identifier)
+                }
+
+                if (subject.entity) {
+                    subject.metadata.columns.forEach((column) => {
+                        if (
+                            column.embeddedMetadata ||
+                            column.relationMetadata ||
+                            !column.transformer
+                        )
+                            return
+
+                        const value = column.getEntityValue(subject.entity!)
+                        if (value !== undefined && value !== null) {
+                            const persistedValue =
+                                this.queryRunner.connection.driver.preparePersistentValue(
+                                    value,
+                                    column,
+                                )
+                            const preparedValue =
+                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                    persistedValue,
+                                    column,
+                                )
+                            column.setEntityValue(
+                                subject.entity!,
+                                preparedValue,
+                            )
+                        }
+                    })
                 }
 
                 const updateResult = await updateQueryBuilder.execute()

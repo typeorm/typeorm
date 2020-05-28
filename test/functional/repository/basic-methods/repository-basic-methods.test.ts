@@ -24,6 +24,7 @@ import questionSchema from "./model-schema/QuestionSchema"
 import userSchema from "./model-schema/UserSchema"
 import type { Question } from "./model/Question"
 import type { User } from "./model/User"
+import { Customer } from "./entity/Customer"
 
 describe("repository > basic methods", () => {
     const UserEntity = new EntitySchema<any>(userSchema as any)
@@ -34,6 +35,7 @@ describe("repository > basic methods", () => {
         dataSources = await createTestingConnections({
             entities: [
                 Post,
+                Customer,
                 Blog,
                 Category,
                 UserEntity,
@@ -428,6 +430,31 @@ describe("repository > basic methods", () => {
                             .dateAdded!.getTime()
                             .should.be.equal(date.getTime())
                     }),
+            ))
+        it("should return the transformed value after save", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.manager.getRepository(Customer)
+
+                    const customer = await repo.save({
+                        firstName: " Foo ",
+                        lastName: " Bar ",
+                    })
+
+                    customer.should.be.deep.equal({
+                        id: 1,
+                        firstName: "Foo",
+                        lastName: "Bar",
+                    })
+
+                    customer.firstName = " Baz "
+                    const updatedCustomer = await repo.save(customer)
+                    updatedCustomer.should.be.deep.equal({
+                        id: 1,
+                        firstName: "Baz",
+                        lastName: "Bar",
+                    })
+                }),
             ))
     })
 

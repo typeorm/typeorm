@@ -909,6 +909,18 @@ export class PostgresDriver implements Driver {
             value = DateUtils.stringToSimpleArray(value)
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value)
+        } else if (
+            columnMetadata.type === "json" ||
+            columnMetadata.type === "jsonb"
+        ) {
+            if (typeof value === "string") {
+                try {
+                    value = JSON.parse(value)
+                } catch {
+                    // pg can already hydrate json/jsonb scalar strings (e.g. "foo") to plain strings
+                    // and parsing those again would throw.
+                }
+            }
         } else if (columnMetadata.type === "cube") {
             value = value.replace(/[()\s]+/g, "") // remove whitespace
             if (columnMetadata.isArray) {
