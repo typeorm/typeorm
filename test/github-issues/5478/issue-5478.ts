@@ -35,6 +35,7 @@ describe("github issues > #5478 Setting enumName doesn't change how migrations g
                 );
                 if (!options) {
                     fail();
+                    return;
                 }
                 const connection = await createConnection(options);
                 try {
