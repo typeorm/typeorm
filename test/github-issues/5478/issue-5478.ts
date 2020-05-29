@@ -35,7 +35,6 @@ describe("github issues > #5478 Setting enumName doesn't change how migrations g
                 );
                 if (!options) {
                     fail();
-                    return;
                 }
                 const connection = await createConnection(options);
                 try {
@@ -51,14 +50,14 @@ describe("github issues > #5478 Setting enumName doesn't change how migrations g
                     );
 
                     upQueries.should.eql([
-                        `ALTER TYPE "public"."user_usertype_enum" RENAME TO "user_usertype_enum_old"`,
+                        `ALTER TYPE "user_usertype_enum" RENAME TO "user_usertype_enum_old"`,
                         `CREATE TYPE "UserRoleEnum" AS ENUM('0', '1')`,
                         `ALTER TABLE "user" ALTER COLUMN "userType" TYPE "UserRoleEnum" USING "userType"::"text"::"UserRoleEnum"`,
                         `DROP TYPE "user_usertype_enum_old"`
                       ]);
                     downQueries.should.eql([
                         `DROP TYPE "UserRoleEnum_old"`,
-                        `ALTER TABLE "user" ALTER COLUMN "userType" TYPE user_usertype_enum USING "userType"::"text"::user_usertype_enum`,
+                        `ALTER TABLE "user" ALTER COLUMN "userType" TYPE "user_usertype_enum" USING "userType"::"text"::"user_usertype_enum"`,
                         `CREATE TYPE "user_usertype_enum" AS ENUM('0', '1')`,
                         `ALTER TYPE "UserRoleEnum" RENAME TO "UserRoleEnum_old"`
                       ]);
