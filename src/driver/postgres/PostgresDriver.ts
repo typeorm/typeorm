@@ -925,13 +925,15 @@ export class PostgresDriver implements Driver {
         credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
         // build connection options for the driver
+        // See: https://github.com/brianc/node-postgres/tree/master/packages/pg-pool#create
         const connectionOptions = Object.assign({}, {
             host: credentials.host,
             user: credentials.username,
             password: credentials.password,
             database: credentials.database,
             port: credentials.port,
-            ssl: credentials.ssl
+            ssl: credentials.ssl,
+            connectionTimeoutMillis: options.connectTimeoutMS
         }, options.extra || {});
 
         // create a connection pool
