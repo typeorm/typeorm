@@ -715,15 +715,15 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     || oldColumn.enumName !== newColumn.enumName)
             ) {
                 const arraySuffix = newColumn.isArray ? "[]" : "";
-                const prevEnumName = this.buildEnumName(table, oldColumn);
+                const prevEnumNameWithSchema = this.buildEnumName(table, oldColumn);
                 const prevEnumNameWithOldSuffix = this.buildEnumName(table, oldColumn, false, false, true);
                 const prevEnumNameWithOldSuffixAndSchema = this.buildEnumName(table, oldColumn, true, false, true);
-                const newEnumName = this.buildEnumName(table, newColumn);
+                const newEnumNameWithSchema = this.buildEnumName(table, newColumn);
                 const newEnumNameWithOldSuffix = this.buildEnumName(table, newColumn, false, false, true);
                 const newEnumNameWithOldSuffixAndSchema = this.buildEnumName(table, newColumn, true, false, true);
 
                 // create new enum type and rename old enum type
-                upQueries.push(new Query(`ALTER TYPE ${prevEnumName} RENAME TO ${prevEnumNameWithOldSuffix}`));
+                upQueries.push(new Query(`ALTER TYPE ${prevEnumNameWithSchema} RENAME TO ${prevEnumNameWithOldSuffix}`));
                 upQueries.push(this.createEnumTypeSql(table, newColumn));
                 downQueries.push(this.dropEnumTypeSql(table, newColumn, newEnumNameWithOldSuffixAndSchema));
 
@@ -734,8 +734,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
 
                 // build column types
-                const upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`;
-                const downType = `${prevEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${prevEnumName}${arraySuffix}`;
+                const upType = `${newEnumNameWithSchema}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumNameWithSchema}${arraySuffix}`;
+                const downType = `${prevEnumNameWithSchema}${arraySuffix} USING "${newColumn.name}"::"text"::${prevEnumNameWithSchema}${arraySuffix}`;
 
                 // update column to use new type
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`));
@@ -751,7 +751,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 // down: rename new enum type and create old enum type
                 upQueries.push(this.dropEnumTypeSql(table, newColumn, prevEnumNameWithOldSuffixAndSchema));
                 downQueries.push(this.createEnumTypeSql(table, oldColumn));
-                downQueries.push(new Query(`ALTER TYPE ${newEnumName} RENAME TO ${newEnumNameWithOldSuffix}`));
+                downQueries.push(new Query(`ALTER TYPE ${newEnumNameWithSchema} RENAME TO ${newEnumNameWithOldSuffix}`));
             }
 
             if (oldColumn.isNullable !== newColumn.isNullable) {
