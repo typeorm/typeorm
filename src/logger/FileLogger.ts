@@ -24,7 +24,7 @@ export class FileLogger implements Logger {
      * Logs query and parameters used in it.
      */
     logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("query") !== -1)) {
+        if (this.options === "all" || this.options === true || (Array.isArray(this.options) && this.options.indexOf("query") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             this.write("[QUERY]: " + sql);
         }
@@ -34,7 +34,7 @@ export class FileLogger implements Logger {
      * Logs query that is failed.
      */
     logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("error") !== -1)) {
+        if (this.options === "all" || this.options === true || (Array.isArray(this.options) && this.options.indexOf("error") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             this.write([
                 `[FAILED QUERY]: ${sql}`,
@@ -55,7 +55,7 @@ export class FileLogger implements Logger {
      * Logs events from the schema build process.
      */
     logSchemaBuild(message: string, queryRunner?: QueryRunner) {
-        if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("schema") !== -1)) {
+        if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("schema") !== -1)) {
             this.write(message);
         }
     }
@@ -74,15 +74,15 @@ export class FileLogger implements Logger {
     log(level: "log"|"info"|"warn", message: any, queryRunner?: QueryRunner) {
         switch (level) {
             case "log":
-                if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("log") !== -1))
+                if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("log") !== -1))
                     this.write("[LOG]: " + message);
                 break;
             case "info":
-                if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("info") !== -1))
+                if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("info") !== -1))
                     this.write("[INFO]: " + message);
                 break;
             case "warn":
-                if (this.options === "all" || (this.options instanceof Array && this.options.indexOf("warn") !== -1))
+                if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("warn") !== -1))
                     this.write("[WARN]: " + message);
                 break;
         }
@@ -96,7 +96,7 @@ export class FileLogger implements Logger {
      * Writes given strings into the log file.
      */
     protected write(strings: string|string[]) {
-        strings = strings instanceof Array ? strings : [strings];
+        strings = Array.isArray(strings) ? strings : [strings];
         const basePath = PlatformTools.load("app-root-path").path;
         strings = (strings as string[]).map(str => "[" + new Date().toISOString() + "]" + str);
         PlatformTools.appendFileSync(basePath + "/ormlogs.log", strings.join("\r\n") + "\r\n"); // todo: use async or implement promises?

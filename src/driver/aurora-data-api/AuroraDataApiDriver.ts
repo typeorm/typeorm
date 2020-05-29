@@ -231,6 +231,9 @@ export class AuroraDataApiDriver implements Driver {
         updateDate: "datetime",
         updateDatePrecision: 6,
         updateDateDefault: "CURRENT_TIMESTAMP(6)",
+        deleteDate: "datetime",
+        deleteDatePrecision: 6,
+        deleteDateNullable: true,
         version: "int",
         treeLevel: "int",
         migrationId: "int",
@@ -303,6 +306,7 @@ export class AuroraDataApiDriver implements Driver {
             this.options.resourceArn,
             this.options.database,
             (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
+            this.options.serviceConfigOptions
         );
 
         // validate options to make sure everything is set

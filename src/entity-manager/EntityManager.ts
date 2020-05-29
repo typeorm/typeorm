@@ -276,7 +276,7 @@ export class EntityManager {
         if (!plainObjectOrObjects)
             return metadata.create(this.queryRunner);
 
-        if (plainObjectOrObjects instanceof Array)
+        if (Array.isArray(plainObjectOrObjects))
             return plainObjectOrObjects.map(plainEntityLike => this.create(entityClass as any, plainEntityLike));
 
         const mergeIntoEntity = metadata.create(this.queryRunner);
@@ -309,7 +309,7 @@ export class EntityManager {
     }
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * Creates a new entity from the given plain javascript object. If entity already exist in the database, then
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
@@ -317,7 +317,7 @@ export class EntityManager {
     preload<Entity>(entityClass: ObjectType<Entity>, entityLike: DeepPartial<Entity>): Promise<Entity|undefined>;
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * Creates a new entity from the given plain javascript object. If entity already exist in the database, then
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
@@ -325,7 +325,7 @@ export class EntityManager {
     preload<Entity>(entitySchema: EntitySchema<Entity>, entityLike: DeepPartial<Entity>): Promise<Entity|undefined>;
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * Creates a new entity from the given plain javascript object. If entity already exist in the database, then
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
@@ -333,7 +333,7 @@ export class EntityManager {
     preload(entityName: string, entityLike: DeepPartial<any>): Promise<any|undefined>;
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * Creates a new entity from the given plain javascript object. If entity already exist in the database, then
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
@@ -398,7 +398,7 @@ export class EntityManager {
             target = target.options.name;
 
         // if user passed empty array of entities then we don't need to do anything
-        if (entity instanceof Array && entity.length === 0)
+        if (Array.isArray(entity) && entity.length === 0)
             return Promise.resolve(entity);
 
         // execute save operation
@@ -458,11 +458,117 @@ export class EntityManager {
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
         // if user passed empty array of entities then we don't need to do anything
-        if (entity instanceof Array && entity.length === 0)
+        if (Array.isArray(entity) && entity.length === 0)
             return Promise.resolve(entity);
 
         // execute save operation
         return new EntityPersistExecutor(this.connection, this.queryRunner, "remove", target, entity, options)
+            .execute()
+            .then(() => entity);
+    }
+
+    /**
+     * Records the delete date of all given entities.
+     */
+    softRemove<Entity>(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
+
+    /**
+     * Records the delete date of a given entity.
+     */
+    softRemove<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
+
+    /**
+     * Records the delete date of all given entities.
+     */
+    softRemove<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>, entities: T[], options?: SaveOptions): Promise<T[]>;
+
+    /**
+     * Records the delete date of a given entity.
+     */
+    softRemove<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>, entity: T, options?: SaveOptions): Promise<T>;
+
+    /**
+     * Records the delete date of all given entities.
+     */
+    softRemove<T>(targetOrEntity: string, entities: T[], options?: SaveOptions): Promise<T[]>;
+
+    /**
+     * Records the delete date of a given entity.
+     */
+    softRemove<T>(targetOrEntity: string, entity: T, options?: SaveOptions): Promise<T>;
+
+    /**
+     * Records the delete date of one or many given entities.
+     */
+    softRemove<Entity, T extends DeepPartial<Entity>>(targetOrEntity: (T|T[])|ObjectType<Entity>|EntitySchema<Entity>|string, maybeEntityOrOptions?: T|T[], maybeOptions?: SaveOptions): Promise<T|T[]> {
+
+        // normalize mixed parameters
+        let target = (arguments.length > 1 && (targetOrEntity instanceof Function || targetOrEntity instanceof EntitySchema || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
+        const entity: T|T[] = target ? maybeEntityOrOptions as T|T[] : targetOrEntity as T|T[];
+        const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
+
+        if (target instanceof EntitySchema)
+            target = target.options.name;
+
+        // if user passed empty array of entities then we don't need to do anything
+        if (Array.isArray(entity) && entity.length === 0)
+            return Promise.resolve(entity);
+
+        // execute soft-remove operation
+        return new EntityPersistExecutor(this.connection, this.queryRunner, "soft-remove", target, entity, options)
+            .execute()
+            .then(() => entity);
+    }
+
+    /**
+     * Recovers all given entities.
+     */
+    recover<Entity>(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
+
+    /**
+     * Recovers a given entity.
+     */
+    recover<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
+
+    /**
+     * Recovers all given entities.
+     */
+    recover<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>, entities: T[], options?: SaveOptions): Promise<T[]>;
+
+    /**
+     * Recovers a given entity.
+     */
+    recover<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>, entity: T, options?: SaveOptions): Promise<T>;
+
+    /**
+     * Recovers all given entities.
+     */
+    recover<T>(targetOrEntity: string, entities: T[], options?: SaveOptions): Promise<T[]>;
+
+    /**
+     * Recovers a given entity.
+     */
+    recover<T>(targetOrEntity: string, entity: T, options?: SaveOptions): Promise<T>;
+
+    /**
+     * Recovers one or many given entities.
+     */
+    recover<Entity, T extends DeepPartial<Entity>>(targetOrEntity: (T|T[])|ObjectType<Entity>|EntitySchema<Entity>|string, maybeEntityOrOptions?: T|T[], maybeOptions?: SaveOptions): Promise<T|T[]> {
+
+        // normalize mixed parameters
+        let target = (arguments.length > 1 && (targetOrEntity instanceof Function || targetOrEntity instanceof EntitySchema || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
+        const entity: T|T[] = target ? maybeEntityOrOptions as T|T[] : targetOrEntity as T|T[];
+        const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
+
+        if (target instanceof EntitySchema)
+            target = target.options.name;
+
+        // if user passed empty array of entities then we don't need to do anything
+        if (Array.isArray(entity) && entity.length === 0)
+            return Promise.resolve(entity);
+
+        // execute recover operation
+        return new EntityPersistExecutor(this.connection, this.queryRunner, "recover", target, entity, options)
             .execute()
             .then(() => entity);
     }
@@ -476,8 +582,18 @@ export class EntityManager {
      */
     async insert<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, entity: QueryDeepPartialEntity<Entity>|(QueryDeepPartialEntity<Entity>[])): Promise<InsertResult> {
 
+        // If user passed empty array of entities then we don't need to do
+        // anything.
+        //
+        // Fixes GitHub issue #5734.  If we were to let this through we would
+        // run into problems downstream, like subscribers getting invoked with
+        // the empty array where they expect an entity, and SQL queries with an
+        // empty VALUES clause.
+        if (Array.isArray(entity) && entity.length === 0)
+            return Promise.resolve(new InsertResult());
+
         // TODO: Oracle does not support multiple values. Need to create another nice solution.
-        if (this.connection.driver instanceof OracleDriver && entity instanceof Array) {
+        if (this.connection.driver instanceof OracleDriver && Array.isArray(entity)) {
             const results = await Promise.all(entity.map(entity => this.insert(target, entity)));
             return results.reduce((mergedResult, result) => Object.assign(mergedResult, result), {} as InsertResult);
         }
@@ -501,7 +617,7 @@ export class EntityManager {
         if (criteria === undefined ||
             criteria === null ||
             criteria === "" ||
-            (criteria instanceof Array && criteria.length === 0)) {
+            (Array.isArray(criteria) && criteria.length === 0)) {
 
             return Promise.reject(new Error(`Empty criteria(s) are not allowed for the update method.`));
         }
@@ -509,7 +625,7 @@ export class EntityManager {
         if (typeof criteria === "string" ||
             typeof criteria === "number" ||
             criteria instanceof Date ||
-            criteria instanceof Array) {
+            Array.isArray(criteria)) {
 
             return this.createQueryBuilder()
                 .update(target)
@@ -539,7 +655,7 @@ export class EntityManager {
         if (criteria === undefined ||
             criteria === null ||
             criteria === "" ||
-            (criteria instanceof Array && criteria.length === 0)) {
+            (Array.isArray(criteria) && criteria.length === 0)) {
 
             return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
         }
@@ -547,7 +663,7 @@ export class EntityManager {
         if (typeof criteria === "string" ||
             typeof criteria === "number" ||
             criteria instanceof Date ||
-            criteria instanceof Array) {
+            Array.isArray(criteria)) {
 
             return this.createQueryBuilder()
                 .delete()
@@ -558,6 +674,82 @@ export class EntityManager {
         } else {
             return this.createQueryBuilder()
                 .delete()
+                .from(targetOrEntity)
+                .where(criteria)
+                .execute();
+        }
+    }
+
+    /**
+     * Records the delete date of entities by a given condition(s).
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient DELETE query.
+     * Does not check if entity exist in the database.
+     * Condition(s) cannot be empty.
+     */
+    softDelete<Entity>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|any): Promise<UpdateResult> {
+
+        // if user passed empty criteria or empty list of criterias, then throw an error
+        if (criteria === undefined ||
+            criteria === null ||
+            criteria === "" ||
+            (Array.isArray(criteria) && criteria.length === 0)) {
+
+            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
+        }
+
+        if (typeof criteria === "string" ||
+            typeof criteria === "number" ||
+            criteria instanceof Date ||
+            Array.isArray(criteria)) {
+
+            return this.createQueryBuilder()
+                .softDelete()
+                .from(targetOrEntity)
+                .whereInIds(criteria)
+                .execute();
+
+        } else {
+            return this.createQueryBuilder()
+                .softDelete()
+                .from(targetOrEntity)
+                .where(criteria)
+                .execute();
+        }
+    }
+
+    /**
+     * Restores entities by a given condition(s).
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient DELETE query.
+     * Does not check if entity exist in the database.
+     * Condition(s) cannot be empty.
+     */
+    restore<Entity>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|any): Promise<UpdateResult> {
+
+        // if user passed empty criteria or empty list of criterias, then throw an error
+        if (criteria === undefined ||
+            criteria === null ||
+            criteria === "" ||
+            (Array.isArray(criteria) && criteria.length === 0)) {
+
+            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
+        }
+
+        if (typeof criteria === "string" ||
+            typeof criteria === "number" ||
+            criteria instanceof Date ||
+            Array.isArray(criteria)) {
+
+            return this.createQueryBuilder()
+                .restore()
+                .from(targetOrEntity)
+                .whereInIds(criteria)
+                .execute();
+
+        } else {
+            return this.createQueryBuilder()
+                .restore()
                 .from(targetOrEntity)
                 .where(criteria)
                 .execute();

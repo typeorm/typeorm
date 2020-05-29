@@ -148,6 +148,8 @@ export class SapDriver implements Driver {
         createDateDefault: "CURRENT_TIMESTAMP",
         updateDate: "timestamp",
         updateDateDefault: "CURRENT_TIMESTAMP",
+        deleteDate: "timestamp",
+        deleteDateNullable: true,
         version: "integer",
         treeLevel: "integer",
         migrationId: "integer",
@@ -207,9 +209,6 @@ export class SapDriver implements Driver {
      * either create a pool and create connection when needed.
      */
     async connect(): Promise<void> {
-        // this.master = await this.createConnection(this.options);
-
-
         // HANA connection info
         const dbParams = {
             hostName: this.options.host,
@@ -221,25 +220,25 @@ export class SapDriver implements Driver {
 
         if (this.options.database) dbParams.databaseName = this.options.database;
         if (this.options.encrypt) dbParams.encrypt = this.options.encrypt;
-        if (this.options.encrypt) dbParams.validateCertificate = this.options.validateCertificate;
-        if (this.options.encrypt) dbParams.key = this.options.key;
-        if (this.options.encrypt) dbParams.cert = this.options.cert;
-        if (this.options.encrypt) dbParams.ca = this.options.ca;
+        if (this.options.sslValidateCertificate) dbParams.validateCertificate = this.options.sslValidateCertificate;
+        if (this.options.key) dbParams.key = this.options.key;
+        if (this.options.cert) dbParams.cert = this.options.cert;
+        if (this.options.ca) dbParams.ca = this.options.ca;
 
         // pool options
         const options: any = {
-            min: this.options.pool && this.options.pool.min ? this.options.pool && this.options.pool.min : 1,
-            max: this.options.pool && this.options.pool.max ? this.options.pool && this.options.pool.max : 1,
+            min: this.options.pool && this.options.pool.min ? this.options.pool.min : 1,
+            max: this.options.pool && this.options.pool.max ? this.options.pool.max : 10,
         };
 
         if (this.options.pool && this.options.pool.checkInterval) options.checkInterval = this.options.pool.checkInterval;
-        if (this.options.pool && this.options.pool.checkInterval) options.maxWaitingRequests = this.options.pool.maxWaitingRequests;
-        if (this.options.pool && this.options.pool.checkInterval) options.requestTimeout = this.options.pool.requestTimeout;
-        if (this.options.pool && this.options.pool.checkInterval) options.idleTimeout = this.options.pool.idleTimeout;
+        if (this.options.pool && this.options.pool.maxWaitingRequests) options.maxWaitingRequests = this.options.pool.maxWaitingRequests;
+        if (this.options.pool && this.options.pool.requestTimeout) options.requestTimeout = this.options.pool.requestTimeout;
+        if (this.options.pool && this.options.pool.idleTimeout) options.idleTimeout = this.options.pool.idleTimeout;
 
         const { logger } = this.connection;
 
-        const poolErrorHandler = options.poolErrorHandler || ((error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
+        const poolErrorHandler = options.poolErrorHandler || ((error: any) => logger.log("warn", `SAP Hana pool raised an error. ${error}`));
         this.client.eventEmitter.on("poolError", poolErrorHandler);
 
         // create the pool
@@ -284,6 +283,10 @@ export class SapDriver implements Driver {
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
         const builtParameters: any[] = Object.keys(nativeParameters).map(key => {
+
+            if (nativeParameters[key] instanceof Date)
+                return DateUtils.mixedDateToDatetimeString(nativeParameters[key], true);
+
             return nativeParameters[key];
         });
 
@@ -310,6 +313,9 @@ export class SapDriver implements Driver {
 
             } else if (value instanceof Function) {
                 return value();
+
+            } else if (value instanceof Date) {
+                return DateUtils.mixedDateToDatetimeString(value, true);
 
             } else {
                 builtParameters.push(value);
@@ -574,15 +580,15 @@ export class SapDriver implements Driver {
 
             // console.log("table:", columnMetadata.entityMetadata.tableName);
             // console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            // console.log("length:", tableColumn.length, columnMetadata.length);
+            // console.log("type:", tableColumn.type, _this.normalizeType(columnMetadata));
+            // console.log("length:", tableColumn.length, _this.getColumnLength(columnMetadata));
             // console.log("width:", tableColumn.width, columnMetadata.width);
             // console.log("precision:", tableColumn.precision, columnMetadata.precision);
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
             // console.log("default:", tableColumn.default, columnMetadata.default);
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            // console.log("isUnique:", tableColumn.isUnique, _this.normalizeIsUnique(columnMetadata));
             // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
             // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
             // console.log("==========================================");
@@ -590,9 +596,9 @@ export class SapDriver implements Driver {
             const normalizeDefault = this.normalizeDefault(columnMetadata);
             const hanaNullComapatibleDefault = normalizeDefault == null ? undefined : normalizeDefault;
 
-            return  tableColumn.name !== columnMetadata.databaseName
+            return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadata.length
+                || columnMetadata.length && tableColumn.length !== this.getColumnLength(columnMetadata)
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
@@ -600,7 +606,7 @@ export class SapDriver implements Driver {
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || tableColumn.isGenerated !== columnMetadata.isGenerated;
+                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
         });
     }
 

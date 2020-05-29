@@ -10,6 +10,7 @@
     * [`@ObjectIdColumn`](#objectidcolumn)
     * [`@CreateDateColumn`](#createdatecolumn)
     * [`@UpdateDateColumn`](#updatedatecolumn)
+    * [`@DeleteDateColumn`](#deletedatecolumn)
     * [`@VersionColumn`](#versioncolumn)
     * [`@Generated`](#generated)
 * [Relation decorators](#relation-decorators)
@@ -93,7 +94,7 @@ View entity is a class that maps to a database view.
 `expression` can be string with properly escaped columns and tables, depend on database used (postgres in example):
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: `
         SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
         FROM "post" "post"
@@ -106,7 +107,7 @@ export class PostCategory {
 or an instance of QueryBuilder
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -120,7 +121,7 @@ export class PostCategory {
 **Note:** parameter binding is not supported due to drivers limitations. Use the literal parameters instead.
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -178,7 +179,7 @@ Default value is `true`.
 * `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
 * `default: string` - Adds database-level column's `DEFAULT` value.
 * `primary: boolean` - Marks column as primary. Same as using  `@PrimaryColumn`.
-* `unique: boolean` - Marks column as unique column (creates unique constraint).
+* `unique: boolean` - Marks column as unique column (creates unique constraint). Default value is false.
 * `comment: string` - Database's column comment. Not supported by all database types.
 * `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
  number of digits that are stored for the values. Used in some column types.
@@ -192,6 +193,7 @@ If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
 * `collation: string` - Defines a column collation.
 * `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
 You can specify array of values or specify a enum class.
+* `enumName: string` - A name for generated enum type. If not specified, TypeORM will generate a enum type from entity and column names - so it's neccessary if you intend to use the same enum type in different tables.
 * `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
@@ -240,7 +242,7 @@ There are two generation strategies:
 
 * `increment` - uses AUTO_INCREMENT / SERIAL / SEQUENCE (depend on database type) to generate incremental number.
 * `uuid` - generates unique `uuid` string.
-* `rowid` - only for [CockroachDB](https://www.cockroachlabs.com/docs/stable/serial.html). Value is automatically generated using the `unique_rowid()` 
+* `rowid` - only for [CockroachDB](https://www.cockroachlabs.com/docs/stable/serial.html). Value is automatically generated using the `unique_rowid()`
 function. This produces a 64-bit integer from the current timestamp and ID of the node executing the `INSERT` or `UPSERT` operation.
 > Note: property with a `rowid` generation strategy must be a `string` data type
 
@@ -305,6 +307,24 @@ export class User {
 
     @UpdateDateColumn()
     updatedDate: Date;
+
+}
+```
+
+#### `@DeleteDateColumn`
+
+Special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set.
+
+TypeORM's own soft delete functionality utilizes global scopes to only pull "non-deleted" entities from the database.
+
+If the @DeleteDateColumn is set, the default scope will be "non-deleted".
+
+```typescript
+@Entity()
+export class User {
+
+    @DeleteDateColumn()
+    deletedDate: Date;
 
 }
 ```

@@ -1,10 +1,79 @@
-## [0.2.22](https://github.com/typeorm/typeorm/compare/0.2.21...0.2.22) (2019-12-23)
+## [0.2.25](https://github.com/typeorm/typeorm/compare/0.2.24...0.2.25) (2020-05-19)
 
+### Bug Fixes
+
+* 'in' clause case for ORACLE ([#5345](https://github.com/typeorm/typeorm/issues/5345)) ([8977365](https://github.com/typeorm/typeorm/commit/8977365))
+* calling EntityManager.insert() with an empty array of entities ([#5745](https://github.com/typeorm/typeorm/issues/5745)) ([f8c52f3](https://github.com/typeorm/typeorm/commit/f8c52f3)), closes [#5734](https://github.com/typeorm/typeorm/issues/5734) [#5734](https://github.com/typeorm/typeorm/issues/5734) [#5734](https://github.com/typeorm/typeorm/issues/5734)
+* columns with transformer should be normalized for update ([#5700](https://github.com/typeorm/typeorm/issues/5700)) ([4ef6b65](https://github.com/typeorm/typeorm/commit/4ef6b65)), closes [#2703](https://github.com/typeorm/typeorm/issues/2703)
+* escape column comment in mysql driver ([#6056](https://github.com/typeorm/typeorm/issues/6056)) ([5fc802d](https://github.com/typeorm/typeorm/commit/5fc802d))
+* expo sqlite driver disconnect() ([#6027](https://github.com/typeorm/typeorm/issues/6027)) ([61d59ca](https://github.com/typeorm/typeorm/commit/61d59ca))
+* HANA - SSL options, column delta detection mechanism ([#5938](https://github.com/typeorm/typeorm/issues/5938)) ([2fd0a8a](https://github.com/typeorm/typeorm/commit/2fd0a8a))
+* handle URL objects as column field values ([#5771](https://github.com/typeorm/typeorm/issues/5771)) ([50a0641](https://github.com/typeorm/typeorm/commit/50a0641)), closes [#5762](https://github.com/typeorm/typeorm/issues/5762) [#5762](https://github.com/typeorm/typeorm/issues/5762)
+* insert and update query builder to handle mssql geometry column correctly ([#5947](https://github.com/typeorm/typeorm/issues/5947)) ([87cc6f4](https://github.com/typeorm/typeorm/commit/87cc6f4))
+* migrations being generated for FK even if there are no changes ([#5869](https://github.com/typeorm/typeorm/issues/5869)) ([416e419](https://github.com/typeorm/typeorm/commit/416e419))
+* multiple assignments to same column on UPDATE [#2651](https://github.com/typeorm/typeorm/issues/2651) ([#5598](https://github.com/typeorm/typeorm/issues/5598)) ([334e17e](https://github.com/typeorm/typeorm/commit/334e17e))
+* prevent TypeError when calling bind function with sql.js 1.2.X ([#5789](https://github.com/typeorm/typeorm/issues/5789)) ([c6cbddc](https://github.com/typeorm/typeorm/commit/c6cbddc))
+* prototype pollution issue ([#6096](https://github.com/typeorm/typeorm/issues/6096)) ([db9d0fa](https://github.com/typeorm/typeorm/commit/db9d0fa))
+* provide a default empty array for parameters. ([#5677](https://github.com/typeorm/typeorm/issues/5677)) ([9e8a8cf](https://github.com/typeorm/typeorm/commit/9e8a8cf))
+* redundant undefined parameters are not generated in migration files anymore ([#5690](https://github.com/typeorm/typeorm/issues/5690)) ([d5cde49](https://github.com/typeorm/typeorm/commit/d5cde49))
+* replacing instanceof Array checks to Array.isArray because instanceof Array seems to be problematic on some platforms ([#5606](https://github.com/typeorm/typeorm/issues/5606)) ([b99b4ad](https://github.com/typeorm/typeorm/commit/b99b4ad))
+* respect database from connection urls ([#5640](https://github.com/typeorm/typeorm/issues/5640)) ([ed75d59](https://github.com/typeorm/typeorm/commit/ed75d59)), closes [#2096](https://github.com/typeorm/typeorm/issues/2096)
+* sha.js import ([#5728](https://github.com/typeorm/typeorm/issues/5728)) ([8c3f48a](https://github.com/typeorm/typeorm/commit/8c3f48a))
+* Unknown fields are stripped from WHERE clause (issue [#3416](https://github.com/typeorm/typeorm/issues/3416)) ([#5603](https://github.com/typeorm/typeorm/issues/5603)) ([215f106](https://github.com/typeorm/typeorm/commit/215f106))
+* update dependency mkdirp to 1.x ([#5748](https://github.com/typeorm/typeorm/issues/5748)) ([edeb561](https://github.com/typeorm/typeorm/commit/edeb561))
+* update Entity decorator return type to ClassDecorator ([#5776](https://github.com/typeorm/typeorm/issues/5776)) ([7d8a1ca](https://github.com/typeorm/typeorm/commit/7d8a1ca))
+* use an empty string enum as the type of a primary key column ([#6063](https://github.com/typeorm/typeorm/issues/6063)) ([8e0d817](https://github.com/typeorm/typeorm/commit/8e0d817)), closes [#3874](https://github.com/typeorm/typeorm/issues/3874)
+* use correct typings for the result of `getUpsertedIds()` ([#5878](https://github.com/typeorm/typeorm/issues/5878)) ([2ab88c2](https://github.com/typeorm/typeorm/commit/2ab88c2))
+* wrong table name parameter when not using default schema ([#5801](https://github.com/typeorm/typeorm/issues/5801)) ([327144a](https://github.com/typeorm/typeorm/commit/327144a))
+
+### Features
+
+* add FOR NO KEY UPDATE lock mode for postgresql ([#5971](https://github.com/typeorm/typeorm/issues/5971)) ([360122f](https://github.com/typeorm/typeorm/commit/360122f))
+* add name option to view column ([#5962](https://github.com/typeorm/typeorm/issues/5962)) ([3cfcc50](https://github.com/typeorm/typeorm/commit/3cfcc50)), closes [#5708](https://github.com/typeorm/typeorm/issues/5708)
+* Add soft remove and recover methods to entity ([#5854](https://github.com/typeorm/typeorm/issues/5854)) ([9d2b8e0](https://github.com/typeorm/typeorm/commit/9d2b8e0))
+* added support for NOWAIT & SKIP LOCKED in Postgres ([#5927](https://github.com/typeorm/typeorm/issues/5927)) ([2c90e1c](https://github.com/typeorm/typeorm/commit/2c90e1c))
+* Aurora Data API - Postgres Support ([#5651](https://github.com/typeorm/typeorm/issues/5651)) ([e584297](https://github.com/typeorm/typeorm/commit/e584297))
+* aurora Data API - Support for AWS configuration options through aurora driver ([#5754](https://github.com/typeorm/typeorm/issues/5754)) ([1829f96](https://github.com/typeorm/typeorm/commit/1829f96))
+* create-column, update-column, version-column column kinds now support user specified values ([#5867](https://github.com/typeorm/typeorm/issues/5867)) ([5a2eb30](https://github.com/typeorm/typeorm/commit/5a2eb30)), closes [#3271](https://github.com/typeorm/typeorm/issues/3271)
+* names of extra columns for specific tree types moved to NamingStrategy ([#5737](https://github.com/typeorm/typeorm/issues/5737)) ([ec3be41](https://github.com/typeorm/typeorm/commit/ec3be41))
+* PG allow providing a function for password ([#5673](https://github.com/typeorm/typeorm/issues/5673)) ([265d1ae](https://github.com/typeorm/typeorm/commit/265d1ae))
+* update cli migration up and down from any to void ([#5630](https://github.com/typeorm/typeorm/issues/5630)) ([76e165d](https://github.com/typeorm/typeorm/commit/76e165d))
+* UpdateResult returns affected rows in mysql ([#5628](https://github.com/typeorm/typeorm/issues/5628)) ([17f2fff](https://github.com/typeorm/typeorm/commit/17f2fff)), closes [#1308](https://github.com/typeorm/typeorm/issues/1308)
+
+### Performance Improvements
+
+* An optimized version of EntityMetadata#compareIds() for the common case ([#5419](https://github.com/typeorm/typeorm/issues/5419)) ([a9bdb37](https://github.com/typeorm/typeorm/commit/a9bdb37))
+
+## [0.2.23](https://github.com/typeorm/typeorm/compare/0.2.22...0.2.23), [0.2.24](https://github.com/typeorm/typeorm/compare/0.2.23...0.2.24) (2020-02-28)
+
+### Bug Fixes
+
+* .synchronize() drops json column on mariadb ([#5391](https://github.com/typeorm/typeorm/issues/5391)) ([e3c78c1](https://github.com/typeorm/typeorm/commit/e3c78c1)), closes [typeorm/typeorm#3636](https://github.com/typeorm/typeorm/issues/3636)
+* (base-entity) set create return type to T[] ([#5400](https://github.com/typeorm/typeorm/issues/5400)) ([ceff897](https://github.com/typeorm/typeorm/commit/ceff897))
+* add the enableArithAbort option to the sql server connection option typings ([#5526](https://github.com/typeorm/typeorm/issues/5526)) ([d19dbc6](https://github.com/typeorm/typeorm/commit/d19dbc6))
+* bug when default value in mssql were not updated if previous default was already set ([9fc8329](https://github.com/typeorm/typeorm/commit/9fc8329))
+* change OrmUtils.mergeDeep to not merge RegExp objects ([#5182](https://github.com/typeorm/typeorm/issues/5182)) ([0f51836](https://github.com/typeorm/typeorm/commit/0f51836)), closes [#3534](https://github.com/typeorm/typeorm/issues/3534)
+* fk on update should not use attributes of on delete ([2baa934](https://github.com/typeorm/typeorm/commit/2baa934))
+* load typeorm-aurora-data-api-driver correctly when using webpack ([#4788](https://github.com/typeorm/typeorm/issues/4788)) ([#5302](https://github.com/typeorm/typeorm/issues/5302)) ([9da0d34](https://github.com/typeorm/typeorm/commit/9da0d34))
+* not to make typeorm generate alter query on geometry column when that column was not changed ([#5525](https://github.com/typeorm/typeorm/issues/5525)) ([ee57557](https://github.com/typeorm/typeorm/commit/ee57557))
+* Oracle sql expression for date column ([#5305](https://github.com/typeorm/typeorm/issues/5305)) ([40e9d3a](https://github.com/typeorm/typeorm/commit/40e9d3a)), closes [#4452](https://github.com/typeorm/typeorm/issues/4452) [#4452](https://github.com/typeorm/typeorm/issues/4452)
+* refactoring instance of with Array.isArray() ([#5539](https://github.com/typeorm/typeorm/issues/5539)) ([1e1595e](https://github.com/typeorm/typeorm/commit/1e1595e))
+* Return NULL when normalize default null value ([#5517](https://github.com/typeorm/typeorm/issues/5517)) ([1826b75](https://github.com/typeorm/typeorm/commit/1826b75)), closes [#5509](https://github.com/typeorm/typeorm/issues/5509)
+* SAP HANA driver fixes ([#5445](https://github.com/typeorm/typeorm/issues/5445)) ([87b161f](https://github.com/typeorm/typeorm/commit/87b161f))
+* update foreign keys when table name changes ([#5482](https://github.com/typeorm/typeorm/issues/5482)) ([7157cb3](https://github.com/typeorm/typeorm/commit/7157cb3))
+* use OUTPUT INTO on SqlServer for returning columns ([#5361](https://github.com/typeorm/typeorm/issues/5361)) ([6bac3ca](https://github.com/typeorm/typeorm/commit/6bac3ca)), closes [#5160](https://github.com/typeorm/typeorm/issues/5160) [#5160](https://github.com/typeorm/typeorm/issues/5160)
+* use sha.js instead of crypto for hash calculation ([#5270](https://github.com/typeorm/typeorm/issues/5270)) ([b380a7f](https://github.com/typeorm/typeorm/commit/b380a7f))
+
+### Features
+
+* Add basic support for custom cache providers ([#5309](https://github.com/typeorm/typeorm/issues/5309)) ([6c6bde7](https://github.com/typeorm/typeorm/commit/6c6bde7))
+* add fulltext parser option ([#5380](https://github.com/typeorm/typeorm/issues/5380)) ([dd73395](https://github.com/typeorm/typeorm/commit/dd73395))
+
+## [0.2.22](https://github.com/typeorm/typeorm/compare/0.2.21...0.2.22) (2019-12-23)
 
 ### Bug Fixes
 
 * use a prefix on SelectQueryBuilder internal parameters ([#5178](https://github.com/typeorm/typeorm/issues/5178)) ([cacb08b](https://github.com/typeorm/typeorm/commit/cacb08b)), closes [#5174](https://github.com/typeorm/typeorm/issues/5174) [#5174](https://github.com/typeorm/typeorm/issues/5174)
-
 
 ### Features
 
@@ -13,11 +82,11 @@
 * SAP Hana support ([#5246](https://github.com/typeorm/typeorm/issues/5246)) ([ec90341](https://github.com/typeorm/typeorm/commit/ec90341))
 * speed ​​up id search in buildChildrenEntityTree ([#5202](https://github.com/typeorm/typeorm/issues/5202)) ([2e628c3](https://github.com/typeorm/typeorm/commit/2e628c3))
 
-
 ### BREAKING CHANGES
 
-* aliases for very long relation names may be replaced with hashed strings
-
+* aliases for very long relation names may be replaced with hashed strings.
+    Fix: avoid collisions by using longest possible hash.
+    Retain more entropy by not using only 8 characters of hashed aliases.
 
 ## [0.2.21](https://github.com/typeorm/typeorm/compare/0.2.20...0.2.21) (2019-12-05)
 

@@ -51,12 +51,12 @@ describe("view entity > oracle", () => {
 
         const postId1 = connection.driver instanceof CockroachDriver ? "1" : 1;
         postCategories[0].id.should.be.equal(postId1);
-        postCategories[0].name.should.be.equal("About BMW");
+        postCategories[0].postName.should.be.equal("About BMW");
         postCategories[0].categoryName.should.be.equal("Cars");
 
         const postId2 = connection.driver instanceof CockroachDriver ? "2" : 2;
         postCategories[1].id.should.be.equal(postId2);
-        postCategories[1].name.should.be.equal("About Boeing");
+        postCategories[1].postName.should.be.equal("About Boeing");
         postCategories[1].categoryName.should.be.equal("Airplanes");
 
     })));

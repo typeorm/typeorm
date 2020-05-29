@@ -200,6 +200,8 @@ You don't need to set this column - it will be automatically set.
 each time you call `save` of entity manager or repository.
 You don't need to set this column - it will be automatically set.
 
+* `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted".
+
 * `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)  
 each time you call `save` of entity manager or repository.
 You don't need to set this column - it will be automatically set.
@@ -288,6 +290,8 @@ or
 ```typescript
 @Column({ type: "int", width: 200 })
 ```
+
+> Note about `bigint` type: `bigint` column type, used in SQL databases, doesn't fit into the regular `number` type and maps property to a `string` instead.
 
 ### Column types for `mysql` / `mariadb`
 

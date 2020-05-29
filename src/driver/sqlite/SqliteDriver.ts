@@ -1,12 +1,12 @@
-import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {SqliteQueryRunner} from "./SqliteQueryRunner";
-import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
-import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
-import {ColumnType} from "../types/ColumnTypes";
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver";
+import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
+import { SqliteQueryRunner } from "./SqliteQueryRunner";
+import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
+import { PlatformTools } from "../../platform/PlatformTools";
+import { Connection } from "../../connection/Connection";
+import { SqliteConnectionOptions } from "./SqliteConnectionOptions";
+import { ColumnType } from "../types/ColumnTypes";
+import { QueryRunner } from "../../query-runner/QueryRunner";
+import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -63,14 +63,14 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+    createQueryRunner(mode: "master" | "slave" = "master"): QueryRunner {
         if (!this.queryRunner)
             this.queryRunner = new SqliteQueryRunner(this);
 
         return this.queryRunner;
     }
 
-    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number | null, scale?: number }): string {
         if ((column.type as any) === Buffer) {
             return "blob";
         }
@@ -133,11 +133,9 @@ export class SqliteDriver extends AbstractSqliteDriver {
      * Auto creates database directory if it does not exist.
      */
     protected createDatabaseDirectory(fullPath: string): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            const mkdirp = PlatformTools.load("mkdirp");
-            const path = PlatformTools.load("path");
-            mkdirp(path.dirname(fullPath), (err: any) => err ? reject(err) : resolve());
-        });
+        const mkdirp = PlatformTools.load("mkdirp");
+        const path = PlatformTools.load("path");
+        return mkdirp(path.dirname(fullPath));
     }
 
 }

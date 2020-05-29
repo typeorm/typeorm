@@ -39,7 +39,7 @@ export class QueryExpressionMap {
     /**
      * Represents query type. QueryBuilder is able to build SELECT, UPDATE and DELETE queries.
      */
-    queryType: "select"|"update"|"delete"|"insert"|"relation" = "select";
+    queryType: "select"|"update"|"delete"|"insert"|"relation"|"soft-delete"|"restore" = "select";
 
     /**
      * Data needs to be SELECT-ed.
@@ -150,12 +150,18 @@ export class QueryExpressionMap {
     /**
      * Locking mode.
      */
-    lockMode?: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read";
+    lockMode?: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail"|"for_no_key_update";
 
     /**
      * Current version of the entity, used for locking.
      */
     lockVersion?: number|Date;
+
+    /**
+     * Indicates if soft-deleted rows should be included in entity result.
+     * By default the soft-deleted rows are not included.
+     */
+    withDeleted: boolean = false;
 
     /**
      * Parameters used to be escaped in final query.
@@ -405,6 +411,7 @@ export class QueryExpressionMap {
         map.take = this.take;
         map.lockMode = this.lockMode;
         map.lockVersion = this.lockVersion;
+        map.withDeleted = this.withDeleted;
         map.parameters = Object.assign({}, this.parameters);
         map.disableEscaping = this.disableEscaping;
         map.enableRelationIdValues = this.enableRelationIdValues;

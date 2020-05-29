@@ -236,6 +236,9 @@ export class MysqlDriver implements Driver {
         updateDate: "datetime",
         updateDatePrecision: 6,
         updateDateDefault: "CURRENT_TIMESTAMP(6)",
+        deleteDate: "datetime",
+        deleteDatePrecision: 6,
+        deleteDateNullable: true,
         version: "int",
         treeLevel: "int",
         migrationId: "int",
@@ -537,6 +540,15 @@ export class MysqlDriver implements Driver {
         } else if (column.type === "uuid") {
             return "varchar";
 
+        } else if (column.type === "json" && this.options.type === "mariadb") {
+            /*
+             * MariaDB implements this as a LONGTEXT rather, as the JSON data type contradicts the SQL standard,
+             * and MariaDB's benchmarks indicate that performance is at least equivalent.
+             *
+             * @see https://mariadb.com/kb/en/json-data-type/
+             */
+            return "longtext";
+
         } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "text";
 
@@ -590,7 +602,7 @@ export class MysqlDriver implements Driver {
             return `'${defaultValue}'`;
 
         } else if (defaultValue === null) {
-            return `null`;
+            return `NULL`;
 
         } else {
             return defaultValue;

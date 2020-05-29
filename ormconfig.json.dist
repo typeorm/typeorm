@@ -90,5 +90,31 @@
     "logging": false,
     "useNewUrlParser": true,
     "useUnifiedTopology": true
+  },
+  {
+    "skip": true,
+    "name": "aurora-data-api",
+    "type": "aurora-data-api",
+    "region": "us-east-1",
+    "secretArn": "mysecret",
+    "resourceArn": "app-dbcluster",
+    "database": "app-dbcluster-mine",
+    "serviceConfigOptions": {
+      "maxRetries": 3
+    },
+    "logging": false
+  },
+  {
+    "skip": true,
+    "name": "aurora-data-api-pg",
+    "type": "aurora-data-api-pg",
+    "region": "us-east-1",
+    "secretArn": "mysecret",
+    "resourceArn": "app-dbcluster",
+    "database": "app-dbcluster-mine",
+    "serviceConfigOptions": {
+      "maxRetries": 3
+    },
+    "logging": false
   }
 ]

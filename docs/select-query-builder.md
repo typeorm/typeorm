@@ -3,7 +3,7 @@
 * [What is `QueryBuilder`](#what-is-querybuilder)
 * [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
 * [Getting values using QueryBuilder](#getting-values-using-querybuilder)
-* [What are aliases for?](#what-are-aliases-for?)
+* [What are aliases for?](#what-are-aliases-for)
 * [Using parameters to escape data](#using-parameters-to-escape-data)
 * [Adding `WHERE` expression](#adding-where-expression)
 * [Adding `HAVING` expression](#adding-having-expression)
@@ -204,7 +204,7 @@ const photosSums = await getRepository(User)
     .createQueryBuilder("user")
     .select("user.id")
     .addSelect("SUM(user.photosCount)", "sum")
-    .where("user.id = :id", { id: 1 })
+    .groupBy("user.id")
     .getRawMany();
 
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
@@ -331,6 +331,20 @@ Which will produce the following SQL query:
 ```sql
 SELECT ... FROM users user WHERE user.firstName = 'Timber' OR user.lastName = 'Saw'
 ```
+
+You can do an `IN` query with the `WHERE` expression:
+
+```typescript
+createQueryBuilder("user")
+    .where("user.id IN (:...ids)", { ids: [1, 2, 3, 4] })
+```
+
+Which will produce the following SQL query:
+
+```sql
+SELECT ... FROM users user WHERE user.firstName IN (1, 2, 3, 4)
+```
+
 
 You can add a complex `WHERE` expression into an existing `WHERE` using `Brackets`
 
@@ -762,7 +776,7 @@ const photosSums = await getRepository(User)
     .createQueryBuilder("user")
     .select("user.id")
     .addSelect("SUM(user.photosCount)", "sum")
-    .where("user.id = :id", { id: 1 })
+    .groupBy("user.id")
     .getRawMany();
 
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]

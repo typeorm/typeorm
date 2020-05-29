@@ -22,7 +22,7 @@ export interface SaveOptions {
     transaction?: boolean;
 
     /**
-     * Breaks save execution into given number of chunks.
+     * Breaks save execution into chunks of a given size.
      * For example, if you want to save 100,000 objects but you have issues with saving them,
      * you can break them into 10 groups of 10,000 objects (by setting { chunk: 10000 }) and save each group separately.
      * This option is needed to perform very big insertions when you have issues with underlying driver parameter number limitation.

@@ -54,6 +54,8 @@ export class EntitySchemaTransformer {
                     mode = "createDate";
                 if (column.updateDate)
                     mode = "updateDate";
+                if (column.deleteDate)
+                    mode = "deleteDate";
                 if (column.version)
                     mode = "version";
                 if (column.treeChildrenCount)

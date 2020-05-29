@@ -11,7 +11,7 @@ export class CommandUtils {
      * Creates directories recursively.
      */
     static createDirectories(directory: string) {
-        return new Promise((ok, fail) => mkdirp(directory, (err: any) => err ? fail(err) : ok()));
+        return mkdirp(directory);
     }
 
     /**

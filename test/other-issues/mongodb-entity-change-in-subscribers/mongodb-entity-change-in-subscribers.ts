@@ -35,7 +35,7 @@ describe("other issues > mongodb entity change in subscribers should affect pers
         const loadedUpdatedPost = await connection.manager.findOne(Post);
         expect(loadedUpdatedPost).not.to.be.undefined;
         expect(loadedUpdatedPost!.title).to.equals("hello world!");
-        expect(loadedUpdatedPost!.updatedColumns).to.equals(3); // it actually should be 2, but ObjectId column always added
+        expect(loadedUpdatedPost!.updatedColumns).to.equals(4); // it actually should be 3, but ObjectId column always added
 
         await connection.manager.save(loadedPost!);
 

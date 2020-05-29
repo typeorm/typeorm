@@ -119,7 +119,7 @@ export class EntityMetadataValidator {
 
                 // get entity relation value and check if its an array
                 const relationInitializedValue = relation.getEntityValue(entityInstance);
-                if (relationInitializedValue instanceof Array)
+                if (Array.isArray(relationInitializedValue))
                     throw new InitializedRelationError(relation);
             }
         });

@@ -38,7 +38,7 @@ export class ConnectionOptionsReader {
     async all(): Promise<ConnectionOptions[]> {
         const options = await this.load();
         if (!options)
-            throw new Error(`No connection options were found in any of configurations file.`);
+            throw new Error(`No connection options were found in any orm configuration files.`);
 
         return options;
     }
@@ -138,7 +138,7 @@ export class ConnectionOptionsReader {
      * Normalize connection options.
      */
     protected normalizeConnectionOptions(connectionOptions: ConnectionOptions|ConnectionOptions[]): ConnectionOptions[] {
-        if (!(connectionOptions instanceof Array))
+        if (!(Array.isArray(connectionOptions)))
             connectionOptions = [connectionOptions];
 
         connectionOptions.forEach(options => {

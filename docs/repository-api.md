@@ -51,7 +51,7 @@ const users = await repository
  }
 ```
 
-* `getId` - Gets the primary column property values of the given entity. 
+* `getId` - Gets the primary column property values of the given entity.
 If entity has composite primary keys then the returned value will be an object with names and values of primary columns.
 
 ```typescript
@@ -135,12 +135,12 @@ await repository.insert({
 });
 
 
-await manager.insert(User, [{ 
-    firstName: "Foo", 
-    lastName: "Bar" 
-}, { 
-    firstName: "Rizz", 
-    lastName: "Rak" 
+await manager.insert(User, [{
+    firstName: "Foo",
+    lastName: "Bar"
+}, {
+    firstName: "Rizz",
+    lastName: "Rak"
 }]);
 ```
 
@@ -161,6 +161,27 @@ await repository.delete(1);
 await repository.delete([1, 2, 3]);
 await repository.delete({ firstName: "Timber" });
 ```
+
+* `softDelete` and `restore` - Soft deleting and restoring a row by id
+
+```typescript
+const repository = connection.getRepository(Entity);
+// Delete a entity
+await repository.softDelete(1);
+// And You can restore it using restore;
+await repository.restore(1);
+```
+
+* `softRemove` and `recover` - This is alternative to `softDelete` and `restore`.
+```typescript
+// You can soft-delete them using softRemove
+const entities = await repository.find();
+const entitiesAfterSoftRemove = await repository.softRemove(entities);
+
+// And You can recover them using recover;
+await repository.recover(entitiesAfterSoftRemove);
+```
+
 
 * `count` - Counts entities that match given options. Useful for pagination.
 

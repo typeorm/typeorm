@@ -76,13 +76,13 @@ export class MetadataArgsStorage {
     findGenerated(target: (Function|string)[], propertyName: string): GeneratedMetadataArgs|undefined;
     findGenerated(target: (Function|string)|(Function|string)[], propertyName: string): GeneratedMetadataArgs|undefined {
         return this.generations.find(generated => {
-            return (target instanceof Array ? target.indexOf(generated.target) !== -1 : generated.target === target) && generated.propertyName === propertyName;
+            return (Array.isArray(target) ? target.indexOf(generated.target) !== -1 : generated.target === target) && generated.propertyName === propertyName;
         });
     }
 
     findTree(target: (Function|string)|(Function|string)[]): TreeMetadataArgs|undefined {
         return this.trees.find(tree => {
-            return (target instanceof Array ? target.indexOf(tree.target) !== -1 : tree.target === target);
+            return (Array.isArray(target) ? target.indexOf(tree.target) !== -1 : tree.target === target);
         });
     }
 
@@ -109,7 +109,7 @@ export class MetadataArgsStorage {
     filterIndices(target: (Function|string)|(Function|string)[]): IndexMetadataArgs[] {
         // todo: implement parent-entity overrides?
         return this.indices.filter(index => {
-            return target instanceof Array ? target.indexOf(index.target) !== -1 : index.target === target;
+            return Array.isArray(target) ? target.indexOf(index.target) !== -1 : index.target === target;
         });
     }
 
@@ -117,7 +117,7 @@ export class MetadataArgsStorage {
     filterUniques(target: (Function|string)[]): UniqueMetadataArgs[];
     filterUniques(target: (Function|string)|(Function|string)[]): UniqueMetadataArgs[] {
         return this.uniques.filter(unique => {
-            return target instanceof Array ? target.indexOf(unique.target) !== -1 : unique.target === target;
+            return Array.isArray(target) ? target.indexOf(unique.target) !== -1 : unique.target === target;
         });
     }
 
@@ -125,7 +125,7 @@ export class MetadataArgsStorage {
     filterChecks(target: (Function|string)[]): CheckMetadataArgs[];
     filterChecks(target: (Function|string)|(Function|string)[]): CheckMetadataArgs[] {
         return this.checks.filter(check => {
-            return target instanceof Array ? target.indexOf(check.target) !== -1 : check.target === target;
+            return Array.isArray(target) ? target.indexOf(check.target) !== -1 : check.target === target;
         });
     }
 
@@ -133,7 +133,7 @@ export class MetadataArgsStorage {
     filterExclusions(target: (Function|string)[]): ExclusionMetadataArgs[];
     filterExclusions(target: (Function|string)|(Function|string)[]): ExclusionMetadataArgs[] {
         return this.exclusions.filter(exclusion => {
-            return target instanceof Array ? target.indexOf(exclusion.target) !== -1 : exclusion.target === target;
+            return Array.isArray(target) ? target.indexOf(exclusion.target) !== -1 : exclusion.target === target;
         });
     }
 
@@ -176,13 +176,13 @@ export class MetadataArgsStorage {
 
     filterTransactionEntityManagers(target: Function|string, propertyName: string): TransactionEntityMetadataArgs[] {
         return this.transactionEntityManagers.filter(transactionEm => {
-            return (target instanceof Array ? target.indexOf(transactionEm.target) !== -1 : transactionEm.target === target) && transactionEm.methodName === propertyName;
+            return (Array.isArray(target) ? target.indexOf(transactionEm.target) !== -1 : transactionEm.target === target) && transactionEm.methodName === propertyName;
         });
     }
 
     filterTransactionRepository(target: Function|string, propertyName: string): TransactionRepositoryMetadataArgs[] {
         return this.transactionRepositories.filter(transactionEm => {
-            return (target instanceof Array ? target.indexOf(transactionEm.target) !== -1 : transactionEm.target === target) && transactionEm.methodName === propertyName;
+            return (Array.isArray(target) ? target.indexOf(transactionEm.target) !== -1 : transactionEm.target === target) && transactionEm.methodName === propertyName;
         });
     }
 
@@ -212,7 +212,7 @@ export class MetadataArgsStorage {
      */
     protected filterByTarget<T extends { target: Function|string }>(array: T[], target: (Function|string)|(Function|string)[]): T[] {
         return array.filter(table => {
-            return target instanceof Array ? target.indexOf(table.target) !== -1 : table.target === target;
+            return Array.isArray(target) ? target.indexOf(table.target) !== -1 : table.target === target;
         });
     }
 
@@ -222,7 +222,7 @@ export class MetadataArgsStorage {
     protected filterByTargetAndWithoutDuplicateProperties<T extends { target: Function|string, propertyName: string }>(array: T[], target: (Function|string)|(Function|string)[]): T[] {
         const newArray: T[] = [];
         array.forEach(item => {
-            const sameTarget = target instanceof Array ? target.indexOf(item.target) !== -1 : item.target === target;
+            const sameTarget = Array.isArray(target) ? target.indexOf(item.target) !== -1 : item.target === target;
             if (sameTarget) {
                 if (!newArray.find(newItem => newItem.propertyName === item.propertyName))
                     newArray.push(item);
@@ -237,7 +237,7 @@ export class MetadataArgsStorage {
     protected filterByTargetAndWithoutDuplicateEmbeddedProperties<T extends EmbeddedMetadataArgs>(array: T[], target: (Function|string)|(Function|string)[]): T[] {
         const newArray: T[] = [];
         array.forEach(item => {
-            const sameTarget = target instanceof Array ? target.indexOf(item.target) !== -1 : item.target === target;
+            const sameTarget = Array.isArray(target) ? target.indexOf(item.target) !== -1 : item.target === target;
             if (sameTarget) {
                 const isDuplicateEmbeddedProperty = newArray.find((newItem: EmbeddedMetadataArgs): boolean =>
                     newItem.prefix === item.prefix && newItem.propertyName === item.propertyName

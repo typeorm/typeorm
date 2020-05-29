@@ -107,7 +107,7 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * Creates a new entity from the given plain javascript object. If entity already exist in the database, then
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
@@ -168,6 +168,60 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Records the delete date of all given entities.
+     */
+    softRemove<T extends DeepPartial<Entity>>(entities: T[], options: SaveOptions & { reload: false }): Promise<T[]>;
+
+    /**
+     * Records the delete date of all given entities.
+     */
+    softRemove<T extends DeepPartial<Entity>>(entities: T[], options?: SaveOptions): Promise<(T & Entity)[]>;
+
+    /**
+     * Records the delete date of a given entity.
+     */
+    softRemove<T extends DeepPartial<Entity>>(entity: T, options: SaveOptions & { reload: false }): Promise<T>;
+
+    /**
+     * Records the delete date of a given entity.
+     */
+    softRemove<T extends DeepPartial<Entity>>(entity: T, options?: SaveOptions): Promise<T & Entity>;
+
+    /**
+     * Records the delete date of one or many given entities.
+     */
+    softRemove<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
+        return this.manager.softRemove<T>(this.metadata.target as any, entityOrEntities as any, options);
+    }
+
+    /**
+     * Recovers all given entities in the database.
+     */
+    recover<T extends DeepPartial<Entity>>(entities: T[], options: SaveOptions & { reload: false }): Promise<T[]>;
+
+    /**
+     * Recovers all given entities in the database.
+     */
+    recover<T extends DeepPartial<Entity>>(entities: T[], options?: SaveOptions): Promise<(T & Entity)[]>;
+
+    /**
+     * Recovers a given entity in the database.
+     */
+    recover<T extends DeepPartial<Entity>>(entity: T, options: SaveOptions & { reload: false }): Promise<T>;
+
+    /**
+     * Recovers a given entity in the database.
+     */
+    recover<T extends DeepPartial<Entity>>(entity: T, options?: SaveOptions): Promise<T & Entity>;
+
+    /**
+     * Recovers one or many given entities.
+     */
+    recover<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
+        return this.manager.recover<T>(this.metadata.target as any, entityOrEntities as any, options);
+    }
+
+    /**
      * Inserts a given entity into the database.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT query.
@@ -195,6 +249,26 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     delete(criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>): Promise<DeleteResult> {
         return this.manager.delete(this.metadata.target as any, criteria as any);
+    }
+
+    /**
+     * Records the delete date of entities by a given criteria.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient SOFT-DELETE query.
+     * Does not check if entity exist in the database.
+     */
+    softDelete(criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>): Promise<UpdateResult> {
+        return this.manager.softDelete(this.metadata.target as any, criteria as any);
+    }
+
+    /**
+     * Restores entities by a given criteria.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient SOFT-DELETE query.
+     * Does not check if entity exist in the database.
+     */
+    restore(criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>): Promise<UpdateResult> {
+        return this.manager.restore(this.metadata.target as any, criteria as any);
     }
 
     /**

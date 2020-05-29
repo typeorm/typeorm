@@ -29,7 +29,7 @@ export function JoinColumn(options: JoinColumnOptions[]): Function;
  */
 export function JoinColumn(optionsOrOptionsArray?: JoinColumnOptions|JoinColumnOptions[]): Function {
     return function (object: Object, propertyName: string) {
-        const options = optionsOrOptionsArray instanceof Array ? optionsOrOptionsArray : [optionsOrOptionsArray || {}];
+        const options = Array.isArray(optionsOrOptionsArray) ? optionsOrOptionsArray : [optionsOrOptionsArray || {}];
         options.forEach(options => {
             getMetadataArgsStorage().joinColumns.push({
                 target: object.constructor,

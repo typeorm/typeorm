@@ -4271,7 +4271,7 @@ export interface BulkWriteResult {
     /**
      * Return an array of upserted ids.
      */
-    getUpsertedIds(): Array<Object>;
+    getUpsertedIds(): Array<{ _id: string, index: number }>;
 
     /**
      * Retrieve the write concern error if any.
