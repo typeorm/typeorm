@@ -715,7 +715,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     || oldColumn.enumName !== newColumn.enumName)
             ) {
                 const arraySuffix = newColumn.isArray ? "[]" : "";
-                const prevEnumNameWithSchema = this.buildEnumName(table, oldColumn);
+                const enumTypeBeforeColumnChange = await this.getEnumTypeName(table, oldColumn);
+                const prevEnumNameWithSchema = `"${enumTypeBeforeColumnChange.enumTypeSchema}"."${enumTypeBeforeColumnChange.enumTypeName}"`
                 const prevEnumNameWithOldSuffix = this.buildEnumName(table, oldColumn, false, false, true);
                 const prevEnumNameWithOldSuffixAndSchema = this.buildEnumName(table, oldColumn, true, false, true);
                 const newEnumNameWithSchema = this.buildEnumName(table, newColumn);
