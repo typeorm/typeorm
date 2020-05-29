@@ -87,7 +87,7 @@ export function Transaction(connectionOrOptions?: string | TransactionOptions): 
                     }
 
                     // replace method param with injection of repository instance
-                    argsWithInjectedTransactionManagerAndRepositories.splice(metadata.index, 0, repositoryInstance);
+                    argsWithInjectedTransactionManagerAndRepositories.splice(metadata.index, 1, repositoryInstance);
                 });
 
                 return originalMethod.apply(this, argsWithInjectedTransactionManagerAndRepositories);
