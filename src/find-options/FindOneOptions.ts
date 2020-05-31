@@ -1,6 +1,7 @@
 import {JoinOptions} from "./JoinOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindConditions} from "./FindConditions";
+import {SelectQueryBuilder, ScopeFn} from "../query-builder/SelectQueryBuilder";
 
 /**
  * Defines a special criteria to find specific entity.
@@ -31,6 +32,10 @@ export interface FindOneOptions<Entity = any> {
      * Order, in which entities should be ordered.
      */
     order?: { [P in keyof Entity]?: "ASC"|"DESC"|1|-1 };
+
+    unscoped?: boolean;
+
+    scope?: ScopeFn<SelectQueryBuilder<Entity>> | Array<ScopeFn<SelectQueryBuilder<Entity>>>;
 
     /**
      * Enables or disables query result caching.

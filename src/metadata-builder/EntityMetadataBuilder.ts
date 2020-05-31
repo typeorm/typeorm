@@ -23,6 +23,7 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {ExclusionMetadata} from "../metadata/ExclusionMetadata";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {ScopeMetadata} from '../metadata/ScopeMetadata';
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -238,6 +239,11 @@ export class EntityMetadataBuilder {
         // build all check constraints
         entityMetadatas.forEach(entityMetadata => {
             entityMetadata.checks.forEach(check => check.build(this.connection.namingStrategy));
+        });
+
+        // build all scopes
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.scopes.forEach(scope => scope.build());
         });
 
         // build all exclusion constraints
@@ -489,6 +495,9 @@ export class EntityMetadataBuilder {
         });
         entityMetadata.checks = this.metadataArgsStorage.filterChecks(entityMetadata.inheritanceTree).map(args => {
             return new CheckMetadata({ entityMetadata, args });
+        });
+        entityMetadata.scopes = this.metadataArgsStorage.filterScopes(entityMetadata.inheritanceTree).map(args => {
+            return new ScopeMetadata({ entityMetadata, args });
         });
 
         // Only PostgreSQL supports exclusion constraints.

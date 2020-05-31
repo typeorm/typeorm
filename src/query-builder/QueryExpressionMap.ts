@@ -206,6 +206,11 @@ export class QueryExpressionMap {
     aliasNamePrefixingEnabled: boolean = true;
 
     /**
+     * Indicates if global scope is enabled or not.
+     */
+    globalScoped: boolean = true;
+
+    /**
      * Indicates if query result cache is enabled or not.
      */
     cache: boolean = false;

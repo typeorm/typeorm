@@ -37,6 +37,8 @@ import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
+export type ScopeFn<SelectQueryBuilder> = (qb: SelectQueryBuilder) => SelectQueryBuilder;
+
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
@@ -50,6 +52,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
+        this.mightGlobalScoped();
+
         let sql = this.createSelectExpression();
         sql += this.createJoinExpression();
         sql += this.createWhereExpression();
@@ -2027,4 +2031,29 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         return this.queryRunner || this.connection.createQueryRunner("slave");
     }
 
+    protected mightGlobalScoped(): this {
+        if (!this.expressionMap.globalScoped)
+            return this;
+        const metadata = this.expressionMap.mainAlias!.metadata;
+        const scopeFns = metadata.scopes.filter(scope => scope.global).map(scope => {
+            return (scope.target as any)[scope.propertyName] as ScopeFn<this>;
+        });
+        this.scope(scopeFns);
+        return this;
+    }
+
+    unscoped(globalScoped: boolean = false): this {
+        this.expressionMap.globalScoped = globalScoped;
+        return this;
+    }
+
+    scope(scopeFn: ScopeFn<this>): this;
+    scope(scopeFns: Array<ScopeFn<this>>): this;
+    scope(scopeFn:  ScopeFn<this> | Array<ScopeFn<this>>): this {
+        const scopeFns = Array.isArray(scopeFn) ? scopeFn : [scopeFn];
+        scopeFns.forEach(scopeFn => {
+            scopeFn(this);
+        });
+        return this;
+    }
 }

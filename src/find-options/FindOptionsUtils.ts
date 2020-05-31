@@ -27,6 +27,8 @@ export class FindOptionsUtils {
                     Array.isArray(possibleOptions.relations) ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
+                    possibleOptions.scope instanceof Object ||
+                    typeof possibleOptions.unscoped === "boolean" ||
                     possibleOptions.cache instanceof Object ||
                     typeof possibleOptions.cache === "boolean" ||
                     typeof possibleOptions.cache === "number" ||
@@ -88,6 +90,14 @@ export class FindOptionsUtils {
             return qb;
 
         const metadata = qb.expressionMap.mainAlias!.metadata;
+
+        if (options.unscoped) {
+            qb.unscoped();
+        }
+        if (options.scope) {
+            const scopes = Array.isArray(options.scope) ? options.scope : [options.scope];
+            qb.scope(scopes);
+        }
 
         // apply all options from FindOptions
         if (options.select) {

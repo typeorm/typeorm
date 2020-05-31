@@ -25,6 +25,7 @@ import {RelationMetadata} from "./RelationMetadata";
 import {TableType} from "./types/TableTypes";
 import {TreeType} from "./types/TreeTypes";
 import {UniqueMetadata} from "./UniqueMetadata";
+import {ScopeMetadata} from './ScopeMetadata';
 
 /**
  * Contains all entity metadata.
@@ -426,6 +427,11 @@ export class EntityMetadata {
      * Entity's check metadatas.
      */
     checks: CheckMetadata[] = [];
+
+    /**
+     * Entity's check metadatas.
+     */
+    scopes: ScopeMetadata[] = [];
 
     /**
      * Entity's exclusion metadatas.

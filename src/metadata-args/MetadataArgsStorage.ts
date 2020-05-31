@@ -8,6 +8,7 @@ import {NamingStrategyMetadataArgs} from "./NamingStrategyMetadataArgs";
 import {JoinTableMetadataArgs} from "./JoinTableMetadataArgs";
 import {JoinColumnMetadataArgs} from "./JoinColumnMetadataArgs";
 import {EmbeddedMetadataArgs} from "./EmbeddedMetadataArgs";
+import {ScopeMetadataArgs} from "./ScopeMetadataArgs";
 import {EntitySubscriberMetadataArgs} from "./EntitySubscriberMetadataArgs";
 import {RelationIdMetadataArgs} from "./RelationIdMetadataArgs";
 import {InheritanceMetadataArgs} from "./InheritanceMetadataArgs";
@@ -52,6 +53,7 @@ export class MetadataArgsStorage {
     readonly entityListeners: EntityListenerMetadataArgs[] = [];
     readonly relationCounts: RelationCountMetadataArgs[] = [];
     readonly relationIds: RelationIdMetadataArgs[] = [];
+    readonly scopes: ScopeMetadataArgs[] = [];
     readonly embeddeds: EmbeddedMetadataArgs[] = [];
     readonly inheritances: InheritanceMetadataArgs[] = [];
     readonly discriminatorValues: DiscriminatorValueMetadataArgs[] = [];
@@ -126,6 +128,14 @@ export class MetadataArgsStorage {
     filterChecks(target: (Function|string)|(Function|string)[]): CheckMetadataArgs[] {
         return this.checks.filter(check => {
             return Array.isArray(target) ? target.indexOf(check.target) !== -1 : check.target === target;
+        });
+    }
+
+    filterScopes(target: Function|string): ScopeMetadataArgs[];
+    filterScopes(target: (Function|string)[]): ScopeMetadataArgs[];
+    filterScopes(target: (Function|string)|(Function|string)[]): ScopeMetadataArgs[] {
+        return this.scopes.filter(scope => {
+            return Array.isArray(target) ? target.indexOf(scope.target as any) !== -1 : scope.target === target;
         });
     }
 
