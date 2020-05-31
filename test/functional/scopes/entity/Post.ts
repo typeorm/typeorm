@@ -24,18 +24,18 @@ export class Post extends BaseEntity {
     @Scope()
     static idAtMost(id: number): (qb: SelectQueryBuilder<Post>) => SelectQueryBuilder<Post> {
         return function(qb: SelectQueryBuilder<Post>): SelectQueryBuilder<Post> {
-            return qb.andWhere('id <= :id', {id: id});
-        }
+            return qb.andWhere("id <= :id", {id: id});
+        };
     }
 
     @Scope(true)
     static isPublic(qb: SelectQueryBuilder<Post>): SelectQueryBuilder<Post> {
-        return qb.andWhere('stage = :stage', {stage: 'public'});
+        return qb.andWhere("stage = :stage", {stage: "public"});
     }
 
     @Scope()
     static isDraft(qb: SelectQueryBuilder<Post>): SelectQueryBuilder<Post> {
-        return qb.andWhere('stage = :stage', {stage: 'draft'});
+        return qb.andWhere("stage = :stage", {stage: "draft"});
     }
 
     @Scope(true)
@@ -46,8 +46,8 @@ export class Post extends BaseEntity {
     @Scope()
     static hasViewsAtLeast(views: number): (qb: SelectQueryBuilder<Post>) => SelectQueryBuilder<Post> {
         return function(qb: SelectQueryBuilder<Post>): SelectQueryBuilder<Post> {
-            return qb.andWhere('views >= :views', {views: views});
-        }
+            return qb.andWhere("views >= :views", {views: views});
+        };
     }
 
     @Scope()

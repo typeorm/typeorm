@@ -23,7 +23,7 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {ExclusionMetadata} from "../metadata/ExclusionMetadata";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import {ScopeMetadata} from '../metadata/ScopeMetadata';
+import {ScopeMetadata} from "../metadata/ScopeMetadata";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.

@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
 
-describe.only("scopes > query builder", () => {
+describe("scopes > query builder", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -34,9 +34,9 @@ describe.only("scopes > query builder", () => {
             .getMany();
 
         expect(posts.length).equal(3);
-        posts[0].title.should.equal('post #1');
-        posts[1].title.should.equal('post #4');
-        posts[2].title.should.equal('post #5');
+        posts[0].title.should.equal("post #1");
+        posts[1].title.should.equal("post #4");
+        posts[2].title.should.equal("post #5");
 
         const posts2 = await connection
             .getRepository(Post)
@@ -45,8 +45,8 @@ describe.only("scopes > query builder", () => {
             .getMany();
 
         expect(posts2.length).equal(2);
-        posts[0].title.should.equal('post #1');
-        posts[1].title.should.equal('post #4');
+        posts[0].title.should.equal("post #1");
+        posts[1].title.should.equal("post #4");
     })));
 
     it("should not apply scope when unscoped", () => Promise.all(connections.map(async connection => {
@@ -77,8 +77,8 @@ describe.only("scopes > query builder", () => {
             .getMany();
 
         expect(publicPosts.length).equal(2);
-        publicPosts[0].title.should.equal('post #1');
-        publicPosts[1].title.should.equal('post #3');
+        publicPosts[0].title.should.equal("post #1");
+        publicPosts[1].title.should.equal("post #3");
     })));
 
 
@@ -103,7 +103,7 @@ describe.only("scopes > query builder", () => {
             .getMany();
 
         expect(draftAndView200Posts.length).equal(1);
-        draftAndView200Posts[0].title.should.equal('post #2');
+        draftAndView200Posts[0].title.should.equal("post #2");
 
         const draftAndView200Posts2 = await connection
             .getRepository(Post)
@@ -114,7 +114,7 @@ describe.only("scopes > query builder", () => {
             .getMany();
 
         expect(draftAndView200Posts2.length).equal(1);
-        draftAndView200Posts2[0].title.should.equal('post #2');
+        draftAndView200Posts2[0].title.should.equal("post #2");
 
 
         const draftAndView200Posts3 = await connection
@@ -125,7 +125,7 @@ describe.only("scopes > query builder", () => {
             .getMany();
 
         expect(draftAndView200Posts3.length).equal(1);
-        draftAndView200Posts3[0].title.should.equal('post #2');
+        draftAndView200Posts3[0].title.should.equal("post #2");
     })));
 
 });

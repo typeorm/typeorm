@@ -25,7 +25,7 @@ import {RelationMetadata} from "./RelationMetadata";
 import {TableType} from "./types/TableTypes";
 import {TreeType} from "./types/TreeTypes";
 import {UniqueMetadata} from "./UniqueMetadata";
-import {ScopeMetadata} from './ScopeMetadata';
+import {ScopeMetadata} from "./ScopeMetadata";
 
 /**
  * Contains all entity metadata.
