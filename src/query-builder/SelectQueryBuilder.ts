@@ -2034,11 +2034,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected mightGlobalScoped(): this {
         if (!this.expressionMap.globalScoped)
             return this;
-        const metadata = this.expressionMap.mainAlias!.metadata;
-        const scopeFns = metadata.scopes.filter(scope => scope.global).map(scope => {
-            return (scope.target as any)[scope.propertyName] as ScopeFn<this>;
-        });
-        this.scope(scopeFns);
+        try {
+            const metadata = this.expressionMap.mainAlias!.metadata;
+            const scopeFns = metadata.scopes.filter(scope => scope.global).map(scope => {
+                return (scope.target as any)[scope.propertyName] as ScopeFn<this>;
+            });
+            this.scope(scopeFns);
+        } catch (_) {
+        }
         return this;
     }
 
