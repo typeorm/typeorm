@@ -47,10 +47,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createUpdateExpression();
-        sql += this.createOrderByExpression();
-        sql += this.createLimitExpression();
-        return sql.trim();
+        return this.createUpdateExpression().trim();
     }
 
     /**
@@ -519,17 +516,19 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         // get a table name and all column database names
         const whereExpression = this.createWhereExpression();
+        const orderByExpression = this.createOrderByExpression();
+        const limitExpression = this.createLimitExpression();
         const returningExpression = this.createReturningExpression();
 
         // generate and return sql update query
         if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${returningExpression}`;
+            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression}${orderByExpression}${limitExpression} RETURNING ${returningExpression}`;
 
         } else if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")} OUTPUT ${returningExpression}${whereExpression}`;
+            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")} OUTPUT ${returningExpression}${whereExpression}${orderByExpression}${limitExpression}`;
 
         } else {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
+            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression}${orderByExpression}${limitExpression}`; // todo: how do we replace aliases in where to nothing?
         }
     }
 
