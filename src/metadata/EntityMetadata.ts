@@ -700,12 +700,19 @@ export class EntityMetadata {
         relations.forEach(relation => {
             const value = relation.getEntityValue(entity);
             if (Array.isArray(value)) {
-                value.forEach(subValue => relationsAndValues.push([relation, subValue, relation.inverseEntityMetadata]));
+                value.forEach(subValue => relationsAndValues.push([relation, subValue, this.getInverseEntityMetadata(subValue, relation)]));
             } else if (value) {
-                relationsAndValues.push([relation, value, relation.inverseEntityMetadata]);
+                relationsAndValues.push([relation, value, this.getInverseEntityMetadata(value, relation)]);
             }
         });
         return relationsAndValues;
+    }
+
+    private getInverseEntityMetadata(value: any, relation: RelationMetadata): EntityMetadata {
+        const childEntityMetadata = relation.inverseEntityMetadata.childEntityMetadatas.find(metadata => 
+            metadata.target == value.constructor
+        )
+        return childEntityMetadata ? childEntityMetadata : relation.inverseEntityMetadata;
     }
 
     // -------------------------------------------------------------------------
