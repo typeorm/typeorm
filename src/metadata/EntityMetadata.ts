@@ -710,8 +710,8 @@ export class EntityMetadata {
 
     private getInverseEntityMetadata(value: any, relation: RelationMetadata): EntityMetadata {
         const childEntityMetadata = relation.inverseEntityMetadata.childEntityMetadatas.find(metadata => 
-            metadata.target == value.constructor
-        )
+            metadata.target === value.constructor
+        );
         return childEntityMetadata ? childEntityMetadata : relation.inverseEntityMetadata;
     }
 
