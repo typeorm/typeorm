@@ -57,6 +57,7 @@
     "@types/sinon": "^7.0.8",
     "@types/source-map-support": "^0.4.2",
     "@types/yargs": "^12.0.9",
+    "better-sqlite3": "^7.0.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "class-transformer": "^0.2.3",

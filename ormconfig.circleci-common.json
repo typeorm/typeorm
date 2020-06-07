@@ -27,6 +27,12 @@
   },
   {
     "skip": false,
+    "name": "better-sqlite3",
+    "type": "better-sqlite3",
+    "database": "temp/better-sqlite3db.db"
+  },
+  {
+    "skip": false,
     "name": "postgres",
     "type": "postgres",
     "host": "localhost",

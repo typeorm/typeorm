@@ -16,6 +16,7 @@ import {Driver} from "./Driver";
 import {Connection} from "../connection/Connection";
 import {SapDriver} from "./sap/SapDriver";
 import {AuroraDataApiPostgresDriver} from "./postgres/PostgresDriver";
+import {BetterSqlite3Driver} from "./better-sqlite3/BetterSqlite3Driver";
 
 /**
  * Helps to create drivers.
@@ -40,6 +41,8 @@ export class DriverFactory {
                 return new MysqlDriver(connection);
             case "sqlite":
                 return new SqliteDriver(connection);
+            case "better-sqlite3":
+                return new BetterSqlite3Driver(connection);
             case "cordova":
                 return new CordovaDriver(connection);
             case "nativescript":

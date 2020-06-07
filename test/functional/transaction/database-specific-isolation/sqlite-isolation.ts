@@ -10,7 +10,7 @@ describe("transaction > transaction with sqlite connection partial isolation sup
   let connections: Connection[];
   before(async () => connections = await createTestingConnections({
       entities: [__dirname + "/entity/*{.js,.ts}"],
-      enabledDrivers: ["sqlite"] // todo: for some reasons mariadb tests are not passing here
+      enabledDrivers: ["sqlite", "better-sqlite3"] // todo: for some reasons mariadb tests are not passing here
   }));
   beforeEach(() => reloadTestingDatabases(connections));
   after(() => closeTestingConnections(connections));
