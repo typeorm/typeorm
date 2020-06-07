@@ -106,6 +106,8 @@ export class User {
 And your domain logic looks like this:
 
 ```typescript
+const repository = connection.getRepository(User);
+
 const user = new User();
 user.firstName = "Timber";
 user.lastName = "Saw";
