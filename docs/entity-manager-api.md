@@ -65,7 +65,7 @@ const user = manager.create(User, {
     id: 1,
     firstName: "Timber",
     lastName: "Saw"
-}); // same as const user = new User(); user.firstName = "Timber"; user.lastName = "Saw";
+}).save(); // same as const user = new User(); user.firstName = "Timber"; user.lastName = "Saw";
 ```
 
 * `merge` - Merges multiple entities into a single entity.
