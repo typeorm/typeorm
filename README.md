@@ -882,7 +882,7 @@ createConnection(/*...*/).then(async connection => {
     metadata.width = 480;
     metadata.compressed = true;
     metadata.comment = "cybershoot";
-    metadata.orientation = "portait";
+    metadata.orientation = "portrait";
     metadata.photo = photo; // this way we connect them
 
     // get entity repositories
