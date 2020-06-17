@@ -2,7 +2,6 @@ import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {DriverUtils} from "../DriverUtils";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
 import {DateUtils} from "../../util/DateUtils";
@@ -922,11 +921,12 @@ export class PostgresDriver implements Driver {
      */
     protected async createPool(options: PostgresConnectionOptions, credentials: PostgresConnectionCredentialsOptions): Promise<any> {
 
-        credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+        credentials = Object.assign({}, credentials);
 
         // build connection options for the driver
         // See: https://github.com/brianc/node-postgres/tree/master/packages/pg-pool#create
         const connectionOptions = Object.assign({}, {
+            connectionString: credentials.url,
             host: credentials.host,
             user: credentials.username,
             password: credentials.password,
