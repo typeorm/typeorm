@@ -80,7 +80,7 @@ export class ConnectionOptionsReader {
     protected async load(): Promise<ConnectionOptions[]|undefined> {
         let connectionOptions: ConnectionOptions|ConnectionOptions[]|undefined = undefined;
 
-        const fileFormats = ["env", "js", "ts", "json", "yml", "yaml", "xml"];
+        const fileFormats = ["env", "js", "cjs", "ts", "json", "yml", "yaml", "xml"];
 
         // Detect if baseFilePath contains file extension
         const possibleExtension = this.baseFilePath.substr(this.baseFilePath.lastIndexOf("."));
@@ -107,7 +107,7 @@ export class ConnectionOptionsReader {
         if (PlatformTools.getEnvVariable("TYPEORM_CONNECTION") || PlatformTools.getEnvVariable("TYPEORM_URL")) {
             connectionOptions = new ConnectionOptionsEnvReader().read();
 
-        } else if (foundFileFormat === "js") {
+        } else if (foundFileFormat === "js" || foundFileFormat === "cjs") {
             connectionOptions = await PlatformTools.load(configFile);
 
         } else if (foundFileFormat === "ts") {
