@@ -116,6 +116,20 @@ export class DocumentToEntityTransformer {
         addEmbeddedValuesRecursively(entity, document, metadata.embeddeds);
 
         // if relation is loaded then go into it recursively and transform its values too
+        metadata.relations.forEach(relation => {
+            const isResultArray = relation.isManyToMany || relation.isOneToMany;
+            const relatedEntities = document[relation.propertyName];
+
+            if (relatedEntities) {
+                const result = this.transformAll(relatedEntities, relation.inverseEntityMetadata);
+
+                entity[relation.propertyName] = !isResultArray ? result[0] : result;
+
+                if (!isResultArray || result.length > 0)
+                    hasData = true;
+            }
+        });        
+        
         /*metadata.relations.forEach(relation => {
             const relationAlias = this.selectionMap.findSelectionByParent(alias.name, relation.propertyName);
             if (relationAlias) {
