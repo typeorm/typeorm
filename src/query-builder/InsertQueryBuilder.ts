@@ -267,16 +267,16 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     orUpdate(statement?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] }): this {
       this.expressionMap.onUpdate = {};
       if (statement && Array.isArray(statement.conflict_target))
-          this.expressionMap.onUpdate.conflict = ` ( ${statement.conflict_target.join(", ")} ) `;
+          this.expressionMap.onUpdate.conflict = ` ( ${statement.conflict_target.map((columnName) => this.escape(columnName)).join(", ")} ) `;
       if (statement && typeof statement.conflict_target === "string")
-          this.expressionMap.onUpdate.conflict = ` ON CONSTRAINT ${statement.conflict_target} `;
+          this.expressionMap.onUpdate.conflict = ` ON CONSTRAINT ${this.escape(statement.conflict_target)} `;
       if (statement && Array.isArray(statement.columns))
-          this.expressionMap.onUpdate.columns = statement.columns.map(column => `${column} = :${column}`).join(", ");
+          this.expressionMap.onUpdate.columns = statement.columns.map(column => `${this.escape(column)} = :${column}`).join(", ");
       if (statement && Array.isArray(statement.overwrite)) {
         if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = VALUES(${column})`).join(", ");
         } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
-          this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = EXCLUDED.${column}`).join(", ");
+          this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${this.escape(column)} = EXCLUDED.${this.escape(column)}`).join(", ");
         }
       }
       return this;
