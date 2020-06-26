@@ -50,7 +50,7 @@ function makePropertyDecorator(typeFunction) {
   return function(object, propertyName) {
     if (!(typeFunction instanceof Function)) {
       typeFunction = getDesignTypeFunction(object, propertyName);
-    } 
+    }
     if (typeFunction) {
       class_transformer_1.Type(typeFunction)(object, propertyName);
     }
@@ -61,14 +61,24 @@ function makePropertyDecorator(typeFunction) {
 
 /* export */
 function Column(typeOrOptions, options) {
-  return makePropertyDecorator(typeOrOptions);
+    return makePropertyDecorator(typeOrOptions);
 }
 exports.Column = Column;
+
+/* export */ function ViewColumn(options) {
+  return function(object, propertyName) {};
+}
+exports.ViewColumn = ViewColumn;
 
 /* export */ function CreateDateColumn(options) {
   return function(object, propertyName) {};
 }
 exports.CreateDateColumn = CreateDateColumn;
+
+/* export */ function DeleteDateColumn(options) {
+  return function(object, propertyName) {};
+}
+exports.DeleteDateColumn = DeleteDateColumn;
 
 /* export */
 function ObjectIdColumn(typeOrOptions, options) {
@@ -80,6 +90,16 @@ exports.ObjectIdColumn = ObjectIdColumn;
   return function(object, propertyName) {};
 }
 exports.PrimaryColumn = PrimaryColumn;
+
+/* export */ function Repository(options) {
+  return function(object, propertyName) {};
+}
+exports.Repository = Repository;
+
+/* export */ function EntityRepository(options) {
+  return function(object, propertyName) {};
+}
+exports.EntityRepository = EntityRepository;
 
 /* export */ function PrimaryGeneratedColumn(options) {
   return function(object, propertyName) {};
@@ -192,6 +212,11 @@ exports.ChildEntity = ChildEntity;
 }
 exports.Entity = Entity;
 
+/* export */ function ViewEntity(name, options) {
+  return function(object) {};
+}
+exports.ViewEntity = ViewEntity;
+
 /* export */ function TableInheritance(type) {
   return function(object) {};
 }
@@ -220,7 +245,7 @@ exports.TreeChildrenCount = TreeChildrenCount;
 exports.TreeLevelColumn = TreeLevelColumn;
 
 /* export */ function TreeParent(typeFunction) {
-  return makePropertyDecorator();
+return makePropertyDecorator();
 }
 exports.TreeParent = TreeParent;
 
