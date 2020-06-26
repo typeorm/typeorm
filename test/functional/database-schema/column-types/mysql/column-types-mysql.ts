@@ -1,10 +1,14 @@
 import "reflect-metadata";
-import {Post} from "./entity/Post";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {PostWithOptions} from "./entity/PostWithOptions";
-import {PostWithoutTypes} from "./entity/PostWithoutTypes";
-import {FruitEnum} from "./enum/FruitEnum";
+import { Post } from "./entity/Post";
+import { Connection } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { PostWithOptions } from "./entity/PostWithOptions";
+import { PostWithoutTypes } from "./entity/PostWithoutTypes";
+import { FruitEnum } from "./enum/FruitEnum";
 
 describe("database schema > column types > mysql", () => {
 
@@ -77,9 +81,9 @@ describe("database schema > column types > mysql", () => {
         post.geometrycollection = "GEOMETRYCOLLECTION(POINT(10 10),POINT(30 30),LINESTRING(15 15,20 20))";
         post.enum = "A";
         post.classEnum1 = FruitEnum.Apple;
-        post.json = { id: 1, name: "Post" };
+        post.json = {id: 1, name: "Post"};
         post.simpleArray = ["A", "B", "C"];
-        post.simpleJson = { param: "VALUE" };
+        post.simpleJson = {param: "VALUE"};
         post.simpleEnum = "A";
         post.simpleClassEnum1 = FruitEnum.Apple;
         await postRepository.save(post);

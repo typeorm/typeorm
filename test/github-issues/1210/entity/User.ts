@@ -1,8 +1,6 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {ObjectIdColumn} from "../../../../src/decorator/columns/ObjectIdColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {ObjectID} from "../../../../src/driver/mongodb/typings";
-import {Event} from "./Event";
+import { Column, Entity, ObjectIdColumn } from "@typeorm/core";
+import { Event } from "./Event";
+import { ObjectID } from "mongodb";
 
 @Entity()
 export class User {

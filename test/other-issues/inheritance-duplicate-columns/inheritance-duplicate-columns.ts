@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("other issues > double inheritance produces multiple duplicated columns", () => {
 
@@ -13,7 +13,7 @@ describe("other issues > double inheritance produces multiple duplicated columns
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should not produce duplicate columns", () => Promise.all(connections.map(async function(connection) {
+    it("should not produce duplicate columns", () => Promise.all(connections.map(async function (connection) {
 
         // insert a post
         const post = new Post();

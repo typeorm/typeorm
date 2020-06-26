@@ -1,28 +1,28 @@
-import {Column, Entity, ManyToOne, PrimaryColumn} from "../../../../src";
-import {User} from "./User";
-import {StringDecoder} from "string_decoder";
+import { Column, Entity, ManyToOne, PrimaryColumn } from "@typeorm/core";
+import { User } from "./User";
+import { StringDecoder } from "string_decoder";
 
 @Entity()
 export class Photo {
 
-  @PrimaryColumn("binary", {
-    length: 2
-  })
-  private _id: Buffer;
+    @Column()
+    description: string;
+    @ManyToOne(type => User, user => user.photos)
+    user: User;
 
-  get id(): string {
-      const decoder = new StringDecoder("hex");
+    @PrimaryColumn("binary", {
+        length: 2
+    })
+    private _id: Buffer;
 
-      return decoder.end(this._id);
-  }
-  set id(value: string) {
-      this._id = Buffer.from(value, "hex");
-  }
+    get id(): string {
+        const decoder = new StringDecoder("hex");
 
-  @Column()
-  description: string;
+        return decoder.end(this._id);
+    }
 
-  @ManyToOne(type => User, user => user.photos)
-  user: User;
+    set id(value: string) {
+        this._id = Buffer.from(value, "hex");
+    }
 
 }

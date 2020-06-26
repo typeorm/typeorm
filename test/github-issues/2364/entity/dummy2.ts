@@ -1,5 +1,4 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {Column, PrimaryColumn} from "../../../../src";
+import { Column, Entity, PrimaryColumn } from "@typeorm/core";
 
 @Entity()
 export class Dummy2 {
@@ -10,7 +9,7 @@ export class Dummy2 {
     })
     id: number;
 
-    @Column({ default: "name" })
+    @Column({default: "name"})
     name: string;
 }
 

@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
 
 describe("other issues > hydration performance", () => {
 
@@ -13,7 +13,7 @@ describe("other issues > hydration performance", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("if entity was changed in the listener, changed property should be updated in the db", () => Promise.all(connections.map(async function(connection) {
+    it("if entity was changed in the listener, changed property should be updated in the db", () => Promise.all(connections.map(async function (connection) {
 
         // insert few posts first
         const posts: Post[] = [];

@@ -1,7 +1,6 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../../src";
-import {Index} from "../../../../../src/decorator/Index";
+import { Column, Entity, Index, PrimaryGeneratedColumn } from "@typeorm/core";
 
-@Index(["name", "text"], { where: `"name" IS NOT NULL AND "text" IS NOT NULL` })
+@Index(["name", "text"], {where: `"name" IS NOT NULL AND "text" IS NOT NULL`})
 @Entity()
 export class Post {
 
@@ -14,7 +13,7 @@ export class Post {
     @Column()
     text: string;
 
-    @Index({ where: `"version" IS NOT NULL AND "version" > 0` })
+    @Index({where: `"version" IS NOT NULL AND "version" > 0`})
     @Column()
     version: number;
 

@@ -1,5 +1,4 @@
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
+import { Entity, PrimaryColumn } from "@typeorm/core";
 
 @Entity()
 export class Category {

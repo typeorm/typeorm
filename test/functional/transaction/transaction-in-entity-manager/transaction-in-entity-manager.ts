@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { expect } from "chai";
 
 describe("transaction > transaction with entity manager", () => {
 
@@ -17,7 +17,7 @@ describe("transaction > transaction with entity manager", () => {
 
     it("should execute all operations in a single transaction", () => Promise.all(connections.map(async connection => {
 
-        let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
+        let postId: number | undefined = undefined, categoryId: number | undefined = undefined;
 
         await connection.manager.transaction(async entityManager => {
 
@@ -34,14 +34,14 @@ describe("transaction > transaction with entity manager", () => {
 
         });
 
-        const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
+        const post = await connection.manager.findOne(Post, {where: {title: "Post #1"}});
         expect(post).not.to.be.undefined;
         post!.should.be.eql({
             id: postId,
             title: "Post #1"
         });
 
-        const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
+        const category = await connection.manager.findOne(Category, {where: {name: "Category #1"}});
         expect(category).not.to.be.undefined;
         category!.should.be.eql({
             id: categoryId,
@@ -52,7 +52,7 @@ describe("transaction > transaction with entity manager", () => {
 
     it("should not save anything if any of operation in transaction fail", () => Promise.all(connections.map(async connection => {
 
-        let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
+        let postId: number | undefined = undefined, categoryId: number | undefined = undefined;
 
         try {
             await connection.manager.transaction(async entityManager => {
@@ -68,14 +68,14 @@ describe("transaction > transaction with entity manager", () => {
                 postId = post.id;
                 categoryId = category.id;
 
-                const loadedPost = await entityManager.findOne(Post, { where: { title: "Post #1" }});
+                const loadedPost = await entityManager.findOne(Post, {where: {title: "Post #1"}});
                 expect(loadedPost).not.to.be.undefined;
                 loadedPost!.should.be.eql({
                     id: postId,
                     title: "Post #1"
                 });
 
-                const loadedCategory = await entityManager.findOne(Category, { where: { name: "Category #1" }});
+                const loadedCategory = await entityManager.findOne(Category, {where: {name: "Category #1"}});
                 expect(loadedCategory).not.to.be.undefined;
                 loadedCategory!.should.be.eql({
                     id: categoryId,
@@ -91,10 +91,10 @@ describe("transaction > transaction with entity manager", () => {
             /* skip error */
         }
 
-        const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
+        const post = await connection.manager.findOne(Post, {where: {title: "Post #1"}});
         expect(post).to.be.undefined;
 
-        const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
+        const category = await connection.manager.findOne(Category, {where: {name: "Category #1"}});
         expect(category).to.be.undefined;
 
     })));

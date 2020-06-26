@@ -1,8 +1,5 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {PostInformation} from "./PostInformation";
-import {Index} from "../../../../../src/decorator/Index";
+import { Column, Entity, Index, PrimaryGeneratedColumn } from "@typeorm/core";
+import { PostInformation } from "./PostInformation";
 
 @Entity()
 export class Post {
@@ -17,7 +14,7 @@ export class Post {
     @Column()
     text: string;
 
-    @Column(type => PostInformation, { prefix: "info" })
+    @Column(type => PostInformation, {prefix: "info"})
     information: PostInformation = new PostInformation();
 
 }

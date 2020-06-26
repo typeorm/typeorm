@@ -10,139 +10,139 @@
 这些属性都有少量的共同点，`first name` 和 `last name`属性。
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: string;
-    
+
     @Column()
     firstName: string;
-    
+
     @Column()
     lastName: string;
-    
+
     @Column()
     isActive: boolean;
-    
+
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class Employee {
-    
+
     @PrimaryGeneratedColumn()
     id: string;
-    
+
     @Column()
     firstName: string;
-    
+
     @Column()
     lastName: string;
-    
+
     @Column()
     salary: string;
-    
+
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class Student {
-    
+
     @PrimaryGeneratedColumn()
     id: string;
-    
+
     @Column()
     firstName: string;
-    
+
     @Column()
     lastName: string;
-    
+
     @Column()
     faculty: string;
-    
+
 }
 ```
 我们可以做的是通过创建一个包含`firstName`和`lastName`的新类：
 
 ```typescript
-import {Entity, Column} from "typeorm";
+import {Entity, Column} from "@typeorm/core";
 
 export class Name {
-    
+
     @Column()
     first: string;
-    
+
     @Column()
     last: string;
-    
+
 }
 ```
 
 然后"connect"实体中的这些列：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 import {Name} from "./Name";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: string;
-    
+
     @Column(type => Name)
     name: Name;
-    
+
     @Column()
     isActive: boolean;
-    
+
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 import {Name} from "./Name";
 
 @Entity()
 export class Employee {
-    
+
     @PrimaryGeneratedColumn()
     id: string;
-    
+
     @Column(type => Name)
     name: Name;
-    
+
     @Column()
     salary: number;
-    
+
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 import {Name} from "./Name";
 
 @Entity()
 export class Student {
-    
+
     @PrimaryGeneratedColumn()
     id: string;
-    
+
     @Column(type => Name)
     name: Name;
-    
+
     @Column()
     faculty: string;
-    
+
 }
 ```
 `Name`实体中定义的所有列将合并为`user`，`employee`和`student`：
@@ -179,4 +179,4 @@ export class Student {
 这种方式可以减少实体类中的代码重复。
 你可以根据需要在嵌入式类中使用尽可能多的列（或关系）。
 甚至可以在嵌入式类中嵌套嵌套列。
- 
+

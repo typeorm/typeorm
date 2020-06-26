@@ -1,9 +1,5 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {OneToMany} from "../../../../../../src/decorator/relations/OneToMany";
-import {Post} from "./Post";
-import {Unique} from "../../../../../../src";
+import { Column, Entity, OneToMany, PrimaryColumn, Unique } from "@typeorm/core";
+import { Post } from "./Post";
 
 @Entity()
 @Unique(["code", "version", "description"])

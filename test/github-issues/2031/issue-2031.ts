@@ -1,7 +1,7 @@
-import {Connection, Equal} from "../../../src";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {User} from "./entity/User";
-import {Photo} from "./entity/Photo";
+import { Connection, Equal } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { User } from "./entity/User";
+import { Photo } from "./entity/Photo";
 
 describe("github issues > #2031 Advanced find options with FKs", () => {
 
@@ -27,7 +27,7 @@ describe("github issues > #2031 Advanced find options with FKs", () => {
         photo.userId = user.id;
         await connection.manager.save(photo);
 
-        const photos = await connection.manager.find(Photo, { where: { userId: Equal(user.id) } });
+        const photos = await connection.manager.find(Photo, {where: {userId: Equal(user.id)}});
         photos.should.be.eql([{
             id: 1,
             description: "Tall trees",

@@ -6,46 +6,46 @@ Eager relations are loaded automatically each time you load entities from the da
 For example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany} from "@typeorm/core";
 import {Question} from "./Question";
 
 @Entity()
 export class Category {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
     @ManyToMany(type => Question, question => question.categories)
     questions: Question[];
-    
+
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "@typeorm/core";
 import {Category} from "./Category";
 
 @Entity()
 export class Question {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     title: string;
-    
+
     @Column()
     text: string;
-    
+
     @ManyToMany(type => Category, category => category.questions, {
         eager: true
     })
     @JoinTable()
     categories: Category[];
-    
+
 }
 ```
 
@@ -66,49 +66,49 @@ using `eager: true` on both sides of relationship is disallowed.
 
 ## Lazy relations
 
-Entities in lazy relations are loaded once you access them. 
+Entities in lazy relations are loaded once you access them.
 Such relations must have `Promise` as type - you store your value in a promise,
 and when you load them promise is returned as well. Example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany} from "@typeorm/core";
 import {Question} from "./Question";
 
 @Entity()
 export class Category {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
     @ManyToMany(type => Question, question => question.categories)
     questions: Promise<Question[]>;
-    
+
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "@typeorm/core";
 import {Category} from "./Category";
 
 @Entity()
 export class Question {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     title: string;
-    
+
     @Column()
     text: string;
-    
+
     @ManyToMany(type => Category, category => category.questions)
     @JoinTable()
     categories: Promise<Category[]>;
-    
+
 }
 ```
 
@@ -140,4 +140,4 @@ const categories = await question.categories;
 Note: if you came from other languages (Java, PHP, etc.) and are used to use lazy relations everywhere - be careful.
 Those languages aren't asynchronous and lazy loading is achieved different way, that's why you don't work with promises there.
 In JavaScript and Node.JS you have to use promises if you want to have lazy-loaded relations.
-This is non-standard technique and considered experimental in TypeORM. 
+This is non-standard technique and considered experimental in TypeORM.

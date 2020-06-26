@@ -1,8 +1,4 @@
-import {Column} from "../../../../src";
-import {PrimaryGeneratedColumn} from "../../../../src";
-import {Entity} from "../../../../src";
-import {JoinTable} from "../../../../src";
-import {ManyToMany} from "../../../../src";
+import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from "@typeorm/core";
 import { Category } from "./Category";
 
 @Entity()

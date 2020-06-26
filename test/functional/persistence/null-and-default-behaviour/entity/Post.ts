@@ -1,6 +1,4 @@
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../src/decorator/columns/Column";
+import { Column, Entity, PrimaryColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {
@@ -8,7 +6,7 @@ export class Post {
     @PrimaryColumn()
     id: number;
 
-    @Column({ type: String, default: "hello default value", nullable: true })
-    title?: string|null;
+    @Column({type: String, default: "hello default value", nullable: true})
+    title?: string | null;
 
 }

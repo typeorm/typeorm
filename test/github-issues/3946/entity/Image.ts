@@ -1,8 +1,5 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
-import {Category} from "./Category";
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Image {

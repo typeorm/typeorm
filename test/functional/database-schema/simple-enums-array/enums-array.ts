@@ -1,7 +1,13 @@
 import "reflect-metadata";
-import { Connection } from "../../../../src";
+import { Connection } from "@typeorm/core";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
-import { EnumArrayEntity, NumericEnum, StringEnum, HeterogeneousEnum, StringNumericEnum } from "./entity/EnumArrayEntity";
+import {
+    EnumArrayEntity,
+    HeterogeneousEnum,
+    NumericEnum,
+    StringEnum,
+    StringNumericEnum
+} from "./entity/EnumArrayEntity";
 
 describe("database schema > simple enum arrays", () => {
 

@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {PersonSchema} from "./entity/Person";
-import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { PersonSchema } from "./entity/Person";
+import { MysqlDriver } from "@typeorm/driver-mysql";
 
 describe("entity-schema > checks", () => {
 

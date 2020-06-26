@@ -1,27 +1,27 @@
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne} from "../../../../src/index";
-import {Photo} from "./Photo";
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Photo } from "./Photo";
 
 @Entity()
 export class PhotoMetadata {
 
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @Column("int")
-  height: number;
+    @Column("int")
+    height: number;
 
-  @Column("int")
-  width: number;
+    @Column("int")
+    width: number;
 
-  @Column()
-  orientation: string;
+    @Column()
+    orientation: string;
 
-  @Column()
-  compressed: boolean;
+    @Column()
+    compressed: boolean;
 
-  @Column()
-  comment: string;
+    @Column()
+    comment: string;
 
-  @OneToOne(type => Photo, photo => photo.metadata)
-  photo: Photo;
+    @OneToOne(type => Photo, photo => photo.metadata)
+    photo: Photo;
 }

@@ -1,13 +1,13 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("query builder > entity updation", () => {
 
     let connections: Connection[];
-    before(async () => connections = await createTestingConnections({ __dirname }));
+    before(async () => connections = await createTestingConnections({__dirname}));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
@@ -91,7 +91,7 @@ describe("query builder > entity updation", () => {
 
         await connection.createQueryBuilder()
             .update(Post)
-            .set({ title: "again changed title" })
+            .set({title: "again changed title"})
             .whereEntity(post)
             .updateEntity(true)
             .execute();
@@ -108,7 +108,7 @@ describe("query builder > entity updation", () => {
 
         await connection.createQueryBuilder()
             .update(Post)
-            .set({ title: "again changed title" })
+            .set({title: "again changed title"})
             .whereEntity(post)
             .updateEntity(false)
             .execute();

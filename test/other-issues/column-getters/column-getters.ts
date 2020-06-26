@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("other issues > column with getter / setter should work", () => {
 
@@ -23,7 +23,7 @@ describe("other issues > column with getter / setter should work", () => {
         const loadedPost = await connection
             .manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost).not.to.be.undefined;

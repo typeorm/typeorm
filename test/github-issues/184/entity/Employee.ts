@@ -1,6 +1,5 @@
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Person, PersonType} from "./Person";
-import {ChildEntity} from "../../../../src/decorator/entity/ChildEntity";
+import { ChildEntity, Column } from "@typeorm/core";
+import { Person, PersonType } from "./Person";
 
 @ChildEntity(PersonType.Employee)
 export class Employee extends Person {

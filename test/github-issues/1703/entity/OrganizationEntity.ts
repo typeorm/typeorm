@@ -1,5 +1,5 @@
-import {Entity, OneToMany, PrimaryGeneratedColumn} from "../../../../src";
-import {UserToOrganizationEntity} from "./UserToOrganizationEntity";
+import { Entity, OneToMany, PrimaryGeneratedColumn } from "@typeorm/core";
+import { UserToOrganizationEntity } from "./UserToOrganizationEntity";
 
 @Entity("organizations")
 export class OrganizationEntity {

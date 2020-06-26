@@ -1,31 +1,51 @@
 {
-    "version": "2.1.1",
-    "compilerOptions": {
-        "lib": ["es5", "es6"],
-        "outDir": "build/compiled",
-        "allowSyntheticDefaultImports": true,
-	      "esModuleInterop": true,
-        "target": "es5",
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "importHelpers": true,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "sourceMap": true,
-        "noImplicitAny": true,
-        "declaration": true,
-        "noFallthroughCasesInSwitch": true,
-        "noImplicitReturns": true,
-        "stripInternal": true,
-        "pretty": true,
-        "strictNullChecks": true,
-        "noUnusedLocals": true,
-        "downlevelIteration": true
-    },
-    "exclude": [
-        "tmp",
-        "temp",
-        "build",
-        "node_modules"
-    ]
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "typeRoots": ["node_modules/@types"],
+    "lib": ["es2017", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@typeorm/browser-core": ["libs/browser-core/src/index.ts"],
+      "@typeorm/driver-mysql": ["libs/driver/mysql/src/index.ts"],
+      "@typeorm/driver-postgres": ["libs/driver/postgres/src/index.ts"],
+      "@typeorm/cli": ["libs/cli/src/index.ts"],
+      "@typeorm/driver-sqljs": ["libs/driver/sqljs/src/index.ts"],
+      "@typeorm/driver-sqlite-abstract": [
+        "libs/driver/sqlite-abstract/src/index.ts"
+      ],
+      "@typeorm/driver-mongodb": ["libs/driver/mongodb/src/index.ts"],
+      "@typeorm/driver-sqlite": ["libs/driver/sqlite/src/index.ts"],
+      "@typeorm/driver-sqlserver": ["libs/driver/sqlserver/src/index.ts"],
+      "@typeorm/core": ["libs/core/src/index.ts"],
+      "@typeorm/driver-oracle": ["libs/driver/oracle/src/index.ts"],
+      "@typeorm/driver-aurora-data-api": [
+        "libs/driver/aurora-data-api/src/index.ts"
+      ],
+      "@typeorm/driver-aurora-data-api-pg": [
+        "libs/driver/aurora-data-api-pg/src/index.ts"
+      ],
+      "@typeorm/driver-cockroachdb": ["libs/driver/cockroachdb/src/index.ts"],
+      "@typeorm/driver-sql-abstract": ["libs/driver/sql-abstract/src/index.ts"],
+      "@typeorm/driver-browser-sqljs": [
+        "libs/driver/browser-sqljs/src/index.ts"
+      ],
+      "@typeorm/driver-sap": ["libs/driver/sap/src/index.ts"],
+      "@typeorm/driver-cordova": ["libs/driver/cordova/src/index.ts"],
+      "@typeorm/driver-expo": ["libs/driver/expo/src/index.ts"],
+      "@typeorm/driver-react-native": ["libs/driver/react-native/src/index.ts"],
+      "@typeorm/driver-nativescript": ["libs/driver/nativescript/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
 }

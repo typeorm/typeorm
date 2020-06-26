@@ -1,11 +1,10 @@
-import {expect} from "chai";
+import { expect } from "chai";
 import "reflect-metadata";
-import {Connection, EntityMetadata} from "../../../../src";
-import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
-import {IndexMetadata} from "../../../../src/metadata/IndexMetadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import { Connection, EntityMetadata, IndexMetadata } from "@typeorm/core";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
 
-import {Person} from "./entity/Person";
+import { Person } from "./entity/Person";
 
 describe("database schema > indices > reading index from entity and updating database", () => {
 

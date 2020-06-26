@@ -1,9 +1,5 @@
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
-import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
-import {User} from "./User";
-import {Generated} from "../../../../../src/decorator/Generated";
+import { Entity, Generated, JoinColumn, OneToOne, PrimaryColumn } from "@typeorm/core";
+import { User } from "./User";
 
 @Entity()
 export class AccessToken {

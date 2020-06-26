@@ -1,10 +1,7 @@
-import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {BaseEntity} from "../../../../src/repository/BaseEntity";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { BaseEntity, Column, Entity, PrimaryColumn } from "@typeorm/core";
 
 @Entity()
-export class Category  extends BaseEntity {
+export class Category extends BaseEntity {
 
     @PrimaryColumn()
     id: number;

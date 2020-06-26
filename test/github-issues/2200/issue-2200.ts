@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Booking} from "./entity/Booking";
-import {NamingStrategyUnderTest} from "./naming/NamingStrategyUnderTest";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Booking } from "./entity/Booking";
+import { NamingStrategyUnderTest } from "./naming/NamingStrategyUnderTest";
 
 
 describe("github issue > #2200 Bug - Issue with snake_case naming strategy", () => {

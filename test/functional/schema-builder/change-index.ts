@@ -1,13 +1,10 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {PromiseUtils} from "../../../src";
-import {IndexMetadata} from "../../../src/metadata/IndexMetadata";
-import {Teacher} from "./entity/Teacher";
-import {Student} from "./entity/Student";
-import {TableIndex} from "../../../src/schema-builder/table/TableIndex";
-import {expect} from "chai";
+import { Connection, IndexMetadata, PromiseUtils, TableIndex } from "@typeorm/core";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Teacher } from "./entity/Teacher";
+import { Student } from "./entity/Student";
+import { expect } from "chai";
 
 describe("schema builder > change index", () => {
 
@@ -87,7 +84,7 @@ describe("schema builder > change index", () => {
         let teacherTable = await queryRunner.getTable("teacher");
         teacherTable!.indices.length.should.be.equal(0);
 
-        const index = new TableIndex({ name: "ignored_index", columnNames: ["name"], isUnique: true });
+        const index = new TableIndex({name: "ignored_index", columnNames: ["name"], isUnique: true});
         await queryRunner.createIndex(teacherTable!, index);
 
         teacherTable = await queryRunner.getTable("teacher");

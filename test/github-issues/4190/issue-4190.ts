@@ -1,12 +1,12 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
 
-import {Photo} from "./entity/Photo";
-import {User} from "./entity/User";
-import {Profile} from "./entity/Profile";
-import {Category} from "./entity/Category";
-import {Question} from "./entity/Question";
+import { Photo } from "./entity/Photo";
+import { User } from "./entity/User";
+import { Profile } from "./entity/Profile";
+import { Category } from "./entity/Category";
+import { Question } from "./entity/Question";
 
 describe("github issues > #4190 Relation decorators: allow to pass string instead of typeFunction", () => {
 
@@ -31,7 +31,7 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
         user.profile = profile;
         await connection.manager.save(user);
 
-        const users = await connection.manager.find(User, { relations: ["profile"] });
+        const users = await connection.manager.find(User, {relations: ["profile"]});
 
         users.should.eql([{
             id: 1,
@@ -60,8 +60,8 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
         user.photos = [photo1, photo2];
         await connection.manager.save(user);
 
-        const users = await connection.manager.find(User, { relations: ["photos"] });
-        const photos = await connection.manager.find(Photo, { relations: ["user"] });
+        const users = await connection.manager.find(User, {relations: ["photos"]});
+        const photos = await connection.manager.find(Photo, {relations: ["user"]});
 
         // Check one-to-many
         users[0].photos.should.have.deep.members([
@@ -112,7 +112,7 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
         question.categories = [category1, category2];
         await connection.manager.save(question);
 
-        const questions = await connection.manager.find(Question, { relations: ["categories"] });
+        const questions = await connection.manager.find(Question, {relations: ["categories"]});
 
         questions[0].categories.should.have.deep.members([
             {

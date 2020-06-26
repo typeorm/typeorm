@@ -1,9 +1,7 @@
-import {Connection} from "../../../../../src";
-import {ViewColumn} from "../../../../../src/decorator/columns/ViewColumn";
-import {ViewEntity} from "../../../../../src/decorator/entity-view/ViewEntity";
-import {Album} from "./Album";
-import {Category} from "./Category";
-import {Photo} from "./Photo";
+import { Connection, ViewColumn, ViewEntity } from "@typeorm/core";
+import { Album } from "./Album";
+import { Category } from "./Category";
+import { Photo } from "./Photo";
 
 @ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
@@ -31,6 +29,6 @@ export class PhotoAlbumCategory {
     @ViewColumn()
     albumName: string;
 
-    @ViewColumn({ name: "albumId" })
+    @ViewColumn({name: "albumId"})
     photoAlbumId: number;
 }

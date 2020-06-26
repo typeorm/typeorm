@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("github issues > #1901 The correct way of adding `ON UPDATE CURRENT_TIMESTAMP` clause to timestamp column", () => {
 

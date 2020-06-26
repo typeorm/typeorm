@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Race} from "./entity/Race";
-import {Duration} from "./entity/Duration";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Race } from "./entity/Race";
+import { Duration } from "./entity/Duration";
 
 describe("github issues > embeddeds with custom column name don't work", () => {
 
@@ -25,7 +25,7 @@ describe("github issues > embeddeds with custom column name don't work", () => {
 
         await connection.manager.save(race);
 
-        const loadedRace = await connection.manager.findOne(Race, { name: "National Race" });
+        const loadedRace = await connection.manager.findOne(Race, {name: "National Race"});
         expect(loadedRace).to.be.not.undefined;
         expect(loadedRace!.id).to.be.not.undefined;
         expect(loadedRace!.duration).to.be.not.undefined;

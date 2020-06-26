@@ -1,9 +1,7 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Table} from "../../../src/schema-builder/table/Table";
-import {TableIndex} from "../../../src/schema-builder/table/TableIndex";
+import { Connection, Table, TableIndex } from "@typeorm/core";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 
 describe("query runner > create index", () => {
 
@@ -43,10 +41,10 @@ describe("query runner > create index", () => {
         // clear sqls in memory to avoid removing tables when down queries executed.
         queryRunner.clearSqlMemory();
 
-        const index = new TableIndex({ columnNames: ["name", "description"] });
+        const index = new TableIndex({columnNames: ["name", "description"]});
         await queryRunner.createIndex("question", index);
 
-        const uniqueIndex = new TableIndex({ columnNames: ["description"], isUnique: true });
+        const uniqueIndex = new TableIndex({columnNames: ["description"], isUnique: true});
         await queryRunner.createIndex("question", uniqueIndex);
 
         let table = await queryRunner.getTable("question");

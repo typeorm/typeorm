@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { Connection } from "../../../src/connection/Connection";
+import { Connection } from "@typeorm/core";
 import { EquipmentModel } from "./entity/EquipmentModel";
 import { expect } from "chai";
 

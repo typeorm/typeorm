@@ -1,4 +1,4 @@
-import { ChildEntity, OneToOne, JoinColumn, ManyToMany, JoinTable } from "../../../../src/index";
+import { ChildEntity, JoinColumn, JoinTable, ManyToMany, OneToOne } from "@typeorm/core";
 
 import { TournamentParticipant } from "./TournamentParticipant";
 import { User } from "./User";

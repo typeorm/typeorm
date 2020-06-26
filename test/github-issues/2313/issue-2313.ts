@@ -1,10 +1,8 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {PromiseUtils} from "../../../src/util/PromiseUtils";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
-import {EntityNotFoundError} from "../../../src/error/EntityNotFoundError";
+import { Connection, EntityNotFoundError, PromiseUtils } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("github issues > #2313 - BaseEntity has no findOneOrFail() method", () => {
 

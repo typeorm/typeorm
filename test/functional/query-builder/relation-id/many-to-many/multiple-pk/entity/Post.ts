@@ -1,9 +1,5 @@
-import {ManyToMany} from "../../../../../../../src/decorator/relations/ManyToMany";
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {JoinTable} from "../../../../../../../src/decorator/relations/JoinTable";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {Category} from "./Category";
+import { Column, Entity, JoinTable, ManyToMany, PrimaryColumn } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Post {
@@ -27,7 +23,7 @@ export class Post {
     @ManyToMany(type => Category)
     @JoinTable()
     subcategories: Category[];
-    
+
     categoryIds: number[];
 
 }

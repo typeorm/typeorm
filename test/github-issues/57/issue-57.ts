@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {expect} from "chai";
-import {AccessToken} from "./entity/AccessToken";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { User } from "./entity/User";
+import { expect } from "chai";
+import { AccessToken } from "./entity/AccessToken";
 
 describe("github issues > #57 cascade insert not working with OneToOne relationship", () => {
 

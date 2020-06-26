@@ -1,9 +1,7 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {UniqueMetadata} from "../../../src/metadata/UniqueMetadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {ForeignKeyMetadata} from "../../../src/metadata/ForeignKeyMetadata";
+import { Connection, ForeignKeyMetadata, UniqueMetadata } from "@typeorm/core";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 
 describe("schema builder > create foreign key", () => {
 

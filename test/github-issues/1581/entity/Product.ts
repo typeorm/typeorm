@@ -1,9 +1,9 @@
-import {Column, Entity} from "../../../../src";
+import { Column, Entity } from "@typeorm/core";
 
 @Entity()
 export class Product {
 
-    @Column({ primary: true })
+    @Column({primary: true})
     id: number;
 
     @Column()

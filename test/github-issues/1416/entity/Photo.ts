@@ -1,6 +1,6 @@
-import {Column, Entity, PrimaryGeneratedColumn, OneToOne, ManyToOne, JoinColumn} from "../../../../src/index";
-import {PhotoMetadata} from "./PhotoMetadata";
-import {Author} from "./Author";
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { PhotoMetadata } from "./PhotoMetadata";
+import { Author } from "./Author";
 
 @Entity()
 export class Photo {

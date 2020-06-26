@@ -1,9 +1,9 @@
-import {expect} from "chai";
+import { expect } from "chai";
 import "reflect-metadata";
-import {Connection, ObjectLiteral} from "../../../src";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {FruitEnum} from "./enum/FruitEnum";
+import { Connection, ObjectLiteral } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { FruitEnum } from "./enum/FruitEnum";
 
 describe("github issues > #3694 Sync enums on schema sync", () => {
 
@@ -18,7 +18,7 @@ describe("github issues > #3694 Sync enums on schema sync", () => {
     it("should change schema when enum definition changes", () => Promise.all(connections.map(async connection => {
         const fruitEnum = FruitEnum;
         (fruitEnum as any).Banana = "BANANA";
-        Object.assign(fruitEnum, { Cherry: "cherry" });
+        Object.assign(fruitEnum, {Cherry: "cherry"});
         const metadata = connection.getMetadata(Post);
         const fruitColumn = metadata.columns.find(column => column.propertyName === "fruit");
         fruitColumn!.enum = Object.keys(fruitEnum).map(key => (fruitEnum as ObjectLiteral)[key]);

@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { MysqlDriver } from "@typeorm/driver-mysql";
 
 describe("query runner > drop check constraint", () => {
 

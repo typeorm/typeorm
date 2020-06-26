@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Foo} from "./entity/Foo";
-import {FooMetadata} from "./entity/FooMetadata";
-import {FooChildMetadata} from "./entity/FooChildMetadata";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Foo } from "./entity/Foo";
+import { FooMetadata } from "./entity/FooMetadata";
+import { FooChildMetadata } from "./entity/FooChildMetadata";
 
 describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
 
@@ -25,7 +25,7 @@ describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
         foo.metadata.child.somethingElse = 3;
         await connection.manager.save(foo);
 
-        const loadedFoo = await connection.getRepository(Foo).findOne({ name: "Apple" });
+        const loadedFoo = await connection.getRepository(Foo).findOne({name: "Apple"});
         loadedFoo!.should.be.eql({
             id: 1,
             name: "Apple",
@@ -49,7 +49,7 @@ describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
         foo.metadata.child.somethingElse = 3;
         await connection.manager.save(foo);
 
-        const loadedFoo = await connection.getRepository(Foo).findOne({ name: "Apple" });
+        const loadedFoo = await connection.getRepository(Foo).findOne({name: "Apple"});
         loadedFoo!.should.be.eql({
             id: 1,
             name: "Apple",
@@ -69,7 +69,7 @@ describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
         foo2.metadata.child.something = 2;
         await connection.manager.save(foo2);
 
-        const loadedFoo2 = await connection.getRepository(Foo).findOne({ name: "Apple2" });
+        const loadedFoo2 = await connection.getRepository(Foo).findOne({name: "Apple2"});
         loadedFoo2!.should.be.eql({
             id: 2,
             name: "Apple2",
@@ -87,7 +87,7 @@ describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
         foo3.metadata = new FooMetadata();
         await connection.manager.save(foo3);
 
-        const loadedFoo3 = await connection.getRepository(Foo).findOne({ name: "Apple3" });
+        const loadedFoo3 = await connection.getRepository(Foo).findOne({name: "Apple3"});
         loadedFoo3!.should.be.eql({
             id: 3,
             name: "Apple3",
@@ -107,7 +107,7 @@ describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
         foo.name = "Orange";
         await connection.manager.save(foo);
 
-        const loadedFoo = await connection.getRepository(Foo).findOne({ name: "Orange" });
+        const loadedFoo = await connection.getRepository(Foo).findOne({name: "Orange"});
         loadedFoo!.should.be.eql({
             id: 1,
             name: "Orange",

@@ -1,15 +1,12 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {QueryBuilder} from "../../../../src/query-builder/QueryBuilder";
-import {User} from "./model/User";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection, DeepPartial, EntitySchema, QueryBuilder } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { User } from "./model/User";
 import questionSchema from "./model-schema/QuestionSchema";
-import {Question} from "./model/Question";
-import {Blog} from "./entity/Blog";
-import {Category} from "./entity/Category";
-import {DeepPartial} from "../../../../src/common/DeepPartial";
-import {EntitySchema} from "../../../../src";
+import { Question } from "./model/Question";
+import { Blog } from "./entity/Blog";
+import { Category } from "./entity/Category";
 
 describe("repository > basic methods", () => {
 
@@ -31,7 +28,7 @@ describe("repository > basic methods", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    describe("target", function() {
+    describe("target", function () {
 
         it("should return instance of the object it manages", () => connections.forEach(connection => {
             const postRepository = connection.getRepository(Post);
@@ -43,8 +40,8 @@ describe("repository > basic methods", () => {
         }));
 
     });
-    
-    describe("hasId", function() {
+
+    describe("hasId", function () {
 
         it("should return true if entity has an id", () => connections.forEach(connection => {
             const postRepository = connection.getRepository(Post);
@@ -125,7 +122,7 @@ describe("repository > basic methods", () => {
 
     });
 
-    describe("createQueryBuilder", function() {
+    describe("createQueryBuilder", function () {
 
         it("should create a new query builder with the given alias", () => connections.forEach(connection => {
             const postRepository = connection.getRepository(Post);
@@ -144,7 +141,7 @@ describe("repository > basic methods", () => {
 
     });
 
-    describe("create", function() {
+    describe("create", function () {
 
         it("should create a new instance of the object we are working with", () => connections.forEach(connection => {
             const repository = connection.getRepository(Post);
@@ -168,19 +165,19 @@ describe("repository > basic methods", () => {
             const userRepository = connection.getRepository<User>("User");
             const questionRepository = connection.getRepository<Question>("Question");
 
-            const plainPost = { id: 2, title: "Hello post" };
+            const plainPost = {id: 2, title: "Hello post"};
             const post = postRepository.create(plainPost);
             post.should.be.instanceOf(Post);
             (post.id as number).should.be.equal(2);
             post.title.should.be.equal("Hello post");
 
-            const plainUser = { id: 3, firstName: "John", secondName: "Doe" };
+            const plainUser = {id: 3, firstName: "John", secondName: "Doe"};
             const user = userRepository.create(plainUser);
             (user.id as number).should.be.equal(3);
             (user.firstName as string).should.be.equal("John");
             (user.secondName as string).should.be.equal("Doe");
 
-            const plainQuestion = { id: 3, title: "What is better?" };
+            const plainQuestion = {id: 3, title: "What is better?"};
             const question = questionRepository.create(plainQuestion);
             (question.id as number).should.be.equal(3);
             (question.title as string).should.be.equal("What is better?");
@@ -188,11 +185,11 @@ describe("repository > basic methods", () => {
 
     });
 
-    describe("createMany", function() {
+    describe("createMany", function () {
 
         it("should create entities and copy to them all properties of the given plain object if its given", () => connections.forEach(connection => {
             const postRepository = connection.getRepository(Post);
-            const plainPosts = [{ id: 2, title: "Hello post" }, { id: 3, title: "Bye post" }];
+            const plainPosts = [{id: 2, title: "Hello post"}, {id: 3, title: "Bye post"}];
             const posts = postRepository.create(plainPosts);
             posts.length.should.be.equal(2);
             posts[0].should.be.instanceOf(Post);
@@ -205,7 +202,7 @@ describe("repository > basic methods", () => {
 
     });
 
-    describe("preload", function() {
+    describe("preload", function () {
 
         it("should preload entity from the given object with only id", () => Promise.all(connections.map(async connection => {
             const blogRepository = connection.getRepository(Blog);
@@ -222,9 +219,9 @@ describe("repository > basic methods", () => {
             blog.text = "Blog about good people";
             blog.categories = [category];
             await blogRepository.save(blog);
-            
+
             // and preload it
-            const plainBlogWithId = { id: 1 };
+            const plainBlogWithId = {id: 1};
             const preloadedBlog = await blogRepository.preload(plainBlogWithId);
             preloadedBlog!.should.be.instanceOf(Blog);
             preloadedBlog!.id.should.be.equal(1);
@@ -247,9 +244,9 @@ describe("repository > basic methods", () => {
             blog.text = "Blog about good people";
             blog.categories = [category];
             await blogRepository.save(blog);
-            
+
             // and preload it
-            const plainBlogWithId = { id: 1, categories: [{ id: 1 }] };
+            const plainBlogWithId = {id: 1, categories: [{id: 1}]};
             const preloadedBlog = await blogRepository.preload(plainBlogWithId);
             preloadedBlog!.should.be.instanceOf(Blog);
             preloadedBlog!.id.should.be.equal(1);
@@ -261,7 +258,7 @@ describe("repository > basic methods", () => {
 
     });
 
-    describe("merge", function() {
+    describe("merge", function () {
 
         it("should merge multiple entities", () => Promise.all(connections.map(async connection => {
             const blogRepository = connection.getRepository(Blog);
@@ -300,14 +297,14 @@ describe("repository > basic methods", () => {
             const originalEntity = new Blog();
 
             // first entity
-            const blog1 = { title: "First Blog" };
+            const blog1 = {title: "First Blog"};
 
             // second entity
-            const blog2 = { text: "text is from second blog" };
+            const blog2 = {text: "text is from second blog"};
 
             // third entity
             const blog3 = new Blog();
-            blog3.categories = [{ name: "category from third blog" } as Category];
+            blog3.categories = [{name: "category from third blog"} as Category];
 
             const mergedBlog = blogRepository.merge(originalEntity, blog1, blog2, blog3);
 
@@ -349,7 +346,7 @@ describe("repository > basic methods", () => {
             const saved = await postRepository.save(dbPost);
 
             saved.should.be.instanceOf(Post);
-            
+
             saved.id!.should.be.equal(1);
             saved.title.should.be.equal("New title");
             saved.dateAdded.should.be.instanceof(Date);
@@ -357,7 +354,7 @@ describe("repository > basic methods", () => {
         });
     });
 
-    describe("preload also should also implement merge functionality", function() {
+    describe("preload also should also implement merge functionality", function () {
 
         it("if we preload entity from the plain object and merge preloaded object with plain object we'll have an object from the db with the replaced properties by a plain object's properties", () => Promise.all(connections.map(async connection => {
             const blogRepository = connection.getRepository(Blog);
@@ -384,7 +381,7 @@ describe("repository > basic methods", () => {
             const plainBlogWithId: DeepPartial<Blog> = {
                 id: 1,
                 title: "changed title about people",
-                categories: [ { id: 1 }, { id: 2, name: "insects" } ]
+                categories: [{id: 1}, {id: 2, name: "insects"}]
             };
             const preloadedBlog = await blogRepository.preload(plainBlogWithId);
             preloadedBlog!.should.be.instanceOf(Blog);
@@ -399,7 +396,7 @@ describe("repository > basic methods", () => {
 
     });
 
-    describe("query", function() {
+    describe("query", function () {
 
         it("should execute the query natively and it should return the result", () => Promise.all(connections.map(async connection => {
             const repository = connection.getRepository(Blog);

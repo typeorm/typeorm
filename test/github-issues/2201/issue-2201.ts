@@ -1,8 +1,8 @@
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {RecordContext} from "./entity/ver2/context";
-import {Record} from "./entity/ver2/record";
-import {User} from "./entity/ver2/user";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { RecordContext } from "./entity/ver2/context";
+import { Record } from "./entity/ver2/record";
+import { User } from "./entity/ver2/user";
 
 describe("github issues > #2201 - Create a select query when using a (custom) junction table", () => {
 
@@ -37,10 +37,10 @@ describe("github issues > #2201 - Create a select query when using a (custom) ju
         Record.useConnection(connections[0]);
         RecordContext.useConnection(connections[0]);
 
-        const user = User.create({ id: "user1" });
+        const user = User.create({id: "user1"});
         await user.save();
 
-        const record = Record.create({ id: "record1", status: "pending" });
+        const record = Record.create({id: "record1", status: "pending"});
         await record.save();
 
         const context = RecordContext.create({
@@ -48,14 +48,14 @@ describe("github issues > #2201 - Create a select query when using a (custom) ju
             record,
             userId: user.id,
             recordId: record.id,
-            meta: { name: "meta name", description: "meta description" }
+            meta: {name: "meta name", description: "meta description"}
         } as RecordContext);
         await context.save();
 
         const query = Record
             .createQueryBuilder("record")
             .leftJoinAndSelect("record.contexts", "context")
-            .where("record.id = :recordId", { recordId: record.id });
+            .where("record.id = :recordId", {recordId: record.id});
 
         const result = (await query.getOne())!;
 

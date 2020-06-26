@@ -1,17 +1,17 @@
 import "reflect-metadata";
-import {expect} from "chai";
+import { expect } from "chai";
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases
 } from "../../../../../utils/test-utils";
-import {Connection} from "../../../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {Image} from "./entity/Image";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { Image } from "./entity/Image";
 
 describe("query builder > relation-id > one-to-many > multiple-pk", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -131,8 +131,8 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
         const loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .loadRelationIdAndMap("category.imageIds", "category.images")
-            .where("category.id = :id", { id: 1 })
-            .andWhere("category.code = :code", { code: 1 })
+            .where("category.id = :id", {id: 1})
+            .andWhere("category.code = :code", {code: 1})
             .getOne();
 
         expect(loadedCategory!.imageIds).to.not.be.eql([]);
@@ -185,43 +185,46 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
 
         let loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
-            .loadRelationIdAndMap("post.categoryIds", "post.categories", "category", qb => qb.andWhere("category.id = :id AND category.code = :code", { id: 1, code: 1 }))
+            .loadRelationIdAndMap("post.categoryIds", "post.categories", "category", qb => qb.andWhere("category.id = :id AND category.code = :code", {
+                id: 1,
+                code: 1
+            }))
             .getMany();
 
         expect(loadedPosts[0].categoryIds).to.not.be.eql([]);
-        expect(loadedPosts[0].categoryIds[0]).to.be.eql({ id: 1, code: 1 });
+        expect(loadedPosts[0].categoryIds[0]).to.be.eql({id: 1, code: 1});
         expect(loadedPosts[1].categoryIds).to.be.eql([]);
 
         loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
-            .loadRelationIdAndMap("post.categoryIds", "post.categories", "category", qb => qb.andWhere("category.code = :code", { code: 1 }))
+            .loadRelationIdAndMap("post.categoryIds", "post.categories", "category", qb => qb.andWhere("category.code = :code", {code: 1}))
             .getMany();
 
         expect(loadedPosts[0].categoryIds).to.not.be.eql([]);
-        expect(loadedPosts[0].categoryIds[0]).to.be.eql({ id: 1, code: 1 });
-        expect(loadedPosts[0].categoryIds[1]).to.be.eql({ id: 2, code: 1 });
+        expect(loadedPosts[0].categoryIds[0]).to.be.eql({id: 1, code: 1});
+        expect(loadedPosts[0].categoryIds[1]).to.be.eql({id: 2, code: 1});
         expect(loadedPosts[1].categoryIds).to.not.be.eql([]);
-        expect(loadedPosts[1].categoryIds[0]).to.be.eql({ id: 3, code: 1 });
+        expect(loadedPosts[1].categoryIds[0]).to.be.eql({id: 3, code: 1});
 
         loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
-            .loadRelationIdAndMap("post.categoryIds", "post.categories", "category", qb => qb.andWhere("category.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationIdAndMap("post.categoryIds", "post.categories", "category", qb => qb.andWhere("category.isRemoved = :isRemoved", {isRemoved: true}))
             .getMany();
 
         expect(loadedPosts[0].categoryIds).to.not.be.eql([]);
-        expect(loadedPosts[0].categoryIds[0]).to.be.eql({ id: 2, code: 1 });
+        expect(loadedPosts[0].categoryIds[0]).to.be.eql({id: 2, code: 1});
         expect(loadedPosts[1].categoryIds).to.not.be.eql([]);
-        expect(loadedPosts[1].categoryIds[0]).to.be.eql({ id: 4, code: 2 });
+        expect(loadedPosts[1].categoryIds[0]).to.be.eql({id: 4, code: 2});
 
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .loadRelationIdAndMap("post.categoryIds", "post.categories", "category", qb => qb.andWhere("category.isRemoved = :isRemoved", { isRemoved: true }))
-            .where("post.id = :id", { id: 1 })
-            .andWhere("post.authorId = :authorId", { authorId: 1 })
+            .loadRelationIdAndMap("post.categoryIds", "post.categories", "category", qb => qb.andWhere("category.isRemoved = :isRemoved", {isRemoved: true}))
+            .where("post.id = :id", {id: 1})
+            .andWhere("post.authorId = :authorId", {authorId: 1})
             .getOne();
 
         expect(loadedPost!.categoryIds).to.not.be.eql([]);
-        expect(loadedPost!.categoryIds[0]).to.be.eql({ id: 2, code: 1 });
+        expect(loadedPost!.categoryIds[0]).to.be.eql({id: 2, code: 1});
 
     })));
 
@@ -292,7 +295,7 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
 
         expect(loadedPosts[0].categoryIds).to.not.be.eql([]);
         expect(loadedPosts[0].categoryIds.length).to.be.equal(1);
-        expect(loadedPosts[0].categoryIds[0]).to.be.eql({ id: 1, code: 1 });
+        expect(loadedPosts[0].categoryIds[0]).to.be.eql({id: 1, code: 1});
         expect(loadedPosts[0].categories).to.not.be.eql([]);
         expect(loadedPosts[0].categories[0].imageIds).to.not.be.eql([]);
         expect(loadedPosts[0].categories[0].imageIds.length).to.be.equal(2);
@@ -300,8 +303,8 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
         expect(loadedPosts[0].categories[0].imageIds[1]).to.be.equal(2);
         expect(loadedPosts[1].categoryIds).to.not.be.eql([]);
         expect(loadedPosts[1].categoryIds.length).to.be.equal(2);
-        expect(loadedPosts[1].categoryIds[0]).to.be.eql({ id: 2, code: 1 });
-        expect(loadedPosts[1].categoryIds[1]).to.be.eql({ id: 3, code: 2 });
+        expect(loadedPosts[1].categoryIds[0]).to.be.eql({id: 2, code: 1});
+        expect(loadedPosts[1].categoryIds[1]).to.be.eql({id: 3, code: 2});
         expect(loadedPosts[1].categories).to.not.be.eql([]);
         expect(loadedPosts[1].categories.length).to.be.equal(2);
         expect(loadedPosts[1].categories[0].imageIds).to.not.be.eql([]);
@@ -317,13 +320,13 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
             .loadRelationIdAndMap("post.categoryIds", "post.categories")
             .leftJoinAndSelect("post.categories", "category")
             .loadRelationIdAndMap("category.imageIds", "category.images")
-            .where("post.id = :id", { id: 1 })
-            .andWhere("post.authorId = :authorId", { authorId: 1 })
+            .where("post.id = :id", {id: 1})
+            .andWhere("post.authorId = :authorId", {authorId: 1})
             .orderBy("category.id")
             .getOne();
 
         expect(loadedPost!.categoryIds).to.not.be.eql([]);
-        expect(loadedPost!.categoryIds[0]).to.be.eql({ id: 1, code: 1 });
+        expect(loadedPost!.categoryIds[0]).to.be.eql({id: 1, code: 1});
         expect(loadedPost!.categories).to.not.be.eql([]);
         expect(loadedPost!.categories[0].imageIds).to.not.be.eql([]);
         expect(loadedPost!.categories[0].imageIds.length).to.be.equal(2);

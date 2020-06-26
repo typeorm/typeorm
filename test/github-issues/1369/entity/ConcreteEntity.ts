@@ -1,5 +1,5 @@
-import {Column, Entity} from "../../../../src/index";
-import {AbstractEntity} from "./AbstractEntity";
+import { Column, Entity } from "@typeorm/core";
+import { AbstractEntity } from "./AbstractEntity";
 
 @Entity()
 export class ConcreteEntity extends AbstractEntity {

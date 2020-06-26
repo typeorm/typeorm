@@ -10,7 +10,7 @@
 If connection options parameter is omitted then connection options are read from `ormconfig` file or environment variables.
 
 ```typescript
-import {createConnection} from "typeorm";
+import {createConnection} from "@typeorm/core";
 
 const connection = await createConnection({
     type: "mysql",
@@ -26,7 +26,7 @@ const connection = await createConnection({
 If connection options parameter is omitted then connection options are read from `ormconfig` file or environment variables.
 
 ```typescript
-import {createConnections} from "typeorm";
+import {createConnections} from "@typeorm/core";
 
 const connection = await createConnections([{
     name: "connection1",
@@ -50,7 +50,7 @@ const connection = await createConnections([{
 * `getConnectionManager()` - Gets connection manager which stores all created (using `createConnection()` or `createConnections()`) connections.
 
 ```typescript
-import {getConnectionManager} from "typeorm";
+import {getConnectionManager} from "@typeorm/core";
 
 const defaultConnection = getConnectionManager().get("default");
 const secondaryConnection = getConnectionManager().get("secondary");
@@ -59,18 +59,18 @@ const secondaryConnection = getConnectionManager().get("secondary");
 * `getConnection()` - Gets connection which was created by using `createConnection` method.
 
 ```typescript
-import {getConnection} from "typeorm";
+import {getConnection} from "@typeorm/core";
 
 const connection = getConnection();
 // if you have named connection you can specify its name:
 const secondaryConnection = getConnection("secondary-connection");
 ```
 
-* `getEntityManager()` - Gets `EntityManager` from connection. 
+* `getEntityManager()` - Gets `EntityManager` from connection.
 Connection name can be specified to indicate what connection's entity manager should be taken.
 
 ```typescript
-import {getEntityManager} from "typeorm";
+import {getEntityManager} from "@typeorm/core";
 
 const manager = getEntityManager();
 // you can use manager methods now
@@ -79,11 +79,11 @@ const secondaryManager = getEntityManager("secondary-connection");
 // you can use secondary connection manager methods
 ```
 
-* `getRepository()` - Gets `Repository` for given entity from connection. 
+* `getRepository()` - Gets `Repository` for given entity from connection.
 Connection name can be specified to indicate what connection's entity manager should be taken.
 
 ```typescript
-import {getRepository} from "typeorm";
+import {getRepository} from "@typeorm/core";
 
 const userRepository = getRepository(User);
 // you can use repository methods now
@@ -92,11 +92,11 @@ const blogRepository = getRepository(Blog, "secondary-connection");
 // you can use secondary connection repository methods
 ```
 
-* `getTreeRepository()` - Gets `TreeRepository` for given entity from connection. 
+* `getTreeRepository()` - Gets `TreeRepository` for given entity from connection.
 Connection name can be specified to indicate what connection's entity manager should be taken.
 
 ```typescript
-import {getTreeRepository} from "typeorm";
+import {getTreeRepository} from "@typeorm/core";
 
 const userRepository = getTreeRepository(User);
 // you can use repository methods now
@@ -105,11 +105,11 @@ const blogRepository = getTreeRepository(Blog, "secondary-connection");
 // you can use secondary connection repository methods
 ```
 
-* `getMongoRepository()` - Gets `MongoRepository` for given entity from connection. 
+* `getMongoRepository()` - Gets `MongoRepository` for given entity from connection.
 Connection name can be specified to indicate what connection's entity manager should be taken.
 
 ```typescript
-import {getMongoRepository} from "typeorm";
+import {getMongoRepository} from "@typeorm/core";
 
 const userRepository = getMongoRepository(User);
 // you can use repository methods now
@@ -168,21 +168,21 @@ const manager: MongoEntityManager = connection.mongoManager;
 const user = await manager.findOne(1);
 ```
 
-* `connect` - Performs connection to the database. 
+* `connect` - Performs connection to the database.
 When you use `createConnection` it automatically calls `connect` and you don't need to call it yourself.
 
 ```typescript
 await connection.connect();
 ```
 
-* `close` - Closes connection with the database. 
+* `close` - Closes connection with the database.
 Usually, you call this method when your application is shutting down.
 
 ```typescript
 await connection.close();
 ```
 
-* `synchronize` - Synchronizes database schema. When `synchronize: true` is set in connection options it calls this method. 
+* `synchronize` - Synchronizes database schema. When `synchronize: true` is set in connection options it calls this method.
 Usually, you call this method when your application is starting.
 
 ```typescript
@@ -296,7 +296,7 @@ const users = await connection.createQueryBuilder()
 ```
 
 * `createQueryRunner` - Creates a query runner used to manage and work with a single real database connection.
-Learn more about [QueryRunner](./query-runner.md). 
+Learn more about [QueryRunner](./query-runner.md).
 
 ```typescript
 const queryRunner = connection.createQueryRunner();

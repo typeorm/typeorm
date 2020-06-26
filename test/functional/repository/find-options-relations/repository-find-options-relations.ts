@@ -1,12 +1,11 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {Category} from "./entity/Category";
-import {Post} from "./entity/Post";
-import {Photo} from "./entity/Photo";
-import {Counters} from "./entity/Counters";
-import {FindRelationsNotFoundError} from "../../../../src/error/FindRelationsNotFoundError";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection, FindRelationsNotFoundError } from "@typeorm/core";
+import { User } from "./entity/User";
+import { Category } from "./entity/Category";
+import { Post } from "./entity/Post";
+import { Photo } from "./entity/Photo";
+import { Counters } from "./entity/Counters";
 
 describe("repository > find options > relations", () => {
 
@@ -98,7 +97,7 @@ describe("repository > find options > relations", () => {
     })));
 
     it("should load specified relations case 1", () => Promise.all(connections.map(async connection => {
-        const loadedPost = await connection.getRepository(Post).findOne(1, { relations: ["photos"] });
+        const loadedPost = await connection.getRepository(Post).findOne(1, {relations: ["photos"]});
         loadedPost!.id.should.be.equal(1);
         loadedPost!.title.should.be.equal("About Timber");
         loadedPost!.counters.commentCount.should.be.equal(1);
@@ -130,7 +129,7 @@ describe("repository > find options > relations", () => {
     })));
 
     it("should load specified relations case 2", () => Promise.all(connections.map(async connection => {
-        const loadedPost = await connection.getRepository(Post).findOne(1, { relations: ["photos", "user", "categories"] });
+        const loadedPost = await connection.getRepository(Post).findOne(1, {relations: ["photos", "user", "categories"]});
         loadedPost!.id.should.be.equal(1);
         loadedPost!.title.should.be.equal("About Timber");
         loadedPost!.counters.commentCount.should.be.equal(1);
@@ -174,7 +173,7 @@ describe("repository > find options > relations", () => {
     })));
 
     it("should load specified relations and their sub-relations case 1", () => Promise.all(connections.map(async connection => {
-        const loadedPost = await connection.getRepository(Post).findOne(1, { relations: ["photos", "user", "categories", "photos.user"] });
+        const loadedPost = await connection.getRepository(Post).findOne(1, {relations: ["photos", "user", "categories", "photos.user"]});
         loadedPost!.id.should.be.equal(1);
         loadedPost!.title.should.be.equal("About Timber");
         loadedPost!.counters.commentCount.should.be.equal(1);
@@ -224,7 +223,7 @@ describe("repository > find options > relations", () => {
     })));
 
     it("should load specified relations and their sub-relations case 2", () => Promise.all(connections.map(async connection => {
-        const loadedPost = await connection.getRepository(Post).findOne(1, { relations: ["photos", "user", "photos.user", "counters.author"] });
+        const loadedPost = await connection.getRepository(Post).findOne(1, {relations: ["photos", "user", "photos.user", "counters.author"]});
         loadedPost!.id.should.be.equal(1);
         loadedPost!.title.should.be.equal("About Timber");
         loadedPost!.counters.commentCount.should.be.equal(1);
@@ -270,7 +269,7 @@ describe("repository > find options > relations", () => {
     })));
 
     it("should load specified relations and their sub-relations case 3", () => Promise.all(connections.map(async connection => {
-        const loadedPost = await connection.getRepository(Post).findOne(1, { relations: ["photos", "user", "photos.user", "counters.author", "photos.counters.author"] });
+        const loadedPost = await connection.getRepository(Post).findOne(1, {relations: ["photos", "user", "photos.user", "counters.author", "photos.counters.author"]});
         loadedPost!.id.should.be.equal(1);
         loadedPost!.title.should.be.equal("About Timber");
         loadedPost!.counters.commentCount.should.be.equal(1);
@@ -322,27 +321,27 @@ describe("repository > find options > relations", () => {
     })));
 
     it("should throw error if specified relations were not found case 1", () => Promise.all(connections.map(async connection => {
-        await connection.getRepository(Post).findOne(1, { relations: ["photos2"] }).should.eventually.be.rejectedWith(FindRelationsNotFoundError);
+        await connection.getRepository(Post).findOne(1, {relations: ["photos2"]}).should.eventually.be.rejectedWith(FindRelationsNotFoundError);
     })));
 
     it("should throw error if specified relations were not found case 2", () => Promise.all(connections.map(async connection => {
-        await connection.getRepository(Post).findOne(1, { relations: ["photos", "counters.author2"] }).should.eventually.be.rejectedWith(FindRelationsNotFoundError);
+        await connection.getRepository(Post).findOne(1, {relations: ["photos", "counters.author2"]}).should.eventually.be.rejectedWith(FindRelationsNotFoundError);
     })));
 
     it("should throw error if specified relations were not found case 3", () => Promise.all(connections.map(async connection => {
-        await connection.getRepository(Post).findOne(1, { relations: ["photos", "counters2.author"] }).should.eventually.be.rejectedWith(FindRelationsNotFoundError);
+        await connection.getRepository(Post).findOne(1, {relations: ["photos", "counters2.author"]}).should.eventually.be.rejectedWith(FindRelationsNotFoundError);
     })));
 
     it("should throw error if specified relations were not found case 4", () => Promise.all(connections.map(async connection => {
-        await connection.getRepository(Post).findOne(1, { relations: ["photos", "photos.user.haha"] }).should.eventually.be.rejectedWith(FindRelationsNotFoundError);
+        await connection.getRepository(Post).findOne(1, {relations: ["photos", "photos.user.haha"]}).should.eventually.be.rejectedWith(FindRelationsNotFoundError);
     })));
 
     it("should throw error if specified relations were not found case 5", () => Promise.all(connections.map(async connection => {
-        await connection.getRepository(Post).findOne(1, { relations: ["questions"] }).should.eventually.be.rejectedWith(FindRelationsNotFoundError);
+        await connection.getRepository(Post).findOne(1, {relations: ["questions"]}).should.eventually.be.rejectedWith(FindRelationsNotFoundError);
     })));
 
     it("should throw error if specified relations were not found case 6", () => Promise.all(connections.map(async connection => {
-        await connection.getRepository(Post).findOne(1, { relations: ["questions.haha"] }).should.eventually.be.rejectedWith(FindRelationsNotFoundError);
+        await connection.getRepository(Post).findOne(1, {relations: ["questions.haha"]}).should.eventually.be.rejectedWith(FindRelationsNotFoundError);
     })));
 
 });

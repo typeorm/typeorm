@@ -12,7 +12,7 @@
 那么你可以简单地使用它并按照以下方式覆盖它：
 
 ```typescript
-import {createConnection, getConnectionOptions} from "typeorm";
+import {createConnection, getConnectionOptions} from "@typeorm/core";
 import {MyNamingStrategy} from "./logger/MyNamingStrategy";
 
 //getConnectionOptions将读取ormconfig文件中的选项并将其返回到connectionOptions对象中，然后你只需向其附加其他属性

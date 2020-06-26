@@ -1,9 +1,5 @@
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../../src/decorator/relations/ManyToMany";
-import {RelationCount} from "../../../../../../src/decorator/relations/RelationCount";
-import {Category} from "./Category";
+import { Column, Entity, ManyToMany, PrimaryColumn, RelationCount } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Image {

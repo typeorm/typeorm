@@ -168,7 +168,7 @@ npm i typeorm mysql reflect-metadata --save
 让我们在`src/entity`中创建一个`User`实体：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -189,7 +189,7 @@ export class User {
 import * as express from "express";
 import { Request, Response } from "express";
 import * as bodyParser from "body-parser";
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { User } from "./User";
 
 // 创建 typeorm 连接
@@ -233,7 +233,7 @@ createConnection().then(connection => {
 如果要将逻辑处理提取到单独的文件中并且还需要`connection`实例，则可以使用`getConnection`：
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 import { User } from "./User";
 
 export function UsersListAction(req: Request, res: Response) {
@@ -246,7 +246,7 @@ export function UsersListAction(req: Request, res: Response) {
 在这个例子中你甚至不需要`getConnection` - 可以直接使用`getRepository`函数：
 
 ```typescript
-import { getRepository } from "typeorm";
+import { getRepository } from "@typeorm/core";
 import { User } from "./User";
 
 export function UsersListAction(req: Request, res: Response) {

@@ -1,4 +1,4 @@
-import {Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn} from "../../../../src/index";
+import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
 import { Contact } from "./Contact";
 
 @Entity()
@@ -7,9 +7,9 @@ export class Booking {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(type => Contact, contact => contact.bookings, { eager: true })
+    @ManyToOne(type => Contact, contact => contact.bookings, {eager: true})
     @JoinColumn({
-      name: "contact_id",
+        name: "contact_id",
     })
     contact: Contact;
 }

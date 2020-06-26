@@ -1,7 +1,11 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
 
 describe(`query builder > find with the global condition of "non-deleted"`, () => {
 
@@ -44,7 +48,7 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
             .from(Post, "post")
             .orderBy("post.id")
             .getOne();
-            loadedPost!.title.should.be.equals("title#2");
+        loadedPost!.title.should.be.equals("title#2");
 
     })));
 
@@ -83,7 +87,7 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
             .withDeleted()
             .orderBy("post.id")
             .getOne();
-            loadedPost!.title.should.be.equals("title#1");
+        loadedPost!.title.should.be.equals("title#1");
 
     })));
 });

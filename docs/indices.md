@@ -13,18 +13,18 @@ You can create indices for any columns of your entity.
 Example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, Index} from "@typeorm/core";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Index()
     @Column()
     firstName: string;
-    
+
     @Column()
     @Index()
     lastName: string;
@@ -34,18 +34,18 @@ export class User {
 You can also specify an index name:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, Index} from "@typeorm/core";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Index("name1-idx")
     @Column()
     firstName: string;
-    
+
     @Column()
     @Index("name2-idx")
     lastName: string;
@@ -59,18 +59,18 @@ To create an unique index you need to specify `{ unique: true }` in the index op
 > Note: CockroachDB stores unique indices as `UNIQUE` constraints
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, Index} from "@typeorm/core";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Index({ unique: true })
     @Column()
     firstName: string;
-    
+
     @Column()
     @Index({ unique: true })
     lastName: string;
@@ -84,16 +84,16 @@ and specify all column property names which should be included in the index.
 Example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, Index} from "@typeorm/core";
 
 @Entity()
 @Index(["firstName", "lastName"])
 @Index(["firstName", "middleName", "lastName"], { unique: true })
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     firstName: string;
 
@@ -160,7 +160,7 @@ export class Post {
 
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
 

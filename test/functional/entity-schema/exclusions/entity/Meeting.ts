@@ -1,4 +1,4 @@
-import {EntitySchema} from "../../../../../src/index";
+import { EntitySchema } from "@typeorm/core";
 
 export const MeetingSchema = new EntitySchema<any>({
     name: "Meeting",
@@ -18,6 +18,6 @@ export const MeetingSchema = new EntitySchema<any>({
         }
     },
     exclusions: [
-        { expression: `USING gist (tsrange("StartsAt", "FinishesAt") WITH &&)` }
+        {expression: `USING gist (tsrange("StartsAt", "FinishesAt") WITH &&)`}
     ]
 });

@@ -1,10 +1,6 @@
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
-import {Category} from "./Category";
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
-import {Counters} from "./Counters";
+import { Column, Entity, JoinTable, ManyToMany, PrimaryColumn } from "@typeorm/core";
+import { Category } from "./Category";
+import { Counters } from "./Counters";
 
 @Entity()
 export class Post {

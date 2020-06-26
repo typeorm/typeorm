@@ -14,7 +14,7 @@ Let's take for example `Question` and `Category` entities.
 Question can have multiple categories, and each category can have multiple questions.
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class Category {
@@ -29,7 +29,7 @@ export class Category {
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "@typeorm/core";
 import {Category} from "./Category";
 
 @Entity()
@@ -137,7 +137,7 @@ await connection.manager.softRemove(newQuestion);
 As you can see in this example we did not call save or softRemove for category1 and category2. But They will be automatically saved and soft-deleted when the cascade of relation options is set to true like this:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "@typeorm/core";
 import {Category} from "./Category";
 
 @Entity()
@@ -185,7 +185,7 @@ Bi-directional are relations with decorators on both sides of a relation.
 We just created a uni-directional relation. Let's make it bi-directional:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany} from "@typeorm/core";
 import {Question} from "./Question";
 
 @Entity()
@@ -204,7 +204,7 @@ export class Category {
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "@typeorm/core";
 import {Category} from "./Category";
 
 @Entity()
@@ -245,7 +245,7 @@ In case you need to have additional properties to your many-to-many relationship
 For example if you would like entities `Post` and `Category` to have a many-to-many relationship with additional `order` column, you need to create entity `PostToCategory` with two `ManyToOne` relations pointing in both directions and custom columns in it:
 
 ```typescript
-import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
 import { Post } from "./post";
 import { Category } from "./category";
 

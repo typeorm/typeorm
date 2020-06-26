@@ -1,14 +1,8 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
-import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
-import {Category} from "./Category";
-import {User} from "./User";
-import {Photo} from "./Photo";
-import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
-import {Counters} from "./Counters";
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Category } from "./Category";
+import { User } from "./User";
+import { Photo } from "./Photo";
+import { Counters } from "./Counters";
 
 @Entity()
 export class Post {

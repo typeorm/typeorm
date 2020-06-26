@@ -1,10 +1,14 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src";
-import {Category} from "./entity/Category";
-import {Post} from "./entity/Post";
-import {Image} from "./entity/Image";
+import { expect } from "chai";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Category } from "./entity/Category";
+import { Post } from "./entity/Post";
+import { Image } from "./entity/Image";
 
 describe("query builder > relation-count-decorator-many-to-many > many-to-many", () => {
 
@@ -64,7 +68,7 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost!.categoryCount).to.be.equal(3);
@@ -206,7 +210,7 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .addOrderBy("post.id, categories.id")
             .getOne();
 
@@ -262,7 +266,7 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .addOrderBy("post.id, categories.id")
             .getOne();
 
@@ -324,7 +328,7 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
-            .where("category.id = :id", { id: 1 })
+            .where("category.id = :id", {id: 1})
             .getOne();
 
         expect(loadedCategory!.postCount).to.be.equal(3);
@@ -448,7 +452,7 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
-            .where("category.id = :id", { id: 1 })
+            .where("category.id = :id", {id: 1})
             .getOne();
 
         expect(loadedCategory!.postCount).to.be.equal(3);

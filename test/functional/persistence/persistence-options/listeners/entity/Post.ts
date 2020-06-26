@@ -1,8 +1,4 @@
-import {BeforeInsert} from "../../../../../../src/decorator/listeners/BeforeInsert";
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {AfterRemove} from "../../../../../../src/decorator/listeners/AfterRemove";
+import { AfterRemove, BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {

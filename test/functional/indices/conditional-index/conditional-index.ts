@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {Connection} from "../../../../src";
-import {closeTestingConnections, createTestingConnections} from "../../../utils/test-utils";
-import {expect} from "chai";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../../utils/test-utils";
+import { expect } from "chai";
 
 describe("indices > conditional index", () => {
 

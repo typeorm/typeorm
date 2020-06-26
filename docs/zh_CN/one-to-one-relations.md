@@ -6,7 +6,7 @@
 用户只能拥有一个配置文件，并且一个配置文件仅由一个用户拥有。
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class Profile {
@@ -22,7 +22,7 @@ export class Profile {
 ```
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from "@typeorm/core";
 import { Profile } from "./Profile";
 
 @Entity()
@@ -107,7 +107,7 @@ const users = await connection
 我们刚刚创建了一个单向关系。 让我们将它改为双向：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from "@typeorm/core";
 import { User } from "./User";
 
 @Entity()
@@ -127,7 +127,7 @@ export class Profile {
 ```
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from "@typeorm/core";
 import { Profile } from "./Profile";
 
 @Entity()

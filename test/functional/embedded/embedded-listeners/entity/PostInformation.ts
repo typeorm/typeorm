@@ -1,7 +1,5 @@
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {PostCounter} from "./PostCounter";
-import {BeforeInsert} from "../../../../../src/decorator/listeners/BeforeInsert";
-import {Index} from "../../../../../src/decorator/Index";
+import { BeforeInsert, Column, Index } from "@typeorm/core";
+import { PostCounter } from "./PostCounter";
 
 export class PostInformation {
 
@@ -9,7 +7,7 @@ export class PostInformation {
     @Index()
     description: string;
 
-    @Column(type => PostCounter, { prefix: "counters" } )
+    @Column(type => PostCounter, {prefix: "counters"})
     counters: PostCounter = new PostCounter();
 
     @BeforeInsert()

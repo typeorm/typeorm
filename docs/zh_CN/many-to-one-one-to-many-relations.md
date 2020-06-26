@@ -5,7 +5,7 @@
 User 可以拥有多张 photos，但每张 photo 仅由一位 user 拥有。
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "@typeorm/core";
 import { User } from "./User";
 
 @Entity()
@@ -22,7 +22,7 @@ export class Photo {
 ```
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "@typeorm/core";
 import { Photo } from "./Photo";
 
 @Entity()

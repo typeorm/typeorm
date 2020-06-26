@@ -1,7 +1,6 @@
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
-import {Subcounters} from "./Subcounters";
-import {User} from "./User";
+import { Column, ManyToMany } from "@typeorm/core";
+import { Subcounters } from "./Subcounters";
+import { User } from "./User";
 
 export class Counters {
 
@@ -17,7 +16,7 @@ export class Counters {
     @Column()
     favorites: number;
 
-    @Column(() => Subcounters, { prefix: "subcnt" })
+    @Column(() => Subcounters, {prefix: "subcnt"})
     subcounters: Subcounters;
 
     @ManyToMany(type => User, user => user.likedPosts)

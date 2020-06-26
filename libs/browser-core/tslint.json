@@ -1,0 +1,22 @@
+{
+  "extends": "../../tslint.json",
+  "rules": {
+    "directive-selector": [true, "attribute", "typeorm", "camelCase"],
+    "component-selector": [true, "element", "typeorm", "kebab-case"],
+    "unified-signatures": false,
+    "no-non-null-assertion": false,
+    "no-shadowed-variable": false,
+    "no-bitwise": false,
+    "radix": false,
+    "prefer-const": false,
+    "forin": false,
+    "no-inferrable-types": false,
+    "member-ordering": false,
+    "no-unnecessary-initializer": false,
+    "no-console": false,
+    "interface-over-type-literal": false
+  },
+  "linterOptions": {
+    "exclude": ["!**/*"]
+  }
+}

@@ -1,13 +1,13 @@
 import "reflect-metadata";
-import {plainToClass} from "class-transformer";
+import { plainToClass } from "class-transformer";
 
-import {Photo} from "./entity/Photo";
-import {User} from "./entity/User";
+import { Photo } from "./entity/Photo";
+import { User } from "./entity/User";
 
 describe("github issues > #4219 class-transformer-shim: support metadata reflection", () => {
 
     it("should create instances with the correct property types", () => {
-        
+
         const photoLiteral = {
             url: "typeorm.io"
         };

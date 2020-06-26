@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
 
 describe("github issues > #433 default value (json) is not getting set in postgreSQL", () => {
 
@@ -18,7 +18,7 @@ describe("github issues > #433 default value (json) is not getting set in postgr
         post.id = 1;
         await connection.getRepository(Post).save(post);
         const loadedPost = (await connection.getRepository(Post).findOne(1))!;
-        loadedPost.json.should.be.eql({ hello: "world" });
+        loadedPost.json.should.be.eql({hello: "world"});
     })));
 
 });

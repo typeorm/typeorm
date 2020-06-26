@@ -1,12 +1,8 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Unique} from "../../../../src/decorator/Unique";
-import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
-import {Index} from "../../../../src/decorator/Index";
+import { Column, Entity, Index, PrimaryColumn, Unique } from "@typeorm/core";
 
 @Entity()
 @Unique(["name"])
-@Index(["text"], { unique: true })
+@Index(["text"], {unique: true})
 export class Photo {
 
     @PrimaryColumn()
@@ -16,10 +12,10 @@ export class Photo {
     name: string;
 
     @Column()
-    @Index({ unique: true })
+    @Index({unique: true})
     tag: string;
 
-    @Column({ unique: true })
+    @Column({unique: true})
     description: string;
 
     @Column()

@@ -1,6 +1,4 @@
-import {Index, PrimaryGeneratedColumn} from "../../../../src";
-import {Column} from "../../../../src";
-import {Entity} from "../../../../src";
+import { Column, Entity, Index, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Index("name_index", ["name"])
 @Entity()

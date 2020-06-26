@@ -1,25 +1,22 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {
 
     @PrimaryGeneratedColumn()
     id: number;
-
-    @Column({ name: "title" })
-    private _title: string;
-
     @Column()
     text: string;
 
-    set title(title: string) {
-        this._title = title;
-    }
+    @Column({name: "title"})
+    private _title: string;
 
     get title(): string {
         return this._title;
+    }
+
+    set title(title: string) {
+        this._title = title;
     }
 
 }

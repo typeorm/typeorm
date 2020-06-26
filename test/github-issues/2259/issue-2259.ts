@@ -1,8 +1,6 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import { TableColumn } from "../../../src/schema-builder/table/TableColumn";
-import { Table } from "../../../src/schema-builder/table/Table";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection, Table, TableColumn } from "@typeorm/core";
 
 describe("github issues > #2259 Missing type for generated columns", () => {
 

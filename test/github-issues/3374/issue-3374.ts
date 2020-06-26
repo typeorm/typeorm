@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("github issues > #3374 Synchronize issue with UUID (MySQL)", () => {
 
@@ -15,7 +15,7 @@ describe("github issues > #3374 Synchronize issue with UUID (MySQL)", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should not drop primary column again", () => Promise.all(connections.map(async function(connection) {
+    it("should not drop primary column again", () => Promise.all(connections.map(async function (connection) {
 
         const post = new Post();
         post.id = 1;
@@ -24,7 +24,7 @@ describe("github issues > #3374 Synchronize issue with UUID (MySQL)", () => {
 
         await connection.synchronize();
 
-        const loadedPost = await connection.manager.find(Post, { name: "hello world" });
+        const loadedPost = await connection.manager.find(Post, {name: "hello world"});
         expect(loadedPost).to.be.not.empty;
 
     })));

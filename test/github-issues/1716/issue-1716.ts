@@ -1,14 +1,17 @@
 import "reflect-metadata";
-import { Connection } from "../../../src/connection/Connection";
-import { ConnectionOptions } from "../../../src/connection/ConnectionOptions";
-import { createTestingConnections, closeTestingConnections, reloadTestingDatabases, getTypeOrmConfig } from "../../utils/test-utils";
+import { Connection, ConnectionOptions } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    getTypeOrmConfig,
+    reloadTestingDatabases
+} from "../../utils/test-utils";
 import { expect } from "chai";
 
 import { PgEntity } from "./entity/pgEntity";
 import { MysqlEntity } from "./entity/mysqlEntity";
 import { MariadbEntity } from "./entity/mariadbEntity";
 import { MssqlEntity } from "./entity/mssqlEntity";
-
 
 
 const toISOString = (input: string) => new Date(input).toISOString();
@@ -83,7 +86,6 @@ describe("github issues > #1716 send timestamp to database without converting it
             });
 
 
-
             await manager.save(PgEntity, {
                 id: 2,
                 fieldTime: "17:00:00",
@@ -110,7 +112,6 @@ describe("github issues > #1716 send timestamp to database without converting it
         });
 
     });
-
 
 
     describe("mysql", async () => {
@@ -159,7 +160,6 @@ describe("github issues > #1716 send timestamp to database without converting it
             });
 
 
-
             await manager.save(MysqlEntity, {
                 id: 2,
                 fieldTime: "17:00:00",
@@ -180,7 +180,6 @@ describe("github issues > #1716 send timestamp to database without converting it
         });
 
     });
-
 
 
     describe("mariadb", async () => {
@@ -229,7 +228,6 @@ describe("github issues > #1716 send timestamp to database without converting it
             });
 
 
-
             await manager.save(MariadbEntity, {
                 id: 2,
                 fieldTime: "17:00:00",
@@ -250,7 +248,6 @@ describe("github issues > #1716 send timestamp to database without converting it
         });
 
     });
-
 
 
     describe("mssql", async () => {
@@ -299,7 +296,6 @@ describe("github issues > #1716 send timestamp to database without converting it
                 fieldDatetime2: toISOString("2018-03-07 14:00:00+05"),
                 fieldDatetimeoffset: toISOString("2018-03-07 14:00:00+05"),
             });
-
 
 
             await manager.save(MssqlEntity, {

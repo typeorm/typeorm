@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
-import {PostRepository} from "./repository/PostRepository";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
+import { PostRepository } from "./repository/PostRepository";
 
 describe("transaction > single query runner", () => {
 
@@ -35,26 +35,26 @@ describe("transaction > single query runner", () => {
         await entityManager.save(new Post(undefined, "Hello World"));
 
         await entityManager.queryRunner!.startTransaction();
-        const loadedPost1 = await entityManager.findOne(Post, { title: "Hello World" });
-        expect(loadedPost1).to.be.eql({ id: 1, title: "Hello World" });
+        const loadedPost1 = await entityManager.findOne(Post, {title: "Hello World"});
+        expect(loadedPost1).to.be.eql({id: 1, title: "Hello World"});
         await entityManager.remove(loadedPost1!);
-        const loadedPost2 = await entityManager.findOne(Post, { title: "Hello World" });
+        const loadedPost2 = await entityManager.findOne(Post, {title: "Hello World"});
         expect(loadedPost2).to.be.undefined;
         await entityManager.queryRunner!.rollbackTransaction();
 
-        const loadedPost3 = await entityManager.findOne(Post, { title: "Hello World" });
-        expect(loadedPost3).to.be.eql({ id: 1, title: "Hello World" });
+        const loadedPost3 = await entityManager.findOne(Post, {title: "Hello World"});
+        expect(loadedPost3).to.be.eql({id: 1, title: "Hello World"});
 
         await entityManager.queryRunner!.startTransaction();
-        const loadedPost4 = await entityManager.findOne(Post, { title: "Hello World" });
-        expect(loadedPost4).to.be.eql({ id: 1, title: "Hello World" });
+        const loadedPost4 = await entityManager.findOne(Post, {title: "Hello World"});
+        expect(loadedPost4).to.be.eql({id: 1, title: "Hello World"});
         await entityManager.query(`DELETE FROM ${connection.driver.escape("post")}`);
-        const loadedPost5 = await entityManager.findOne(Post, { title: "Hello World" });
+        const loadedPost5 = await entityManager.findOne(Post, {title: "Hello World"});
         expect(loadedPost5).to.be.undefined;
         await entityManager.queryRunner!.rollbackTransaction();
 
-        const loadedPost6 = await entityManager.findOne(Post, { title: "Hello World" });
-        expect(loadedPost6).to.be.eql({ id: 1, title: "Hello World" });
+        const loadedPost6 = await entityManager.findOne(Post, {title: "Hello World"});
+        expect(loadedPost6).to.be.eql({id: 1, title: "Hello World"});
         await entityManager.queryRunner!.release();
     })));
 

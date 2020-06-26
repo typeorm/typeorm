@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {Event} from "./entity/Event";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { User } from "./entity/User";
+import { Event } from "./entity/Event";
 
 describe("github issues > #1210 mongodb does not have multiple entities properly", () => {
 
@@ -48,8 +48,8 @@ describe("github issues > #1210 mongodb does not have multiple entities properly
         let users = [user1, user2];
         let events = [event1, event2, event3, event4];
 
-        await connection.mongoManager.save(events);
-        await connection.mongoManager.save(users);
+        await connection.manager.save(events);
+        await connection.manager.save(users);
 
     })));
 

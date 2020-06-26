@@ -1,23 +1,25 @@
 import "reflect-metadata";
-import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
-import {SapDriver} from "../../../../src/driver/sap/SapDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src";
-import {PostWithVersion} from "./entity/PostWithVersion";
-import {expect} from "chai";
-import {PostWithoutVersionAndUpdateDate} from "./entity/PostWithoutVersionAndUpdateDate";
-import {PostWithUpdateDate} from "./entity/PostWithUpdateDate";
-import {PostWithVersionAndUpdatedDate} from "./entity/PostWithVersionAndUpdatedDate";
-import {OptimisticLockVersionMismatchError} from "../../../../src/error/OptimisticLockVersionMismatchError";
-import {OptimisticLockCanNotBeUsedError} from "../../../../src/error/OptimisticLockCanNotBeUsedError";
-import {NoVersionOrUpdateDateColumnError} from "../../../../src/error/NoVersionOrUpdateDateColumnError";
-import {PessimisticLockTransactionRequiredError} from "../../../../src/error/PessimisticLockTransactionRequiredError";
-import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
-import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
-import {AbstractSqliteDriver} from "../../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {OracleDriver} from "../../../../src/driver/oracle/OracleDriver";
-import {LockNotSupportedOnGivenDriverError} from "../../../../src/error/LockNotSupportedOnGivenDriverError";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { SapDriver } from "@typeorm/driver-sap";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import {
+    Connection,
+    LockNotSupportedOnGivenDriverError,
+    NoVersionOrUpdateDateColumnError,
+    OptimisticLockCanNotBeUsedError,
+    OptimisticLockVersionMismatchError,
+    PessimisticLockTransactionRequiredError
+} from "@typeorm/core";
+import { PostWithVersion } from "./entity/PostWithVersion";
+import { expect } from "chai";
+import { PostWithoutVersionAndUpdateDate } from "./entity/PostWithoutVersionAndUpdateDate";
+import { PostWithUpdateDate } from "./entity/PostWithUpdateDate";
+import { PostWithVersionAndUpdatedDate } from "./entity/PostWithVersionAndUpdatedDate";
+import { MysqlDriver } from "@typeorm/driver-mysql";
+import { PostgresDriver } from "@typeorm/driver-postgres";
+import { SqlServerDriver } from "@typeorm/driver-sqlserver";
+import { AbstractSqliteDriver } from "@typeorm/driver-sqlite-abstract";
+import { OracleDriver } from "@typeorm/driver-oracle";
 
 describe("repository > find options > locking", () => {
 
@@ -35,12 +37,12 @@ describe("repository > find options > locking", () => {
         return Promise.all([
             connection
                 .getRepository(PostWithVersion)
-                .findOne(1, { lock: { mode: "pessimistic_read" } })
+                .findOne(1, {lock: {mode: "pessimistic_read"}})
                 .should.be.rejectedWith(PessimisticLockTransactionRequiredError),
 
             connection
                 .getRepository(PostWithVersion)
-                .findOne(1, { lock: { mode: "pessimistic_write" } })
+                .findOne(1, {lock: {mode: "pessimistic_write"}})
                 .should.be.rejectedWith(PessimisticLockTransactionRequiredError),
         ]);
     })));
@@ -53,12 +55,12 @@ describe("repository > find options > locking", () => {
             return Promise.all([
                 entityManager
                     .getRepository(PostWithVersion)
-                    .findOne(1, { lock: { mode: "pessimistic_read" } })
+                    .findOne(1, {lock: {mode: "pessimistic_read"}})
                     .should.not.be.rejected,
 
                 entityManager
                     .getRepository(PostWithVersion)
-                    .findOne(1, { lock: { mode: "pessimistic_write" } })
+                    .findOne(1, {lock: {mode: "pessimistic_write"}})
                     .should.not.be.rejected
             ]);
         });
@@ -146,10 +148,10 @@ describe("repository > find options > locking", () => {
     })));
 
     it("should throw error if optimistic lock used with `find` method", () => Promise.all(connections.map(async connection => {
-       return connection
-           .getRepository(PostWithVersion)
-           .find({lock: {mode: "optimistic", version: 1}})
-           .should.be.rejectedWith(OptimisticLockCanNotBeUsedError);
+        return connection
+            .getRepository(PostWithVersion)
+            .find({lock: {mode: "optimistic", version: 1}})
+            .should.be.rejectedWith(OptimisticLockCanNotBeUsedError);
     })));
 
     it("should not throw error if optimistic lock used with `findOne` method", () => Promise.all(connections.map(async connection => {
@@ -255,12 +257,12 @@ describe("repository > find options > locking", () => {
                 return Promise.all([
                     entityManager
                         .getRepository(PostWithVersion)
-                        .findOne(1, { lock: { mode: "pessimistic_read" } })
+                        .findOne(1, {lock: {mode: "pessimistic_read"}})
                         .should.be.rejectedWith(LockNotSupportedOnGivenDriverError),
 
                     entityManager
                         .getRepository(PostWithVersion)
-                        .findOne(1, { lock: { mode: "pessimistic_write" } })
+                        .findOne(1, {lock: {mode: "pessimistic_write"}})
                         .should.be.rejectedWith(LockNotSupportedOnGivenDriverError),
                 ]);
             });

@@ -1,12 +1,13 @@
 import "reflect-metadata";
-import {Connection} from "../../../../../src/connection/Connection";
+import { Connection } from "@typeorm/core";
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases
 } from "../../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
+import { MongoRepository } from '../../../../../libs/driver/mongodb/src/lib/MongoRepository';
 
 describe("mongodb > timestampable columns", () => {
 
@@ -19,7 +20,7 @@ describe("mongodb > timestampable columns", () => {
     after(() => closeTestingConnections(connections));
 
     it("should persist timestampable columns", () => Promise.all(connections.map(async connection => {
-        const commentMongoRepository = connection.getMongoRepository(Post);
+        const commentMongoRepository = connection.getRepository(Post) as MongoRepository<Post>;
 
         // save a post
         const post = new Post();

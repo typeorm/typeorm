@@ -1,4 +1,4 @@
-import { Entity, ManyToOne, JoinColumn, Column } from "../../../../src/index";
+import { Column, Entity, JoinColumn, ManyToOne } from "@typeorm/core";
 import { MainModel } from "./MainModel";
 import { ValidationModel } from "./ValidationModel";
 
@@ -12,7 +12,7 @@ export class DataModel {
     })
     validations: ValidationModel;
 
-    
+
     @ManyToOne(type => MainModel, {
         primary: true
     })
@@ -21,7 +21,7 @@ export class DataModel {
         referencedColumnName: "id"
     })
     main: MainModel;
-    
+
     @Column({
         type: "boolean",
         default: false

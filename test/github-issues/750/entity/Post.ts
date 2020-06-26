@@ -1,10 +1,8 @@
-import {Entity, PrimaryGeneratedColumn} from "../../../../src";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Index} from "../../../../src/decorator/Index";
+import { Column, Entity, Index, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
-@Index(["name"], { fulltext: true })
-@Index(["point"], { spatial: true })
+@Index(["name"], {fulltext: true})
+@Index(["point"], {spatial: true})
 export class Post {
 
     @PrimaryGeneratedColumn()

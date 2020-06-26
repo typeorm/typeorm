@@ -1,6 +1,4 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
+import { Column, Entity, PrimaryColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {
@@ -10,10 +8,10 @@ export class Post {
 
     @Column()
     title: string;
-    
+
     @Column()
     categoryName: string;
-    
+
     @Column()
     isNew: boolean = false;
 

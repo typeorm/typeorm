@@ -1,8 +1,4 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {BeforeUpdate} from "../../../../src/decorator/listeners/BeforeUpdate";
-import {UpdateDateColumn} from "../../../../src/decorator/columns/UpdateDateColumn";
+import { BeforeUpdate, Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {
@@ -13,7 +9,7 @@ export class Post {
     @Column()
     title: string;
 
-    @Column({ default: false })
+    @Column({default: false})
     active: boolean;
 
     @UpdateDateColumn()

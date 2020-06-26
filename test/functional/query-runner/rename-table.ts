@@ -1,13 +1,12 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {SapDriver} from "../../../src/driver/sap/SapDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
-import {Table} from "../../../src/schema-builder/table/Table";
-import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import { Connection, Table } from "@typeorm/core";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { SapDriver } from "@typeorm/driver-sap";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { SqlServerDriver } from "@typeorm/driver-sqlserver";
+import { AbstractSqliteDriver } from "@typeorm/driver-sqlite-abstract";
+import { PostgresDriver } from "@typeorm/driver-postgres";
+import { MysqlDriver } from "@typeorm/driver-mysql";
 
 describe("query runner > rename table", () => {
 
@@ -89,7 +88,7 @@ describe("query runner > rename table", () => {
             return;
 
         const queryRunner = connection.createQueryRunner();
-        let table: Table|undefined;
+        let table: Table | undefined;
 
         let questionTableName: string = "question";
         let renamedQuestionTableName: string = "renamedQuestion";
@@ -135,7 +134,7 @@ describe("query runner > rename table", () => {
                     type: "varchar",
                 }
             ],
-            indices: [{ columnNames: ["name"] }]
+            indices: [{columnNames: ["name"]}]
         }), true);
 
         await queryRunner.createTable(new Table({

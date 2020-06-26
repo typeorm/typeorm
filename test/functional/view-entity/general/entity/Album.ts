@@ -1,7 +1,5 @@
-import {Entity, JoinColumn, ManyToOne} from "../../../../../src";
-import {Column} from "../../../../../src";
-import {PrimaryGeneratedColumn} from "../../../../../src";
-import {Category} from "./Category";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Album {
@@ -16,7 +14,7 @@ export class Album {
     categoryId: number;
 
     @ManyToOne(() => Category)
-    @JoinColumn({ name: "categoryId" })
+    @JoinColumn({name: "categoryId"})
     category: Category;
 
 }

@@ -1,6 +1,4 @@
-import {Entity} from "../../../../../src";
-import {Column} from "../../../../../src";
-import {PrimaryGeneratedColumn} from "../../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Category {

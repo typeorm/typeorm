@@ -1,15 +1,15 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Message, MessageType} from "./entity/Message";
-import {Recipient} from "./entity/Recipient";
-import {User} from "./entity/User";
-import {Chat} from "./entity/Chat";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Message, MessageType } from "./entity/Message";
+import { Recipient } from "./entity/Recipient";
+import { User } from "./entity/User";
+import { Chat } from "./entity/Chat";
 
 describe("github issues > #1551 complex example of cascades + multiple primary keys = persistence order", () => {
 
     let connections: Connection[];
-    before(async () => connections = await createTestingConnections({ __dirname, enabledDrivers: ["mysql"] }));
+    before(async () => connections = await createTestingConnections({__dirname, enabledDrivers: ["mysql"]}));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
@@ -37,7 +37,7 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
             allTimeMembers: [user1, user5],
             listingMembers: [user1, user5],
             messages: [
-                new Message ({
+                new Message({
                     sender: user1,
                     content: "I should buy a boat",
                     type: MessageType.TEXT,
@@ -95,7 +95,7 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
             allTimeMembers: [user1, user5],
             listingMembers: [user1, user5],
             messages: [
-                new Message ({
+                new Message({
                     sender: user1,
                     content: "I should buy a boat",
                     type: MessageType.TEXT,
@@ -162,7 +162,7 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
             allTimeMembers: [user1, user5],
             listingMembers: [user1, user5],
             messages: [
-                new Message ({
+                new Message({
                     sender: user1,
                     content: "I should buy a boat",
                     type: MessageType.TEXT,
@@ -227,7 +227,7 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
             allTimeMembers: [user1, user5],
             listingMembers: [user1, user5],
             messages: [
-                new Message ({
+                new Message({
                     sender: user1,
                     content: "I should buy a boat",
                     type: MessageType.TEXT,

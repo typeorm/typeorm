@@ -11,7 +11,7 @@ You can create `DELETE` queries using `QueryBuilder`.
 Examples:
 
 ```typescript
-import {getConnection} from "typeorm";
+import {getConnection} from "@typeorm/core";
 
 await getConnection()
     .createQueryBuilder()
@@ -30,7 +30,7 @@ This is the most efficient way in terms of performance to delete entities from y
 Applying Soft Delete to QueryBuilder
 
 ```typescript
-import {createConnection} from "typeorm";
+import {createConnection} from "@typeorm/core";
 import {Entity} from "./entity";
 
 createConnection(/*...*/).then(async connection => {
@@ -48,7 +48,7 @@ createConnection(/*...*/).then(async connection => {
 Alternatively, You can recover the soft deleted rows by using the `restore()` method:
 
 ```typescript
-import {createConnection} from "typeorm";
+import {createConnection} from "@typeorm/core";
 import {Entity} from "./entity";
 
 createConnection(/*...*/).then(async connection => {

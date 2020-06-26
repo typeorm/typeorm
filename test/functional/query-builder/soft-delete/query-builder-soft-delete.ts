@@ -1,14 +1,11 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
-import {LimitOnUpdateNotSupportedError} from "../../../../src/error/LimitOnUpdateNotSupportedError";
-import {Not, IsNull} from "../../../../src";
-import {MissingDeleteDateColumnError} from "../../../../src/error/MissingDeleteDateColumnError";
-import {UserWithoutDeleteDateColumn} from "./entity/UserWithoutDeleteDateColumn";
-import {Photo} from "./entity/Photo";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection, IsNull, LimitOnUpdateNotSupportedError, MissingDeleteDateColumnError, Not } from "@typeorm/core";
+import { User } from "./entity/User";
+import { MysqlDriver } from "@typeorm/driver-mysql";
+import { UserWithoutDeleteDateColumn } from "./entity/UserWithoutDeleteDateColumn";
+import { Photo } from "./entity/Photo";
 
 describe("query builder > soft-delete", () => {
 
@@ -30,12 +27,12 @@ describe("query builder > soft-delete", () => {
             .createQueryBuilder()
             .softDelete()
             .from(User)
-            .where("name = :name", { name: "Alex Messer" })
+            .where("name = :name", {name: "Alex Messer"})
             .execute();
 
         const loadedUser1 = await connection.getRepository(User).findOne(
-            { name: "Alex Messer" },
-            { withDeleted: true }
+            {name: "Alex Messer"},
+            {withDeleted: true}
         );
         expect(loadedUser1).to.exist;
         expect(loadedUser1!.deletedAt).to.be.instanceof(Date);
@@ -44,10 +41,10 @@ describe("query builder > soft-delete", () => {
             .createQueryBuilder()
             .restore()
             .from(User)
-            .where("name = :name", { name: "Alex Messer" })
+            .where("name = :name", {name: "Alex Messer"})
             .execute();
 
-        const loadedUser2 = await connection.getRepository(User).findOne({ name: "Alex Messer" });
+        const loadedUser2 = await connection.getRepository(User).findOne({name: "Alex Messer"});
         expect(loadedUser2).to.exist;
         expect(loadedUser2!.deletedAt).to.be.equals(null);
 
@@ -83,11 +80,11 @@ describe("query builder > soft-delete", () => {
                 }
             })
             .execute();
-        
-        const loadedPhoto1 = await connection.getRepository(Photo).findOne({ url: "1.jpg" });
+
+        const loadedPhoto1 = await connection.getRepository(Photo).findOne({url: "1.jpg"});
         expect(loadedPhoto1).to.be.undefined;
 
-        const loadedPhoto2 = await connection.getRepository(Photo).findOne({ url: "2.jpg" });
+        const loadedPhoto2 = await connection.getRepository(Photo).findOne({url: "2.jpg"});
         loadedPhoto2!.should.be.eql({
             id: 2,
             url: "2.jpg",
@@ -101,16 +98,16 @@ describe("query builder > soft-delete", () => {
 
         // restore photo now
         await connection.getRepository(Photo)
-        .createQueryBuilder("photo")
-        .restore()
-        .where({
-            counters: {
-                likes: 2
-            }
-        })
-        .execute();
+            .createQueryBuilder("photo")
+            .restore()
+            .where({
+                counters: {
+                    likes: 2
+                }
+            })
+            .execute();
 
-        const restoredPhoto2 = await connection.getRepository(Photo).findOne({ url: "1.jpg" });
+        const restoredPhoto2 = await connection.getRepository(Photo).findOne({url: "1.jpg"});
         restoredPhoto2!.should.be.eql({
             id: 1,
             url: "1.jpg",
@@ -140,10 +137,10 @@ describe("query builder > soft-delete", () => {
 
         if (connection.driver instanceof MysqlDriver) {
             await connection.createQueryBuilder()
-            .softDelete()
-            .from(User)
-            .limit(limitNum)
-            .execute();
+                .softDelete()
+                .from(User)
+                .limit(limitNum)
+                .execute();
 
             const loadedUsers = await connection.getRepository(User).find({
                 where: {
@@ -155,10 +152,10 @@ describe("query builder > soft-delete", () => {
             loadedUsers!.length.should.be.equal(limitNum);
         } else {
             await connection.createQueryBuilder()
-            .softDelete()
-            .from(User)
-            .limit(limitNum)
-            .execute().should.be.rejectedWith(LimitOnUpdateNotSupportedError);
+                .softDelete()
+                .from(User)
+                .limit(limitNum)
+                .execute().should.be.rejectedWith(LimitOnUpdateNotSupportedError);
         }
 
     })));
@@ -179,25 +176,25 @@ describe("query builder > soft-delete", () => {
 
         if (connection.driver instanceof MysqlDriver) {
             await connection.createQueryBuilder()
-            .softDelete()
-            .from(User)
-            .execute();
+                .softDelete()
+                .from(User)
+                .execute();
 
             await connection.createQueryBuilder()
-            .restore()
-            .from(User)
-            .limit(limitNum)
-            .execute();
+                .restore()
+                .from(User)
+                .limit(limitNum)
+                .execute();
 
             const loadedUsers = await connection.getRepository(User).find();
             expect(loadedUsers).to.exist;
             loadedUsers!.length.should.be.equal(limitNum);
         } else {
             await connection.createQueryBuilder()
-            .restore()
-            .from(User)
-            .limit(limitNum)
-            .execute().should.be.rejectedWith(LimitOnUpdateNotSupportedError);
+                .restore()
+                .from(User)
+                .limit(limitNum)
+                .execute().should.be.rejectedWith(LimitOnUpdateNotSupportedError);
         }
 
     })));
@@ -214,7 +211,7 @@ describe("query builder > soft-delete", () => {
             await connection.createQueryBuilder()
                 .softDelete()
                 .from(UserWithoutDeleteDateColumn)
-                .where("name = :name", { name: "Alex Messer" })
+                .where("name = :name", {name: "Alex Messer"})
                 .execute();
         } catch (err) {
             error1 = err;
@@ -226,7 +223,7 @@ describe("query builder > soft-delete", () => {
             await connection.createQueryBuilder()
                 .restore()
                 .from(UserWithoutDeleteDateColumn)
-                .where("name = :name", { name: "Alex Messer" })
+                .where("name = :name", {name: "Alex Messer"})
                 .execute();
         } catch (err) {
             error2 = err;

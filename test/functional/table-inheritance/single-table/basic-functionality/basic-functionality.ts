@@ -1,12 +1,16 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {Student} from "./entity/Student";
-import {Teacher} from "./entity/Teacher";
-import {Accountant} from "./entity/Accountant";
-import {Employee} from "./entity/Employee";
-import {Person} from "./entity/Person";
-import {expect} from "chai";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Student } from "./entity/Student";
+import { Teacher } from "./entity/Teacher";
+import { Accountant } from "./entity/Accountant";
+import { Employee } from "./entity/Employee";
+import { Person } from "./entity/Person";
+import { expect } from "chai";
 
 describe("table-inheritance > single-table > basic-functionality", () => {
 
@@ -113,7 +117,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         let loadedStudent = await connection.manager
             .createQueryBuilder(Student, "student")
-            .where("student.name = :name", { name: "Bob" })
+            .where("student.name = :name", {name: "Bob"})
             .getOne();
 
         loadedStudent!.faculty = "Chemistry";
@@ -121,7 +125,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         loadedStudent = await connection.manager
             .createQueryBuilder(Student, "student")
-            .where("student.name = :name", { name: "Bob" })
+            .where("student.name = :name", {name: "Bob"})
             .getOne();
 
         loadedStudent!.should.have.all.keys("id", "name", "faculty");
@@ -131,7 +135,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         let loadedTeacher = await connection.manager
             .createQueryBuilder(Teacher, "teacher")
-            .where("teacher.name = :name", { name: "Mr. Adler" })
+            .where("teacher.name = :name", {name: "Mr. Adler"})
             .getOne();
 
         loadedTeacher!.salary = 1000;
@@ -139,7 +143,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         loadedTeacher = await connection.manager
             .createQueryBuilder(Teacher, "teacher")
-            .where("teacher.name = :name", { name: "Mr. Adler" })
+            .where("teacher.name = :name", {name: "Mr. Adler"})
             .getOne();
 
         loadedTeacher!.should.have.all.keys("id", "name", "specialization", "salary");
@@ -150,7 +154,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         let loadedAccountant = await connection.manager
             .createQueryBuilder(Accountant, "accountant")
-            .where("accountant.name = :name", { name: "Mr. Trump" })
+            .where("accountant.name = :name", {name: "Mr. Trump"})
             .getOne();
 
         loadedAccountant!.salary = 1000;
@@ -158,7 +162,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         loadedAccountant = await connection.manager
             .createQueryBuilder(Accountant, "accountant")
-            .where("accountant.name = :name", { name: "Mr. Trump" })
+            .where("accountant.name = :name", {name: "Mr. Trump"})
             .getOne();
 
         loadedAccountant!.should.have.all.keys("id", "name", "department", "salary");

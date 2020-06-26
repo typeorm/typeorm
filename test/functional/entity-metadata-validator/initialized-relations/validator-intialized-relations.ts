@@ -1,14 +1,16 @@
 import "reflect-metadata";
-import {Connection} from "../../../../src/connection/Connection";
-import {ConnectionMetadataBuilder} from "../../../../src/connection/ConnectionMetadataBuilder";
-import {EntityMetadataValidator} from "../../../../src/metadata-builder/EntityMetadataValidator";
-import {expect} from "chai";
-import {InitializedRelationError} from "../../../../src/error/InitializedRelationError";
-import {Category} from "./entity/Category";
-import {Post} from "./entity/Post";
-import {Image} from "./entity/Image";
-import {ImageInfo} from "./entity/ImageInfo";
-import {Question} from "./entity/Question";
+import {
+    Connection,
+    ConnectionMetadataBuilder,
+    EntityMetadataValidator,
+    InitializedRelationError
+} from "@typeorm/core";
+import { expect } from "chai";
+import { Category } from "./entity/Category";
+import { Post } from "./entity/Post";
+import { Image } from "./entity/Image";
+import { ImageInfo } from "./entity/ImageInfo";
+import { Question } from "./entity/Question";
 
 describe("entity-metadata-validator > initialized relations", () => {
 

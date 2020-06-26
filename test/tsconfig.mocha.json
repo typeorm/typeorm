@@ -1,0 +1,36 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@typeorm/browser-core": ["dist/libs/browser-core/src/index.js"],
+      "@typeorm/driver-mysql": ["dist/libs/driver/mysql/src/index.js"],
+      "@typeorm/driver-postgres": ["dist/libs/driver/postgres/src/index.js"],
+      "@typeorm/cli": ["dist/libs/cli/src/index.js"],
+      "@typeorm/driver-sqljs": ["dist/libs/driver/sqljs/src/index.js"],
+      "@typeorm/driver-sqlite-abstract": [
+        "dist/libs/driver/sqlite-abstract/src/index.js"
+      ],
+      "@typeorm/driver-mongodb": ["dist/libs/driver/mongodb/src/index.js"],
+      "@typeorm/driver-sqlite": ["dist/libs/driver/sqlite/src/index.js"],
+      "@typeorm/driver-sqlserver": ["dist/libs/driver/sqlserver/src/index.js"],
+      "@typeorm/core": ["dist/libs/core/src/index.js"],
+      "@typeorm/driver-oracle": ["dist/libs/driver/oracle/src/index.js"],
+      "@typeorm/driver-aurora-data-api": [
+        "dist/libs/driver/aurora-data-api/src/index.js"
+      ],
+      "@typeorm/driver-aurora-data-api-pg": [
+        "dist/libs/driver/aurora-data-api-pg/src/index.js"
+      ],
+      "@typeorm/driver-cockroachdb": ["dist/libs/driver/cockroachdb/src/index.js"],
+      "@typeorm/driver-sql-abstract": ["dist/libs/driver/sql-abstract/src/index.js"],
+      "@typeorm/driver-browser-sqljs": [
+        "dist/libs/driver/browser-sqljs/src/index.js"
+      ],
+      "@typeorm/driver-sap": ["dist/libs/driver/sap/src/index.js"],
+      "@typeorm/driver-cordova": ["dist/libs/driver/cordova/src/index.js"],
+      "@typeorm/driver-expo": ["dist/libs/driver/expo/src/index.js"],
+      "@typeorm/driver-react-native": ["dist/libs/driver/react-native/src/index.js"],
+      "@typeorm/driver-nativescript": ["dist/libs/driver/nativescript/src/index.js"]
+    }
+  }
+}

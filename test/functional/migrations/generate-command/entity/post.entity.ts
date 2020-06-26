@@ -1,11 +1,7 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {BaseEntity} from "../../../../../src/repository/BaseEntity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {ManyToMany, JoinTable} from "../../../../../src";
-import {Category} from "./category.entity";
+import { BaseEntity, Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Category } from "./category.entity";
 
-@Entity("post_test", { schema: "public" })
+@Entity("post_test", {schema: "public"})
 export class Post extends BaseEntity {
 
     @PrimaryGeneratedColumn()

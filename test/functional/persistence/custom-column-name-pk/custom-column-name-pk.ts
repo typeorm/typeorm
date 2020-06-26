@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
 
 describe("persistence > cascade operations with custom name", () => {
 
@@ -13,7 +13,7 @@ describe("persistence > cascade operations with custom name", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    describe("cascade update", function() {
+    describe("cascade update", function () {
 
         it("should remove relation", () => Promise.all(connections.map(async connection => {
 

@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Cat} from "./entity/Cat";
-import {Dog} from "./entity/Dog";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Cat } from "./entity/Cat";
+import { Dog } from "./entity/Dog";
 
 describe("github issues > #620 Feature Request: Flexibility in Foreign Key names", () => {
 

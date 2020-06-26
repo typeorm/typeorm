@@ -1,6 +1,6 @@
-import {Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn} from "../../../../src";
-import {TestEntity1} from "./TestEntity1";
-import {TestEntity3} from "./TestEntity3";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { TestEntity1 } from "./TestEntity1";
+import { TestEntity3 } from "./TestEntity3";
 
 @Entity()
 export class TestEntity2 {

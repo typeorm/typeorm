@@ -17,7 +17,7 @@ You only need to create a `ormconfig.[format]` file in the root directory of you
 put your configuration there and in your app call `createConnection()` without any configuration passed:
 
 ```typescript
-import {createConnection} from "typeorm";
+import {createConnection} from "@typeorm/core";
 
 // createConnection method will automatically read connection options
 // from your ormconfig file or environment variables

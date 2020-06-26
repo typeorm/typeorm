@@ -1,9 +1,5 @@
-import {Entity} from "../../../../../src";
-import {Column} from "../../../../../src";
-import {PrimaryGeneratedColumn} from "../../../../../src";
-import {ManyToOne} from "../../../../../src";
-import {JoinColumn} from "../../../../../src";
-import {Album} from "./Album";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Album } from "./Album";
 
 @Entity()
 export class Photo {
@@ -18,7 +14,7 @@ export class Photo {
     albumId: number;
 
     @ManyToOne(() => Album)
-    @JoinColumn({ name: "albumId" })
+    @JoinColumn({name: "albumId"})
     album: Album;
 
 }

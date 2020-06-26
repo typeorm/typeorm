@@ -1,4 +1,4 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {
@@ -9,7 +9,7 @@ export class Post {
     @Column()
     name: string;
 
-    @Column({ length: 255 })
+    @Column({length: 255})
     name2: string;
 
 }

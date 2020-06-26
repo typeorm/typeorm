@@ -1,14 +1,12 @@
-import {expect} from "chai";
+import { expect } from "chai";
 import "reflect-metadata";
-import {getConnectionManager} from "../../../../src";
-import {Connection} from "../../../../src/connection/Connection";
-import {Repository} from "../../../../src/repository/Repository";
-import {setupSingleTestingConnection} from "../../../utils/test-utils";
-import {Category} from "./entity/Category";
-import {CategoryMetadata} from "./entity/CategoryMetadata";
-import {Post} from "./entity/Post";
+import { Connection, getConnectionManager, Repository } from "@typeorm/core";
+import { setupSingleTestingConnection } from "../../../utils/test-utils";
+import { Category } from "./entity/Category";
+import { CategoryMetadata } from "./entity/CategoryMetadata";
+import { Post } from "./entity/Post";
 
-describe("persistence > custom-column-names", function() {
+describe("persistence > custom-column-names", function () {
 
     // -------------------------------------------------------------------------
     // Configuration
@@ -42,7 +40,7 @@ describe("persistence > custom-column-names", function() {
     let postRepository: Repository<Post>;
     let categoryRepository: Repository<Category>;
     let metadataRepository: Repository<CategoryMetadata>;
-    before(function() {
+    before(function () {
         if (!connection)
             return;
         postRepository = connection.getRepository(Post);
@@ -53,8 +51,8 @@ describe("persistence > custom-column-names", function() {
     // -------------------------------------------------------------------------
     // Specifications
     // -------------------------------------------------------------------------
-    
-    describe("attach exist entity to exist entity with many-to-one relation", function() {
+
+    describe("attach exist entity to exist entity with many-to-one relation", function () {
         if (!connection)
             return;
         let newPost: Post, newCategory: Category, loadedPost: Post;
@@ -69,22 +67,22 @@ describe("persistence > custom-column-names", function() {
         });
 
         // save a new post
-        before(function() {
+        before(function () {
             newPost = postRepository.create();
             newPost.title = "All about animals";
             return postRepository.save(newPost);
         });
 
         // attach category to post and save it
-        before(function() {
+        before(function () {
             newPost.category = newCategory;
             return postRepository.save(newPost);
         });
 
         // load a post
-        before(function() {
+        before(function () {
             return postRepository
-                .findOne(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category" } }})
+                .findOne(1, {join: {alias: "post", leftJoinAndSelect: {category: "post.category"}}})
                 .then(post => loadedPost = post!);
         });
 
@@ -96,7 +94,7 @@ describe("persistence > custom-column-names", function() {
 
     });
 
-    describe("attach new entity to exist entity with many-to-one relation", function() {
+    describe("attach new entity to exist entity with many-to-one relation", function () {
         if (!connection)
             return;
         let newPost: Post, newCategory: Category, loadedPost: Post;
@@ -111,7 +109,7 @@ describe("persistence > custom-column-names", function() {
         });
 
         // save a new post and attach category
-        before(function() {
+        before(function () {
             newPost = postRepository.create();
             newPost.title = "All about animals";
             newPost.category = newCategory;
@@ -119,9 +117,9 @@ describe("persistence > custom-column-names", function() {
         });
 
         // load a post
-        before(function() {
+        before(function () {
             return postRepository
-                .findOne(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category" } } })
+                .findOne(1, {join: {alias: "post", leftJoinAndSelect: {category: "post.category"}}})
                 .then(post => loadedPost = post!);
         });
 
@@ -133,7 +131,7 @@ describe("persistence > custom-column-names", function() {
 
     });
 
-    describe("attach new entity to new entity with many-to-one relation", function() {
+    describe("attach new entity to new entity with many-to-one relation", function () {
         if (!connection)
             return;
         let newPost: Post, newCategory: Category, loadedPost: Post;
@@ -151,9 +149,9 @@ describe("persistence > custom-column-names", function() {
         });
 
         // load a post
-        before(function() {
+        before(function () {
             return postRepository
-                .findOne(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category" } }})
+                .findOne(1, {join: {alias: "post", leftJoinAndSelect: {category: "post.category"}}})
                 .then(post => loadedPost = post!);
         });
 
@@ -165,7 +163,7 @@ describe("persistence > custom-column-names", function() {
 
     });
 
-    describe("attach exist entity to exist entity with one-to-one relation", function() {
+    describe("attach exist entity to exist entity with one-to-one relation", function () {
         if (!connection)
             return;
         let newPost: Post, newCategory: Category, newMetadata: CategoryMetadata, loadedPost: Post;
@@ -173,7 +171,7 @@ describe("persistence > custom-column-names", function() {
         before(reloadDatabase);
 
         // save a new post
-        before(function() {
+        before(function () {
             newPost = postRepository.create();
             newPost.title = "All about animals";
             return postRepository.save(newPost);
@@ -187,23 +185,28 @@ describe("persistence > custom-column-names", function() {
         });
 
         // save a new metadata
-        before(function() {
+        before(function () {
             newMetadata = metadataRepository.create();
             newMetadata.keyword = "animals";
             return metadataRepository.save(newMetadata);
         });
 
         // attach metadata to category and category to post and save it
-        before(function() {
+        before(function () {
             newCategory.metadata = newMetadata;
             newPost.category = newCategory;
             return postRepository.save(newPost);
         });
 
         // load a post
-        before(function() {
+        before(function () {
             return postRepository
-                .findOne(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category", metadata: "category.metadata" } } })
+                .findOne(1, {
+                    join: {
+                        alias: "post",
+                        leftJoinAndSelect: {category: "post.category", metadata: "category.metadata"}
+                    }
+                })
                 .then(post => loadedPost = post!);
         });
 
@@ -217,7 +220,7 @@ describe("persistence > custom-column-names", function() {
 
     });
 
-    describe("attach new entity to exist entity with one-to-one relation", function() {
+    describe("attach new entity to exist entity with one-to-one relation", function () {
         if (!connection)
             return;
         let newPost: Post, newCategory: Category, newMetadata: CategoryMetadata, loadedPost: Post;
@@ -225,7 +228,7 @@ describe("persistence > custom-column-names", function() {
         before(reloadDatabase);
 
         // save a new post
-        before(function() {
+        before(function () {
             newPost = postRepository.create();
             newPost.title = "All about animals";
             return postRepository.save(newPost);
@@ -242,15 +245,20 @@ describe("persistence > custom-column-names", function() {
         });
 
         // attach metadata to category and category to post and save it
-        before(function() {
+        before(function () {
             newPost.category = newCategory;
             return postRepository.save(newPost);
         });
 
         // load a post
-        before(function() {
+        before(function () {
             return postRepository
-                .findOne(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category", metadata: "category.metadata" } } })
+                .findOne(1, {
+                    join: {
+                        alias: "post",
+                        leftJoinAndSelect: {category: "post.category", metadata: "category.metadata"}
+                    }
+                })
                 .then(post => loadedPost = post!);
         });
 

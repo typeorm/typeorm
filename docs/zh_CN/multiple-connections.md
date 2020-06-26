@@ -11,7 +11,7 @@
 使用多个数据库的最简单方法是创建不同的连接：
 
 ```typescript
-import {createConnections} from "typeorm";
+import {createConnections} from "@typeorm/core";
 
 const connections = await createConnections([{
     name: "db1Connection",
@@ -44,7 +44,7 @@ const connections = await createConnections([{
 也可以从ormconfig文件加载所有连接选项：
 
 ```typescript
-import {createConnections} from "typeorm";
+import {createConnections} from "@typeorm/core";
 
 const connections = await createConnections();
 ```
@@ -52,7 +52,7 @@ const connections = await createConnections();
 指定要按名称创建的连接：
 
 ```typescript
-import {createConnection} from "typeorm";
+import {createConnection} from "@typeorm/core";
 
 const connection = await createConnection("db2Connection");
 ```
@@ -60,7 +60,7 @@ const connection = await createConnection("db2Connection");
 使用连接时，必须指定连接名称以获取特定连接：
 
 ```typescript
-import {getConnection} from "typeorm";
+import {getConnection} from "@typeorm/core";
 
 const db1Connection = getConnection("db1Connection");
 // 现在可以使用"db1"数据库...
@@ -78,7 +78,7 @@ const db2Connection = getConnection("db2Connection");
 如果你不想创建多个连接，但是想在一个连接中使用多个数据库，则可以指定使用的每个实体的数据库名称：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity({ database: "secondDB" })
 export class User {
@@ -96,7 +96,7 @@ export class User {
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity({ database: "thirdDB" })
 export class Photo {
@@ -126,7 +126,7 @@ const users = await connection
 此代码将生成以下sql查询（取决于数据库类型）：
 
 ```sql
-SELECT * FROM "secondDB"."question" "question", "thirdDB"."photo" "photo" 
+SELECT * FROM "secondDB"."question" "question", "thirdDB"."photo" "photo"
     WHERE "photo"."userId" = "user"."id"
 ```
 
@@ -149,7 +149,7 @@ const users = await connection
 你可以在应用程序中使用多个模式，只需在每个实体上设置`schema`：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity({ schema: "secondSchema" })
 export class User {
@@ -167,7 +167,7 @@ export class User {
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity({ schema: "thirdSchema" })
 export class Photo {
@@ -199,7 +199,7 @@ const users = await connection
 此代码将生成以下sql查询（取决于数据库类型）：
 
 ```sql
-SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo" 
+SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo"
     WHERE "photo"."userId" = "user"."id"
 ```
 
@@ -220,7 +220,7 @@ const users = await connection
 在mssql中，你还可以组合模式和数据库，例如：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity({ database: "secondDB", schema: "public" })
 export class User {
@@ -316,7 +316,7 @@ Mysql支持深度配置：
       password: "test",
       database: "test"
     }],
-    
+
     /**
     * 如果为true，则PoolCluster将在连接失败时尝试重新连接。 （默认值：true）
     */

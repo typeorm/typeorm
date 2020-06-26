@@ -1,6 +1,6 @@
-import {Entity, PrimaryGeneratedColumn, OneToOne} from "../../../../src/index";
+import { Entity, OneToOne, PrimaryGeneratedColumn } from "@typeorm/core";
 
-import {Tournament} from "./Tournament";
+import { Tournament } from "./Tournament";
 
 @Entity()
 export class TournamentGraph {

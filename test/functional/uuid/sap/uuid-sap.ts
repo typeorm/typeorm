@@ -1,9 +1,9 @@
-import {expect} from "chai";
+import { expect } from "chai";
 import "reflect-metadata";
-import {Connection} from "../../../../src";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {Question} from "./entity/Question";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { Question } from "./entity/Question";
 
 describe("uuid-mysql", () => {
 

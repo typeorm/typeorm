@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
 
 describe("github issues > #1751 Create sequence repeatedly when it already exists", () => {
 

@@ -10,7 +10,7 @@
 如果省略connection options参数，则从`ormconfig`文件或环境变量中读取连接选项。
 
 ```typescript
-import {createConnection} from "typeorm";
+import {createConnection} from "@typeorm/core";
 
 const connection = await createConnection({
     type: "mysql",
@@ -26,7 +26,7 @@ const connection = await createConnection({
 如果省略connection options参数，则从`ormconfig`文件或环境变量中读取连接选项。
 
 ```typescript
-import {createConnections} from "typeorm";
+import {createConnections} from "@typeorm/core";
 
 const connection = await createConnections([{
     name: "connection1",
@@ -50,7 +50,7 @@ const connection = await createConnections([{
 * `getConnectionManager()` - 获取存储所有已创建（使用`createConnection()`或`createConnections()`）连接的管理器。
 
 ```typescript
-import {getConnectionManager} from "typeorm";
+import {getConnectionManager} from "@typeorm/core";
 
 const defaultConnection = getConnectionManager().get("default");
 const secondaryConnection = getConnectionManager().get("secondary");
@@ -59,7 +59,7 @@ const secondaryConnection = getConnectionManager().get("secondary");
 * `getConnection()` - 获取使用`createConnection`方法创建的连接。
 
 ```typescript
-import {getConnection} from "typeorm";
+import {getConnection} from "@typeorm/core";
 
 const connection = getConnection();
 // 如果有命名连接，则可以指定其名称：
@@ -70,7 +70,7 @@ const secondaryConnection = getConnection("secondary-connection");
 可以指定连接名称以指示应该采用哪个连接的实体管理器。
 
 ```typescript
-import {getEntityManager} from "typeorm";
+import {getEntityManager} from "@typeorm/core";
 
 const manager = getEntityManager();
 // you can use manager methods now
@@ -79,11 +79,11 @@ const secondaryManager = getEntityManager("secondary-connection");
 // you can use secondary connection manager methods
 ```
 
-* `getRepository()` - Gets `Repository` for given entity from connection. 
+* `getRepository()` - Gets `Repository` for given entity from connection.
 可以指定连接名称以指示应该采用哪个连接的实体管理器。
 
 ```typescript
-import {getRepository} from "typeorm";
+import {getRepository} from "@typeorm/core";
 
 const userRepository = getRepository(User);
 // you can use repository methods now
@@ -92,11 +92,11 @@ const blogRepository = getRepository(Blog, "secondary-connection");
 // you can use secondary connection repository methods
 ```
 
-* `getTreeRepository()` - Gets `TreeRepository` for given entity from connection. 
+* `getTreeRepository()` - Gets `TreeRepository` for given entity from connection.
 可以指定连接名称以指示应该采用哪个连接的实体管理器。
 
 ```typescript
-import {getTreeRepository} from "typeorm";
+import {getTreeRepository} from "@typeorm/core";
 
 const userRepository = getTreeRepository(User);
 // 使用存储库方法
@@ -109,7 +109,7 @@ const blogRepository = getTreeRepository(Blog, "secondary-connection");
 可以指定连接名称以指示应该采用哪个连接的实体管理器。
 
 ```typescript
-import {getMongoRepository} from "typeorm";
+import {getMongoRepository} from "@typeorm/core";
 
 const userRepository = getMongoRepository(User);
 //使用存储库方法
@@ -294,7 +294,7 @@ const users = await connection.createQueryBuilder()
 ```
 
 * `createQueryRunner` - 创建一个用于管理和使用单个真实数据库连接的查询运行器。
-了解更多关于 [QueryRunner](./query-runner.md). 
+了解更多关于 [QueryRunner](./query-runner.md).
 
 ```typescript
 const queryRunner = connection.createQueryRunner();

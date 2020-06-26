@@ -1,4 +1,4 @@
-import {EntitySchema} from "../../../../../src/index";
+import { EntitySchema } from "@typeorm/core";
 
 export const PersonSchema = new EntitySchema<any>({
     name: "Person",
@@ -23,7 +23,7 @@ export const PersonSchema = new EntitySchema<any>({
         }
     },
     checks: [
-        { expression: `"FirstName" <> 'John' AND "LastName" <> 'Doe'` },
-        { expression: `"Age" > 18` }
+        {expression: `"FirstName" <> 'John' AND "LastName" <> 'Doe'`},
+        {expression: `"Age" > 18`}
     ]
 });

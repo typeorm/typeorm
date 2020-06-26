@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("other issues > joining empty relations", () => {
 
@@ -13,7 +13,7 @@ describe("other issues > joining empty relations", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should return empty array if its joined and nothing was found", () => Promise.all(connections.map(async function(connection) {
+    it("should return empty array if its joined and nothing was found", () => Promise.all(connections.map(async function (connection) {
 
         const post = new Post();
         post.title = "Hello Post";
@@ -35,7 +35,7 @@ describe("other issues > joining empty relations", () => {
 
     })));
 
-    it("should return empty array if its joined and nothing was found, but relations in empty results should be skipped", () => Promise.all(connections.map(async function(connection) {
+    it("should return empty array if its joined and nothing was found, but relations in empty results should be skipped", () => Promise.all(connections.map(async function (connection) {
 
         const post = new Post();
         post.title = "Hello Post";

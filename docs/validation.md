@@ -1,10 +1,10 @@
 # Using Validation
 
-To use validation use [class-validator](https://github.com/pleerock/class-validator). 
+To use validation use [class-validator](https://github.com/pleerock/class-validator).
 Example how to use class-validator with TypeORM:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 import {Contains, IsInt, Length, IsEmail, IsFQDN, IsDate, Min, Max} from "class-validator";
 
 @Entity()
@@ -12,7 +12,7 @@ export class Post {
 
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     @Length(10, 20)
     title: string;
@@ -45,7 +45,7 @@ export class Post {
 Validation:
 
 ```typescript
-import {getManager} from "typeorm";
+import {getManager} from "@typeorm/core";
 import {validate} from "class-validator";
 
 let post = new Post();
@@ -57,7 +57,7 @@ post.site = "googlecom"; // should not pass
 
 const errors = await validate(post);
 if (errors.length > 0) {
-    throw new Error(`Validation failed!`); 
+    throw new Error(`Validation failed!`);
 } else {
     await getManager().save(post);
 }

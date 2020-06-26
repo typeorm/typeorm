@@ -16,7 +16,7 @@
 例如:
 
 ```typescript
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { BaseEntity, Entity, PrimaryGeneratedColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class User extends BaseEntity {
@@ -62,7 +62,7 @@ const timber = await User.findOne({ firstName: "Timber", lastName: "Saw" });
 我们可以在`User`类中创建静态方法等函数：
 
 ```typescript
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { BaseEntity, Entity, PrimaryGeneratedColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class User extends BaseEntity {
@@ -106,7 +106,7 @@ const timber = await User.findByName("Timber", "Saw");
 例如:
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -149,7 +149,7 @@ const timber = await userRepository.findOne({ firstName: "Timber", lastName: "Sa
 我们可以在"custom repository"中创建这样的功能。
 
 ```typescript
-import { EntityRepository, Repository } from "typeorm";
+import { EntityRepository, Repository } from "@typeorm/core";
 import { User } from "../entity/User";
 
 @EntityRepository()

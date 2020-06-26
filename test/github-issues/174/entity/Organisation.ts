@@ -1,7 +1,5 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Contact} from "./Contact";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Contact } from "./Contact";
 
 @Entity()
 export class Organisation {

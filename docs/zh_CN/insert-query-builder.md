@@ -4,7 +4,7 @@
 例如：
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 
 await getConnection()
   .createQueryBuilder()
@@ -23,14 +23,14 @@ await getConnection()
 
 
 ```typescript
-import {getConnection} from "typeorm";
+import {getConnection} from "@typeorm/core";
 
 await getConnection()
     .createQueryBuilder()
     .insert()
     .into(User)
-    .values({ 
-        firstName: "Timber", 
+    .values({
+        firstName: "Timber",
         lastName: () => "CONCAT('S', 'A', 'W')"
     })
     .execute();

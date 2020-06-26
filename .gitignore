@@ -9,3 +9,42 @@ ormconfig.json
 ormlogs.log
 npm-debug.log
 /test/github-issues/799/tmp/*
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# compiled output
+/dist
+/tmp
+/temp
+/out-tsc
+
+# dependencies
+/node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/libpeerconnection.log
+yarn-error.log
+testem.log
+/typings
+.pnpm-store
+
+# System Files
+Thumbs.db
+ormconfig.json

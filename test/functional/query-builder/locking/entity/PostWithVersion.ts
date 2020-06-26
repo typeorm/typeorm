@@ -1,7 +1,4 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {VersionColumn} from "../../../../../src/decorator/columns/VersionColumn";
+import { Column, Entity, PrimaryGeneratedColumn, VersionColumn } from "@typeorm/core";
 
 @Entity()
 export class PostWithVersion {

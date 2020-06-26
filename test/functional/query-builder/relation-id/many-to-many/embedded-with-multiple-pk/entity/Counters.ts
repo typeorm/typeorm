@@ -1,9 +1,6 @@
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../../../../src/decorator/relations/JoinTable";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {Category} from "./Category";
-import {Subcounters} from "./Subcounters";
+import { Column, JoinTable, ManyToMany, PrimaryColumn } from "@typeorm/core";
+import { Category } from "./Category";
+import { Subcounters } from "./Subcounters";
 
 export class Counters {
 
@@ -20,7 +17,7 @@ export class Counters {
     favorites: number;
 
     @ManyToMany(type => Category, category => category.posts)
-    @JoinTable({ name: "counter_categories" })
+    @JoinTable({name: "counter_categories"})
     categories: Category[];
 
     @Column(() => Subcounters)

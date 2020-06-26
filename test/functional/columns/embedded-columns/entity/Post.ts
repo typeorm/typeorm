@@ -1,6 +1,4 @@
-import { Entity } from "../../../../../src/decorator/entity/Entity";
-import { Column } from "../../../../../src/decorator/columns/Column";
-import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 import { Counters } from "./Counters";
 
 @Entity()
@@ -18,10 +16,10 @@ export class Post {
     @Column(type => Counters)
     counters: Counters;
 
-    @Column(type => Counters, { prefix: "testCounters" })
+    @Column(type => Counters, {prefix: "testCounters"})
     otherCounters: Counters;
 
-    @Column(type => Counters, { prefix: "" })
+    @Column(type => Counters, {prefix: ""})
     countersWithoutPrefix: Counters;
 
 }

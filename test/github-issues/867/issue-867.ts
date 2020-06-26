@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { User } from "./entity/User";
+import { expect } from "chai";
 
 describe("github issues > #867 result of `findAndCount` is wrong when apply `skip` and `take` option", () => {
 
@@ -21,7 +21,7 @@ describe("github issues > #867 result of `findAndCount` is wrong when apply `ski
             return user;
         });
         await userRepository.save(users);
-        const [ foundUsers, totalCount ] = await userRepository.findAndCount({
+        const [foundUsers, totalCount] = await userRepository.findAndCount({
             skip: 1,
             take: 2,
             order: {

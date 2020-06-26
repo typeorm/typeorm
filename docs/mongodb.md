@@ -8,39 +8,39 @@
 ## MongoDB support
 
 TypeORM has basic MongoDB support.
-Most of TypeORM functionality is RDBMS-specific, 
+Most of TypeORM functionality is RDBMS-specific,
 this page contains all MongoDB-specific functionality documentation.
 
 ## Defining entities and columns
 
-Defining entities and columns is almost the same as in relational databases, 
-the main difference is that you must use `@ObjectIdColumn` 
+Defining entities and columns is almost the same as in relational databases,
+the main difference is that you must use `@ObjectIdColumn`
 instead of `@PrimaryColumn` or `@PrimaryGeneratedColumn`.
 
 Simple entity example:
 
 ```typescript
-import {Entity, ObjectID, ObjectIdColumn, Column} from "typeorm";
+import {Entity, ObjectID, ObjectIdColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class User {
-    
+
     @ObjectIdColumn()
     id: ObjectID;
-    
+
     @Column()
     firstName: string;
-    
+
     @Column()
     lastName: string;
-    
+
 }
 ```
 
 And this is how you bootstrap the app:
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import {createConnection, Connection} from "@typeorm/core";
 
 const connection: Connection = await createConnection({
     type: "mongodb",
@@ -56,73 +56,73 @@ Since MongoDB stores objects and objects inside objects (or documents inside doc
 you can do the same in TypeORM:
 
 ```typescript
-import {Entity, ObjectID, ObjectIdColumn, Column} from "typeorm";
+import {Entity, ObjectID, ObjectIdColumn, Column} from "@typeorm/core";
 
 export class Profile {
-    
+
     @Column()
     about: string;
-    
+
     @Column()
     education: string;
-    
+
     @Column()
     career: string;
-    
+
 }
 ```
 
 ```typescript
-import {Entity, ObjectID, ObjectIdColumn, Column} from "typeorm";
+import {Entity, ObjectID, ObjectIdColumn, Column} from "@typeorm/core";
 
 export class Photo {
-    
+
     @Column()
     url: string;
-    
+
     @Column()
     description: string;
-    
+
     @Column()
     size: number;
-    
+
     constructor(url: string, description: string, size: number) {
         this.url = url;
         this.description = description;
         this.size = size;
     }
-    
+
 }
 ```
 
 ```typescript
-import {Entity, ObjectID, ObjectIdColumn, Column} from "typeorm";
+import {Entity, ObjectID, ObjectIdColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class User {
-    
+
     @ObjectIdColumn()
     id: ObjectID;
-    
+
     @Column()
     firstName: string;
-    
+
     @Column()
     lastName: string;
-    
+
     @Column(type => Profile)
     profile: Profile;
-    
+
     @Column(type => Photo)
     photos: Photo[];
-    
+
 }
 ```
 
 If you save this entity:
 
 ```typescript
-import {getMongoManager} from "typeorm";
+import {getMongoManager} from "@typeorm/core";
 
 const user = new User();
 user.firstName = "Timber";
@@ -172,7 +172,7 @@ You can use the majority of methods inside the `EntityManager` (except for RDBMS
 For example:
 
 ```typescript
-import {getManager} from "typeorm";
+import {getManager} from "@typeorm/core";
 
 const manager = getManager(); // or connection.manager
 const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
@@ -181,7 +181,7 @@ const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw
 For MongoDB there is also a separate `MongoEntityManager` which extends `EntityManager`.
 
 ```typescript
-import {getMongoManager} from "typeorm";
+import {getMongoManager} from "@typeorm/core";
 
 const manager = getMongoManager(); // or connection.mongoManager
 const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
@@ -190,7 +190,7 @@ const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw
 Just like separate like `MongoEntityManager` there is a `MongoRepository` with extended `Repository`:
 
 ```typescript
-import {getMongoRepository} from "typeorm";
+import {getMongoRepository} from "@typeorm/core";
 
 const userRepository = getMongoRepository(User); // or connection.getMongoRepository
 const timber = await userRepository.findOne({ firstName: "Timber", lastName: "Saw" });
@@ -201,7 +201,7 @@ Use Advanced options in find():
 Equal:
 
 ```typescript
-import {getMongoRepository} from "typeorm";
+import {getMongoRepository} from "@typeorm/core";
 
 const userRepository = getMongoRepository(User);
 const timber = await userRepository.find({
@@ -214,7 +214,7 @@ const timber = await userRepository.find({
 LessThan:
 
 ```typescript
-import {getMongoRepository} from "typeorm";
+import {getMongoRepository} from "@typeorm/core";
 
 const userRepository = getMongoRepository(User);
 const timber = await userRepository.find({
@@ -227,7 +227,7 @@ const timber = await userRepository.find({
 In:
 
 ```typescript
-import {getMongoRepository} from "typeorm";
+import {getMongoRepository} from "@typeorm/core";
 
 const userRepository = getMongoRepository(User);
 const timber = await userRepository.find({
@@ -240,7 +240,7 @@ const timber = await userRepository.find({
 Not in:
 
 ```typescript
-import {getMongoRepository} from "typeorm";
+import {getMongoRepository} from "@typeorm/core";
 
 const userRepository = getMongoRepository(User);
 const timber = await userRepository.find({
@@ -253,7 +253,7 @@ firstName: {$not: {$in: ["Timber","Zhang"]}},
 Or:
 
 ```typescript
-import {getMongoRepository} from "typeorm";
+import {getMongoRepository} from "@typeorm/core";
 
 const userRepository = getMongoRepository(User);
 const timber = await userRepository.find({

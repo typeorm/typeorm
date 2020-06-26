@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { expect } from "chai";
 
 describe("transaction > return data from transaction", () => {
 
@@ -17,7 +17,7 @@ describe("transaction > return data from transaction", () => {
 
     it("should allow to return typed data from transaction", () => Promise.all(connections.map(async connection => {
 
-        const { postId, categoryId } = await connection.manager.transaction<{ postId: number, categoryId: number }>(async entityManager => {
+        const {postId, categoryId} = await connection.manager.transaction<{ postId: number, categoryId: number }>(async entityManager => {
 
             const post = new Post();
             post.title = "Post #1";
@@ -34,14 +34,14 @@ describe("transaction > return data from transaction", () => {
 
         });
 
-        const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
+        const post = await connection.manager.findOne(Post, {where: {title: "Post #1"}});
         expect(post).not.to.be.undefined;
         post!.should.be.eql({
             id: postId,
             title: "Post #1"
         });
 
-        const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
+        const category = await connection.manager.findOne(Category, {where: {name: "Category #1"}});
         expect(category).not.to.be.undefined;
         category!.should.be.eql({
             id: categoryId,
@@ -52,7 +52,7 @@ describe("transaction > return data from transaction", () => {
 
     it("should allow to return typed data from transaction using type inference", () => Promise.all(connections.map(async connection => {
 
-        const { postId, categoryId } = await connection.manager.transaction(async entityManager => {
+        const {postId, categoryId} = await connection.manager.transaction(async entityManager => {
 
             const post = new Post();
             post.title = "Post #1";
@@ -69,14 +69,14 @@ describe("transaction > return data from transaction", () => {
 
         });
 
-        const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
+        const post = await connection.manager.findOne(Post, {where: {title: "Post #1"}});
         expect(post).not.to.be.undefined;
         post!.should.be.eql({
             id: postId,
             title: "Post #1"
         });
 
-        const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
+        const category = await connection.manager.findOne(Category, {where: {name: "Category #1"}});
         expect(category).not.to.be.undefined;
         category!.should.be.eql({
             id: categoryId,

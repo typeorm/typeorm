@@ -6,14 +6,14 @@
 
 ## Defining Schemas
 
-You can define an entity and its columns right in the model, using decorators. 
+You can define an entity and its columns right in the model, using decorators.
 But some people prefer to define an entity and its columns inside separate files
 which are called "entity schemas" in TypeORM.
 
 Simple definition example:
 
 ```ts
-import {EntitySchema} from "typeorm";
+import {EntitySchema} from "@typeorm/core";
 
 export const CategoryEntity = new EntitySchema({
     name: "category",
@@ -33,7 +33,7 @@ export const CategoryEntity = new EntitySchema({
 Example with relations:
 
 ```ts
-import {EntitySchema} from "typeorm";
+import {EntitySchema} from "@typeorm/core";
 
 export const PostEntity = new EntitySchema({
     name: "post",
@@ -62,7 +62,7 @@ export const PostEntity = new EntitySchema({
 Complex example:
 
 ```ts
-import {EntitySchema} from "typeorm";
+import {EntitySchema} from "@typeorm/core";
 
 export const PersonSchema = new EntitySchema({
     name: "person",
@@ -115,7 +115,7 @@ export const PersonSchema = new EntitySchema({
 If you want to make your entity typesafe, you can define a model and specify it in schema definition:
 
 ```ts
-import {EntitySchema} from "typeorm";
+import {EntitySchema} from "@typeorm/core";
 
 export interface Category {
     id: number;
@@ -139,18 +139,18 @@ export const CategoryEntity = new EntitySchema<Category>({
 
 ## Extending Schemas
 
-When using the `Decorator` approach it is easy to `extend` basic columns to an abstract class and simply extend this. 
-For example, your `id`, `createdAt` and `updatedAt` columns may be defined in such a `BaseEntity`. For more details, see 
+When using the `Decorator` approach it is easy to `extend` basic columns to an abstract class and simply extend this.
+For example, your `id`, `createdAt` and `updatedAt` columns may be defined in such a `BaseEntity`. For more details, see
 the documentation on [concrete table inheritance](entity-inheritance.md#concrete-table-inheritance).
 
-When using the `EntitySchema` approach, this is not possible. However, you can use the `Spread Operator` (`...`) to your 
+When using the `EntitySchema` approach, this is not possible. However, you can use the `Spread Operator` (`...`) to your
 advantage.
 
-Reconsider the `Category` example from above. You may want to `extract` basic column descriptions and reuse it across 
+Reconsider the `Category` example from above. You may want to `extract` basic column descriptions and reuse it across
 your other schemas. This may be done in the following way:
 
 ```ts
-import {EntitySchemaColumnOptions} from "typeorm";
+import {EntitySchemaColumnOptions} from "@typeorm/core";
 
 export const BaseColumnSchemaPart = {
   id: {
@@ -177,7 +177,7 @@ Now you can use the `BaseColumnSchemaPart` in your other schema models, like thi
 export const CategoryEntity = new EntitySchema<Category>({
     name: "category",
     columns: {
-        ...BaseColumnSchemaPart,    
+        ...BaseColumnSchemaPart,
         // the CategoryEntity now has the defined id, createdAt, updatedAt columns!
         // in addition, the following NEW fields are defined
         name: {
@@ -192,7 +192,7 @@ Be sure to add the `extended` columns also to the `Category` interface (e.g., vi
 ## Using Schemas to Query / Insert Data
 
 Of course, you can use the defined schemas in your repositories or entity manager as you would use the decorators.
-Consider the previously defined `Category` example (with its `Interface` and `CategoryEntity` schema in order to get 
+Consider the previously defined `Category` example (with its `Interface` and `CategoryEntity` schema in order to get
 some data or manipulate the database.
 
 ```ts

@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Animal} from "./entity/Animal";
-import {NamingStrategyUnderTest} from "./naming/NamingStrategyUnderTest";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Animal } from "./entity/Animal";
+import { NamingStrategyUnderTest } from "./naming/NamingStrategyUnderTest";
 
 
 describe("github issues > #3847 FEATURE REQUEST - Naming strategy foreign key override name", () => {
@@ -24,7 +24,7 @@ describe("github issues > #3847 FEATURE REQUEST - Naming strategy foreign key ov
         await connection.getRepository(Animal).find();
 
         let metadata = connection.getMetadata(Animal);
-        
+
         expect(metadata.foreignKeys[0].name).to.eq("fk_animal_category_categoryId");
     })));
 });

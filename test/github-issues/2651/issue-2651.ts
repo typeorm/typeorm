@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { expect } from "chai";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
 
 describe("github issues > #2651 set shouldn't have update statements twice when UpdateDate is in use", () => {
 
@@ -28,7 +28,7 @@ describe("github issues > #2651 set shouldn't have update statements twice when 
             updatedAt: new Date()
         });
 
-        const loadedPost1 = await connection.manager.findOneOrFail(Post, { id: 1 });
+        const loadedPost1 = await connection.manager.findOneOrFail(Post, {id: 1});
         expect(loadedPost1.title).to.be.eql("updated post");
 
     })));

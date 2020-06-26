@@ -1,9 +1,9 @@
-import {expect} from "chai";
-import {Connection} from "../../../src/connection/Connection";
-import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../utils/test-utils";
-import {Dummy} from "./entity/Dummy";
-import {WrappedString} from "./wrapped-string";
-import {MemoryLogger} from "./memory-logger";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Dummy } from "./entity/Dummy";
+import { WrappedString } from "./wrapped-string";
+import { MemoryLogger } from "./memory-logger";
 
 describe("github issues > #2703 Column with transformer is not normalized for update", () => {
     let connections: Connection[];

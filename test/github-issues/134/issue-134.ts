@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("github issues > #134 Error TIME is converted to 'HH-mm' instead of 'HH:mm", () => {
 
@@ -26,7 +26,7 @@ describe("github issues > #134 Error TIME is converted to 'HH-mm' instead of 'HH
         const savedPost = await postRepository.save(post);
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.id=:id", { id: savedPost.id })
+            .where("post.id=:id", {id: savedPost.id})
             .getOne();
 
         // create a correct minutes:hours:seconds string

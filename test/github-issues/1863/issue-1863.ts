@@ -1,7 +1,6 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Table} from "../../../src";
+import { Connection, Table } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
 
 describe("github issues > #1863 createTable.uniques doesn't work when the columnNames only has one item", () => {
 

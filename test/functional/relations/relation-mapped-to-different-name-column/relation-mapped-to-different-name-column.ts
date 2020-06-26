@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {PostDetails} from "./entity/PostDetails";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { PostDetails } from "./entity/PostDetails";
 
 describe.skip("relations > relation mapped to relation with different name (#56)", () => { // skipped because of CI error. todo: needs investigation
 

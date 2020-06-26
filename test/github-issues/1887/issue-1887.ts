@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Error} from "./entity/Error";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { Error } from "./entity/Error";
 
 describe("github issues > #1887 Having problems with UNIQUEIDENTIFIERS", () => {
 

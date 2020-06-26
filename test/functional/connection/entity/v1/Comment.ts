@@ -1,13 +1,8 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
-import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
-import {Index} from "../../../../../src/decorator/Index";
-import {Guest} from "./Guest";
+import { Column, Entity, Index, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Guest } from "./Guest";
 
 @Entity()
-@Index("author_and_title_unique", ["author", "title"], { unique: true })
+@Index("author_and_title_unique", ["author", "title"], {unique: true})
 export class Comment {
 
     @PrimaryGeneratedColumn()

@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {expect} from "chai";
-import {Counters} from "./entity/Counters";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { expect } from "chai";
+import { Counters } from "./entity/Counters";
 
 describe("persistence > partial persist", () => {
 
@@ -68,7 +68,7 @@ describe("persistence > partial persist", () => {
         loadedPost!.counters.commentCount.should.be.equal(2);
 
         // now update partially
-        await postRepository.update({ title: "All about animals" }, { title: "All about bears" });
+        await postRepository.update({title: "All about animals"}, {title: "All about bears"});
 
         // now check if update worked as expected, title is updated and all other columns are not touched
         const loadedPostAfterTitleUpdate = await postRepository.findOne(1, {
@@ -91,7 +91,7 @@ describe("persistence > partial persist", () => {
         loadedPostAfterTitleUpdate!.counters.commentCount.should.be.equal(2);
 
         // now update in partial embeddable column
-        await postRepository.update({ id: 1 }, { counters: { stars: 10 } });
+        await postRepository.update({id: 1}, {counters: {stars: 10}});
 
         // now check if update worked as expected, stars counter is updated and all other columns are not touched
         const loadedPostAfterStarsUpdate = await postRepository.findOne(1, {
@@ -114,7 +114,7 @@ describe("persistence > partial persist", () => {
         loadedPostAfterStarsUpdate!.counters.commentCount.should.be.equal(2);
 
         // now update in relational column
-        await postRepository.save({ id: 1, categories: [{ id: 1, name: "Bears" }] });
+        await postRepository.save({id: 1, categories: [{id: 1, name: "Bears"}]});
 
         // now check if update worked as expected, name of category is updated and all other columns are not touched
         const loadedPostAfterCategoryUpdate = await postRepository.findOne(1, {

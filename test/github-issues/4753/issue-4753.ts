@@ -1,5 +1,4 @@
-import { getConnectionManager } from "../../../src";
-import { Connection } from "../../../src/connection/Connection";
+import { Connection, getConnectionManager } from "@typeorm/core";
 import { closeTestingConnections } from "../../utils/test-utils";
 import { User } from "./entity/User";
 

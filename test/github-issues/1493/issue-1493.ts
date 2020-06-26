@@ -1,4 +1,4 @@
-import { DriverUtils } from "../../../src/driver/DriverUtils";
+import { DriverUtils } from "@typeorm/core";
 import { expect } from "chai";
 // import {exec} from "child_process";
 

@@ -11,7 +11,7 @@
 例如:
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 
 await getConnection().transaction(transactionalEntityManager => {});
 ```
@@ -19,7 +19,7 @@ await getConnection().transaction(transactionalEntityManager => {});
 or
 
 ```typescript
-import { getManager } from "typeorm";
+import { getManager } from "@typeorm/core";
 
 await getManager().transaction(transactionalEntityManager => {});
 ```
@@ -27,7 +27,7 @@ await getManager().transaction(transactionalEntityManager => {});
 你想要在事务中运行的所有内容都必须在回调中执行：
 
 ```typescript
-import { getManager } from "typeorm";
+import { getManager } from "@typeorm/core";
 
 await getManager().transaction(async transactionalEntityManager => {
   await transactionalEntityManager.save(users);
@@ -45,7 +45,7 @@ await getManager().transaction(async transactionalEntityManager => {
 指定事务的隔离级别可以通过将其作为第一个参数提供来完成：
 
 ```typescript
-import { getManager } from "typeorm";
+import { getManager } from "@typeorm/core";
 
 await getManager().transaction("SERIALIZABLE", transactionalEntityManager => {});
 ```
@@ -107,7 +107,7 @@ save(user: User, @TransactionRepository(User) userRepository: Repository<User>) 
 例如：
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 
 // 获取连接并创建新的queryRunner
 const connection = getConnection();

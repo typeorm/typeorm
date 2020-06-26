@@ -1,5 +1,5 @@
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {EditHistory} from "./EditHistory";
+import { Column } from "@typeorm/core";
+import { EditHistory } from "./EditHistory";
 
 export class ExtraInformation {
 

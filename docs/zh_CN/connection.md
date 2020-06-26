@@ -22,7 +22,7 @@ TypeORM 的`Connection`不会像看起来那样设置单个数据库连接，而
 `createConnection` 创建单个连接：
 
 ```typescript
-import { createConnection, Connection } from "typeorm";
+import { createConnection, Connection } from "@typeorm/core";
 
 const connection = await createConnection({
   type: "mysql",
@@ -46,7 +46,7 @@ createConnection({
 `createConnections` 创建多个连接:
 
 ```typescript
-import { createConnections, Connection } from "typeorm";
+import { createConnections, Connection } from "@typeorm/core";
 
 const connections = await createConnections([
   {
@@ -73,7 +73,7 @@ const connections = await createConnections([
 这两种方式都根据你传递的连接选项创建`Connection`，并调用`connect`方法。另外你也可以在项目的根目录中创建一个`ormconfig.json`文件，`createConnection`和`createConnections`将自动从此文件中读取连接选项。项目的根目录与`node_modules`目录的级别相同。
 
 ```typescript
-import { createConnection, createConnections, Connection } from "typeorm";
+import { createConnection, createConnections, Connection } from "@typeorm/core";
 
 // createConnection将从ormconfig.json / ormconfig.js / ormconfig.yml / ormconfig.env / ormconfig.xml 文件或特殊环境变量中加载连接选项
 const connection: Connection = await createConnection();
@@ -93,7 +93,7 @@ const connections: Connection[] = await createConnections();
 创建连接后，你可以使用`getConnection`函数从应用程序中的任何位置使用它：
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 
 // 可以在调用createConnection后使用并解析
 const connection = getConnection();
@@ -109,7 +109,7 @@ const secondConnection = getConnection("test2-connection");
 你可以使用`ConnectionManager`类创建连接。例如：
 
 ```typescript
-import { getConnectionManager, ConnectionManager, Connection } from "typeorm";
+import { getConnectionManager, ConnectionManager, Connection } from "@typeorm/core";
 
 const connectionManager = getConnectionManager();
 const connection = connectionManager.create({
@@ -126,7 +126,7 @@ await connection.connect(); // 执行连接
 这不是常规创建连接的方法，但它可能对某些用户有用。例如，想要创建连接并存储其实例,同时控制何时建立实际"connection"。你还可以创建和维护自己的`ConnectionManager`：
 
 ```typescript
-import { getConnectionManager, ConnectionManager, Connection } from "typeorm";
+import { getConnectionManager, ConnectionManager, Connection } from "@typeorm/core";
 
 const connectionManager = new ConnectionManager();
 const connection = connectionManager.create({
@@ -149,7 +149,7 @@ await connection.connect(); // 执行连接
 设置连接后，可以使用`getConnection`函数在应用程序的任何位置使用它：
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 import { User } from "../entity/User";
 
 export class UserController {
@@ -168,7 +168,7 @@ export class UserController {
 但一般来说，你不要太多使用`Connection`。大多数情况下，你只需创建连接并使用`getRepository()`和`getManager()`来访问连接的管理器和存储库，而无需直接使用连接对象：
 
 ```typescript
-import { getManager, getRepository } from "typeorm";
+import { getManager, getRepository } from "@typeorm/core";
 import { User } from "../entity/User";
 
 export class UserController {

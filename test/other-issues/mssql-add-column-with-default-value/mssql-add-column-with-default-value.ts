@@ -1,6 +1,5 @@
-
-import { createTestingConnections, closeTestingConnections } from "../../utils/test-utils";
-import { Connection } from "../../../src";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
 import { Post } from "./entity/Post-Succeed";
 
 describe("mssql -> add column to existing table", () => {
@@ -13,7 +12,7 @@ describe("mssql -> add column to existing table", () => {
         }));
         await Promise.all(connections.map(async connection => {
             await connection.synchronize(true);
-            await connection.getRepository("Post").insert({ title: "test" });
+            await connection.getRepository("Post").insert({title: "test"});
             await connection.close();
         }));
     });

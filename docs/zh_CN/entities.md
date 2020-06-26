@@ -23,7 +23,7 @@
 你可以通过定义一个新类来创建一个实体，并用`@Entity()`来标记：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -60,7 +60,7 @@ export class User {
 每个实体都必须在连接选项中注册：
 
 ```typescript
-import { createConnection, Connection } from "typeorm";
+import { createConnection, Connection } from "@typeorm/core";
 import { User } from "./entity/User";
 
 const connection: Connection = await createConnection({
@@ -77,7 +77,7 @@ const connection: Connection = await createConnection({
 或者你可以指定包含所有实体的整个目录， 该目录下所有实体都将被加载：
 
 ```typescript
-import { createConnection, Connection } from "typeorm";
+import { createConnection, Connection } from "@typeorm/core";
 
 const connection: Connection = await createConnection({
     type: "mysql",
@@ -112,7 +112,7 @@ const connection: Connection = await createConnection({
 下面的示例将使用`int`类型创建 id，你必须在保存之前手动分配。
 
 ```typescript
-import { Entity, PrimaryColumn } from "typeorm";
+import { Entity, PrimaryColumn } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -124,7 +124,7 @@ export class User {
 -   `@PrimaryGeneratedColumn()` 创建一个主列，该值将使用自动增量值自动生成。 它将使用`auto-increment` /`serial` /`sequence`创建`int`列（取决于数据库）。 你不必在保存之前手动分配其值，该值将会自动生成。
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -136,7 +136,7 @@ export class User {
 -   `@PrimaryGeneratedColumn("uuid")` 创建一个主列，该值将使用`uuid`自动生成。 Uuid 是一个独特的字符串 id。 你不必在保存之前手动分配其值，该值将自动生成。
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -148,7 +148,7 @@ export class User {
 你也可以拥有复合主列：
 
 ```typescript
-import { Entity, PrimaryColumn } from "typeorm";
+import { Entity, PrimaryColumn } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -565,7 +565,7 @@ TypeORM 支持存储树结构的 Adjacency 列表和 Closure 表模式。
 例如:
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from "@typeorm/core";
 
 @Entity()
 export class Category {
@@ -596,7 +596,7 @@ closure 表以特殊方式在单独的表中存储父和子之间的关系。
 例如:
 
 ```typescript
-import { Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn } from "typeorm";
+import { Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn } from "@typeorm/core";
 
 @Entity()
 @Tree("closure-table")

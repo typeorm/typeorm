@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Student} from "./entity/Student";
-import {Employee} from "./entity/Employee";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Student } from "./entity/Student";
+import { Employee } from "./entity/Employee";
 
 describe("github issues > #131 Error with single table inheritance query without additional conditions", () => {
 

@@ -87,14 +87,14 @@ typeorm migration:create -n PostRefactoring
 ```
 
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
-After you run the command you can see a new file generated in the "migration" directory 
+After you run the command you can see a new file generated in the "migration" directory
 named `{TIMESTAMP}-PostRefactoring.ts` where `{TIMESTAMP}` is the current timestamp when the migration was generated.
 Now you can open the file and add your migration sql queries there.
 
 You should see the following content inside your migration:
 
 ```typescript
-import {MigrationInterface, QueryRunner} from "typeorm";
+import {MigrationInterface, QueryRunner} from "@typeorm/core";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
 
@@ -122,7 +122,7 @@ Learn more about [query runner](./query-runner.md).
 Let's see what the migration looks like with our `Post` changes:
 
 ```typescript
-import {MigrationInterface, QueryRunner} from "typeorm";
+import {MigrationInterface, QueryRunner} from "@typeorm/core";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
 
@@ -144,7 +144,7 @@ Once you have a migration to run on production, you can run them using a CLI com
 typeorm migration:run
 ```
 
-**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files. The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files. 
+**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files. The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files.
 
 Example with `ts-node`:
 ```
@@ -161,8 +161,8 @@ If for some reason you want to revert the changes, you can run:
 typeorm migration:revert
 ```
 
-This command will execute `down` in the latest executed migration. 
-If you need to revert multiple migrations you must call this command multiple times. 
+This command will execute `down` in the latest executed migration.
+If you need to revert multiple migrations you must call this command multiple times.
 
 ## Generating migrations
 
@@ -178,7 +178,7 @@ typeorm migration:generate -n PostRefactoring
 And it will generate a new migration called `{TIMESTAMP}-PostRefactoring.ts` with the following content:
 
 ```typescript
-import {MigrationInterface, QueryRunner} from "typeorm";
+import {MigrationInterface, QueryRunner} from "@typeorm/core";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
 
@@ -210,7 +210,7 @@ In order to use an API to change a database schema you can use `QueryRunner`.
 Example:
 
 ```ts
-import {MigrationInterface, QueryRunner, Table, TableIndex, TableColumn, TableForeignKey } from "typeorm";
+import {MigrationInterface, QueryRunner, Table, TableIndex, TableColumn, TableForeignKey } from "@typeorm/core";
 
 export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
 
@@ -383,7 +383,7 @@ Drops database.
 createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void>
 ```
 
-- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter. 
+- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
 If schema path passed, it will create schema in specified database
 - `ifNotExist` - skips creation if `true`, otherwise throws error if schema already exist
 
@@ -395,7 +395,7 @@ Creates a new table schema.
 dropSchema(schemaPath: string, ifExist?: boolean, isCascade?: boolean): Promise<void>
 ```
 
-- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter. 
+- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
 If schema path passed, it will drop schema in specified database
 - `ifExist` - skips deletion if `true`, otherwise throws error if schema was not found
 - `isCascade` - If `true`, automatically drop objects (tables, functions, etc.) that are contained in the schema.

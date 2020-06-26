@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Author} from "./entity/Author";
-import {Abbreviation} from "./entity/Abbreviation";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Author } from "./entity/Author";
+import { Abbreviation } from "./entity/Abbreviation";
 
 describe("github issues > #215 invalid replacements of join conditions", () => {
 

@@ -1,8 +1,5 @@
-import {BaseEntity} from "../../../../src";
-import {Column} from "../../../../src";
-import {PrimaryGeneratedColumn} from "../../../../src";
-import {Entity} from "../../../../src";
-import {Contact} from "./Contact";
+import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Contact } from "./Contact";
 
 @Entity()
 export class Person extends BaseEntity {
@@ -13,6 +10,6 @@ export class Person extends BaseEntity {
     contact: Contact;
 
     // I added the unique: true just for the sake of the example
-    @Column({ unique: true })
+    @Column({unique: true})
     status: string;
 }

@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {User} from "./entity/User";
-import {expect} from "chai";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { User } from "./entity/User";
+import { expect } from "chai";
 
 describe("github issues > #1680 Delete & Update applies to all entities in table if criteria is undefined or empty", () => {
 
@@ -48,13 +48,13 @@ describe("github issues > #1680 Delete & Update applies to all entities in table
 
             expect(error).to.be.instanceof(Error);
         }
-        
+
         // Ensure normal deleting works
         await connection.manager.delete(User, 3);
-        
+
         // Ensure normal updating works
-        await connection.manager.update(User, 2, { name: "User B Updated" } );
-        
+        await connection.manager.update(User, 2, {name: "User B Updated"});
+
         // All users should still exist except for User C
         await connection.manager.find(User).should.eventually.eql([{
             id: 1,

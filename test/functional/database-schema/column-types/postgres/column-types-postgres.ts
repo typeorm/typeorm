@@ -1,9 +1,13 @@
 import "reflect-metadata";
-import {PostWithOptions} from "./entity/PostWithOptions";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {PostWithoutTypes} from "./entity/PostWithoutTypes";
-import {Post} from "./entity/Post";
+import { PostWithOptions } from "./entity/PostWithOptions";
+import { Connection } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { PostWithoutTypes } from "./entity/PostWithoutTypes";
+import { Post } from "./entity/Post";
 
 describe("database schema > column types > postgres", () => {
 
@@ -77,8 +81,8 @@ describe("database schema > column types > postgres", () => {
         post.varbit = "100";
         post.bitVarying = "00";
         post.uuid = "0e37df36-f698-11e6-8dd4-cb9ced3df976";
-        post.json = { id: 1, name: "Post" };
-        post.jsonb = { id: 1, name: "Post" };
+        post.json = {id: 1, name: "Post"};
+        post.jsonb = {id: 1, name: "Post"};
         post.int4range = "[10,20)";
         post.int8range = "[200000,500000)";
         post.numrange = "(10.5,20.2)";
@@ -88,7 +92,7 @@ describe("database schema > column types > postgres", () => {
         post.xml = "<book><title>Manual</title><chapter>...</chapter></book>";
         post.array = [1, 2, 3];
         post.simpleArray = ["A", "B", "C"];
-        post.simpleJson = { param: "VALUE" };
+        post.simpleJson = {param: "VALUE"};
         post.simpleEnum = "A";
         await postRepository.save(post);
 
@@ -133,13 +137,13 @@ describe("database schema > column types > postgres", () => {
         loadedPost.boolean.should.be.equal(post.boolean);
         loadedPost.bool.should.be.equal(post.bool);
         loadedPost.enum.should.be.equal(post.enum);
-        loadedPost.point.should.be.eql({ x: 10, y: 20 });
+        loadedPost.point.should.be.eql({x: 10, y: 20});
         loadedPost.line.should.be.equal(post.line);
         loadedPost.lseg.should.be.equal("[(1,2),(3,4)]");
         // loadedPost.box.should.be.equal(post.box); // postgres swaps coordinates in database. This one will be saved like (3,4),(1,2)
         loadedPost.path.should.be.equal(post.path);
         loadedPost.polygon.should.be.equal(post.polygon);
-        loadedPost.circle.should.be.eql({ x: 4, y: 5, radius: 12 });
+        loadedPost.circle.should.be.eql({x: 4, y: 5, radius: 12});
         loadedPost.cidr.should.be.equal(post.cidr);
         loadedPost.inet.should.be.equal(post.inet);
         loadedPost.macaddr.should.be.equal(post.macaddr);

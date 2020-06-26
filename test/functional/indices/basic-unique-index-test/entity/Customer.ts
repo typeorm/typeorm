@@ -1,10 +1,7 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Index} from "../../../../../src/decorator/Index";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
+import { Column, Entity, Index, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
-@Index("index_name_english", ["nameEnglish"], { unique: true })
+@Index("index_name_english", ["nameEnglish"], {unique: true})
 export class Customer {
 
     @PrimaryGeneratedColumn()

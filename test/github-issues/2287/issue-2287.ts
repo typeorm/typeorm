@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import { Connection } from "../../../src/connection/Connection";
+import { Connection } from "@typeorm/core";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import {Post} from "./entity/Post";
+import { Post } from "./entity/Post";
 
 describe("github issues > #2287 - QueryBuilder IN and ANY Fail with .where - Postgres", () => {
 
@@ -27,22 +27,22 @@ describe("github issues > #2287 - QueryBuilder IN and ANY Fail with .where - Pos
         const result1 = await connection
             .getRepository(Post)
             .createQueryBuilder("post") // you shall assign an alias
-            .where(":id = ANY(post.skill_id_array)", { id: 1 }) // and use that alias everywhere in your query builder
+            .where(":id = ANY(post.skill_id_array)", {id: 1}) // and use that alias everywhere in your query builder
             .getMany();
 
         result1.should.be.eql([
-            { id: 1, skill_id_array: [1, 2] },
+            {id: 1, skill_id_array: [1, 2]},
         ]);
 
         const result2 = await connection
             .getRepository(Post)
             .createQueryBuilder("post") // you shall assign an alias
-            .where(":id = ANY(post.skill_id_array)", { id: 2 }) // and use that alias everywhere in your query builder
+            .where(":id = ANY(post.skill_id_array)", {id: 2}) // and use that alias everywhere in your query builder
             .getMany();
 
         result2.should.be.eql([
-            { id: 1, skill_id_array: [1, 2] },
-            { id: 2, skill_id_array: [2] },
+            {id: 1, skill_id_array: [1, 2]},
+            {id: 2, skill_id_array: [2]},
         ]);
     })));
 });

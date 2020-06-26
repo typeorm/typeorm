@@ -1,7 +1,4 @@
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {Generated} from "../../../../../src/decorator/Generated";
+import { Column, Entity, Generated, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {

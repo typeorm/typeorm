@@ -4,15 +4,15 @@ import {
     createTestingConnections,
     reloadTestingDatabases
 } from "../../../../../utils/test-utils";
-import {Connection} from "../../../../../../src/connection/Connection";
-import {Student} from "./entity/Student";
-import {Teacher} from "./entity/Teacher";
-import {Accountant} from "./entity/Accountant";
-import {Employee} from "./entity/Employee";
-import {Person} from "./entity/Person";
-import {Faculty} from "./entity/Faculty";
-import {Specialization} from "./entity/Specialization";
-import {Department} from "./entity/Department";
+import { Connection } from "@typeorm/core";
+import { Student } from "./entity/Student";
+import { Teacher } from "./entity/Teacher";
+import { Accountant } from "./entity/Accountant";
+import { Employee } from "./entity/Employee";
+import { Person } from "./entity/Person";
+import { Faculty } from "./entity/Faculty";
+import { Specialization } from "./entity/Specialization";
+import { Department } from "./entity/Department";
 
 describe("table-inheritance > single-table > relations > one-to-many", () => {
 
@@ -77,7 +77,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
         let loadedStudent = await connection.manager
             .createQueryBuilder(Student, "student")
             .leftJoinAndSelect("student.faculties", "faculty")
-            .where("student.name = :name", { name: "Alice" })
+            .where("student.name = :name", {name: "Alice"})
             .orderBy("student.id, faculty.id")
             .getOne();
 
@@ -90,10 +90,10 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
 
         let loadedTeacher = await connection.manager
             .createQueryBuilder(Teacher, "teacher")
-                .leftJoinAndSelect("teacher.specializations", "specialization")
-                .where("teacher.name = :name", { name: "Mr. Garrison" })
-                .orderBy("teacher.id, specialization.id")
-                .getOne();
+            .leftJoinAndSelect("teacher.specializations", "specialization")
+            .where("teacher.name = :name", {name: "Mr. Garrison"})
+            .orderBy("teacher.id, specialization.id")
+            .getOne();
 
         loadedTeacher!.should.have.all.keys("id", "name", "specializations", "salary");
         loadedTeacher!.id.should.equal(2);
@@ -106,7 +106,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
         let loadedAccountant = await connection.manager
             .createQueryBuilder(Accountant, "accountant")
             .leftJoinAndSelect("accountant.departments", "department")
-            .where("accountant.name = :name", { name: "Mr. Burns" })
+            .where("accountant.name = :name", {name: "Mr. Burns"})
             .orderBy("accountant.id, department.id")
             .getOne();
 

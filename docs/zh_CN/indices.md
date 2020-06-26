@@ -13,7 +13,7 @@
 例如：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -33,7 +33,7 @@ export class User {
 还可以指定索引名称：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -55,7 +55,7 @@ export class User {
 要创建唯一索引，需要在索引选项中指定`{unique：true}`：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -78,7 +78,7 @@ export class User {
 例如：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "@typeorm/core";
 
 @Entity()
 @Index(["firstName", "lastName"])

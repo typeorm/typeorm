@@ -1,13 +1,13 @@
 import "reflect-metadata";
-import {expect} from "chai";
+import { expect } from "chai";
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
     sleep
 } from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {User} from "./entity/User";
+import { Connection } from "@typeorm/core";
+import { User } from "./entity/User";
 
 describe("query builder > cache", () => {
 
@@ -49,7 +49,7 @@ describe("query builder > cache", () => {
         // select for the first time with caching enabled
         const users1 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: true })
+            .where("user.isAdmin = :isAdmin", {isAdmin: true})
             .cache(true)
             .getMany();
         expect(users1.length).to.be.equal(1);
@@ -64,14 +64,14 @@ describe("query builder > cache", () => {
         // without cache it must return really how many there entities are
         const users2 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: true })
+            .where("user.isAdmin = :isAdmin", {isAdmin: true})
             .getMany();
         expect(users2.length).to.be.equal(2);
 
         // but with cache enabled it must not return newly inserted entity since cache is not expired yet
         const users3 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: true })
+            .where("user.isAdmin = :isAdmin", {isAdmin: true})
             .cache(true)
             .getMany();
         expect(users3.length).to.be.equal(1);
@@ -82,7 +82,7 @@ describe("query builder > cache", () => {
         // now, when our cache has expired we check if we have new user inserted even with cache enabled
         const users4 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: true })
+            .where("user.isAdmin = :isAdmin", {isAdmin: true})
             .cache(true)
             .getMany();
         expect(users4.length).to.be.equal(2);
@@ -113,7 +113,7 @@ describe("query builder > cache", () => {
         // select for the first time with caching enabled
         const users1 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: false })
+            .where("user.isAdmin = :isAdmin", {isAdmin: false})
             .skip(1)
             .take(5)
             .orderBy("user.id")
@@ -131,7 +131,7 @@ describe("query builder > cache", () => {
         // without cache it must return really how many there entities are
         const users2 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: false })
+            .where("user.isAdmin = :isAdmin", {isAdmin: false})
             .skip(1)
             .take(5)
             .orderBy("user.id")
@@ -141,7 +141,7 @@ describe("query builder > cache", () => {
         // but with cache enabled it must not return newly inserted entity since cache is not expired yet
         const users3 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: false })
+            .where("user.isAdmin = :isAdmin", {isAdmin: false})
             .skip(1)
             .take(5)
             .cache(true)
@@ -155,7 +155,7 @@ describe("query builder > cache", () => {
         // now, when our cache has expired we check if we have new user inserted even with cache enabled
         const users4 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: false })
+            .where("user.isAdmin = :isAdmin", {isAdmin: false})
             .skip(1)
             .take(5)
             .cache(true)
@@ -189,7 +189,7 @@ describe("query builder > cache", () => {
         // select for the first time with caching enabled
         const users1 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: false })
+            .where("user.isAdmin = :isAdmin", {isAdmin: false})
             .skip(1)
             .take(5)
             .cache("user_admins", 2000)
@@ -207,7 +207,7 @@ describe("query builder > cache", () => {
         // without cache it must return really how many there entities are
         const users2 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: false })
+            .where("user.isAdmin = :isAdmin", {isAdmin: false})
             .skip(1)
             .take(5)
             .orderBy("user.id")
@@ -220,7 +220,7 @@ describe("query builder > cache", () => {
         // but with cache enabled it must not return newly inserted entity since cache is not expired yet
         const users3 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: false })
+            .where("user.isAdmin = :isAdmin", {isAdmin: false})
             .skip(1)
             .take(5)
             .orderBy("user.id")
@@ -234,7 +234,7 @@ describe("query builder > cache", () => {
         // now, when our cache has expired we check if we have new user inserted even with cache enabled
         const users4 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: false })
+            .where("user.isAdmin = :isAdmin", {isAdmin: false})
             .skip(1)
             .take(5)
             .orderBy("user.id")
@@ -268,7 +268,7 @@ describe("query builder > cache", () => {
         // select for the first time with caching enabled
         const users1 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: true })
+            .where("user.isAdmin = :isAdmin", {isAdmin: true})
             .cache(true)
             .getCount();
         expect(users1).to.be.equal(1);
@@ -283,14 +283,14 @@ describe("query builder > cache", () => {
         // without cache it must return really how many there entities are
         const users2 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: true })
+            .where("user.isAdmin = :isAdmin", {isAdmin: true})
             .getCount();
         expect(users2).to.be.equal(2);
 
         // but with cache enabled it must not return newly inserted entity since cache is not expired yet
         const users3 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: true })
+            .where("user.isAdmin = :isAdmin", {isAdmin: true})
             .cache(true)
             .getCount();
         expect(users3).to.be.equal(1);
@@ -301,7 +301,7 @@ describe("query builder > cache", () => {
         // now, when our cache has expired we check if we have new user inserted even with cache enabled
         const users4 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: true })
+            .where("user.isAdmin = :isAdmin", {isAdmin: true})
             .cache(true)
             .getCount();
         expect(users4).to.be.equal(2);

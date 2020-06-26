@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
-import {User} from "./entity/User";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { PostgresDriver } from "@typeorm/driver-postgres";
+import { User } from "./entity/User";
+import { expect } from "chai";
 
 describe("github issues > #2067 Unhandled promise rejection warning on postgres connection issues", () => {
 
@@ -21,8 +21,8 @@ describe("github issues > #2067 Unhandled promise rejection warning on postgres 
         const connectionFailureMessage = "Test error to simulate a connection error";
 
         if (connection.driver instanceof PostgresDriver) {
-          connection.driver.obtainMasterConnection = () => Promise.reject<any>(new Error(connectionFailureMessage));
-          connection.driver.obtainSlaveConnection = () => Promise.reject<any>(new Error(connectionFailureMessage));
+            connection.driver.obtainMasterConnection = () => Promise.reject<any>(new Error(connectionFailureMessage));
+            connection.driver.obtainSlaveConnection = () => Promise.reject<any>(new Error(connectionFailureMessage));
         }
 
         const repository = connection.getRepository(User);

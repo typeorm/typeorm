@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Post} from "./entity/Post";
-import {Connection} from "../../../src/connection/Connection";
-import {createTestingConnections} from "../../utils/test-utils";
+import { expect } from "chai";
+import { Post } from "./entity/Post";
+import { Connection } from "@typeorm/core";
+import { createTestingConnections } from "../../utils/test-utils";
 
 describe("sqljs driver > autosave", () => {
     let connections: Connection[];
@@ -34,7 +34,7 @@ describe("sqljs driver > autosave", () => {
         await connection.createQueryBuilder().insert().into(Post).values(posts).execute();
         await connection.createQueryBuilder().update(Post).set({title: "Many posts"}).execute();
         await connection.createQueryBuilder().delete().from(Post).where("title = ?", {title: "third post"}).execute();
-        
+
         const repository = connection.getRepository(Post);
         let post = new Post();
         post.title = "A post";

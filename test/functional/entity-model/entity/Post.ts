@@ -1,9 +1,5 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {BaseEntity} from "../../../../src/repository/BaseEntity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {ManyToMany, JoinTable} from "../../../../src";
-import {Category} from "./Category";
+import { BaseEntity, Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Post extends BaseEntity {

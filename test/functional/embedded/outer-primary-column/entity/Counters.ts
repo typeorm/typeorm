@@ -1,5 +1,4 @@
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
+import { Column, PrimaryColumn } from "@typeorm/core";
 
 export class Counters {
 

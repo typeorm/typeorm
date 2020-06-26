@@ -1,7 +1,5 @@
-import {AbstractRepository} from "../../../../../src/repository/AbstractRepository";
-import {Post} from "../entity/Post";
-import {EntityManager} from "../../../../../src/entity-manager/EntityManager";
-import {EntityRepository} from "../../../../../src/decorator/EntityRepository";
+import { AbstractRepository, EntityManager, EntityRepository } from "@typeorm/core";
+import { Post } from "../entity/Post";
 
 @EntityRepository()
 export class PostRepository extends AbstractRepository<Post> {

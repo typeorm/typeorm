@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Game} from "./entity/Game";
-import {Platform} from "./entity/Platform";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Game } from "./entity/Game";
+import { Platform } from "./entity/Platform";
+import { expect } from "chai";
 
 describe("github issues > #163 ManyToMany relation : Cannot read property 'joinColumnName' of undefined", () => {
 
@@ -38,7 +38,7 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
 
         const loadedPlatform = await connection
             .getRepository(Platform)
-            .findOne({ where: { slug: "windows" } });
+            .findOne({where: {slug: "windows"}});
 
         let jediAcademy = new Game();
         jediAcademy.name = "SW Jedi Academy";
@@ -52,7 +52,7 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
             .getRepository(Platform)
             .createQueryBuilder("platform")
             .leftJoinAndSelect("platform.games", "game")
-            .where("platform.slug=:slug", { slug: "windows" })
+            .where("platform.slug=:slug", {slug: "windows"})
             .orderBy("platform.id")
             .addOrderBy("game.id")
             .getOne();

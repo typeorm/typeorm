@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 // todo: fix this test
 
@@ -25,7 +25,7 @@ describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not 
         // persist
         await connection.manager.save(post1);
 
-        const loadedPosts1 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
+        const loadedPosts1 = await connection.manager.findOne(Post, {where: {title: "Hello Post #1"}});
         expect(loadedPosts1!).not.to.be.undefined;
 
         // loadedPosts1!.date.toISOString().should.be.equal("2017-01-10T17:38:06.000Z");

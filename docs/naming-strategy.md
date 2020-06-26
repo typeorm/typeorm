@@ -12,7 +12,7 @@ If you defined your connection options in the `ormconfig` file,
 then you can simply use it and override it following way:
 
 ```typescript
-import {createConnection, getConnectionOptions} from "typeorm";
+import {createConnection, getConnectionOptions} from "@typeorm/core";
 import {MyNamingStrategy} from "./logger/MyNamingStrategy";
 
 // getConnectionOptions will read options from your ormconfig file

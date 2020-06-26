@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
 import {
     Any,
     Between,
@@ -13,13 +13,13 @@ import {
     MoreThan,
     MoreThanOrEqual,
     Not,
-    PromiseUtils
-} from "../../../../src";
-import {Post} from "./entity/Post";
-import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
-import {Raw} from "../../../../src/find-options/operator/Raw";
-import {PersonAR} from "./entity/PersonAR";
-import {expect} from "chai";
+    PromiseUtils,
+    Raw
+} from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { PostgresDriver } from "@typeorm/driver-postgres";
+import { PersonAR } from "./entity/PersonAR";
+import { expect } from "chai";
 
 describe("repository > find options > operators", () => {
 
@@ -46,7 +46,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             title: Not("About #1")
         });
-        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
     })));
 
@@ -66,7 +66,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             likes: LessThan(10)
         });
-        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
     })));
 
@@ -91,8 +91,8 @@ describe("repository > find options > operators", () => {
             likes: LessThanOrEqual(12)
         });
         loadedPosts.should.be.eql([
-            { id: 1, likes: 12, title: "About #1" },
-            { id: 2, likes: 3, title: "About #2" }
+            {id: 1, likes: 12, title: "About #1"},
+            {id: 2, likes: 3, title: "About #2"}
         ]);
 
     })));
@@ -113,7 +113,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             likes: Not(LessThan(10))
         });
-        loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+        loadedPosts.should.be.eql([{id: 1, likes: 12, title: "About #1"}]);
 
     })));
 
@@ -137,7 +137,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             likes: Not(LessThanOrEqual(12))
         });
-        loadedPosts.should.be.eql([{ id: 3, likes: 13, title: "About #3" }]);
+        loadedPosts.should.be.eql([{id: 3, likes: 13, title: "About #3"}]);
 
     })));
 
@@ -157,7 +157,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             likes: MoreThan(10)
         });
-        loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+        loadedPosts.should.be.eql([{id: 1, likes: 12, title: "About #1"}]);
 
     })));
 
@@ -182,8 +182,8 @@ describe("repository > find options > operators", () => {
             likes: MoreThanOrEqual(12)
         });
         loadedPosts.should.be.eql([
-            { id: 1, likes: 12, title: "About #1" },
-            { id: 3, likes: 13, title: "About #3" }
+            {id: 1, likes: 12, title: "About #1"},
+            {id: 3, likes: 13, title: "About #3"}
         ]);
 
     })));
@@ -204,7 +204,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             likes: Not(MoreThan(10))
         });
-        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
     })));
 
@@ -228,7 +228,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             likes: Not(MoreThanOrEqual(12))
         });
-        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
     })));
 
@@ -248,7 +248,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             title: Equal("About #2")
         });
-        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
     })));
 
@@ -268,7 +268,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             title: Not(Equal("About #2"))
         });
-        loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+        loadedPosts.should.be.eql([{id: 1, likes: 12, title: "About #1"}]);
 
     })));
 
@@ -288,7 +288,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             title: Like("%out #%")
         });
-        loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }, { id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts.should.be.eql([{id: 1, likes: 12, title: "About #1"}, {id: 2, likes: 3, title: "About #2"}]);
 
     })));
 
@@ -308,7 +308,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             title: Not(Like("%out #1"))
         });
-        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
     })));
 
@@ -328,17 +328,17 @@ describe("repository > find options > operators", () => {
         const loadedPosts1 = await connection.getRepository(Post).find({
             likes: Between(1, 10)
         });
-        loadedPosts1.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts1.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
         const loadedPosts2 = await connection.getRepository(Post).find({
             likes: Between(10, 13)
         });
-        loadedPosts2.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+        loadedPosts2.should.be.eql([{id: 1, likes: 12, title: "About #1"}]);
 
         const loadedPosts3 = await connection.getRepository(Post).find({
             likes: Between(1, 20)
         });
-        loadedPosts3.should.be.eql([{ id: 1, likes: 12, title: "About #1" }, { id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts3.should.be.eql([{id: 1, likes: 12, title: "About #1"}, {id: 2, likes: 3, title: "About #2"}]);
 
     })));
 
@@ -358,12 +358,12 @@ describe("repository > find options > operators", () => {
         const loadedPosts1 = await connection.getRepository(Post).find({
             likes: Not(Between(1, 10))
         });
-        loadedPosts1.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+        loadedPosts1.should.be.eql([{id: 1, likes: 12, title: "About #1"}]);
 
         const loadedPosts2 = await connection.getRepository(Post).find({
             likes: Not(Between(10, 13))
         });
-        loadedPosts2.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts2.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
         const loadedPosts3 = await connection.getRepository(Post).find({
             likes: Not(Between(1, 20))
@@ -387,7 +387,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             title: In(["About #2", "About #3"])
         });
-        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
     })));
 
@@ -407,7 +407,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             title: Not(In(["About #1", "About #3"]))
         });
-        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
     })));
 
@@ -429,7 +429,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             title: Any(["About #2", "About #3"])
         });
-        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
     })));
 
@@ -451,7 +451,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             title: Not(Any(["About #2", "About #3"]))
         });
-        loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+        loadedPosts.should.be.eql([{id: 1, likes: 12, title: "About #1"}]);
 
     })));
 
@@ -471,7 +471,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             title: IsNull()
         });
-        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: null }]);
+        loadedPosts.should.be.eql([{id: 2, likes: 3, title: null}]);
 
     })));
 
@@ -491,7 +491,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             title: Not(IsNull())
         });
-        loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+        loadedPosts.should.be.eql([{id: 1, likes: 12, title: "About #1"}]);
 
     })));
 
@@ -511,7 +511,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             likes: Raw("12")
         });
-        loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+        loadedPosts.should.be.eql([{id: 1, likes: 12, title: "About #1"}]);
 
     })));
 
@@ -531,7 +531,7 @@ describe("repository > find options > operators", () => {
         const loadedPosts = await connection.getRepository(Post).find({
             likes: Raw(columnAlias => "1 + " + columnAlias + " = 4")
         });
-        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+        loadedPosts.should.be.eql([{id: 2, likes: 3, title: "About #2"}]);
 
     })));
 

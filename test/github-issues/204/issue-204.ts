@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Record} from "./entity/Record";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {RecordData} from "./entity/RecordData";
+import { expect } from "chai";
+import { Record } from "./entity/Record";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { RecordData } from "./entity/RecordData";
 
 describe("github issues > #204 jsonb array is not persisted correctly", () => {
 
@@ -23,9 +23,9 @@ describe("github issues > #204 jsonb array is not persisted correctly", () => {
             new RecordData("bye1", "bye2", "bye3", "bye4", false, false),
         ];
         record.configs = [
-            { id: 1, option1: "1", option2: "1", option3: "1", isActive: true, extra: { data1: "one", data2: "two" } },
-            { id: 2, option1: "2", option2: "2", option3: "2", isActive: false, extra: { data1: "one", data2: "two" } },
-            { id: 3, option1: "3", option2: "3", option3: "3", isActive: true, extra: { data1: "one", data2: "two" } },
+            {id: 1, option1: "1", option2: "1", option3: "1", isActive: true, extra: {data1: "one", data2: "two"}},
+            {id: 2, option1: "2", option2: "2", option3: "2", isActive: false, extra: {data1: "one", data2: "two"}},
+            {id: 3, option1: "3", option2: "3", option3: "3", isActive: true, extra: {data1: "one", data2: "two"}},
         ];
         await connection.manager.save(record);
 
@@ -37,9 +37,9 @@ describe("github issues > #204 jsonb array is not persisted correctly", () => {
             new RecordData("bye1", "bye2", "bye3", "bye4", false, false),
         ]);
         foundRecord!.configs.should.be.eql([
-            { id: 1, option1: "1", option2: "1", option3: "1", isActive: true, extra: { data1: "one", data2: "two" } },
-            { id: 2, option1: "2", option2: "2", option3: "2", isActive: false, extra: { data1: "one", data2: "two" } },
-            { id: 3, option1: "3", option2: "3", option3: "3", isActive: true, extra: { data1: "one", data2: "two" } },
+            {id: 1, option1: "1", option2: "1", option3: "1", isActive: true, extra: {data1: "one", data2: "two"}},
+            {id: 2, option1: "2", option2: "2", option3: "2", isActive: false, extra: {data1: "one", data2: "two"}},
+            {id: 3, option1: "3", option2: "3", option3: "3", isActive: true, extra: {data1: "one", data2: "two"}},
         ]);
     })));
 

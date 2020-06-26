@@ -1,6 +1,6 @@
-import {Connection} from "../../../src";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Post} from "./entity/Post";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { Post } from "./entity/Post";
 
 describe("entity-listeners", () => {
 

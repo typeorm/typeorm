@@ -1,9 +1,13 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {Category} from "./entity/Category";
-import {Post} from "./entity/Post";
+import { expect } from "chai";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Category } from "./entity/Category";
+import { Post } from "./entity/Post";
 
 describe("decorators > relation-id > one-to-many", () => {
 
@@ -57,7 +61,7 @@ describe("decorators > relation-id > one-to-many", () => {
 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
-            .where("category.id = :id", { id: 1 })
+            .where("category.id = :id", {id: 1})
             .getOne();
 
         expect(loadedCategory!.postIds.length).to.be.equal(2);
@@ -109,7 +113,7 @@ describe("decorators > relation-id > one-to-many", () => {
 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
-            .where("category.id = :id", { id: 1 })
+            .where("category.id = :id", {id: 1})
             .getOne();
 
         expect(loadedCategory!.removedPostIds).to.not.be.eql([]);

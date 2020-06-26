@@ -1,7 +1,5 @@
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {Counters} from "./Counters";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
+import { Column, Entity, PrimaryColumn } from "@typeorm/core";
+import { Counters } from "./Counters";
 
 @Entity()
 export class Post {

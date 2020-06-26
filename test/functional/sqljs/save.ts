@@ -1,11 +1,11 @@
 import "reflect-metadata";
 import * as fs from "fs";
 import * as path from "path";
-import {expect} from "chai";
-import {getSqljsManager} from "../../../src/index";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { getSqljsManager } from '@typeorm/driver-sqljs';
 
 describe("sqljs driver > save", () => {
 

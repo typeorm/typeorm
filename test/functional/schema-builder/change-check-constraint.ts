@@ -1,11 +1,9 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {PromiseUtils} from "../../../src";
-import {Teacher} from "./entity/Teacher";
-import {Post} from "./entity/Post";
-import {CheckMetadata} from "../../../src/metadata/CheckMetadata";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import { CheckMetadata, Connection, PromiseUtils } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Teacher } from "./entity/Teacher";
+import { Post } from "./entity/Post";
+import { MysqlDriver } from "@typeorm/driver-mysql";
 
 describe("schema builder > change check constraint", () => {
 

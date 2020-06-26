@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { expect } from "chai";
-import { Connection } from "../../../src/connection/Connection";
+import { Connection } from "@typeorm/core";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { Item, EmbeddedItem } from "./entity/Item";
+import { EmbeddedItem, Item } from "./entity/Item";
 
 describe("github issue > #1569 updateById generates wrong SQL with arrays inside embeddeds", () => {
 

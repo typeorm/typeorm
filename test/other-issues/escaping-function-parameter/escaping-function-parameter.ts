@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("other issues > escaping function parameter", () => {
 
@@ -23,7 +23,7 @@ describe("other issues > escaping function parameter", () => {
             return connection
                 .manager
                 .createQueryBuilder(Post, "post")
-                .where("post.title = :title", { title: () => "Super title" })
+                .where("post.title = :title", {title: () => "Super title"})
                 .getOne();
         }).to.throw(Error);
     })));
@@ -40,8 +40,8 @@ describe("other issues > escaping function parameter", () => {
             })
             .execute();
 
-        const post = await connection.manager.findOne(Post, { title: "super title" });
-        expect(post).to.be.eql({ id: 1, title: "super title" });
+        const post = await connection.manager.findOne(Post, {title: "super title"});
+        expect(post).to.be.eql({id: 1, title: "super title"});
 
     })));
 
@@ -61,8 +61,8 @@ describe("other issues > escaping function parameter", () => {
             })
             .execute();
 
-        const loadedPost = await connection.manager.findOne(Post, { title: "super title" });
-        expect(loadedPost).to.be.eql({ id: 1, title: "super title" });
+        const loadedPost = await connection.manager.findOne(Post, {title: "super title"});
+        expect(loadedPost).to.be.eql({id: 1, title: "super title"});
 
     })));
 

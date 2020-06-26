@@ -1,8 +1,6 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Table} from "../../../src/schema-builder/table/Table";
-import {TableUnique} from "../../../src/schema-builder/table/TableUnique";
+import { Connection, Table, TableUnique } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 
 describe("query runner > create unique constraint", () => {
 
@@ -58,10 +56,10 @@ describe("query runner > create unique constraint", () => {
         // clear sqls in memory to avoid removing tables when down queries executed.
         queryRunner.clearSqlMemory();
 
-        const categoryUniqueConstraint = new TableUnique({ columnNames: ["name"] });
+        const categoryUniqueConstraint = new TableUnique({columnNames: ["name"]});
         await queryRunner.createUniqueConstraint("category", categoryUniqueConstraint);
 
-        const questionUniqueConstraint = new TableUnique({ columnNames: ["name", "description"] });
+        const questionUniqueConstraint = new TableUnique({columnNames: ["name", "description"]});
         await queryRunner.createUniqueConstraint("question", questionUniqueConstraint);
 
         let categoryTable = await queryRunner.getTable("category");

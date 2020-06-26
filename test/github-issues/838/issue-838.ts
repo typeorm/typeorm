@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Flight} from "./entity/Flight";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
-import {expect} from "chai";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Flight } from "./entity/Flight";
+import { PostgresDriver } from "@typeorm/driver-postgres";
+import { expect } from "chai";
 
 describe.skip("github issues > #838 Time zones for timestamp columns are incorrectly fetched and persisted in PostgreSQL", () => {
 

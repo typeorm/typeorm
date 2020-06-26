@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src";
-import {Simple} from "./entity/Simple";
-import {Complex} from "./entity/Complex";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Simple } from "./entity/Simple";
+import { Complex } from "./entity/Complex";
 
 describe("github issues > #2103 query builder regression", () => {
 
@@ -19,10 +19,10 @@ describe("github issues > #2103 query builder regression", () => {
         const repository = connection.getRepository(Simple);
 
         const savedEntities = await repository.save([
-            repository.create({ x: 1 }),
-            repository.create({ x: 2 }),
-            repository.create({ x: 1 }),
-            repository.create({ x: 3 })
+            repository.create({x: 1}),
+            repository.create({x: 2}),
+            repository.create({x: 1}),
+            repository.create({x: 3})
         ]);
 
         savedEntities.length.should.be.equal(4); // check if they all are saved
@@ -46,10 +46,10 @@ describe("github issues > #2103 query builder regression", () => {
 
         // sqlite does not support autoincrement for composite primary key, so we pass ids by ourselves here
         const savedEntities = await repository.save([
-            repository.create({ id: 1, code: 1, x: 1 }),
-            repository.create({ id: 2, code: 1, x: 2 }),
-            repository.create({ id: 3, code: 1, x: 1 }),
-            repository.create({ id: 4, code: 1, x: 3 })
+            repository.create({id: 1, code: 1, x: 1}),
+            repository.create({id: 2, code: 1, x: 2}),
+            repository.create({id: 3, code: 1, x: 1}),
+            repository.create({id: 4, code: 1, x: 3})
         ]);
 
         savedEntities.length.should.be.equal(4); // check if they all are saved
@@ -58,7 +58,7 @@ describe("github issues > #2103 query builder regression", () => {
 
         const entities = await repository.createQueryBuilder("s")
             .whereInIds(ids.map(id => {
-                return { id, code: 1 };
+                return {id, code: 1};
             }))
             .andWhere("s.x = 1")
             .getMany();

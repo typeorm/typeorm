@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src";
-import {Year} from "./entity/year";
-import {Month} from "./entity/month";
-import {User} from "./entity/user";
-import {UserMonth} from "./entity/user-month";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Year } from "./entity/year";
+import { Month } from "./entity/month";
+import { User } from "./entity/user";
+import { UserMonth } from "./entity/user-month";
 
 describe.skip("github issues > #1685 JoinColumn from JoinColum is not considered when inserting new value", () => {
 

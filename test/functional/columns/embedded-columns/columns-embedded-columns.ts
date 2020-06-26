@@ -1,11 +1,11 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {SimplePost} from "./entity/SimplePost";
-import {SimpleCounters} from "./entity/SimpleCounters";
-import {Information} from "./entity/Information";
-import {Post} from "./entity/Post";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { SimplePost } from "./entity/SimplePost";
+import { SimpleCounters } from "./entity/SimpleCounters";
+import { Information } from "./entity/Information";
+import { Post } from "./entity/Post";
 
 describe("columns > embedded columns", () => {
 
@@ -31,7 +31,7 @@ describe("columns > embedded columns", () => {
         post.counters.information.description = "Hello post";
         await postRepository.save(post);
 
-        const loadedPost = await postRepository.findOne({ title: "Post" });
+        const loadedPost = await postRepository.findOne({title: "Post"});
 
         expect(loadedPost).to.be.not.empty;
         expect(loadedPost!.counters).to.be.not.empty;
@@ -51,7 +51,7 @@ describe("columns > embedded columns", () => {
         post.counters.information.description = "Hello updated post";
         await postRepository.save(post);
 
-        const loadedUpdatedPost = await postRepository.findOne({ title: "Updated post" });
+        const loadedUpdatedPost = await postRepository.findOne({title: "Updated post"});
 
         expect(loadedUpdatedPost).to.be.not.empty;
         expect(loadedUpdatedPost!.counters).to.be.not.empty;
@@ -68,8 +68,8 @@ describe("columns > embedded columns", () => {
 
         await postRepository.remove(post);
 
-        const removedPost = await postRepository.findOne({ title: "Post" });
-        const removedUpdatedPost = await postRepository.findOne({ title: "Updated post" });
+        const removedPost = await postRepository.findOne({title: "Post"});
+        const removedUpdatedPost = await postRepository.findOne({title: "Updated post"});
         expect(removedPost).to.be.undefined;
         expect(removedUpdatedPost).to.be.undefined;
     })));

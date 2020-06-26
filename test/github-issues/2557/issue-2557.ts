@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Dummy} from "./entity/dummy";
-import {transformer, WrappedNumber} from "./transformer";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Dummy } from "./entity/dummy";
+import { transformer, WrappedNumber } from "./transformer";
 
 describe("github issues > #2557 object looses its prototype before transformer.to()", () => {
 

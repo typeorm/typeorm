@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
 
 describe("columns > getters and setters", () => {
 
@@ -27,7 +27,7 @@ describe("columns > getters and setters", () => {
         expect(loadedPost1!.title).to.be.equal("bye");
 
         // try to load a column by its value
-        const loadedPost2 = await postRepository.findOne({ title: "bye" });
+        const loadedPost2 = await postRepository.findOne({title: "bye"});
         expect(loadedPost2!.title).to.be.equal("bye");
 
     })));

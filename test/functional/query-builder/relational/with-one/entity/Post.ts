@@ -1,11 +1,6 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {ManyToOne} from "../../../../../../src/decorator/relations/ManyToOne";
-import {Category} from "./Category";
-import {Image} from "./Image";
-import {OneToOne} from "../../../../../../src/decorator/relations/OneToOne";
-import {JoinColumn} from "../../../../../../src/decorator/relations/JoinColumn";
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Category } from "./Category";
+import { Image } from "./Image";
 
 @Entity()
 export class Post {

@@ -1,11 +1,11 @@
 import "reflect-metadata";
-import {Connection} from "../../../../src/connection/Connection";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {Counters} from "./entity/Counters";
-import {Subcounters} from "./entity/Subcounters";
-import {User} from "./entity/User";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { Counters } from "./entity/Counters";
+import { Subcounters } from "./entity/Subcounters";
+import { User } from "./entity/User";
 
 describe("embedded > embedded-many-to-one-case2", () => {
 
@@ -121,7 +121,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
             let loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPost", "likedPost")
-                .where("user.id = :id", { id: 1 })
+                .where("user.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedUser!.should.be.eql(
@@ -152,7 +152,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
             loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPost", "likedPost")
-                .where("user.id = :id", { id: 1 })
+                .where("user.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedUser!.should.be.eql(
@@ -247,8 +247,8 @@ describe("embedded > embedded-many-to-one-case2", () => {
                         favorites: 2,
                         likes: 3,
                         likedUsers: [
-                            { id: 1, name: "Alice" },
-                            { id: 2, name: "Bob" }
+                            {id: 1, name: "Alice"},
+                            {id: 2, name: "Bob"}
                         ],
                         subcounters: {
                             version: 1,
@@ -267,7 +267,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
                         favorites: 3,
                         likes: 4,
                         likedUsers: [
-                            { id: 3, name: "Clara" }
+                            {id: 3, name: "Clara"}
                         ],
                         subcounters: {
                             version: 1,
@@ -281,7 +281,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUsers", "likedUser")
                 .orderBy("likedUser.id")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.should.be.eql(
@@ -294,8 +294,8 @@ describe("embedded > embedded-many-to-one-case2", () => {
                         favorites: 2,
                         likes: 3,
                         likedUsers: [
-                            { id: 1, name: "Alice" },
-                            { id: 2, name: "Bob" }
+                            {id: 1, name: "Alice"},
+                            {id: 2, name: "Bob"}
                         ],
                         subcounters: {
                             version: 1,
@@ -314,7 +314,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUsers", "likedUser")
                 .orderBy("likedUser.id")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.should.be.eql(
@@ -327,7 +327,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
                         favorites: 3,
                         likes: 3,
                         likedUsers: [
-                            { id: 1, name: "Alice" }
+                            {id: 1, name: "Alice"}
                         ],
                         subcounters: {
                             version: 1,
@@ -340,7 +340,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
             const loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPost", "likedPost")
-                .where("user.id = :id", { id: 2 })
+                .where("user.id = :id", {id: 2})
                 .getOne();
 
             expect(loadedUser!.likedPost).to.be.null;

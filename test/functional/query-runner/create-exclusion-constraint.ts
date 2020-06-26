@@ -1,8 +1,6 @@
 import "reflect-metadata";
-import {Connection} from "../../../src";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Table} from "../../../src";
-import {TableExclusion} from "../../../src/schema-builder/table/TableExclusion";
+import { Connection, Table, TableExclusion } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 
 describe("query runner > create exclusion constraint", () => {
 
@@ -48,8 +46,8 @@ describe("query runner > create exclusion constraint", () => {
         queryRunner.clearSqlMemory();
 
         const driver = connection.driver;
-        const exclusion1 = new TableExclusion({ expression: `USING gist (${driver.escape("name")} WITH =)` });
-        const exclusion2 = new TableExclusion({ expression: `USING gist (${driver.escape("id")} WITH =)` });
+        const exclusion1 = new TableExclusion({expression: `USING gist (${driver.escape("name")} WITH =)`});
+        const exclusion2 = new TableExclusion({expression: `USING gist (${driver.escape("id")} WITH =)`});
         await queryRunner.createExclusionConstraints("question", [exclusion1, exclusion2]);
 
         let table = await queryRunner.getTable("question");

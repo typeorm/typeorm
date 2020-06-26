@@ -1,26 +1,26 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {User} from "./entity/User";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { User } from "./entity/User";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
 
-describe("persistence > many-to-many", function() {
+describe("persistence > many-to-many", function () {
 
     // -------------------------------------------------------------------------
     // Configuration
     // -------------------------------------------------------------------------
 
     let connections: Connection[];
-    before(async () => connections = await createTestingConnections({ __dirname }));
+    before(async () => connections = await createTestingConnections({__dirname}));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     // -------------------------------------------------------------------------
     // Specifications
     // -------------------------------------------------------------------------
-    
+
     it("add exist element to exist object with empty many-to-many relation and save it and it should contain a new category", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
@@ -51,7 +51,7 @@ describe("persistence > many-to-many", function() {
         const loadedUser = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
-                leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
+                leftJoinAndSelect: {post: "user.post", categories: "post.categories"}
             }
         });
 
@@ -96,7 +96,7 @@ describe("persistence > many-to-many", function() {
         const loadedUser1 = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
-                leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
+                leftJoinAndSelect: {post: "user.post", categories: "post.categories"}
             }
         });
 
@@ -114,7 +114,7 @@ describe("persistence > many-to-many", function() {
         const loadedUser2 = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
-                leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
+                leftJoinAndSelect: {post: "user.post", categories: "post.categories"}
             }
         });
 
@@ -160,7 +160,7 @@ describe("persistence > many-to-many", function() {
         const loadedUser1 = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
-                leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
+                leftJoinAndSelect: {post: "user.post", categories: "post.categories"}
             }
         });
 
@@ -178,7 +178,7 @@ describe("persistence > many-to-many", function() {
         const loadedUser2 = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
-                leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
+                leftJoinAndSelect: {post: "user.post", categories: "post.categories"}
             }
         });
 
@@ -223,7 +223,7 @@ describe("persistence > many-to-many", function() {
         const loadedUser1 = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
-                leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
+                leftJoinAndSelect: {post: "user.post", categories: "post.categories"}
             }
         });
 
@@ -241,7 +241,7 @@ describe("persistence > many-to-many", function() {
         const loadedUser2 = await userRepository.findOne(newUser.id, {
             join: {
                 alias: "user",
-                leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
+                leftJoinAndSelect: {post: "user.post", categories: "post.categories"}
             }
         });
 

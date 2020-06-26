@@ -31,7 +31,7 @@
 级联例子:
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "@typeorm/core";
 import { Question } from "./Question";
 
 @Entity()
@@ -48,7 +48,7 @@ export class Category {
 ```
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "@typeorm/core";
 import { Category } from "./Category";
 
 @Entity()

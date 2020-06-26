@@ -1,8 +1,7 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {ObjectLiteral} from "../../../src";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection, ObjectLiteral } from "@typeorm/core";
+import { Post } from "./entity/Post";
 
 describe("github issues > #922 Support HSTORE column type", () => {
 

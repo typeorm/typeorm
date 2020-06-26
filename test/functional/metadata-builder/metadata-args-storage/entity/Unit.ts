@@ -1,5 +1,4 @@
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
+import { Column, PrimaryGeneratedColumn } from "@typeorm/core";
 
 export class Unit {
 

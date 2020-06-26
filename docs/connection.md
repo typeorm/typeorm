@@ -4,7 +4,7 @@
 * [Creating a new connection](#creating-a-new-connection)
 * [Using `ConnectionManager`](#using-connectionmanager)
 * [Working with connection](#working-with-connection)
-    
+
 ## What is `Connection`
 
 Your interaction with the database is only possible once you setup a connection.
@@ -27,7 +27,7 @@ The most simple and common way is to use `createConnection` and `createConnectio
 `createConnection` creates a single connection:
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import {createConnection, Connection} from "@typeorm/core";
 
 const connection = await createConnection({
     type: "mysql",
@@ -50,7 +50,7 @@ createConnection({
 `createConnections` creates multiple connections:
 
 ```typescript
-import {createConnections, Connection} from "typeorm";
+import {createConnections, Connection} from "@typeorm/core";
 
 const connections = await createConnections([{
     name: "default",
@@ -77,7 +77,7 @@ and connection options will be automatically read from this file by those method
 Root of your project is the same level where your `node_modules` directory is.
 
 ```typescript
-import {createConnection, createConnections, Connection} from "typeorm";
+import {createConnection, createConnections, Connection} from "@typeorm/core";
 
 // here createConnection will load connection options from
 // ormconfig.json / ormconfig.js / ormconfig.yml / ormconfig.env / ormconfig.xml
@@ -100,7 +100,7 @@ Usually, you use multiple connections when you use multiple databases or multipl
 Once you created a connection you can obtain it anywhere from your app, using `getConnection` function:
 
 ```typescript
-import {getConnection} from "typeorm";
+import {getConnection} from "@typeorm/core";
 
 // can be used once createConnection is called and is resolved
 const connection = getConnection();
@@ -118,7 +118,7 @@ you don't need to overengineer and create useless abstractions.
 You can create connection using `ConnectionManager` class. For example:
 
 ```typescript
-import {getConnectionManager, ConnectionManager, Connection} from "typeorm";
+import {getConnectionManager, ConnectionManager, Connection} from "@typeorm/core";
 
 const connectionManager = getConnectionManager();
 const connection = connectionManager.create({
@@ -138,7 +138,7 @@ but have to control when the actual "connection" will be established.
 Also you can create and maintain your own `ConnectionManager`:
 
 ```typescript
-import {getConnectionManager, ConnectionManager, Connection} from "typeorm";
+import {getConnectionManager, ConnectionManager, Connection} from "@typeorm/core";
 
 const connectionManager = new ConnectionManager();
 const connection = connectionManager.create({
@@ -163,7 +163,7 @@ use `ConnectionManager` only if you really think you need it.
 Once you set your connection up, you can use it anywhere in your app using `getConnection` function:
 
 ```typescript
-import {getConnection} from "typeorm";
+import {getConnection} from "@typeorm/core";
 import {User} from "../entity/User";
 
 export class UserController {
@@ -188,7 +188,7 @@ Most of the time you only create a connection and use `getRepository()` and `get
 to access your connection's manager and repositories without directly using connection object:
 
 ```typescript
-import {getManager, getRepository} from "typeorm";
+import {getManager, getRepository} from "@typeorm/core";
 import {User} from "../entity/User";
 
 export class UserController {

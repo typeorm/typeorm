@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Record} from "./entity/Record";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
+import { expect } from "chai";
+import { Record } from "./entity/Record";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
 
 describe("jsonb type", () => {
 
@@ -28,7 +28,7 @@ describe("jsonb type", () => {
         await connection.synchronize(true);
         let recordRepo = connection.getRepository(Record);
         let record = new Record();
-        record.data = { foo: "bar" };
+        record.data = {foo: "bar"};
         let persistedRecord = await recordRepo.save(record);
         let foundRecord = await recordRepo.findOne(persistedRecord.id);
         expect(foundRecord).to.be.not.undefined;
@@ -49,10 +49,10 @@ describe("jsonb type", () => {
     it("should persist jsonb array correctly", () => Promise.all(connections.map(async connection => {
         let recordRepo = connection.getRepository(Record);
         let record = new Record();
-        record.data = [1, "2", { a: 3 }];
+        record.data = [1, "2", {a: 3}];
         let persistedRecord = await recordRepo.save(record);
         let foundRecord = await recordRepo.findOne(persistedRecord.id);
         expect(foundRecord).to.be.not.undefined;
-        expect(foundRecord!.data).to.deep.include.members([1, "2", { a: 3 }]);
+        expect(foundRecord!.data).to.deep.include.members([1, "2", {a: 3}]);
     })));
 });

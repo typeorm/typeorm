@@ -1,14 +1,18 @@
-import {Connection} from "../../src/connection/Connection";
-import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
-import {PostgresDriver} from "../../src/driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../../src/driver/sqlserver/SqlServerDriver";
-import {DatabaseType} from "../../src/driver/types/DatabaseType";
-import {EntitySchema} from "../../src/entity-schema/EntitySchema";
-import {createConnections} from "../../src/index";
-import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
-import {PromiseUtils} from "../../src/util/PromiseUtils";
-import {QueryResultCache} from "../../src/cache/QueryResultCache";
-import {Logger} from "../../src/logger/Logger";
+import {
+    Connection,
+    ConnectionOptions,
+    createConnections,
+    DatabaseType,
+    EntitySchema,
+    Logger,
+    NamingStrategyInterface,
+    PromiseUtils,
+    QueryResultCache
+} from "@typeorm/core";
+import { PostgresDriver } from '@typeorm/driver-postgres';
+import { SqlServerDriver } from '@typeorm/driver-sqlserver';
+import "@typeorm/driver-mongodb";
+import "@typeorm/driver-sqljs";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -52,7 +56,7 @@ export interface TestingOptions {
     /**
      * Entities needs to be included in the connection for the given test suite.
      */
-    entities?: (string|Function|EntitySchema<any>)[];
+    entities?: (string | Function | EntitySchema<any>)[];
 
 
     /**
@@ -63,7 +67,7 @@ export interface TestingOptions {
     /**
      * Subscribers needs to be included in the connection for the given test suite.
      */
-    subscribers?: string[]|Function[];
+    subscribers?: string[] | Function[];
 
     /**
      * Indicates if schema sync should be performed or not.
@@ -138,14 +142,14 @@ export interface TestingOptions {
     /**
      * Factory to create a logger for each test connection.
      */
-    createLogger?: () => "advanced-console"|"simple-console"|"file"|"debug"|Logger;
+    createLogger?: () => "advanced-console" | "simple-console" | "file" | "debug" | Logger;
 }
 
 /**
  * Creates a testing connection options for the given driver type based on the configuration in the ormconfig.json
  * and given options that can override some of its configuration for the test-specific use case.
  */
-export function setupSingleTestingConnection(driverType: DatabaseType, options: TestingOptions): ConnectionOptions|undefined {
+export function setupSingleTestingConnection(driverType: DatabaseType, options: TestingOptions): ConnectionOptions | undefined {
 
     const testingConnections = setupTestingConnections({
         name: options.name ? options.name : undefined,
@@ -172,7 +176,7 @@ export function getTypeOrmConfig(): TestingConnectionOptions[] {
     try {
 
         try {
-            return require(__dirname + "/../../../../ormconfig.json");
+            return require(__dirname + "/../../../ormconfig.json");
 
         } catch (err) {
             return require(__dirname + "/../../ormconfig.json");
@@ -197,16 +201,11 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
 
     return ormConfigConnectionOptionsArray
         .filter(connectionOptions => {
-            if (connectionOptions.skip === true)
-                return false;
-
-            if (options && options.enabledDrivers && options.enabledDrivers.length)
-                return options.enabledDrivers.indexOf(connectionOptions.type!) !== -1; // ! is temporary
-
-            if (connectionOptions.disabledIfNotEnabledImplicitly === true)
-                return false;
-
-            return true;
+            return connectionOptions.skip === true
+                ? false
+                : options?.enabledDrivers?.length
+                    ? options.enabledDrivers.indexOf(connectionOptions.type!) !== -1
+                    : connectionOptions.disabledIfNotEnabledImplicitly !== true;
         })
         .map(connectionOptions => {
             let newOptions: any = Object.assign({}, connectionOptions as ConnectionOptions, {
@@ -299,7 +298,7 @@ export function generateRandomText(length: number): string {
     let text = "";
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-    for (let i = 0; i <= length; i++ )
+    for (let i = 0; i <= length; i++)
         text += characters.charAt(Math.floor(Math.random() * characters.length));
 
     return text;

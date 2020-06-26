@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
-import { Connection } from "../../../../src/connection/Connection";
-import { UpdateResult } from "../../../../src";
+import { Connection, UpdateResult } from "@typeorm/core";
 import { Post } from "./entity/Post";
 import { PostBigInt } from "./entity/PostBigInt";
 import { UserWithEmbededEntity } from "./entity/UserWithEmbededEntity";
@@ -33,12 +32,12 @@ describe("repository > decrement method", () => {
             // decrement counter of post 1
             await connection
                 .getRepository(Post)
-                .decrement({ id: 1 }, "counter", 1);
+                .decrement({id: 1}, "counter", 1);
 
             // decrement counter of post 2
             await connection
                 .manager
-                .decrement(Post, { id: 2 }, "counter", 3);
+                .decrement(Post, {id: 2}, "counter", 3);
 
             // load and check counter
             const loadedPost1 = await connection.manager.findOne(Post, 1);
@@ -64,12 +63,12 @@ describe("repository > decrement method", () => {
             // decrement counter of post 1
             await connection
                 .getRepository(Post)
-                .decrement({ id: 1 }, "counter", "22");
+                .decrement({id: 1}, "counter", "22");
 
             // decrement counter of post 2
             await connection
                 .manager
-                .decrement(Post, { id: 2 }, "counter", "33");
+                .decrement(Post, {id: 2}, "counter", "33");
 
             // load and check counter
             const loadedPost1 = await connection.manager.findOne(Post, 1);
@@ -91,7 +90,7 @@ describe("repository > decrement method", () => {
             // increment counter of post 1
             const result = await connection
                 .getRepository(Post)
-                .decrement({ id: 1 }, "counter", 22);
+                .decrement({id: 1}, "counter", 22);
 
             result.should.be.an.instanceOf(UpdateResult);
 
@@ -113,7 +112,7 @@ describe("repository > decrement method", () => {
             // decrement counter of post 1
             await connection
                 .getRepository(Post)
-                .decrement({ id: 1 }, "unknownProperty", 1)
+                .decrement({id: 1}, "unknownProperty", 1)
                 .should.be.rejected;
 
         })));
@@ -134,7 +133,7 @@ describe("repository > decrement method", () => {
             // decrement counter of post 1
             await connection
                 .getRepository(Post)
-                .decrement({ id: 1 }, "counter", "12abc")
+                .decrement({id: 1}, "counter", "12abc")
                 .should.be.rejected;
 
         })));
@@ -168,12 +167,12 @@ describe("repository > decrement method", () => {
             // decrement counter of post 1
             await connection
                 .getRepository(PostBigInt)
-                .decrement({ id: 1 }, "counter", "9000000000000000000");
+                .decrement({id: 1}, "counter", "9000000000000000000");
 
             // decrement counter of post 2
             await connection
                 .manager
-                .decrement(PostBigInt, { id: 2 }, "counter", "9000000000000000000");
+                .decrement(PostBigInt, {id: 2}, "counter", "9000000000000000000");
 
             // load and check counter
             const loadedPost1 = await connection.manager.findOne(PostBigInt, 1);
@@ -204,7 +203,7 @@ describe("repository > decrement method", () => {
 
             await connection
                 .getRepository(UserWithEmbededEntity)
-                .decrement({ id: 1 }, "friend.sent", 15);
+                .decrement({id: 1}, "friend.sent", 15);
 
             const loadedUser = await connection.manager.findOne(UserWithEmbededEntity, 1);
             loadedUser!.friend.sent.should.be.equal(-15);

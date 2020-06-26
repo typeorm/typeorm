@@ -1,5 +1,5 @@
-import {PrimaryColumn, Entity, OneToMany} from "../../../../src";
-import {UserMonth} from "./user-month";
+import { Entity, OneToMany, PrimaryColumn } from "@typeorm/core";
+import { UserMonth } from "./user-month";
 
 @Entity()
 export class User {

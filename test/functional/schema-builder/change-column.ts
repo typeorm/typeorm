@@ -1,17 +1,17 @@
-import {expect} from "chai";
+import { expect } from "chai";
 import "reflect-metadata";
-import {Connection, PromiseUtils} from "../../../src";
-import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
-import {SapDriver} from "../../../src/driver/sap/SapDriver";
-import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {PostVersion} from "./entity/PostVersion";
+import { Connection, PromiseUtils } from "@typeorm/core";
+import { AuroraDataApiDriver } from "@typeorm/driver-aurora-data-api";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { MysqlDriver } from "@typeorm/driver-mysql";
+import { OracleDriver } from "@typeorm/driver-oracle";
+import { PostgresDriver } from "@typeorm/driver-postgres";
+import { SapDriver } from "@typeorm/driver-sap";
+import { AbstractSqliteDriver } from "@typeorm/driver-sqlite-abstract";
+import { SqlServerDriver } from "@typeorm/driver-sqlserver";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { PostVersion } from "./entity/PostVersion";
 
 describe("schema builder > change column", () => {
 

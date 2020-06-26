@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Car} from "./entity/Car";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Car } from "./entity/Car";
 
 describe("github issues > #479 orWhere breaks skip / take", () => {
 
@@ -35,8 +35,8 @@ describe("github issues > #479 orWhere breaks skip / take", () => {
         const cars = await connection
             .getRepository(Car)
             .createQueryBuilder("car")
-            .where("car.name LIKE :filter1", { filter1: "Test%" })
-            .orWhere("car.name LIKE :filter2", { filter2: "BM%" })
+            .where("car.name LIKE :filter1", {filter1: "Test%"})
+            .orWhere("car.name LIKE :filter2", {filter2: "BM%"})
             .orderBy("car.id")
             .skip(0)
             .take(1)

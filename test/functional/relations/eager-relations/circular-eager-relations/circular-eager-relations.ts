@@ -1,8 +1,6 @@
 import "reflect-metadata";
-import {Connection} from "../../../../../src/connection/Connection";
-import {EntityMetadataValidator} from "../../../../../src/metadata-builder/EntityMetadataValidator";
-import {ConnectionMetadataBuilder} from "../../../../../src/connection/ConnectionMetadataBuilder";
-import {expect} from "chai";
+import { Connection, ConnectionMetadataBuilder, EntityMetadataValidator } from "@typeorm/core";
+import { expect } from "chai";
 
 describe("relations > eager relations > circular eager relations", () => {
 

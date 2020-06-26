@@ -13,7 +13,7 @@
 大多数情况下，我们希望将连接选项存储在单独的配置文件中，因为此方式使管理变得更方便和容易。 TypeORM 支持多个配置源。你只需要在应用程序的根目录（`package.json`附近）中创建一个`ormconfig.[format]`文件存放连接配置，并在应用程序中调用`createConnection()`，而不传递任何参数配置：
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 
 // createConnection方法会自动读取来自ormconfig文件或环境变量中的连接选项
 const connection = await createConnection();

@@ -17,7 +17,7 @@ Categories 可以嵌套 categories，嵌套类别可以嵌套其他类别等。
 例如：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "@typeorm/core";
 
 @Entity()
 export class Category {
@@ -44,7 +44,7 @@ export class Category {
 例如：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class Profile {
@@ -60,7 +60,7 @@ export class Profile {
 ```
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from "@typeorm/core";
 import { Profile } from "./Profile";
 
 @Entity()
@@ -92,7 +92,7 @@ User {
 例如：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from "@typeorm/core";
 import { Profile } from "./Profile";
 
 @Entity()
@@ -151,7 +151,7 @@ const user = await connection
 有时先初始化关系属性很有用，例如：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "@typeorm/core";
 import { Category } from "./Category";
 
 @Entity()

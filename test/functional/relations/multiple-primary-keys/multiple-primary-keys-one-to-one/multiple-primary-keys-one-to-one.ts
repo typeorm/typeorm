@@ -1,13 +1,17 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {Category} from "./entity/Category";
-import {Post} from "./entity/Post";
-import {Tag} from "./entity/Tag";
+import { expect } from "chai";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Category } from "./entity/Category";
+import { Post } from "./entity/Post";
+import { Tag } from "./entity/Tag";
 
 describe("relations > multiple-primary-keys > one-to-one", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -110,7 +114,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categoryWithOptions", "category")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.categoryWithOptions).to.not.be.eql([]);
@@ -164,7 +168,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categoryWithNonPKColumns", "category")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.categoryWithNonPKColumns).to.not.be.eql([]);
@@ -221,7 +225,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                 .createQueryBuilder(Tag, "tag")
                 .leftJoinAndSelect("tag.category", "category")
                 .orderBy("category.code")
-                .where("tag.code = :code", { code: 1 })
+                .where("tag.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedTag!.category).to.not.be.undefined;
@@ -277,7 +281,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                 .createQueryBuilder(Tag, "tag")
                 .leftJoinAndSelect("tag.categoryWithOptions", "category")
                 .orderBy("category.code")
-                .where("tag.code = :code", { code: 1 })
+                .where("tag.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedTag!.categoryWithOptions).to.not.be.eql([]);
@@ -335,7 +339,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                 .createQueryBuilder(Tag, "tag")
                 .leftJoinAndSelect("tag.categoryWithNonPKColumns", "category")
                 .orderBy("category.code")
-                .where("tag.code = :code", { code: 1 })
+                .where("tag.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedTag!.categoryWithNonPKColumns).to.not.be.eql([]);
@@ -389,7 +393,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.post", "post")
                 .orderBy("post.id")
-                .where("category.code = :code", { code: 1 })
+                .where("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.post).to.not.be.undefined;
@@ -444,7 +448,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tag", "tag")
                 .orderBy("tag.code")
-                .where("category.code = :code", { code: 1 })
+                .where("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.tag).to.not.be.undefined;
@@ -500,7 +504,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tagWithOptions", "tag")
                 .orderBy("tag.code")
-                .where("category.code = :code", { code: 1 })
+                .where("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.tagWithOptions).to.not.be.eql([]);
@@ -558,7 +562,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tagWithNonPKColumns", "tag")
                 .orderBy("tag.code")
-                .where("category.code = :code", { code: 1 })
+                .where("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.tagWithNonPKColumns).to.not.be.eql([]);
@@ -614,7 +618,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tagWithOptions", "tag")
                 .orderBy("tag.code")
-                .where("category.code = :code", { code: 1 })
+                .where("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.tagWithOptions).to.not.be.eql([]);
@@ -672,7 +676,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tagWithNonPKColumns", "tag")
                 .orderBy("tag.code")
-                .where("category.code = :code", { code: 1 })
+                .where("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.tagWithNonPKColumns).to.not.be.eql([]);

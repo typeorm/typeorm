@@ -1,9 +1,5 @@
-import {Column} from "../../../../src/decorator/columns/Column";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {JoinColumn} from "../../../../src/decorator/relations/JoinColumn";
-import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
-import {Category} from "./Category";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Post {
@@ -11,11 +7,11 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ name: "category_id" })
+    @Column({name: "category_id"})
     categoryId: number;
 
     @ManyToOne(() => Category)
-    @JoinColumn({ name: "category_id" })
+    @JoinColumn({name: "category_id"})
     category: Category;
 
 }

@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
 
 describe("github issues > #3604 FK columns have wrong length when PrimaryGeneratedColumn('uuid') is used.", () => {
 
@@ -13,7 +13,7 @@ describe("github issues > #3604 FK columns have wrong length when PrimaryGenerat
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("join column should have the same length with primary column", () => Promise.all(connections.map(async function(connection) {
+    it("join column should have the same length with primary column", () => Promise.all(connections.map(async function (connection) {
 
         const queryRunner = connection.createQueryRunner();
         const table = await queryRunner.getTable("post");

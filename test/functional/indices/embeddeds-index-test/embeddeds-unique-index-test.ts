@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Customer} from "./entity/Customer";
-import {Profile} from "./entity/Profile";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Customer } from "./entity/Customer";
+import { Profile } from "./entity/Profile";
 
 describe("indices > embeds index test", () => {
 
@@ -13,7 +13,7 @@ describe("indices > embeds index test", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    describe("embeddeds index", function() {
+    describe("embeddeds index", function () {
 
         it("should work without errors", () => Promise.all(connections.map(async connection => {
             const customer = new Customer();

@@ -1,13 +1,17 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {Tag} from "./entity/Tag";
+import { expect } from "chai";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { Tag } from "./entity/Tag";
 
 describe("relations > multiple-primary-keys > many-to-many", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -69,7 +73,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categories", "categories")
                 .orderBy("categories.code")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.categories).to.not.be.eql([]);
@@ -130,7 +134,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categoriesWithOptions", "categories")
                 .orderBy("categories.code")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.categoriesWithOptions).to.not.be.eql([]);
@@ -197,7 +201,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categoriesWithNonPKColumns", "categories")
                 .orderBy("categories.code")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.categoriesWithNonPKColumns).to.not.be.eql([]);
@@ -263,7 +267,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .createQueryBuilder(Tag, "tag")
                 .leftJoinAndSelect("tag.categories", "categories")
                 .orderBy("categories.code")
-                .where("tag.code = :code", { code: 1 })
+                .where("tag.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedTag!.categories).to.not.be.eql([]);
@@ -328,7 +332,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .createQueryBuilder(Tag, "tag")
                 .leftJoinAndSelect("tag.categoriesWithOptions", "categories")
                 .orderBy("categories.code")
-                .where("tag.code = :code", { code: 1 })
+                .where("tag.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedTag!.categoriesWithOptions).to.not.be.eql([]);
@@ -399,7 +403,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .createQueryBuilder(Tag, "tag")
                 .leftJoinAndSelect("tag.categoriesWithNonPKColumns", "categories")
                 .orderBy("categories.code")
-                .where("tag.code = :code", { code: 1 })
+                .where("tag.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedTag!.categoriesWithNonPKColumns).to.not.be.eql([]);
@@ -459,7 +463,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.posts", "posts")
                 .orderBy("posts.id")
-                .where("category.code = :code", { code: 1 })
+                .where("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.posts).to.not.be.eql([]);
@@ -514,7 +518,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.postsWithOptions", "posts")
                 .orderBy("posts.id")
-                .where("category.code = :code", { code: 1 })
+                .where("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.postsWithOptions).to.not.be.eql([]);
@@ -571,7 +575,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.postsWithNonPKColumns", "posts")
                 .orderBy("posts.id")
-                .where("category.code = :code", { code: 1 })
+                .where("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.postsWithNonPKColumns).to.not.be.eql([]);
@@ -635,7 +639,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tags", "tags")
                 .orderBy("tags.code")
-                .where("category.code = :code", { code: 1 })
+                .where("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.tags).to.not.be.eql([]);
@@ -699,7 +703,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tagsWithOptions", "tags")
                 .orderBy("tags.code")
-                .where("category.code = :code", { code: 1 })
+                .where("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.tagsWithOptions).to.not.be.eql([]);
@@ -765,7 +769,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
                 .createQueryBuilder(Category, "category")
                 .leftJoinAndSelect("category.tagsWithNonPKColumns", "tags")
                 .orderBy("tags.code")
-                .where("category.code = :code", { code: 1 })
+                .where("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.tagsWithNonPKColumns).to.not.be.eql([]);

@@ -1,8 +1,5 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../src/decorator/relations/JoinTable";
-import {ActivityEntity} from "./ActivityEntity";
+import { Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from "@typeorm/core";
+import { ActivityEntity } from "./ActivityEntity";
 
 @Entity("tile")
 export class TileEntity {

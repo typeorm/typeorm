@@ -1,11 +1,11 @@
 import "reflect-metadata";
-import {Post} from "./entity/Post";
-import {Counters} from "./entity/Counters";
-import {Connection} from "../../../../src/connection/Connection";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Subcounters} from "./entity/Subcounters";
-import {User} from "./entity/User";
+import { Post } from "./entity/Post";
+import { Counters } from "./entity/Counters";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Subcounters } from "./entity/Subcounters";
+import { User } from "./entity/User";
 
 describe("embedded > embedded-one-to-one", () => {
 
@@ -80,7 +80,7 @@ describe("embedded > embedded-one-to-one", () => {
                         comments: 1,
                         favorites: 2,
                         likes: 3,
-                        likedUser: { id: 1, name: "Alice" },
+                        likedUser: {id: 1, name: "Alice"},
                         subcounters: {
                             version: 1,
                             watches: 5
@@ -97,7 +97,7 @@ describe("embedded > embedded-one-to-one", () => {
                         comments: 2,
                         favorites: 3,
                         likes: 4,
-                        likedUser: { id: 2, name: "Bob" },
+                        likedUser: {id: 2, name: "Bob"},
                         subcounters: {
                             version: 1,
                             watches: 10
@@ -109,7 +109,7 @@ describe("embedded > embedded-one-to-one", () => {
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUser", "likedUser")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.should.be.eql(
@@ -121,7 +121,7 @@ describe("embedded > embedded-one-to-one", () => {
                         comments: 1,
                         favorites: 2,
                         likes: 3,
-                        likedUser: { id: 1, name: "Alice" },
+                        likedUser: {id: 1, name: "Alice"},
                         subcounters: {
                             version: 1,
                             watches: 5
@@ -138,7 +138,7 @@ describe("embedded > embedded-one-to-one", () => {
             const loadedPost2 = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.counters.likedUser", "likedUser")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost2!.should.be.eql(
@@ -150,7 +150,7 @@ describe("embedded > embedded-one-to-one", () => {
                         comments: 1,
                         favorites: 3,
                         likes: 3,
-                        likedUser: { id: 3, name: "Clara" },
+                        likedUser: {id: 3, name: "Clara"},
                         subcounters: {
                             version: 1,
                             watches: 6
@@ -273,7 +273,7 @@ describe("embedded > embedded-one-to-one", () => {
             let loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPost", "likedPost")
-                .where("user.id = :id", { id: 1 })
+                .where("user.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedUser!.should.be.eql(
@@ -304,7 +304,7 @@ describe("embedded > embedded-one-to-one", () => {
             loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
                 .leftJoinAndSelect("user.likedPost", "likedPost")
-                .where("user.id = :id", { id: 1 })
+                .where("user.id = :id", {id: 1})
                 .getOne();
 
 

@@ -1,11 +1,7 @@
 import "reflect-metadata";
 import { expect } from "chai";
-import { Connection } from "../../../../src/connection/Connection";
-import {
-    closeTestingConnections,
-    createTestingConnections,
-    reloadTestingDatabases
-} from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
 import { Post } from "./entity/Post";
 
 describe("cube-postgres", () => {
@@ -68,8 +64,8 @@ describe("cube-postgres", () => {
                 const persistedPost = await postRepo.save(post);
 
                 await postRepo.update(
-                    { id: persistedPost.id },
-                    { mainColor: color2 }
+                    {id: persistedPost.id},
+                    {mainColor: color2}
                 );
 
                 const foundPost = await postRepo.findOne(persistedPost.id);
@@ -103,7 +99,7 @@ describe("cube-postgres", () => {
                 // Get Postgres version because zero-length cubes are not legal
                 // on all Postgres versions. Zero-length cubes are only tested
                 // to be working on Postgres version >=10.6.
-                const [{ server_version }] = await connection.query(
+                const [{server_version}] = await connection.query(
                     "SHOW server_version"
                 );
                 const semverArray = server_version.split(".").map(Number);

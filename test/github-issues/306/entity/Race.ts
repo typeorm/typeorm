@@ -1,7 +1,5 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Duration} from "./Duration";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Duration } from "./Duration";
 
 @Entity()
 export class Race {

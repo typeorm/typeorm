@@ -1,10 +1,10 @@
 import "reflect-metadata";
 import * as path from "path";
-import {expect} from "chai";
-import {Post} from "./entity/Post";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {PlatformTools} from "../../../src/platform/PlatformTools";
+import { expect } from "chai";
+import { Post } from "./entity/Post";
+import { Connection, PlatformTools } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { fileExistsSync } from 'tsconfig-paths/lib/filesystem';
 
 describe("sqljs driver > startup", () => {
     let connections: Connection[];
@@ -35,6 +35,6 @@ describe("sqljs driver > startup", () => {
         const repository = connection.getRepository(Post);
         await repository.save(post);
 
-        expect(PlatformTools.fileExist(pathToSqlite)).to.be.true;
+        expect(fileExistsSync(pathToSqlite)).to.be.true;
     })));
 });

@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, /*reloadTestingDatabases*/} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
+import { closeTestingConnections, createTestingConnections, } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
 import { Category, Post } from "./entity";
 
 describe("migrations > generate command", () => {
@@ -33,4 +33,4 @@ describe("migrations > generate command", () => {
         sqlInMemory.downQueries.length.should.be.equal(0);
 
     })));
- });
+});

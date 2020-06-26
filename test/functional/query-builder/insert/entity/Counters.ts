@@ -1,14 +1,14 @@
-import {Column} from "../../../../../src/decorator/columns/Column";
+import { Column } from "@typeorm/core";
 
 export class Counters {
 
-    @Column({ default: 1 })
+    @Column({default: 1})
     likes: number;
 
-    @Column({ nullable: true })
+    @Column({nullable: true})
     favorites: number;
 
-    @Column({ default: 0 })
+    @Column({default: 0})
     comments: number;
 
 }

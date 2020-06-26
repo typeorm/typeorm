@@ -1,9 +1,12 @@
 import "reflect-metadata";
-import {Connection} from "../../../../../src/connection/Connection";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {Table, TableColumn} from "../../../../../src";
+import { Connection, Table, TableColumn } from "@typeorm/core";
+import { expect } from "chai";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Post } from "./entity/Post";
 
 describe("database schema > column types > postgres-enum", () => {
 

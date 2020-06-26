@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Car} from "./entity/Car";
-import {Fruit} from "./entity/Fruit";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Car } from "./entity/Car";
+import { Fruit } from "./entity/Fruit";
 
 describe("github issues > #363 Can't save 2 unrelated entity types in a single persist call", () => {
 

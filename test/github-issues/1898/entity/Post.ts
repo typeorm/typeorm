@@ -1,5 +1,4 @@
-import {BaseEntity, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn} from "../../../../src";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "@typeorm/core";
 
 @Entity()
 export class Post extends BaseEntity {
@@ -10,10 +9,10 @@ export class Post extends BaseEntity {
     @Column()
     type: string;
 
-    @Column({ nullable: true })
+    @Column({nullable: true})
     token: string;
 
-    @Column("simple-json", { default: "{}" })
+    @Column("simple-json", {default: "{}"})
     values: Object;
 
     @CreateDateColumn()

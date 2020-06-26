@@ -1,10 +1,14 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {Category} from "./entity/Category";
-import {Post} from "./entity/Post";
-import {Image} from "./entity/Image";
+import { expect } from "chai";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Category } from "./entity/Category";
+import { Post } from "./entity/Post";
+import { Image } from "./entity/Image";
 
 describe("decorators > relation-count-decorator > one-to-many", () => {
 

@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
 
 describe("github issues > #151 joinAndSelect can't find entity from inverse side of relation", () => {
 

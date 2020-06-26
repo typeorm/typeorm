@@ -1,8 +1,5 @@
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Post} from "./Post";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
+import { Column, Entity, ManyToMany, PrimaryColumn } from "@typeorm/core";
+import { Post } from "./Post";
 
 @Entity()
 export class Category {
@@ -15,7 +12,7 @@ export class Category {
 
     @Column()
     position: number;
-    
+
     @ManyToMany(type => Post, post => post.categories)
     posts: Post[];
 

@@ -1,11 +1,13 @@
 import "reflect-metadata";
-import {CockroachDriver} from "../../../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {EntityMetadata} from "../../../../../src/metadata/EntityMetadata";
-import {IndexMetadata} from "../../../../../src/metadata/IndexMetadata";
-import {expect} from "chai";
-import {PersonSchema} from "./entity/Person";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection, EntityMetadata, IndexMetadata } from "@typeorm/core";
+import { expect } from "chai";
+import { PersonSchema } from "./entity/Person";
 
 describe("entity-schema > indices > basic", () => {
 

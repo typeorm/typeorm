@@ -1,6 +1,5 @@
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column, Entity, OneToMany} from "../../../../src";
-import {AuthorWithVeryLongName} from "./AuthorWithVeryLongName";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "@typeorm/core";
+import { AuthorWithVeryLongName } from "./AuthorWithVeryLongName";
 
 @Entity()
 export class GroupWithVeryLongName {

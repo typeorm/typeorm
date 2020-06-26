@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { Connection } from "../../../src/connection/Connection";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
 import { expect } from "chai";
 import { Dummy } from "./entity/dummy";
 import { Dummy2 } from "./entity/dummy2";

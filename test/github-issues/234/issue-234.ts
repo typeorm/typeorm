@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
-import {Category} from "./entity/Category";
-import {Tag} from "./entity/Tag";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
+import { Category } from "./entity/Category";
+import { Tag } from "./entity/Tag";
 
 describe("github issues > #234 and #223 lazy loading does not work correctly from one-to-many and many-to-many sides", () => {
 
@@ -54,7 +54,10 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
         // check that all persisted objects exist
         const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.title = :firstTitle OR post.title = :secondTitle", { firstTitle: "Hello Post #1", secondTitle: "Hello Post #2" })
+            .where("post.title = :firstTitle OR post.title = :secondTitle", {
+                firstTitle: "Hello Post #1",
+                secondTitle: "Hello Post #2"
+            })
             .getMany();
 
         const loadedCategory1 = await loadedPosts[0].category;
@@ -122,7 +125,10 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
         // check that all persisted objects exist
         const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.title = :firstTitle OR post.title = :secondTitle", { firstTitle: "Hello Post #1", secondTitle: "Hello Post #2" })
+            .where("post.title = :firstTitle OR post.title = :secondTitle", {
+                firstTitle: "Hello Post #1",
+                secondTitle: "Hello Post #2"
+            })
             .getMany();
 
         // check owner side

@@ -1,9 +1,9 @@
 import "reflect-metadata";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { Connection } from "../../../src/connection/Connection";
+import { Connection } from "@typeorm/core";
 import { expect } from "chai";
 import { Post } from "./entity/Post";
-import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver";
+import { PostgresDriver } from "@typeorm/driver-postgres";
 
 describe("github issues > #2128 skip preparePersistentValue for value functions", () => {
 
@@ -47,13 +47,13 @@ describe("github issues > #2128 skip preparePersistentValue for value functions"
             })
             .execute();
 
-        const loadedPost = await connection.getRepository(Post).findOne({ title: "First Post" });
+        const loadedPost = await connection.getRepository(Post).findOne({title: "First Post"});
 
         expect(loadedPost!.meta).to.deep.equal({
-             author: "John Doe",
-             keywords: [
-                 "important",
-                 "fresh"
+            author: "John Doe",
+            keywords: [
+                "important",
+                "fresh"
             ]
         });
 

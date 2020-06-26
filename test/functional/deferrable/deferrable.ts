@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Company} from "./entity/Company";
-import {Office} from "./entity/Office";
-import {User} from "./entity/User";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Company } from "./entity/Company";
+import { Office } from "./entity/Office";
+import { User } from "./entity/User";
+import { expect } from "chai";
 
 describe("deferrable fk constraints should be check at the end of transaction (#2191)", () => {
 
@@ -22,7 +22,7 @@ describe("deferrable fk constraints should be check at the end of transaction (#
             // first save user
             const user = new User();
             user.id = 1;
-            user.company = { id: 100 };
+            user.company = {id: 100};
             user.name = "Bob";
 
             await entityManager.save(user);
@@ -38,7 +38,7 @@ describe("deferrable fk constraints should be check at the end of transaction (#
         // now check
         const user = await connection.manager.findOne(User, {
             relations: ["company"],
-            where: { id: 1 }
+            where: {id: 1}
         });
 
         expect(user).not.to.be.undefined;
@@ -62,7 +62,7 @@ describe("deferrable fk constraints should be check at the end of transaction (#
             // now save office
             const office = new Office();
             office.id = 2;
-            office.company = { id: 200 };
+            office.company = {id: 200};
             office.name = "Barcelona";
 
             await entityManager.save(office);
@@ -78,7 +78,7 @@ describe("deferrable fk constraints should be check at the end of transaction (#
         // now check
         const office = await connection.manager.findOne(Office, {
             relations: ["company"],
-            where: { id: 2 }
+            where: {id: 2}
         });
 
         expect(office).not.to.be.undefined;

@@ -372,7 +372,7 @@ User can have only a single profile, and a single profile is owned by only a sin
 Example:
 
 ```typescript
-import {Entity, OneToOne, JoinColumn} from "typeorm";
+import {Entity, OneToOne, JoinColumn} from "@typeorm/core";
 import {Profile} from "./Profile";
 
 @Entity()
@@ -395,7 +395,7 @@ User can have multiple photos, but each photo is owned by only one single user.
 Example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne} from "@typeorm/core";
 import {User} from "./User";
 
 @Entity()
@@ -423,7 +423,7 @@ User can have multiple photos, but each photo is owned by only a single user.
 Example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToMany} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, OneToMany} from "@typeorm/core";
 import {Photo} from "./Photo";
 
 @Entity()
@@ -451,7 +451,7 @@ Question can have multiple categories, and each category can have multiple quest
 Example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "@typeorm/core";
 import {Category} from "./Category";
 
 @Entity()

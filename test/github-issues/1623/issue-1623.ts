@@ -1,9 +1,7 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {ColumnMetadata} from "../../../src/metadata/ColumnMetadata";
-import {ColumnMetadataArgs} from "../../../src/metadata-args/ColumnMetadataArgs";
-import {User} from "./entity/User";
+import { ColumnMetadata, ColumnMetadataArgs, Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { User } from "./entity/User";
 
 describe("github issues > #1623 NOT NULL constraint failed after a new column is added (SQLite)", () => {
 

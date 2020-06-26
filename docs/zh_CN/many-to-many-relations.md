@@ -5,7 +5,7 @@
 Question 可以有多个 categories, 每个 category 可以有多个 questions。
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class Category {
@@ -18,7 +18,7 @@ export class Category {
 ```
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "@typeorm/core";
 import { Category } from "./Category";
 
 @Entity()
@@ -110,7 +110,7 @@ const questions = await connection
 我们刚刚创建了一个单向关系。 让我们改为双向：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "@typeorm/core";
 import { Question } from "./Question";
 
 @Entity()
@@ -127,7 +127,7 @@ export class Category {
 ```
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "@typeorm/core";
 import { Category } from "./Category";
 
 @Entity()

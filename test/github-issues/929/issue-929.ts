@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
 import { TestEntity } from "./entity/TestEntity";
 
 describe("github issues > #929 sub-queries should set their own parameters on execution", () => {
@@ -38,7 +38,7 @@ describe("github issues > #929 sub-queries should set their own parameters on ex
             .subQuery()
             .from(TestEntity, "innerTestEntity")
             .select(["innerTestEntity.id"])
-            .where("innerTestEntity.id = :innerId", { innerId: 1 });
+            .where("innerTestEntity.id = :innerId", {innerId: 1});
 
         const results = await queryBuilder
             .select("testEntity")
@@ -46,7 +46,7 @@ describe("github issues > #929 sub-queries should set their own parameters on ex
             .getMany();
 
         expect(results.length).to.be.equal(1);
-        expect(results).to.eql([{ id: 1, name: "Entity #1" }]);
+        expect(results).to.eql([{id: 1, name: "Entity #1"}]);
     })));
 
 });

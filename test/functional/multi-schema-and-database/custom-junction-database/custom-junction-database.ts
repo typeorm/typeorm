@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {Connection} from "../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {expect} from "chai";
-import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { expect } from "chai";
+import { SqlServerDriver } from "@typeorm/driver-sqlserver";
 
 describe("multi-schema-and-database > custom-junction-database", () => {
 

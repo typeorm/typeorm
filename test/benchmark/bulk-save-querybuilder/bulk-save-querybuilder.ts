@@ -1,12 +1,12 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Document} from "../bulk-save-case2/entity/Document";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Document } from "../bulk-save-case2/entity/Document";
 
 describe("benchmark > bulk-save > case-querybuilder", () => {
 
     let connections: Connection[];
-    before(async () => connections = await createTestingConnections({ __dirname, enabledDrivers: ["postgres"] }));
+    before(async () => connections = await createTestingConnections({__dirname, enabledDrivers: ["postgres"]}));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
@@ -30,11 +30,11 @@ describe("benchmark > bulk-save > case-querybuilder", () => {
         await connection.manager.createQueryBuilder()
             .insert()
             .into("document", [
-              "id",
-              "docId",
-              "label",
-              "context",
-              "date",
+                "id",
+                "docId",
+                "label",
+                "context",
+                "date",
             ])
             .values(documents)
             .execute();

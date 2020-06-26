@@ -1,9 +1,6 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Author} from "./Author";
-import {Abbreviation} from "./Abbreviation";
-import {OneToOne} from "../../../../src/decorator/relations/OneToOne";
-import {JoinColumn} from "../../../../src/decorator/relations/JoinColumn";
+import { Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Author } from "./Author";
+import { Abbreviation } from "./Abbreviation";
 
 @Entity()
 export class Post {

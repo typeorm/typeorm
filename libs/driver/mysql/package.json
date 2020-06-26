@@ -1,0 +1,6 @@
+{
+  "name": "@typeorm/driver-mysql",
+  "version": "1.0.0-alpha",
+  "peerDependencies": {
+  }
+}

@@ -1,7 +1,5 @@
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {ManyToMany} from "../../../../../../../src/decorator/relations/ManyToMany";
-import {Post} from "./Post";
+import { Entity, ManyToMany, PrimaryColumn } from "@typeorm/core";
+import { Post } from "./Post";
 
 @Entity()
 export class User {

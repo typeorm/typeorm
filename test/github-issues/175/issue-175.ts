@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { expect } from "chai";
 
 describe("github issues > #175 ManyToMany relation doesn't put an empty array when the relation is empty", () => {
 
@@ -32,7 +32,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
-            .where("post.title = :title", { title: "post with categories" })
+            .where("post.title = :title", {title: "post with categories"})
             .getOne();
 
         expect(loadedPost).not.to.be.undefined;
@@ -48,7 +48,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
             }]
         });
     })));
-    
+
     it("should return post with categories even if post with empty categories was saved", () => Promise.all(connections.map(async connection => {
 
         const category1 = new Category();
@@ -70,7 +70,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
-            .where("post.title = :title", { title: "post without categories" })
+            .where("post.title = :title", {title: "post without categories"})
             .getOne();
 
         expect(loadedPost).not.to.be.undefined;
@@ -80,7 +80,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
             categories: []
         });
     })));
-    
+
     it("should return post with categories even if post was saved without categories set", () => Promise.all(connections.map(async connection => {
 
         const category1 = new Category();
@@ -98,7 +98,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.secondaryCategories", "secondaryCategories")
-            .where("post.title = :title", { title: "just post" })
+            .where("post.title = :title", {title: "just post"})
             .getOne();
 
         expect(loadedPost).not.to.be.undefined;

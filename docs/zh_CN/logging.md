@@ -106,7 +106,7 @@ TypeORM 附带 4 种不同类型的记录器：
 你可以通过实现`Logger`接口来创建自己的记录器类：
 
 ```typescript
-import { Logger } from "typeorm";
+import { Logger } from "@typeorm/core";
 
 export class MyCustomLogger implements Logger {
   // 实现logger类的所有方法
@@ -116,7 +116,7 @@ export class MyCustomLogger implements Logger {
 并在连接选项中指定它：
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { MyCustomLogger } from "./logger/MyCustomLogger";
 
 createConnection({
@@ -135,7 +135,7 @@ createConnection({
 然后你可以使用它并以下面的方式覆盖它：
 
 ```typescript
-import { createConnection, getConnectionOptions } from "typeorm";
+import { createConnection, getConnectionOptions } from "@typeorm/core";
 import { MyCustomLogger } from "./logger/MyCustomLogger";
 
 // getConnectionOptions将从ormconfig文件中读取选项并将其返回到connectionOptions对象中，

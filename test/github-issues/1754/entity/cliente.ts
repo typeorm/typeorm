@@ -1,4 +1,4 @@
-import {Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn} from "../../../../src";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
 import { TipoCliente } from "./tipo-cliente";
 
 @Entity()

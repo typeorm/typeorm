@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { User } from "./entity/User";
+import { expect } from "chai";
 
 describe("other issues > ekifox reported issue with increment", () => {
 
@@ -21,14 +21,14 @@ describe("other issues > ekifox reported issue with increment", () => {
         user.nickName = "pleerock";
         await connection.manager.save(user);
 
-        await connection.manager.update(User, { id: 1 }, {
+        await connection.manager.update(User, {id: 1}, {
             friendsInvitesCount: () => "friends_invites_count + 1"
         });
 
         const loadedUser = await connection
             .manager
             .createQueryBuilder(User, "user")
-            .where("user.id = :id", { id: 1 })
+            .where("user.id = :id", {id: 1})
             .getOne();
 
         expect(loadedUser).not.to.be.undefined;

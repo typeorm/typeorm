@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Person} from "./entity/Person";
-import {Men} from "./entity/Men";
-import {Women} from "./entity/Women";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Person } from "./entity/Person";
+import { Men } from "./entity/Men";
+import { Women } from "./entity/Women";
 
 describe("github issues > #3857 Schema inheritance when STI pattern is used", () => {
 

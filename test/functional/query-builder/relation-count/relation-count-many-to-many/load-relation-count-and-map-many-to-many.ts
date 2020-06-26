@@ -1,13 +1,17 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src";
-import {Category} from "./entity/Category";
-import {Post} from "./entity/Post";
-import {Image} from "./entity/Image";
+import { expect } from "chai";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Category } from "./entity/Category";
+import { Post } from "./entity/Post";
+import { Image } from "./entity/Image";
 
 describe("query builder > load-relation-count-and-map > many-to-many", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -58,7 +62,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
-            .where("post.id = :id", { id: post1.id })
+            .where("post.id = :id", {id: post1.id})
             .getOne();
 
         expect(loadedPost!.categoryCount).to.be.equal(3);
@@ -169,9 +173,9 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
-            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", {isRemoved: true}))
             .loadRelationCountAndMap("categories.imageCount", "categories.images", "ic")
-            .loadRelationCountAndMap("categories.removedImageCount", "categories.images", "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationCountAndMap("categories.removedImageCount", "categories.images", "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", {isRemoved: true}))
             .addOrderBy("post.id, categories.id")
             .getMany();
 
@@ -188,10 +192,10 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
-            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", {isRemoved: true}))
             .loadRelationCountAndMap("categories.imageCount", "categories.images", "ic")
-            .loadRelationCountAndMap("categories.removedImageCount", "categories.images", "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", { isRemoved: true }))
-            .where("post.id = :id", { id: post1.id })
+            .loadRelationCountAndMap("categories.removedImageCount", "categories.images", "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", {isRemoved: true}))
+            .where("post.id = :id", {id: post1.id})
             .addOrderBy("post.id, categories.id")
             .getOne();
 
@@ -246,7 +250,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
             .leftJoinAndSelect("post.categories", "categories")
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
             .loadRelationCountAndMap("categories.postCount", "categories.posts")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .addOrderBy("post.id, categories.id")
             .getOne();
 
@@ -302,7 +306,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .loadRelationCountAndMap("category.postCount", "category.posts")
-            .where("category.id = :id", { id: category1.id })
+            .where("category.id = :id", {id: category1.id})
             .getOne();
 
         expect(loadedCategory!.postCount).to.be.equal(3);
@@ -403,7 +407,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
         let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")
             .loadRelationCountAndMap("category.postCount", "category.posts")
-            .loadRelationCountAndMap("category.removedPostCount", "category.posts", "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationCountAndMap("category.removedPostCount", "category.posts", "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", {isRemoved: true}))
             .getMany();
 
         expect(loadedCategories![0].postCount).to.be.equal(3);
@@ -413,8 +417,8 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .loadRelationCountAndMap("category.postCount", "category.posts")
-            .loadRelationCountAndMap("category.removedPostCount", "category.posts", "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", { isRemoved: true }))
-            .where("category.id = :id", { id: category1.id })
+            .loadRelationCountAndMap("category.removedPostCount", "category.posts", "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", {isRemoved: true}))
+            .where("category.id = :id", {id: category1.id})
             .getOne();
 
         expect(loadedCategory!.postCount).to.be.equal(3);

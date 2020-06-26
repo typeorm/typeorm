@@ -173,7 +173,7 @@ Learn more about [connection options](./connection-options.md).
 Let's create a `User` entity inside `src/entity`:
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn} from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -196,7 +196,7 @@ Let's change `src/app.ts`:
 import * as express from "express";
 import {Request, Response} from "express";
 import * as bodyParser from  "body-parser";
-import {createConnection} from "typeorm";
+import {createConnection} from "@typeorm/core";
 import {User} from "./entity/User";
 
 // create typeorm connection
@@ -246,7 +246,7 @@ If you want to extract action callbacks into separate files and you need the `co
 you can simply use `getConnection`:
 
 ```typescript
-import {getConnection} from "typeorm";
+import {getConnection} from "@typeorm/core";
 import {User} from "./entity/User";
 
 export function UsersListAction(req: Request, res: Response) {
@@ -257,7 +257,7 @@ export function UsersListAction(req: Request, res: Response) {
 You don't even need `getConnection` in this example - you can directly use the `getRepository` function:
 
 ```typescript
-import {getRepository} from "typeorm";
+import {getRepository} from "@typeorm/core";
 import {User} from "./entity/User";
 
 export function UsersListAction(req: Request, res: Response) {

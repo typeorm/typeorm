@@ -18,7 +18,7 @@ TypeORM支持用于存储树结构的Adjacency列表和Closure表模式。
 例如：:
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany} from "@typeorm/core";
 
 @Entity()
 export class Category {
@@ -38,7 +38,7 @@ export class Category {
     @OneToMany(type => Category, category => category.parent)
     children: Category[];
 }
-     
+
 ```
 
 ## 嵌套集
@@ -49,7 +49,7 @@ export class Category {
 例如：
 
 ```typescript
-import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
+import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "@typeorm/core";
 
 @Entity()
 @Tree("nested-set")
@@ -76,7 +76,7 @@ export class Category {
 例如：
 
 ```typescript
-import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
+import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "@typeorm/core";
 
 @Entity()
 @Tree("materialized-path")
@@ -103,7 +103,7 @@ export class Category {
 例如：
 
 ```typescript
-import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
+import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "@typeorm/core";
 
 @Entity()
 @Tree("closure-table")

@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {expect} from "chai";
-import {Post} from "./entity/Post";
-import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
-import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Post } from "./entity/Post";
+import { PostgresDriver } from "@typeorm/driver-postgres";
+import { MysqlDriver } from "@typeorm/driver-mysql";
 
 describe("query builder > order-by", () => {
 

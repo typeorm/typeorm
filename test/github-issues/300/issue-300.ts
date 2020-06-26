@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Race} from "./entity/Race";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Race } from "./entity/Race";
 
 describe("github issues > support of embeddeds that are not set", () => {
 
@@ -20,7 +20,7 @@ describe("github issues > support of embeddeds that are not set", () => {
 
         await connection.manager.save(race);
 
-        const loadedRace = await connection.manager.findOne(Race, { name: "National Race" });
+        const loadedRace = await connection.manager.findOne(Race, {name: "National Race"});
         expect(loadedRace).to.exist;
         expect(loadedRace!.id).to.exist;
         loadedRace!.name.should.be.equal("National Race");

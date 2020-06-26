@@ -1,11 +1,10 @@
 import "reflect-metadata";
-import {Connection} from "../../../src";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
-import {SapDriver} from "../../../src/driver/sap/SapDriver";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
-import {ForeignKeyMetadata} from "../../../src/metadata/ForeignKeyMetadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import { Connection, ForeignKeyMetadata } from "@typeorm/core";
+import { MysqlDriver } from "@typeorm/driver-mysql";
+import { PostgresDriver } from "@typeorm/driver-postgres";
+import { SapDriver } from "@typeorm/driver-sap";
+import { SqlServerDriver } from "@typeorm/driver-sqlserver";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 
 describe("schema builder > custom-db-and-schema-sync", () => {
 

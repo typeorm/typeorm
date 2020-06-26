@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {User} from "./entity/User";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { User } from "./entity/User";
 
 describe("github issues > #1600 Postgres: QueryBuilder insert with Postgres array type bug", () => {
 
@@ -31,14 +31,14 @@ describe("github issues > #1600 Postgres: QueryBuilder insert with Postgres arra
 
         const loadedUsers2 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.id IN (:...ids)", { ids: [1, 2, 3, 15] })
+            .where("user.id IN (:...ids)", {ids: [1, 2, 3, 15]})
             .getMany();
 
         loadedUsers2.length.should.be.equal(3);
 
         const loadedUsers3 = await connection
             .createQueryBuilder(User, "user")
-            .where("user.id = ANY(:ids)", { ids: [1, 2, 15] })
+            .where("user.id = ANY(:ids)", {ids: [1, 2, 15]})
             .getMany();
 
         loadedUsers3.length.should.be.equal(2);

@@ -1,5 +1,5 @@
-import {Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn} from "../../../../src";
-import {TestEntity2} from "./TestEntity2";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { TestEntity2 } from "./TestEntity2";
 
 @Entity()
 export class TestEntity1 {

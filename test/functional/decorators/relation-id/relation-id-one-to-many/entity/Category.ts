@@ -1,9 +1,5 @@
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {OneToMany} from "../../../../../../src/decorator/relations/OneToMany";
-import {RelationId} from "../../../../../../src/decorator/relations/RelationId";
-import {Post} from "./Post";
+import { Column, Entity, OneToMany, PrimaryColumn, RelationId } from "@typeorm/core";
+import { Post } from "./Post";
 
 @Entity()
 export class Category {
@@ -20,7 +16,7 @@ export class Category {
     @RelationId((category: Category) => category.posts)
     postIds: number[];
 
-    @RelationId((category: Category) => category.posts, "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", { isRemoved: true }))
+    @RelationId((category: Category) => category.posts, "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", {isRemoved: true}))
     removedPostIds: number[];
 
 }

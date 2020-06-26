@@ -1,5 +1,4 @@
-import {Entity, PrimaryGeneratedColumn} from "../../../../src";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity("Error")
 export class Error {
@@ -7,7 +6,7 @@ export class Error {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column("uniqueidentifier", { nullable: false })
+    @Column("uniqueidentifier", {nullable: false})
     executionGuid: string;
 
     @Column()
@@ -18,5 +17,5 @@ export class Error {
 
     @Column()
     errorDate: Date;
-    
+
 }

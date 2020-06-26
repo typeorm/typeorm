@@ -1,10 +1,6 @@
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {ManyToOne} from "../../../../../../../src/decorator/relations/ManyToOne";
-import {OneToMany} from "../../../../../../../src/decorator/relations/OneToMany";
-import {Post} from "./Post";
-import {Image} from "./Image";
+import { Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "@typeorm/core";
+import { Post } from "./Post";
+import { Image } from "./Image";
 
 @Entity()
 export class Category {

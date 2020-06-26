@@ -1,8 +1,12 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Post} from "./entity/Post";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import { expect } from "chai";
+import { Post } from "./entity/Post";
+import { Connection } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
 
 describe("database schema > column length > mssql", () => {
 
@@ -28,11 +32,11 @@ describe("database schema > column length > mssql", () => {
         expect(table!.findColumnByName("nvarchar")!.length).to.be.equal("50");
         expect(table!.findColumnByName("binary")!.length).to.be.equal("50");
         expect(table!.findColumnByName("varbinary")!.length).to.be.equal("50");
-    
+
     })));
 
     it("all types should update their size", () => Promise.all(connections.map(async connection => {
-        
+
         let metadata = connection.getMetadata(Post);
         metadata.findColumnWithPropertyName("char")!.length = "100";
         metadata.findColumnWithPropertyName("varchar")!.length = "100";
@@ -53,11 +57,11 @@ describe("database schema > column length > mssql", () => {
         expect(table!.findColumnByName("nvarchar")!.length).to.be.equal("100");
         expect(table!.findColumnByName("binary")!.length).to.be.equal("100");
         expect(table!.findColumnByName("varbinary")!.length).to.be.equal("100");
-            
+
     })));
 
     it("all relevant types should update their size to max", () => Promise.all(connections.map(async connection => {
-        
+
         let metadata = connection.getMetadata(Post);
         metadata.findColumnWithPropertyName("varchar")!.length = "MAX";
         metadata.findColumnWithPropertyName("nvarchar")!.length = "MAX";
@@ -72,7 +76,7 @@ describe("database schema > column length > mssql", () => {
         expect(table!.findColumnByName("varchar")!.length).to.be.equal("MAX");
         expect(table!.findColumnByName("nvarchar")!.length).to.be.equal("MAX");
         expect(table!.findColumnByName("varbinary")!.length).to.be.equal("MAX");
-            
+
     })));
-    
+
 });

@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {User} from "./entity/User";
-import {SpecificUser} from "./entity/SpecificUser";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { User } from "./entity/User";
+import { SpecificUser } from "./entity/SpecificUser";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
 
 describe("github issue > #1326 Wrong behavior w/ the same table names in different databases", () => {
 
@@ -27,14 +27,14 @@ describe("github issue > #1326 Wrong behavior w/ the same table names in differe
             await connection.manager.save(user);
         }
 
-        const user = await connection.manager.findOne(User, { name: "user #1" });
+        const user = await connection.manager.findOne(User, {name: "user #1"});
         expect(user).not.to.be.undefined;
         user!.should.be.eql({
             id: 1,
             name: "user #1"
         });
 
-        const specificUser = await connection.manager.findOne(SpecificUser, { name: "specific user #1" });
+        const specificUser = await connection.manager.findOne(SpecificUser, {name: "specific user #1"});
         expect(specificUser).not.to.be.undefined;
         specificUser!.should.be.eql({
             id: 1,

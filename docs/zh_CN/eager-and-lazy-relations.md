@@ -6,7 +6,7 @@
 例如：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "@typeorm/core";
 import { Question } from "./Question";
 
 @Entity()
@@ -23,7 +23,7 @@ export class Category {
 ```
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "@typeorm/core";
 import { Category } from "./Category";
 
 @Entity()
@@ -65,7 +65,7 @@ Eager 的关系只能用于关系的一方，在关系的两边使用`eager：tr
 当你加载它们时，也会返回 promise。 例如：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "@typeorm/core";
 import { Question } from "./Question";
 
 @Entity()
@@ -82,7 +82,7 @@ export class Category {
 ```
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "@typeorm/core";
 import { Category } from "./Category";
 
 @Entity()

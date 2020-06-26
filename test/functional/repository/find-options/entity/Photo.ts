@@ -1,11 +1,5 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {
-    PrimaryGeneratedColumn,
-    ManyToMany,
-    JoinTable
-} from "../../../../../src/index";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {Category} from "./Category";
+import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Photo {

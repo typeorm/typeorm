@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import "reflect-metadata";
-import { Connection } from "../../../../src";
+import { Connection } from "@typeorm/core";
 import {
     closeTestingConnections,
     createTestingConnections,

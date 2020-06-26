@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - 13
+#  - 13
   - 12
   - 10
 
@@ -15,7 +15,7 @@ before_script:
 
 script:
   - npm run lint
-  - npx nyc npm test
+  - npm run coverage
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

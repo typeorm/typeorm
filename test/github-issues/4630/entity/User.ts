@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn } from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 export enum Realm {
     Blackrock = "Blackrock",
@@ -10,6 +10,6 @@ export class User {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ type: "enum", enum: Realm })
+    @Column({type: "enum", enum: Realm})
     realm: Realm;
 }

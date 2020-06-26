@@ -1,15 +1,15 @@
 import "reflect-metadata";
-import {expect} from "chai";
+import { expect } from "chai";
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases
 } from "../../../../../utils/test-utils";
-import {Connection} from "../../../../../../src/connection/Connection";
-import {Tag} from "./entity/Tag";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {Image} from "./entity/Image";
+import { Connection } from "@typeorm/core";
+import { Tag } from "./entity/Tag";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { Image } from "./entity/Image";
 
 describe("query builder > relation-id > many-to-many > basic-functionality", () => {
 
@@ -71,7 +71,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .leftJoinAndSelect("post.tag", "tag")
             .leftJoinAndSelect("post.categories", "categories")
             .addOrderBy("post.id, tag.id, categories.id")
-            .where("post.id = :id", { id: post.id })
+            .where("post.id = :id", {id: post.id})
             .getOne();
 
         expect(loadedPost!.tag).to.not.be.undefined;
@@ -116,7 +116,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.categoryIds", "post.categories")
-            .where("post.id = :id", { id: post.id })
+            .where("post.id = :id", {id: post.id})
             .getOne();
 
         expect(loadedPost!.categoryIds).to.not.be.undefined;
@@ -146,7 +146,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.categoryIds", "post.subcategories")
-            .where("post.id = :id", { id: post.id })
+            .where("post.id = :id", {id: post.id})
             .getOne();
 
         expect(loadedPost!.categoryIds).to.not.be.undefined;
@@ -177,7 +177,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .loadRelationIdAndMap("category.postIds", "category.posts")
-            .where("category.id = :id", { id: category.id })
+            .where("category.id = :id", {id: category.id})
             .getOne();
 
         expect(loadedCategory!.postIds).to.not.be.undefined;
@@ -206,7 +206,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories", qb => qb.andWhere("categories.id = :categoryId", { categoryId: 1 }))
+            .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories", qb => qb.andWhere("categories.id = :categoryId", {categoryId: 1}))
             .getOne();
 
         expect(loadedPost!.categoryIds).to.not.be.undefined;
@@ -235,7 +235,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .loadRelationIdAndMap("post.categoryIds", "post.subcategories", "subCategories", qb => qb.andWhere("subCategories.id = :categoryId", { categoryId: 1 }))
+            .loadRelationIdAndMap("post.categoryIds", "post.subcategories", "subCategories", qb => qb.andWhere("subCategories.id = :categoryId", {categoryId: 1}))
             .getOne();
 
         expect(loadedPost!.categoryIds).to.not.be.undefined;
@@ -265,8 +265,8 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
-            .loadRelationIdAndMap("category.postIds", "category.posts", "posts", qb => qb.andWhere("posts.id = :postId", { postId: 1 }))
-            .where("category.id = :id", { id: category.id })
+            .loadRelationIdAndMap("category.postIds", "category.posts", "posts", qb => qb.andWhere("posts.id = :postId", {postId: 1}))
+            .where("category.id = :id", {id: category.id})
             .getOne();
 
         expect(loadedCategory!.postIds).to.not.be.undefined;
@@ -307,7 +307,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .leftJoinAndSelect("post.categories", "categories")
             .loadRelationIdAndMap("post.categoryIds", "post.categories")
             .loadRelationIdAndMap("categories.imageIds", "categories.images")
-            .where("post.id = :id", { id: post.id })
+            .where("post.id = :id", {id: post.id})
             .addOrderBy("post.id, categories.id")
             .getOne();
 
@@ -353,9 +353,9 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
-            .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories2", qb => qb.andWhere("categories2.id = :categoryId", { categoryId: 1 }))
-            .loadRelationIdAndMap("categories.imageIds", "categories.images", "images", qb => qb.andWhere("images.id = :imageId", { imageId: 1 }))
-            .where("post.id = :id", { id: post.id })
+            .loadRelationIdAndMap("post.categoryIds", "post.categories", "categories2", qb => qb.andWhere("categories2.id = :categoryId", {categoryId: 1}))
+            .loadRelationIdAndMap("categories.imageIds", "categories.images", "images", qb => qb.andWhere("images.id = :imageId", {imageId: 1}))
+            .where("post.id = :id", {id: post.id})
             .addOrderBy("post.id, categories.id")
             .getOne();
 
@@ -396,7 +396,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories", "categories.id = :categoryId")
             .loadRelationIdAndMap("categories.imageIds", "categories.images")
-            .where("post.id = :id", { id: post.id })
+            .where("post.id = :id", {id: post.id})
             .setParameter("categoryId", 2)
             .addOrderBy("post.id, categories.id")
             .getOne();

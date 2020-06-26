@@ -1,8 +1,5 @@
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {ManyToMany} from "../../../../../../../src/decorator/relations/ManyToMany";
-import {Accountant} from "./Accountant";
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Accountant } from "./Accountant";
 
 @Entity()
 export class Department {

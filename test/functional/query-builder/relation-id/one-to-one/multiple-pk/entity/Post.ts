@@ -1,9 +1,5 @@
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {OneToOne} from "../../../../../../../src/decorator/relations/OneToOne";
-import {JoinColumn} from "../../../../../../../src/decorator/relations/JoinColumn";
-import {Category} from "./Category";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Post {
@@ -27,7 +23,7 @@ export class Post {
     @OneToOne(type => Category)
     @JoinColumn()
     subcategory: Category;
-    
+
     categoryId: number;
 
 }

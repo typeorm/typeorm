@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src";
-import {PostEntity} from "./entity/PostEntity";
-import {CategoryEntity} from "./entity/CategoryEntity";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { PostEntity } from "./entity/PostEntity";
+import { CategoryEntity } from "./entity/CategoryEntity";
 
 describe("entity schemas > basic functionality", () => {
 
@@ -25,7 +25,7 @@ describe("entity schemas > basic functionality", () => {
         });
         await postRepository.save(post);
 
-        const loadedPost = await connection.manager.findOne(PostEntity, { title: "First Post" });
+        const loadedPost = await connection.manager.findOne(PostEntity, {title: "First Post"});
         loadedPost!.id.should.be.equal(post.id);
         loadedPost!.title.should.be.equal("First Post");
         loadedPost!.text.should.be.equal("About first post");

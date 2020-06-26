@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Counters} from "./entity/Counters";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Counters } from "./entity/Counters";
 
 describe("decorators > embedded", () => {
 
@@ -13,7 +13,7 @@ describe("decorators > embedded", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     afterEach(() => closeTestingConnections(connections));
 
-    describe("basic functionality", function() {
+    describe("basic functionality", function () {
 
         it("should persist and load entities with embeddeds properly", () => Promise.all(connections.map(async connection => {
             const postRepository = connection.getRepository(Post);

@@ -1,4 +1,4 @@
-import {Column, Entity, PrimaryGeneratedColumn, TableInheritance} from "../../../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn, TableInheritance } from "@typeorm/core";
 
 @Entity({database: "test"})
 @TableInheritance({column: {name: "type", type: "varchar"}})

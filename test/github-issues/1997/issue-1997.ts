@@ -1,9 +1,8 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {createTestingConnections, closeTestingConnections} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Table, TableColumn} from "../../../src";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { Connection, Table, TableColumn } from "@typeorm/core";
+import { Post } from "./entity/Post";
 
 describe("github issues > #1997 enum type not working in postgres when defined in a custom schema", () => {
     let connections: Connection[];

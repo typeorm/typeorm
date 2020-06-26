@@ -1,16 +1,16 @@
 import "reflect-metadata";
-import {expect} from "chai";
+import { expect } from "chai";
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases
 } from "../../../../../utils/test-utils";
-import {Connection} from "../../../../../../src/connection/Connection";
-import {Category} from "./entity/Category";
-import {Post} from "./entity/Post";
+import { Connection } from "@typeorm/core";
+import { Category } from "./entity/Category";
+import { Post } from "./entity/Post";
 
 describe("query builder > relation-id > one-to-one > basic-functionality", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -51,7 +51,7 @@ describe("query builder > relation-id > one-to-one > basic-functionality", () =>
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.categoryId", "post.category")
-            .where("post.id = :id", { id: post.id })
+            .where("post.id = :id", {id: post.id})
             .getOne();
 
         expect(loadedPost!.categoryId).to.not.be.undefined;

@@ -1,5 +1,4 @@
-
-import {Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique} from "../../../../src";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "@typeorm/core";
 
 @Entity()
 @Unique(["clientId", "key"])
@@ -17,11 +16,14 @@ export class User {
     @Column()
     public name: string;
 
-    @Column({ name: "updated_by"})
+    @Column({name: "updated_by"})
     public updatedById: number;
 
     @ManyToOne(type => User)
-    @JoinColumn([{name: "client_id", referencedColumnName: "clientId"}, { name: "updated_by", referencedColumnName: "key"}])
+    @JoinColumn([{name: "client_id", referencedColumnName: "clientId"}, {
+        name: "updated_by",
+        referencedColumnName: "key"
+    }])
     public updatedBy: Promise<User>;
 
 }

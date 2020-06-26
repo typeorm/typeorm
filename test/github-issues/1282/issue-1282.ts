@@ -1,10 +1,9 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Animal} from "./entity/Animal";
-import {NamingStrategyUnderTest} from "./naming/NamingStrategyUnderTest";
-import {ColumnMetadata} from "../../../src/metadata/ColumnMetadata";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { ColumnMetadata, Connection } from "@typeorm/core";
+import { Animal } from "./entity/Animal";
+import { NamingStrategyUnderTest } from "./naming/NamingStrategyUnderTest";
 
 
 describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumnName if it is called from the owning or owned (inverse) context ", () => {
@@ -28,7 +27,7 @@ describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumn
 
         let metadata = connection.getManyToManyMetadata(Animal, "categories");
 
-        let columns:  ColumnMetadata[];
+        let columns: ColumnMetadata[];
         if (metadata !== undefined) {
             columns = metadata.columns;
         } else {

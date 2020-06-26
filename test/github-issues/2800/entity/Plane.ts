@@ -1,5 +1,5 @@
-import {Engine, Vehicle} from "./Vehicle";
-import {ChildEntity, Column} from "../../../../src";
+import { Engine, Vehicle } from "./Vehicle";
+import { ChildEntity, Column } from "@typeorm/core";
 
 export class PlaneEngine extends Engine {
 
@@ -14,7 +14,7 @@ export class PlaneEngine extends Engine {
 @ChildEntity()
 export class Plane extends Vehicle {
 
-    @Column(type => PlaneEngine, { prefix: "planeEngine" })
+    @Column(type => PlaneEngine, {prefix: "planeEngine"})
     public engine: PlaneEngine;
 
 }

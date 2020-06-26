@@ -1,9 +1,5 @@
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {ManyToOne} from "../../../../../../../src/decorator/relations/ManyToOne";
-import {JoinColumn} from "../../../../../../../src/decorator/relations/JoinColumn";
-import {Post} from "./Post";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Post } from "./Post";
 
 @Entity()
 export class User {

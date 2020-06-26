@@ -1,16 +1,16 @@
 import "reflect-metadata";
-import {Connection} from "../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {expect} from "chai";
-import {Post} from "./entity/Post";
-import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
-import {User} from "./entity/User";
-import {Category} from "./entity/Category";
-import {Person} from "./entity/Person";
-import {Question} from "./entity/Question";
-import {Answer} from "./entity/Answer";
-import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { expect } from "chai";
+import { Post } from "./entity/Post";
+import { PostgresDriver } from "@typeorm/driver-postgres";
+import { SqlServerDriver } from "@typeorm/driver-sqlserver";
+import { User } from "./entity/User";
+import { Category } from "./entity/Category";
+import { Person } from "./entity/Person";
+import { Question } from "./entity/Question";
+import { Answer } from "./entity/Answer";
+import { MysqlDriver } from "@typeorm/driver-mysql";
 
 describe("multi-schema-and-database > basic-functionality", () => {
 

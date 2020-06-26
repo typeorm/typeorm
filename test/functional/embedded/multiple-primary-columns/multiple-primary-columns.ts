@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {Post} from "./entity/Post";
-import {Counters} from "./entity/Counters";
-import {Connection} from "../../../../src/connection/Connection";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { Counters } from "./entity/Counters";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
 
 describe("embedded > multiple-primary-column", () => {
 
@@ -44,20 +44,20 @@ describe("embedded > multiple-primary-column", () => {
             .getMany();
 
         expect(loadedPosts[0].title).to.be.equal("About cars");
-        expect(loadedPosts[0].counters.should.be.eql({ code: 1, comments: 1, favorites: 2, likes: 3 }));
+        expect(loadedPosts[0].counters.should.be.eql({code: 1, comments: 1, favorites: 2, likes: 3}));
         expect(loadedPosts[1].title).to.be.equal("About airplanes");
-        expect(loadedPosts[1].counters.should.be.eql({ code: 2, comments: 2, favorites: 3, likes: 4 }));
+        expect(loadedPosts[1].counters.should.be.eql({code: 2, comments: 2, favorites: 3, likes: 4}));
 
-        const loadedPost = (await postRepository.findOne({ id: 1, counters: { code: 1 } }))!;
+        const loadedPost = (await postRepository.findOne({id: 1, counters: {code: 1}}))!;
         expect(loadedPost.title).to.be.equal("About cars");
-        expect(loadedPost.counters.should.be.eql({ code: 1, comments: 1, favorites: 2, likes: 3 }));
+        expect(loadedPost.counters.should.be.eql({code: 1, comments: 1, favorites: 2, likes: 3}));
 
         loadedPost.counters.favorites += 1;
         await postRepository.save(loadedPost);
 
-        const loadedPost2 = (await postRepository.findOne({ id: 1, counters: { code: 1 } }))!;
+        const loadedPost2 = (await postRepository.findOne({id: 1, counters: {code: 1}}))!;
         expect(loadedPost.title).to.be.equal("About cars");
-        expect(loadedPost.counters.should.be.eql({ code: 1, comments: 1, favorites: 3, likes: 3 }));
+        expect(loadedPost.counters.should.be.eql({code: 1, comments: 1, favorites: 3, likes: 3}));
 
         await postRepository.remove(loadedPost2);
 

@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("github issues > #3352 sync drops text column", () => {
 
@@ -15,7 +15,7 @@ describe("github issues > #3352 sync drops text column", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should not drop text column", () => Promise.all(connections.map(async function(connection) {
+    it("should not drop text column", () => Promise.all(connections.map(async function (connection) {
 
         const post = new Post();
         post.id = 1;
@@ -24,7 +24,7 @@ describe("github issues > #3352 sync drops text column", () => {
 
         await connection.synchronize();
 
-        const loadedPost = await connection.manager.find(Post, { text: "hello world" });
+        const loadedPost = await connection.manager.find(Post, {text: "hello world"});
         expect(loadedPost).to.be.not.empty;
 
     })));

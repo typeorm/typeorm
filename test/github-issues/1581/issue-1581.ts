@@ -1,11 +1,11 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src";
-import {User} from "./entity/User";
-import {Product} from "./entity/Product";
-import {DeliverySlot} from "./entity/DeliverySlot";
-import {Order} from "./entity/Order";
-import {OrderItem} from "./entity/OrderItem";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { User } from "./entity/User";
+import { Product } from "./entity/Product";
+import { DeliverySlot } from "./entity/DeliverySlot";
+import { Order } from "./entity/Order";
+import { OrderItem } from "./entity/OrderItem";
 
 describe.skip("github issues > #1581 Composite key breaks OneToMany relation", () => {
 

@@ -1,6 +1,6 @@
-import {Column, Entity, ManyToOne, PrimaryGeneratedColumn} from "../../../../src";
-import {UserEntity} from "./UserEntity";
-import {OrganizationEntity} from "./OrganizationEntity";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { UserEntity } from "./UserEntity";
+import { OrganizationEntity } from "./OrganizationEntity";
 
 @Entity("user_organization")
 export class UserToOrganizationEntity {

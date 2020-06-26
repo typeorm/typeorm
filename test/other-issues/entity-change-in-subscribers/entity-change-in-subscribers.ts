@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
-import {PostCategory} from "./entity/PostCategory";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
+import { PostCategory } from "./entity/PostCategory";
 
 describe("other issues > entity change in subscribers should affect persistence", () => {
 
@@ -15,7 +15,7 @@ describe("other issues > entity change in subscribers should affect persistence"
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("if entity was changed, subscriber should be take updated columns", () => Promise.all(connections.map(async function(connection) {
+    it("if entity was changed, subscriber should be take updated columns", () => Promise.all(connections.map(async function (connection) {
 
         const category1 = new PostCategory();
         category1.name = "category #1";

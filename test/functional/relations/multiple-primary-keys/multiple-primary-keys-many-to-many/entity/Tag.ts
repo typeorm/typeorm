@@ -1,9 +1,5 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {ManyToMany} from "../../../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../../../src/decorator/relations/JoinTable";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Category} from "./Category";
-import {Column} from "../../../../../../src/decorator/columns/Column";
+import { Column, Entity, JoinTable, ManyToMany, PrimaryColumn } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Tag {

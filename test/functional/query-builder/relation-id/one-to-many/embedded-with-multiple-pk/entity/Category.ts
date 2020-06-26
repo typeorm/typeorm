@@ -1,7 +1,5 @@
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {Post} from "./Post";
-import {ManyToOne} from "../../../../../../../src/decorator/relations/ManyToOne";
+import { Entity, ManyToOne, PrimaryColumn } from "@typeorm/core";
+import { Post } from "./Post";
 
 @Entity()
 export class Category {

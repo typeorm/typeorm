@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Foo} from "./entity/Foo";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Foo } from "./entity/Foo";
+import { expect } from "chai";
 
 describe("github issues > #2499 Postgres DELETE query result is useless", () => {
 
@@ -25,9 +25,9 @@ describe("github issues > #2499 Postgres DELETE query result is useless", () => 
         }
         const repo = connection.getRepository(Foo);
 
-        await repo.save({ id: 1, description: "test1" });
-        await repo.save({ id: 2, description: "test2" });
-        await repo.save({ id: 3, description: "test3" });
+        await repo.save({id: 1, description: "test1"});
+        await repo.save({id: 2, description: "test2"});
+        await repo.save({id: 3, description: "test3"});
 
         // number 4 doesn't exist
         const result = await repo.delete([1, 2, 3, 4]);

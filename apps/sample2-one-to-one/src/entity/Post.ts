@@ -1,0 +1,62 @@
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { PostDetails } from "./PostDetails";
+import { PostCategory } from "./PostCategory";
+import { PostAuthor } from "./PostAuthor";
+import { PostInformation } from "./PostInformation";
+import { PostImage } from "./PostImage";
+import { PostMetadata } from "./PostMetadata";
+
+@Entity("sample2_post")
+export class Post {
+
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column()
+  text: string;
+
+  // post has relation with category, however inverse relation is not set (category does not have relation with post set)
+  @OneToOne('PostCategory', {
+    cascade: true
+  })
+  @JoinColumn()
+  category: PostCategory | number | any;
+
+  // post has relation with details. cascade inserts here means if new PostDetails instance will be set to this
+  // relation it will be inserted automatically to the db when you save this Post entity
+  @OneToOne(() => PostDetails, details => details.post, {
+    cascade: ["insert"]
+  })
+  @JoinColumn()
+  details: PostDetails | number | any;
+
+  // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
+  // it will be inserted automatically to the db when you save this Post entity
+  @OneToOne(() => PostImage, image => image.post, {
+    cascade: ["update"]
+  })
+  @JoinColumn()
+  image: PostImage | number | any;
+
+  // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
+  // it will be inserted automatically to the db when you save this Post entity
+  @OneToOne(() => PostMetadata, metadata => metadata.post)
+  @JoinColumn()
+  metadata: PostMetadata | number | any;
+
+  // post has relation with details. full cascades here
+  @OneToOne(() => PostInformation, information => information.post, {
+    cascade: true
+  })
+  @JoinColumn()
+  information: PostInformation | number | any;
+
+  // post has relation with details. not cascades here. means cannot be persisted, updated or removed
+  @OneToOne(() => PostAuthor, author => author.post)
+  @JoinColumn()
+  author: PostAuthor | number | any;
+
+}

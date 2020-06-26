@@ -1,6 +1,5 @@
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {Information} from "./Information";
-import {BeforeInsert} from "../../../../../../src";
+import { BeforeInsert, Column } from "@typeorm/core";
+import { Information } from "./Information";
 
 export class Counters {
 

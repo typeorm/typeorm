@@ -1,8 +1,4 @@
-import {Generated} from "../../../../../src";
-import {PrimaryColumn} from "../../../../../src";
-import {PrimaryGeneratedColumn} from "../../../../../src";
-import {Entity} from "../../../../../src";
-import {Column} from "../../../../../src";
+import { Column, Entity, Generated, PrimaryColumn, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Person {
@@ -14,10 +10,10 @@ export class Person {
     @Generated("rowid")
     id2: string;
 
-    @PrimaryColumn({ generated: "rowid" })
+    @PrimaryColumn({generated: "rowid"})
     id3: string;
 
-    @Column({ generated: "rowid" })
+    @Column({generated: "rowid"})
     id4: string;
 
 }

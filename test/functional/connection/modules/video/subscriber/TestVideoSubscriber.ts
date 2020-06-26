@@ -1,10 +1,8 @@
-import {EventSubscriber} from "../../../../../../src/decorator/listeners/EventSubscriber";
-import {EntitySubscriberInterface} from "../../../../../../src/subscriber/EntitySubscriberInterface";
-import {InsertEvent} from "../../../../../../src/subscriber/event/InsertEvent";
+import { EntitySubscriberInterface, EventSubscriber, InsertEvent } from "@typeorm/core";
 
 @EventSubscriber()
 export class TestVideoSubscriber implements EntitySubscriberInterface {
-    
+
     /**
      * Called after entity insertion.
      */

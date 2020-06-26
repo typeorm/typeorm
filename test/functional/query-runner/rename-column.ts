@@ -1,14 +1,13 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../src";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {SapDriver} from "../../../src/driver/sap/SapDriver";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Table} from "../../../src";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
-import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import { expect } from "chai";
+import { Connection, Table } from "@typeorm/core";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { SapDriver } from "@typeorm/driver-sap";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { SqlServerDriver } from "@typeorm/driver-sqlserver";
+import { PostgresDriver } from "@typeorm/driver-postgres";
+import { AbstractSqliteDriver } from "@typeorm/driver-sqlite-abstract";
+import { MysqlDriver } from "@typeorm/driver-mysql";
 
 describe("query runner > rename column", () => {
 
@@ -111,7 +110,7 @@ describe("query runner > rename column", () => {
             return;
 
         const queryRunner = connection.createQueryRunner();
-        let table: Table|undefined;
+        let table: Table | undefined;
 
         let questionTableName: string = "question";
         let categoryTableName: string = "category";
@@ -149,7 +148,7 @@ describe("query runner > rename column", () => {
                     type: "varchar",
                 }
             ],
-            indices: [{ columnNames: ["name"] }]
+            indices: [{columnNames: ["name"]}]
         }), true);
 
         await queryRunner.createTable(new Table({

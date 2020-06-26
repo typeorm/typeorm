@@ -1,18 +1,16 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../src/connection/Connection";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {SapDriver} from "../../../src/driver/sap/SapDriver";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Table} from "../../../src/schema-builder/table/Table";
-import {TableOptions} from "../../../src/schema-builder/options/TableOptions";
-import {Post} from "./entity/Post";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
-import {Photo} from "./entity/Photo";
-import {Book2, Book} from "./entity/Book";
-import {SqliteDriver} from "../../../src/driver/sqlite/SqliteDriver";
+import { expect } from "chai";
+import { Connection, Table, TableOptions } from "@typeorm/core";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { SapDriver } from "@typeorm/driver-sap";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { MysqlDriver } from "@typeorm/driver-mysql";
+import { AbstractSqliteDriver } from "@typeorm/driver-sqlite-abstract";
+import { OracleDriver } from "@typeorm/driver-oracle";
+import { Photo } from "./entity/Photo";
+import { Book, Book2 } from "./entity/Book";
+import { SqliteDriver } from "@typeorm/driver-sqlite";
 
 describe("query runner > create table", () => {
 
@@ -145,7 +143,7 @@ describe("query runner > create table", () => {
                     type: "int"
                 }
             ],
-            indices: [{ columnNames: ["authorId", "authorUserId"], isUnique: true }],
+            indices: [{columnNames: ["authorId", "authorUserId"], isUnique: true}],
             foreignKeys: [
                 {
                     columnNames: ["authorId", "authorUserId"],
@@ -156,10 +154,10 @@ describe("query runner > create table", () => {
         };
 
         if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
-            questionTableOptions.indices!.push({ columnNames: ["name", "text"] });
+            questionTableOptions.indices!.push({columnNames: ["name", "text"]});
         } else {
-            questionTableOptions.uniques = [{ columnNames: ["name", "text"] }];
-            questionTableOptions.checks = [{ expression: `${connection.driver.escape("name")} <> 'ASD'` }];
+            questionTableOptions.uniques = [{columnNames: ["name", "text"]}];
+            questionTableOptions.checks = [{expression: `${connection.driver.escape("name")} <> 'ASD'`}];
         }
 
         await queryRunner.createTable(new Table(questionTableOptions), true);
@@ -201,14 +199,14 @@ describe("query runner > create table", () => {
         };
 
         if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
-            categoryTableOptions.indices = [{ columnNames: ["name", "alternativeName"]}];
+            categoryTableOptions.indices = [{columnNames: ["name", "alternativeName"]}];
         } else {
-            categoryTableOptions.uniques = [{ columnNames: ["name", "alternativeName"]}];
+            categoryTableOptions.uniques = [{columnNames: ["name", "alternativeName"]}];
         }
 
         // When we mark column as unique, MySql create index for that column and we don't need to create index separately.
         if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof OracleDriver) && !(connection.driver instanceof SapDriver))
-            categoryTableOptions.indices = [{ columnNames: ["questionId"] }];
+            categoryTableOptions.indices = [{columnNames: ["questionId"]}];
 
         await queryRunner.createTable(new Table(categoryTableOptions), true);
 

@@ -1,11 +1,15 @@
 import "reflect-metadata";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {User} from "./entity/User";
-import {Profile} from "./entity/Profile";
-import {Editor} from "./entity/Editor";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
+import { Connection } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { User } from "./entity/User";
+import { Profile } from "./entity/Profile";
+import { Editor } from "./entity/Editor";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
 
 describe("relations > eager relations > basic", () => {
 
@@ -106,7 +110,7 @@ describe("relations > eager relations > basic", () => {
 
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         loadedPost!.should.be.eql({

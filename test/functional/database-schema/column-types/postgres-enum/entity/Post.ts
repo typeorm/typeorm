@@ -1,6 +1,4 @@
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {
@@ -8,10 +6,10 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column("enum", { enum: ["A", "B", "C"] })
+    @Column("enum", {enum: ["A", "B", "C"]})
     enum: string;
 
-    @Column("simple-enum", { enum: ["A", "B", "C"] })
+    @Column("simple-enum", {enum: ["A", "B", "C"]})
     simpleEnum: string;
 
     @Column()

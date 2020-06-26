@@ -20,7 +20,7 @@ TypeORM 的主要职责之一是使你的数据库表与实体保持同步。
 - 在连接选项中设置 `synchronize: true`：
 
   ```typescript
-  import { createConnection } from "typeorm";
+  import { createConnection } from "@typeorm/core";
 
   createConnection({
     synchronize: true
@@ -129,7 +129,7 @@ TypeORM 无法为你决定。
 以下是如何使用 TypeORM 设置 typedi 服务容器的示例。 注意：你可以使用 TypeORM 设置任何服务容器。
 
 ```typescript
-import { useContainer, createConnection } from "typeorm";
+import { useContainer, createConnection } from "@typeorm/core";
 import { Container } from "typedi";
 
 // 在开始使用TypeORM之前设置容器很重要

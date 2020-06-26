@@ -1,11 +1,10 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {User} from "./model/User";
-import {EntityNotFoundError} from "../../../../src/error/EntityNotFoundError";
-import {UserEntity} from "./schema/UserEntity";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection, EntityNotFoundError } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { User } from "./model/User";
+import { UserEntity } from "./schema/UserEntity";
 
 describe("repository > find methods", () => {
 
@@ -18,12 +17,12 @@ describe("repository > find methods", () => {
 
     describe("count", function () {
         it("should return a full count when no criteria given", () => Promise.all(connections.map(async connection => {
-            const postRepository            = connection.getRepository(Post);
+            const postRepository = connection.getRepository(Post);
             const promises: Promise<Post>[] = [];
             for (let i = 0; i < 100; i++) {
-                const post        = new Post();
-                post.id           = i;
-                post.title        = "post #" + i;
+                const post = new Post();
+                post.id = i;
+                post.title = "post #" + i;
                 post.categoryName = "other";
                 promises.push(postRepository.save(post));
             }
@@ -32,7 +31,7 @@ describe("repository > find methods", () => {
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check count method
-            const count = await postRepository.count({ order: { id: "ASC" }});
+            const count = await postRepository.count({order: {id: "ASC"}});
             count.should.be.equal(100);
         })));
 
@@ -40,9 +39,9 @@ describe("repository > find methods", () => {
             const postRepository = connection.getRepository(Post);
             const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
-                const post        = new Post();
-                post.id           = i;
-                post.title        = "post #" + i;
+                const post = new Post();
+                post.id = i;
+                post.title = "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
                 promises.push(postRepository.save(post));
             }
@@ -52,21 +51,21 @@ describe("repository > find methods", () => {
 
             // check count method
             const count = await postRepository.count({
-                where: { categoryName: "odd" },
-                order: { id: "ASC" }
+                where: {categoryName: "odd"},
+                order: {id: "ASC"}
             });
             count.should.be.equal(50);
         })));
 
         it("should return a count of posts that match given multiple criteria", () => Promise.all(connections.map(async connection => {
-            const postRepository            = connection.getRepository(Post);
+            const postRepository = connection.getRepository(Post);
             const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
-                const post        = new Post();
-                post.id           = i;
-                post.title        = "post #" + i;
+                const post = new Post();
+                post.id = i;
+                post.title = "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                post.isNew        = i > 90;
+                post.isNew = i > 90;
                 promises.push(postRepository.save(post));
             }
 
@@ -75,20 +74,20 @@ describe("repository > find methods", () => {
 
             // check count method
             const count = await postRepository.count({
-                where: { categoryName: "odd", isNew: true },
-                order: { id: "ASC" }
+                where: {categoryName: "odd", isNew: true},
+                order: {id: "ASC"}
             });
             count.should.be.equal(5);
         })));
 
         it("should return a count of posts that match given find options", () => Promise.all(connections.map(async connection => {
-            const postRepository            = connection.getRepository(Post);
+            const postRepository = connection.getRepository(Post);
             const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
-                const post        = new Post();
-                post.id           = i;
-                post.isNew        = i > 90;
-                post.title        = post.isNew ? "new post #" + i : "post #" + i;
+                const post = new Post();
+                post.id = i;
+                post.isNew = i > 90;
+                post.title = post.isNew ? "new post #" + i : "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
                 promises.push(postRepository.save(post));
             }
@@ -102,13 +101,13 @@ describe("repository > find methods", () => {
         })));
 
         it("should return a count of posts that match both criteria and find options", () => Promise.all(connections.map(async connection => {
-            const postRepository            = connection.getRepository(Post);
+            const postRepository = connection.getRepository(Post);
             const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
-                const post        = new Post();
-                post.id           = i;
-                post.isNew        = i > 90;
-                post.title        = post.isNew ? "new post #" + i : "post #" + i;
+                const post = new Post();
+                post.id = i;
+                post.isNew = i > 90;
+                post.title = post.isNew ? "new post #" + i : "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
                 promises.push(postRepository.save(post));
             }
@@ -118,17 +117,17 @@ describe("repository > find methods", () => {
 
             // check count method
             const count = await postRepository.count({
-                where: { categoryName: "even", isNew: true },
+                where: {categoryName: "even", isNew: true},
                 skip: 1,
-                take:  2,
-                order: { id: "ASC" }
+                take: 2,
+                order: {id: "ASC"}
             });
             count.should.be.equal(5);
         })));
-        
+
     });
 
-    describe("find and findAndCount", function() {
+    describe("find and findAndCount", function () {
 
         it("should return everything when no criteria given", () => Promise.all(connections.map(async connection => {
             const postRepository = connection.getRepository(Post);
@@ -145,7 +144,7 @@ describe("repository > find methods", () => {
             savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
-            const loadedPosts = await postRepository.find({ order: { id: "ASC" }});
+            const loadedPosts = await postRepository.find({order: {id: "ASC"}});
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(100);
             loadedPosts[0].id.should.be.equal(0);
@@ -154,7 +153,7 @@ describe("repository > find methods", () => {
             loadedPosts[99].title.should.be.equal("post #99");
 
             // check findAndCount method
-            let [loadedPosts2, count] = await postRepository.findAndCount({ order: { id: "ASC" }});
+            let [loadedPosts2, count] = await postRepository.findAndCount({order: {id: "ASC"}});
             count.should.be.equal(100);
             loadedPosts2.should.be.instanceOf(Array);
             loadedPosts2.length.should.be.equal(100);
@@ -180,8 +179,8 @@ describe("repository > find methods", () => {
 
             // check find method
             const loadedPosts = await postRepository.find({
-                where: { categoryName: "odd" },
-                order: { id: "ASC" }
+                where: {categoryName: "odd"},
+                order: {id: "ASC"}
             });
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(50);
@@ -192,8 +191,8 @@ describe("repository > find methods", () => {
 
             // check findAndCount method
             let [loadedPosts2, count] = await postRepository.findAndCount({
-                where: { categoryName: "odd" },
-                order: { id: "ASC" }
+                where: {categoryName: "odd"},
+                order: {id: "ASC"}
             });
             count.should.be.equal(50);
             loadedPosts2.should.be.instanceOf(Array);
@@ -221,8 +220,8 @@ describe("repository > find methods", () => {
 
             // check find method
             const loadedPosts = await postRepository.find({
-                where: { categoryName: "odd", isNew: true },
-                order: { id: "ASC" }
+                where: {categoryName: "odd", isNew: true},
+                order: {id: "ASC"}
             });
             loadedPosts.should.be.instanceOf(Array);
             loadedPosts.length.should.be.equal(5);
@@ -233,8 +232,8 @@ describe("repository > find methods", () => {
 
             // check findAndCount method
             let [loadedPosts2, count] = await postRepository.findAndCount({
-                where: { categoryName: "odd", isNew: true },
-                order: { id: "ASC" }
+                where: {categoryName: "odd", isNew: true},
+                order: {id: "ASC"}
             });
             count.should.be.equal(5);
             loadedPosts2.should.be.instanceOf(Array);
@@ -351,7 +350,7 @@ describe("repository > find methods", () => {
 
     });
 
-    describe("findOne", function() {
+    describe("findOne", function () {
 
         it("should return first when no criteria given", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");
@@ -368,7 +367,7 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            const loadedUser = (await userRepository.findOne({ order: { id: "ASC" }}))!;
+            const loadedUser = (await userRepository.findOne({order: {id: "ASC"}}))!;
             loadedUser.id.should.be.equal(0);
             loadedUser.firstName.should.be.equal("name #0");
             loadedUser.secondName.should.be.equal("Doe");
@@ -389,7 +388,7 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            const loadedUser = (await userRepository.findOne({ where: { firstName: "name #1" }, order: { id: "ASC" } }))!;
+            const loadedUser = (await userRepository.findOne({where: {firstName: "name #1"}, order: {id: "ASC"}}))!;
             loadedUser.id.should.be.equal(1);
             loadedUser.firstName.should.be.equal("name #1");
             loadedUser.secondName.should.be.equal("Doe");
@@ -426,7 +425,7 @@ describe("repository > find methods", () => {
 
     });
 
-    describe("findOne", function() {
+    describe("findOne", function () {
 
         it("should return entity by a given id", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");
@@ -493,7 +492,7 @@ describe("repository > find methods", () => {
 
     });
 
-    describe("findByIds", function() {
+    describe("findByIds", function () {
 
         it("should return entities by given ids", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");
@@ -517,7 +516,7 @@ describe("repository > find methods", () => {
 
     });
 
-    describe("findOneOrFail", function() {
+    describe("findOneOrFail", function () {
 
         it("should return entity by a given id", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");

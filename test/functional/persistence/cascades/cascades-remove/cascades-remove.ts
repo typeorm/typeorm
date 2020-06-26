@@ -1,14 +1,18 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {Photo} from "./entity/Photo";
-import {User} from "./entity/User";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Photo } from "./entity/Photo";
+import { User } from "./entity/User";
 
 // todo: fix later
 describe.skip("persistence > cascades > remove", () => {
 
     let connections: Connection[];
-    before(async () => connections = await createTestingConnections({ __dirname, enabledDrivers: ["mysql"] }));
+    before(async () => connections = await createTestingConnections({__dirname, enabledDrivers: ["mysql"]}));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 

@@ -1,8 +1,7 @@
 import "reflect-metadata";
-import {Connection} from "../../../src";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {PromiseUtils} from "../../../src";
+import { Connection, PromiseUtils } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { Post } from "./entity/Post";
 
 describe("github issues > #3496 jsonb comparison doesn't work", () => {
 

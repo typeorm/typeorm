@@ -1,6 +1,4 @@
-import {Entity} from "../../../../src";
-import {PrimaryGeneratedColumn} from "../../../../src";
-import {Column, VersionColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn, VersionColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {
@@ -10,6 +8,6 @@ export class Post {
     @VersionColumn()
     version: number;
 
-    @Column({ type: "jsonb" })
+    @Column({type: "jsonb"})
     problems: object;
 }

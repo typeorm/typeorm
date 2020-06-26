@@ -1,8 +1,12 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Post} from "./entity/Post";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Post } from "./entity/Post";
 
 describe("mongodb > basic repository actions", () => {
 
@@ -37,8 +41,8 @@ describe("mongodb > basic repository actions", () => {
             text: "All about this post"
         });
         const mergedPost = postRepository.merge(post,
-            { title: "This is updated post" },
-            { text: "And its text is updated as well" }
+            {title: "This is updated post"},
+            {text: "And its text is updated as well"}
         );
         mergedPost.should.be.instanceOf(Post);
         mergedPost.should.be.equal(post);
@@ -109,7 +113,7 @@ describe("mongodb > basic repository actions", () => {
         expect(loadedPost1!.text).to.be.equal("Everything about first post");
 
         // assert findOne method
-        const loadedPost2 = await postRepository.findOne({ title: "Second Post" });
+        const loadedPost2 = await postRepository.findOne({title: "Second Post"});
         expect(loadedPost2!.id).to.be.eql(post2.id);
         expect(loadedPost2!.title).to.be.equal("Second Post");
         expect(loadedPost2!.text).to.be.equal("Everything about second post");
@@ -170,10 +174,9 @@ describe("mongodb > basic repository actions", () => {
         await postRepository.save(posts);
 
 
-
         // ASCENDANT SORTING
         let queryPostsAsc = await postRepository.find({
-            order: { index: "ASC" }
+            order: {index: "ASC"}
         });
 
 
@@ -184,7 +187,7 @@ describe("mongodb > basic repository actions", () => {
 
         // DESCENDANT SORTING
         let queryPostsDesc = await postRepository.find({
-            order: { index: "DESC" }
+            order: {index: "DESC"}
         });
 
         queryPostsDesc.length.should.be.equal(10);

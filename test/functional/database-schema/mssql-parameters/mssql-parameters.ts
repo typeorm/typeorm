@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {Connection} from "../../../../src/connection/Connection";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Post} from "./entity/Post";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Post } from "./entity/Post";
 
 describe("database schema > mssql-parameters", () => {
 
@@ -66,8 +66,8 @@ describe("database schema > mssql-parameters", () => {
 
         await connection.createQueryBuilder()
             .update(Post)
-            .set({ name: "Updated Post #2" })
-            .where("id = :id", { id: 2 })
+            .set({name: "Updated Post #2"})
+            .where("id = :id", {id: 2})
             .execute();
 
         loadedPost2 = (await postRepository.findOne(2))!;
@@ -76,7 +76,7 @@ describe("database schema > mssql-parameters", () => {
         await connection.createQueryBuilder()
             .delete()
             .from(Post)
-            .where("id = :id", { id: "2" })
+            .where("id = :id", {id: "2"})
             .execute();
 
         loadedPost2 = (await postRepository.findOne(2))!;

@@ -1,7 +1,6 @@
 import "reflect-metadata";
-import { Connection } from "../../../src/connection/Connection";
+import { Connection, PromiseUtils } from "@typeorm/core";
 import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
-import { PromiseUtils } from "../../../src";
 import { Roles } from "./entity/Roles";
 
 describe("github issues > #3536 Sync only works once for enums on entities with capital letters in entity name", () => {

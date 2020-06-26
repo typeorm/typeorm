@@ -1,13 +1,13 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {SapDriver} from "../../../../src/driver/sap/SapDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
-import {Photo} from "./entity/Photo";
-import {AbstractSqliteDriver} from "../../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {OracleDriver} from "../../../../src/driver/oracle/OracleDriver";
+import { expect } from "chai";
+import { SapDriver } from "@typeorm/driver-sap";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { User } from "./entity/User";
+import { SqlServerDriver } from "@typeorm/driver-sqlserver";
+import { Photo } from "./entity/Photo";
+import { AbstractSqliteDriver } from "@typeorm/driver-sqlite-abstract";
+import { OracleDriver } from "@typeorm/driver-oracle";
 
 describe("query builder > insert", () => {
 
@@ -41,14 +41,14 @@ describe("query builder > insert", () => {
         await connection.getRepository(User)
             .createQueryBuilder("user")
             .insert()
-            .values({ name: "Muhammad Mirzoev" })
+            .values({name: "Muhammad Mirzoev"})
             .execute();
 
         const users = await connection.getRepository(User).find();
         users.should.be.eql([
-            { id: 1, name: "Alex Messer" },
-            { id: 2, name: "Dima Zotov" },
-            { id: 3, name: "Muhammad Mirzoev" }
+            {id: 1, name: "Alex Messer"},
+            {id: 2, name: "Dima Zotov"},
+            {id: 3, name: "Muhammad Mirzoev"}
         ]);
 
     })));
@@ -62,17 +62,17 @@ describe("query builder > insert", () => {
             .insert()
             .into(User)
             .values([
-                { name: "Umed Khudoiberdiev" },
-                { name: "Bakhrom Baubekov" },
-                { name: "Bakhodur Kandikov" },
+                {name: "Umed Khudoiberdiev"},
+                {name: "Bakhrom Baubekov"},
+                {name: "Bakhodur Kandikov"},
             ])
             .execute();
 
         const users = await connection.getRepository(User).find();
         users.should.be.eql([
-            { id: 1, name: "Umed Khudoiberdiev" },
-            { id: 2, name: "Bakhrom Baubekov" },
-            { id: 3, name: "Bakhodur Kandikov" }
+            {id: 1, name: "Umed Khudoiberdiev"},
+            {id: 2, name: "Bakhrom Baubekov"},
+            {id: 3, name: "Bakhodur Kandikov"}
         ]);
 
     })));
@@ -87,7 +87,7 @@ describe("query builder > insert", () => {
             })
             .execute();
 
-        const loadedUser1 = await connection.getRepository(User).findOne({ name: "Dima" });
+        const loadedUser1 = await connection.getRepository(User).findOne({name: "Dima"});
         expect(loadedUser1).to.exist;
         loadedUser1!.name.should.be.equal("Dima");
 
@@ -115,7 +115,7 @@ describe("query builder > insert", () => {
             }])
             .execute();
 
-        const loadedPhoto1 = await connection.getRepository(Photo).findOne({ url: "1.jpg" });
+        const loadedPhoto1 = await connection.getRepository(Photo).findOne({url: "1.jpg"});
         expect(loadedPhoto1).to.exist;
         loadedPhoto1!.should.be.eql({
             id: 1,
@@ -127,7 +127,7 @@ describe("query builder > insert", () => {
             }
         });
 
-        const loadedPhoto2 = await connection.getRepository(Photo).findOne({ url: "2.jpg" });
+        const loadedPhoto2 = await connection.getRepository(Photo).findOne({url: "2.jpg"});
         expect(loadedPhoto2).to.exist;
         loadedPhoto2!.should.be.eql({
             id: 2,

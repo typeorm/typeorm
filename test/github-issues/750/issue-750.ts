@@ -1,9 +1,8 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {IndexMetadata} from "../../../src/metadata/IndexMetadata";
-import {expect} from "chai";
+import { Connection, IndexMetadata } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("github issues > #750 Need option for Mysql's full text search", () => {
 

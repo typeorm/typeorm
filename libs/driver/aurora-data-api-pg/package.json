@@ -1,0 +1,4 @@
+{
+  "name": "@typeorm/driver-aurora-data-api-pg",
+  "version": "1.0.0-alpha"
+}

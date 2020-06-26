@@ -1,9 +1,5 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {Post} from "./Post";
-import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
-import {Generated} from "../../../../../src/decorator/Generated";
+import { Column, Entity, Generated, OneToMany, PrimaryColumn } from "@typeorm/core";
+import { Post } from "./Post";
 
 @Entity()
 export class Category {

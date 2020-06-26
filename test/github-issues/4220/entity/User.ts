@@ -1,4 +1,4 @@
-import {Entity, PrimaryColumn, Column} from "../../../../src";
+import { Column, Entity, PrimaryColumn } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -6,9 +6,9 @@ export class User {
         comment: "The ID of this user.",
         length: 16,
         type: "binary",
-    })    
+    })
     id: Buffer;
-    
+
     @Column()
     name: string;
 }

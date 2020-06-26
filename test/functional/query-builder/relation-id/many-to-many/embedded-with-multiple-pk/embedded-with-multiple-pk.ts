@@ -1,16 +1,16 @@
 import "reflect-metadata";
-import {expect} from "chai";
+import { expect } from "chai";
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases
 } from "../../../../../utils/test-utils";
-import {Connection} from "../../../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {Counters} from "./entity/Counters";
-import {User} from "./entity/User";
-import {Subcounters} from "./entity/Subcounters";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { Counters } from "./entity/Counters";
+import { User } from "./entity/User";
+import { Subcounters } from "./entity/Subcounters";
 
 describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk", () => {
 
@@ -107,15 +107,15 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         comments: 2,
                         favorites: 3,
                         categoryIds: [
-                            { id: 1, name: "cars"},
-                            { id: 2, name: "BMW"}
+                            {id: 1, name: "cars"},
+                            {id: 2, name: "BMW"}
                         ],
                         subcntrs: {
                             version: 1,
                             watches: 2,
                             watchedUserIds: [
-                                { id: 1, name: "Alice"},
-                                { id: 2, name: "Bob"}
+                                {id: 1, name: "Alice"},
+                                {id: 2, name: "Bob"}
                             ]
                         }
                     }
@@ -131,14 +131,14 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         comments: 4,
                         favorites: 5,
                         categoryIds: [
-                            { id: 3, name: "airplanes"},
-                            { id: 4, name: "Boeing"}
+                            {id: 3, name: "airplanes"},
+                            {id: 4, name: "Boeing"}
                         ],
                         subcntrs: {
                             version: 1,
                             watches: 1,
                             watchedUserIds: [
-                                { id: 3, name: "Clara"}
+                                {id: 3, name: "Clara"}
                             ]
                         }
                     }
@@ -149,9 +149,9 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                 .createQueryBuilder(Post, "post")
                 .loadRelationIdAndMap("post.counters.categoryIds", "post.counters.categories")
                 .loadRelationIdAndMap("post.counters.subcntrs.watchedUserIds", "post.counters.subcntrs.watchedUsers")
-                .where("post.id = :id", { id: 1 })
-                .andWhere("post.counters.code = :code", { code: 111 })
-                .andWhere("post.counters.subcntrs.version = :version", { version: 1 })
+                .where("post.id = :id", {id: 1})
+                .andWhere("post.counters.code = :code", {code: 111})
+                .andWhere("post.counters.subcntrs.version = :version", {version: 1})
                 .getOne();
 
             expect(loadedPost!.should.be.eql(
@@ -164,15 +164,15 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         comments: 2,
                         favorites: 3,
                         categoryIds: [
-                            { id: 1, name: "cars"},
-                            { id: 2, name: "BMW"}
+                            {id: 1, name: "cars"},
+                            {id: 2, name: "BMW"}
                         ],
                         subcntrs: {
                             version: 1,
                             watches: 2,
                             watchedUserIds: [
-                                { id: 1, name: "Alice"},
-                                { id: 2, name: "Bob"}
+                                {id: 1, name: "Alice"},
+                                {id: 2, name: "Bob"}
                             ]
                         }
                     }
@@ -270,24 +270,24 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
 
             expect(loadedCategories[0].postIds).to.not.be.eql([]);
             expect(loadedCategories[0].postIds.length).to.be.equal(2);
-            expect(loadedCategories[0].postIds[0]).to.be.eql({ id: 1, counters: { code: 111, subcntrs: { version: 1 }} });
-            expect(loadedCategories[0].postIds[1]).to.be.eql({ id: 2, counters: { code: 222, subcntrs: { version: 1 }} });
+            expect(loadedCategories[0].postIds[0]).to.be.eql({id: 1, counters: {code: 111, subcntrs: {version: 1}}});
+            expect(loadedCategories[0].postIds[1]).to.be.eql({id: 2, counters: {code: 222, subcntrs: {version: 1}}});
             expect(loadedCategories[1].postIds).to.not.be.eql([]);
             expect(loadedCategories[1].postIds.length).to.be.equal(2);
-            expect(loadedCategories[1].postIds[0]).to.be.eql({ id: 3, counters: { code: 333, subcntrs: { version: 2 }} });
-            expect(loadedCategories[1].postIds[1]).to.be.eql({ id: 4, counters: { code: 444, subcntrs: { version: 3 }} });
+            expect(loadedCategories[1].postIds[0]).to.be.eql({id: 3, counters: {code: 333, subcntrs: {version: 2}}});
+            expect(loadedCategories[1].postIds[1]).to.be.eql({id: 4, counters: {code: 444, subcntrs: {version: 3}}});
 
             const loadedCategory = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .loadRelationIdAndMap("category.postIds", "category.posts")
-                .where("category.id = :id", { id: 1 })
-                .andWhere("category.name = :name", { name: "cars" })
+                .where("category.id = :id", {id: 1})
+                .andWhere("category.name = :name", {name: "cars"})
                 .getOne();
 
             expect(loadedCategory!.postIds).to.not.be.eql([]);
             expect(loadedCategory!.postIds.length).to.be.equal(2);
-            expect(loadedCategory!.postIds[0]).to.be.eql({ id: 1, counters: { code: 111, subcntrs: { version: 1 }} });
-            expect(loadedCategory!.postIds[1]).to.be.eql({ id: 2, counters: { code: 222, subcntrs: { version: 1 }} });
+            expect(loadedCategory!.postIds[0]).to.be.eql({id: 1, counters: {code: 111, subcntrs: {version: 1}}});
+            expect(loadedCategory!.postIds[1]).to.be.eql({id: 2, counters: {code: 222, subcntrs: {version: 1}}});
 
             const loadedUsers = await connection.manager
                 .createQueryBuilder(User, "user")
@@ -297,24 +297,24 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
 
             expect(loadedUsers[0].postIds).to.not.be.eql([]);
             expect(loadedUsers[0].postIds.length).to.be.equal(2);
-            expect(loadedUsers[0].postIds[0]).to.be.eql({ id: 1, counters: { code: 111, subcntrs: { version: 1 }} });
-            expect(loadedUsers[0].postIds[1]).to.be.eql({ id: 2, counters: { code: 222, subcntrs: { version: 1 }} });
+            expect(loadedUsers[0].postIds[0]).to.be.eql({id: 1, counters: {code: 111, subcntrs: {version: 1}}});
+            expect(loadedUsers[0].postIds[1]).to.be.eql({id: 2, counters: {code: 222, subcntrs: {version: 1}}});
             expect(loadedUsers[1].postIds).to.not.be.eql([]);
             expect(loadedUsers[1].postIds.length).to.be.equal(2);
-            expect(loadedUsers[1].postIds[0]).to.be.eql({ id: 3, counters: { code: 333, subcntrs: { version: 2 }} });
-            expect(loadedUsers[1].postIds[1]).to.be.eql({ id: 4, counters: { code: 444, subcntrs: { version: 3 }} });
+            expect(loadedUsers[1].postIds[0]).to.be.eql({id: 3, counters: {code: 333, subcntrs: {version: 2}}});
+            expect(loadedUsers[1].postIds[1]).to.be.eql({id: 4, counters: {code: 444, subcntrs: {version: 3}}});
 
             const loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
                 .loadRelationIdAndMap("user.postIds", "user.posts")
-                .where("user.id = :id", { id: 1 })
-                .andWhere("user.name = :name", { name: "Alice" })
+                .where("user.id = :id", {id: 1})
+                .andWhere("user.name = :name", {name: "Alice"})
                 .getOne();
 
             expect(loadedUser!.postIds).to.not.be.eql([]);
             expect(loadedUser!.postIds.length).to.be.equal(2);
-            expect(loadedUser!.postIds[0]).to.be.eql({ id: 1, counters: { code: 111, subcntrs: { version: 1 }} });
-            expect(loadedUser!.postIds[1]).to.be.eql({ id: 2, counters: { code: 222, subcntrs: { version: 1 }} });
+            expect(loadedUser!.postIds[0]).to.be.eql({id: 1, counters: {code: 111, subcntrs: {version: 1}}});
+            expect(loadedUser!.postIds[1]).to.be.eql({id: 2, counters: {code: 222, subcntrs: {version: 1}}});
 
         })));
 

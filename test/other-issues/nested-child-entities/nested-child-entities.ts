@@ -1,8 +1,8 @@
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
 
-import {TournamentGraph} from "./entity/TournamentGraph";
-import {SquadBilliardsTournament} from "./entity/SquadBilliardsTournament";
+import { TournamentGraph } from "./entity/TournamentGraph";
+import { SquadBilliardsTournament } from "./entity/SquadBilliardsTournament";
 
 describe("other issues > using nested child entities", () => {
     let connections: Connection[];
@@ -11,7 +11,7 @@ describe("other issues > using nested child entities", () => {
         entities: [__dirname + "/entity/*{.js,.ts}"],
         enabledDrivers: ["postgres"]
     }));
-    
+
     beforeEach(() => reloadTestingDatabases(connections));
 
     after(() => closeTestingConnections(connections));

@@ -1,8 +1,7 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {User} from "./entity/User";
-import {PromiseUtils} from "../../../src";
+import { Connection, PromiseUtils } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { User } from "./entity/User";
 
 describe("github issues > #3422 cannot save to nested-tree table if schema is used in postgres", () => {
 

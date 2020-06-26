@@ -11,7 +11,7 @@
 The simplest way to use multiple databases is to create different connections:
 
 ```typescript
-import {createConnections} from "typeorm";
+import {createConnections} from "@typeorm/core";
 
 const connections = await createConnections([{
     name: "db1Connection",
@@ -36,7 +36,7 @@ const connections = await createConnections([{
 }]);
 ```
 
-This approach allows you to connect to any number of databases you have 
+This approach allows you to connect to any number of databases you have
 and each database will have its own configuration, own entities and overall ORM scope and settings.
 
 For each connection a new `Connection` instance will be created.
@@ -45,14 +45,14 @@ You must specify a unique name for each connection you create.
 The connection options can also be loaded from an ormconfig file. You can load all connections from
 the ormconfig file:
 ```typescript
-import {createConnections} from "typeorm";
+import {createConnections} from "@typeorm/core";
 
 const connections = await createConnections();
 ```
 
 or you can specify which connection to create by name:
 ```typescript
-import {createConnection} from "typeorm";
+import {createConnection} from "@typeorm/core";
 
 const connection = await createConnection("db2Connection");
 ```
@@ -60,7 +60,7 @@ const connection = await createConnection("db2Connection");
 When working with connections you must specify a connection name to get a specific connection:
 
 ```typescript
-import {getConnection} from "typeorm";
+import {getConnection} from "@typeorm/core";
 
 const db1Connection = getConnection("db1Connection");
 // you can work with "db1" database now...
@@ -71,16 +71,16 @@ const db2Connection = getConnection("db2Connection");
 
 Benefit of using this approach is that you can configure multiple connections with different login credentials,
 host, port and even database type itself.
-Downside for might be that you'll need to manage and work with multiple connection instances. 
+Downside for might be that you'll need to manage and work with multiple connection instances.
 
 ## Using multiple databases in a single connection
 
-If you don't want to create multiple connections, 
+If you don't want to create multiple connections,
 but want to use multiple databases in a single connection,
 you can specify database name per-entity you use:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity({ database: "secondDB" })
 export class User {
@@ -98,7 +98,7 @@ export class User {
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity({ database: "thirdDB" })
 export class Photo {
@@ -130,7 +130,7 @@ const users = await connection
 This code will produce following sql query (depend on database type):
 
 ```sql
-SELECT * FROM "secondDB"."user" "user", "thirdDB"."photo" "photo" 
+SELECT * FROM "secondDB"."user" "user", "thirdDB"."photo" "photo"
     WHERE "photo"."userId" = "user"."id"
 ```
 
@@ -153,7 +153,7 @@ This feature is supported only in mysql and mssql databases.
 You can use multiple schemas in your applications, just set `schema` on each entity:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity({ schema: "secondSchema" })
 export class User {
@@ -171,7 +171,7 @@ export class User {
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity({ schema: "thirdSchema" })
 export class Photo {
@@ -203,7 +203,7 @@ const users = await connection
 This code will produce following sql query (depend on database type):
 
 ```sql
-SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo" 
+SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo"
     WHERE "photo"."userId" = "user"."id"
 ```
 
@@ -223,7 +223,7 @@ This feature is supported only in postgres and mssql databases.
 In mssql you can also combine schemas and databases, for example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity({ database: "secondDB", schema: "public" })
 export class User {
@@ -275,7 +275,7 @@ Example of replication connection settings:
 ```
 
 All schema update and write operations are performed using `master` server.
-All simple queries performed by find methods or select query builder are using a random `slave` instance. 
+All simple queries performed by find methods or select query builder are using a random `slave` instance.
 
 If you want to explicitly use master in SELECT created by query builder, you can use the following code:
 
@@ -288,7 +288,7 @@ try {
 } finally {
       await masterQueryRunner.release();
 }
-        
+
 ```
 
 Note that connection created by a `QueryRunner` need to be explicitly released.
@@ -320,7 +320,7 @@ Mysql supports deep configuration:
       password: "test",
       database: "test"
     }],
-    
+
     /**
     * If true, PoolCluster will attempt to reconnect when connection fails. (Default: true)
     */

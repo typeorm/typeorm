@@ -1,8 +1,4 @@
-import {Entity, PrimaryGeneratedColumn} from "../../../../src";
-import {Tree} from "../../../../src/decorator/tree/Tree";
-import {TreeParent} from "../../../../src/decorator/tree/TreeParent";
-import {TreeChildren} from "../../../../src/decorator/tree/TreeChildren";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Column, Entity, PrimaryGeneratedColumn, Tree, TreeChildren, TreeParent } from "@typeorm/core";
 
 @Entity()
 @Tree("closure-table")
@@ -17,7 +13,7 @@ export class Category {
     @TreeParent()
     parentCategory: Category;
 
-    @TreeChildren({ cascade: true })
+    @TreeChildren({cascade: true})
     childCategories: Category[];
 
 }

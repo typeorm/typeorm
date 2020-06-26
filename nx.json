@@ -1,0 +1,196 @@
+{
+  "npmScope": "typeorm",
+  "implicitDependencies": {
+    "angular.json": "*",
+    "package.json": {
+      "dependencies": "*",
+      "devDependencies": "*"
+    },
+    "tsconfig.json": "*",
+    "tslint.json": "*",
+    "nx.json": "*"
+  },
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "@nrwl/workspace/tasks-runners/default",
+      "options": {
+        "cacheableOperations": [
+          "build",
+          "lint",
+          "test",
+          "e2e"
+        ]
+      }
+    }
+  },
+  "projects": {
+    "browser-core": {
+      "tags": []
+    },
+    "driver-mysql": {
+      "tags": []
+    },
+    "ng-sample1-simple-entity": {
+      "tags": []
+    },
+    "ng-sample1-simple-entity-e2e": {
+      "tags": [],
+      "implicitDependencies": [
+        "ng-sample1-simple-entity"
+      ]
+    },
+    "sample1-simple-entity": {
+      "tags": []
+    },
+    "sample2-one-to-one": {
+      "tags": []
+    },
+    "driver-postgres": {
+      "tags": []
+    },
+    "cli": {
+      "tags": []
+    },
+    "driver-sqljs": {
+      "tags": []
+    },
+    "driver-sqlite-abstract": {
+      "tags": []
+    },
+    "driver-mongodb": {
+      "tags": []
+    },
+    "sample34-mongodb": {
+      "tags": []
+    },
+    "driver-sqlite": {
+      "tags": []
+    },
+    "driver-sqlserver": {
+      "tags": []
+    },
+    "core": {
+      "tags": []
+    },
+    "driver-oracle": {
+      "tags": []
+    },
+    "driver-aurora-data-api": {
+      "tags": []
+    },
+    "driver-aurora-data-api-pg": {
+      "tags": []
+    },
+    "driver-cockroachdb": {
+      "tags": []
+    },
+    "driver-sql-abstract": {
+      "tags": []
+    },
+    "driver-browser-sqljs": {
+      "tags": []
+    },
+    "driver-sap": {
+      "tags": []
+    },
+    "sample3-many-to-one": {
+      "tags": []
+    },
+    "sample4-many-to-many": {
+      "tags": []
+    },
+    "driver-cordova": {
+      "tags": []
+    },
+    "driver-expo": {
+      "tags": []
+    },
+    "driver-react-native": {
+      "tags": []
+    },
+    "driver-nativescript": {
+      "tags": []
+    },
+    "sample5-subscribers": {
+      "tags": []
+    },
+    "sample6-abstract-table": {
+      "tags": []
+    },
+    "sample7-pagination": {
+      "tags": []
+    },
+    "sample8-self-referencing": {
+      "tags": []
+    },
+    "sample9-entity-listeners": {
+      "tags": []
+    },
+    "sample10-mixed": {
+      "tags": []
+    },
+    "sample11-all-types-entity": {
+      "tags": []
+    },
+    "sample12-custom-naming-strategy": {
+      "tags": []
+    },
+    "sample13-everywhere-abstraction": {
+      "tags": []
+    },
+    "sample14-errors-in-wrong-metadata": {
+      "tags": []
+    },
+    "sample16-indexes": {
+      "tags": []
+    },
+    "sample17-versioning": {
+      "tags": []
+    },
+    "sample18-lazy-relations": {
+      "tags": []
+    },
+    "sample19-one-side-relations": {
+      "tags": []
+    },
+    "sample20-join-without-relation": {
+      "tags": []
+    },
+    "sample21-custom-join-table-column": {
+      "tags": []
+    },
+    "sample22-closure-table": {
+      "tags": []
+    },
+    "sample23-nested-joins": {
+      "tags": []
+    },
+    "sample24-schemas": {
+      "tags": []
+    },
+    "sample25-insert-from-inverse-side": {
+      "tags": []
+    },
+    "sample26-embedded-tables": {
+      "tags": []
+    },
+    "sample27-composite-primary-keys": {
+      "tags": []
+    },
+    "sample28-single-table-inheritance": {
+      "tags": []
+    },
+    "sample30-default-order-by": {
+      "tags": []
+    },
+    "sample31-table-prefix": {
+      "tags": []
+    },
+    "sample32-migrations": {
+      "tags": []
+    },
+    "sample33-custom-repository": {
+      "tags": []
+    }
+  }
+}

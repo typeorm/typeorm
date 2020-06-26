@@ -1,15 +1,15 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Post} from "./entity/Post";
-import {Counters} from "./entity/Counters";
-import {Connection} from "../../../../src/connection/Connection";
+import { expect } from "chai";
+import { Post } from "./entity/Post";
+import { Counters } from "./entity/Counters";
+import { Connection } from "@typeorm/core";
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
     sleep
 } from "../../../utils/test-utils";
-import {Subcounters} from "../embedded-many-to-one-case2/entity/Subcounters";
+import { Subcounters } from "../embedded-many-to-one-case2/entity/Subcounters";
 
 describe("embedded > embedded-with-special-columns", () => {
 
@@ -61,7 +61,7 @@ describe("embedded > embedded-with-special-columns", () => {
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .orderBy("post.id")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost!.counters.createdDate.should.be.instanceof(Date));
@@ -78,7 +78,7 @@ describe("embedded > embedded-with-special-columns", () => {
 
         loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect((loadedPost!.counters.updatedDate.valueOf()).should.be.greaterThan(prevUpdateDate.valueOf()));

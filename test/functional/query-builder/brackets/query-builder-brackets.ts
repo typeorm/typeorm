@@ -1,12 +1,11 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {Brackets} from "../../../../src/query-builder/Brackets";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Brackets, Connection } from "@typeorm/core";
+import { User } from "./entity/User";
 
 describe("query builder > brackets", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -35,14 +34,14 @@ describe("query builder > brackets", () => {
         await connection.manager.save(user3);
 
         const users = await connection.createQueryBuilder(User, "user")
-            .where("user.isAdmin = :isAdmin", { isAdmin: true })
+            .where("user.isAdmin = :isAdmin", {isAdmin: true})
             .orWhere(new Brackets(qb => {
-                qb.where("user.firstName = :firstName1", { firstName1: "Timber" })
-                    .andWhere("user.lastName = :lastName1", { lastName1: "Saw" });
+                qb.where("user.firstName = :firstName1", {firstName1: "Timber"})
+                    .andWhere("user.lastName = :lastName1", {lastName1: "Saw"});
             }))
             .orWhere(new Brackets(qb => {
-                qb.where("user.firstName = :firstName2", { firstName2: "Alex" })
-                    .andWhere("user.lastName = :lastName2", { lastName2: "Messer" });
+                qb.where("user.firstName = :firstName2", {firstName2: "Alex"})
+                    .andWhere("user.lastName = :lastName2", {lastName2: "Messer"});
             }))
             .getMany();
 

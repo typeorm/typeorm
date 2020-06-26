@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { User } from "./entity/User";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
 
 describe("query builder > sub-query", () => {
 
@@ -78,8 +78,8 @@ describe("query builder > sub-query", () => {
             .getMany();
 
         posts.should.be.eql([
-            { id: 1, title: "Alex Messer" },
-            { id: 2, title: "Dima Zotov" },
+            {id: 1, title: "Alex Messer"},
+            {id: 2, title: "Dima Zotov"},
         ]);
     })));
 
@@ -101,8 +101,8 @@ describe("query builder > sub-query", () => {
             .getMany();
 
         posts.should.be.eql([
-            { id: 1, title: "Alex Messer" },
-            { id: 2, title: "Dima Zotov" },
+            {id: 1, title: "Alex Messer"},
+            {id: 2, title: "Dima Zotov"},
         ]);
     })));
 
@@ -124,8 +124,8 @@ describe("query builder > sub-query", () => {
             .getMany();
 
         posts.should.be.eql([
-            { id: 1, title: "Alex Messer" },
-            { id: 2, title: "Dima Zotov" },
+            {id: 1, title: "Alex Messer"},
+            {id: 2, title: "Dima Zotov"},
         ]);
     })));
 
@@ -135,7 +135,7 @@ describe("query builder > sub-query", () => {
         const userQb = await connection.getRepository(User)
             .createQueryBuilder("usr")
             .select("usr.name")
-            .where("usr.registered = :registered", { registered: true });
+            .where("usr.registered = :registered", {registered: true});
 
         const posts = await connection.getRepository(Post)
             .createQueryBuilder("post")
@@ -145,8 +145,8 @@ describe("query builder > sub-query", () => {
             .getMany();
 
         posts.should.be.eql([
-            { id: 1, title: "Alex Messer" },
-            { id: 2, title: "Dima Zotov" },
+            {id: 1, title: "Alex Messer"},
+            {id: 2, title: "Dima Zotov"},
         ]);
     })));
 
@@ -156,7 +156,7 @@ describe("query builder > sub-query", () => {
         const userQb = await connection.getRepository(User)
             .createQueryBuilder("usr")
             .select("usr.name", "name")
-            .where("usr.registered = :registered", { registered: true });
+            .where("usr.registered = :registered", {registered: true});
 
         const posts = await connection
             .createQueryBuilder()
@@ -166,8 +166,8 @@ describe("query builder > sub-query", () => {
             .getRawMany();
 
         posts.should.be.eql([
-            { name: "Alex Messer" },
-            { name: "Dima Zotov" },
+            {name: "Alex Messer"},
+            {name: "Dima Zotov"},
         ]);
     })));
 
@@ -177,7 +177,7 @@ describe("query builder > sub-query", () => {
         const userQb = await connection.getRepository(User)
             .createQueryBuilder("usr")
             .select("usr.name", "name")
-            .where("usr.registered = :registered", { registered: true });
+            .where("usr.registered = :registered", {registered: true});
 
         const posts = await connection
             .createQueryBuilder()
@@ -186,14 +186,14 @@ describe("query builder > sub-query", () => {
                 return subQuery
                     .select("usr.name", "name")
                     .from(User, "usr")
-                    .where("usr.registered = :registered", { registered: true });
+                    .where("usr.registered = :registered", {registered: true});
             }, "usr")
             .setParameters(userQb.getParameters())
             .getRawMany();
 
         posts.should.be.eql([
-            { name: "Alex Messer" },
-            { name: "Dima Zotov" },
+            {name: "Alex Messer"},
+            {name: "Dima Zotov"},
         ]);
     })));
 
@@ -203,7 +203,7 @@ describe("query builder > sub-query", () => {
         const userQb = await connection.getRepository(User)
             .createQueryBuilder("usr")
             .select("usr.name", "name")
-            .where("usr.registered = :registered", { registered: true });
+            .where("usr.registered = :registered", {registered: true});
 
         const posts = await connection
             .createQueryBuilder()
@@ -212,14 +212,14 @@ describe("query builder > sub-query", () => {
                 return subQuery
                     .select("usr.name", "name")
                     .from(User, "usr")
-                    .where("usr.registered = :registered", { registered: true });
+                    .where("usr.registered = :registered", {registered: true});
             }, "usr")
             .setParameters(userQb.getParameters())
             .getRawMany();
 
         posts.should.be.eql([
-            { name: "Alex Messer" },
-            { name: "Dima Zotov" },
+            {name: "Alex Messer"},
+            {name: "Dima Zotov"},
         ]);
     })));
 
@@ -234,15 +234,15 @@ describe("query builder > sub-query", () => {
                 return subQuery
                     .select("usr.name", "name")
                     .from(User, "usr")
-                    .where("usr.registered = :registered", { registered: true });
+                    .where("usr.registered = :registered", {registered: true});
             }, "usr")
             .where(`${connection.driver.escape("post")}.${connection.driver.escape("title")} = ${connection.driver.escape("usr")}.${connection.driver.escape("name")}`)
             .orderBy("post.id")
             .getMany();
 
         posts.should.be.eql([
-            { id: 1, title: "Alex Messer" },
-            { id: 2, title: "Dima Zotov" },
+            {id: 1, title: "Alex Messer"},
+            {id: 2, title: "Dima Zotov"},
         ]);
     })));
 
@@ -268,16 +268,16 @@ describe("query builder > sub-query", () => {
         // CockroachDB returns numeric data types as string
         if (connection.driver instanceof CockroachDriver) {
             posts.should.be.eql([
-                { id: "1", name: "Alex Messer" },
-                { id: "2", name: "Alex Messer" },
-                { id: "3", name: "Alex Messer" },
+                {id: "1", name: "Alex Messer"},
+                {id: "2", name: "Alex Messer"},
+                {id: "3", name: "Alex Messer"},
             ]);
 
         } else {
             posts.should.be.eql([
-                { id: 1, name: "Alex Messer" },
-                { id: 2, name: "Alex Messer" },
-                { id: 3, name: "Alex Messer" },
+                {id: 1, name: "Alex Messer"},
+                {id: 2, name: "Alex Messer"},
+                {id: 3, name: "Alex Messer"},
             ]);
         }
     })));
@@ -302,16 +302,16 @@ describe("query builder > sub-query", () => {
         // CockroachDB returns numeric data types as string
         if (connection.driver instanceof CockroachDriver) {
             posts.should.be.eql([
-                { id: "1", name: "Alex Messer" },
-                { id: "2", name: "Alex Messer" },
-                { id: "3", name: "Alex Messer" },
+                {id: "1", name: "Alex Messer"},
+                {id: "2", name: "Alex Messer"},
+                {id: "3", name: "Alex Messer"},
             ]);
 
         } else {
             posts.should.be.eql([
-                { id: 1, name: "Alex Messer" },
-                { id: 2, name: "Alex Messer" },
-                { id: 3, name: "Alex Messer" },
+                {id: 1, name: "Alex Messer"},
+                {id: 2, name: "Alex Messer"},
+                {id: 3, name: "Alex Messer"},
             ]);
         }
     })));
@@ -333,8 +333,8 @@ describe("query builder > sub-query", () => {
             .getMany();
 
         posts.should.be.eql([
-            { id: 1, title: "Alex Messer" },
-            { id: 2, title: "Dima Zotov" },
+            {id: 1, title: "Alex Messer"},
+            {id: 2, title: "Dima Zotov"},
         ]);
     })));
 
@@ -357,9 +357,9 @@ describe("query builder > sub-query", () => {
             .getMany();
 
         posts.should.be.eql([
-            { id: 1, title: "Alex Messer" },
-            { id: 2, title: "Dima Zotov" },
-            { id: 3, title: "Umed Khudoiberdiev" },
+            {id: 1, title: "Alex Messer"},
+            {id: 2, title: "Dima Zotov"},
+            {id: 3, title: "Umed Khudoiberdiev"},
         ]);
     })));
 
@@ -386,9 +386,9 @@ describe("query builder > sub-query", () => {
             .getMany();
 
         posts.should.be.eql([
-            { id: 1, title: "Alex Messer" },
-            { id: 2, title: "Dima Zotov" },
-            { id: 3, title: "Umed Khudoiberdiev" },
+            {id: 1, title: "Alex Messer"},
+            {id: 2, title: "Dima Zotov"},
+            {id: 3, title: "Umed Khudoiberdiev"},
         ]);
     })));
 

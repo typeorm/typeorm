@@ -1,12 +1,12 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
 
 // todo: fix this test later
-describe.skip("repository > set/add/remove relation methods", function() {
+describe.skip("repository > set/add/remove relation methods", function () {
 
     // -------------------------------------------------------------------------
     // Configuration
@@ -88,9 +88,10 @@ describe.skip("repository > set/add/remove relation methods", function() {
 
         // load a post, want to have categories count
         const loadedCategory = await categoryRepository.findOne(1, {
-            join: {
-                alias: "category",
-                leftJoinAndSelect: { manyPosts: "category.manyPosts" } }
+                join: {
+                    alias: "category",
+                    leftJoinAndSelect: {manyPosts: "category.manyPosts"}
+                }
             }
         );
 
@@ -133,7 +134,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         const loadedPost = await postRepository.findOne(1, {
             join: {
                 alias: "post",
-                leftJoinAndSelect: { manyCategories: "post.manyCategories" }
+                leftJoinAndSelect: {manyCategories: "post.manyCategories"}
             }
         });
 
@@ -177,7 +178,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         const loadedCategory = await categoryRepository.findOne(1, {
             join: {
                 alias: "category",
-                leftJoinAndSelect: { manyPosts: "category.manyPosts" }
+                leftJoinAndSelect: {manyPosts: "category.manyPosts"}
             }
         });
 
@@ -210,7 +211,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         const loadedPost = await postRepository.findOne(1, {
             join: {
                 alias: "post",
-                leftJoinAndSelect: { categories: "post.categories" }
+                leftJoinAndSelect: {categories: "post.categories"}
             }
         });
 
@@ -242,7 +243,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         const loadedCategory = await categoryRepository.findOne(1, {
             join: {
                 alias: "category",
-                leftJoinAndSelect: { post: "category.post" }
+                leftJoinAndSelect: {post: "category.post"}
             }
         });
 
@@ -273,7 +274,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         const loadedPost = await postRepository.findOne(1, {
             join: {
                 alias: "post",
-                leftJoinAndSelect: { categories: "post.categories" }
+                leftJoinAndSelect: {categories: "post.categories"}
             }
         });
 
@@ -304,7 +305,7 @@ describe.skip("repository > set/add/remove relation methods", function() {
         const loadedCategory = await categoryRepository.findOne(1, {
             join: {
                 alias: "category",
-                leftJoinAndSelect: { post: "category.post" }
+                leftJoinAndSelect: {post: "category.post"}
             }
         });
 

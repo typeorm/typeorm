@@ -28,7 +28,7 @@ sequelize
 在 TypeORM 中，可以创建如下连接：
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 
 createConnection({
   type: "mysql",
@@ -97,7 +97,7 @@ module.exports = function(sequelize, DataTypes) {
 在 TypeORM 中，这些模型称为实体，你可以像这样定义它们：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class Project {
@@ -113,7 +113,7 @@ export class Project {
 ```
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class Task {

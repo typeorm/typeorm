@@ -1,7 +1,4 @@
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
-import {UpdateDateColumn} from "../../../../../src/decorator/columns/UpdateDateColumn";
-import {CreateDateColumn} from "../../../../../src/decorator/columns/CreateDateColumn";
-import {VersionColumn} from "../../../../../src/decorator/columns/VersionColumn";
+import { CreateDateColumn, PrimaryColumn, UpdateDateColumn, VersionColumn } from "@typeorm/core";
 
 export class PostEmbedded {
 

@@ -1,10 +1,13 @@
 import "reflect-metadata";
-import {Post} from "./entity/Post";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {PostWithOptions} from "./entity/PostWithOptions";
-import {PostWithoutTypes} from "./entity/PostWithoutTypes";
-import {DateUtils} from "../../../../../src/util/DateUtils";
+import { Post } from "./entity/Post";
+import { Connection, DateUtils } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { PostWithOptions } from "./entity/PostWithOptions";
+import { PostWithoutTypes } from "./entity/PostWithoutTypes";
 
 describe("database schema > column types > oracle", () => {
 

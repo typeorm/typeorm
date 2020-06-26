@@ -11,14 +11,14 @@ To learn more about hierarchy table take a look at [this awesome presentation by
 
 ## Adjacency list
 
-Adjacency list is a simple model with self-referencing. 
-The benefit of this approach is simplicity, 
+Adjacency list is a simple model with self-referencing.
+The benefit of this approach is simplicity,
 drawback is that you can't load big trees in all at once because of join limitations.
 To learn more about the benefits and use of Adjacency Lists look at [this article by Matthew Schinckel](http://schinckel.net/2014/09/13/long-live-adjacency-lists/).
 Example:
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany} from "@typeorm/core";
 
 @Entity()
 export class Category {
@@ -38,7 +38,7 @@ export class Category {
     @OneToMany(type => Category, category => category.parent)
     children: Category[];
 }
-     
+
 ```
 
 ## Nested set
@@ -49,7 +49,7 @@ You cannot have multiple roots in nested set.
 Example:
 
 ```typescript
-import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
+import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "@typeorm/core";
 
 @Entity()
 @Tree("nested-set")
@@ -76,7 +76,7 @@ Its simple and effective.
 Example:
 
 ```typescript
-import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
+import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "@typeorm/core";
 
 @Entity()
 @Tree("materialized-path")
@@ -98,12 +98,12 @@ export class Category {
 
 ## Closure table
 
-Closure table stores relations between parent and child in a separate table in a special way. 
+Closure table stores relations between parent and child in a separate table in a special way.
 It's efficient in both reads and writes.
 Example:
 
 ```typescript
-import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
+import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "@typeorm/core";
 
 @Entity()
 @Tree("closure-table")

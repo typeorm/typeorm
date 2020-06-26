@@ -1,9 +1,5 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {VersionColumn} from "../../../../../src/decorator/columns/VersionColumn";
-import {Category} from "./Category";
-import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, VersionColumn } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Post {

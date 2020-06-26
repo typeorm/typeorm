@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
-import {Category} from "./entity/Category";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
+import { Category } from "./entity/Category";
 
 describe("other issues > using limit in conjunction with order by", () => {
 
@@ -14,7 +14,7 @@ describe("other issues > using limit in conjunction with order by", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should persist successfully and return persisted entity", () => Promise.all(connections.map(async function(connection) {
+    it("should persist successfully and return persisted entity", () => Promise.all(connections.map(async function (connection) {
 
         // generate bulk array of posts with categories
         for (let i = 1; i <= 100; i++) {

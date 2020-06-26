@@ -1,10 +1,14 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {Question} from "./entity/Question";
-import {Answer} from "./entity/Answer";
-import {Photo} from "./entity/Photo";
-import {User} from "./entity/User";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Question } from "./entity/Question";
+import { Answer } from "./entity/Answer";
+import { Photo } from "./entity/Photo";
+import { User } from "./entity/User";
 
 describe("persistence > cascades > example 2", () => {
 

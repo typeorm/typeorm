@@ -1,10 +1,9 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection, MissingDeleteDateColumnError } from "@typeorm/core";
+import { Post } from "./entity/Post";
 import { PostWithoutDeleteDateColumn } from "./entity/PostWithoutDeleteDateColumn";
-import { MissingDeleteDateColumnError } from "../../../../src/error/MissingDeleteDateColumnError";
 
 describe("repository > soft-remove", () => {
 
@@ -36,7 +35,7 @@ describe("repository > soft-remove", () => {
         await postRepository.softRemove(newPost1);
 
         // load to check
-        const loadedPosts = await postRepository.find({ withDeleted: true });
+        const loadedPosts = await postRepository.find({withDeleted: true});
 
         // assert
         loadedPosts.length.should.be.equal(2);
@@ -53,7 +52,7 @@ describe("repository > soft-remove", () => {
         // recover one
         await postRepository.recover(loadedPost1!);
         // load to check
-        const recoveredPosts = await postRepository.find({ withDeleted: true });
+        const recoveredPosts = await postRepository.find({withDeleted: true});
 
         // assert
         recoveredPosts.length.should.be.equal(2);

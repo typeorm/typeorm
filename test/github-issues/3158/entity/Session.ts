@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from "../../../../src";
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "@typeorm/core";
 import { SessionSettings } from "./SessionSettings";
 
 @Entity({

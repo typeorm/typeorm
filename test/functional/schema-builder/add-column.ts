@@ -1,10 +1,8 @@
 import "reflect-metadata";
-import {Connection} from "../../../src";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {ColumnMetadataArgs} from "../../../src/metadata-args/ColumnMetadataArgs";
-import {ColumnMetadata} from "../../../src/metadata/ColumnMetadata";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Post} from "./entity/Post";
+import { ColumnMetadata, ColumnMetadataArgs, Connection } from "@typeorm/core";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { Post } from "./entity/Post";
 
 describe("schema builder > add column", () => {
 

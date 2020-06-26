@@ -1,9 +1,13 @@
 import "reflect-metadata";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {expect} from "chai";
-import {Connection} from "../../../../../src/connection/Connection";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
 
 describe("query builder > relational query builder > load operation > many-to-one and one-to-one relations", () => {
 
@@ -51,7 +55,7 @@ describe("query builder > relational query builder > load operation > many-to-on
             .loadOne();
         loadedPost1!.category = loadedCategory1!;
 
-        expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
+        expect(loadedPost1!.category).to.be.eql({id: 3, name: "category #3"});
 
         const loadedPost2 = await connection.manager.findOne(Post, 2);
         const loadedCategory2 = await connection
@@ -61,7 +65,7 @@ describe("query builder > relational query builder > load operation > many-to-on
             .loadOne();
         loadedPost2!.category = loadedCategory2!;
 
-        expect(loadedPost2!.category).to.be.eql({ id: 2, name: "category #2" });
+        expect(loadedPost2!.category).to.be.eql({id: 2, name: "category #2"});
 
         const loadedPost3 = await connection.manager.findOne(Post, 3);
         const loadedCategory3 = await connection
@@ -71,7 +75,7 @@ describe("query builder > relational query builder > load operation > many-to-on
             .loadOne();
         loadedPost3!.category = loadedCategory3!;
 
-        expect(loadedPost3!.category).to.be.eql({ id: 1, name: "category #1" });
+        expect(loadedPost3!.category).to.be.eql({id: 1, name: "category #1"});
     })));
 
     it("should load relation entity of a given entity id", () => Promise.all(connections.map(async connection => {
@@ -107,31 +111,31 @@ describe("query builder > relational query builder > load operation > many-to-on
         const loadedCategory1 = await connection
             .createQueryBuilder()
             .relation(Post, "category")
-            .of({ id: 1 })
+            .of({id: 1})
             .loadOne();
         loadedPost1!.category = loadedCategory1!;
 
-        expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
+        expect(loadedPost1!.category).to.be.eql({id: 3, name: "category #3"});
 
         const loadedPost2 = await connection.manager.findOne(Post, 2);
         const loadedCategory2 = await connection
             .createQueryBuilder()
             .relation(Post, "category")
-            .of({ id: 2 })
+            .of({id: 2})
             .loadOne();
         loadedPost2!.category = loadedCategory2!;
 
-        expect(loadedPost2!.category).to.be.eql({ id: 2, name: "category #2" });
+        expect(loadedPost2!.category).to.be.eql({id: 2, name: "category #2"});
 
         const loadedPost3 = await connection.manager.findOne(Post, 3);
         const loadedCategory3 = await connection
             .createQueryBuilder()
             .relation(Post, "category")
-            .of({ id: 3 })
+            .of({id: 3})
             .loadOne();
         loadedPost3!.category = loadedCategory3!;
 
-        expect(loadedPost3!.category).to.be.eql({ id: 1, name: "category #1" });
+        expect(loadedPost3!.category).to.be.eql({id: 1, name: "category #1"});
     })));
 
     it("should load relation entity of a given id", () => Promise.all(connections.map(async connection => {
@@ -171,7 +175,7 @@ describe("query builder > relational query builder > load operation > many-to-on
             .loadOne();
         loadedPost1!.category = loadedCategory1!;
 
-        expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
+        expect(loadedPost1!.category).to.be.eql({id: 3, name: "category #3"});
 
         const loadedPost2 = await connection.manager.findOne(Post, 2);
         const loadedCategory2 = await connection
@@ -181,7 +185,7 @@ describe("query builder > relational query builder > load operation > many-to-on
             .loadOne();
         loadedPost2!.category = loadedCategory2!;
 
-        expect(loadedPost2!.category).to.be.eql({ id: 2, name: "category #2" });
+        expect(loadedPost2!.category).to.be.eql({id: 2, name: "category #2"});
 
         const loadedPost3 = await connection.manager.findOne(Post, 3);
         const loadedCategory3 = await connection
@@ -191,7 +195,7 @@ describe("query builder > relational query builder > load operation > many-to-on
             .loadOne();
         loadedPost3!.category = loadedCategory3!;
 
-        expect(loadedPost3!.category).to.be.eql({ id: 1, name: "category #1" });
+        expect(loadedPost3!.category).to.be.eql({id: 1, name: "category #1"});
     })));
 
 });

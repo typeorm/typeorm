@@ -1,8 +1,5 @@
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../../../../src/decorator/relations/JoinTable";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {User} from "./User";
+import { Column, JoinTable, ManyToMany, PrimaryColumn } from "@typeorm/core";
+import { User } from "./User";
 
 export class Subcounters {
 
@@ -13,7 +10,7 @@ export class Subcounters {
     watches: number;
 
     @ManyToMany(type => User, user => user.posts)
-    @JoinTable({ name: "subcnt_users" })
+    @JoinTable({name: "subcnt_users"})
     watchedUsers: User[];
 
     watchedUserIds: number[];

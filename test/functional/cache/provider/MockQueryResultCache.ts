@@ -1,14 +1,15 @@
-import {ObjectLiteral} from "../../../../src/common/ObjectLiteral";
-import {Connection} from "../../../../src/connection/Connection";
-import {OracleDriver} from "../../../../src/driver/oracle/OracleDriver";
-import {PostgresConnectionOptions} from "../../../../src/driver/postgres/PostgresConnectionOptions";
-import {MssqlParameter} from "../../../../src/driver/sqlserver/MssqlParameter";
-import {SqlServerConnectionOptions} from "../../../../src/driver/sqlserver/SqlServerConnectionOptions";
-import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
-import {QueryRunner} from "../../../../src/query-runner/QueryRunner";
-import {Table} from "../../../../src/schema-builder/table/Table";
-import {QueryResultCache} from "../../../../src/cache/QueryResultCache";
-import {QueryResultCacheOptions} from "../../../../src/cache/QueryResultCacheOptions";
+import {
+    Connection,
+    MssqlParameter,
+    ObjectLiteral,
+    QueryResultCache,
+    QueryResultCacheOptions,
+    QueryRunner,
+    Table
+} from "@typeorm/core";
+import { SqlServerConnectionOptions, SqlServerDriver } from '@typeorm/driver-sqlserver';
+import { PostgresConnectionOptions } from '@typeorm/driver-postgres';
+import { OracleDriver } from '@typeorm/driver-oracle';
 
 /**
  * Caches query result into current database, into separate table called "mock-query-result-cache".
@@ -27,7 +28,7 @@ export class MockQueryResultCache implements QueryResultCache {
 
     constructor(protected connection: Connection) {
 
-        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
+        const options = <SqlServerConnectionOptions | PostgresConnectionOptions>this.connection.driver.options;
         const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
         const cacheTableName = cacheOptions.tableName || "mock-query-result-cache";
 
@@ -110,7 +111,7 @@ export class MockQueryResultCache implements QueryResultCache {
      * Returns cache result if found.
      * Returns undefined if result is not cached.
      */
-    getFromCache(options: QueryResultCacheOptions, queryRunner?: QueryRunner): Promise<QueryResultCacheOptions|undefined> {
+    getFromCache(options: QueryResultCacheOptions, queryRunner?: QueryRunner): Promise<QueryResultCacheOptions | undefined> {
         queryRunner = this.getQueryRunner(queryRunner);
         const qb = this.connection
             .createQueryBuilder(queryRunner)
@@ -120,19 +121,19 @@ export class MockQueryResultCache implements QueryResultCache {
         if (options.identifier) {
             return qb
                 .where(`${qb.escape("cache")}.${qb.escape("identifier")} = :identifier`)
-                .setParameters({ identifier: this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(options.identifier, "nvarchar") : options.identifier })
+                .setParameters({identifier: this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(options.identifier, "nvarchar") : options.identifier})
                 .getRawOne();
 
         } else if (options.query) {
             if (this.connection.driver instanceof OracleDriver) {
                 return qb
-                    .where(`dbms_lob.compare(${qb.escape("cache")}.${qb.escape("query")}, :query) = 0`, { query: options.query })
+                    .where(`dbms_lob.compare(${qb.escape("cache")}.${qb.escape("query")}, :query) = 0`, {query: options.query})
                     .getRawOne();
             }
 
             return qb
                 .where(`${qb.escape("cache")}.${qb.escape("query")} = :query`)
-                .setParameters({ query: this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(options.query, "nvarchar") : options.query })
+                .setParameters({query: this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(options.query, "nvarchar") : options.query})
                 .getRawOne();
         }
 
@@ -150,7 +151,7 @@ export class MockQueryResultCache implements QueryResultCache {
     /**
      * Stores given query result in the cache.
      */
-    async storeInCache(options: QueryResultCacheOptions, savedCache: QueryResultCacheOptions|undefined, queryRunner?: QueryRunner): Promise<void> {
+    async storeInCache(options: QueryResultCacheOptions, savedCache: QueryResultCacheOptions | undefined, queryRunner?: QueryRunner): Promise<void> {
         queryRunner = this.getQueryRunner(queryRunner);
 
         let insertedValues: ObjectLiteral = options;
@@ -170,7 +171,7 @@ export class MockQueryResultCache implements QueryResultCache {
                 .update(this.queryResultCacheTable)
                 .set(insertedValues);
 
-            qb.where(`${qb.escape("identifier")} = :condition`, { condition: insertedValues.identifier });
+            qb.where(`${qb.escape("identifier")} = :condition`, {condition: insertedValues.identifier});
             await qb.execute();
 
         } else if (savedCache && savedCache.query) { // if exist then update
@@ -180,10 +181,10 @@ export class MockQueryResultCache implements QueryResultCache {
                 .set(insertedValues);
 
             if (this.connection.driver instanceof OracleDriver) {
-                qb.where(`dbms_lob.compare("query", :condition) = 0`, { condition: insertedValues.query });
+                qb.where(`dbms_lob.compare("query", :condition) = 0`, {condition: insertedValues.query});
 
             } else {
-                qb.where(`${qb.escape("query")} = :condition`, { condition: insertedValues.query });
+                qb.where(`${qb.escape("query")} = :condition`, {condition: insertedValues.query});
             }
 
             await qb.execute();
@@ -225,7 +226,7 @@ export class MockQueryResultCache implements QueryResultCache {
     /**
      * Gets a query runner to work with.
      */
-    protected getQueryRunner(queryRunner: QueryRunner|undefined): QueryRunner {
+    protected getQueryRunner(queryRunner: QueryRunner | undefined): QueryRunner {
         if (queryRunner)
             return queryRunner;
 

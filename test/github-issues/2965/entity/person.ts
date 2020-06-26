@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, PrimaryGeneratedColumn } from "../../../../src/";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "@typeorm/core";
 import { Note } from "./note";
 
 @Entity()
@@ -9,6 +9,6 @@ export class Person {
     @Column()
     public name: string;
 
-    @OneToMany(type => Note, note => note.owner, { lazy: true })
+    @OneToMany(type => Note, note => note.owner, {lazy: true})
     public notes: Promise<Note[]> | Note[];
 }

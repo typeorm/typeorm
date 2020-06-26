@@ -1,6 +1,5 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src/index";
-import {EventRole} from "./EventRole";
-import {OneToMany} from "../../../../src";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "@typeorm/core";
+import { EventRole } from "./EventRole";
 
 @Entity()
 export class Role {

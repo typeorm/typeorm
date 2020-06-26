@@ -19,7 +19,7 @@
 例如：
 
 ```typescript
-import { EntityRepository, Repository } from "typeorm";
+import { EntityRepository, Repository } from "@typeorm/core";
 import { User } from "../entity/User";
 
 @EntityRepository(User)
@@ -33,7 +33,7 @@ export class UserRepository extends Repository<User> {
 然后你可以这样使用它：
 
 ```typescript
-import { getCustomRepository } from "typeorm";
+import { getCustomRepository } from "@typeorm/core";
 import { UserRepository } from "./repository/UserRepository";
 
 const userRepository = getCustomRepository(UserRepository); // 或connection.getCustomRepository或manager.getCustomRepository（）
@@ -53,7 +53,7 @@ const timber = await userRepository.findByName("Timber", "Saw");
 创建自定义 repository 的第二种方法是扩展`AbstractRepository`：
 
 ```typescript
-import { EntityRepository, AbstractRepository } from "typeorm";
+import { EntityRepository, AbstractRepository } from "@typeorm/core";
 import { User } from "../entity/User";
 
 @EntityRepository(User)
@@ -74,7 +74,7 @@ export class UserRepository extends AbstractRepository<User> {
 然后你可以这样使用它：
 
 ```typescript
-import { getCustomRepository } from "typeorm";
+import { getCustomRepository } from "@typeorm/core";
 import { UserRepository } from "./repository/UserRepository";
 
 const userRepository = getCustomRepository(UserRepository); // or connection.getCustomRepository or manager.getCustomRepository()
@@ -92,7 +92,7 @@ const timber = await userRepository.findByName("Timber", "Saw");
 但是需要定义一个总是接受实体管理器(entity manager)实例的构造函数：
 
 ```typescript
-import { EntityRepository, Repository, EntityManager } from "typeorm";
+import { EntityRepository, Repository, EntityManager } from "@typeorm/core";
 import { User } from "../entity/User";
 
 @EntityRepository()
@@ -115,7 +115,7 @@ export class UserRepository {
 然后你可以这样使用它：
 
 ```typescript
-import { getCustomRepository } from "typeorm";
+import { getCustomRepository } from "@typeorm/core";
 import { UserRepository } from "./repository/UserRepository";
 
 const userRepository = getCustomRepository(UserRepository); // 或者 connection.getCustomRepository 或者 manager.getCustomRepository()

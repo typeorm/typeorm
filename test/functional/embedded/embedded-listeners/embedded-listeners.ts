@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("other issues > entity listeners must work in embeddeds as well", () => {
 
@@ -23,7 +23,7 @@ describe("other issues > entity listeners must work in embeddeds as well", () =>
         const loadedPost = await connection
             .manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: post.id })
+            .where("post.id = :id", {id: post.id})
             .getOne();
 
         expect(loadedPost).not.to.be.undefined;

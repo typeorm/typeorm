@@ -1,7 +1,6 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src";
+import { Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
-@Entity("bar", { schema: "foo" })
+@Entity("bar", {schema: "foo"})
 export class Bar {
 
     @PrimaryGeneratedColumn()

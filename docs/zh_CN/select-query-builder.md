@@ -67,7 +67,7 @@ User {
 - 使用 connection:
 
   ```typescript
-  import { getConnection } from "typeorm";
+  import { getConnection } from "@typeorm/core";
 
   const user = await getConnection()
     .createQueryBuilder()
@@ -80,7 +80,7 @@ User {
 - 使用 entity manager:
 
   ```typescript
-  import { getManager } from "typeorm";
+  import { getManager } from "@typeorm/core";
 
   const user = await getManager()
     .createQueryBuilder(User, "user")
@@ -91,7 +91,7 @@ User {
 - 使用 repository:
 
   ```typescript
-  import { getRepository } from "typeorm";
+  import { getRepository } from "@typeorm/core";
 
   const user = await getRepository(User)
     .createQueryBuilder("user")
@@ -104,7 +104,7 @@ User {
 - `SelectQueryBuilder` - 用于构建和执行`SELECT`查询。 例如：
 
   ```typescript
-  import { getConnection } from "typeorm";
+  import { getConnection } from "@typeorm/core";
 
   const user = await getConnection()
     .createQueryBuilder()
@@ -117,7 +117,7 @@ User {
 - `InsertQueryBuilder` - 用于构建和执行`INSERT`查询。 例如：
 
   ```typescript
-  import { getConnection } from "typeorm";
+  import { getConnection } from "@typeorm/core";
 
   await getConnection()
     .createQueryBuilder()
@@ -130,7 +130,7 @@ User {
 - `UpdateQueryBuilder` - 用于构建和执行`UPDATE`查询。 例如：
 
   ```typescript
-  import { getConnection } from "typeorm";
+  import { getConnection } from "@typeorm/core";
 
   await getConnection()
     .createQueryBuilder()
@@ -143,7 +143,7 @@ User {
 - `DeleteQueryBuilder` - 用于构建和执行`DELETE`查询。 例如：
 
   ```typescript
-  import { getConnection } from "typeorm";
+  import { getConnection } from "@typeorm/core";
 
   await getConnection()
     .createQueryBuilder()
@@ -492,7 +492,7 @@ SELECT ... FROM users user OFFSET 10
 假设有以下实体：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "@typeorm/core";
 import { Photo } from "./Photo";
 
 @Entity()
@@ -509,7 +509,7 @@ export class User {
 ```
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "@typeorm/core";
 import { User } from "./User";
 
 @Entity()
@@ -948,7 +948,7 @@ const posts = await connection
 假设你有以下实体：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class User {

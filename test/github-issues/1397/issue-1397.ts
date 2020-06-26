@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Post} from "./entity/Post";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Post } from "./entity/Post";
 
 describe("github issue > #1397 Spaces at the end of values are removed when inserting", () => {
 
@@ -21,7 +21,7 @@ describe("github issue > #1397 Spaces at the end of values are removed when inse
         await connection.manager.save(post);
         post.title.should.be.equal(" About My Post   ");
 
-        const loadedPost = await connection.manager.findOne(Post, { id: 1 });
+        const loadedPost = await connection.manager.findOne(Post, {id: 1});
         expect(loadedPost).not.to.be.undefined;
         loadedPost!.title.should.be.equal(" About My Post   ");
     })));

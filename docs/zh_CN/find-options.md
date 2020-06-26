@@ -154,7 +154,7 @@ TypeORM 提供了许多内置运算符，可用于创建更复杂的查询：
 -   `Not`
 
 ```ts
-import { Not } from "typeorm";
+import { Not } from "@typeorm/core";
 
 const loadedPosts = await connection.getRepository(Post).find({
     title: Not("About #1")
@@ -170,7 +170,7 @@ SELECT * FROM "post" WHERE "title" != 'About #1'
 -   `LessThan`
 
 ```ts
-import { LessThan } from "typeorm";
+import { LessThan } from "@typeorm/core";
 
 const loadedPosts = await connection.getRepository(Post).find({
     likes: LessThan(10)
@@ -186,7 +186,7 @@ SELECT * FROM "post" WHERE "likes" < 10
 -   `LessThanOrEqual`
 
 ```ts
-import { LessThanOrEqual } from "typeorm";
+import { LessThanOrEqual } from "@typeorm/core";
 const loadedPosts = await connection.getRepository(Post).find({
     likes: LessThanOrEqual(10)
 });
@@ -201,7 +201,7 @@ SELECT * FROM "post" WHERE "likes" <= 10
 -   `MoreThan`
 
 ```ts
-import { MoreThan } from "typeorm";
+import { MoreThan } from "@typeorm/core";
 
 const loadedPosts = await connection.getRepository(Post).find({
     likes: MoreThan(10)
@@ -217,7 +217,7 @@ SELECT * FROM "post" WHERE "likes" > 10
 -   `MoreThanOrEqual`
 
 ```ts
-import { MoreThanOrEqual } from "typeorm";
+import { MoreThanOrEqual } from "@typeorm/core";
 const loadedPosts = await connection.getRepository(Post).find({
     likes: MoreThanOrEqual(10)
 });
@@ -232,7 +232,7 @@ SELECT * FROM "post" WHERE "likes" >= 10
 -   `Equal`
 
 ```ts
-import { Equal } from "typeorm";
+import { Equal } from "@typeorm/core";
 
 const loadedPosts = await connection.getRepository(Post).find({
     title: Equal("About #2")
@@ -248,7 +248,7 @@ SELECT * FROM "post" WHERE "title" = 'About #2'
 -   `Like`
 
 ```ts
-import { Like } from "typeorm";
+import { Like } from "@typeorm/core";
 
 const loadedPosts = await connection.getRepository(Post).find({
     title: Like("%out #%")
@@ -264,7 +264,7 @@ SELECT * FROM "post" WHERE "title" LIKE '%out #%'
 -   `Between`
 
 ```ts
-import { Between } from "typeorm";
+import { Between } from "@typeorm/core";
 
 const loadedPosts = await connection.getRepository(Post).find({
     likes: Between(1, 10)
@@ -280,7 +280,7 @@ SELECT * FROM "post" WHERE "likes" BETWEEN 1 AND 10
 -   `In`
 
 ```ts
-import { In } from "typeorm";
+import { In } from "@typeorm/core";
 
 const loadedPosts = await connection.getRepository(Post).find({
     title: In(["About #2", "About #3"])
@@ -296,7 +296,7 @@ SELECT * FROM "post" WHERE "title" IN ('About #2','About #3')
 -   `Any`
 
 ```ts
-import { Any } from "typeorm";
+import { Any } from "@typeorm/core";
 
 const loadedPosts = await connection.getRepository(Post).find({
     title: Any(["About #2", "About #3"])
@@ -312,7 +312,7 @@ SELECT * FROM "post" WHERE "title" = ANY(['About #2','About #3'])
 -   `IsNull`
 
 ```ts
-import { IsNull } from "typeorm";
+import { IsNull } from "@typeorm/core";
 
 const loadedPosts = await connection.getRepository(Post).find({
     title: IsNull()
@@ -328,7 +328,7 @@ SELECT * FROM "post" WHERE "title" IS NULL
 -   `Raw`
 
 ```ts
-import { Raw } from "typeorm";
+import { Raw } from "@typeorm/core";
 
 const loadedPosts = await connection.getRepository(Post).find({
     likes: Raw("1 + likes = 4")
@@ -346,7 +346,7 @@ SELECT * FROM "post" WHERE 1 + "likes" = 4
 你还可以将这些运算符与`Not`运算符组合使用：
 
 ```ts
-import { Not, MoreThan, Equal } from "typeorm";
+import { Not, MoreThan, Equal } from "@typeorm/core";
 
 const loadedPosts = await connection.getRepository(Post).find({
     likes: Not(MoreThan(10)),

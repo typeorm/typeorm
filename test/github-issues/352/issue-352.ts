@@ -1,9 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Post} from "./entity/Post";
-import {MssqlParameter} from "../../../src/driver/sqlserver/MssqlParameter";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection, MssqlParameter } from "@typeorm/core";
+import { expect } from "chai";
+import { Post } from "./entity/Post";
 
 describe("github issues > #352 double precision round to int in mssql", () => {
 
@@ -28,7 +27,7 @@ describe("github issues > #352 double precision round to int in mssql", () => {
 
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: new MssqlParameter(1.234567789, "float") })
+            .where("post.id = :id", {id: new MssqlParameter(1.234567789, "float")})
             .getOne();
 
         expect(loadedPost).to.exist;

@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src";
-import {PostEntity} from "./entity/PostEntity";
-import {Post} from "./model/Post";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { PostEntity } from "./entity/PostEntity";
+import { Post } from "./model/Post";
 
 describe("entity schemas > target option", () => {
 
@@ -29,7 +29,7 @@ describe("entity schemas > target option", () => {
         post.text = "About first post";
         await postRepository.save(post);
 
-        const loadedPost = await postRepository.findOne({ title: "First Post" });
+        const loadedPost = await postRepository.findOne({title: "First Post"});
         loadedPost!.should.be.instanceof(Post);
     })));
 

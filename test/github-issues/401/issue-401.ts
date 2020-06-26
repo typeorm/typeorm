@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Player} from "./entity/Player";
-import {Group} from "./entity/Group";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Player } from "./entity/Player";
+import { Group } from "./entity/Group";
 
 describe("github issues > #401 special keywords should be escaped in join queries", () => {
 
@@ -29,7 +29,7 @@ describe("github issues > #401 special keywords should be escaped in join querie
             .getRepository(Player)
             .createQueryBuilder("player")
             .leftJoinAndSelect("player.group", "group")
-            .where("player.email = :email", { email: "player@gmail.com" })
+            .where("player.email = :email", {email: "player@gmail.com"})
             .getOne();
 
         expect(loadedPlayer).to.be.eql({

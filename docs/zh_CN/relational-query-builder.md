@@ -8,7 +8,7 @@
 让我们为这种多对多关系添加一个新 category：
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 
 await getConnection()
   .createQueryBuilder()
@@ -20,7 +20,7 @@ await getConnection()
 这段代码相当于：
 
 ```typescript
-import { getManager } from "typeorm";
+import { getManager } from "@typeorm/core";
 
 const postRepository = getRepository(Post);
 const post = await postRepository.findOne(1, { relations: ["categories"] });
@@ -38,7 +38,7 @@ await postRepository.save(post);
 例如，让我们在 id 为 1 的 post 中添加 id = 3 的 category：
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 
 await getConnection()
   .createQueryBuilder()
@@ -50,7 +50,7 @@ await getConnection()
 如果你使用了复合主键，则必须将它们作为 id 映射传递，例如：
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 
 await getConnection()
   .createQueryBuilder()
@@ -62,7 +62,7 @@ await getConnection()
 也可以按照添加实体的方式删除实体：
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 
 // 此代码从给定的post中删除一个category
 await getConnection()
@@ -76,7 +76,7 @@ await getConnection()
 对于`一对一`和`多对一`关系，请使用`set`代替：
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 
 // 此代码set给定post的category
 await getConnection()
@@ -89,7 +89,7 @@ await getConnection()
 如果要取消设置关系（将其设置为 null），只需将`null`传递给`set`方法：
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 
 // 此代码取消设置给定post的category
 await getConnection()
@@ -103,7 +103,7 @@ await getConnection()
 例如，假设在`Post`实体内部，我们有多对多的`categories`关系和多对一的`user`关系，为加载这些关系，你可以使用以下代码：
 
 ```typescript
-import { getConnection } from "typeorm";
+import { getConnection } from "@typeorm/core";
 
 const post = await getConnection().manager.findOne(Post, 1);
 

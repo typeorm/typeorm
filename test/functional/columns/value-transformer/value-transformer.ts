@@ -1,14 +1,14 @@
 import "reflect-metadata";
 
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
 
-import {Connection} from "../../../../src/connection/Connection";
-import {PhoneBook} from "./entity/PhoneBook";
-import {Post} from "./entity/Post";
-import {User} from "./entity/User";
-import {Category} from "./entity/Category";
-import {View} from "./entity/View";
-import {expect} from "chai";
+import { Connection } from "@typeorm/core";
+import { PhoneBook } from "./entity/PhoneBook";
+import { Post } from "./entity/Post";
+import { User } from "./entity/User";
+import { Category } from "./entity/Category";
+import { View } from "./entity/View";
+import { expect } from "chai";
 
 describe("columns > value-transformer functionality", () => {
 

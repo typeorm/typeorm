@@ -18,7 +18,7 @@ TypeORM 大多数功能都是特定于 RDBMS 的，
 简单实体示例：
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm";
+import { Entity, ObjectID, ObjectIdColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -36,7 +36,7 @@ export class User {
 这里是你的应用程序如何连接到 MongoDB：
 
 ```typescript
-import { createConnection, Connection } from "typeorm";
+import { createConnection, Connection } from "@typeorm/core";
 
 const connection: Connection = await createConnection({
   type: "mongodb",
@@ -51,7 +51,7 @@ const connection: Connection = await createConnection({
 由于 MongoDB 存储对象和对象内的对象（或文档内的文档），因此你可以在 TypeORM 中执行相同的操作：
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm";
+import { Entity, ObjectID, ObjectIdColumn, Column } from "@typeorm/core";
 
 export class Profile {
   @Column()
@@ -66,7 +66,7 @@ export class Profile {
 ```
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm";
+import { Entity, ObjectID, ObjectIdColumn, Column } from "@typeorm/core";
 
 export class Photo {
   @Column()
@@ -87,7 +87,7 @@ export class Photo {
 ```
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm";
+import { Entity, ObjectID, ObjectIdColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -111,7 +111,7 @@ export class User {
 如果保存此实体：
 
 ```typescript
-import { getMongoManager } from "typeorm";
+import { getMongoManager } from "@typeorm/core";
 
 const user = new User();
 user.firstName = "Timber";
@@ -161,7 +161,7 @@ await manager.save(user);
 例如：
 
 ```typescript
-import { getManager } from "typeorm";
+import { getManager } from "@typeorm/core";
 
 const manager = getManager(); // 或者 connection.manager
 const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
@@ -170,7 +170,7 @@ const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw
 对于 MongoDB，还有一个单独的`MongoEntityManager`，它扩展了`EntityManager`。
 
 ```typescript
-import { getMongoManager } from "typeorm";
+import { getMongoManager } from "@typeorm/core";
 
 const manager = getMongoManager(); // 或者 connection.mongoManager
 const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
@@ -179,7 +179,7 @@ const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw
 就像`MongoEntityManager`的`EntityManager`一样，`MongoRepository`也扩展了`Repository`：
 
 ```typescript
-import { getMongoRepository } from "typeorm";
+import { getMongoRepository } from "@typeorm/core";
 
 const userRepository = getMongoRepository(User); // 或者 connection.getMongoManager
 const timber = await userRepository.findOne({ firstName: "Timber", lastName: "Saw" });

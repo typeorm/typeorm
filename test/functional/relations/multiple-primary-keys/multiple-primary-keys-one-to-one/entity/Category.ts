@@ -1,10 +1,6 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {OneToOne} from "../../../../../../src/decorator/relations/OneToOne";
-import {Post} from "./Post";
-import {Tag} from "./Tag";
-import {Unique} from "../../../../../../src";
+import { Column, Entity, OneToOne, PrimaryColumn, Unique } from "@typeorm/core";
+import { Post } from "./Post";
+import { Tag } from "./Tag";
 
 @Entity()
 @Unique(["code", "version", "description"])

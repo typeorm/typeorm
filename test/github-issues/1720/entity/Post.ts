@@ -1,5 +1,5 @@
-import {Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn} from "../../../../src";
-import {Category} from "./Category";
+import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Post {
@@ -10,6 +10,8 @@ export class Post {
     @Column()
     title: string;
 
+    private _categories: Category[];
+
     @ManyToMany(() => Category)
     @JoinTable()
     get categories() {
@@ -19,8 +21,6 @@ export class Post {
     set categories(arr) {
         this._categories = arr;
     }
-
-    private _categories: Category[];
 
 
 }

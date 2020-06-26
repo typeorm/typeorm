@@ -1,8 +1,12 @@
 import "reflect-metadata";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {MongoRepository} from "../../../../../src/repository/MongoRepository";
+import { Connection } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { MongoRepository } from '../../../../../libs/driver/mongodb/src/lib/MongoRepository';
 
 describe("mongodb > MongoRepository", () => {
 
@@ -15,17 +19,17 @@ describe("mongodb > MongoRepository", () => {
     after(() => closeTestingConnections(connections));
 
     it("connection should return mongo repository when requested", () => Promise.all(connections.map(async connection => {
-        const postRepository = connection.getMongoRepository(Post);
+        const postRepository = connection.getRepository(Post);
         postRepository.should.be.instanceOf(MongoRepository);
     })));
 
     it("entity manager should return mongo repository when requested", () => Promise.all(connections.map(async connection => {
-        const postRepository = connection.manager.getMongoRepository(Post);
+        const postRepository = connection.manager.getRepository(Post);
         postRepository.should.be.instanceOf(MongoRepository);
     })));
 
     it("should be able to use entity cursor which will return instances of entity classes", () => Promise.all(connections.map(async connection => {
-        const postRepository = connection.getMongoRepository(Post);
+        const postRepository = connection.getRepository(Post) as MongoRepository<Post>;
 
         // save few posts
         const firstPost = new Post();
@@ -52,7 +56,7 @@ describe("mongodb > MongoRepository", () => {
     })));
 
     it("should be able to use entity cursor which will return instances of entity classes", () => Promise.all(connections.map(async connection => {
-        const postRepository = connection.getMongoRepository(Post);
+        const postRepository = connection.getRepository(Post);
 
         // save few posts
         const firstPost = new Post();

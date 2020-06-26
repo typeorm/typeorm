@@ -1,5 +1,13 @@
-import {Column, PrimaryGeneratedColumn, Tree, TreeParent, TreeChildren, UpdateDateColumn, CreateDateColumn} from "../../../../src";
-import {Entity} from "../../../../src/decorator/entity/Entity";
+import {
+    Column,
+    CreateDateColumn,
+    Entity,
+    PrimaryGeneratedColumn,
+    Tree,
+    TreeChildren,
+    TreeParent,
+    UpdateDateColumn
+} from "@typeorm/core";
 
 @Entity()
 @Tree("closure-table")

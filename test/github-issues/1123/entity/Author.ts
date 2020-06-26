@@ -1,5 +1,5 @@
-import {EntitySchemaOptions} from "../../../../src/entity-schema/EntitySchemaOptions";
-import {Post} from "./Post";
+import { EntitySchemaOptions } from "@typeorm/core";
+import { Post } from "./Post";
 
 export class Author {
     id: number;
@@ -24,7 +24,7 @@ export const AuthorSchema: EntitySchemaOptions<Author> = {
             type: "varchar"
         }
     },
-    
+
     relations: {
         posts: {
             target: () => Post,

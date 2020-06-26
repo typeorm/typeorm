@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
 
 describe("github issues > #3142 Unique constraint not created on embedded entity field", () => {
 
@@ -14,7 +14,7 @@ describe("github issues > #3142 Unique constraint not created on embedded entity
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should create unique constraint on embedded entity", () => Promise.all(connections.map(async function(connection) {
+    it("should create unique constraint on embedded entity", () => Promise.all(connections.map(async function (connection) {
 
         const queryRunner = connection.createQueryRunner();
         const table = await queryRunner.getTable("person");

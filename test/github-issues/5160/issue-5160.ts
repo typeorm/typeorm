@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../src";
-import {Post} from "./entity/Post";
-import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../utils/test-utils";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { SqlServerDriver } from "@typeorm/driver-sqlserver";
 
 describe("github issues > #5160 (MSSQL) DML statement cannot have any enabled triggers if the statement contains an OUTPUT clause without INTO clause", () => {
 
@@ -61,7 +61,7 @@ describe("github issues > #5160 (MSSQL) DML statement cannot have any enabled tr
 
         // for additional safety, re-fetch entity and check that the trigger fired and updated the field as expected
         const updatedPost = await connection.createQueryBuilder(Post, "post")
-            .where({ id: post.id })
+            .where({id: post.id})
             .getOne();
 
         expect(updatedPost).is.not.undefined;
@@ -86,7 +86,7 @@ describe("github issues > #5160 (MSSQL) DML statement cannot have any enabled tr
 
         // for additional safety, re-fetch entity and check that the trigger fired and updated the field as expected
         const updatedPost = await connection.createQueryBuilder(Post, "post")
-            .where({ id: post.id })
+            .where({id: post.id})
             .getOne();
 
         expect(updatedPost).is.not.undefined;

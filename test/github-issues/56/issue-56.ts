@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {expect} from "chai";
-import {AccessToken} from "./entity/AccessToken";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { User } from "./entity/User";
+import { expect } from "chai";
+import { AccessToken } from "./entity/AccessToken";
 
 describe.skip("github issues > #56 relationships only work when both primary keys have the same name", () => { // skipped because of CI error. todo: needs investigation
 
@@ -25,7 +25,7 @@ describe.skip("github issues > #56 relationships only work when both primary key
 
         return connection.getRepository(AccessToken).save(token).then(token => {
             return connection.getRepository(User).save(user);
-        }).then (user => {
+        }).then(user => {
             expect(user).not.to.be.undefined;
             user.should.be.eql({
                 id: 1,

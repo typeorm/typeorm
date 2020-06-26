@@ -1,6 +1,5 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {ContentModule} from "./ContentModule";
+import { Column, Entity } from "@typeorm/core";
+import { ContentModule } from "./ContentModule";
 
 @Entity()
 export class Post extends ContentModule {

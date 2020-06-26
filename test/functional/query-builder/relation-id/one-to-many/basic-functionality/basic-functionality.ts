@@ -1,17 +1,17 @@
 import "reflect-metadata";
-import {expect} from "chai";
+import { expect } from "chai";
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases
 } from "../../../../../utils/test-utils";
-import {Connection} from "../../../../../../src/connection/Connection";
-import {Category} from "./entity/Category";
-import {Post} from "./entity/Post";
-import {Image} from "./entity/Image";
+import { Connection } from "@typeorm/core";
+import { Category } from "./entity/Category";
+import { Post } from "./entity/Post";
+import { Image } from "./entity/Image";
 
 describe("query builder > relation-id > one-to-many > basic-functionality", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -64,7 +64,7 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.categoryIds", "post.categories")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost!.categoryIds).to.not.be.eql([]);
@@ -105,7 +105,7 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
 
         const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
-            .loadRelationIdAndMap("post.categoryIds", "post.categories", "category", qb => qb.andWhere("category.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationIdAndMap("post.categoryIds", "post.categories", "category", qb => qb.andWhere("category.isRemoved = :isRemoved", {isRemoved: true}))
             .getMany();
 
         expect(loadedPosts[0].categoryIds).to.not.be.eql([]);
@@ -117,8 +117,8 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
 
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .loadRelationIdAndMap("post.categoryIds", "post.categories", "category", qb => qb.andWhere("category.id = :categoryId", { categoryId: 1 }))
-            .where("post.id = :id", { id: 1 })
+            .loadRelationIdAndMap("post.categoryIds", "post.categories", "category", qb => qb.andWhere("category.id = :categoryId", {categoryId: 1}))
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost!.categoryIds).to.not.be.eql([]);
@@ -215,7 +215,7 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
             .loadRelationIdAndMap("post.categoryIds", "post.categories")
             .leftJoinAndSelect("post.categories", "category")
             .loadRelationIdAndMap("category.imageIds", "category.images")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .orderBy("category.id")
             .getOne();
 

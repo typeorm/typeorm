@@ -1,6 +1,4 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {
@@ -11,16 +9,16 @@ export class Post {
     @Column()
     title: string;
 
-    @Column({ type: "text" })
+    @Column({type: "text"})
     text: string;
 
-    @Column({ type: "int" })
+    @Column({type: "int"})
     likesCount: number;
 
-    @Column({ type: "int" })
+    @Column({type: "int"})
     commentsCount: number;
 
-    @Column({ type: "int" })
+    @Column({type: "int"})
     watchesCount: number;
 
 }

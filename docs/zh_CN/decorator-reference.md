@@ -93,7 +93,7 @@ export class User {
 `expression`可以是带有正确转义的列和表的字符串，取决于所使用的数据库（示例中为postgres）：
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: `
         SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
         FROM "post" "post"
@@ -106,7 +106,7 @@ export class PostCategory {
 或者是QueryBuilder的一个实例
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -120,7 +120,7 @@ export class PostCategory {
 **注意:** 由于驱动程序的限制，不支持参数绑定。请改用文字参数。
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -324,7 +324,7 @@ export class User {
 例如：
 
 ```typescript
-import { Entity, OneToOne, JoinColumn } from "typeorm";
+import { Entity, OneToOne, JoinColumn } from "@typeorm/core";
 import { Profile } from "./Profile";
 
 @Entity()
@@ -345,7 +345,7 @@ User 可以拥有多张 photos，但每张 photo 仅由一位 user 拥有。
 例如：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "@typeorm/core";
 import { User } from "./User";
 
 @Entity()
@@ -371,7 +371,7 @@ User 可以拥有多张 photos，但每张 photo 仅由一位 user 拥有。
 例如：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "@typeorm/core";
 import { Photo } from "./Photo";
 
 @Entity()
@@ -397,7 +397,7 @@ Question 可以有多个 categories，每个 category 可以有多个 questions�
 例如：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "@typeorm/core";
 import { Category } from "./Category";
 
 @Entity()

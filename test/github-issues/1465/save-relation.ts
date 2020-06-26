@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {assert} from "chai";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Account} from "./entity/Account";
-import {AccountActivationToken} from "./entity/AccountActivationToken";
+import { assert } from "chai";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Account } from "./entity/Account";
+import { AccountActivationToken } from "./entity/AccountActivationToken";
 
 describe("save child and parent entity", () => {
 

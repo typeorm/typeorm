@@ -1,12 +1,17 @@
 import "reflect-metadata";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {Counters} from "./entity/Counters";
-import {Information} from "./entity/Information";
-import {ExtraInformation} from "./entity/ExtraInformation";
-import {EditHistory} from "./entity/EditHistory";
-import {expect} from "chai";
+import { Connection } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { Counters } from "./entity/Counters";
+import { Information } from "./entity/Information";
+import { ExtraInformation } from "./entity/ExtraInformation";
+import { EditHistory } from "./entity/EditHistory";
+import { expect } from "chai";
+import { MongoRepository } from '../../../../../libs/driver/mongodb/src/lib/MongoRepository';
 
 describe("mongodb > embedded columns", () => {
 
@@ -33,7 +38,7 @@ describe("mongodb > embedded columns", () => {
         post.counters.information.description = "Hello post";
         await postRepository.save(post);
 
-        const loadedPost = await postRepository.findOne({ title: "Post" });
+        const loadedPost = await postRepository.findOne({title: "Post"});
 
         expect(loadedPost).to.be.not.empty;
         expect(loadedPost!.counters).to.be.not.empty;
@@ -53,7 +58,7 @@ describe("mongodb > embedded columns", () => {
         post.counters.information.description = "Hello updated post";
         await postRepository.save(post);
 
-        const loadedUpdatedPost = await postRepository.findOne({ title: "Updated post" });
+        const loadedUpdatedPost = await postRepository.findOne({title: "Updated post"});
 
         expect(loadedUpdatedPost).to.be.not.empty;
         expect(loadedUpdatedPost!.counters).to.be.not.empty;
@@ -70,15 +75,15 @@ describe("mongodb > embedded columns", () => {
 
         await postRepository.remove(post);
 
-        const removedPost = await postRepository.findOne({ title: "Post" });
-        const removedUpdatedPost = await postRepository.findOne({ title: "Updated post" });
+        const removedPost = await postRepository.findOne({title: "Post"});
+        const removedUpdatedPost = await postRepository.findOne({title: "Updated post"});
         expect(removedPost).to.be.undefined;
         expect(removedUpdatedPost).to.be.undefined;
 
     })));
 
     it("should store results in correct camelCase format", () => Promise.all(connections.map(async connection => {
-        const postRepository = connection.getMongoRepository(Post);
+        const postRepository = connection.getRepository(Post) as MongoRepository<Post>;
 
         // save few posts
         const post = new Post();
@@ -105,7 +110,7 @@ describe("mongodb > embedded columns", () => {
     })));
 
     it("should transform results to correct boolean value", () => Promise.all(connections.map(async connection => {
-        const postRepository = connection.getMongoRepository(Post);
+        const postRepository = connection.getRepository(Post) as MongoRepository<Post>;
 
         // save few posts
         const post = new Post();
@@ -130,9 +135,9 @@ describe("mongodb > embedded columns", () => {
 
     })));
 
-    
+
     it("should transform entity with nested embedded columns correctly", () => Promise.all(connections.map(async connection => {
-        const postRepository = connection.getMongoRepository(Post);
+        const postRepository = connection.getRepository(Post);
 
         // save few posts
         const post = new Post();

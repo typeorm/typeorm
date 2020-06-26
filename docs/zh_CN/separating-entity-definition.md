@@ -12,7 +12,7 @@
 简单定义示例：
 
 ```ts
-import {EntitySchema} from "typeorm";
+import {EntitySchema} from "@typeorm/core";
 
 export const CategoryEntity = new EntitySchema({
     name: "category",
@@ -32,7 +32,7 @@ export const CategoryEntity = new EntitySchema({
 关系示例：
 
 ```ts
-import {EntitySchema} from "typeorm";
+import {EntitySchema} from "@typeorm/core";
 
 export const PostEntity = new EntitySchema({
     name: "post",
@@ -61,7 +61,7 @@ export const PostEntity = new EntitySchema({
 复杂示例：
 
 ```ts
-import {EntitySchema} from "typeorm";
+import {EntitySchema} from "@typeorm/core";
 
 export const PersonSchema = new EntitySchema({
     name: "person",
@@ -114,7 +114,7 @@ export const PersonSchema = new EntitySchema({
 如果要使实体类型安全，可以定义模型并在模式定义中指定它：
 
 ```ts
-import {EntitySchema} from "typeorm";
+import {EntitySchema} from "@typeorm/core";
 
 export interface Category {
     id: number;
@@ -146,7 +146,7 @@ export const CategoryEntity = new EntitySchema<Category>({
 重新审视上面的`Category`示例。 你可能希望`extract`基本列描述并在其他模式中复用它，则可以通过以下方式完成：
 
 ```ts
-import {EntitySchemaColumnOptions} from "typeorm";
+import {EntitySchemaColumnOptions} from "@typeorm/core";
 
 export const BaseColumnSchemaPart = {
   id: {
@@ -173,7 +173,7 @@ export const BaseColumnSchemaPart = {
 export const CategoryEntity = new EntitySchema<Category>({
     name: "category",
     columns: {
-        ...BaseColumnSchemaPart,    
+        ...BaseColumnSchemaPart,
         // CategoryEntity现在具有已定义的id，createdAt，updatedAt列！
         // 此外，还定义了以下新字段
         name: {

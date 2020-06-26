@@ -1,7 +1,6 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Migration} from "../../../src/migration/Migration";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection, Migration } from "@typeorm/core";
 
 describe("github issues > #2875 runMigrations() function is not returning a list of migrated files", () => {
     let connections: Connection[];
@@ -17,8 +16,8 @@ describe("github issues > #2875 runMigrations() function is not returning a list
 
     it("should be able to run all necessary migrations", () => Promise.all(connections.map(async connection => {
         const mymigr: Migration[] = await connection.runMigrations();
-    
+
         mymigr.length.should.be.equal(1);
         mymigr[0].name.should.be.equal("InitUsers1530542855524");
     })));
- });
+});

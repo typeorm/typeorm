@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Group} from "./entity/Group";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Group } from "./entity/Group";
 
 describe("github issues > #1089 UUID in ClosureEntity", () => {
 

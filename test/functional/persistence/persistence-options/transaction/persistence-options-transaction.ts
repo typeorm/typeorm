@@ -1,7 +1,11 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {Connection} from "../../../../../src/connection/Connection";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { Connection } from "@typeorm/core";
 // import {expect} from "chai";
 
 describe("persistence > persistence options > transaction", () => {
@@ -11,7 +15,7 @@ describe("persistence > persistence options > transaction", () => {
     // -------------------------------------------------------------------------
 
     let connections: Connection[];
-    before(async () => connections = await createTestingConnections({ __dirname }));
+    before(async () => connections = await createTestingConnections({__dirname}));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
@@ -23,7 +27,7 @@ describe("persistence > persistence options > transaction", () => {
         const post = new Post();
         post.title = "Bakhrom";
         post.description = "Hello";
-        await connection.manager.save(post, { transaction: false });
+        await connection.manager.save(post, {transaction: false});
         // todo: check if actual transaction query is not executed
     })));
 

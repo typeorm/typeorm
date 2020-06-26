@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Record} from "./entity/Record";
-import {Connection} from "../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {Question} from "./entity/Question";
+import { expect } from "chai";
+import { Record } from "./entity/Record";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { Question } from "./entity/Question";
 
 describe("uuid-cockroach", () => {
 

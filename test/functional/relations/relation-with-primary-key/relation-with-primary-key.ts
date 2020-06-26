@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
 
 describe("relations > relation with primary key", () => {
 
@@ -13,7 +13,7 @@ describe("relations > relation with primary key", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    describe("many-to-one with primary key in relation", function() {
+    describe("many-to-one with primary key in relation", function () {
 
         it("should work perfectly", () => Promise.all(connections.map(async connection => {
 

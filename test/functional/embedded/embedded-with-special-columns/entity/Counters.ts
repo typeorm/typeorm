@@ -1,8 +1,5 @@
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {CreateDateColumn} from "../../../../../src/decorator/columns/CreateDateColumn";
-import {UpdateDateColumn} from "../../../../../src/decorator/columns/UpdateDateColumn";
-import {DeleteDateColumn} from "../../../../../src/decorator/columns/DeleteDateColumn";
-import {Subcounters} from "./Subcounters";
+import { Column, CreateDateColumn, DeleteDateColumn, UpdateDateColumn } from "@typeorm/core";
+import { Subcounters } from "./Subcounters";
 
 
 export class Counters {
@@ -16,7 +13,7 @@ export class Counters {
     @Column()
     favorites: number;
 
-    @Column(() => Subcounters, { prefix: "subcnt" })
+    @Column(() => Subcounters, {prefix: "subcnt"})
     subcounters: Subcounters;
 
     @CreateDateColumn()

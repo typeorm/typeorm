@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {User} from "./entity/User";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { User } from "./entity/User";
 
 describe("github issues > #1178 subqueries must work in insert statements", () => {
 
@@ -28,11 +28,11 @@ describe("github issues > #1178 subqueries must work in insert statements", () =
                 name: "First post",
                 user: () => `(SELECT "user"."id" FROM "user" WHERE "user"."name" = :userName)`,
             })
-            .setParameter("userName",  "Timber Saw")
+            .setParameter("userName", "Timber Saw")
             .returning("*")
             .execute();
 
-        await connection.manager.findOne(Post, 1, { relations: ["user"] }).should.eventually.eql({
+        await connection.manager.findOne(Post, 1, {relations: ["user"]}).should.eventually.eql({
             id: 1,
             name: "First post",
             user: {

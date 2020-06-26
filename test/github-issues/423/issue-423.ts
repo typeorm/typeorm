@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
 
 describe("github issues > #423 Cannot use Group as Table name && cannot autoSchemeSync when use alias Entity", () => {
 
@@ -21,7 +21,7 @@ describe("github issues > #423 Cannot use Group as Table name && cannot autoSche
         await queryRunner.release();
 
         table!.should.exist;
-        
+
         // CockroachDB stores unique indices as UNIQUE constraints
         if (connection.driver instanceof CockroachDriver) {
             table!.uniques.length.should.be.equal(1);

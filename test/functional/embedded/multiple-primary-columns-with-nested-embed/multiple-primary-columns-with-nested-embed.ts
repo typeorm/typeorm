@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {Post} from "./entity/Post";
-import {Counters} from "./entity/Counters";
-import {Connection} from "../../../../src/connection/Connection";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Subcounters} from "./entity/Subcounters";
+import { Post } from "./entity/Post";
+import { Counters } from "./entity/Counters";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Subcounters } from "./entity/Subcounters";
 
 describe("embedded > multiple-primary-columns-with-nested-embed", () => {
 
@@ -83,7 +83,7 @@ describe("embedded > multiple-primary-columns-with-nested-embed", () => {
             }
         ));
 
-        const loadedPost = (await postRepository.findOne({ id: 1, counters: { code: 1, subcounters: { version: 1 } } }))!;
+        const loadedPost = (await postRepository.findOne({id: 1, counters: {code: 1, subcounters: {version: 1}}}))!;
         expect(loadedPost.should.be.eql(
             {
                 id: 1,
@@ -105,7 +105,7 @@ describe("embedded > multiple-primary-columns-with-nested-embed", () => {
         loadedPost.counters.subcounters.watches += 1;
         await postRepository.save(loadedPost);
 
-        const loadedPost2 = (await postRepository.findOne({ id: 1, counters: { code: 1, subcounters: { version: 1 } } }))!;
+        const loadedPost2 = (await postRepository.findOne({id: 1, counters: {code: 1, subcounters: {version: 1}}}))!;
         expect(loadedPost2.should.be.eql(
             {
                 id: 1,

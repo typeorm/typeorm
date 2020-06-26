@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Post} from "./entity/Post";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Post } from "./entity/Post";
 
 describe("table inheritance > regular inheritance using extends keyword", () => {
 
@@ -23,7 +23,7 @@ describe("table inheritance > regular inheritance using extends keyword", () => 
         const loadedPost = await connection
             .manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost).not.to.be.undefined;

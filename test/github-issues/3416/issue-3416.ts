@@ -1,9 +1,8 @@
 import "reflect-metadata";
 import { expect } from "chai";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { Connection } from "../../../src/connection/Connection";
-import {User} from "../../functional/query-builder/update/entity/User";
-import {EntityColumnNotFound} from "../../../src/error/EntityColumnNotFound";
+import { Connection, EntityColumnNotFound } from "@typeorm/core";
+import { User } from "../../functional/query-builder/update/entity/User";
 
 describe("github issues > #3416 Unknown fields are stripped from WHERE clause", () => {
 
@@ -28,7 +27,7 @@ describe("github issues > #3416 Unknown fields are stripped from WHERE clause", 
         it("update", () => Promise.all(connections.map(async connection => {
             let error: Error | undefined;
             try {
-                await connection.manager.update(User, { unknownProp: "Something" }, { name: "John doe "});
+                await connection.manager.update(User, {unknownProp: "Something"}, {name: "John doe "});
             } catch (err) {
                 error = err;
             }
@@ -37,7 +36,7 @@ describe("github issues > #3416 Unknown fields are stripped from WHERE clause", 
         it("delete", () => Promise.all(connections.map(async connection => {
             let error: Error | undefined;
             try {
-                await connection.manager.delete(User, { unknownProp: "Something" });
+                await connection.manager.delete(User, {unknownProp: "Something"});
             } catch (err) {
                 error = err;
             }

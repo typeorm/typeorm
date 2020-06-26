@@ -1,16 +1,14 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../src/connection/Connection";
-import {createConnection} from "../../src/index";
-import {Repository} from "../../src/repository/Repository";
-import {PostDetails} from "../../sample/sample4-many-to-many/entity/PostDetails";
-import {Post} from "../../sample/sample4-many-to-many/entity/Post";
-import {PostCategory} from "../../sample/sample4-many-to-many/entity/PostCategory";
-import {PostMetadata} from "../../sample/sample4-many-to-many/entity/PostMetadata";
-import {PostImage} from "../../sample/sample4-many-to-many/entity/PostImage";
-import {setupSingleTestingConnection} from "../utils/test-utils";
+import { expect } from "chai";
+import { Connection, createConnection, Repository } from "@typeorm/core";
+import { PostDetails } from "../../apps/sample4-many-to-many/src/entity/PostDetails";
+import { Post } from "../../apps/sample4-many-to-many/src/entity/Post";
+import { PostCategory } from "../../apps/sample4-many-to-many/src/entity/PostCategory";
+import { PostMetadata } from "../../apps/sample4-many-to-many/src/entity/PostMetadata";
+import { PostImage } from "../../apps/sample4-many-to-many/src/entity/PostImage";
+import { setupSingleTestingConnection } from "../utils/test-utils";
 
-describe("many-to-many", function() {
+describe("many-to-many", function () {
 
     // -------------------------------------------------------------------------
     // Configuration
@@ -18,9 +16,9 @@ describe("many-to-many", function() {
 
     // connect to db
     let connection: Connection;
-    before(async function() {
+    before(async function () {
         const options = setupSingleTestingConnection("mysql", {
-            entities: [__dirname + "/../../sample/sample4-many-to-many/entity/*"],
+            entities: [__dirname + "/../../apps/sample4-many-to-many/src/entity/*"],
         });
 
         if (!options)
@@ -42,7 +40,7 @@ describe("many-to-many", function() {
         postCategoryRepository: Repository<PostCategory>,
         postImageRepository: Repository<PostImage>,
         postMetadataRepository: Repository<PostMetadata>;
-    before(function() {
+    before(function () {
         if (!connection)
             return;
         postRepository = connection.getRepository(Post);
@@ -56,25 +54,25 @@ describe("many-to-many", function() {
     // Specifications
     // -------------------------------------------------------------------------
 
-    describe("insert post and details (has inverse relation + full cascade options)", function() {
+    describe("insert post and details (has inverse relation + full cascade options)", function () {
         if (!connection)
             return;
         let newPost: Post, details: PostDetails, savedPost: Post;
-        
+
         before(reloadDatabase);
 
-        before(function() {
+        before(function () {
             details = new PostDetails();
             details.authorName = "Umed";
             details.comment = "this is post";
             details.metadata = "post,posting,postman";
-            
+
             newPost = new Post();
             newPost.text = "Hello post";
             newPost.title = "this is post title";
             newPost.details = [];
             newPost.details.push(details);
-            
+
             return postRepository.save(newPost).then(post => savedPost = post as Post);
         });
 
@@ -91,26 +89,26 @@ describe("many-to-many", function() {
             expect(savedPost.details[0].id).not.to.be.undefined;
         });
 
-        it("should have inserted post in the database", function() {
+        it("should have inserted post in the database", function () {
             const expectedPost = new Post();
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
-            
+
             return postRepository.findOne(savedPost.id).should.eventually.eql(expectedPost);
         });
 
-        it("should have inserted post details in the database", function() {
+        it("should have inserted post details in the database", function () {
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedPost.details[0].id;
             expectedDetails.authorName = savedPost.details[0].authorName;
             expectedDetails.comment = savedPost.details[0].comment;
             expectedDetails.metadata = savedPost.details[0].metadata;
-            
+
             return postDetailsRepository.findOne(savedPost.details[0].id).should.eventually.eql(expectedDetails);
         });
 
-        it("should load post and its details if left join used", function() {
+        it("should load post and its details if left join used", function () {
             const expectedPost = new Post();
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
@@ -121,7 +119,7 @@ describe("many-to-many", function() {
             expectedPost.details[0].authorName = savedPost.details[0].authorName;
             expectedPost.details[0].comment = savedPost.details[0].comment;
             expectedPost.details[0].metadata = savedPost.details[0].metadata;
-            
+
             return postRepository
                 .createQueryBuilder("post")
                 .leftJoinAndSelect("post.details", "details")
@@ -131,7 +129,7 @@ describe("many-to-many", function() {
                 .should.eventually.eql(expectedPost);
         });
 
-        it("should load details and its post if left join used (from reverse side)", function() {
+        it("should load details and its post if left join used (from reverse side)", function () {
 
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedPost.details[0].id;
@@ -146,7 +144,7 @@ describe("many-to-many", function() {
 
             expectedDetails.posts = [];
             expectedDetails.posts.push(expectedPost);
-            
+
             return postDetailsRepository
                 .createQueryBuilder("details")
                 .leftJoinAndSelect("details.posts", "posts")
@@ -156,43 +154,43 @@ describe("many-to-many", function() {
                 .should.eventually.eql(expectedDetails);
         });
 
-        it("should load saved post without details if left joins are not specified", function() {
+        it("should load saved post without details if left joins are not specified", function () {
             const expectedPost = new Post();
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
-            
+
             return postRepository
                 .createQueryBuilder("post")
-                .where("post.id=:id", { id: savedPost.id })
+                .where("post.id=:id", {id: savedPost.id})
                 .getOne()
                 .should.eventually.eql(expectedPost);
         });
 
-        it("should load saved post without details if left joins are not specified", function() {
+        it("should load saved post without details if left joins are not specified", function () {
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedPost.details[0].id;
             expectedDetails.authorName = savedPost.details[0].authorName;
             expectedDetails.comment = savedPost.details[0].comment;
             expectedDetails.metadata = savedPost.details[0].metadata;
-            
+
             return postDetailsRepository
                 .createQueryBuilder("details")
-                .where("details.id=:id", { id: savedPost.id })
+                .where("details.id=:id", {id: savedPost.id})
                 .getOne()
                 .should.eventually.eql(expectedDetails);
         });
 
     });
 
-    describe("insert post and category (one-side relation)", function() {
+    describe("insert post and category (one-side relation)", function () {
         if (!connection)
             return;
         let newPost: Post, category: PostCategory, savedPost: Post;
 
         before(reloadDatabase);
 
-        before(function() {
+        before(function () {
             category = new PostCategory();
             category.name = "technology";
 
@@ -218,7 +216,7 @@ describe("many-to-many", function() {
             expect(savedPost.categories[0].id).not.to.be.undefined;
         });
 
-        it("should have inserted post in the database", function() {
+        it("should have inserted post in the database", function () {
             const expectedPost = new Post();
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
@@ -226,14 +224,14 @@ describe("many-to-many", function() {
             return postRepository.findOne(savedPost.id).should.eventually.eql(expectedPost);
         });
 
-        it("should have inserted category in the database", function() {
+        it("should have inserted category in the database", function () {
             const expectedPost = new PostCategory();
             expectedPost.id = savedPost.categories[0].id;
             expectedPost.name = "technology";
             return postCategoryRepository.findOne(savedPost.categories[0].id).should.eventually.eql(expectedPost);
         });
 
-        it("should load post and its category if left join used", function() {
+        it("should load post and its category if left join used", function () {
             const expectedPost = new Post();
             expectedPost.id = savedPost.id;
             expectedPost.title = savedPost.title;
@@ -246,12 +244,12 @@ describe("many-to-many", function() {
             return postRepository
                 .createQueryBuilder("post")
                 .leftJoinAndSelect("post.categories", "categories")
-                .where("post.id=:id", { id: savedPost.id })
+                .where("post.id=:id", {id: savedPost.id})
                 .getOne()
                 .should.eventually.eql(expectedPost);
         });
 
-        it("should load details and its post if left join used (from reverse side)", function() {
+        it("should load details and its post if left join used (from reverse side)", function () {
             // later need to specify with what exception we reject it
             /*return postCategoryRepository
                 .createQueryBuilder("category")
@@ -260,17 +258,17 @@ describe("many-to-many", function() {
                 .getSingleResult()
                 .should.be.rejectedWith(Error);*/ // not working, find fix
         });
-        
+
     });
 
-    describe("cascade updates should not be executed when cascadeUpdate option is not set", function() {
+    describe("cascade updates should not be executed when cascadeUpdate option is not set", function () {
         if (!connection)
             return;
         let newPost: Post, details: PostDetails;
 
         before(reloadDatabase);
 
-        before(function() {
+        before(function () {
 
             details = new PostDetails();
             details.authorName = "Umed";
@@ -303,14 +301,14 @@ describe("many-to-many", function() {
         }); // todo: also check that updates throw exception in strict cascades mode
     });
 
-    describe("cascade remove should not be executed when cascadeRemove option is not set", function() {
+    describe("cascade remove should not be executed when cascadeRemove option is not set", function () {
         if (!connection)
             return;
         let newPost: Post, details: PostDetails;
 
         before(reloadDatabase);
 
-        before(function() {
+        before(function () {
 
             details = new PostDetails();
             details.authorName = "Umed";
@@ -352,7 +350,7 @@ describe("many-to-many", function() {
         });
     });
 
-    describe("cascade updates should be executed when cascadeUpdate option is set", function() {
+    describe("cascade updates should be executed when cascadeUpdate option is set", function () {
         if (!connection)
             return;
         let newPost: Post, newImage: PostImage;
@@ -395,7 +393,7 @@ describe("many-to-many", function() {
                         .where("post.id=:id")
                         .setParameter("id", newPost.id)
                         .getOne();
-                    
+
                 }).then(reloadedPost => {
                     reloadedPost!.images[0].url.should.be.equal("new-logo.png");
                 });
@@ -403,7 +401,7 @@ describe("many-to-many", function() {
 
     });
 
-    describe("cascade remove should be executed when cascadeRemove option is set", function() {
+    describe("cascade remove should be executed when cascadeRemove option is set", function () {
         if (!connection)
             return;
         let newPost: Post, newMetadata: PostMetadata;
@@ -454,14 +452,14 @@ describe("many-to-many", function() {
 
     });
 
-    describe("insert post details from reverse side", function() {
+    describe("insert post details from reverse side", function () {
         if (!connection)
             return;
         let newPost: Post, details: PostDetails, savedDetails: PostDetails;
 
         before(reloadDatabase);
 
-        before(function() {
+        before(function () {
             newPost = new Post();
             newPost.text = "Hello post";
             newPost.title = "this is post title";
@@ -487,7 +485,7 @@ describe("many-to-many", function() {
             expect(details.id).not.to.be.undefined;
         });
 
-        it("should have inserted post in the database", function() {
+        it("should have inserted post in the database", function () {
             const expectedPost = new Post();
             expectedPost.id = newPost.id;
             expectedPost.text = newPost.text;
@@ -495,7 +493,7 @@ describe("many-to-many", function() {
             return postRepository.findOne(savedDetails.id).should.eventually.eql(expectedPost);
         });
 
-        it("should have inserted details in the database", function() {
+        it("should have inserted details in the database", function () {
             const expectedDetails = new PostDetails();
             expectedDetails.id = details.id;
             expectedDetails.comment = details.comment;
@@ -504,7 +502,7 @@ describe("many-to-many", function() {
             return postDetailsRepository.findOne(details.id).should.eventually.eql(expectedDetails);
         });
 
-        it("should load post and its details if left join used", function() {
+        it("should load post and its details if left join used", function () {
             const expectedDetails = new PostDetails();
             expectedDetails.id = savedDetails.id;
             expectedDetails.comment = savedDetails.comment;
@@ -519,7 +517,7 @@ describe("many-to-many", function() {
             return postDetailsRepository
                 .createQueryBuilder("details")
                 .leftJoinAndSelect("details.posts", "posts")
-                .where("details.id=:id", { id: savedDetails.id })
+                .where("details.id=:id", {id: savedDetails.id})
                 .getOne()
                 .should.eventually.eql(expectedDetails);
         });

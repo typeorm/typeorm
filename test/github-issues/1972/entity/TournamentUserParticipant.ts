@@ -1,6 +1,6 @@
-import {ChildEntity, JoinColumn, OneToOne} from "../../../../src/index";
-import {TournamentParticipant} from "./TournamentParticipant";
-import {User} from "./User";
+import { ChildEntity, JoinColumn, OneToOne } from "@typeorm/core";
+import { TournamentParticipant } from "./TournamentParticipant";
+import { User } from "./User";
 
 @ChildEntity()
 export class TournamentUserParticipant extends TournamentParticipant {

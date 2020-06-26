@@ -1,11 +1,11 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
 
-describe("persistence > one-to-many", function() {
+describe("persistence > one-to-many", function () {
 
     // -------------------------------------------------------------------------
     // Setup
@@ -40,7 +40,7 @@ describe("persistence > one-to-many", function() {
         newPost.categories = [newCategory];
         await postRepository.save(newPost);
 
-        const loadedPost = await postRepository.findOne(newPost.id, { relations: ["categories"] });
+        const loadedPost = await postRepository.findOne(newPost.id, {relations: ["categories"]});
         expect(loadedPost!).not.to.be.undefined;
         expect(loadedPost!.categories).not.to.be.undefined;
         expect(loadedPost!.categories![0]).not.to.be.undefined;
@@ -60,7 +60,7 @@ describe("persistence > one-to-many", function() {
         newPost.categories = [newCategory];
         await postRepository.save(newPost);
 
-        const loadedPost = await postRepository.findOne(newPost.id, { relations: ["categories"] });
+        const loadedPost = await postRepository.findOne(newPost.id, {relations: ["categories"]});
         expect(loadedPost).not.to.be.undefined;
         expect(loadedPost!.categories).not.to.be.undefined;
         expect(loadedPost!.categories![0]).not.to.be.undefined;

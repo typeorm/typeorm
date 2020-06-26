@@ -1,7 +1,4 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {ValueTransformer} from "../../../../src/decorator/options/ValueTransformer";
-import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Column, Entity, PrimaryColumn, ValueTransformer } from "@typeorm/core";
 
 export class Uuid {
 
@@ -35,7 +32,7 @@ class UuidTransformer implements ValueTransformer {
 @Entity()
 export class Post {
 
-    @PrimaryColumn({ type: "uuid", transformer: new UuidTransformer() })
+    @PrimaryColumn({type: "uuid", transformer: new UuidTransformer()})
     id: Uuid;
 
     @Column()

@@ -1,8 +1,5 @@
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {Category} from "./Category";
-import {ManyToOne} from "../../../../../../../src/decorator/relations/ManyToOne";
+import { Column, Entity, ManyToOne, PrimaryColumn } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Post {
@@ -24,7 +21,7 @@ export class Post {
 
     @ManyToOne(type => Category)
     subcategory: Category;
-    
+
     categoryId: number;
 
 }

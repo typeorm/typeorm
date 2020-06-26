@@ -1,8 +1,6 @@
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {OneToMany} from "../../../../../../../src/decorator/relations/OneToMany";
-import {Category} from "./Category";
-import {Subcounters} from "./Subcounters";
+import { Column, OneToMany, PrimaryColumn } from "@typeorm/core";
+import { Category } from "./Category";
+import { Subcounters } from "./Subcounters";
 
 export class Counters {
 

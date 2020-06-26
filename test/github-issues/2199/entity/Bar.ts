@@ -1,5 +1,4 @@
-import { Column, PrimaryGeneratedColumn } from "../../../../src";
-import { Entity } from "../../../../src/decorator/entity/Entity";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity("bar")
 export class Bar {

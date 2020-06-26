@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { expect } from "chai";
-import { createConnection } from "../../../src";
+import { createConnection } from "@typeorm/core";
 import { getTypeOrmConfig } from "../../utils/test-utils";
 
 describe("github issues > #2096 [mysql] Database name isn't read from url", () => {

@@ -1,14 +1,14 @@
-import {expect} from "chai";
+import { expect } from "chai";
 import "reflect-metadata";
-import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
-import {Album} from "./entity/Album";
-import {Category} from "./entity/Category";
-import {Connection} from "../../../../src";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Photo} from "./entity/Photo";
-import {PhotoAlbumCategory} from "./entity/PhotoAlbumCategory";
-import {Post} from "./entity/Post";
-import {PostCategory} from "./entity/PostCategory";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { Album } from "./entity/Album";
+import { Category } from "./entity/Category";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Photo } from "./entity/Photo";
+import { PhotoAlbumCategory } from "./entity/PhotoAlbumCategory";
+import { Post } from "./entity/Post";
+import { PostCategory } from "./entity/PostCategory";
 
 describe("view entity > general", () => {
 
@@ -105,7 +105,7 @@ describe("view entity > general", () => {
         photoAlbumCategories[1].categoryName.should.be.equal("Cars");
 
         const albumId = connection.driver instanceof CockroachDriver ? "1" : 1;
-        const photoAlbumCategory = await connection.manager.findOne(PhotoAlbumCategory, { id: 1 });
+        const photoAlbumCategory = await connection.manager.findOne(PhotoAlbumCategory, {id: 1});
         photoAlbumCategory!.id.should.be.equal(photoId1);
         photoAlbumCategory!.name.should.be.equal("BMW E39");
         photoAlbumCategory!.albumName.should.be.equal("BMW photos");

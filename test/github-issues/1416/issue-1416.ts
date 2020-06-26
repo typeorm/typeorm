@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Author} from "./entity/Author";
-import {Photo} from "./entity/Photo";
-import {Connection} from "../../../src/connection/Connection";
-import {PhotoMetadata} from "./entity/PhotoMetadata";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Author } from "./entity/Author";
+import { Photo } from "./entity/Photo";
+import { Connection } from "@typeorm/core";
+import { PhotoMetadata } from "./entity/PhotoMetadata";
+import { expect } from "chai";
 
 describe("github issue > #1416 Wrong behavior when fetching an entity that has a relation with its own eager relations", () => {
     let connections: Connection[] = [];
@@ -37,11 +37,11 @@ describe("github issue > #1416 Wrong behavior when fetching an entity that has a
         photoAuthor.photos = [photo];
         await connection.manager.save(photoAuthor);
 
-        const author = await connection.manager.findOne(Author, { 
-            where: { 
+        const author = await connection.manager.findOne(Author, {
+            where: {
                 name: photoAuthor.name
-            }, 
-            relations: ["photos"] 
+            },
+            relations: ["photos"]
         }) as Author;
         expect(author).not.to.be.undefined;
         expect(author.photos[0]).not.to.be.undefined;

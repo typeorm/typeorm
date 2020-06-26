@@ -1,13 +1,13 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {Tag} from "./entity/Tag";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { Tag } from "./entity/Tag";
 
 describe("relations > custom-referenced-column-name", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -48,7 +48,7 @@ describe("relations > custom-referenced-column-name", () => {
 
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.categoryName).to.not.be.undefined;
@@ -86,7 +86,7 @@ describe("relations > custom-referenced-column-name", () => {
 
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .leftJoinAndSelect("post.categoryWithEmptyJoinCol", "categoryWithEmptyJoinCol")
                 .getOne();
 
@@ -123,7 +123,7 @@ describe("relations > custom-referenced-column-name", () => {
 
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.categoryId).to.be.equal(1);
@@ -161,7 +161,7 @@ describe("relations > custom-referenced-column-name", () => {
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categoryWithoutColName", "categoryWithoutColName")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.categoryWithoutColName.id).to.be.equal(1);
@@ -201,7 +201,7 @@ describe("relations > custom-referenced-column-name", () => {
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categoryWithoutRefColName2", "categoryWithoutRefColName2")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.categoryWithoutRefColName2).to.not.be.undefined;
@@ -242,7 +242,7 @@ describe("relations > custom-referenced-column-name", () => {
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.category", "category")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.category).to.not.be.undefined;
@@ -284,7 +284,7 @@ describe("relations > custom-referenced-column-name", () => {
 
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.tagName).to.not.be.undefined;
@@ -323,7 +323,7 @@ describe("relations > custom-referenced-column-name", () => {
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.tagWithEmptyJoinCol", "tagWithEmptyJoinCol")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.tagWithEmptyJoinCol.id).to.be.equal(1);
@@ -359,7 +359,7 @@ describe("relations > custom-referenced-column-name", () => {
 
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.tagId).to.be.equal(1);
@@ -397,7 +397,7 @@ describe("relations > custom-referenced-column-name", () => {
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.tagWithoutColName", "tagWithoutColName")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.tagWithoutColName.id).to.be.equal(1);
@@ -437,7 +437,7 @@ describe("relations > custom-referenced-column-name", () => {
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.tagWithoutRefColName2", "tagWithoutRefColName2")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.tagWithoutRefColName2).to.not.be.undefined;
@@ -478,7 +478,7 @@ describe("relations > custom-referenced-column-name", () => {
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.tag", "category")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.tag).to.not.be.undefined;

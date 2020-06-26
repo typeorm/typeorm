@@ -1,9 +1,13 @@
 import "reflect-metadata";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {Counters} from "./entity/Counters";
-import {expect} from "chai";
+import { Connection } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { Counters } from "./entity/Counters";
+import { expect } from "chai";
 
 describe("mongodb > array columns", () => {
 
@@ -33,7 +37,7 @@ describe("mongodb > array columns", () => {
         await postRepository.save(post);
 
         // check saved post
-        const loadedPost = await postRepository.findOne({ title: "Post" });
+        const loadedPost = await postRepository.findOne({title: "Post"});
 
         expect(loadedPost).to.be.not.empty;
         expect(loadedPost!.names).to.be.not.empty;
@@ -81,7 +85,7 @@ describe("mongodb > array columns", () => {
         await postRepository.save(post);
 
         // now load updated post
-        const loadedUpdatedPost = await postRepository.findOne({ title: "Post" });
+        const loadedUpdatedPost = await postRepository.findOne({title: "Post"});
 
         expect(loadedUpdatedPost).to.be.not.empty;
         expect(loadedUpdatedPost!.names).to.be.not.empty;

@@ -1,7 +1,4 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {UpdateDateColumn} from "../../../../../src/decorator/columns/UpdateDateColumn";
+import { Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "@typeorm/core";
 
 @Entity()
 export class PostWithUpdateDate {

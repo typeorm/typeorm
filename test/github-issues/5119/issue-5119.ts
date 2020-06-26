@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
     setupSingleTestingConnection
 } from "../../utils/test-utils";
-import { Connection, createConnection } from "../../../src";
+import { Connection, createConnection } from "@typeorm/core";
 import { fail } from "assert";
 
 describe("github issues > #5119 migration with foreign key that changes target", () => {
@@ -22,7 +22,7 @@ describe("github issues > #5119 migration with foreign key that changes target",
 
     it("should generate a drop and create step", async () => {
         return Promise.all(
-            connections.map(async function(_connection) {
+            connections.map(async function (_connection) {
                 const options = setupSingleTestingConnection(
                     _connection.options.type,
                     {

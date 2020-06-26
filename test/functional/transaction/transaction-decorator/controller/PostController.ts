@@ -1,12 +1,8 @@
-import {Repository} from "../../../../../src/repository/Repository";
-import {Transaction} from "../../../../../src/decorator/transaction/Transaction";
-import {TransactionManager} from "../../../../../src/decorator/transaction/TransactionManager";
-import {TransactionRepository} from "../../../../../src/decorator/transaction/TransactionRepository";
-import {EntityManager} from "../../../../../src/entity-manager/EntityManager";
+import { EntityManager, Repository, Transaction, TransactionManager, TransactionRepository } from "@typeorm/core";
 
-import {Post} from "../entity/Post";
-import {Category} from "../entity/Category";
-import {CategoryRepository} from "../repository/CategoryRepository";
+import { Post } from "../entity/Post";
+import { Category } from "../entity/Category";
+import { CategoryRepository } from "../repository/CategoryRepository";
 
 export class PostController {
 
@@ -35,7 +31,7 @@ export class PostController {
         return categoryRepository.findByName(category.name);
     }
 
-    @Transaction({ connectionName: "mysql", isolation: "SERIALIZABLE" }) // "mysql" is a connection name. you can not pass it if you are using default connection.
+    @Transaction({connectionName: "mysql", isolation: "SERIALIZABLE"}) // "mysql" is a connection name. you can not pass it if you are using default connection.
     async saveWithNonDefaultIsolation(post: Post, category: Category, @TransactionManager() entityManager: EntityManager) {
         await entityManager.save(post);
         await entityManager.save(category);

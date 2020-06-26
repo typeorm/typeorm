@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("other issues > mongodb entity change in subscribers should affect persistence", () => {
 
@@ -15,7 +15,7 @@ describe("other issues > mongodb entity change in subscribers should affect pers
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("if entity was changed, subscriber should be take updated columns", () => Promise.all(connections.map(async function(connection) {
+    it("if entity was changed, subscriber should be take updated columns", () => Promise.all(connections.map(async function (connection) {
 
         const post = new Post();
         post.title = "hello world";
@@ -41,7 +41,7 @@ describe("other issues > mongodb entity change in subscribers should affect pers
 
     })));
 
-    it("if entity was loaded, loaded property should be changed", () => Promise.all(connections.map(async function(connection) {
+    it("if entity was loaded, loaded property should be changed", () => Promise.all(connections.map(async function (connection) {
 
         const post = new Post();
         post.title = "hello world";

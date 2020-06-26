@@ -2,9 +2,9 @@
 
 You can create `UPDATE` queries using `QueryBuilder`.
 Examples:
-             
+
 ```typescript
-import {getConnection} from "typeorm";
+import {getConnection} from "@typeorm/core";
 
 await getConnection()
     .createQueryBuilder()
@@ -16,19 +16,19 @@ await getConnection()
 
 This is the most efficient way in terms of performance to update entities in your database.
 
-### Raw SQL support 
+### Raw SQL support
 
 In some cases when you need to execute SQL queries you need to use function style value:
 
 
 ```typescript
-import {getConnection} from "typeorm";
+import {getConnection} from "@typeorm/core";
 
 await getConnection()
     .createQueryBuilder()
     .update(User)
-    .set({ 
-        firstName: "Timber", 
+    .set({
+        firstName: "Timber",
         lastName: "Saw",
         age: () => "age + 1"
     })

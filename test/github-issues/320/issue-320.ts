@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {ActivityEntity} from "./entity/ActivityEntity";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { ActivityEntity } from "./entity/ActivityEntity";
 
 describe("github issues > #320 Bug in getManyAndCount", () => {
 

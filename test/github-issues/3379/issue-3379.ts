@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
-import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection, Table} from "../../../src";
+import { MysqlDriver } from "@typeorm/driver-mysql";
+import { PostgresDriver } from "@typeorm/driver-postgres";
+import { AbstractSqliteDriver } from "@typeorm/driver-sqlite-abstract";
+import { SqlServerDriver } from "@typeorm/driver-sqlserver";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection, Table } from "@typeorm/core";
 
 describe("github issues > #3379 Migration will keep create and drop indexes if index name is the same across tables", () => {
 
@@ -50,7 +50,7 @@ describe("github issues > #3379 Migration will keep create and drop indexes if i
                     type: "varchar",
                 }
             ],
-            indices: [{ name: "name_index", columnNames: ["name"] }]
+            indices: [{name: "name_index", columnNames: ["name"]}]
         }), true);
 
         // Only MySQL and SQLServer allows non unique index names
@@ -70,7 +70,7 @@ describe("github issues > #3379 Migration will keep create and drop indexes if i
                         type: "varchar",
                     }
                 ],
-                indices: [{ name: "name_index", columnNames: ["name"] }]
+                indices: [{name: "name_index", columnNames: ["name"]}]
             }), true);
         }
 

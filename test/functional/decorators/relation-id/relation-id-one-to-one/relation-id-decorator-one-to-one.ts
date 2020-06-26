@@ -1,12 +1,16 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {Category} from "./entity/Category";
-import {Post} from "./entity/Post";
+import { expect } from "chai";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Category } from "./entity/Category";
+import { Post } from "./entity/Post";
 
 describe("decorators > relation-id > one-to-one", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -66,7 +70,7 @@ describe("decorators > relation-id > one-to-one", () => {
 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost!.categoryId).to.not.be.undefined;
@@ -111,7 +115,7 @@ describe("decorators > relation-id > one-to-one", () => {
 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
-            .where("category.id = :id", { id: 1 })
+            .where("category.id = :id", {id: 1})
             .getOne();
 
         expect(loadedCategory!.postId).to.not.be.undefined;

@@ -1,10 +1,7 @@
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {TableInheritance} from "../../../../../../../src/decorator/entity/TableInheritance";
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import { Column, Entity, PrimaryGeneratedColumn, TableInheritance } from "@typeorm/core";
 
 @Entity()
-@TableInheritance({ column: { name: "type", type: "varchar" } })
+@TableInheritance({column: {name: "type", type: "varchar"}})
 export class Person {
 
     @PrimaryGeneratedColumn()

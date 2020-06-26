@@ -1,9 +1,13 @@
 import "reflect-metadata";
-import {Post} from "./entity/Post";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {PostWithoutTypes} from "./entity/PostWithoutTypes";
-import {FruitEnum} from "./enum/FruitEnum";
+import { Post } from "./entity/Post";
+import { Connection } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { PostWithoutTypes } from "./entity/PostWithoutTypes";
+import { FruitEnum } from "./enum/FruitEnum";
 
 describe("database schema > column types > sqlite", () => {
 
@@ -56,7 +60,7 @@ describe("database schema > column types > sqlite", () => {
         post.datetime = new Date();
         post.datetime.setMilliseconds(0);
         post.simpleArray = ["A", "B", "C"];
-        post.simpleJson = { param: "VALUE" };
+        post.simpleJson = {param: "VALUE"};
         post.simpleEnum = "A";
         post.simpleClassEnum1 = FruitEnum.Apple;
         await postRepository.save(post);

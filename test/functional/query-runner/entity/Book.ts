@@ -1,5 +1,4 @@
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn";
-import { Entity } from "../../../../src/decorator/entity/Entity";
+import { Entity, PrimaryColumn } from "@typeorm/core";
 
 @Entity()
 export class Book {
@@ -9,7 +8,7 @@ export class Book {
 
 }
 
-@Entity({ withoutRowid: true })
+@Entity({withoutRowid: true})
 export class Book2 {
 
     @PrimaryColumn()

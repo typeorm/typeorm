@@ -19,7 +19,7 @@ You can create a view entity by defining a new class and mark it with `@ViewEnti
 `expression` can be string with properly escaped columns and tables, depend on database used (postgres in example):
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: `
         SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
         FROM "post" "post"
@@ -31,7 +31,7 @@ You can create a view entity by defining a new class and mark it with `@ViewEnti
 or an instance of QueryBuilder
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -44,7 +44,7 @@ or an instance of QueryBuilder
 **Note:** parameter binding is not supported due to drivers limitations. Use the literal parameters instead.
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -59,7 +59,7 @@ or an instance of QueryBuilder
 Each view entity must be registered in your connection options:
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import {createConnection, Connection} from "@typeorm/core";
 import {UserView} from "./entity/UserView";
 
 const connection: Connection = await createConnection({
@@ -76,7 +76,7 @@ const connection: Connection = await createConnection({
 Or you can specify the whole directory with all entities inside - and all of them will be loaded:
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import {createConnection, Connection} from "@typeorm/core";
 
 const connection: Connection = await createConnection({
     type: "mysql",
@@ -92,14 +92,14 @@ const connection: Connection = await createConnection({
 ## View Entity columns
 
 To map data from view into the correct entity columns you must mark entity columns with `@ViewColumn()`
-decorator and specify these columns as select statement aliases. 
+decorator and specify these columns as select statement aliases.
 
 example with string expression definition:
 
 ```typescript
-import {ViewEntity, ViewColumn} from "typeorm";
+import {ViewEntity, ViewColumn} from "@typeorm/core";
 
-@ViewEntity({ 
+@ViewEntity({
     expression: `
         SELECT "post"."id" AS "id", "post"."name" AS "name", "category"."name" AS "categoryName"
         FROM "post" "post"
@@ -123,9 +123,9 @@ export class PostCategory {
 example using QueryBuilder:
 
 ```typescript
-import {ViewEntity, ViewColumn} from "typeorm";
+import {ViewEntity, ViewColumn} from "@typeorm/core";
 
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -152,7 +152,7 @@ export class PostCategory {
 Let create two entities and a view containing aggregated data from these entities:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class Category {
@@ -167,7 +167,7 @@ export class Category {
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn} from "@typeorm/core";
 import {Category} from "./Category";
 
 @Entity()
@@ -190,9 +190,9 @@ export class Post {
 ```
 
 ```typescript
-import {ViewEntity, ViewColumn} from "typeorm";
+import {ViewEntity, ViewColumn} from "@typeorm/core";
 
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -217,7 +217,7 @@ export class PostCategory {
 then fill these tables with data and request all data from PostCategory view:
 
 ```typescript
-import {getManager} from "typeorm";
+import {getManager} from "@typeorm/core";
 import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
 import {PostCategory} from "./entity/PostCategory";

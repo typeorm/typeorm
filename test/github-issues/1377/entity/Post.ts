@@ -1,4 +1,4 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {
@@ -12,10 +12,10 @@ export class Post {
     @Column()
     lastName: string;
 
-    @Column({ asExpression: "concat(`firstName`,' ',`lastName`)" })
+    @Column({asExpression: "concat(`firstName`,' ',`lastName`)"})
     virtualFullName: string;
 
-    @Column({ asExpression: "concat(`firstName`,' ',`lastName`)", generatedType: "STORED" })
+    @Column({asExpression: "concat(`firstName`,' ',`lastName`)", generatedType: "STORED"})
     storedFullName: string;
 
 }

@@ -1,6 +1,4 @@
-import { MigrationInterface } from "../../../../src/migration/MigrationInterface";
-import { QueryRunner } from "../../../../src/query-runner/QueryRunner";
-import { Table } from "../../../../src/schema-builder/table/Table";
+import { MigrationInterface, QueryRunner, Table } from "@typeorm/core";
 
 export class CreateUsers0000000000002 implements MigrationInterface {
     public up(queryRunner: QueryRunner): Promise<any> {

@@ -1,7 +1,7 @@
-import { Column, ValueTransformer, Entity, PrimaryGeneratedColumn } from "../../../../../src";
-import { lowercase, encrypt } from "./User";
+import { Column, Entity, PrimaryGeneratedColumn, ValueTransformer } from "@typeorm/core";
+import { encrypt, lowercase } from "./User";
 
-const trim: ValueTransformer = {    
+const trim: ValueTransformer = {
     to: (entityValue: string) => {
         return entityValue.trim();
     },

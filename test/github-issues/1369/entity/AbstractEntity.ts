@@ -1,8 +1,8 @@
-import {Column, PrimaryGeneratedColumn} from "../../../../src/index";
+import { Column, PrimaryGeneratedColumn } from "@typeorm/core";
 
 export abstract class AbstractEntity {
-  @PrimaryGeneratedColumn() id: number;
-  @Column() firstname: string;
-  @Column() lastname: string;
-  @Column() fullname: string;
+    @PrimaryGeneratedColumn() id: number;
+    @Column() firstname: string;
+    @Column() lastname: string;
+    @Column() fullname: string;
 }

@@ -1,16 +1,16 @@
 import "reflect-metadata";
-import {expect} from "chai";
+import { expect } from "chai";
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases
 } from "../../../../../utils/test-utils";
-import {Connection} from "../../../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {Counters} from "./entity/Counters";
-import {User} from "./entity/User";
-import {Subcounters} from "./entity/Subcounters";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { Counters } from "./entity/Counters";
+import { User } from "./entity/User";
+import { Subcounters } from "./entity/Subcounters";
 
 describe("query builder > relation-id > one-to-many > embedded-with-multiple-pk", () => {
 
@@ -105,15 +105,15 @@ describe("query builder > relation-id > one-to-many > embedded-with-multiple-pk"
                     comments: 2,
                     favorites: 3,
                     categoryIds: [
-                        { id: 1, name: "cars"},
-                        { id: 2, name: "BMW"}
+                        {id: 1, name: "cars"},
+                        {id: 2, name: "BMW"}
                     ],
                     subcounters: {
                         version: 1,
                         watches: 2,
                         watchedUserIds: [
-                            { id: 1, name: "Alice"},
-                            { id: 2, name: "Bob"}
+                            {id: 1, name: "Alice"},
+                            {id: 2, name: "Bob"}
                         ]
                     }
                 }
@@ -129,14 +129,14 @@ describe("query builder > relation-id > one-to-many > embedded-with-multiple-pk"
                     comments: 4,
                     favorites: 5,
                     categoryIds: [
-                        { id: 3, name: "airplanes"},
-                        { id: 4, name: "Boeing"}
+                        {id: 3, name: "airplanes"},
+                        {id: 4, name: "Boeing"}
                     ],
                     subcounters: {
                         version: 1,
                         watches: 1,
                         watchedUserIds: [
-                            { id: 3, name: "Clara"}
+                            {id: 3, name: "Clara"}
                         ]
                     }
                 }
@@ -147,9 +147,9 @@ describe("query builder > relation-id > one-to-many > embedded-with-multiple-pk"
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.counters.categoryIds", "post.counters.categories")
             .loadRelationIdAndMap("post.counters.subcounters.watchedUserIds", "post.counters.subcounters.watchedUsers")
-            .where("post.id = :id", { id: 1 })
-            .andWhere("post.counters.code = :code", { code: 111 })
-            .andWhere("post.counters.subcounters.version = :version", { version: 1 })
+            .where("post.id = :id", {id: 1})
+            .andWhere("post.counters.code = :code", {code: 111})
+            .andWhere("post.counters.subcounters.version = :version", {version: 1})
             .getOne();
 
         expect(loadedPost!.should.be.eql(
@@ -162,15 +162,15 @@ describe("query builder > relation-id > one-to-many > embedded-with-multiple-pk"
                     comments: 2,
                     favorites: 3,
                     categoryIds: [
-                        { id: 1, name: "cars"},
-                        { id: 2, name: "BMW"}
+                        {id: 1, name: "cars"},
+                        {id: 2, name: "BMW"}
                     ],
                     subcounters: {
                         version: 1,
                         watches: 2,
                         watchedUserIds: [
-                            { id: 1, name: "Alice"},
-                            { id: 2, name: "Bob"}
+                            {id: 1, name: "Alice"},
+                            {id: 2, name: "Bob"}
                         ]
                     }
                 }

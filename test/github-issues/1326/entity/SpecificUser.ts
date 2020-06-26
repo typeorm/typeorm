@@ -1,6 +1,6 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src/index";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
-@Entity("user", { database: "db_2" })
+@Entity("user", {database: "db_2"})
 export class SpecificUser {
 
     @PrimaryGeneratedColumn()

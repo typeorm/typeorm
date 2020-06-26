@@ -1,9 +1,13 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {Student} from "./entity/Student";
-import {Employee} from "./entity/Employee";
-import {Person} from "./entity/Person";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Student } from "./entity/Student";
+import { Employee } from "./entity/Employee";
+import { Person } from "./entity/Person";
 
 describe("table-inheritance > single-table > non-virtual-discriminator-column", () => {
 

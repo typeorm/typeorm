@@ -16,7 +16,7 @@
 假设你已经有一个数据库和一个 post 实体：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {
@@ -91,7 +91,7 @@ typeorm migration:create -n PostRefactoring
 你应该可以在迁移中看到以下内容：
 
 ```typescript
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from "@typeorm/core";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {}
@@ -112,7 +112,7 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 让我们通过`Post`更改看看迁移是什么样的：
 
 ```typescript
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from "@typeorm/core";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
@@ -168,7 +168,7 @@ typeorm migration:generate -n PostRefactoring
 它将生成一个名为`{TIMESTAMP} -PostRefactoring.ts`的新迁移，其中包含以下内容：
 
 ```typescript
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from "@typeorm/core";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
@@ -191,7 +191,7 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 例如:
 
 ```ts
-import { MigrationInterface, QueryRunner, Table, TableIndex, TableColumn, TableForeignKey } from "typeorm";
+import { MigrationInterface, QueryRunner, Table, TableIndex, TableColumn, TableForeignKey } from "@typeorm/core";
 
 export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {

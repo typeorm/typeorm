@@ -1,9 +1,7 @@
 import "reflect-metadata";
-import {Connection} from "../../../src";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Table} from "../../../src";
-import {TableCheck} from "../../../src/schema-builder/table/TableCheck";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import { Connection, Table, TableCheck } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { MysqlDriver } from "@typeorm/driver-mysql";
 
 describe("query runner > create check constraint", () => {
 
@@ -52,9 +50,9 @@ describe("query runner > create check constraint", () => {
         queryRunner.clearSqlMemory();
 
         const driver = connection.driver;
-        const check1 = new TableCheck({ expression: `${driver.escape("name")} <> 'asd' AND ${driver.escape("description")} <> 'test'` });
-        const check2 = new TableCheck({ expression: `(${driver.escape("id")} < 0 AND ${driver.escape("version")} < 9999) OR (${driver.escape("id")} > 9999 AND ${driver.escape("version")} < 888)` });
-        const check3 = new TableCheck({ expression: `${driver.escape("id")} + ${driver.escape("version")} > 0` });
+        const check1 = new TableCheck({expression: `${driver.escape("name")} <> 'asd' AND ${driver.escape("description")} <> 'test'`});
+        const check2 = new TableCheck({expression: `(${driver.escape("id")} < 0 AND ${driver.escape("version")} < 9999) OR (${driver.escape("id")} > 9999 AND ${driver.escape("version")} < 888)`});
+        const check3 = new TableCheck({expression: `${driver.escape("id")} + ${driver.escape("version")} > 0`});
         await queryRunner.createCheckConstraints("question", [check1, check2, check3]);
 
         let table = await queryRunner.getTable("question");

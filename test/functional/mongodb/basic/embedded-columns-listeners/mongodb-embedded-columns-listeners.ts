@@ -1,10 +1,15 @@
 import "reflect-metadata";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {Counters} from "./entity/Counters";
-import {Information} from "./entity/Information";
-import {expect} from "chai";
+import { Connection } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { Counters } from "./entity/Counters";
+import { Information } from "./entity/Information";
+import { expect } from "chai";
+import { MongoRepository } from '../../../../../libs/driver/mongodb/src/lib/MongoRepository';
 
 describe("mongodb > embedded columns listeners", () => {
 
@@ -55,7 +60,7 @@ describe("mongodb > embedded columns listeners", () => {
     })));
 
     it("should not work listeners in entity embeddeds if property is optional", () => Promise.all(connections.map(async connection => {
-        const postRepository = connection.getMongoRepository(Post);
+        const postRepository = connection.getRepository(Post) as MongoRepository<Post>;
 
         // save posts without embeddeds
         const post = new Post();

@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src";
-import {Post, Uuid} from "./entity/Post";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post, Uuid } from "./entity/Post";
+import { SqlServerDriver } from "@typeorm/driver-sqlserver";
 
 describe("github issues > #1748 PrimaryColumn combined with transformer leads to error on save", () => {
 
@@ -31,7 +31,7 @@ describe("github issues > #1748 PrimaryColumn combined with transformer leads to
         await postRepository.save(post);
 
         // check if all columns are updated except for readonly columns
-        const loadedPost = await postRepository.findOne({ id: id });
+        const loadedPost = await postRepository.findOne({id: id});
         expect(loadedPost!.id).to.deep.eq(id);
         expect(loadedPost!.title).to.be.equal("About columns1");
 

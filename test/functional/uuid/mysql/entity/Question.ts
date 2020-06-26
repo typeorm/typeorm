@@ -1,7 +1,4 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {Generated} from "../../../../../src/decorator/Generated";
+import { Column, Entity, Generated, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Question {
@@ -16,11 +13,11 @@ export class Question {
     @Column()
     uuid2: string;
 
-    @Column("varchar", { nullable: true })
-    uuid3: string|null;
+    @Column("varchar", {nullable: true})
+    uuid3: string | null;
 
-    @Column("varchar", { nullable: true })
+    @Column("varchar", {nullable: true})
     @Generated("uuid")
-    uuid4: string|null;
+    uuid4: string | null;
 
 }

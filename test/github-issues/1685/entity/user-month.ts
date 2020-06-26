@@ -1,6 +1,6 @@
-import {PrimaryColumn, Entity, ManyToOne, BeforeInsert, JoinColumn} from "../../../../src";
-import {Month} from "./month";
-import {User} from "./user";
+import { BeforeInsert, Entity, JoinColumn, ManyToOne, PrimaryColumn } from "@typeorm/core";
+import { Month } from "./month";
+import { User } from "./user";
 
 @Entity()
 export class UserMonth {

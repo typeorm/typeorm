@@ -1,8 +1,7 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {EntitySchema, InsertResult} from "../../../src";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection, EntitySchema, InsertResult } from "@typeorm/core";
+import { expect } from "chai";
 
 describe("github issues > #1510 entity schema does not support mode=objectId", () => {
 

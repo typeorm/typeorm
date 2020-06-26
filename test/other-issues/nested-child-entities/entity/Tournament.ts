@@ -1,6 +1,6 @@
-import {TableInheritance, Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from "../../../../src/index";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, TableInheritance } from "@typeorm/core";
 
-import {TournamentGraph} from "./TournamentGraph";
+import { TournamentGraph } from "./TournamentGraph";
 
 @Entity()
 @TableInheritance({
@@ -21,7 +21,7 @@ export abstract class Tournament {
     @JoinColumn()
     public graph: TournamentGraph;
 
-    constructor(tournament?: {name: string}) {
+    constructor(tournament?: { name: string }) {
         if (tournament) {
             this.name = tournament.name;
         }

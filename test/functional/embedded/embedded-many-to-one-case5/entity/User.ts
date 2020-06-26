@@ -1,8 +1,5 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {Post} from "./Post";
+import { Column, Entity, OneToMany, PrimaryColumn } from "@typeorm/core";
+import { Post } from "./Post";
 
 @Entity()
 export class User {

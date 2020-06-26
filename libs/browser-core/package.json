@@ -1,0 +1,7 @@
+{
+  "name": "@typeorm/browser-core",
+  "version": "1.0.0-alpha",
+  "peerDependencies": {
+    "tslib": "^1.10.0"
+  }
+}

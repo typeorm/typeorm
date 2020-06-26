@@ -1,175 +1,171 @@
 import "reflect-metadata";
 import { expect } from "chai";
-import { Connection } from "../../../../src/connection/Connection";
-import {
-  closeTestingConnections,
-  createTestingConnections,
-  reloadTestingDatabases
-} from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
 import { Post } from "./entity/Post";
 
 describe("spatial-postgres", () => {
-  let connections: Connection[];
-  before(async () => {
-    connections = await createTestingConnections({
-      entities: [__dirname + "/entity/*{.js,.ts}"],
-      enabledDrivers: ["postgres"]
-    });
-  });
-  beforeEach(async () => {
-    try {
-      await reloadTestingDatabases(connections);
-    } catch (err) {
-      console.warn(err.stack);
-      throw err;
-    }
-  });
-  after(async () => {
-    try {
-      await closeTestingConnections(connections);
-    } catch (err) {
-      console.warn(err.stack);
-      throw err;
-    }
-  });
-
-  it("should create correct schema with Postgres' geometry type", () =>
-    Promise.all(
-      connections.map(async connection => {
-        const queryRunner = connection.createQueryRunner();
-        const schema = await queryRunner.getTable("post");
-        await queryRunner.release();
-        expect(schema).not.to.be.undefined;
-        const pointColumn = schema!.columns.find(
-            tableColumn =>
-              tableColumn.name === "point" && tableColumn.type === "geometry"
-          );
-        expect(pointColumn).to.not.be.undefined;
-        expect(pointColumn!.spatialFeatureType!.toLowerCase()).to.equal("point");
-        expect(pointColumn!.srid).to.equal(4326);
-      })
-    ));
-
-  it("should create correct schema with Postgres' geography type", () =>
-    Promise.all(
-      connections.map(async connection => {
-        const queryRunner = connection.createQueryRunner();
-        const schema = await queryRunner.getTable("post");
-        await queryRunner.release();
-        expect(schema).not.to.be.undefined;
-        expect(
-          schema!.columns.find(
-            tableColumn =>
-              tableColumn.name === "geog" && tableColumn.type === "geography"
-          )
-        ).to.not.be.undefined;
-      })
-    ));
-
-  it("should create correct schema with Postgres' geometry indices", () =>
-    Promise.all(
-      connections.map(async connection => {
-        const queryRunner = connection.createQueryRunner();
-        const schema = await queryRunner.getTable("post");
-        await queryRunner.release();
-        expect(schema).not.to.be.undefined;
-        expect(
-          schema!.indices.find(
-            tableIndex =>
-              tableIndex.isSpatial === true &&
-              tableIndex.columnNames.length === 1 &&
-              tableIndex.columnNames[0] === "geom"
-          )
-        ).to.not.be.undefined;
-      })
-    ));
-
-  it("should persist geometry correctly", () =>
-    Promise.all(
-      connections.map(async connection => {
-        const geom = {
-          type: "Point",
-          coordinates: [0, 0]
-        };
-        const recordRepo = connection.getRepository(Post);
-        const post = new Post();
-        post.geom = geom;
-        const persistedPost = await recordRepo.save(post);
-        const foundPost = await recordRepo.findOne(persistedPost.id);
-        expect(foundPost).to.exist;
-        expect(foundPost!.geom).to.deep.equal(geom);
-      })
-    ));
-
-  it("should persist geography correctly", () =>
-    Promise.all(
-      connections.map(async connection => {
-        const geom = {
-          type: "Point",
-          coordinates: [0, 0]
-        };
-        const recordRepo = connection.getRepository(Post);
-        const post = new Post();
-        post.geog = geom;
-        const persistedPost = await recordRepo.save(post);
-        const foundPost = await recordRepo.findOne(persistedPost.id);
-        expect(foundPost).to.exist;
-        expect(foundPost!.geog).to.deep.equal(geom);
-      })
-    ));
-
-  it("should update geometry correctly", () =>
-    Promise.all(
-      connections.map(async connection => {
-        const geom = {
-          type: "Point",
-          coordinates: [0, 0]
-        };
-        const geom2 = {
-          type: "Point",
-          coordinates: [45, 45]
-        };
-        const recordRepo = connection.getRepository(Post);
-        const post = new Post();
-        post.geom = geom;
-        const persistedPost = await recordRepo.save(post);
-
-        await recordRepo.update({
-          id: persistedPost.id
-        }, {
-          geom: geom2
+    let connections: Connection[];
+    before(async () => {
+        connections = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"]
         });
+    });
+    beforeEach(async () => {
+        try {
+            await reloadTestingDatabases(connections);
+        } catch (err) {
+            console.warn(err.stack);
+            throw err;
+        }
+    });
+    after(async () => {
+        try {
+            await closeTestingConnections(connections);
+        } catch (err) {
+            console.warn(err.stack);
+            throw err;
+        }
+    });
 
-        const foundPost = await recordRepo.findOne(persistedPost.id);
-        expect(foundPost).to.exist;
-        expect(foundPost!.geom).to.deep.equal(geom2);
-      })
-    ));
+    it("should create correct schema with Postgres' geometry type", () =>
+        Promise.all(
+            connections.map(async connection => {
+                const queryRunner = connection.createQueryRunner();
+                const schema = await queryRunner.getTable("post");
+                await queryRunner.release();
+                expect(schema).not.to.be.undefined;
+                const pointColumn = schema!.columns.find(
+                    tableColumn =>
+                        tableColumn.name === "point" && tableColumn.type === "geometry"
+                );
+                expect(pointColumn).to.not.be.undefined;
+                expect(pointColumn!.spatialFeatureType!.toLowerCase()).to.equal("point");
+                expect(pointColumn!.srid).to.equal(4326);
+            })
+        ));
 
-  it("should re-save geometry correctly", () =>
-    Promise.all(
-      connections.map(async connection => {
-        const geom = {
-          type: "Point",
-          coordinates: [0, 0]
-        };
-        const geom2 = {
-          type: "Point",
-          coordinates: [45, 45]
-        };
-        const recordRepo = connection.getRepository(Post);
-        const post = new Post();
-        post.geom = geom;
-        const persistedPost = await recordRepo.save(post);
+    it("should create correct schema with Postgres' geography type", () =>
+        Promise.all(
+            connections.map(async connection => {
+                const queryRunner = connection.createQueryRunner();
+                const schema = await queryRunner.getTable("post");
+                await queryRunner.release();
+                expect(schema).not.to.be.undefined;
+                expect(
+                    schema!.columns.find(
+                        tableColumn =>
+                            tableColumn.name === "geog" && tableColumn.type === "geography"
+                    )
+                ).to.not.be.undefined;
+            })
+        ));
 
-        persistedPost.geom = geom2;
-        await recordRepo.save(persistedPost);
+    it("should create correct schema with Postgres' geometry indices", () =>
+        Promise.all(
+            connections.map(async connection => {
+                const queryRunner = connection.createQueryRunner();
+                const schema = await queryRunner.getTable("post");
+                await queryRunner.release();
+                expect(schema).not.to.be.undefined;
+                expect(
+                    schema!.indices.find(
+                        tableIndex =>
+                            tableIndex.isSpatial === true &&
+                            tableIndex.columnNames.length === 1 &&
+                            tableIndex.columnNames[0] === "geom"
+                    )
+                ).to.not.be.undefined;
+            })
+        ));
 
-        const foundPost = await recordRepo.findOne(persistedPost.id);
-        expect(foundPost).to.exist;
-        expect(foundPost!.geom).to.deep.equal(geom2);
-      })
-    ));
+    it("should persist geometry correctly", () =>
+        Promise.all(
+            connections.map(async connection => {
+                const geom = {
+                    type: "Point",
+                    coordinates: [0, 0]
+                };
+                const recordRepo = connection.getRepository(Post);
+                const post = new Post();
+                post.geom = geom;
+                const persistedPost = await recordRepo.save(post);
+                const foundPost = await recordRepo.findOne(persistedPost.id);
+                expect(foundPost).to.exist;
+                expect(foundPost!.geom).to.deep.equal(geom);
+            })
+        ));
+
+    it("should persist geography correctly", () =>
+        Promise.all(
+            connections.map(async connection => {
+                const geom = {
+                    type: "Point",
+                    coordinates: [0, 0]
+                };
+                const recordRepo = connection.getRepository(Post);
+                const post = new Post();
+                post.geog = geom;
+                const persistedPost = await recordRepo.save(post);
+                const foundPost = await recordRepo.findOne(persistedPost.id);
+                expect(foundPost).to.exist;
+                expect(foundPost!.geog).to.deep.equal(geom);
+            })
+        ));
+
+    it("should update geometry correctly", () =>
+        Promise.all(
+            connections.map(async connection => {
+                const geom = {
+                    type: "Point",
+                    coordinates: [0, 0]
+                };
+                const geom2 = {
+                    type: "Point",
+                    coordinates: [45, 45]
+                };
+                const recordRepo = connection.getRepository(Post);
+                const post = new Post();
+                post.geom = geom;
+                const persistedPost = await recordRepo.save(post);
+
+                await recordRepo.update({
+                    id: persistedPost.id
+                }, {
+                    geom: geom2
+                });
+
+                const foundPost = await recordRepo.findOne(persistedPost.id);
+                expect(foundPost).to.exist;
+                expect(foundPost!.geom).to.deep.equal(geom2);
+            })
+        ));
+
+    it("should re-save geometry correctly", () =>
+        Promise.all(
+            connections.map(async connection => {
+                const geom = {
+                    type: "Point",
+                    coordinates: [0, 0]
+                };
+                const geom2 = {
+                    type: "Point",
+                    coordinates: [45, 45]
+                };
+                const recordRepo = connection.getRepository(Post);
+                const post = new Post();
+                post.geom = geom;
+                const persistedPost = await recordRepo.save(post);
+
+                persistedPost.geom = geom2;
+                await recordRepo.save(persistedPost);
+
+                const foundPost = await recordRepo.findOne(persistedPost.id);
+                expect(foundPost).to.exist;
+                expect(foundPost!.geom).to.deep.equal(geom2);
+            })
+        ));
 
     it("should be able to order geometries by distance", () => Promise.all(connections.map(async connection => {
 
@@ -213,13 +209,13 @@ describe("spatial-postgres", () => {
                     nulls: "NULLS FIRST"
                 }
             })
-            .setParameters({ origin: JSON.stringify(origin) })
+            .setParameters({origin: JSON.stringify(origin)})
             .getMany();
 
         const posts2 = await connection.manager
             .createQueryBuilder(Post, "post")
             .orderBy("ST_Distance(post.geom, ST_GeomFromGeoJSON(:origin))", "DESC")
-            .setParameters({ origin: JSON.stringify(origin) })
+            .setParameters({origin: JSON.stringify(origin)})
             .getMany();
 
         expect(posts1[0].id).to.be.equal(post1.id);

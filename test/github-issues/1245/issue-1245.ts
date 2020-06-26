@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Post} from "./entity/Post";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Post } from "./entity/Post";
 
 describe("github issues > #1245 `findByIds` ignores `FindManyOptions`", () => {
 
@@ -29,7 +29,7 @@ describe("github issues > #1245 `findByIds` ignores `FindManyOptions`", () => {
         await connection.manager.save([post1, post2, post3]);
 
         expect(await connection.manager.findByIds(
-          Post, [post2.id, post3.id], { name: "some_name" }
+            Post, [post2.id, post3.id], {name: "some_name"}
         )).to.eql([post2]);
 
     })));
@@ -48,7 +48,7 @@ describe("github issues > #1245 `findByIds` ignores `FindManyOptions`", () => {
         await connection.manager.save([post1, post2, post3]);
 
         expect(await connection.manager.findByIds(
-          Post, [post2.id, post3.id], { where: { name: "some_name" } }
+            Post, [post2.id, post3.id], {where: {name: "some_name"}}
         )).to.eql([post2]);
 
     })));

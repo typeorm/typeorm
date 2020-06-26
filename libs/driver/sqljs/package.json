@@ -1,0 +1,7 @@
+{
+  "name": "@typeorm/driver-sqljs",
+  "version": "1.0.0-alpha",
+  "peerDependencies": {
+    "@typeorm/cli": "^1.0.0"
+  }
+}

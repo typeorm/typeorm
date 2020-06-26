@@ -1,10 +1,10 @@
 import "reflect-metadata";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
-import { Connection } from "../../../../src/connection/Connection";
+import { Connection } from "@typeorm/core";
 import { Post } from "./entity/Post";
 import { expect } from "chai";
-import {PostInformation} from "./entity/PostInformation";
-import {PostCounter} from "./entity/PostCounter";
+import { PostInformation } from "./entity/PostInformation";
+import { PostCounter } from "./entity/PostCounter";
 
 describe("other issues > entity listeners must work in optional embeddeds as well", () => {
 

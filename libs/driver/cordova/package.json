@@ -1,0 +1,9 @@
+{
+  "name": "@typeorm/driver-cordova",
+  "version": "1.0.0-alpha",
+  "peerDependencies": {
+  },
+  "dependencies": {
+    "tslib": "^1.10.0"
+  }
+}

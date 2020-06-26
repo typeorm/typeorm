@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { expect } from "chai";
 
 describe("github issues > Join query on ManyToMany relations not working", () => {
 
@@ -32,7 +32,7 @@ describe("github issues > Join query on ManyToMany relations not working", () =>
             .manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "category")
-            .where("category.category_id IN (:...ids)", { ids: [21] })
+            .where("category.category_id IN (:...ids)", {ids: [21]})
             .getOne();
 
         expect(loadedPost).not.to.be.undefined;

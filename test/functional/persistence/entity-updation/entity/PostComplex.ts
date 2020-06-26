@@ -1,7 +1,5 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {PostEmbedded} from "./PostEmbedded";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
+import { Column, Entity, PrimaryColumn } from "@typeorm/core";
+import { PostEmbedded } from "./PostEmbedded";
 
 @Entity()
 export class PostComplex {
@@ -9,7 +7,7 @@ export class PostComplex {
     @PrimaryColumn()
     firstId: number;
 
-    @Column({ default: "Hello Complexity" })
+    @Column({default: "Hello Complexity"})
     text: string;
 
     @Column(type => PostEmbedded)

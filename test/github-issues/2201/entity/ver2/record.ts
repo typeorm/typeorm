@@ -1,10 +1,8 @@
-import { PrimaryColumn, Column, OneToMany } from "../../../../../src/index";
-import { Entity } from "../../../../../src/decorator/entity/Entity";
-import { BaseEntity } from "../../../../../src/repository/BaseEntity";
+import { BaseEntity, Column, Entity, OneToMany, PrimaryColumn } from "@typeorm/core";
 
 import { RecordContext } from "./context";
 
-@Entity({ name: "records" })
+@Entity({name: "records"})
 export class Record extends BaseEntity {
     @PrimaryColumn()
     public id: string;

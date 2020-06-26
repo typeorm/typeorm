@@ -1,14 +1,11 @@
 import "reflect-metadata";
-import {PromiseUtils} from "../../../src";
-import {Connection} from "../../../src";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import {SapDriver} from "../../../src/driver/sap/SapDriver";
-import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {IndexMetadata} from "../../../src/metadata/IndexMetadata";
-import {UniqueMetadata} from "../../../src/metadata/UniqueMetadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {Teacher} from "./entity/Teacher";
+import { Connection, IndexMetadata, PromiseUtils, UniqueMetadata } from "@typeorm/core";
+import { MysqlDriver } from "@typeorm/driver-mysql";
+import { SapDriver } from "@typeorm/driver-sap";
+import { AbstractSqliteDriver } from "@typeorm/driver-sqlite-abstract";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { Teacher } from "./entity/Teacher";
 
 describe("schema builder > change unique constraint", () => {
 
@@ -26,8 +23,8 @@ describe("schema builder > change unique constraint", () => {
     it("should correctly add new unique constraint", () => PromiseUtils.runInSequence(connections, async connection => {
         const teacherMetadata = connection.getMetadata(Teacher);
         const nameColumn = teacherMetadata.findColumnWithPropertyName("name")!;
-        let uniqueIndexMetadata: IndexMetadata|undefined = undefined;
-        let uniqueMetadata: UniqueMetadata|undefined = undefined;
+        let uniqueIndexMetadata: IndexMetadata | undefined = undefined;
+        let uniqueMetadata: UniqueMetadata | undefined = undefined;
 
         // Mysql and SAP stores unique constraints as unique indices.
         if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
@@ -126,7 +123,7 @@ describe("schema builder > change unique constraint", () => {
             const index = postMetadata!.indices.find(i => i.columns.length === 2 && i.isUnique === true);
             postMetadata!.indices.splice(postMetadata!.indices.indexOf(index!), 1);
 
-        } else  {
+        } else {
             const unique = postMetadata!.uniques.find(u => u.columns.length === 2);
             postMetadata!.uniques.splice(postMetadata!.uniques.indexOf(unique!), 1);
         }

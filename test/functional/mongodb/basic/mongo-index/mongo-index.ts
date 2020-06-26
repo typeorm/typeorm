@@ -1,8 +1,12 @@
 import "reflect-metadata";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
+import { Connection } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("mongodb > indices", () => {
 
@@ -24,7 +28,7 @@ describe("mongodb > indices", () => {
         await postRepository.save(post);
 
         // check saved post
-        const loadedPost = await postRepository.findOne({ title: "Post" });
+        const loadedPost = await postRepository.findOne({title: "Post"});
 
         expect(loadedPost).to.be.not.empty;
     })));

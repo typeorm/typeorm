@@ -1,16 +1,16 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Tag} from "./entity/Tag";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {Image} from "./entity/Image";
-import {User} from "./entity/User";
+import { expect } from "chai";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Tag } from "./entity/Tag";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { Image } from "./entity/Image";
+import { User } from "./entity/User";
 
 describe("query builder > joins", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -97,7 +97,7 @@ describe("query builder > joins", () => {
                 .leftJoinAndSelect("post.author", "author")
                 .leftJoinAndSelect("post.categories", "categories")
                 .leftJoinAndSelect("categories.images", "images")
-                .where("post.id = :id", { id: 1 })
+                .where("post.id = :id", {id: 1})
                 .getOne();
 
             expect(loadedPost!.tag).to.not.be.undefined;
@@ -147,8 +147,8 @@ describe("query builder > joins", () => {
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.categories", "categories", "categories.id = :categoryId")
                 .leftJoinAndSelect("categories.images", "images", "images.id = :imageId")
-                .where("post.id = :id", { id: post.id })
-                .setParameters({ categoryId: 1, imageId: 2 })
+                .where("post.id = :id", {id: post.id})
+                .setParameters({categoryId: 1, imageId: 2})
                 .getOne();
 
             expect(loadedPost!.categories).to.not.be.eql([]);
@@ -175,7 +175,7 @@ describe("query builder > joins", () => {
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post_categories_category", "categoriesJunction", "categoriesJunction.postId = post.id")
                 .leftJoinAndSelect(Category, "categories", "categories.id = categoriesJunction.categoryId")
-                .where("post.id = :id", { id: post.id })
+                .where("post.id = :id", {id: post.id})
                 .getRawOne();
 
             if (connection.driver instanceof CockroachDriver) {
@@ -231,7 +231,7 @@ describe("query builder > joins", () => {
                 .innerJoinAndSelect("post.author", "author")
                 .innerJoinAndSelect("post.categories", "categories")
                 .innerJoinAndSelect("categories.images", "images")
-                .where("post.id = :id", { id: post.id })
+                .where("post.id = :id", {id: post.id})
                 .getOne();
 
             expect(loadedPost!.tag).to.not.be.undefined;
@@ -273,8 +273,8 @@ describe("query builder > joins", () => {
                 .createQueryBuilder(Post, "post")
                 .innerJoinAndSelect("post.categories", "categories", "categories.id = :categoryId")
                 .innerJoinAndSelect("categories.images", "images", "images.id = :imageId")
-                .where("post.id = :id", { id: post.id })
-                .setParameters({ categoryId: 1, imageId: 2 })
+                .where("post.id = :id", {id: post.id})
+                .setParameters({categoryId: 1, imageId: 2})
                 .getOne();
 
             expect(loadedPost!.categories).to.not.be.eql([]);
@@ -295,7 +295,7 @@ describe("query builder > joins", () => {
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .innerJoinAndSelect("post.tag", "tag")
-                .where("post.id = :id", { id: post.id })
+                .where("post.id = :id", {id: post.id})
                 .getOne();
 
             expect(loadedPost!).to.be.undefined;
@@ -344,8 +344,8 @@ describe("query builder > joins", () => {
                 .leftJoinAndMapOne("post.author", User, "user", "user.id = :userId")
                 .leftJoinAndMapMany("post.categories", Category, "categories", "categories.id IN (:...categoryIds)")
                 .leftJoinAndMapMany("categories.images", Image, "image", "image.id IN (:...imageIds)")
-                .where("post.id = :id", { id: post.id })
-                .setParameters({ tagId: 1, userId: 1, categoryIds: [1, 2], imageIds: [1, 2] })
+                .where("post.id = :id", {id: post.id})
+                .setParameters({tagId: 1, userId: 1, categoryIds: [1, 2], imageIds: [1, 2]})
                 .getOne();
 
             expect(loadedPost!.tag).to.not.be.undefined;
@@ -398,8 +398,8 @@ describe("query builder > joins", () => {
                 .leftJoinAndMapOne("post.author", "user", "user", "user.id = :userId")
                 .leftJoinAndMapMany("post.categories", "category", "categories", "categories.id IN (:...categoryIds)")
                 .leftJoinAndMapMany("categories.images", "image", "image", "image.id IN (:...imageIds)")
-                .where("post.id = :id", { id: post.id })
-                .setParameters({ tagId: 1, userId: 1, categoryIds: [1, 2], imageIds: [1, 2] })
+                .where("post.id = :id", {id: post.id})
+                .setParameters({tagId: 1, userId: 1, categoryIds: [1, 2], imageIds: [1, 2]})
                 .getOne();
 
             expect(loadedPost!.tag).to.not.be.undefined;
@@ -436,8 +436,8 @@ describe("query builder > joins", () => {
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndMapMany("post.categories", Category, "categories", "categories.id IN (:...categoryIds)")
                 .leftJoinAndMapMany("post.subcategories", Category, "subcategories", "subcategories.id IN (:...subcategoryIds)")
-                .where("post.id = :id", { id: post.id })
-                .setParameters({ categoryIds: [1, 2], subcategoryIds: [3] })
+                .where("post.id = :id", {id: post.id})
+                .setParameters({categoryIds: [1, 2], subcategoryIds: [3]})
                 .getOne();
 
             expect(loadedPost!.categories).to.not.be.eql([]);
@@ -505,7 +505,7 @@ describe("query builder > joins", () => {
                 .leftJoinAndMapMany("rc.removedImages", "rc.images", "removedImages", "removedImages.isRemoved = :isRemoved")
                 .leftJoinAndMapMany("post.subcategories", "post.categories", "subcategories", "subcategories.id IN (:...subcategoryIds)")
                 .leftJoinAndMapOne("subcategories.titleImage", "subcategories.images", "titleImage", "titleImage.id = :titleImageId")
-                .setParameters({ isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1 })
+                .setParameters({isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1})
                 .getMany();
 
             expect(loadedPosts![0].removedCategories).to.not.be.eql([]);
@@ -535,8 +535,8 @@ describe("query builder > joins", () => {
                 .leftJoinAndMapMany("rc.removedImages", "rc.images", "removedImages", "removedImages.isRemoved = :isRemoved")
                 .leftJoinAndMapMany("post.subcategories", "post.categories", "subcategories", "subcategories.id IN (:...subcategoryIds)")
                 .leftJoinAndMapOne("subcategories.titleImage", "subcategories.images", "titleImage", "titleImage.id = :titleImageId")
-                .setParameters({ isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1 })
-                .where("post.id = :id", { id: post.id })
+                .setParameters({isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1})
+                .where("post.id = :id", {id: post.id})
                 .getOne();
 
             expect(loadedPost!.removedCategories).to.not.be.eql([]);
@@ -594,8 +594,8 @@ describe("query builder > joins", () => {
                 .innerJoinAndMapOne("post.author", User, "user", "user.id = :userId")
                 .innerJoinAndMapMany("post.categories", Category, "categories", "categories.id IN (:...categoryIds)")
                 .innerJoinAndMapMany("categories.images", Image, "image", "image.id IN (:...imageIds)")
-                .where("post.id = :id", { id: post.id })
-                .setParameters({ tagId: 1, userId: 1, categoryIds: [1, 2], imageIds: [1, 2] })
+                .where("post.id = :id", {id: post.id})
+                .setParameters({tagId: 1, userId: 1, categoryIds: [1, 2], imageIds: [1, 2]})
                 .getOne();
 
             expect(loadedPost!.tag).to.not.be.undefined;
@@ -648,8 +648,8 @@ describe("query builder > joins", () => {
                 .innerJoinAndMapOne("post.author", "user", "user", "user.id = :userId")
                 .innerJoinAndMapMany("post.categories", "category", "categories", "categories.id IN (:...categoryIds)")
                 .innerJoinAndMapMany("categories.images", "image", "image", "image.id IN (:...imageIds)")
-                .where("post.id = :id", { id: post.id })
-                .setParameters({ tagId: 1, userId: 1, categoryIds: [1, 2], imageIds: [1, 2] })
+                .where("post.id = :id", {id: post.id})
+                .setParameters({tagId: 1, userId: 1, categoryIds: [1, 2], imageIds: [1, 2]})
                 .getOne();
 
             expect(loadedPost!.tag).to.not.be.undefined;
@@ -686,8 +686,8 @@ describe("query builder > joins", () => {
                 .createQueryBuilder(Post, "post")
                 .innerJoinAndMapMany("post.categories", Category, "categories", "categories.id IN (:...categoryIds)")
                 .innerJoinAndMapMany("post.subcategories", Category, "subcategories", "subcategories.id IN (:...subcategoryIds)")
-                .where("post.id = :id", { id: post.id })
-                .setParameters({ categoryIds: [1, 2], subcategoryIds: [3] })
+                .where("post.id = :id", {id: post.id})
+                .setParameters({categoryIds: [1, 2], subcategoryIds: [3]})
                 .getOne();
 
             expect(loadedPost!.categories).to.not.be.eql([]);
@@ -755,7 +755,7 @@ describe("query builder > joins", () => {
                 .leftJoinAndMapMany("rc.removedImages", "rc.images", "removedImages", "removedImages.isRemoved = :isRemoved")
                 .leftJoinAndMapMany("post.subcategories", "post.categories", "subcategories", "subcategories.id IN (:...subcategoryIds)")
                 .leftJoinAndMapOne("subcategories.titleImage", "subcategories.images", "titleImage", "titleImage.id = :titleImageId")
-                .setParameters({ isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1 })
+                .setParameters({isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1})
                 .getMany();
 
             expect(loadedPosts![0].removedCategories).to.not.be.eql([]);
@@ -785,8 +785,8 @@ describe("query builder > joins", () => {
                 .innerJoinAndMapMany("rc.removedImages", "rc.images", "removedImages", "removedImages.isRemoved = :isRemoved")
                 .innerJoinAndMapMany("post.subcategories", "post.categories", "subcategories", "subcategories.id IN (:...subcategoryIds)")
                 .innerJoinAndMapOne("subcategories.titleImage", "subcategories.images", "titleImage", "titleImage.id = :titleImageId")
-                .setParameters({ isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1 })
-                .where("post.id = :id", { id: post.id })
+                .setParameters({isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1})
+                .where("post.id = :id", {id: post.id})
                 .getOne();
 
             expect(loadedPost!.removedCategories).to.not.be.eql([]);
@@ -811,8 +811,8 @@ describe("query builder > joins", () => {
             const loadedPost1 = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .innerJoinAndMapOne("post.author", User, "user", "user.id = :userId")
-                .where("post.id = :id", { id: 1 })
-                .setParameters({ userId: 1 })
+                .where("post.id = :id", {id: 1})
+                .setParameters({userId: 1})
                 .getOne();
 
             expect(loadedPost1!).to.be.undefined;
@@ -820,8 +820,8 @@ describe("query builder > joins", () => {
             const loadedPost2 = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .innerJoinAndMapMany("post.categories", Category, "categories", "categories.id = :categoryId")
-                .where("post.id = :id", { id: 1 })
-                .setParameters({ categoryId: 1 })
+                .where("post.id = :id", {id: 1})
+                .setParameters({categoryId: 1})
                 .getOne();
 
             expect(loadedPost2!).to.be.undefined;

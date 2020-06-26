@@ -1,6 +1,4 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {BaseEntity} from "../../../../src/repository/BaseEntity";
+import { BaseEntity, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Foo extends BaseEntity {

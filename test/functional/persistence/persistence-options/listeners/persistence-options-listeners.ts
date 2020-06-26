@@ -1,8 +1,12 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {Connection} from "../../../../../src/connection/Connection";
-import {PostWithDeleteDateColumn} from "./entity/PostWithDeleteDateColumn";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { Connection } from "@typeorm/core";
+import { PostWithDeleteDateColumn } from "./entity/PostWithDeleteDateColumn";
 // import {expect} from "chai";
 
 describe("persistence > persistence options > listeners", () => {
@@ -12,7 +16,7 @@ describe("persistence > persistence options > listeners", () => {
     // -------------------------------------------------------------------------
 
     let connections: Connection[];
-    before(async () => connections = await createTestingConnections({ __dirname }));
+    before(async () => connections = await createTestingConnections({__dirname}));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
@@ -32,7 +36,7 @@ describe("persistence > persistence options > listeners", () => {
         const post = new Post();
         post.title = "Bakhrom";
         post.description = "Hello";
-        await connection.manager.save(post, { listeners: false });
+        await connection.manager.save(post, {listeners: false});
         post.title.should.be.equal("Bakhrom");
     })));
 
@@ -50,7 +54,7 @@ describe("persistence > persistence options > listeners", () => {
         post.title = "Bakhrom";
         post.description = "Hello";
         await connection.manager.save(post);
-        await connection.manager.remove(post, { listeners: false });
+        await connection.manager.remove(post, {listeners: false});
         post.isRemoved.should.be.equal(false);
     })));
 
@@ -69,7 +73,7 @@ describe("persistence > persistence options > listeners", () => {
         post.title = "Bakhrom";
         post.description = "Hello";
         await connection.manager.save(post);
-        await connection.manager.softRemove(post, { listeners: false });
+        await connection.manager.softRemove(post, {listeners: false});
         post.title.should.be.equal("Bakhrom");
         post.isSoftRemoved.should.be.equal(false);
     })));

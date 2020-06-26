@@ -1,10 +1,9 @@
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import {SapDriver} from "../../../src/driver/sap/SapDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src";
-import {EntitySchema} from "../../../src";
-import {Post, PostSchema} from "./entity/Post";
-import {expect} from "chai";
+import { MysqlDriver } from "@typeorm/driver-mysql";
+import { SapDriver } from "@typeorm/driver-sap";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection, EntitySchema } from "@typeorm/core";
+import { Post, PostSchema } from "./entity/Post";
+import { expect } from "chai";
 
 describe("github issues > #3803 column option unique sqlite error", () => {
     let connections: Connection[];

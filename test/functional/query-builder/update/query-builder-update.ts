@@ -1,14 +1,16 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
-import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
-import {LimitOnUpdateNotSupportedError} from "../../../../src/error/LimitOnUpdateNotSupportedError";
-import {Photo} from "./entity/Photo";
-import {EntityColumnNotFound} from "../../../../src/error/EntityColumnNotFound";
-import {UpdateValuesMissingError} from "../../../../src/error/UpdateValuesMissingError";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import {
+    Connection,
+    EntityColumnNotFound,
+    LimitOnUpdateNotSupportedError,
+    UpdateValuesMissingError
+} from "@typeorm/core";
+import { User } from "./entity/User";
+import { MysqlDriver } from "@typeorm/driver-mysql";
+import { SqlServerDriver } from "@typeorm/driver-sqlserver";
+import { Photo } from "./entity/Photo";
 
 describe("query builder > update", () => {
 
@@ -28,22 +30,22 @@ describe("query builder > update", () => {
 
         await connection.createQueryBuilder()
             .update(User)
-            .set({ name: "Dima Zotov" })
-            .where("name = :name", { name: "Alex Messer" })
+            .set({name: "Dima Zotov"})
+            .where("name = :name", {name: "Alex Messer"})
             .execute();
 
-        const loadedUser1 = await connection.getRepository(User).findOne({ name: "Dima Zotov" });
+        const loadedUser1 = await connection.getRepository(User).findOne({name: "Dima Zotov"});
         expect(loadedUser1).to.exist;
         loadedUser1!.name.should.be.equal("Dima Zotov");
 
         await connection.getRepository(User)
             .createQueryBuilder("myUser")
             .update()
-            .set({ name: "Muhammad Mirzoev" })
-            .where("name = :name", { name: "Dima Zotov" })
+            .set({name: "Muhammad Mirzoev"})
+            .where("name = :name", {name: "Dima Zotov"})
             .execute();
 
-        const loadedUser2 = await connection.getRepository(User).findOne({ name: "Muhammad Mirzoev" });
+        const loadedUser2 = await connection.getRepository(User).findOne({name: "Muhammad Mirzoev"});
         expect(loadedUser2).to.exist;
         loadedUser2!.name.should.be.equal("Muhammad Mirzoev");
 
@@ -58,14 +60,14 @@ describe("query builder > update", () => {
 
         await connection.createQueryBuilder()
             .update(User)
-            .set({ name: () => connection.driver instanceof SqlServerDriver ? "SUBSTRING('Dima Zotov', 1, 4)" : "SUBSTR('Dima Zotov', 1, 4)" })
+            .set({name: () => connection.driver instanceof SqlServerDriver ? "SUBSTRING('Dima Zotov', 1, 4)" : "SUBSTR('Dima Zotov', 1, 4)"})
             .where("name = :name", {
                 name: "Alex Messer"
             })
             .execute();
 
 
-        const loadedUser1 = await connection.getRepository(User).findOne({ name: "Dima" });
+        const loadedUser1 = await connection.getRepository(User).findOne({name: "Dima"});
         expect(loadedUser1).to.exist;
         loadedUser1!.name.should.be.equal("Dima");
 
@@ -82,12 +84,12 @@ describe("query builder > update", () => {
         const qb = connection.createQueryBuilder();
         await qb
             .update(User)
-            .set({ likesCount: () => qb.escape(`likesCount`) + " + 1" })
+            .set({likesCount: () => qb.escape(`likesCount`) + " + 1"})
             // .set({ likesCount: 2 })
             .where("likesCount = 1")
             .execute();
 
-        const loadedUser1 = await connection.getRepository(User).findOne({ likesCount: 2 });
+        const loadedUser1 = await connection.getRepository(User).findOne({likesCount: 2});
         expect(loadedUser1).to.exist;
         loadedUser1!.name.should.be.equal("Dima");
 
@@ -129,7 +131,7 @@ describe("query builder > update", () => {
             })
             .execute();
 
-        const loadedPhoto1 = await connection.getRepository(Photo).findOne({ url: "1.jpg" });
+        const loadedPhoto1 = await connection.getRepository(Photo).findOne({url: "1.jpg"});
         expect(loadedPhoto1).to.exist;
         loadedPhoto1!.should.be.eql({
             id: 1,
@@ -141,7 +143,7 @@ describe("query builder > update", () => {
             }
         });
 
-        const loadedPhoto2 = await connection.getRepository(Photo).findOne({ url: "2.jpg" });
+        const loadedPhoto2 = await connection.getRepository(Photo).findOne({url: "2.jpg"});
         expect(loadedPhoto2).to.exist;
         loadedPhoto2!.should.be.eql({
             id: 2,
@@ -171,20 +173,20 @@ describe("query builder > update", () => {
 
         if (connection.driver instanceof MysqlDriver) {
             await connection.createQueryBuilder()
-            .update(User)
-            .set({ name: nameToFind })
-            .limit(limitNum)
-            .execute();
+                .update(User)
+                .set({name: nameToFind})
+                .limit(limitNum)
+                .execute();
 
-            const loadedUsers = await connection.getRepository(User).find({ name: nameToFind });
+            const loadedUsers = await connection.getRepository(User).find({name: nameToFind});
             expect(loadedUsers).to.exist;
             loadedUsers!.length.should.be.equal(limitNum);
         } else {
             await connection.createQueryBuilder()
-            .update(User)
-            .set({ name: nameToFind })
-            .limit(limitNum)
-            .execute().should.be.rejectedWith(LimitOnUpdateNotSupportedError);
+                .update(User)
+                .set({name: nameToFind})
+                .limit(limitNum)
+                .execute().should.be.rejectedWith(LimitOnUpdateNotSupportedError);
         }
     })));
 
@@ -199,7 +201,7 @@ describe("query builder > update", () => {
         try {
             await connection.createQueryBuilder()
                 .update(User)
-                .where("name = :name", { name: "Alex Messer" })
+                .where("name = :name", {name: "Alex Messer"})
                 .execute();
         } catch (err) {
             error = err;
@@ -219,7 +221,7 @@ describe("query builder > update", () => {
         try {
             await connection.createQueryBuilder(User, "user")
                 .update()
-                .where("name = :name", { name: "Alex Messer" })
+                .where("name = :name", {name: "Alex Messer"})
                 .execute();
         } catch (err) {
             error = err;
@@ -239,8 +241,8 @@ describe("query builder > update", () => {
         try {
             await connection.createQueryBuilder()
                 .update(User)
-                .set({ unknownProp: true } as any)
-                .where("name = :name", { name: "Alex Messer" })
+                .set({unknownProp: true} as any)
+                .where("name = :name", {name: "Alex Messer"})
                 .execute();
         } catch (err) {
             error = err;
@@ -260,8 +262,8 @@ describe("query builder > update", () => {
         try {
             await connection.createQueryBuilder()
                 .update(User)
-                .set({ name: "John Doe" } as any)
-                .where( { unknownProp: "Alex Messer" })
+                .set({name: "John Doe"} as any)
+                .where({unknownProp: "Alex Messer"})
                 .execute();
         } catch (err) {
             error = err;

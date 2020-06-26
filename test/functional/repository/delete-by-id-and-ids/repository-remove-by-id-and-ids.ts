@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
 
-describe("repository > deleteById methods", function() {
+describe("repository > deleteById methods", function () {
 
     // -------------------------------------------------------------------------
     // Configuration
@@ -55,7 +55,7 @@ describe("repository > deleteById methods", function() {
         expect(loadedPosts.find(p => p.id === 4)).not.to.be.undefined;
     })));
 
-    it("remove using removeByIds method should delete successfully",  () => Promise.all(connections.map(async connection => {
+    it("remove using removeByIds method should delete successfully", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
 
         // save a new posts

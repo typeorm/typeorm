@@ -1,9 +1,9 @@
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src";
-import {assert} from "chai";
-import {User} from "./entity/User";
-import {TournamentUserParticipant} from "./entity/TournamentUserParticipant";
-import {TournamentSquadParticipant} from "./entity/TournamentSquadParticipant";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { assert } from "chai";
+import { User } from "./entity/User";
+import { TournamentUserParticipant } from "./entity/TournamentUserParticipant";
+import { TournamentSquadParticipant } from "./entity/TournamentSquadParticipant";
 
 describe("github issues > #1972 STI problem - empty columns", () => {
     let connections: Connection[];
@@ -46,7 +46,7 @@ describe("github issues > #1972 STI problem - empty columns", () => {
 
         // create tournament squad participant
         const tournamentSquadParticipant = new TournamentSquadParticipant({
-            users: [ user ],
+            users: [user],
             owner: user,
         });
         await connection.manager.save(tournamentSquadParticipant);

@@ -1,8 +1,8 @@
-import {Cliente} from "./entity/cliente";
+import { Cliente } from "./entity/cliente";
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src";
-import {TipoCliente} from "./entity/tipo-cliente";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { TipoCliente } from "./entity/tipo-cliente";
 
 describe("github issue #1754 Repository.save() always updating ManyToOne relation", () => {
 

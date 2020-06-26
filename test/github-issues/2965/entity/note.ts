@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "../../../../src/";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
 import { Person } from "./person";
 
 @Entity()
@@ -9,6 +9,6 @@ export class Note {
     @Column()
     public label: string;
 
-    @ManyToOne(type => Person, { lazy: true })
+    @ManyToOne(type => Person, {lazy: true})
     public owner: Promise<Person> | Person;
 }

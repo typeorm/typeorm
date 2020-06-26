@@ -1,5 +1,5 @@
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {BaseContent} from "./BaseContent";
+import { PrimaryGeneratedColumn } from "@typeorm/core";
+import { BaseContent } from "./BaseContent";
 
 export class BasePost extends BaseContent {
 

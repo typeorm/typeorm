@@ -1,7 +1,4 @@
-import { Entity } from "../../../../src/decorator/entity/Entity";
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn";
-import { Column } from "../../../../src/decorator/columns/Column";
-import { OneToMany } from "../../../../src/decorator/relations/OneToMany";
+import { Column, Entity, OneToMany, PrimaryColumn } from "@typeorm/core";
 
 import { Detail } from "./detail";
 

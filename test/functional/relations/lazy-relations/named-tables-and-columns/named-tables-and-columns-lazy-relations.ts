@@ -1,12 +1,12 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
 import {
-    Post,
-} from "./entity/Post";
-import {
-    Category,
-} from "./entity/Category";
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post, } from "./entity/Post";
+import { Category, } from "./entity/Category";
 
 /**
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
@@ -142,7 +142,7 @@ describe("named-tables-and-columns-lazy-relations", () => {
         await connection.manager.save(category);
         await connection.manager.save(post);
 
-        const loadedPost = await connection.manager.findOne(Post, { where: { title: "post with great category" } });
+        const loadedPost = await connection.manager.findOne(Post, {where: {title: "post with great category"}});
         const loadedCategory = await loadedPost!.category;
 
         loadedCategory.name.should.be.equal("category of great post");
@@ -179,7 +179,7 @@ describe("named-tables-and-columns-lazy-relations", () => {
         await connection.manager.save(category);
         await connection.manager.save(post);
 
-        const loadedPost = await connection.manager.findOne(Post, { where: { title: "post with great category" } });
+        const loadedPost = await connection.manager.findOne(Post, {where: {title: "post with great category"}});
         const loadedCategory = await loadedPost!.twoSideCategory;
 
         loadedCategory.name.should.be.equal("category of great post");
@@ -215,7 +215,7 @@ describe("named-tables-and-columns-lazy-relations", () => {
         post.twoSideCategory = Promise.resolve(category);
         await connection.manager.save(post);
 
-        const loadedCategory = await connection.manager.findOne(Category, { where: { name: "category of great post" } });
+        const loadedCategory = await connection.manager.findOne(Category, {where: {name: "category of great post"}});
         const loadedPost = await loadedCategory!.twoSidePosts2;
 
         loadedPost[0].title.should.be.equal("post with great category");
@@ -251,7 +251,7 @@ describe("named-tables-and-columns-lazy-relations", () => {
         post.oneCategory = Promise.resolve(category);
         await connection.manager.save(post);
 
-        const loadedPost = await connection.manager.findOne(Post, { where: { title: "post with great category" } });
+        const loadedPost = await connection.manager.findOne(Post, {where: {title: "post with great category"}});
         const loadedCategory = await loadedPost!.oneCategory;
 
         loadedCategory.name.should.be.equal("category of great post");
@@ -287,7 +287,7 @@ describe("named-tables-and-columns-lazy-relations", () => {
         post.oneCategory = Promise.resolve(category);
         await connection.manager.save(post);
 
-        const loadedCategory = await connection.manager.findOne(Category, { where: { name: "category of great post" } });
+        const loadedCategory = await connection.manager.findOne(Category, {where: {name: "category of great post"}});
         const loadedPost = await loadedCategory!.onePost;
         loadedPost.title.should.be.equal("post with great category");
     })));

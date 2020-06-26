@@ -24,7 +24,7 @@ Entity is a class that maps to a database table (or collection when using MongoD
 You can create an entity by defining a new class and mark it with `@Entity()`:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -63,7 +63,7 @@ Each entity **MUST** have a primary column (or ObjectId column if are using Mong
 Each entity must be registered in your connection options:
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import {createConnection, Connection} from "@typeorm/core";
 import {User} from "./entity/User";
 
 const connection: Connection = await createConnection({
@@ -80,7 +80,7 @@ const connection: Connection = await createConnection({
 Or you can specify the whole directory with all entities inside - and all of them will be loaded:
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import {createConnection, Connection} from "@typeorm/core";
 
 const connection: Connection = await createConnection({
     type: "mysql",
@@ -113,7 +113,7 @@ There are several types of primary columns:
 * `@PrimaryColumn()` creates a primary column which takes any value of any type. You can specify the column type. If you don't specify a column type it will be inferred from the property type. The example below will create id with `int` as type which you must manually assign before save.
 
 ```typescript
-import {Entity, PrimaryColumn} from "typeorm";
+import {Entity, PrimaryColumn} from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -128,7 +128,7 @@ export class User {
 * `@PrimaryGeneratedColumn()` creates a primary column which value will be automatically generated with an auto-increment value. It will create `int` column with `auto-increment`/`serial`/`sequence` (depend on the database). You don't have to manually assign its value before save - value will be automatically generated.
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn} from "typeorm";
+import {Entity, PrimaryGeneratedColumn} from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -143,7 +143,7 @@ export class User {
 * `@PrimaryGeneratedColumn("uuid")` creates a primary column which value will be automatically generated with `uuid`. Uuid is a unique string id. You don't have to manually assign its value before save - value will be automatically generated.
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn} from "typeorm";
+import {Entity, PrimaryGeneratedColumn} from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -158,7 +158,7 @@ export class User {
 You can have composite primary columns as well:
 
 ```typescript
-import {Entity, PrimaryColumn} from "typeorm";
+import {Entity, PrimaryColumn} from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -196,13 +196,13 @@ There are several special column types with additional functionality available:
 * `@CreateDateColumn` is a special column that is automatically set to the entity's insertion date.
 You don't need to set this column - it will be automatically set.
 
-* `@UpdateDateColumn` is a special column that is automatically set to the entity's update time 
+* `@UpdateDateColumn` is a special column that is automatically set to the entity's update time
 each time you call `save` of entity manager or repository.
 You don't need to set this column - it will be automatically set.
 
 * `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted".
 
-* `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)  
+* `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)
 each time you call `save` of entity manager or repository.
 You don't need to set this column - it will be automatically set.
 
@@ -691,7 +691,7 @@ drawback is you can't load a big tree at once because of join limitations.
 Example:
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany} from "@typeorm/core";
 
 @Entity()
 export class Category {
@@ -722,7 +722,7 @@ To learn more about closure table take a look at [this awesome presentation by B
 Example:
 
 ```typescript
-import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
+import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "@typeorm/core";
 
 @Entity()
 @Tree("closure-table")

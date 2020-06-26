@@ -1,4 +1,4 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity("Foo")
 export class FooEntity {
@@ -6,6 +6,6 @@ export class FooEntity {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column("datetime2", { precision: 0 })
+    @Column("datetime2", {precision: 0})
     date: Date;
 }

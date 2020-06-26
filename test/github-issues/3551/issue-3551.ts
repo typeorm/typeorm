@@ -1,7 +1,6 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {PromiseUtils} from "../../../src";
+import { Connection, PromiseUtils } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
 import { Book } from "./entity/Book";
 
 describe("github issues > #3551 array of embedded documents through multiple levels are not handled", () => {
@@ -45,9 +44,9 @@ describe("github issues > #3551 array of embedded documents through multiple lev
             ]
         };
 
-        await connection.mongoManager.getMongoRepository(Book).insert(bookInput);
+        await connection.manager.getRepository(Book).insert(bookInput);
 
-        const books = await connection.mongoManager.getMongoRepository(Book).find();
+        const books = await connection.manager.getRepository(Book).find();
         const book = books[0];
 
         book!.title.should.be.equal(bookInput.title);

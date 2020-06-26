@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
+import { closeTestingConnections, createTestingConnections } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
 
 describe("database-schema > rowid-column", () => {
 

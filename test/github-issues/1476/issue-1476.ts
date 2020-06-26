@@ -1,11 +1,11 @@
 import "reflect-metadata";
 import { expect } from "chai";
 
-import { Connection } from "../../../src/connection/Connection";
+import { Connection } from "@typeorm/core";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { Plan } from "./entity/Plan";
 import { Item } from "./entity/Item";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import { MysqlDriver } from "@typeorm/driver-mysql";
 
 describe("github issues > #1476 subqueries", () => {
 
@@ -20,7 +20,7 @@ describe("github issues > #1476 subqueries", () => {
     it("should", () => Promise.all(connections.map(async connection => {
         const planRepo = connection.getRepository(Plan);
         const itemRepo = connection.getRepository(Item);
-        
+
         const plan1 = new Plan();
         plan1.planId = 1;
         plan1.planName = "Test";
@@ -46,7 +46,7 @@ describe("github issues > #1476 subqueries", () => {
                         .addSelect(`planId`)
                         .from(Item, "items")
                         .groupBy(`items.planId`);
-            }, "i", `i.planId = b.planId`)
+                }, "i", `i.planId = b.planId`)
             .getRawMany();
 
         expect(plans).to.not.be.undefined;

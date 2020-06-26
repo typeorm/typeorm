@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
 
 describe("repository > soft-delete", () => {
 
@@ -31,10 +31,10 @@ describe("repository > soft-delete", () => {
         await postRepository.save(newPost2);
 
         // soft-delete one
-        await postRepository.softDelete({ id: 1, name: "post#1" });
+        await postRepository.softDelete({id: 1, name: "post#1"});
 
         // load to check
-        const loadedPosts = await postRepository.find({ withDeleted: true });
+        const loadedPosts = await postRepository.find({withDeleted: true});
 
         // assert
         loadedPosts.length.should.be.equal(2);
@@ -49,9 +49,9 @@ describe("repository > soft-delete", () => {
         expect(loadedPost2!.name).to.equals("post#2");
 
         // restore one
-        await postRepository.restore({ id: 1, name: "post#1" });
+        await postRepository.restore({id: 1, name: "post#1"});
         // load to check
-        const restoredPosts = await postRepository.find({ withDeleted: true });
+        const restoredPosts = await postRepository.find({withDeleted: true});
 
         // assert
         restoredPosts.length.should.be.equal(2);

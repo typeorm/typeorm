@@ -1,4 +1,4 @@
-import {Shim} from "../shim";
+import { Shim } from "../shim";
 
 @Shim.Entity()
 export class Photo {
@@ -8,7 +8,7 @@ export class Photo {
 
     @Shim.Column()
     url: string;
-    
+
     user: any;
 
 }

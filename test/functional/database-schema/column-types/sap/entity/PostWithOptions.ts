@@ -1,6 +1,4 @@
-import {Entity} from "../../../../../../src";
-import {PrimaryColumn} from "../../../../../../src";
-import {Column} from "../../../../../../src";
+import { Column, Entity, PrimaryColumn } from "@typeorm/core";
 
 @Entity()
 export class PostWithOptions {
@@ -12,26 +10,26 @@ export class PostWithOptions {
     // Numeric Types
     // -------------------------------------------------------------------------
 
-    @Column("dec", { precision: 10, scale: 2 })
+    @Column("dec", {precision: 10, scale: 2})
     dec: string;
 
-    @Column("decimal", { precision: 10, scale: 3 })
+    @Column("decimal", {precision: 10, scale: 3})
     decimal: string;
 
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
 
-    @Column("varchar", { length: 50 })
+    @Column("varchar", {length: 50})
     varchar: string;
 
-    @Column("nvarchar", { length: 50 })
+    @Column("nvarchar", {length: 50})
     nvarchar: string;
 
-    @Column("alphanum", { length: 50 })
+    @Column("alphanum", {length: 50})
     alphanum: string;
 
-    @Column("shorttext", { length: 50 })
+    @Column("shorttext", {length: 50})
     shorttext: string;
 
 }

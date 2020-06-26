@@ -1,11 +1,9 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Question {
 
-    @PrimaryGeneratedColumn({ type: "smallint" })
+    @PrimaryGeneratedColumn({type: "smallint"})
     id: number;
 
     @Column()

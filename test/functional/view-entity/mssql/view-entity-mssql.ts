@@ -1,11 +1,11 @@
-import {expect} from "chai";
+import { expect } from "chai";
 import "reflect-metadata";
-import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
-import {Category} from "./entity/Category";
-import {Connection} from "../../../../src";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {PostCategory} from "./entity/PostCategory";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { Category } from "./entity/Category";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { PostCategory } from "./entity/PostCategory";
 
 describe("view entity > mssql", () => {
 

@@ -1,6 +1,4 @@
-import {Column} from "../../../../src";
-import {PrimaryGeneratedColumn} from "../../../../src";
-import {Entity} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -19,6 +17,6 @@ export class User {
     @Column("datetime")
     public date1: Date;
 
-    @Column("datetime", { nullable: true })
+    @Column("datetime", {nullable: true})
     public date2: Date;
 }

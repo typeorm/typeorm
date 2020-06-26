@@ -1,5 +1,5 @@
-import {Shim} from "../shim";
-import {Photo} from "./Photo";
+import { Shim } from "../shim";
+import { Photo } from "./Photo";
 
 // NOTE: The relations in here make no sense, we just care for the types.
 // In real applications, this would of course not work!

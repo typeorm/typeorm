@@ -1,4 +1,4 @@
-import {Entity, PrimaryGeneratedColumn} from "../../../../src/index";
+import { Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Category {

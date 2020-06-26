@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {expect} from "chai";
-import {PostStatus} from "./model/PostStatus";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { expect } from "chai";
+import { PostStatus } from "./model/PostStatus";
 
 describe("github issues > #182 enums are not saved properly", () => {
 
@@ -24,7 +24,7 @@ describe("github issues > #182 enums are not saved properly", () => {
         // persist
         await connection.manager.save(post1);
 
-        const loadedPosts1 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
+        const loadedPosts1 = await connection.manager.findOne(Post, {where: {title: "Hello Post #1"}});
         expect(loadedPosts1!).not.to.be.undefined;
         loadedPosts1!.should.be.eql({
             id: 1,
@@ -42,7 +42,7 @@ describe("github issues > #182 enums are not saved properly", () => {
         // persist
         await connection.manager.save(post2);
 
-        const loadedPosts2 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
+        const loadedPosts2 = await connection.manager.findOne(Post, {where: {title: "Hello Post #1"}});
         expect(loadedPosts2!).not.to.be.undefined;
         loadedPosts2!.should.be.eql({
             id: 2,
@@ -60,7 +60,7 @@ describe("github issues > #182 enums are not saved properly", () => {
         // persist
         await connection.manager.save(post3);
 
-        const loadedPosts3 = await connection.manager.findOne(Post, { where: { title: "Hello Post #1" } });
+        const loadedPosts3 = await connection.manager.findOne(Post, {where: {title: "Hello Post #1"}});
         expect(loadedPosts3!).not.to.be.undefined;
         loadedPosts3!.should.be.eql({
             id: 3,

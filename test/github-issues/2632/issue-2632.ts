@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { expect } from "chai";
 
 describe("github issues > #2632 createQueryBuilder relation remove works only if using ID", () => {
 
@@ -35,39 +35,39 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
         await connection.manager.save(category2);
 
         await connection
-          .createQueryBuilder()
-          .relation(Post, "categories")
-          .of(post1)
-          .add(1);
+            .createQueryBuilder()
+            .relation(Post, "categories")
+            .of(post1)
+            .add(1);
 
-        let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["categories"] });
-        expect(loadedPost1!.categories).to.deep.include({ id: 1, title: "category #1" });
+        let loadedPost1 = await connection.manager.findOne(Post, 1, {relations: ["categories"]});
+        expect(loadedPost1!.categories).to.deep.include({id: 1, title: "category #1"});
 
         await connection
-          .createQueryBuilder()
-          .relation(Post, "categories")
-          .of(post1)
-          .remove(1);
+            .createQueryBuilder()
+            .relation(Post, "categories")
+            .of(post1)
+            .remove(1);
 
-        loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["categories"] });
+        loadedPost1 = await connection.manager.findOne(Post, 1, {relations: ["categories"]});
         expect(loadedPost1!.categories).to.be.eql([]);
 
         await connection
-          .createQueryBuilder()
-          .relation(Post, "categories")
-          .of(2)
-          .add(category2);
+            .createQueryBuilder()
+            .relation(Post, "categories")
+            .of(2)
+            .add(category2);
 
-        let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["categories"] });
-        expect(loadedPost2!.categories).to.deep.include({ id: 2, title: "category #2" });
+        let loadedPost2 = await connection.manager.findOne(Post, 2, {relations: ["categories"]});
+        expect(loadedPost2!.categories).to.deep.include({id: 2, title: "category #2"});
 
         await connection
-          .createQueryBuilder()
-          .relation(Post, "categories")
-          .of(2)
-          .remove(category2);
+            .createQueryBuilder()
+            .relation(Post, "categories")
+            .of(2)
+            .remove(category2);
 
-        loadedPost1 = await connection.manager.findOne(Post, 2, { relations: ["categories"] });
+        loadedPost1 = await connection.manager.findOne(Post, 2, {relations: ["categories"]});
         expect(loadedPost1!.categories).to.be.eql([]);
 
     })));

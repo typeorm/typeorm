@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {Connection} from "../../../../src";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {expect} from "chai";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { expect } from "chai";
 import { Post } from "./entity/Post";
 
 describe("indices > fulltext index", () => {
@@ -22,7 +22,7 @@ describe("indices > fulltext index", () => {
 
         const queryRunner = connection.createQueryRunner();
         const table = await queryRunner.getTable("post");
-        
+
         table!.indices.length.should.be.equal(2);
         expect(table!.indices[0].isFulltext).to.be.true;
         expect(table!.indices[1].isFulltext).to.be.true;
@@ -42,18 +42,18 @@ describe("indices > fulltext index", () => {
 
         const loadedPost1 = await postRepository
             .createQueryBuilder("post")
-            .where("MATCH(post.default) AGAINST (:token)", { token: "text" })
+            .where("MATCH(post.default) AGAINST (:token)", {token: "text"})
             .getOne();
         expect(loadedPost1).to.be.exist;
 
         const loadedPost2 = await postRepository
             .createQueryBuilder("post")
-            .where("MATCH(post.default) AGAINST (:token)", { token: "te" })
+            .where("MATCH(post.default) AGAINST (:token)", {token: "te"})
             .getOne();
         expect(loadedPost2).to.be.undefined;
     })));
 
-    
+
     it("with ngram parser", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
@@ -66,13 +66,13 @@ describe("indices > fulltext index", () => {
 
         const loadedPost1 = await postRepository
             .createQueryBuilder("post")
-            .where("MATCH(post.ngram) AGAINST (:token)", { token: "text" })
+            .where("MATCH(post.ngram) AGAINST (:token)", {token: "text"})
             .getOne();
         expect(loadedPost1).to.be.exist;
-        
+
         const loadedPost2 = await postRepository
             .createQueryBuilder("post")
-            .where("MATCH(post.ngram) AGAINST (:token)", { token: "te" })
+            .where("MATCH(post.ngram) AGAINST (:token)", {token: "te"})
             .getOne();
         expect(loadedPost2).to.be.exist;
     })));

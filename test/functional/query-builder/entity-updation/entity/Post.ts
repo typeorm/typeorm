@@ -1,9 +1,11 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {CreateDateColumn} from "../../../../../src/decorator/columns/CreateDateColumn";
-import {UpdateDateColumn} from "../../../../../src/decorator/columns/UpdateDateColumn";
-import {VersionColumn} from "../../../../../src/decorator/columns/VersionColumn";
+import {
+    Column,
+    CreateDateColumn,
+    Entity,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
+    VersionColumn
+} from "@typeorm/core";
 
 @Entity()
 export class Post {
@@ -20,7 +22,7 @@ export class Post {
     @UpdateDateColumn()
     updateDate: string;
 
-    @Column({ default: 100 })
+    @Column({default: 100})
     order: number;
 
     @VersionColumn()

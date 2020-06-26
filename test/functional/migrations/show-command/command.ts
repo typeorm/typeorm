@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
 
 describe("migrations > show command", () => {
     let connections: Connection[];
@@ -23,4 +23,4 @@ describe("migrations > show command", () => {
         const migrations = await connection.showMigrations();
         migrations.should.be.equal(false);
     })));
- });
+});

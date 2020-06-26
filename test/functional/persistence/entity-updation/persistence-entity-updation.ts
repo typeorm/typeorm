@@ -1,20 +1,20 @@
 import "reflect-metadata";
-import {Connection} from "../../../../src/connection/Connection";
-import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {PostIncrement} from "./entity/PostIncrement";
-import {PostUuid} from "./entity/PostUuid";
-import {PostDefaultValues} from "./entity/PostDefaultValues";
-import {PostSpecialColumns} from "./entity/PostSpecialColumns";
-import {expect} from "chai";
-import {PostMultiplePrimaryKeys} from "./entity/PostMultiplePrimaryKeys";
-import {PostComplex} from "./entity/PostComplex";
-import {PostEmbedded} from "./entity/PostEmbedded";
+import { Connection } from "@typeorm/core";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { PostIncrement } from "./entity/PostIncrement";
+import { PostUuid } from "./entity/PostUuid";
+import { PostDefaultValues } from "./entity/PostDefaultValues";
+import { PostSpecialColumns } from "./entity/PostSpecialColumns";
+import { expect } from "chai";
+import { PostMultiplePrimaryKeys } from "./entity/PostMultiplePrimaryKeys";
+import { PostComplex } from "./entity/PostComplex";
+import { PostEmbedded } from "./entity/PostEmbedded";
 
 describe("persistence > entity updation", () => {
 
     let connections: Connection[];
-    before(async () => connections = await createTestingConnections({ __dirname }));
+    before(async () => connections = await createTestingConnections({__dirname}));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
@@ -80,7 +80,7 @@ describe("persistence > entity updation", () => {
         post!.embed.version.should.be.equal(1);
         post!.text.should.be.equal("Hello Complexity");
 
-        const loadedPost = await connection.manager.findOne(PostComplex, { firstId: 1, embed: { secondId: 3 }});
+        const loadedPost = await connection.manager.findOne(PostComplex, {firstId: 1, embed: {secondId: 3}});
         loadedPost!.firstId.should.be.equal(1);
         loadedPost!.embed.secondId.should.be.equal(3);
         loadedPost!.embed.createDate.should.be.instanceof(Date);

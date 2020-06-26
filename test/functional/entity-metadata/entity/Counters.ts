@@ -1,8 +1,6 @@
-import {Column} from "../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../src/decorator/relations/JoinTable";
-import {Subcounters} from "./Subcounters";
-import {User} from "./User";
+import { Column, JoinTable, ManyToMany } from "@typeorm/core";
+import { Subcounters } from "./Subcounters";
+import { User } from "./User";
 
 export class Counters {
 

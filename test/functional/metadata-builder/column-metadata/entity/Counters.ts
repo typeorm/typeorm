@@ -1,5 +1,5 @@
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {Subcounters} from "./Subcounters";
+import { Column } from "@typeorm/core";
+import { Subcounters } from "./Subcounters";
 
 export class Counters {
 

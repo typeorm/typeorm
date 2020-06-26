@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Employee} from "./entity/Employee";
-import {Person} from "./entity/Person";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Employee } from "./entity/Employee";
+import { Person } from "./entity/Person";
 
 describe("github issues > #184 [Postgres] Single-Inheritance not working with integer type field", () => {
 

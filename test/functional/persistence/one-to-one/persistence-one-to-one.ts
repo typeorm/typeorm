@@ -1,11 +1,11 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {AccessToken} from "./entity/AccessToken";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
+import { User } from "./entity/User";
+import { AccessToken } from "./entity/AccessToken";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
 
-describe("persistence > one-to-one", function() {
+describe("persistence > one-to-one", function () {
 
     // -------------------------------------------------------------------------
     // Setup
@@ -24,7 +24,7 @@ describe("persistence > one-to-one", function() {
     // Specifications
     // -------------------------------------------------------------------------
 
-    describe("set the relation with proper item", function() {
+    describe("set the relation with proper item", function () {
 
         it("should have an access token", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository(User);
@@ -40,7 +40,7 @@ describe("persistence > one-to-one", function() {
 
 
             const loadedUser = await userRepository.findOne({
-                where: { email: "mwelnick@test.com" },
+                where: {email: "mwelnick@test.com"},
                 relations: ["access_token"]
             });
 
@@ -50,7 +50,7 @@ describe("persistence > one-to-one", function() {
 
     });
 
-    describe("doesn't allow the same relation to be used twice", function() {
+    describe("doesn't allow the same relation to be used twice", function () {
 
         it("should reject the saving attempt", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository(User);

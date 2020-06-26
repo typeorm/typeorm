@@ -1,8 +1,5 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {User} from "./User";
-import {ManyToOne} from "../../../../../../src/decorator/relations/ManyToOne";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { User } from "./User";
 
 @Entity()
 export class Post {
@@ -13,7 +10,7 @@ export class Post {
     @Column()
     title: string;
 
-    @ManyToOne(type => User, { eager: true })
+    @ManyToOne(type => User, {eager: true})
     author: User;
 
 }

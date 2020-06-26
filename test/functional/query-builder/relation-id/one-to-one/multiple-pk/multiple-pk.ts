@@ -1,17 +1,17 @@
 import "reflect-metadata";
-import {expect} from "chai";
+import { expect } from "chai";
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases
 } from "../../../../../utils/test-utils";
-import {Connection} from "../../../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {Image} from "./entity/Image";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { Image } from "./entity/Image";
 
 describe("query builder > relation-id > one-to-one > multiple-pk", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -54,17 +54,17 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                 .loadRelationIdAndMap("post.categoryId", "post.category")
                 .getMany();
 
-            expect(loadedPosts[0].categoryId).to.be.eql({ id: 1, code: 1 });
-            expect(loadedPosts[1].categoryId).to.be.eql({ id: 2, code: 1 });
+            expect(loadedPosts[0].categoryId).to.be.eql({id: 1, code: 1});
+            expect(loadedPosts[1].categoryId).to.be.eql({id: 2, code: 1});
 
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .loadRelationIdAndMap("post.categoryId", "post.category")
-                .where("post.id = :id", { id: 1 })
-                .andWhere("post.authorId = :authorId", { authorId: 1 })
+                .where("post.id = :id", {id: 1})
+                .andWhere("post.authorId = :authorId", {authorId: 1})
                 .getOne();
 
-            expect(loadedPost!.categoryId).to.be.eql({ id: 1, code: 1 });
+            expect(loadedPost!.categoryId).to.be.eql({id: 1, code: 1});
 
         })));
 
@@ -103,8 +103,8 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
             const loadedCategory = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .loadRelationIdAndMap("category.imageId", "category.image")
-                .where("category.id = :id", { id: 1 })
-                .andWhere("category.code = :code", { code: 1 })
+                .where("category.id = :id", {id: 1})
+                .andWhere("category.code = :code", {code: 1})
                 .getOne();
 
             expect(loadedCategory!.imageId).to.be.equal(1);
@@ -144,17 +144,17 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                 .loadRelationIdAndMap("post.categoryId", "post.subcategory")
                 .getMany();
 
-            expect(loadedPosts[0].categoryId).to.be.eql({ id: 1, code: 1 });
-            expect(loadedPosts[1].categoryId).to.be.eql({ id: 2, code: 1 });
+            expect(loadedPosts[0].categoryId).to.be.eql({id: 1, code: 1});
+            expect(loadedPosts[1].categoryId).to.be.eql({id: 2, code: 1});
 
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .loadRelationIdAndMap("post.categoryId", "post.subcategory")
-                .where("post.id = :id", { id: 1 })
-                .andWhere("post.authorId = :authorId", { authorId: 1 })
+                .where("post.id = :id", {id: 1})
+                .andWhere("post.authorId = :authorId", {authorId: 1})
                 .getOne();
 
-            expect(loadedPost!.categoryId).to.be.eql({ id: 1, code: 1 });
+            expect(loadedPost!.categoryId).to.be.eql({id: 1, code: 1});
 
         })));
 
@@ -203,9 +203,9 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                 .loadRelationIdAndMap("category.imageId", "category.image")
                 .getMany();
 
-            expect(loadedPosts[0].categoryId).to.be.eql({ id: 1, code: 1 });
+            expect(loadedPosts[0].categoryId).to.be.eql({id: 1, code: 1});
             expect(loadedPosts[0].category.imageId).to.be.equal(1);
-            expect(loadedPosts[1].categoryId).to.be.eql({ id: 2, code: 1 });
+            expect(loadedPosts[1].categoryId).to.be.eql({id: 2, code: 1});
             expect(loadedPosts[1].category.imageId).to.be.equal(2);
 
             const loadedPost = await connection.manager
@@ -213,11 +213,11 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                 .loadRelationIdAndMap("post.categoryId", "post.category")
                 .leftJoinAndSelect("post.category", "category")
                 .loadRelationIdAndMap("category.imageId", "category.image")
-                .where("post.id = :id", { id: 1 })
-                .andWhere("post.authorId = :authorId", { authorId: 1 })
+                .where("post.id = :id", {id: 1})
+                .andWhere("post.authorId = :authorId", {authorId: 1})
                 .getOne();
 
-            expect(loadedPost!.categoryId).to.be.eql({ id: 1, code: 1 });
+            expect(loadedPost!.categoryId).to.be.eql({id: 1, code: 1});
             expect(loadedPost!.category.imageId).to.be.equal(1);
 
         })));
@@ -258,17 +258,17 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                 .loadRelationIdAndMap("category.postId", "category.post")
                 .getMany();
 
-            expect(loadedCategories[0].postId).to.be.eql({ id: 1, authorId: 1 });
-            expect(loadedCategories[1].postId).to.be.eql({ id: 2, authorId: 1 });
+            expect(loadedCategories[0].postId).to.be.eql({id: 1, authorId: 1});
+            expect(loadedCategories[1].postId).to.be.eql({id: 2, authorId: 1});
 
             const loadedCategory = await connection.manager
                 .createQueryBuilder(Category, "category")
                 .loadRelationIdAndMap("category.postId", "category.post")
-                .where("category.id = :id", { id: 1 })
-                .andWhere("category.code = :code", { code: 1 })
+                .where("category.id = :id", {id: 1})
+                .andWhere("category.code = :code", {code: 1})
                 .getOne();
 
-            expect(loadedCategory!.postId).to.be.eql({ id: 1, authorId: 1 });
+            expect(loadedCategory!.postId).to.be.eql({id: 1, authorId: 1});
 
         })));
 
@@ -301,16 +301,16 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                 .loadRelationIdAndMap("image.categoryId", "image.category")
                 .getMany();
 
-            expect(loadedImages[0].categoryId).to.be.eql({ id: 1, code: 1 });
-            expect(loadedImages[1].categoryId).to.be.eql({ id: 2, code: 1 });
+            expect(loadedImages[0].categoryId).to.be.eql({id: 1, code: 1});
+            expect(loadedImages[1].categoryId).to.be.eql({id: 2, code: 1});
 
             const loadedImage = await connection.manager
                 .createQueryBuilder(Image, "image")
                 .loadRelationIdAndMap("image.categoryId", "image.category")
-                .where("image.id = :id", { id: 1 })
+                .where("image.id = :id", {id: 1})
                 .getOne();
 
-            expect(loadedImage!.categoryId).to.be.eql({ id: 1, code: 1 });
+            expect(loadedImage!.categoryId).to.be.eql({id: 1, code: 1});
 
         })));
 
@@ -359,21 +359,21 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                 .loadRelationIdAndMap("category.postId", "category.post")
                 .getMany();
 
-            expect(loadedImages[0].categoryId).to.be.eql({ id: 1, code: 1 });
-            expect(loadedImages[0].category.postId).to.be.eql({ id: 1, authorId: 1 });
-            expect(loadedImages[1].categoryId).to.be.eql({ id: 2, code: 1 });
-            expect(loadedImages[1].category.postId).to.be.eql({ id: 2, authorId: 1 });
+            expect(loadedImages[0].categoryId).to.be.eql({id: 1, code: 1});
+            expect(loadedImages[0].category.postId).to.be.eql({id: 1, authorId: 1});
+            expect(loadedImages[1].categoryId).to.be.eql({id: 2, code: 1});
+            expect(loadedImages[1].category.postId).to.be.eql({id: 2, authorId: 1});
 
             const loadedImage = await connection.manager
                 .createQueryBuilder(Image, "image")
                 .loadRelationIdAndMap("image.categoryId", "image.category")
                 .leftJoinAndSelect("image.category", "category")
                 .loadRelationIdAndMap("category.postId", "category.post")
-                .where("image.id = :id", { id: 1 })
+                .where("image.id = :id", {id: 1})
                 .getOne();
 
-            expect(loadedImage!.categoryId).to.be.eql({ id: 1, code: 1 });
-            expect(loadedImage!.category.postId).to.be.eql({ id: 1, authorId: 1 });
+            expect(loadedImage!.categoryId).to.be.eql({id: 1, code: 1});
+            expect(loadedImage!.category.postId).to.be.eql({id: 1, authorId: 1});
 
         })));
 

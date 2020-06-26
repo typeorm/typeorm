@@ -1,4 +1,4 @@
-import {ValueTransformer} from "../../../src/decorator/options/ValueTransformer";
+import { ValueTransformer } from "@typeorm/core";
 
 export class WrappedString {
     constructor(readonly value: string) {}

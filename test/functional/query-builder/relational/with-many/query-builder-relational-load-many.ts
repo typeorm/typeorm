@@ -1,9 +1,13 @@
 import "reflect-metadata";
-import {Post} from "./entity/Post";
-import {Image} from "./entity/Image";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {expect} from "chai";
-import {Connection} from "../../../../../src/connection/Connection";
+import { Post } from "./entity/Post";
+import { Image } from "./entity/Image";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
 
 describe("query builder > relational with many > load many", () => {
 
@@ -50,9 +54,9 @@ describe("query builder > relational with many > load many", () => {
             .of(post1)
             .loadMany();
 
-        expect(loadedPost1!.images).to.deep.include({ id: 1, url: "image #1" });
-        expect(loadedPost1!.images).to.deep.include({ id: 2, url: "image #2" });
-        expect(loadedPost1!.images).to.not.contain({ id: 3, url: "image #3" });
+        expect(loadedPost1!.images).to.deep.include({id: 1, url: "image #1"});
+        expect(loadedPost1!.images).to.deep.include({id: 2, url: "image #2"});
+        expect(loadedPost1!.images).to.not.contain({id: 3, url: "image #3"});
     })));
 
     it("should load relation entity of a given entity id map", () => Promise.all(connections.map(async connection => {
@@ -88,12 +92,12 @@ describe("query builder > relational with many > load many", () => {
         loadedPost1!.images = await connection
             .createQueryBuilder()
             .relation(Post, "images")
-            .of({ id: 1 })
+            .of({id: 1})
             .loadMany();
 
-        expect(loadedPost1!.images).to.deep.include({ id: 1, url: "image #1" });
-        expect(loadedPost1!.images).to.deep.include({ id: 2, url: "image #2" });
-        expect(loadedPost1!.images).to.not.contain({ id: 3, url: "image #3" });
+        expect(loadedPost1!.images).to.deep.include({id: 1, url: "image #1"});
+        expect(loadedPost1!.images).to.deep.include({id: 2, url: "image #2"});
+        expect(loadedPost1!.images).to.not.contain({id: 3, url: "image #3"});
     })));
 
     it("should load relation entity of a given entity id", () => Promise.all(connections.map(async connection => {
@@ -132,9 +136,9 @@ describe("query builder > relational with many > load many", () => {
             .of(1)
             .loadMany();
 
-        expect(loadedPost1!.images).to.deep.include({ id: 1, url: "image #1" });
-        expect(loadedPost1!.images).to.deep.include({ id: 2, url: "image #2" });
-        expect(loadedPost1!.images).to.not.contain({ id: 3, url: "image #3" });
+        expect(loadedPost1!.images).to.deep.include({id: 1, url: "image #1"});
+        expect(loadedPost1!.images).to.deep.include({id: 2, url: "image #2"});
+        expect(loadedPost1!.images).to.not.contain({id: 3, url: "image #3"});
     })));
 
 });

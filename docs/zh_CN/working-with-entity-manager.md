@@ -8,7 +8,7 @@ EntityManager 就像放一个实体存储库的集合的地方。
 如何使用它：
 
 ```typescript
-import { getManager } from "typeorm";
+import { getManager } from "@typeorm/core";
 import { User } from "./entity/User";
 
 const entityManager = getManager(); // 你也可以通过 getConnection().manager 获取

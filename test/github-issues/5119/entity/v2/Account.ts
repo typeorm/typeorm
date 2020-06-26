@@ -1,8 +1,4 @@
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    ManyToOne
-} from "../../../../../src/index";
+import { Entity, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
 import { User } from "./User";
 
 @Entity()

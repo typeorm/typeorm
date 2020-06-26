@@ -29,7 +29,7 @@ sequelize
 In TypeORM you create a connection like this:
 
 ```typescript
-import {createConnection} from "typeorm";
+import {createConnection} from "@typeorm/core";
 
 createConnection({
     type: "mysql",
@@ -80,7 +80,7 @@ module.exports = function(sequelize, DataTypes) {
       title: DataTypes.STRING,
       description: DataTypes.TEXT
     });
-    
+
     return Project;
 
 };
@@ -94,7 +94,7 @@ module.exports = function(sequelize, DataTypes) {
       description: DataTypes.TEXT,
       deadline: DataTypes.DATE
     });
-    
+
     return Task;
 };
 ```
@@ -102,47 +102,47 @@ module.exports = function(sequelize, DataTypes) {
 In TypeORM these models are called entities and you can define them like this:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class Project {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     title: string;
-    
+
     @Column()
     description: string;
-    
+
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class Task {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     title: string;
-    
+
     @Column("text")
     description: string;
-    
+
     @Column()
     deadline: Date;
-    
+
 }
 ```
 
 It's highly recommended to define one entity class per file.
 TypeORM allows you to use your classes as database models
-and provides a declarative way to define what part of your model 
+and provides a declarative way to define what part of your model
 will become part of your database table.
 The power of TypeScript gives you type hinting and other useful features that you can use in classes.
 
@@ -237,7 +237,7 @@ createDate: Date;
 
 @UpdateDateColumn();
 updateDate: Date;
-``` 
+```
 
 ### Working with models
 

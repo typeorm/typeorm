@@ -1,6 +1,5 @@
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
-import {Subcounters} from "./Subcounters";
+import { Column, PrimaryColumn } from "@typeorm/core";
+import { Subcounters } from "./Subcounters";
 
 export class Counters {
 
@@ -16,7 +15,7 @@ export class Counters {
     @Column()
     favorites: number;
 
-    @Column(() => Subcounters, { prefix: "subcnt" })
+    @Column(() => Subcounters, {prefix: "subcnt"})
     subcounters: Subcounters;
 
 }

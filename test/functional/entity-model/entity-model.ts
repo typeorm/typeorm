@@ -1,9 +1,8 @@
 import "reflect-metadata";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {PromiseUtils} from "../../../src/util/PromiseUtils";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection, PromiseUtils } from "@typeorm/core";
 
 describe("entity-model", () => {
 

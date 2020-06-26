@@ -1,7 +1,5 @@
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {ManyToOne} from "../../../../../../../src/decorator/relations/ManyToOne";
-import {PrimaryGeneratedColumn} from "../../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {User} from "./User";
+import { Column, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { User } from "./User";
 
 export class Subcounters {
 

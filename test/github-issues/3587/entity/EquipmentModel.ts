@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 export enum EquipmentModelType {
     Thing1 = 1,
@@ -12,6 +12,6 @@ export class EquipmentModel {
     @PrimaryGeneratedColumn("uuid")
     id: string;
 
-    @Column("enum", { enum: EquipmentModelType })
+    @Column("enum", {enum: EquipmentModelType})
     type: EquipmentModelType;
 }

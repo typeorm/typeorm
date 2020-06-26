@@ -1,7 +1,4 @@
-import {Column} from "../../../../src";
-import {PrimaryGeneratedColumn} from "../../../../src";
-import {Entity} from "../../../../src";
-import {ManyToMany} from "../../../../src";
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from "@typeorm/core";
 import { Note } from "./Note";
 
 @Entity()

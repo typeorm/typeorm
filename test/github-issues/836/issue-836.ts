@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {User} from "./entity/User";
-import {UserCredential} from "./entity/UserCredential";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { User } from "./entity/User";
+import { UserCredential } from "./entity/UserCredential";
 
 describe("github issues > #836 .save won't update entity when it contains OneToOne relationship", () => {
 
@@ -36,7 +36,7 @@ describe("github issues > #836 .save won't update entity when it contains OneToO
         await connection.manager.save(credential);
 
         // check if credentials and user are saved properly
-        const loadedCredentials = await connection.manager.findOne(UserCredential, 2, { relations: ["user"] });
+        const loadedCredentials = await connection.manager.findOne(UserCredential, 2, {relations: ["user"]});
         loadedCredentials!.should.be.eql({
             user: {
                 id: 2,

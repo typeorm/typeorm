@@ -1,5 +1,4 @@
-import {Entity, PrimaryGeneratedColumn} from "../../../../src";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class LetterBox {
@@ -7,7 +6,7 @@ export class LetterBox {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ type: "point", srid: 4326 })
+    @Column({type: "point", srid: 4326})
     coord: string;
 
 }

@@ -1,16 +1,16 @@
 import "reflect-metadata";
-import {expect} from "chai";
+import { expect } from "chai";
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases
 } from "../../../../../utils/test-utils";
-import {Connection} from "../../../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {Counters} from "./entity/Counters";
-import {User} from "./entity/User";
-import {Subcounters} from "./entity/Subcounters";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { Counters } from "./entity/Counters";
+import { User } from "./entity/User";
+import { Subcounters } from "./entity/Subcounters";
 
 describe("query builder > relation-id > many-to-one > embedded-with-multiple-pk", () => {
 
@@ -89,11 +89,11 @@ describe("query builder > relation-id > many-to-one > embedded-with-multiple-pk"
                     likes: 1,
                     comments: 2,
                     favorites: 3,
-                    categoryId: { id: 1, name: "cars"},
+                    categoryId: {id: 1, name: "cars"},
                     subcounters: {
                         version: 1,
                         watches: 2,
-                        watchedUserId: { id: 1, name: "Alice"}
+                        watchedUserId: {id: 1, name: "Alice"}
                     }
                 }
             }
@@ -107,11 +107,11 @@ describe("query builder > relation-id > many-to-one > embedded-with-multiple-pk"
                     likes: 3,
                     comments: 4,
                     favorites: 5,
-                    categoryId: { id: 2, name: "airplanes"},
+                    categoryId: {id: 2, name: "airplanes"},
                     subcounters: {
                         version: 1,
                         watches: 1,
-                        watchedUserId: { id: 2, name: "Bob"}
+                        watchedUserId: {id: 2, name: "Bob"}
                     }
                 }
             }
@@ -121,9 +121,9 @@ describe("query builder > relation-id > many-to-one > embedded-with-multiple-pk"
             .createQueryBuilder(Post, "post")
             .loadRelationIdAndMap("post.counters.categoryId", "post.counters.category")
             .loadRelationIdAndMap("post.counters.subcounters.watchedUserId", "post.counters.subcounters.watchedUser")
-            .where("post.id = :id", { id: 1 })
-            .andWhere("post.counters.code = :code", { code: 111 })
-            .andWhere("post.counters.subcounters.version = :version", { version: 1 })
+            .where("post.id = :id", {id: 1})
+            .andWhere("post.counters.code = :code", {code: 111})
+            .andWhere("post.counters.subcounters.version = :version", {version: 1})
             .getOne();
 
         expect(loadedPost!.should.be.eql(
@@ -135,11 +135,11 @@ describe("query builder > relation-id > many-to-one > embedded-with-multiple-pk"
                     likes: 1,
                     comments: 2,
                     favorites: 3,
-                    categoryId: { id: 1, name: "cars"},
+                    categoryId: {id: 1, name: "cars"},
                     subcounters: {
                         version: 1,
                         watches: 2,
-                        watchedUserId: { id: 1, name: "Alice"}
+                        watchedUserId: {id: 1, name: "Alice"}
                     }
                 }
             }

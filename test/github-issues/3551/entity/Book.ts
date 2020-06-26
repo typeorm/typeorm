@@ -1,4 +1,5 @@
-import { Entity, ObjectIdColumn, Column, ObjectID } from "../../../../src";
+import { Column, Entity, ObjectIdColumn } from "@typeorm/core";
+import { ObjectID } from "mongodb";
 
 export class Page {
     @Column()

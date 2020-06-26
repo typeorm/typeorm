@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Settings} from "./entity/Settings";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Settings } from "./entity/Settings";
+import { expect } from "chai";
 
 describe("github issues > #3874 Using an (empty string) enum as the type of a primary key column", () => {
 

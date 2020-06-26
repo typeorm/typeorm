@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Customer} from "./entity/Customer";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Customer } from "./entity/Customer";
 
 describe("indices > basic unique index test", () => {
 
@@ -12,7 +12,7 @@ describe("indices > basic unique index test", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    describe("unique index", function() {
+    describe("unique index", function () {
 
         it("should work without errors", () => Promise.all(connections.map(async connection => {
             const customer = new Customer();

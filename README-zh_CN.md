@@ -70,7 +70,7 @@ TypeORM 的一些特性:
 通过使用 `TypeORM` 你的 `models` 看起来如下:
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -107,7 +107,7 @@ await repository.remove(timber);
 或者，如果你更喜欢使用 `ActiveRecord` 模式，也可以这样用：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from "@typeorm/core";
 
 @Entity()
 export class User extends BaseEntity {
@@ -324,7 +324,7 @@ export class Photo {
 让我们将 `Photo` 模型作为一个实体
 
 ```typescript
-import { Entity } from "typeorm";
+import { Entity } from "@typeorm/core";
 
 @Entity()
 export class Photo {
@@ -345,7 +345,7 @@ export class Photo {
 要添加数据库列，你只需要将要生成的实体属性加上 `@Column` 装饰器。
 
 ```typescript
-import { Entity, Column } from "typeorm";
+import { Entity, Column } from "@typeorm/core";
 
 @Entity()
 export class Photo {
@@ -379,7 +379,7 @@ export class Photo {
 每个**必须**至少有一个主键列。这是必须的，你无法避免。要使列成为主键，你需要使用 `@PrimaryColumn` 装饰器。
 
 ```typescript
-import { Entity, Column, PrimaryColumn } from "typeorm";
+import { Entity, Column, PrimaryColumn } from "@typeorm/core";
 
 @Entity()
 export class Photo {
@@ -408,7 +408,7 @@ export class Photo {
 假设你希望 id 列自动生成（这称为 auto-increment/sequence/serial/generated identity column）。为此你需要将`@PrimaryColumn` 装饰器更改为 `@PrimaryGeneratedColumn` 装饰器：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Photo {
@@ -438,7 +438,7 @@ export class Photo {
 数字被映射到一个类似 integer 类型（取决于数据库类型）。但是我们不希望所有的列都是有限的 varchars 或 integer，让我们修改下代码以设置想要的数据类型：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class Photo {
@@ -472,7 +472,7 @@ export class Photo {
 
 ```typescript
 import "reflect-metadata";
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { Photo } from "./entity/Photo";
 
 createConnection({
@@ -503,7 +503,7 @@ createConnection({
 之后当我们创建更多实体时，都需要一一将它们添加到配置中的实体中，但是这不是很方便，所以我们可以设置加载整个目录，从中连接所有实体并使用：
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 
 createConnection({
   type: "mysql",
@@ -548,7 +548,7 @@ createConnection({
 现在创建一个新的 photo 存到数据库：
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/)
@@ -574,7 +574,7 @@ createConnection(/*...*/)
 我们可以使用ES8(ES2017)的新特性，并使用 async/await 语法代替：
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/)
@@ -599,7 +599,7 @@ createConnection(/*...*/)
 例如，加载已经保存的实体：
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/)
@@ -620,7 +620,7 @@ createConnection(/*...*/)
 现在让我们重构之前的代码，并使用 `Repository` 替代 `EntityManager`。每个实体都有自己的repository，可以处理其实体的所有操作。当你经常处理实体时，Repositories 比 EntityManagers 更方便使用：
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/)
@@ -650,7 +650,7 @@ createConnection(/*...*/)
 让我们使用 Repository 尝试更多的加载操作:
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/)
@@ -683,7 +683,7 @@ createConnection(/*...*/)
 让我们从数据库加载出 photo，更新并保存到数据库：
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/)
@@ -703,7 +703,7 @@ createConnection(/*...*/)
 让我们从数据库中删除 Photo:
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/)
@@ -722,7 +722,7 @@ createConnection(/*...*/)
 要与另一个类创建一对一的关系。先在 `PhotoMetadata.ts` 中创建一个新类。此 PhotoMetadata 类应包含 photo 的其他元信息：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "@typeorm/core";
 import { Photo } from "./Photo";
 
 @Entity()
@@ -778,7 +778,7 @@ export class PhotoMetadata {
 现在让我们来创建一个 photo，它的元信息将它们互相连接起来。
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { Photo } from "./entity/Photo";
 import { PhotoMetadata } from "./entity/PhotoMetadata";
 
@@ -821,7 +821,7 @@ createConnection(/*...*/)
 关系可以是单向的或双向的。目前 PhotoMetadata 和 Photo 之间的关系是单向的。关系的所有者是 PhotoMetadata，而 Photo 对 PhotoMetadata 一无所知。这使得从 Photo 中访问 PhotoMetadata 变得很复杂。要解决这个问题，我们应该在 PhotoMetadata 和 Photo 之间建立双向关系。让我们来修改一下实体：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "@typeorm/core";
 import { Photo } from "./Photo";
 
 @Entity()
@@ -835,7 +835,7 @@ export class PhotoMetadata {
 ```
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from "@typeorm/core";
 import { PhotoMetadata } from "./PhotoMetadata";
 
 @Entity()
@@ -856,7 +856,7 @@ export class Photo {
 在一个查询中加载 photo 及 photo metadata 有两种方法。使用 `find *` 或使用 `QueryBuilder`。我们先使用 `find *` 方法。 `find *` 方法允许你使用 `FindOneOptions` / `FindManyOptions` 接口指定对象。
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { Photo } from "./entity/Photo";
 import { PhotoMetadata } from "./entity/PhotoMetadata";
 
@@ -874,7 +874,7 @@ photos 包含来自数据库的 photos 数组，每个 photo 包含其 photo met
 使用find选项很简单，但是如果你需要更复杂的查询，则应该使用 `QueryBuilder`。 `QueryBuilder` 使用更优雅的方式执行更复杂的查询：
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "@typeorm/core";
 import { Photo } from "./entity/Photo";
 import { PhotoMetadata } from "./entity/PhotoMetadata";
 
@@ -945,7 +945,7 @@ createConnection(options)
 让我们创建一个多对一/一对多的关系。假设一个 photo 有一个 author，每个 author 都可以有多个 photos。首先让我们创建一个`Author`类：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinColumn } from "@typeorm/core";
 import { Photo } from "./Photo";
 
 @Entity()
@@ -967,7 +967,7 @@ export class Author {
 现在让我们将关系的所有者方添加到 Photo 实体中：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from "@typeorm/core";
 import { PhotoMetadata } from "./PhotoMetadata";
 import { Author } from "./Author";
 
@@ -1012,7 +1012,7 @@ export class Photo {
 假设一个 photo 可以放在多个 albums 中，每个 albums 可以包含多个 photo。让我们创建一个`Album`类：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "@typeorm/core";
 
 @Entity()
 export class Album {

@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Item} from "./entity/Item";
-import {User} from "./entity/User";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Item } from "./entity/Item";
+import { User } from "./entity/User";
 
 describe("github issues > #495 Unable to set multi-column indices", () => {
 

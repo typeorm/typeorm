@@ -1,16 +1,16 @@
 import "reflect-metadata";
-import {expect} from "chai";
+import { expect } from "chai";
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases
 } from "../../../../../utils/test-utils";
-import {Connection} from "../../../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {Counters} from "./entity/Counters";
-import {User} from "./entity/User";
-import {Subcounters} from "./entity/Subcounters";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { Counters } from "./entity/Counters";
+import { User } from "./entity/User";
+import { Subcounters } from "./entity/Subcounters";
 
 describe("query builder > relation-id > one-to-one > embedded", () => {
 

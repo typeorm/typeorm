@@ -1,10 +1,10 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Category} from "./entity/Category";
-import {Question} from "./entity/Question";
-import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
+import { Connection } from "@typeorm/core";
+import { CockroachDriver } from "@typeorm/driver-cockroachdb";
+import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import { Category } from "./entity/Category";
+import { Question } from "./entity/Question";
+import { AbstractSqliteDriver } from "@typeorm/driver-sqlite-abstract";
 
 describe("schema builder > update primary keys", () => {
 

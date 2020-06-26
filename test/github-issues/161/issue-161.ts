@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Ticket} from "./entity/Ticket";
-import {Request} from "./entity/Request";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Ticket } from "./entity/Ticket";
+import { Request } from "./entity/Request";
+import { expect } from "chai";
 
 describe("github issues > #161 joinAndSelect can't find entity from inverse side of relation", () => {
 
@@ -95,7 +95,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
         const loadedRequest = await connection.manager.findOne(Request, 2, {
             join: {
                 alias: "request",
-                innerJoinAndSelect: { ticket: "request.ticket" }
+                innerJoinAndSelect: {ticket: "request.ticket"}
             }
         });
 

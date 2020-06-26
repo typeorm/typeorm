@@ -7,7 +7,7 @@
 例如：
 
 ```typescript
-import { getRepository } from "typeorm";
+import { getRepository } from "@typeorm/core";
 import { User } from "./entity/User";
 
 const userRepository = getRepository(User); // 你也可以通过getConnection().getRepository()或getManager().getRepository() 获取

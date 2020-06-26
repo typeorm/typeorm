@@ -1,7 +1,7 @@
-import {Connection} from "../../../src";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {User} from "./entity/User";
-import {Photo} from "./entity/Photo";
+import { Connection } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { User } from "./entity/User";
+import { Photo } from "./entity/Photo";
 
 describe("github issues > #2044 Should not double get embedded column value", () => {
 

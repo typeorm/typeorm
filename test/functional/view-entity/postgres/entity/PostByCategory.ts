@@ -1,8 +1,6 @@
-import {Connection} from "../../../../../src";
-import {ViewColumn} from "../../../../../src/decorator/columns/ViewColumn";
-import {ViewEntity} from "../../../../../src/decorator/entity-view/ViewEntity";
-import {Category} from "./Category";
-import {Post} from "./Post";
+import { Connection, ViewColumn, ViewEntity } from "@typeorm/core";
+import { Category } from "./Category";
+import { Post } from "./Post";
 
 @ViewEntity({
     materialized: true,

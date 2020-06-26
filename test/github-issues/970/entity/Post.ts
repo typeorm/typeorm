@@ -1,7 +1,5 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {ObjectIdColumn} from "../../../../src/decorator/columns/ObjectIdColumn";
-import {ObjectID} from "../../../../src/driver/mongodb/typings";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Column, Entity, ObjectIdColumn } from "@typeorm/core";
+import { ObjectID } from "mongodb";
 
 @Entity()
 export class Post {

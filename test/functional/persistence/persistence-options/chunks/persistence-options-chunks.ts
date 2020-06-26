@@ -1,7 +1,11 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {Connection} from "../../../../../src/connection/Connection";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { Connection } from "@typeorm/core";
 
 describe("persistence > persistence options > chunks", () => {
 
@@ -10,7 +14,7 @@ describe("persistence > persistence options > chunks", () => {
     // -------------------------------------------------------------------------
 
     let connections: Connection[];
-    before(async () => connections = await createTestingConnections({ __dirname, enabledDrivers: ["postgres"] }));
+    before(async () => connections = await createTestingConnections({__dirname, enabledDrivers: ["postgres"]}));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
@@ -26,7 +30,7 @@ describe("persistence > persistence options > chunks", () => {
             post.description = "Hello" + i;
             posts.push(post);
         }
-        await connection.manager.save(posts, { chunk: 5000 }); // CI falls on Node 4 with 10000 chunks
+        await connection.manager.save(posts, {chunk: 5000}); // CI falls on Node 4 with 10000 chunks
     })));
 
 });

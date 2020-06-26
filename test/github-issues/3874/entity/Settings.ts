@@ -1,4 +1,4 @@
-import {Entity, Column, PrimaryColumn} from "../../../../src";
+import { Column, Entity, PrimaryColumn } from "@typeorm/core";
 
 enum Singleton {
     EMPTY = ""

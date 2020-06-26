@@ -1,11 +1,11 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Controller} from "./controller/Controller";
-import {A} from "./entity/A";
-import {B} from "./entity/B";
-import {C} from "./entity/C";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Controller } from "./controller/Controller";
+import { A } from "./entity/A";
+import { B } from "./entity/B";
+import { C } from "./entity/C";
 
 describe("github issues > #1656 Wrong repository order with multiple TransactionRepository inside a Transaction decorator", () => {
 

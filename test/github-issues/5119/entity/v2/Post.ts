@@ -1,9 +1,4 @@
-import {
-    Column,
-    Entity,
-    ManyToOne,
-    PrimaryGeneratedColumn
-} from "../../../../../src/index";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
 import { Account } from "./Account";
 
 @Entity()

@@ -1,8 +1,6 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Column, Entity, PrimaryColumn } from "@typeorm/core";
 
-@Entity("view", { synchronize: false })
+@Entity("view", {synchronize: false})
 export class View {
 
     @PrimaryColumn()

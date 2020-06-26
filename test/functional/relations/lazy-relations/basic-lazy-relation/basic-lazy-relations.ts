@@ -1,13 +1,12 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
 import {
-    Post,
-} from "./entity/Post";
-import {
-    Category,
-} from "./entity/Category";
-import {EntitySchema} from "../../../../../src";
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection, EntitySchema } from "@typeorm/core";
+import { Post, } from "./entity/Post";
+import { Category, } from "./entity/Category";
 
 /**
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
@@ -66,9 +65,9 @@ describe("basic-lazy-relations", () => {
 
         const categories = await post.categories;
         categories.length.should.be.equal(3);
-        categories.should.deep.include({ id: 1, name: "kids" });
-        categories.should.deep.include({ id: 2, name: "people" });
-        categories.should.deep.include({ id: 3, name: "animals" });
+        categories.should.deep.include({id: 1, name: "kids"});
+        categories.should.deep.include({id: 2, name: "people"});
+        categories.should.deep.include({id: 3, name: "animals"});
     })));
 
 
@@ -104,9 +103,9 @@ describe("basic-lazy-relations", () => {
 
         const categories = await post.twoSideCategories;
         categories.length.should.be.equal(3);
-        categories.should.deep.include({ id: 1, name: "kids" });
-        categories.should.deep.include({ id: 2, name: "people" });
-        categories.should.deep.include({ id: 3, name: "animals" });
+        categories.should.deep.include({id: 1, name: "kids"});
+        categories.should.deep.include({id: 2, name: "people"});
+        categories.should.deep.include({id: 3, name: "animals"});
 
         const category = (await categoryRepository.findOne(1))!;
         category.name.should.be.equal("kids");
@@ -176,7 +175,7 @@ describe("basic-lazy-relations", () => {
         await connection.manager.save(category);
         await connection.manager.save(post);
 
-        const loadedPost = await connection.manager.findOne(Post, { where: { title: "post with great category" } });
+        const loadedPost = await connection.manager.findOne(Post, {where: {title: "post with great category"}});
         const loadedCategory = await loadedPost!.category;
 
         loadedCategory.name.should.be.equal("category of great post");
@@ -213,7 +212,7 @@ describe("basic-lazy-relations", () => {
         await connection.manager.save(category);
         await connection.manager.save(post);
 
-        const loadedPost = await connection.manager.findOne(Post, { where: { title: "post with great category" } });
+        const loadedPost = await connection.manager.findOne(Post, {where: {title: "post with great category"}});
         const loadedCategory = await loadedPost!.twoSideCategory;
 
         loadedCategory.name.should.be.equal("category of great post");
@@ -249,7 +248,7 @@ describe("basic-lazy-relations", () => {
         post.twoSideCategory = Promise.resolve(category);
         await connection.manager.save(post);
 
-        const loadedCategory = await connection.manager.findOne(Category, { where: { name: "category of great post" } });
+        const loadedCategory = await connection.manager.findOne(Category, {where: {name: "category of great post"}});
         const loadedPost = await loadedCategory!.twoSidePosts2;
 
         loadedPost[0].title.should.be.equal("post with great category");
@@ -285,7 +284,7 @@ describe("basic-lazy-relations", () => {
         post.oneCategory = Promise.resolve(category);
         await connection.manager.save(post);
 
-        const loadedPost = await connection.manager.findOne(Post, { where: { title: "post with great category" } });
+        const loadedPost = await connection.manager.findOne(Post, {where: {title: "post with great category"}});
         const loadedCategory = await loadedPost!.oneCategory;
 
         loadedCategory.name.should.be.equal("category of great post");
@@ -321,7 +320,7 @@ describe("basic-lazy-relations", () => {
         post.oneCategory = Promise.resolve(category);
         await connection.manager.save(post);
 
-        const loadedCategory = await connection.manager.findOne(Category, { where: { name: "category of great post" } });
+        const loadedCategory = await connection.manager.findOne(Category, {where: {name: "category of great post"}});
         const loadedPost = await loadedCategory!.onePost;
         loadedPost.title.should.be.equal("post with great category");
     })));
@@ -331,14 +330,14 @@ describe("basic-lazy-relations", () => {
             const category = new Category();
             category.name = "category of great post";
             await manager.save(category);
-    
+
             const post = new Post();
             post.title = "post with great category";
             post.text = "post with great category and great text";
             post.oneCategory = Promise.resolve(category);
             await manager.save(post);
 
-            const loadedCategory = await manager.findOne(Category, { where: { name: "category of great post" } });
+            const loadedCategory = await manager.findOne(Category, {where: {name: "category of great post"}});
             const loadedPost = await loadedCategory!.onePost;
             loadedPost.title.should.be.equal("post with great category");
         });
@@ -349,14 +348,14 @@ describe("basic-lazy-relations", () => {
             const category = new Category();
             category.name = "category of great post";
             await manager.save(category);
-    
+
             const post = new Post();
             post.title = "post with great category";
             post.text = "post with great category and great text";
             post.oneCategory = Promise.resolve(category);
             await manager.save(post);
 
-            return await manager.findOne(Category, { where: { name: "category of great post" } });
+            return await manager.findOne(Category, {where: {name: "category of great post"}});
         });
         const loadedPost = await loadedCategory!.onePost;
         loadedPost.title.should.be.equal("post with great category");

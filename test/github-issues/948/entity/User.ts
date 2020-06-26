@@ -1,6 +1,4 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 @Entity()
 export class User {
@@ -11,7 +9,7 @@ export class User {
     @Column()
     name: string;
 
-    @Column({ type: "varchar", array: true })
+    @Column({type: "varchar", array: true})
     roles: string[];
 
 }

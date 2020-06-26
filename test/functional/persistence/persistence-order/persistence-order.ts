@@ -1,15 +1,13 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {ConnectionMetadataBuilder} from "../../../../src/connection/ConnectionMetadataBuilder";
-import {EntityMetadataValidator} from "../../../../src/metadata-builder/EntityMetadataValidator";
-import {expect} from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection, ConnectionMetadataBuilder, EntityMetadataValidator } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { expect } from "chai";
 
 describe("persistence > order of persistence execution operations", () => {
 
-    describe("should throw exception when non-resolvable circular relations found", function() {
+    describe("should throw exception when non-resolvable circular relations found", function () {
 
         it("should throw CircularRelationsError", () => {
             const connection = new Connection({ // dummy connection options, connection won't be established anyway
@@ -29,7 +27,7 @@ describe("persistence > order of persistence execution operations", () => {
 
     });
 
-    describe.skip("should persist all entities in correct order", function() {
+    describe.skip("should persist all entities in correct order", function () {
 
         let connections: Connection[];
         before(async () => connections = await createTestingConnections({
@@ -77,7 +75,6 @@ describe("persistence > order of persistence execution operations", () => {
              }]);*/
         })));
     });
-
 
 
 });

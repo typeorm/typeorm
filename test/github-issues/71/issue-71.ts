@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Artikel} from "./entity/Artikel";
-import {Kollektion} from "./entity/Kollektion";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Artikel } from "./entity/Artikel";
+import { Kollektion } from "./entity/Kollektion";
 
 describe("github issues > #71 ManyToOne relation with custom column name persistence fails", () => {
 
@@ -31,7 +31,7 @@ describe("github issues > #71 ManyToOne relation with custom column name persist
         const loadedArtikel = await connection.manager
             .createQueryBuilder(Artikel, "artikel")
             .innerJoinAndSelect("artikel.kollektion", "kollektion")
-            .where("artikel.id=:id", { id: 1 })
+            .where("artikel.id=:id", {id: 1})
             .getOne();
 
         expect(kollektion).not.to.be.undefined;

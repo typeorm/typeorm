@@ -4,7 +4,7 @@
 示例如何在 TypeORM 中使用 class-validator：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "@typeorm/core";
 import { Contains, IsInt, Length, IsEmail, IsFQDN, IsDate, Min, Max } from "class-validator";
 
 @Entity()
@@ -43,7 +43,7 @@ export class Post {
 验证:
 
 ```typescript
-import { getManager } from "typeorm";
+import { getManager } from "@typeorm/core";
 import { validate } from "class-validator";
 
 let post = new Post();

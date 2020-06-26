@@ -1,9 +1,13 @@
 import "reflect-metadata";
-import {Connection} from "../../../../../src";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Post} from "./entity/Post";
-import {PostWithOptions} from "./entity/PostWithOptions";
-import {PostWithoutTypes} from "./entity/PostWithoutTypes";
+import { Connection } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Post } from "./entity/Post";
+import { PostWithOptions } from "./entity/PostWithOptions";
+import { PostWithoutTypes } from "./entity/PostWithoutTypes";
 
 describe("database schema > column types > cockroachdb", () => {
 
@@ -68,11 +72,11 @@ describe("database schema > column types > cockroachdb", () => {
         post.bool = false;
         post.inet = "192.168.100.128";
         post.uuid = "0e37df36-f698-11e6-8dd4-cb9ced3df976";
-        post.jsonb = { id: 1, name: "Post" };
-        post.json = { id: 1, name: "Post" };
+        post.jsonb = {id: 1, name: "Post"};
+        post.json = {id: 1, name: "Post"};
         post.array = ["1", "2", "3"];
         post.simpleArray = ["A", "B", "C"];
-        post.simpleJson = { param: "VALUE" };
+        post.simpleJson = {param: "VALUE"};
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;

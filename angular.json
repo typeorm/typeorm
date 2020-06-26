@@ -1,0 +1,2913 @@
+{
+  "version": 1,
+  "projects": {
+    "browser-core": {
+      "projectType": "library",
+      "root": "libs/browser-core",
+      "sourceRoot": "libs/browser-core/src",
+      "prefix": "typeorm",
+      "architect": {
+        "build": {
+          "builder": "@nrwl/angular:package",
+          "options": {
+            "tsConfig": "libs/browser-core/tsconfig.lib.json",
+            "project": "libs/browser-core/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "libs/browser-core/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/browser-core/tsconfig.lib.json",
+              "libs/browser-core/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/browser-core/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/browser-core/jest.config.js",
+            "tsConfig": "libs/browser-core/tsconfig.spec.json",
+            "passWithNoTests": true,
+            "setupFile": "libs/browser-core/src/test-setup.ts"
+          }
+        }
+      },
+      "schematics": {}
+    },
+    "driver-mysql": {
+      "root": "libs/driver/mysql",
+      "sourceRoot": "libs/driver/mysql/src",
+      "projectType": "library",
+      "schematics": {},
+      "architect": {
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/mysql/tsconfig.lib.json",
+              "libs/driver/mysql/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/mysql/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/mysql/jest.config.js",
+            "tsConfig": "libs/driver/mysql/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        },
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/driver/mysql",
+            "tsConfig": "libs/driver/mysql/tsconfig.lib.json",
+            "packageJson": "libs/driver/mysql/package.json",
+            "main": "libs/driver/mysql/src/index.ts",
+            "assets": [
+              "libs/driver/mysql/*.md"
+            ]
+          }
+        }
+      }
+    },
+    "ng-sample1-simple-entity": {
+      "projectType": "application",
+      "schematics": {
+        "@nrwl/angular:component": {
+          "style": "scss"
+        }
+      },
+      "root": "apps/ng-sample1-simple-entity",
+      "sourceRoot": "apps/ng-sample1-simple-entity/src",
+      "prefix": "typeorm",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist/apps/ng-sample1-simple-entity",
+            "index": "apps/ng-sample1-simple-entity/src/index.html",
+            "main": "apps/ng-sample1-simple-entity/src/main.ts",
+            "polyfills": "apps/ng-sample1-simple-entity/src/polyfills.ts",
+            "tsConfig": "apps/ng-sample1-simple-entity/tsconfig.app.json",
+            "aot": true,
+            "assets": [
+              "apps/ng-sample1-simple-entity/src/favicon.ico",
+              "apps/ng-sample1-simple-entity/src/assets",
+              {
+                "glob": "sql-wasm.wasm",
+                "input": "node_modules/sql.js/dist",
+                "output": "/"
+              }
+            ],
+            "styles": [
+              "apps/ng-sample1-simple-entity/src/styles.scss"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "apps/ng-sample1-simple-entity/src/environments/environment.ts",
+                  "with": "apps/ng-sample1-simple-entity/src/environments/environment.prod.ts"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "extractCss": true,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb",
+                  "maximumError": "10kb"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "browserTarget": "ng-sample1-simple-entity:build"
+          },
+          "configurations": {
+            "production": {
+              "browserTarget": "ng-sample1-simple-entity:build:production"
+            }
+          }
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "ng-sample1-simple-entity:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/ng-sample1-simple-entity/tsconfig.app.json",
+              "apps/ng-sample1-simple-entity/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/ng-sample1-simple-entity/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/ng-sample1-simple-entity/jest.config.js",
+            "tsConfig": "apps/ng-sample1-simple-entity/tsconfig.spec.json",
+            "passWithNoTests": true,
+            "setupFile": "apps/ng-sample1-simple-entity/src/test-setup.ts"
+          }
+        }
+      }
+    },
+    "ng-sample1-simple-entity-e2e": {
+      "root": "apps/ng-sample1-simple-entity-e2e",
+      "sourceRoot": "apps/ng-sample1-simple-entity-e2e/src",
+      "projectType": "application",
+      "architect": {
+        "e2e": {
+          "builder": "@nrwl/cypress:cypress",
+          "options": {
+            "cypressConfig": "apps/ng-sample1-simple-entity-e2e/cypress.json",
+            "tsConfig": "apps/ng-sample1-simple-entity-e2e/tsconfig.e2e.json",
+            "devServerTarget": "ng-sample1-simple-entity:serve"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "ng-sample1-simple-entity:serve:production"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/ng-sample1-simple-entity-e2e/tsconfig.e2e.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/ng-sample1-simple-entity-e2e/**"
+            ]
+          }
+        }
+      }
+    },
+    "sample1-simple-entity": {
+      "root": "apps/sample1-simple-entity",
+      "sourceRoot": "apps/sample1-simple-entity/src",
+      "projectType": "application",
+      "prefix": "sample1-simple-entity",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample1-simple-entity",
+            "main": "apps/sample1-simple-entity/src/app.ts",
+            "tsConfig": "apps/sample1-simple-entity/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample1-simple-entity/src/environments/environment.ts",
+                  "with": "apps/sample1-simple-entity/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample1-simple-entity:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample1-simple-entity/tsconfig.app.json",
+              "apps/sample1-simple-entity/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample1-simple-entity/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample1-simple-entity/jest.config.js",
+            "tsConfig": "apps/sample1-simple-entity/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample2-one-to-one": {
+      "root": "apps/sample2-one-to-one",
+      "sourceRoot": "apps/sample2-one-to-one/src",
+      "projectType": "application",
+      "prefix": "sample2-one-to-one",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample2-one-to-one",
+            "main": "apps/sample2-one-to-one/src/app.ts",
+            "tsConfig": "apps/sample2-one-to-one/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample2-one-to-one/src/environments/environment.ts",
+                  "with": "apps/sample2-one-to-one/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample2-one-to-one:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample2-one-to-one/tsconfig.app.json",
+              "apps/sample2-one-to-one/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample2-one-to-one/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample2-one-to-one/jest.config.js",
+            "tsConfig": "apps/sample2-one-to-one/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "driver-postgres": {
+      "root": "libs/driver/postgres",
+      "sourceRoot": "libs/driver/postgres/src",
+      "projectType": "library",
+      "schematics": {},
+      "architect": {
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/postgres/tsconfig.lib.json",
+              "libs/driver/postgres/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/postgres/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/postgres/jest.config.js",
+            "tsConfig": "libs/driver/postgres/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        },
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/driver/postgres",
+            "tsConfig": "libs/driver/postgres/tsconfig.lib.json",
+            "packageJson": "libs/driver/postgres/package.json",
+            "main": "libs/driver/postgres/src/index.ts",
+            "assets": [
+              "libs/driver/postgres/*.md"
+            ]
+          }
+        }
+      }
+    },
+    "cli": {
+      "projectType": "library",
+      "root": "libs/cli",
+      "sourceRoot": "libs/cli/src",
+      "prefix": "typeorm",
+      "architect": {
+        "build": {
+          "builder": "@nrwl/angular:package",
+          "options": {
+            "tsConfig": "libs/cli/tsconfig.lib.json",
+            "project": "libs/cli/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "libs/cli/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/cli/tsconfig.lib.json",
+              "libs/cli/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/cli/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/cli/jest.config.js",
+            "tsConfig": "libs/cli/tsconfig.spec.json",
+            "passWithNoTests": true,
+            "setupFile": "libs/cli/src/test-setup.ts"
+          }
+        }
+      },
+      "schematics": {}
+    },
+    "driver-sqljs": {
+      "projectType": "library",
+      "root": "libs/driver/sqljs",
+      "sourceRoot": "libs/driver/sqljs/src",
+      "prefix": "typeorm",
+      "architect": {
+        "build": {
+          "builder": "@nrwl/angular:package",
+          "options": {
+            "tsConfig": "libs/driver/sqljs/tsconfig.lib.json",
+            "project": "libs/driver/sqljs/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "libs/driver/sqljs/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/sqljs/tsconfig.lib.json",
+              "libs/driver/sqljs/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/sqljs/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/sqljs/jest.config.js",
+            "tsConfig": "libs/driver/sqljs/tsconfig.spec.json",
+            "passWithNoTests": true,
+            "setupFile": "libs/driver/sqljs/src/test-setup.ts"
+          }
+        }
+      },
+      "schematics": {}
+    },
+    "driver-sqlite-abstract": {
+      "projectType": "library",
+      "root": "libs/driver/sqlite-abstract",
+      "sourceRoot": "libs/driver/sqlite-abstract/src",
+      "prefix": "typeorm",
+      "architect": {
+        "build": {
+          "builder": "@nrwl/angular:package",
+          "options": {
+            "tsConfig": "libs/driver/sqlite-abstract/tsconfig.lib.json",
+            "project": "libs/driver/sqlite-abstract/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "libs/driver/sqlite-abstract/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/sqlite-abstract/tsconfig.lib.json",
+              "libs/driver/sqlite-abstract/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/sqlite-abstract/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/sqlite-abstract/jest.config.js",
+            "tsConfig": "libs/driver/sqlite-abstract/tsconfig.spec.json",
+            "passWithNoTests": true,
+            "setupFile": "libs/driver/sqlite-abstract/src/test-setup.ts"
+          }
+        }
+      },
+      "schematics": {}
+    },
+    "driver-mongodb": {
+      "root": "libs/driver/mongodb",
+      "sourceRoot": "libs/driver/mongodb/src",
+      "projectType": "library",
+      "schematics": {},
+      "architect": {
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/mongodb/tsconfig.lib.json",
+              "libs/driver/mongodb/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/mongodb/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/mongodb/jest.config.js",
+            "tsConfig": "libs/driver/mongodb/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        },
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/driver/mongodb",
+            "tsConfig": "libs/driver/mongodb/tsconfig.lib.json",
+            "packageJson": "libs/driver/mongodb/package.json",
+            "main": "libs/driver/mongodb/src/index.ts",
+            "assets": [
+              "libs/driver/mongodb/*.md"
+            ]
+          }
+        }
+      }
+    },
+    "sample34-mongodb": {
+      "root": "apps/sample34-mongodb",
+      "sourceRoot": "apps/sample34-mongodb/src",
+      "projectType": "application",
+      "prefix": "sample34-mongodb",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample34-mongodb",
+            "main": "apps/sample34-mongodb/src/app.ts",
+            "tsConfig": "apps/sample34-mongodb/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample34-mongodb/src/environments/environment.ts",
+                  "with": "apps/sample34-mongodb/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample34-mongodb:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample34-mongodb/tsconfig.app.json",
+              "apps/sample34-mongodb/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample34-mongodb/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample34-mongodb/jest.config.js",
+            "tsConfig": "apps/sample34-mongodb/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "driver-sqlite": {
+      "projectType": "library",
+      "root": "libs/driver/sqlite",
+      "sourceRoot": "libs/driver/sqlite/src",
+      "prefix": "typeorm",
+      "architect": {
+        "build": {
+          "builder": "@nrwl/angular:package",
+          "options": {
+            "tsConfig": "libs/driver/sqlite/tsconfig.lib.json",
+            "project": "libs/driver/sqlite/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "libs/driver/sqlite/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/sqlite/tsconfig.lib.json",
+              "libs/driver/sqlite/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/sqlite/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/sqlite/jest.config.js",
+            "tsConfig": "libs/driver/sqlite/tsconfig.spec.json",
+            "passWithNoTests": true,
+            "setupFile": "libs/driver/sqlite/src/test-setup.ts"
+          }
+        }
+      },
+      "schematics": {}
+    },
+    "driver-sqlserver": {
+      "projectType": "library",
+      "root": "libs/driver/sqlserver",
+      "sourceRoot": "libs/driver/sqlserver/src",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/driver/sqlserver",
+            "tsConfig": "libs/driver/sqlserver/tsconfig.lib.json",
+            "packageJson": "libs/driver/sqlserver/package.json",
+            "main": "libs/driver/sqlserver/src/index.ts",
+            "assets": [
+              "libs/driver/sqlserver/*.md"
+            ]
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/sqlserver/tsconfig.lib.json",
+              "libs/driver/sqlserver/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/sqlserver/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/sqlserver/jest.config.js",
+            "tsConfig": "libs/driver/sqlserver/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "core": {
+      "root": "libs/core",
+      "sourceRoot": "libs/core/src",
+      "projectType": "library",
+      "schematics": {},
+      "architect": {
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/core/tsconfig.lib.json",
+              "libs/core/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/core/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/core/jest.config.js",
+            "tsConfig": "libs/core/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        },
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/core",
+            "tsConfig": "libs/core/tsconfig.lib.json",
+            "packageJson": "libs/core/package.json",
+            "main": "libs/core/src/index.ts",
+            "assets": [
+              "libs/core/*.md"
+            ]
+          }
+        }
+      }
+    },
+    "driver-oracle": {
+      "root": "libs/driver/oracle",
+      "sourceRoot": "libs/driver/oracle/src",
+      "projectType": "library",
+      "schematics": {},
+      "architect": {
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/oracle/tsconfig.lib.json",
+              "libs/driver/oracle/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/oracle/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/oracle/jest.config.js",
+            "tsConfig": "libs/driver/oracle/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        },
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/driver/oracle",
+            "tsConfig": "libs/driver/oracle/tsconfig.lib.json",
+            "packageJson": "libs/driver/oracle/package.json",
+            "main": "libs/driver/oracle/src/index.ts",
+            "assets": [
+              "libs/driver/oracle/*.md"
+            ]
+          }
+        }
+      }
+    },
+    "driver-aurora-data-api": {
+      "root": "libs/driver/aurora-data-api",
+      "sourceRoot": "libs/driver/aurora-data-api/src",
+      "projectType": "library",
+      "schematics": {},
+      "architect": {
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/aurora-data-api/tsconfig.lib.json",
+              "libs/driver/aurora-data-api/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/aurora-data-api/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/aurora-data-api/jest.config.js",
+            "tsConfig": "libs/driver/aurora-data-api/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        },
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/driver/aurora-data-api",
+            "tsConfig": "libs/driver/aurora-data-api/tsconfig.lib.json",
+            "packageJson": "libs/driver/aurora-data-api/package.json",
+            "main": "libs/driver/aurora-data-api/src/index.ts",
+            "assets": [
+              "libs/driver/aurora-data-api/*.md"
+            ]
+          }
+        }
+      }
+    },
+    "driver-aurora-data-api-pg": {
+      "root": "libs/driver/aurora-data-api-pg",
+      "sourceRoot": "libs/driver/aurora-data-api-pg/src",
+      "projectType": "library",
+      "schematics": {},
+      "architect": {
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/aurora-data-api-pg/tsconfig.lib.json",
+              "libs/driver/aurora-data-api-pg/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/aurora-data-api-pg/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/aurora-data-api-pg/jest.config.js",
+            "tsConfig": "libs/driver/aurora-data-api-pg/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        },
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/driver/aurora-data-api-pg",
+            "tsConfig": "libs/driver/aurora-data-api-pg/tsconfig.lib.json",
+            "packageJson": "libs/driver/aurora-data-api-pg/package.json",
+            "main": "libs/driver/aurora-data-api-pg/src/index.ts",
+            "assets": [
+              "libs/driver/aurora-data-api-pg/*.md"
+            ]
+          }
+        }
+      }
+    },
+    "driver-cockroachdb": {
+      "root": "libs/driver/cockroachdb",
+      "sourceRoot": "libs/driver/cockroachdb/src",
+      "projectType": "library",
+      "schematics": {},
+      "architect": {
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/cockroachdb/tsconfig.lib.json",
+              "libs/driver/cockroachdb/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/cockroachdb/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/cockroachdb/jest.config.js",
+            "tsConfig": "libs/driver/cockroachdb/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        },
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/driver/cockroachdb",
+            "tsConfig": "libs/driver/cockroachdb/tsconfig.lib.json",
+            "packageJson": "libs/driver/cockroachdb/package.json",
+            "main": "libs/driver/cockroachdb/src/index.ts",
+            "assets": [
+              "libs/driver/cockroachdb/*.md"
+            ]
+          }
+        }
+      }
+    },
+    "driver-sql-abstract": {
+      "projectType": "library",
+      "root": "libs/driver/sql-abstract",
+      "sourceRoot": "libs/driver/sql-abstract/src",
+      "prefix": "typeorm",
+      "architect": {
+        "build": {
+          "builder": "@nrwl/angular:package",
+          "options": {
+            "tsConfig": "libs/driver/sql-abstract/tsconfig.lib.json",
+            "project": "libs/driver/sql-abstract/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "libs/driver/sql-abstract/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/sql-abstract/tsconfig.lib.json",
+              "libs/driver/sql-abstract/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/sql-abstract/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/sql-abstract/jest.config.js",
+            "tsConfig": "libs/driver/sql-abstract/tsconfig.spec.json",
+            "passWithNoTests": true,
+            "setupFile": "libs/driver/sql-abstract/src/test-setup.ts"
+          }
+        }
+      },
+      "schematics": {}
+    },
+    "driver-browser-sqljs": {
+      "projectType": "library",
+      "root": "libs/driver/browser-sqljs",
+      "sourceRoot": "libs/driver/browser-sqljs/src",
+      "prefix": "typeorm",
+      "architect": {
+        "build": {
+          "builder": "@nrwl/angular:package",
+          "options": {
+            "tsConfig": "libs/driver/browser-sqljs/tsconfig.lib.json",
+            "project": "libs/driver/browser-sqljs/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "libs/driver/browser-sqljs/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/browser-sqljs/tsconfig.lib.json",
+              "libs/driver/browser-sqljs/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/browser-sqljs/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/browser-sqljs/jest.config.js",
+            "tsConfig": "libs/driver/browser-sqljs/tsconfig.spec.json",
+            "passWithNoTests": true,
+            "setupFile": "libs/driver/browser-sqljs/src/test-setup.ts"
+          }
+        }
+      },
+      "schematics": {}
+    },
+    "driver-sap": {
+      "root": "libs/driver/sap",
+      "sourceRoot": "libs/driver/sap/src",
+      "projectType": "library",
+      "schematics": {},
+      "architect": {
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/sap/tsconfig.lib.json",
+              "libs/driver/sap/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/sap/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/sap/jest.config.js",
+            "tsConfig": "libs/driver/sap/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        },
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/driver/sap",
+            "tsConfig": "libs/driver/sap/tsconfig.lib.json",
+            "packageJson": "libs/driver/sap/package.json",
+            "main": "libs/driver/sap/src/index.ts",
+            "assets": [
+              "libs/driver/sap/*.md"
+            ]
+          }
+        }
+      }
+    },
+    "sample3-many-to-one": {
+      "root": "apps/sample3-many-to-one",
+      "sourceRoot": "apps/sample3-many-to-one/src",
+      "projectType": "application",
+      "prefix": "sample3-many-to-one",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample3-many-to-one",
+            "main": "apps/sample3-many-to-one/src/app.ts",
+            "tsConfig": "apps/sample3-many-to-one/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample3-many-to-one/src/environments/environment.ts",
+                  "with": "apps/sample3-many-to-one/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample3-many-to-one:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample3-many-to-one/tsconfig.app.json",
+              "apps/sample3-many-to-one/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample3-many-to-one/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample3-many-to-one/jest.config.js",
+            "tsConfig": "apps/sample3-many-to-one/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample4-many-to-many": {
+      "root": "apps/sample4-many-to-many",
+      "sourceRoot": "apps/sample4-many-to-many/src",
+      "projectType": "application",
+      "prefix": "sample4-many-to-many",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample4-many-to-many",
+            "main": "apps/sample4-many-to-many/src/app.ts",
+            "tsConfig": "apps/sample4-many-to-many/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample4-many-to-many/src/environments/environment.ts",
+                  "with": "apps/sample4-many-to-many/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample4-many-to-many:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample4-many-to-many/tsconfig.app.json",
+              "apps/sample4-many-to-many/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample4-many-to-many/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample4-many-to-many/jest.config.js",
+            "tsConfig": "apps/sample4-many-to-many/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "driver-cordova": {
+      "projectType": "library",
+      "root": "libs/driver/cordova",
+      "sourceRoot": "libs/driver/cordova/src",
+      "prefix": "typeorm",
+      "architect": {
+        "build": {
+          "builder": "@nrwl/angular:package",
+          "options": {
+            "tsConfig": "libs/driver/cordova/tsconfig.lib.json",
+            "project": "libs/driver/cordova/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "libs/driver/cordova/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/cordova/tsconfig.lib.json",
+              "libs/driver/cordova/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/cordova/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/cordova/jest.config.js",
+            "tsConfig": "libs/driver/cordova/tsconfig.spec.json",
+            "passWithNoTests": true,
+            "setupFile": "libs/driver/cordova/src/test-setup.ts"
+          }
+        }
+      },
+      "schematics": {}
+    },
+    "driver-expo": {
+      "root": "libs/driver/expo",
+      "sourceRoot": "libs/driver/expo/src",
+      "projectType": "library",
+      "schematics": {},
+      "architect": {
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/expo/tsconfig.lib.json",
+              "libs/driver/expo/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/expo/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/expo/jest.config.js",
+            "tsConfig": "libs/driver/expo/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        },
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/driver/expo",
+            "tsConfig": "libs/driver/expo/tsconfig.lib.json",
+            "packageJson": "libs/driver/expo/package.json",
+            "main": "libs/driver/expo/src/index.ts",
+            "assets": [
+              "libs/driver/expo/*.md"
+            ]
+          }
+        }
+      }
+    },
+    "driver-react-native": {
+      "root": "libs/driver/react-native",
+      "sourceRoot": "libs/driver/react-native/src",
+      "projectType": "library",
+      "schematics": {},
+      "architect": {
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/react-native/tsconfig.lib.json",
+              "libs/driver/react-native/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/react-native/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/react-native/jest.config.js",
+            "tsConfig": "libs/driver/react-native/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        },
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/driver/react-native",
+            "tsConfig": "libs/driver/react-native/tsconfig.lib.json",
+            "packageJson": "libs/driver/react-native/package.json",
+            "main": "libs/driver/react-native/src/index.ts",
+            "assets": [
+              "libs/driver/react-native/*.md"
+            ]
+          }
+        }
+      }
+    },
+    "driver-nativescript": {
+      "root": "libs/driver/nativescript",
+      "sourceRoot": "libs/driver/nativescript/src",
+      "projectType": "library",
+      "schematics": {},
+      "architect": {
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/driver/nativescript/tsconfig.lib.json",
+              "libs/driver/nativescript/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!libs/driver/nativescript/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "libs/driver/nativescript/jest.config.js",
+            "tsConfig": "libs/driver/nativescript/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        },
+        "build": {
+          "builder": "@nrwl/node:package",
+          "options": {
+            "outputPath": "dist/libs/driver/nativescript",
+            "tsConfig": "libs/driver/nativescript/tsconfig.lib.json",
+            "packageJson": "libs/driver/nativescript/package.json",
+            "main": "libs/driver/nativescript/src/index.ts",
+            "assets": [
+              "libs/driver/nativescript/*.md"
+            ]
+          }
+        }
+      }
+    },
+    "sample5-subscribers": {
+      "root": "apps/sample5-subscribers",
+      "sourceRoot": "apps/sample5-subscribers/src",
+      "projectType": "application",
+      "prefix": "sample5-subscribers",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample5-subscribers",
+            "main": "apps/sample5-subscribers/src/app.ts",
+            "tsConfig": "apps/sample5-subscribers/tsconfig.app.json",
+            "assets": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample5-subscribers/src/environments/environment.ts",
+                  "with": "apps/sample5-subscribers/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample5-subscribers:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample5-subscribers/tsconfig.app.json",
+              "apps/sample5-subscribers/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample5-subscribers/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample5-subscribers/jest.config.js",
+            "tsConfig": "apps/sample5-subscribers/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample6-abstract-table": {
+      "root": "apps/sample6-abstract-table",
+      "sourceRoot": "apps/sample6-abstract-table/src",
+      "projectType": "application",
+      "prefix": "sample6-abstract-table",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample6-abstract-table",
+            "main": "apps/sample6-abstract-table/src/app.ts",
+            "tsConfig": "apps/sample6-abstract-table/tsconfig.app.json",
+            "assets": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample6-abstract-table/src/environments/environment.ts",
+                  "with": "apps/sample6-abstract-table/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample6-abstract-table:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample6-abstract-table/tsconfig.app.json",
+              "apps/sample6-abstract-table/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample6-abstract-table/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample6-abstract-table/jest.config.js",
+            "tsConfig": "apps/sample6-abstract-table/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample7-pagination": {
+      "root": "apps/sample7-pagination",
+      "sourceRoot": "apps/sample7-pagination/src",
+      "projectType": "application",
+      "prefix": "sample7-pagination",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample7-pagination",
+            "main": "apps/sample7-pagination/src/app.ts",
+            "tsConfig": "apps/sample7-pagination/tsconfig.app.json",
+            "assets": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample7-pagination/src/environments/environment.ts",
+                  "with": "apps/sample7-pagination/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample7-pagination:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample7-pagination/tsconfig.app.json",
+              "apps/sample7-pagination/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample7-pagination/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample7-pagination/jest.config.js",
+            "tsConfig": "apps/sample7-pagination/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample8-self-referencing": {
+      "root": "apps/sample8-self-referencing",
+      "sourceRoot": "apps/sample8-self-referencing/src",
+      "projectType": "application",
+      "prefix": "sample8-self-referencing",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample8-self-referencing",
+            "main": "apps/sample8-self-referencing/src/app.ts",
+            "tsConfig": "apps/sample8-self-referencing/tsconfig.app.json",
+            "assets": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample8-self-referencing/src/environments/environment.ts",
+                  "with": "apps/sample8-self-referencing/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample8-self-referencing:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample8-self-referencing/tsconfig.app.json",
+              "apps/sample8-self-referencing/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample8-self-referencing/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample8-self-referencing/jest.config.js",
+            "tsConfig": "apps/sample8-self-referencing/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample9-entity-listeners": {
+      "root": "apps/sample9-entity-listeners",
+      "sourceRoot": "apps/sample9-entity-listeners/src",
+      "projectType": "application",
+      "prefix": "sample9-entity-listeners",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample9-entity-listeners",
+            "main": "apps/sample9-entity-listeners/src/app.ts",
+            "tsConfig": "apps/sample9-entity-listeners/tsconfig.app.json",
+            "assets": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample9-entity-listeners/src/environments/environment.ts",
+                  "with": "apps/sample9-entity-listeners/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample9-entity-listeners:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample9-entity-listeners/tsconfig.app.json",
+              "apps/sample9-entity-listeners/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample9-entity-listeners/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample9-entity-listeners/jest.config.js",
+            "tsConfig": "apps/sample9-entity-listeners/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample10-mixed": {
+      "root": "apps/sample10-mixed",
+      "sourceRoot": "apps/sample10-mixed/src",
+      "projectType": "application",
+      "prefix": "sample10-mixed",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample10-mixed",
+            "main": "apps/sample10-mixed/src/app.ts",
+            "tsConfig": "apps/sample10-mixed/tsconfig.app.json",
+            "assets": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample10-mixed/src/environments/environment.ts",
+                  "with": "apps/sample10-mixed/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample10-mixed:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample10-mixed/tsconfig.app.json",
+              "apps/sample10-mixed/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample10-mixed/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample10-mixed/jest.config.js",
+            "tsConfig": "apps/sample10-mixed/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample11-all-types-entity": {
+      "root": "apps/sample11-all-types-entity",
+      "sourceRoot": "apps/sample11-all-types-entity/src",
+      "projectType": "application",
+      "prefix": "sample11-all-types-entity",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample11-all-types-entity",
+            "main": "apps/sample11-all-types-entity/src/app.ts",
+            "tsConfig": "apps/sample11-all-types-entity/tsconfig.app.json",
+            "assets": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample11-all-types-entity/src/environments/environment.ts",
+                  "with": "apps/sample11-all-types-entity/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample11-all-types-entity:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample11-all-types-entity/tsconfig.app.json",
+              "apps/sample11-all-types-entity/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample11-all-types-entity/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample11-all-types-entity/jest.config.js",
+            "tsConfig": "apps/sample11-all-types-entity/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample12-custom-naming-strategy": {
+      "root": "apps/sample12-custom-naming-strategy",
+      "sourceRoot": "apps/sample12-custom-naming-strategy/src",
+      "projectType": "application",
+      "prefix": "sample12-custom-naming-strategy",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample12-custom-naming-strategy",
+            "main": "apps/sample12-custom-naming-strategy/src/app.ts",
+            "tsConfig": "apps/sample12-custom-naming-strategy/tsconfig.app.json",
+            "assets": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample12-custom-naming-strategy/src/environments/environment.ts",
+                  "with": "apps/sample12-custom-naming-strategy/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample12-custom-naming-strategy:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample12-custom-naming-strategy/tsconfig.app.json",
+              "apps/sample12-custom-naming-strategy/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample12-custom-naming-strategy/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample12-custom-naming-strategy/jest.config.js",
+            "tsConfig": "apps/sample12-custom-naming-strategy/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample13-everywhere-abstraction": {
+      "root": "apps/sample13-everywhere-abstraction",
+      "sourceRoot": "apps/sample13-everywhere-abstraction/src",
+      "projectType": "application",
+      "prefix": "sample13-everywhere-abstraction",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample13-everywhere-abstraction",
+            "main": "apps/sample13-everywhere-abstraction/src/app.ts",
+            "tsConfig": "apps/sample13-everywhere-abstraction/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample13-everywhere-abstraction/src/environments/environment.ts",
+                  "with": "apps/sample13-everywhere-abstraction/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample13-everywhere-abstraction:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample13-everywhere-abstraction/tsconfig.app.json",
+              "apps/sample13-everywhere-abstraction/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample13-everywhere-abstraction/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample13-everywhere-abstraction/jest.config.js",
+            "tsConfig": "apps/sample13-everywhere-abstraction/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample14-errors-in-wrong-metadata": {
+      "root": "apps/sample14-errors-in-wrong-metadata",
+      "sourceRoot": "apps/sample14-errors-in-wrong-metadata/src",
+      "projectType": "application",
+      "prefix": "sample14-errors-in-wrong-metadata",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample14-errors-in-wrong-metadata",
+            "main": "apps/sample14-errors-in-wrong-metadata/src/app.ts",
+            "tsConfig": "apps/sample14-errors-in-wrong-metadata/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample14-errors-in-wrong-metadata/src/environments/environment.ts",
+                  "with": "apps/sample14-errors-in-wrong-metadata/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample14-errors-in-wrong-metadata:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample14-errors-in-wrong-metadata/tsconfig.app.json",
+              "apps/sample14-errors-in-wrong-metadata/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample14-errors-in-wrong-metadata/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample14-errors-in-wrong-metadata/jest.config.js",
+            "tsConfig": "apps/sample14-errors-in-wrong-metadata/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample16-indexes": {
+      "root": "apps/sample16-indexes",
+      "sourceRoot": "apps/sample16-indexes/src",
+      "projectType": "application",
+      "prefix": "sample16-indexes",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample16-indexes",
+            "main": "apps/sample16-indexes/src/app.ts",
+            "tsConfig": "apps/sample16-indexes/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample16-indexes/src/environments/environment.ts",
+                  "with": "apps/sample16-indexes/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample16-indexes:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample16-indexes/tsconfig.app.json",
+              "apps/sample16-indexes/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample16-indexes/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample16-indexes/jest.config.js",
+            "tsConfig": "apps/sample16-indexes/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample17-versioning": {
+      "root": "apps/sample17-versioning",
+      "sourceRoot": "apps/sample17-versioning/src",
+      "projectType": "application",
+      "prefix": "sample17-versioning",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample17-versioning",
+            "main": "apps/sample17-versioning/src/app.ts",
+            "tsConfig": "apps/sample17-versioning/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample17-versioning/src/environments/environment.ts",
+                  "with": "apps/sample17-versioning/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample17-versioning:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample17-versioning/tsconfig.app.json",
+              "apps/sample17-versioning/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample17-versioning/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample17-versioning/jest.config.js",
+            "tsConfig": "apps/sample17-versioning/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample18-lazy-relations": {
+      "root": "apps/sample18-lazy-relations",
+      "sourceRoot": "apps/sample18-lazy-relations/src",
+      "projectType": "application",
+      "prefix": "sample18-lazy-relations",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample18-lazy-relations",
+            "main": "apps/sample18-lazy-relations/src/app.ts",
+            "tsConfig": "apps/sample18-lazy-relations/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample18-lazy-relations/src/environments/environment.ts",
+                  "with": "apps/sample18-lazy-relations/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample18-lazy-relations:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample18-lazy-relations/tsconfig.app.json",
+              "apps/sample18-lazy-relations/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample18-lazy-relations/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample18-lazy-relations/jest.config.js",
+            "tsConfig": "apps/sample18-lazy-relations/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample19-one-side-relations": {
+      "root": "apps/sample19-one-side-relations",
+      "sourceRoot": "apps/sample19-one-side-relations/src",
+      "projectType": "application",
+      "prefix": "sample19-one-side-relations",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample19-one-side-relations",
+            "main": "apps/sample19-one-side-relations/src/app.ts",
+            "tsConfig": "apps/sample19-one-side-relations/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample19-one-side-relations/src/environments/environment.ts",
+                  "with": "apps/sample19-one-side-relations/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample19-one-side-relations:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample19-one-side-relations/tsconfig.app.json",
+              "apps/sample19-one-side-relations/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample19-one-side-relations/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample19-one-side-relations/jest.config.js",
+            "tsConfig": "apps/sample19-one-side-relations/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample20-join-without-relation": {
+      "root": "apps/sample20-join-without-relation",
+      "sourceRoot": "apps/sample20-join-without-relation/src",
+      "projectType": "application",
+      "prefix": "sample20-join-without-relation",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample20-join-without-relation",
+            "main": "apps/sample20-join-without-relation/src/app.ts",
+            "tsConfig": "apps/sample20-join-without-relation/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample20-join-without-relation/src/environments/environment.ts",
+                  "with": "apps/sample20-join-without-relation/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample20-join-without-relation:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample20-join-without-relation/tsconfig.app.json",
+              "apps/sample20-join-without-relation/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample20-join-without-relation/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample20-join-without-relation/jest.config.js",
+            "tsConfig": "apps/sample20-join-without-relation/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample21-custom-join-table-column": {
+      "root": "apps/sample21-custom-join-table-column",
+      "sourceRoot": "apps/sample21-custom-join-table-column/src",
+      "projectType": "application",
+      "prefix": "sample21-custom-join-table-column",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample21-custom-join-table-column",
+            "main": "apps/sample21-custom-join-table-column/src/app.ts",
+            "tsConfig": "apps/sample21-custom-join-table-column/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample21-custom-join-table-column/src/environments/environment.ts",
+                  "with": "apps/sample21-custom-join-table-column/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample21-custom-join-table-column:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample21-custom-join-table-column/tsconfig.app.json",
+              "apps/sample21-custom-join-table-column/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample21-custom-join-table-column/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample21-custom-join-table-column/jest.config.js",
+            "tsConfig": "apps/sample21-custom-join-table-column/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample22-closure-table": {
+      "root": "apps/sample22-closure-table",
+      "sourceRoot": "apps/sample22-closure-table/src",
+      "projectType": "application",
+      "prefix": "sample22-closure-table",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample22-closure-table",
+            "main": "apps/sample22-closure-table/src/app.ts",
+            "tsConfig": "apps/sample22-closure-table/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample22-closure-table/src/environments/environment.ts",
+                  "with": "apps/sample22-closure-table/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample22-closure-table:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample22-closure-table/tsconfig.app.json",
+              "apps/sample22-closure-table/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample22-closure-table/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample22-closure-table/jest.config.js",
+            "tsConfig": "apps/sample22-closure-table/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample23-nested-joins": {
+      "root": "apps/sample23-nested-joins",
+      "sourceRoot": "apps/sample23-nested-joins/src",
+      "projectType": "application",
+      "prefix": "sample23-nested-joins",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample23-nested-joins",
+            "main": "apps/sample23-nested-joins/src/app.ts",
+            "tsConfig": "apps/sample23-nested-joins/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample23-nested-joins/src/environments/environment.ts",
+                  "with": "apps/sample23-nested-joins/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample23-nested-joins:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample23-nested-joins/tsconfig.app.json",
+              "apps/sample23-nested-joins/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample23-nested-joins/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample23-nested-joins/jest.config.js",
+            "tsConfig": "apps/sample23-nested-joins/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample24-schemas": {
+      "root": "apps/sample24-schemas",
+      "sourceRoot": "apps/sample24-schemas/src",
+      "projectType": "application",
+      "prefix": "sample24-schemas",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample24-schemas",
+            "main": "apps/sample24-schemas/src/app.ts",
+            "tsConfig": "apps/sample24-schemas/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample24-schemas/src/environments/environment.ts",
+                  "with": "apps/sample24-schemas/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample24-schemas:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample24-schemas/tsconfig.app.json",
+              "apps/sample24-schemas/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample24-schemas/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample24-schemas/jest.config.js",
+            "tsConfig": "apps/sample24-schemas/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample25-insert-from-inverse-side": {
+      "root": "apps/sample25-insert-from-inverse-side",
+      "sourceRoot": "apps/sample25-insert-from-inverse-side/src",
+      "projectType": "application",
+      "prefix": "sample25-insert-from-inverse-side",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample25-insert-from-inverse-side",
+            "main": "apps/sample25-insert-from-inverse-side/src/app.ts",
+            "tsConfig": "apps/sample25-insert-from-inverse-side/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample25-insert-from-inverse-side/src/environments/environment.ts",
+                  "with": "apps/sample25-insert-from-inverse-side/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample25-insert-from-inverse-side:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample25-insert-from-inverse-side/tsconfig.app.json",
+              "apps/sample25-insert-from-inverse-side/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample25-insert-from-inverse-side/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample25-insert-from-inverse-side/jest.config.js",
+            "tsConfig": "apps/sample25-insert-from-inverse-side/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample26-embedded-tables": {
+      "root": "apps/sample26-embedded-tables",
+      "sourceRoot": "apps/sample26-embedded-tables/src",
+      "projectType": "application",
+      "prefix": "sample26-embedded-tables",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample26-embedded-tables",
+            "main": "apps/sample26-embedded-tables/src/app.ts",
+            "tsConfig": "apps/sample26-embedded-tables/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample26-embedded-tables/src/environments/environment.ts",
+                  "with": "apps/sample26-embedded-tables/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample26-embedded-tables:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample26-embedded-tables/tsconfig.app.json",
+              "apps/sample26-embedded-tables/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample26-embedded-tables/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample26-embedded-tables/jest.config.js",
+            "tsConfig": "apps/sample26-embedded-tables/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample27-composite-primary-keys": {
+      "root": "apps/sample27-composite-primary-keys",
+      "sourceRoot": "apps/sample27-composite-primary-keys/src",
+      "projectType": "application",
+      "prefix": "sample27-composite-primary-keys",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample27-composite-primary-keys",
+            "main": "apps/sample27-composite-primary-keys/src/app.ts",
+            "tsConfig": "apps/sample27-composite-primary-keys/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample27-composite-primary-keys/src/environments/environment.ts",
+                  "with": "apps/sample27-composite-primary-keys/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample27-composite-primary-keys:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample27-composite-primary-keys/tsconfig.app.json",
+              "apps/sample27-composite-primary-keys/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample27-composite-primary-keys/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample27-composite-primary-keys/jest.config.js",
+            "tsConfig": "apps/sample27-composite-primary-keys/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample28-single-table-inheritance": {
+      "root": "apps/sample28-single-table-inheritance",
+      "sourceRoot": "apps/sample28-single-table-inheritance/src",
+      "projectType": "application",
+      "prefix": "sample28-single-table-inheritance",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample28-single-table-inheritance",
+            "main": "apps/sample28-single-table-inheritance/src/app.ts",
+            "tsConfig": "apps/sample28-single-table-inheritance/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample28-single-table-inheritance/src/environments/environment.ts",
+                  "with": "apps/sample28-single-table-inheritance/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample28-single-table-inheritance:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample28-single-table-inheritance/tsconfig.app.json",
+              "apps/sample28-single-table-inheritance/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample28-single-table-inheritance/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample28-single-table-inheritance/jest.config.js",
+            "tsConfig": "apps/sample28-single-table-inheritance/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample30-default-order-by": {
+      "root": "apps/sample30-default-order-by",
+      "sourceRoot": "apps/sample30-default-order-by/src",
+      "projectType": "application",
+      "prefix": "sample30-default-order-by",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample30-default-order-by",
+            "main": "apps/sample30-default-order-by/src/app.ts",
+            "tsConfig": "apps/sample30-default-order-by/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample30-default-order-by/src/environments/environment.ts",
+                  "with": "apps/sample30-default-order-by/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample30-default-order-by:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample30-default-order-by/tsconfig.app.json",
+              "apps/sample30-default-order-by/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample30-default-order-by/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample30-default-order-by/jest.config.js",
+            "tsConfig": "apps/sample30-default-order-by/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample31-table-prefix": {
+      "root": "apps/sample31-table-prefix",
+      "sourceRoot": "apps/sample31-table-prefix/src",
+      "projectType": "application",
+      "prefix": "sample31-table-prefix",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample31-table-prefix",
+            "main": "apps/sample31-table-prefix/src/app.ts",
+            "tsConfig": "apps/sample31-table-prefix/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample31-table-prefix/src/environments/environment.ts",
+                  "with": "apps/sample31-table-prefix/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample31-table-prefix:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample31-table-prefix/tsconfig.app.json",
+              "apps/sample31-table-prefix/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample31-table-prefix/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample31-table-prefix/jest.config.js",
+            "tsConfig": "apps/sample31-table-prefix/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample32-migrations": {
+      "root": "apps/sample32-migrations",
+      "sourceRoot": "apps/sample32-migrations/src",
+      "projectType": "application",
+      "prefix": "sample32-migrations",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample32-migrations",
+            "main": "apps/sample32-migrations/src/app.ts",
+            "tsConfig": "apps/sample32-migrations/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample32-migrations/src/environments/environment.ts",
+                  "with": "apps/sample32-migrations/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample32-migrations:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample32-migrations/tsconfig.app.json",
+              "apps/sample32-migrations/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample32-migrations/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample32-migrations/jest.config.js",
+            "tsConfig": "apps/sample32-migrations/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "sample33-custom-repository": {
+      "root": "apps/sample33-custom-repository",
+      "sourceRoot": "apps/sample33-custom-repository/src",
+      "projectType": "application",
+      "prefix": "sample33-custom-repository",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/sample33-custom-repository",
+            "main": "apps/sample33-custom-repository/src/app.ts",
+            "tsConfig": "apps/sample33-custom-repository/tsconfig.app.json",
+            "assets": [
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/sample33-custom-repository/src/environments/environment.ts",
+                  "with": "apps/sample33-custom-repository/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "sample33-custom-repository:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/sample33-custom-repository/tsconfig.app.json",
+              "apps/sample33-custom-repository/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**",
+              "!apps/sample33-custom-repository/**"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/sample33-custom-repository/jest.config.js",
+            "tsConfig": "apps/sample33-custom-repository/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    }
+  },
+  "cli": {
+    "defaultCollection": "@nrwl/angular"
+  },
+  "schematics": {
+    "@nrwl/angular:application": {
+      "unitTestRunner": "jest",
+      "e2eTestRunner": "cypress"
+    },
+    "@nrwl/angular:library": {
+      "unitTestRunner": "jest"
+    }
+  },
+  "defaultProject": "ng-sample1-simple-entity"
+}

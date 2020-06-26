@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
 
 describe("columns > no-selection functionality", () => {
 
@@ -43,7 +43,7 @@ describe("columns > no-selection functionality", () => {
         // check if all columns are updated except for readonly columns
         const loadedPost = await postRepository
             .createQueryBuilder("post")
-            .where("post.id = :id", { id: post.id })
+            .where("post.id = :id", {id: post.id})
             .getOne();
         expect(loadedPost!.title).to.be.equal("About columns");
         expect(loadedPost!.text).to.be.equal("Some text about columns");
@@ -64,7 +64,7 @@ describe("columns > no-selection functionality", () => {
         const loadedPost = await postRepository
             .createQueryBuilder("post")
             .addSelect("post.authorName")
-            .where("post.id = :id", { id: post.id })
+            .where("post.id = :id", {id: post.id})
             .getOne();
         expect(loadedPost!.title).to.be.equal("About columns");
         expect(loadedPost!.text).to.be.equal("Some text about columns");

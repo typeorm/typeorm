@@ -19,7 +19,7 @@
 `expression`可以是带有正确转义的列和表的字符串，取决于所使用的数据库（示例中为postgres）：
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: `
         SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
         FROM "post" "post"
@@ -31,7 +31,7 @@
 或者是QueryBuilder的一个实例
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -44,7 +44,7 @@
 **注意:** 由于驱动程序的限制，不支持参数绑定。请改用文字参数。
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -59,7 +59,7 @@
 每个视图实体都必须在连接选项中注册：
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import {createConnection, Connection} from "@typeorm/core";
 import {UserView} from "./entity/UserView";
 
 const connection: Connection = await createConnection({
@@ -75,7 +75,7 @@ const connection: Connection = await createConnection({
 或者你可以指定包含所有实体的整个目录 - 所有实体都将被加载：
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import {createConnection, Connection} from "@typeorm/core";
 
 const connection: Connection = await createConnection({
     type: "mysql",
@@ -95,9 +95,9 @@ const connection: Connection = await createConnection({
 字符串表达式定义的示例：
 
 ```typescript
-import {ViewEntity, ViewColumn} from "typeorm";
+import {ViewEntity, ViewColumn} from "@typeorm/core";
 
-@ViewEntity({ 
+@ViewEntity({
     expression: `
         SELECT "post"."id" AS "id", "post"."name" AS "name", "category"."name" AS "categoryName"
         FROM "post" "post"
@@ -121,9 +121,9 @@ export class PostCategory {
 使用QueryBuilder的示例：
 
 ```typescript
-import {ViewEntity, ViewColumn} from "typeorm";
+import {ViewEntity, ViewColumn} from "@typeorm/core";
 
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -150,7 +150,7 @@ export class PostCategory {
 让我们创建两个实体和一个包含来自这些实体的聚合数据的视图：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class Category {
@@ -165,7 +165,7 @@ export class Category {
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn} from "@typeorm/core";
 import {Category} from "./Category";
 
 @Entity()
@@ -188,9 +188,9 @@ export class Post {
 ```
 
 ```typescript
-import {ViewEntity, ViewColumn} from "typeorm";
+import {ViewEntity, ViewColumn} from "@typeorm/core";
 
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -215,7 +215,7 @@ export class PostCategory {
 然后用数据填充这些表并从PostCategory视图请求所有数据：
 
 ```typescript
-import {getManager} from "typeorm";
+import {getManager} from "@typeorm/core";
 import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
 import {PostCategory} from "./entity/PostCategory";

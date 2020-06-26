@@ -1,6 +1,5 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src/index";
-import {Category} from "./Category";
-import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "@typeorm/core";
+import { Category } from "./Category";
 
 @Entity()
 export class Animal {

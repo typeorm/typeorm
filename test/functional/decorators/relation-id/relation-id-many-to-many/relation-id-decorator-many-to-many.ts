@@ -1,13 +1,17 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {Image} from "./entity/Image";
+import { expect } from "chai";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
+import { Image } from "./entity/Image";
 
 describe("decorators > relation-id-decorator > many-to-many", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -57,7 +61,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost!.categoryIds).to.not.be.eql([]);
@@ -110,7 +114,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost!.removedCategoryIds).to.not.be.eql([]);
@@ -139,7 +143,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost!.subcategoryIds).to.not.be.eql([]);
@@ -169,7 +173,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost!.removedSubcategoryIds).to.not.be.eql([]);
@@ -199,7 +203,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
-            .where("category.id = :id", { id: 1 })
+            .where("category.id = :id", {id: 1})
             .getOne();
 
         expect(loadedCategory!.postIds).to.not.be.eql([]);
@@ -230,7 +234,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
-            .where("category.id = :id", { id: 1 })
+            .where("category.id = :id", {id: 1})
             .getOne();
 
         expect(loadedCategory!.removedPostIds).to.not.be.eql([]);
@@ -312,7 +316,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .addOrderBy("post.id, categories.id")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost!.categories).to.not.be.eql([]);
@@ -354,7 +358,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories", "categories.id = :categoryCode")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .setParameter("categoryCode", 2)
             .addOrderBy("post.id, categories.id")
             .getOne();
@@ -438,7 +442,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .addOrderBy("post.id, categories.id")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", {id: 1})
             .getOne();
 
         expect(loadedPost!.categories).to.not.be.eql([]);

@@ -1,11 +1,14 @@
 import "reflect-metadata";
-import {Post} from "./entity/Post";
-import {Connection} from "../../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {PostWithOptions} from "./entity/PostWithOptions";
-import {PostWithoutTypes} from "./entity/PostWithoutTypes";
-import {DateUtils} from "../../../../../src/util/DateUtils";
-import {FruitEnum} from "./enum/FruitEnum";
+import { Post } from "./entity/Post";
+import { Connection, DateUtils } from "@typeorm/core";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases
+} from "../../../../utils/test-utils";
+import { PostWithOptions } from "./entity/PostWithOptions";
+import { PostWithoutTypes } from "./entity/PostWithoutTypes";
+import { FruitEnum } from "./enum/FruitEnum";
 
 describe("database schema > column types > mssql", () => { // https://github.com/tediousjs/tedious/issues/722
 
@@ -66,7 +69,7 @@ describe("database schema > column types > mssql", () => { // https://github.com
         post.geometry2 = "POLYGON ((0 0, 150 0, 150 150, 0 150, 0 0))";
         post.geometry3 = "GEOMETRYCOLLECTION (POINT (4 0), LINESTRING (4 2, 5 3), POLYGON ((0 0, 3 0, 3 3, 0 3, 0 0), (1 1, 1 2, 2 2, 2 1, 1 1)))";
         post.simpleArray = ["A", "B", "C"];
-        post.simpleJson = { param: "VALUE" };
+        post.simpleJson = {param: "VALUE"};
         post.simpleEnum = "A";
         post.simpleClassEnum1 = FruitEnum.Apple;
         await postRepository.save(post);

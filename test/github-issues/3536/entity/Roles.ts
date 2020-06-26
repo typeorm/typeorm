@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "@typeorm/core";
 
 export enum AccountPermission {
     Thing1 = 1,
@@ -13,6 +13,6 @@ export class Roles {
     @PrimaryGeneratedColumn()
     id: string;
 
-    @Column("enum", { enum: AccountPermission, array: true, default: "{}" })
+    @Column("enum", {enum: AccountPermission, array: true, default: "{}"})
     accountPermission: AccountPermission[];
 }

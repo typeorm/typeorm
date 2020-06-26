@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Device} from "./entity/Device";
-import {DeviceInstance} from "./entity/DeviceInstance";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Device } from "./entity/Device";
+import { DeviceInstance } from "./entity/DeviceInstance";
 
 describe("github issues > #695 Join columns are not using correct length", () => {
 

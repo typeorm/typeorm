@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Record} from "./entity/Record";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { Record } from "./entity/Record";
 
 describe("github issues > #1314 UPDATE on json column stores string type", () => {
 
@@ -19,10 +19,10 @@ describe("github issues > #1314 UPDATE on json column stores string type", () =>
         let recordRepo = connection.getRepository(Record);
 
         let record = new Record();
-        record.data = { foo: "bar" };
+        record.data = {foo: "bar"};
 
         let persistedRecord = await recordRepo.save(record);
-        record.data.should.be.eql({ foo: "bar" });
+        record.data.should.be.eql({foo: "bar"});
 
         let foundRecord = await recordRepo.findOne(persistedRecord.id);
         expect(foundRecord).to.be.not.undefined;

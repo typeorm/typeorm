@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {Connection} from "../../../src/connection/Connection";
-import {PostgresConnectionOptions} from "../../../src/driver/postgres/PostgresConnectionOptions";
+import { expect } from "chai";
+import { Connection } from "@typeorm/core";
+import { PostgresConnectionOptions } from '@typeorm/driver-postgres';
 
 describe.skip("github issues > #114 Can not be parsed correctly the URL of pg.", () => {
 

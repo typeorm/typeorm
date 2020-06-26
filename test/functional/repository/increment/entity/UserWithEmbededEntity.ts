@@ -1,13 +1,13 @@
-import { Column, Entity, PrimaryColumn } from "../../../../../src";
+import { Column, Entity, PrimaryColumn } from "@typeorm/core";
 
 class FriendStats {
-    @Column({ default: 0 })
+    @Column({default: 0})
     count: number;
 
-    @Column({ default: 0 })
+    @Column({default: 0})
     sent: number;
 
-    @Column({ default: 0 })
+    @Column({default: 0})
     received: number;
 }
 

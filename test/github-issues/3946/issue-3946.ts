@@ -1,13 +1,13 @@
 import "reflect-metadata";
-import {expect} from "chai";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src";
-import {Category} from "./entity/Category";
-import {Post} from "./entity/Post";
-import {Image} from "./entity/Image";
+import { expect } from "chai";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Category } from "./entity/Category";
+import { Post } from "./entity/Post";
+import { Image } from "./entity/Image";
 
 describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong IN calculation, when primary key is string", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -60,7 +60,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
         let loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
-            .where("post.id = :id", { id: post1.id })
+            .where("post.id = :id", {id: post1.id})
             .getOne();
 
         expect(loadedPost!.categoryCount).to.be.equal(3);
@@ -189,9 +189,9 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
-            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", {isRemoved: true}))
             .loadRelationCountAndMap("categories.imageCount", "categories.images", "ic")
-            .loadRelationCountAndMap("categories.removedImageCount", "categories.images", "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationCountAndMap("categories.removedImageCount", "categories.images", "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", {isRemoved: true}))
             .addOrderBy("post.id, categories.id")
             .getMany();
 
@@ -208,10 +208,10 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
-            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", {isRemoved: true}))
             .loadRelationCountAndMap("categories.imageCount", "categories.images", "ic")
-            .loadRelationCountAndMap("categories.removedImageCount", "categories.images", "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", { isRemoved: true }))
-            .where("post.id = :id", { id: post1.id })
+            .loadRelationCountAndMap("categories.removedImageCount", "categories.images", "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", {isRemoved: true}))
+            .where("post.id = :id", {id: post1.id})
             .addOrderBy("post.id, categories.id")
             .getOne();
 
@@ -271,7 +271,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
             .leftJoinAndSelect("post.categories", "categories")
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
             .loadRelationCountAndMap("categories.postCount", "categories.posts")
-            .where("post.id = :id", { id: post1.id })
+            .where("post.id = :id", {id: post1.id})
             .addOrderBy("post.id, categories.id")
             .getOne();
 
@@ -334,7 +334,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .loadRelationCountAndMap("category.postCount", "category.posts")
-            .where("category.id = :id", { id: category1.id })
+            .where("category.id = :id", {id: category1.id})
             .getOne();
 
         expect(loadedCategory!.postCount).to.be.equal(3);
@@ -451,7 +451,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
         let loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")
             .loadRelationCountAndMap("category.postCount", "category.posts")
-            .loadRelationCountAndMap("category.removedPostCount", "category.posts", "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationCountAndMap("category.removedPostCount", "category.posts", "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", {isRemoved: true}))
             .getMany();
 
         expect(loadedCategories![0].postCount).to.be.equal(3);
@@ -461,8 +461,8 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
             .loadRelationCountAndMap("category.postCount", "category.posts")
-            .loadRelationCountAndMap("category.removedPostCount", "category.posts", "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", { isRemoved: true }))
-            .where("category.id = :id", { id: category1.id })
+            .loadRelationCountAndMap("category.removedPostCount", "category.posts", "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", {isRemoved: true}))
+            .where("category.id = :id", {id: category1.id})
             .getOne();
 
         expect(loadedCategory!.postCount).to.be.equal(3);

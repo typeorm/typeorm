@@ -5,40 +5,40 @@ Let's take for example `User` and `Photo` entities.
 User can have multiple photos, but each photo is owned by only one single user.
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne} from "@typeorm/core";
 import {User} from "./User";
 
 @Entity()
 export class Photo {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     url: string;
-    
+
     @ManyToOne(type => User, user => user.photos)
     user: User;
-    
+
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToMany} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, OneToMany} from "@typeorm/core";
 import {Photo} from "./Photo";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
     @OneToMany(type => Photo, photo => photo.user)
     photos: Photo[];
-    
+
 }
 ```
 
@@ -105,7 +105,7 @@ await connection.manager.save(photo2);
 With cascades enabled you can save this relation with only one `save` call.
 
 To load a user with photos inside you must specify the relation in `FindOptions`:
- 
+
 ```typescript
 const userRepository = connection.getRepository(User);
 const users = await userRepository.find({ relations: ["photos"] });

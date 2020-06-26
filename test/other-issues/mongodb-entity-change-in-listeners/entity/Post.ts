@@ -1,8 +1,4 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {BeforeUpdate} from "../../../../src/decorator/listeners/BeforeUpdate";
-import {UpdateDateColumn} from "../../../../src/decorator/columns/UpdateDateColumn";
-import {AfterLoad, ObjectIdColumn} from "../../../../src";
+import { AfterLoad, BeforeUpdate, Column, Entity, ObjectIdColumn, UpdateDateColumn } from "@typeorm/core";
 
 @Entity()
 export class Post {
@@ -18,13 +14,12 @@ export class Post {
 
     @UpdateDateColumn()
     updateDate: Date;
+    loaded: Boolean = false;
 
     @BeforeUpdate()
     async beforeUpdate() {
         this.title += "!";
     }
-
-    loaded: Boolean = false;
 
     @AfterLoad()
     async afterLoad() {

@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { Post } from "./entity/Post";
+import { Category } from "./entity/Category";
 
 describe("github issues > #1720 Listener not invoked when relation loaded through getter", () => {
 
@@ -28,7 +28,7 @@ describe("github issues > #1720 Listener not invoked when relation loaded throug
         post1.categories = [category1, category2];
         await connection.manager.save(post1);
 
-        const loadedPost = await connection.manager.findOne(Post, { relations: ["categories"] });
+        const loadedPost = await connection.manager.findOne(Post, {relations: ["categories"]});
         loadedPost!.categories[0].loaded.should.be.equal(true);
         loadedPost!.categories[1].loaded.should.be.equal(true);
     })));

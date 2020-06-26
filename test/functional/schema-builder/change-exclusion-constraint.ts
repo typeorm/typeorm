@@ -1,10 +1,8 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {PromiseUtils} from "../../../src";
-import {Teacher} from "./entity/Teacher";
-import {Post} from "./entity/Post";
-import {ExclusionMetadata} from "../../../src/metadata/ExclusionMetadata";
+import { Connection, ExclusionMetadata, PromiseUtils } from "@typeorm/core";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Teacher } from "./entity/Teacher";
+import { Post } from "./entity/Post";
 
 describe("schema builder > change exclusion constraint", () => {
 

@@ -12,78 +12,78 @@ This is useful when you are storing entities in a tree-like structures.
 Also "adjacency list" pattern is implemented used self-referenced relations.
 For example, you want to create categories tree in your application.
 Categories can nest categories, nested categories can nest other categories, etc.
-Self-referencing relations come handy here. 
+Self-referencing relations come handy here.
 Basically self-referencing relations are just regular relations that targets entity itself.
 Example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany} from "@typeorm/core";
 
 @Entity()
 export class Category {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     title: string;
-    
+
     @Column()
     text: string;
-    
+
     @ManyToOne(type => Category, category => category.childCategories)
     parentCategory: Category;
-    
+
     @OneToMany(type => Category, category => category.parentCategory)
     childCategories: Category[];
-    
+
 }
 ```
 
 ## How to use relation id without joining relation
 
-Sometimes you want to have in your object id of the related object without loading it. 
+Sometimes you want to have in your object id of the related object without loading it.
 For example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class Profile {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     gender: string;
-    
+
     @Column()
     photo: string;
-    
+
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from "@typeorm/core";
 import {Profile} from "./Profile";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
     @OneToOne(type => Profile)
     @JoinColumn()
     profile: Profile;
-    
+
 }
 ```
 
-When you load a user without `profile` joined you won't have any information about profile in your user object, 
+When you load a user without `profile` joined you won't have any information about profile in your user object,
 even profile id:
 
 ```javascript
@@ -98,25 +98,25 @@ To do this you just need to add another property to your entity with `@Column`
 named exactly as the column created by your relation. Example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from "@typeorm/core";
 import {Profile} from "./Profile";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
     @Column({ nullable: true })
     profileId: number;
-    
+
     @OneToOne(type => Profile)
     @JoinColumn()
     profile: Profile;
-    
+
 }
 ```
 
@@ -133,7 +133,7 @@ User {
 ## How to load relations in entities
 
 The easiest way to load your entity relations is to use `relations` option in `FindOptions`:
- 
+
 ```typescript
 const users = await connection.getRepository(User).find({ relations: ["profile", "photos", "videos"] });
 ```
@@ -150,7 +150,7 @@ const user = await connection
     .getMany();
 ```
 
-Using `QueryBuilder` you can do `innerJoinAndSelect` instead of `leftJoinAndSelect` 
+Using `QueryBuilder` you can do `innerJoinAndSelect` instead of `leftJoinAndSelect`
 (to learn the difference between `LEFT JOIN` and `INNER JOIN` refer to your SQL documentation),
 you can join relation data by a condition, make ordering, etc.
 
@@ -161,25 +161,25 @@ Learn more about [`QueryBuilder`](select-query-builder.md).
 Sometimes it is useful to initialize your relation properties, for example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "@typeorm/core";
 import {Category} from "./Category";
 
 @Entity()
 export class Question {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     title: string;
-    
+
     @Column()
     text: string;
-    
+
     @ManyToMany(type => Category, category => category.questions)
     @JoinTable()
     categories: Category[] = []; // see = [] initialization here
-    
+
 }
 ```
 
@@ -209,7 +209,7 @@ Question {
 When you save the object it will check if there are any categories in the database bind to the question -
 and it will detach all of them. Why? Because relation equal to `[]` or any items inside it will be considered
 like something was removed from it, there is no other way to check if an object was removed from entity or not.
- 
+
 Therefore, saving an object like this will bring you problems - it will remove all previously set categories.
 
 How to avoid this behaviour? Simply don't initialize arrays in your entities.

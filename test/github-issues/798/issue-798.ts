@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import * as assert from "assert";
-import {createConnection, getConnectionOptions} from "../../../src/index";
-import {Connection} from "../../../src/connection/Connection";
+import { Connection, createConnection, getConnectionOptions } from "@typeorm/core";
 
 describe("github issues > #798 sqlite: 'database' path in ormconfig.json is not relative", () => {
     let connection: Connection;

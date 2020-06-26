@@ -1,10 +1,11 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {User} from "./entity/User";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "@typeorm/core";
+import { expect } from "chai";
+import { User } from "./entity/User";
+import { MysqlDriver } from "@typeorm/driver-mysql";
+import { PostgresDriver } from "@typeorm/driver-postgres";
+
 describe("github issues > #3047 Mysqsl on duplicate key update use current values", () => {
     let connections: Connection[];
 
@@ -29,66 +30,66 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
     user2.is_updated = "yes";
 
     it("should overwrite using current value in MySQL/MariaDB", () => Promise.all(connections.map(async connection => {
-      try {
-         if (connection.driver instanceof MysqlDriver) {
-            const UserRepository = connection.manager.getRepository(User);
+        try {
+            if (connection.driver instanceof MysqlDriver) {
+                const UserRepository = connection.manager.getRepository(User);
 
-            await UserRepository
-              .createQueryBuilder()
-              .insert()
-              .into(User)
-              .values(user1)
-              .execute();
+                await UserRepository
+                    .createQueryBuilder()
+                    .insert()
+                    .into(User)
+                    .values(user1)
+                    .execute();
 
-            await UserRepository
-              .createQueryBuilder()
-              .insert()
-              .into(User)
-              .values(user2)
-              .orUpdate({ overwrite: ["is_updated"]})
-              .execute();
+                await UserRepository
+                    .createQueryBuilder()
+                    .insert()
+                    .into(User)
+                    .values(user2)
+                    .orUpdate({overwrite: ["is_updated"]})
+                    .execute();
 
-            let loadedUser = await UserRepository.find();
-            expect(loadedUser).not.to.be.undefined;
-            expect(loadedUser).to.have.lengthOf(1);
-            expect(loadedUser[0]).to.includes({ is_updated: "yes" });
+                let loadedUser = await UserRepository.find();
+                expect(loadedUser).not.to.be.undefined;
+                expect(loadedUser).to.have.lengthOf(1);
+                expect(loadedUser[0]).to.includes({is_updated: "yes"});
+            }
+        } catch (err) {
+            throw new Error(err);
         }
-      } catch (err) {
-        throw new Error(err);
-      }
-     })));
+    })));
 
     it("should overwrite using current value in PostgreSQL", () => Promise.all(connections.map(async connection => {
-      try {
-        if (connection.driver instanceof PostgresDriver) {
+        try {
+            if (connection.driver instanceof PostgresDriver) {
 
-          const UserRepository = connection.manager.getRepository(User);
+                const UserRepository = connection.manager.getRepository(User);
 
-          await UserRepository
-            .createQueryBuilder()
-            .insert()
-            .into(User)
-            .values(user1)
-            .execute();
+                await UserRepository
+                    .createQueryBuilder()
+                    .insert()
+                    .into(User)
+                    .values(user1)
+                    .execute();
 
-          await UserRepository
-            .createQueryBuilder()
-            .insert()
-            .into(User)
-            .values(user2)
-            .orUpdate({
-              conflict_target: [ "first_name", "last_name" ],
-              overwrite: ["is_updated"],
-            })
-            .execute();
+                await UserRepository
+                    .createQueryBuilder()
+                    .insert()
+                    .into(User)
+                    .values(user2)
+                    .orUpdate({
+                        conflict_target: ["first_name", "last_name"],
+                        overwrite: ["is_updated"],
+                    })
+                    .execute();
 
-          let loadedUser = await UserRepository.find();
-          expect(loadedUser).not.to.be.undefined;
-          expect(loadedUser).to.have.lengthOf(1);
-          expect(loadedUser[0]).to.includes({ is_updated: "yes" });
+                let loadedUser = await UserRepository.find();
+                expect(loadedUser).not.to.be.undefined;
+                expect(loadedUser).to.have.lengthOf(1);
+                expect(loadedUser[0]).to.includes({is_updated: "yes"});
+            }
+        } catch (err) {
+            throw new Error(err);
         }
-      } catch (err) {
-        throw new Error(err);
-      }
     })));
- });
+});

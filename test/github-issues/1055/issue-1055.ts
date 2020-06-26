@@ -1,10 +1,9 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {Parent} from "./entity/Parent";
-import {Child} from "./entity/Child";
-import {expect} from "chai";
-import {PromiseUtils} from "../../../src/util/PromiseUtils";
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection, PromiseUtils } from "@typeorm/core";
+import { Parent } from "./entity/Parent";
+import { Child } from "./entity/Child";
+import { expect } from "chai";
 
 describe("github issues > #1055 ind with relations not working, correct syntax causes type error", () => {
 
@@ -34,7 +33,7 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
         });
         await manager.save(child);
 
-        const foundChild = await manager.findOne(Child, { parent: loadedParent });
+        const foundChild = await manager.findOne(Child, {parent: loadedParent});
         expect(foundChild).not.to.be.undefined;
     })));
 
@@ -56,7 +55,7 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
         child.parent = Promise.resolve(loadedParent);
         await manager.save(child);
 
-        const foundChild = await manager.findOne(Child, { parent: PromiseUtils.create(loadedParent) });
+        const foundChild = await manager.findOne(Child, {parent: PromiseUtils.create(loadedParent)});
         expect(foundChild).not.to.be.undefined;
     })));
 
@@ -77,7 +76,7 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
         child.parent = Promise.resolve(loadedParent);
         await manager.save(child);
 
-        const foundChild = await manager.findOne(Child, { parent: loadedParent.id });
+        const foundChild = await manager.findOne(Child, {parent: loadedParent.id});
         expect(foundChild).not.to.be.undefined;
     })));
 });

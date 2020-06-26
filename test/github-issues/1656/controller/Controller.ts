@@ -1,7 +1,7 @@
-import {Repository, Transaction, TransactionRepository} from "../../../../src";
-import {A} from "../entity/A";
-import {B} from "../entity/B";
-import {C} from "../entity/C";
+import { Repository, Transaction, TransactionRepository } from "@typeorm/core";
+import { A } from "../entity/A";
+import { B } from "../entity/B";
+import { C } from "../entity/C";
 
 export class Controller {
 

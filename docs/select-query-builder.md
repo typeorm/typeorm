@@ -69,7 +69,7 @@ There are several ways how you can create a `Query Builder`:
 * Using connection:
 
     ```typescript
-    import {getConnection} from "typeorm";
+    import {getConnection} from "@typeorm/core";
 
     const user = await getConnection()
         .createQueryBuilder()
@@ -82,7 +82,7 @@ There are several ways how you can create a `Query Builder`:
 * Using entity manager:
 
     ```typescript
-    import {getManager} from "typeorm";
+    import {getManager} from "@typeorm/core";
 
     const user = await getManager()
         .createQueryBuilder(User, "user")
@@ -93,7 +93,7 @@ There are several ways how you can create a `Query Builder`:
 * Using repository:
 
     ```typescript
-    import {getRepository} from "typeorm";
+    import {getRepository} from "@typeorm/core";
 
     const user = await getRepository(User)
         .createQueryBuilder("user")
@@ -106,7 +106,7 @@ There are 5 different `QueryBuilder` types available:
 * `SelectQueryBuilder` - used to build and execute `SELECT` queries. Example:
 
     ```typescript
-    import {getConnection} from "typeorm";
+    import {getConnection} from "@typeorm/core";
 
     const user = await getConnection()
         .createQueryBuilder()
@@ -119,7 +119,7 @@ There are 5 different `QueryBuilder` types available:
 * `InsertQueryBuilder` - used to build and execute `INSERT` queries. Example:
 
     ```typescript
-    import {getConnection} from "typeorm";
+    import {getConnection} from "@typeorm/core";
 
     await getConnection()
         .createQueryBuilder()
@@ -135,7 +135,7 @@ There are 5 different `QueryBuilder` types available:
 * `UpdateQueryBuilder` - used to build and execute `UPDATE` queries. Example:
 
     ```typescript
-    import {getConnection} from "typeorm";
+    import {getConnection} from "@typeorm/core";
 
     await getConnection()
         .createQueryBuilder()
@@ -147,7 +147,7 @@ There are 5 different `QueryBuilder` types available:
 * `DeleteQueryBuilder` - used to build and execute `DELETE` queries. Example:
 
     ```typescript
-    import {getConnection} from "typeorm";
+    import {getConnection} from "@typeorm/core";
 
     await getConnection()
         .createQueryBuilder()
@@ -546,7 +546,7 @@ If you are using pagination, it's recommended to use `skip` instead.
 Let's say you have the following entities:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToMany} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, OneToMany} from "@typeorm/core";
 import {Photo} from "./Photo";
 
 @Entity()
@@ -564,7 +564,7 @@ export class User {
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne} from "@typeorm/core";
 import {User} from "./User";
 
 @Entity()
@@ -711,7 +711,7 @@ const user = await createQueryBuilder("user")
 Add `profilePhoto` to `User` entity and you can map any data into that property using `QueryBuilder`:
 
 ```typescript
-export class User {    
+export class User {
     /// ...
     profilePhoto: Photo;
 
@@ -993,7 +993,7 @@ If the model you are querying has a column with a `select: false` column, you mu
 Let's say you have the following entity:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column} from "@typeorm/core";
 
 @Entity()
 export class User {

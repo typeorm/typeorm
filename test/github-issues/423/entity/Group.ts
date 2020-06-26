@@ -1,9 +1,6 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Index} from "../../../../src/decorator/Index";
+import { Column, Entity, Index, PrimaryColumn } from "@typeorm/core";
 
-@Index("Groups name", ["name"], { unique: true })
+@Index("Groups name", ["name"], {unique: true})
 @Entity("groups")
 export class Group {
 

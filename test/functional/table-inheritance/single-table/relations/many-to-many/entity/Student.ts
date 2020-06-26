@@ -1,8 +1,6 @@
-import {ChildEntity} from "../../../../../../../src/decorator/entity/ChildEntity";
-import {ManyToMany} from "../../../../../../../src/decorator/relations/ManyToMany";
-import {Person} from "./Person";
-import {Faculty} from "./Faculty";
-import {JoinTable} from "../../../../../../../src/decorator/relations/JoinTable";
+import { ChildEntity, JoinTable, ManyToMany } from "@typeorm/core";
+import { Person } from "./Person";
+import { Faculty } from "./Faculty";
 
 @ChildEntity()
 export class Student extends Person {

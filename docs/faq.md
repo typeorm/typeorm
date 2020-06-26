@@ -17,29 +17,29 @@ One of the main responsibilities of TypeORM is to keep your database tables in s
 There are two ways that help you achieve this:
 
 * Use `synchronize: true` in your connection options:
-    
+
     ```typescript
-    import {createConnection} from "typeorm";
-    
+    import {createConnection} from "@typeorm/core";
+
     createConnection({
         synchronize: true
     });
     ```
 
-    This option automatically syncs your database tables with the given entities each time you run this code. 
+    This option automatically syncs your database tables with the given entities each time you run this code.
     This option is perfect during development, but in production you may not want this option to be enabled.
 
 * Use command line tools and run schema sync manually in the command line:
-    
+
     ```
     typeorm schema:sync
     ```
-    
-    This command will execute schema synchronization. 
+
+    This command will execute schema synchronization.
     Note, to make command line tools work, you must create an ormconfig.json file.
 
-Schema sync is extremely fast. 
-If you are considering the disable synchronize option during development because of performance issues, 
+Schema sync is extremely fast.
+If you are considering the disable synchronize option during development because of performance issues,
 first check how fast it is.
 
 ## How do I change a column name in the database?
@@ -54,10 +54,10 @@ isActive: boolean;
 
 ## How can I set the default value to some function, for example `NOW()`?
 
-`default` column option supports a function. 
+`default` column option supports a function.
 If you are passing a function which returns a string,
 it will use that string as a default value without escaping it.
-For example: 
+For example:
 
 ```typescript
 @Column({ default: () => "NOW()" })
@@ -78,32 +78,32 @@ Let's say we have two entities: `User` and `Photo`:
 ```typescript
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
     @OneToOne()
     photo: Photo;
-    
+
 }
 ```
 
 ```typescript
 @Entity()
 export class Photo {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     url: string;
-    
+
     @OneToOne()
     user: User;
-    
+
 }
 ```
 
@@ -111,7 +111,7 @@ This example does not have a `@JoinColumn` which is incorrect.
 Why? Because to make a real relation, we need to create a column in the database.
 We need to create a column `userId` in `photo` or `photoId` in `user`.
 But which column should be created - `userId` or `photoId`?
-TypeORM cannot decide for you. 
+TypeORM cannot decide for you.
 To make a decision, you must use `@JoinColumn` on one of the sides.
 If you put `@JoinColumn` in `Photo` then a column called `userId` will be created in the `photo` table.
 If you put `@JoinColumn` in `User` then a column called `photoId` will be created in the `user` table.
@@ -120,17 +120,17 @@ The other side of the relation, without `@JoinColumn`, is called the "inverse (n
 
 It is the same in a `@ManyToMany` relation. You use `@JoinTable` to show the owner side of the relation.
 
-In `@ManyToOne` or `@OneToMany` relations, `@JoinColumn` is not necessary because 
-both decorators are different, and the table where you put the `@ManyToOne` decorator will have the relational column. 
+In `@ManyToOne` or `@OneToMany` relations, `@JoinColumn` is not necessary because
+both decorators are different, and the table where you put the `@ManyToOne` decorator will have the relational column.
 
 `@JoinColumn` and `@JoinTable` decorators can also be used to specify additional
-join column / junction table settings, like join column name or junction table name. 
+join column / junction table settings, like join column name or junction table name.
 
 ## How do I add extra columns into many-to-many (junction) table?
 
 It's not possible to add extra columns into a table created by a many-to-many relation.
 You'll need to create a separate entity and bind it using two many-to-one relations with the target entities
-(the effect will be same as creating a many-to-many table), 
+(the effect will be same as creating a many-to-many table),
 and add extra columns in there. You can read more about this in [Many-to-Many relations](./many-to-many-relations.md#many-to-many-relations-with-custom-properties).
 
 ## How to use TypeORM with a dependency injection tool?
@@ -140,7 +140,7 @@ In TypeORM you can use service containers. Service containers allow you to injec
 Here is an example for how you can set up typedi service containers with TypeORM. Note: you can setup any service container with TypeORM.
 
 ```typescript
-import {useContainer, createConnection} from "typeorm";
+import {useContainer, createConnection} from "@typeorm/core";
 import {Container} from "typedi";
 
 // its important to setup container before you start to work with TypeORM
@@ -157,8 +157,8 @@ One important thing to know is that when you remove or move entities, the old en
 For example, you create a `Post` entity and rename it to `Blog`,
 you no longer have `Post.ts` in your project. However, `Post.js` is left inside the output directory.
 Now, when TypeORM reads entities from your output directory, it sees two entities - `Post` and `Blog`.
-This may be a source of bugs. 
-That's why when you remove and move entities with `outDir` enabled, it's strongly recommended to remove your output directory and recompile the project again. 
+This may be a source of bugs.
+That's why when you remove and move entities with `outDir` enabled, it's strongly recommended to remove your output directory and recompile the project again.
 
 ## How to use TypeORM with ts-node?
 
@@ -172,9 +172,9 @@ If you are using ts-node, you can specify `ts` entities inside your connection o
 }
 ```
 
-Also, if you are compiling js files into the same folder where your typescript files are, 
-make sure to use the `outDir` compiler option to prevent 
-[this issue](https://github.com/TypeStrong/ts-node/issues/432). 
+Also, if you are compiling js files into the same folder where your typescript files are,
+make sure to use the `outDir` compiler option to prevent
+[this issue](https://github.com/TypeStrong/ts-node/issues/432).
 
 Also, if you want to use the ts-node CLI, you can execute TypeORM the following way:
 
