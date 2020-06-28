@@ -22,14 +22,32 @@ export interface CockroachConnectionOptions extends BaseConnectionOptions, Cockr
     readonly replication?: {
 
         /**
-         * Master server used by orm to perform writes.
+         * Primary server used by orm to perform writes.
+         *
+         * @deprecated
+         * @see primary
          */
         readonly master: CockroachConnectionCredentialsOptions;
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from severs (replicas).
+         *
+         * @deprecated
+         * @see replicas
          */
         readonly slaves: CockroachConnectionCredentialsOptions[];
+
+    }|{
+
+        /**
+         * Primary server used by orm to perform writes.
+         */
+        readonly primary: CockroachConnectionCredentialsOptions;
+
+        /**
+         * List of read-from severs (replicas).
+         */
+        readonly replicas: CockroachConnectionCredentialsOptions[];
 
     };
 

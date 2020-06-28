@@ -50,7 +50,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: MysqlDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: MysqlDriver, mode: "master"|"slave"|"primary"|"replica" = "primary") {
         super();
         this.driver = driver;
         this.connection = driver.connection;
@@ -73,15 +73,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.databaseConnectionPromise)
             return this.databaseConnectionPromise;
 
-        if (this.mode === "slave" && this.driver.isReplicated) {
+        if ((this.mode === "replica" || this.mode === "slave") && this.driver.isReplicated) {
 
             this.databaseConnectionPromise = this.driver.obtainSlaveConnection().then(connection => {
                 this.databaseConnection = connection;
                 return this.databaseConnection;
             });
 
-        } else { // master
-            this.databaseConnectionPromise = this.driver.obtainMasterConnection().then(connection => {
+        } else { // primary
+            this.databaseConnectionPromise = this.driver.obtainPrimaryConnection().then(connection => {
                 this.databaseConnection = connection;
                 return this.databaseConnection;
             });

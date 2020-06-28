@@ -39,15 +39,34 @@ export class OracleDriver implements Driver {
     oracle: any;
 
     /**
-     * Pool for master database.
+     * Pool for primary database.
+     *
+     * @deprecated
+     * @see primary
      */
-    master: any;
+    get master(): any { return this.primary; }
+    set master(value: any) { this.primary = value; }
 
     /**
-     * Pool for slave databases.
+     * Pool for replica databases.
+     * Used in replication.
+     *
+     * @deprecated
+     * @see replicas
+     */
+    get slaves(): any[] { return this.replicas; }
+    set slaves(value: any[]) { this.replicas = value; }
+
+    /**
+     * Pool for primary database.
+     */
+    primary: any;
+
+    /**
+     * Pool for replica databases.
      * Used in replication.
      */
-    slaves: any[] = [];
+    replicas: any[] = [];
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -59,7 +78,7 @@ export class OracleDriver implements Driver {
     options: OracleConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Primary database used to perform all write queries.
      */
     database?: string;
 
@@ -245,14 +264,18 @@ export class OracleDriver implements Driver {
         this.oracle.fetchAsString = [ this.oracle.CLOB ];
         this.oracle.fetchAsBuffer = [ this.oracle.BLOB ];
         if (this.options.replication) {
-            this.slaves = await Promise.all(this.options.replication.slaves.map(slave => {
-                return this.createPool(this.options, slave);
+            const replication = this.options.replication;
+            const primary = "primary" in replication ? replication.primary : replication.master;
+            const replicas = "replicas" in replication ? replication.replicas : replication.slaves;
+
+            this.replicas = await Promise.all(replicas.map(replica => {
+                return this.createPool(this.options, replica);
             }));
-            this.master = await this.createPool(this.options, this.options.replication.master);
-            this.database = this.options.replication.master.database;
+            this.primary = await this.createPool(this.options, primary);
+            this.database = primary.database;
 
         } else {
-            this.master = await this.createPool(this.options, this.options);
+            this.primary = await this.createPool(this.options, this.options);
             this.database = this.options.database;
         }
     }
@@ -268,13 +291,13 @@ export class OracleDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
+        if (!this.primary)
             return Promise.reject(new ConnectionIsNotSetError("oracle"));
 
-        await this.closePool(this.master);
-        await Promise.all(this.slaves.map(slave => this.closePool(slave)));
-        this.master = undefined;
-        this.slaves = [];
+        await this.closePool(this.primary);
+        await Promise.all(this.replicas.map(replica => this.closePool(replica)));
+        this.primary = undefined;
+        this.replicas = [];
     }
 
     /**
@@ -287,7 +310,7 @@ export class OracleDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: "master"|"slave"|"primary"|"replica" = "primary") {
         return new OracleQueryRunner(this, mode);
     }
 
@@ -537,13 +560,37 @@ export class OracleDriver implements Driver {
     }
 
     /**
-     * Obtains a new database connection to a master server.
+     * Obtains a new database connection to a primary server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     *
+     * @deprecated
+     * @see obtainPrimaryConnection
+     */
+    obtainMasterConnection(): Promise<any> {
+        return this.obtainPrimaryConnection();
+    }
+
+    /**
+     * Obtains a new database connection to a replica server.
+     * Used for replication.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     *
+     * @deprecated
+     * @see obtainReplicaConnection
+     */
+    obtainSlaveConnection(): Promise<any> {
+        return this.obtainReplicaConnection();
+    }
+
+    /**
+     * Obtains a new database connection to a primary server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    obtainMasterConnection(): Promise<any> {
+    obtainPrimaryConnection(): Promise<any> {
         return new Promise<any>((ok, fail) => {
-            this.master.getConnection((err: any, connection: any, release: Function) => {
+            this.primary.getConnection((err: any, connection: any, release: Function) => {
                 if (err) return fail(err);
                 ok(connection);
             });
@@ -551,18 +598,18 @@ export class OracleDriver implements Driver {
     }
 
     /**
-     * Obtains a new database connection to a slave server.
+     * Obtains a new database connection to a replica server.
      * Used for replication.
-     * If replication is not setup then returns master (default) connection's database connection.
+     * If replication is not setup then returns primary (default) connection's database connection.
      */
-    obtainSlaveConnection(): Promise<any> {
-        if (!this.slaves.length)
-            return this.obtainMasterConnection();
+    obtainReplicaConnection(): Promise<any> {
+        if (!this.replicas.length)
+            return this.obtainPrimaryConnection();
 
         return new Promise<any>((ok, fail) => {
-            const random = Math.floor(Math.random() * this.slaves.length);
+            const random = Math.floor(Math.random() * this.replicas.length);
 
-            this.slaves[random].getConnection((err: any, connection: any) => {
+            this.replicas[random].getConnection((err: any, connection: any) => {
                 if (err) return fail(err);
                 ok(connection);
             });

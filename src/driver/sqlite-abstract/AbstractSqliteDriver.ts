@@ -48,7 +48,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     options: BaseConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Primary database used to perform all write queries.
      */
     database?: string;
 
@@ -195,7 +195,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    abstract createQueryRunner(mode: "master"|"slave"): QueryRunner;
+    abstract createQueryRunner(mode: "master"|"slave"|"primary"|"replica"): QueryRunner;
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -487,20 +487,44 @@ export abstract class AbstractSqliteDriver implements Driver {
     }
 
     /**
-     * Obtains a new database connection to a master server.
+     * Obtains a new database connection to a primary server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     *
+     * @deprecated
+     * @see obtainPrimaryConnection
+     */
+    obtainMasterConnection(): Promise<any> {
+        return this.obtainPrimaryConnection();
+    }
+
+    /**
+     * Obtains a new database connection to a replica server.
+     * Used for replication.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     *
+     * @deprecated
+     * @see obtainReplicaConnection
+     */
+    obtainSlaveConnection(): Promise<any> {
+        return this.obtainReplicaConnection();
+    }
+
+    /**
+     * Obtains a new database connection to a primary server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    obtainMasterConnection(): Promise<any> {
+    obtainPrimaryConnection(): Promise<any> {
         return Promise.resolve();
     }
 
     /**
-     * Obtains a new database connection to a slave server.
+     * Obtains a new database connection to a replica server.
      * Used for replication.
-     * If replication is not setup then returns master (default) connection's database connection.
+     * If replication is not setup then returns primary (default) connection's database connection.
      */
-    obtainSlaveConnection(): Promise<any> {
+    obtainReplicaConnection(): Promise<any> {
         return Promise.resolve();
     }
 

@@ -126,7 +126,7 @@ const users = await connection
 此代码将生成以下sql查询（取决于数据库类型）：
 
 ```sql
-SELECT * FROM "secondDB"."question" "question", "thirdDB"."photo" "photo" 
+SELECT * FROM "secondDB"."question" "question", "thirdDB"."photo" "photo"
     WHERE "photo"."userId" = "user"."id"
 ```
 
@@ -199,7 +199,7 @@ const users = await connection
 此代码将生成以下sql查询（取决于数据库类型）：
 
 ```sql
-SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo" 
+SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo"
     WHERE "photo"."userId" = "user"."id"
 ```
 
@@ -248,14 +248,14 @@ export class User {
   type: "mysql",
   logging: true,
   replication: {
-    master: {
+    primary: {
       host: "server1",
       port: 3306,
       username: "test",
       password: "test",
       database: "test"
     },
-    slaves: [{
+    replicas: [{
       host: "server2",
       port: 3306,
       username: "test",
@@ -272,19 +272,19 @@ export class User {
 }
 ```
 
-所有模式更新和写入操作都使用`master`服务器执行。
-find方法或select query builder执行的所有简单查询都使用随机的`slave`实例。
+所有模式更新和写入操作都使用`primary`服务器执行。
+find方法或select query builder执行的所有简单查询都使用随机的`replica`实例。
 
-如果要在查询构建器创建的SELECT中显式使用master，可以使用以下代码：
+如果要在查询构建器创建的SELECT中显式使用primary，可以使用以下代码：
 
 ```typescript
-const masterQueryRunner = connection.createQueryRunner("master");
+const primaryQueryRunner = connection.createQueryRunner("primary");
 try {
-    const postsFromMaster = await connection.createQueryBuilder(Post, "post")
-        .setQueryRunner(masterQueryRunner)
+    const postsFromPrimary = await connection.createQueryBuilder(Post, "post")
+        .setQueryRunner(primaryQueryRunner)
         .getMany();
 } finally {
-      await masterQueryRunner.release();
+      await primaryQueryRunner.release();
 }
 ```
 请注意，需要显式释放由`QueryRunner`创建的连接。
@@ -296,14 +296,14 @@ Mysql支持深度配置：
 ```typescript
 {
   replication: {
-    master: {
+    primary: {
       host: "server1",
       port: 3306,
       username: "test",
       password: "test",
       database: "test"
     },
-    slaves: [{
+    replicas: [{
       host: "server2",
       port: 3306,
       username: "test",
@@ -316,7 +316,7 @@ Mysql支持深度配置：
       password: "test",
       database: "test"
     }],
-    
+
     /**
     * 如果为true，则PoolCluster将在连接失败时尝试重新连接。 （默认值：true）
     */

@@ -20,7 +20,7 @@ export interface Driver {
     options: BaseConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Primary database used to perform all write queries.
      *
      * todo: probably move into query runner.
      */
@@ -102,7 +102,7 @@ export interface Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    createQueryRunner(mode: "master"|"slave"): QueryRunner;
+    createQueryRunner(mode: "master"|"slave"|"primary"|"replica"): QueryRunner;
 
     /**
      * Replaces parameters in the given sql with special escaping character
@@ -159,18 +159,38 @@ export interface Driver {
     createFullType(column: TableColumn): string;
 
     /**
-     * Obtains a new database connection to a master server.
+     * Obtains a new database connection to a primary server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
+     *
+     * @deprecated
+     * @see obtainPrimaryConnection
      */
     obtainMasterConnection(): Promise<any>;
 
     /**
-     * Obtains a new database connection to a slave server.
+     * Obtains a new database connection to a replica server.
      * Used for replication.
-     * If replication is not setup then returns master (default) connection's database connection.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     *
+     * @deprecated
+     * @see obtainReplicaConnection
      */
     obtainSlaveConnection(): Promise<any>;
+
+    /**
+     * Obtains a new database connection to a primary server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainPrimaryConnection(): Promise<any>;
+
+    /**
+     * Obtains a new database connection to a replica server.
+     * Used for replication.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     */
+    obtainReplicaConnection(): Promise<any>;
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.

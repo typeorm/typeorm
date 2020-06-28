@@ -55,7 +55,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: SapDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: SapDriver, mode: "master"|"slave"|"primary"|"replica" = "primary") {
         super();
         this.driver = driver;
         this.connection = driver.connection;
@@ -75,7 +75,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.databaseConnection)
             return this.databaseConnection;
 
-        this.databaseConnection = await this.driver.obtainMasterConnection();
+        this.databaseConnection = await this.driver.obtainPrimaryConnection();
 
         return this.databaseConnection;
     }
@@ -88,10 +88,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         this.isReleased = true;
 
         if (this.databaseConnection) {
-            return this.driver.master.release(this.databaseConnection);
+            return this.driver.primary.release(this.databaseConnection);
         }
 
-        return Promise.resolve();        
+        return Promise.resolve();
     }
 
     /**
@@ -1823,7 +1823,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         let indexType = "";
         if (index.isUnique) {
             indexType += "UNIQUE ";
-        } 
+        }
         if (index.isFulltext) {
             indexType += "FULLTEXT ";
         }

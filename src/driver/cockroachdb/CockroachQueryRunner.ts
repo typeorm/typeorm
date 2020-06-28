@@ -65,7 +65,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: CockroachDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: CockroachDriver, mode: "master"|"slave"|"primary"|"replica" = "primary") {
         super();
         this.driver = driver;
         this.connection = driver.connection;
@@ -88,16 +88,16 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (this.databaseConnectionPromise)
             return this.databaseConnectionPromise;
 
-        if (this.mode === "slave" && this.driver.isReplicated)  {
-            this.databaseConnectionPromise = this.driver.obtainSlaveConnection().then(([ connection, release]: any[]) => {
+        if ((this.mode === "replica" || this.mode === "slave") && this.driver.isReplicated) {
+            this.databaseConnectionPromise = this.driver.obtainReplicaConnection().then(([ connection, release]: any[]) => {
                 this.driver.connectedQueryRunners.push(this);
                 this.databaseConnection = connection;
                 this.releaseCallback = release;
                 return this.databaseConnection;
             });
 
-        } else { // master
-            this.databaseConnectionPromise = this.driver.obtainMasterConnection().then(([connection, release]: any[]) => {
+        } else { // primary
+            this.databaseConnectionPromise = this.driver.obtainPrimaryConnection().then(([connection, release]: any[]) => {
                 this.driver.connectedQueryRunners.push(this);
                 this.databaseConnection = connection;
                 this.releaseCallback = release;

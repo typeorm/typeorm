@@ -54,7 +54,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: SqlServerDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: SqlServerDriver, mode: "master"|"slave"|"primary"|"replica" = "primary") {
         super();
         this.driver = driver;
         this.connection = driver.connection;
@@ -96,7 +96,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         return new Promise<void>(async (ok, fail) => {
             this.isTransactionActive = true;
 
-            const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
+            const pool = await ((this.mode === "replica" || this.mode === "slave") ? this.driver.obtainReplicaConnection() : this.driver.obtainPrimaryConnection());
             this.databaseConnection = pool.transaction();
 
             const transactionCallback = (err: any) => {
@@ -181,7 +181,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const promise = new Promise(async (ok, fail) => {
             try {
                 this.driver.connection.logger.logQuery(query, parameters, this);
-                const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
+                const pool = await ((this.mode === "replica" || this.mode === "slave") ? this.driver.obtainReplicaConnection() : this.driver.obtainPrimaryConnection());
                 const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
                 if (parameters && parameters.length) {
                     parameters.forEach((parameter, index) => {
@@ -263,7 +263,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const promise = new Promise<ReadStream>(async (ok, fail) => {
 
             this.driver.connection.logger.logQuery(query, parameters, this);
-            const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
+            const pool = await ((this.mode === "replica" || this.mode === "slave") ? this.driver.obtainReplicaConnection() : this.driver.obtainPrimaryConnection());
             const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
             request.stream = true;
             if (parameters && parameters.length) {

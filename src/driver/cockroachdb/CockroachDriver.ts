@@ -40,15 +40,34 @@ export class CockroachDriver implements Driver {
     postgres: any;
 
     /**
-     * Pool for master database.
+     * Pool for primary database.
+     *
+     * @deprecated
+     * @see primary
      */
-    master: any;
+    get master(): any { return this.primary; }
+    set master(value: any) { this.primary = value; }
 
     /**
-     * Pool for slave databases.
+     * Pool for replica databases.
+     * Used in replication.
+     *
+     * @deprecated
+     * @see replicas
+     */
+    get slaves(): any[] { return this.replicas; }
+    set slaves(value: any[]) { this.replicas = value; }
+
+    /**
+     * Pool for primary database.
+     */
+    primary: any;
+
+    /**
+     * Pool for replica databases.
      * Used in replication.
      */
-    slaves: any[] = [];
+    replicas: any[] = [];
 
     /**
      * We store all created query runners because we need to release them.
@@ -65,7 +84,7 @@ export class CockroachDriver implements Driver {
     options: CockroachConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Primary database used to perform all write queries.
      */
     database?: string;
 
@@ -242,14 +261,18 @@ export class CockroachDriver implements Driver {
     async connect(): Promise<void> {
 
         if (this.options.replication) {
-            this.slaves = await Promise.all(this.options.replication.slaves.map(slave => {
-                return this.createPool(this.options, slave);
+            const replication = this.options.replication;
+            const primary = "primary" in replication ? replication.primary : replication.master;
+            const replicas = "replicas" in replication ? replication.replicas : replication.slaves;
+
+            this.replicas = await Promise.all(replicas.map(replica => {
+                return this.createPool(this.options, replica);
             }));
-            this.master = await this.createPool(this.options, this.options.replication.master);
-            this.database = this.options.replication.master.database;
+            this.primary = await this.createPool(this.options, primary);
+            this.database = primary.database;
 
         } else {
-            this.master = await this.createPool(this.options, this.options);
+            this.primary = await this.createPool(this.options, this.options);
             this.database = this.options.database;
         }
     }
@@ -265,13 +288,13 @@ export class CockroachDriver implements Driver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
+        if (!this.primary)
             return Promise.reject(new ConnectionIsNotSetError("cockroachdb"));
 
-        await this.closePool(this.master);
-        await Promise.all(this.slaves.map(slave => this.closePool(slave)));
-        this.master = undefined;
-        this.slaves = [];
+        await this.closePool(this.primary);
+        await Promise.all(this.replicas.map(replica => this.closePool(replica)));
+        this.primary = undefined;
+        this.replicas = [];
     }
 
     /**
@@ -284,7 +307,7 @@ export class CockroachDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: "master"|"slave"|"primary"|"replica" = "primary") {
         return new CockroachQueryRunner(this, mode);
     }
 
@@ -540,30 +563,54 @@ export class CockroachDriver implements Driver {
     }
 
     /**
-     * Obtains a new database connection to a master server.
+     * Obtains a new database connection to a primary server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     *
+     * @deprecated
+     * @see obtainPrimaryConnection
+     */
+    obtainMasterConnection(): Promise<any> {
+        return this.obtainPrimaryConnection();
+    }
+
+    /**
+     * Obtains a new database connection to a replica server.
+     * Used for replication.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     *
+     * @deprecated
+     * @see obtainReplicaConnection
+     */
+    obtainSlaveConnection(): Promise<any> {
+        return this.obtainReplicaConnection();
+    }
+
+    /**
+     * Obtains a new database connection to a primary server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    obtainMasterConnection(): Promise<any> {
+    obtainPrimaryConnection(): Promise<any> {
         return new Promise((ok, fail) => {
-            this.master.connect((err: any, connection: any, release: any) => {
+            this.primary.connect((err: any, connection: any, release: any) => {
                 err ? fail(err) : ok([connection, release]);
             });
         });
     }
 
     /**
-     * Obtains a new database connection to a slave server.
+     * Obtains a new database connection to a replica server.
      * Used for replication.
-     * If replication is not setup then returns master (default) connection's database connection.
+     * If replication is not setup then returns primary (default) connection's database connection.
      */
-    obtainSlaveConnection(): Promise<any> {
-        if (!this.slaves.length)
-            return this.obtainMasterConnection();
+    obtainReplicaConnection(): Promise<any> {
+        if (!this.replicas.length)
+            return this.obtainPrimaryConnection();
 
         return new Promise((ok, fail) => {
-            const random = Math.floor(Math.random() * this.slaves.length);
-            this.slaves[random].connect((err: any, connection: any, release: any) => {
+            const random = Math.floor(Math.random() * this.replicas.length);
+            this.replicas[random].connect((err: any, connection: any, release: any) => {
                 err ? fail(err) : ok([connection, release]);
             });
         });

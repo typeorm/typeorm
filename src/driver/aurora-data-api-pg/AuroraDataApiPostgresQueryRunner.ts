@@ -9,7 +9,7 @@ import {PostgresQueryRunner} from "../postgres/PostgresQueryRunner";
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
     driver: any;
 
-    constructor(driver: any, mode: "master"|"slave") {
+    constructor(driver: any, mode: "master"|"slave"|"primary"|"replica") {
         super(driver, mode);
     }
 }
@@ -46,7 +46,7 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AuroraDataApiPostgresDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: AuroraDataApiPostgresDriver, mode: "master"|"slave"|"primary"|"replica" = "primary") {
         super(driver, mode);
     }
 
@@ -65,16 +65,16 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
         if (this.databaseConnectionPromise)
             return this.databaseConnectionPromise;
 
-        if (this.mode === "slave" && this.driver.isReplicated)  {
-            this.databaseConnectionPromise = this.driver.obtainSlaveConnection().then(([ connection, release]: any[]) => {
+        if ((this.mode === "replica" || this.mode === "slave") && this.driver.isReplicated) {
+            this.databaseConnectionPromise = this.driver.obtainReplicaConnection().then(([ connection, release]: any[]) => {
                 this.driver.connectedQueryRunners.push(this);
                 this.databaseConnection = connection;
                 this.releaseCallback = release;
                 return this.databaseConnection;
             });
 
-        } else { // master
-            this.databaseConnectionPromise = this.driver.obtainMasterConnection().then(([connection, release]: any[]) => {
+        } else { // primary
+            this.databaseConnectionPromise = this.driver.obtainPrimaryConnection().then(([connection, release]: any[]) => {
                 this.driver.connectedQueryRunners.push(this);
                 this.databaseConnection = connection;
                 this.releaseCallback = release;

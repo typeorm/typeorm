@@ -66,7 +66,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+    createQueryRunner(mode: "master"|"slave"|"primary"|"replica" = "primary"): QueryRunner {
         if (!this.queryRunner) {
             this.queryRunner = new NativescriptQueryRunner(this);
         }

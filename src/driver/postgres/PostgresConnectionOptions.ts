@@ -22,15 +22,32 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
     readonly replication?: {
 
         /**
-         * Master server used by orm to perform writes.
+         * Primary server used by orm to perform writes.
+         *
+         * @deprecated
+         * @see primary
          */
         readonly master: PostgresConnectionCredentialsOptions;
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from severs (replicas).
+         *
+         * @deprecated
+         * @see replicas
          */
         readonly slaves: PostgresConnectionCredentialsOptions[];
 
+    }|{
+
+        /**
+         * Primary server used by orm to perform writes.
+         */
+        readonly primary: PostgresConnectionCredentialsOptions;
+
+        /**
+         * List of read-from severs (replicas).
+         */
+        readonly replicas: PostgresConnectionCredentialsOptions[];
     };
 
     /**

@@ -48,7 +48,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: OracleDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: OracleDriver, mode: "master"|"slave"|"primary"|"replica" = "primary") {
         super();
         this.driver = driver;
         this.connection = driver.connection;
@@ -71,14 +71,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.databaseConnectionPromise)
             return this.databaseConnectionPromise;
 
-        if (this.mode === "slave" && this.driver.isReplicated) {
-            this.databaseConnectionPromise = this.driver.obtainSlaveConnection().then(connection => {
+        if ((this.mode === "replica" || this.mode === "slave") && this.driver.isReplicated) {
+            this.databaseConnectionPromise = this.driver.obtainReplicaConnection().then(connection => {
                 this.databaseConnection = connection;
                 return this.databaseConnection;
             });
 
-        } else { // master
-            this.databaseConnectionPromise = this.driver.obtainMasterConnection().then(connection => {
+        } else { // primary
+            this.databaseConnectionPromise = this.driver.obtainPrimaryConnection().then(connection => {
                 this.databaseConnection = connection;
                 return this.databaseConnection;
             });

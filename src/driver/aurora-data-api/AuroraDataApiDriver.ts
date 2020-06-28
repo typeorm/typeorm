@@ -55,7 +55,7 @@ export class AuroraDataApiDriver implements Driver {
     options: AuroraDataApiConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Primary database used to perform all write queries.
      */
     database?: string;
 
@@ -354,7 +354,7 @@ export class AuroraDataApiDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: "master"|"slave"|"primary"|"replica" = "primary") {
         return new AuroraDataApiQueryRunner(this);
     }
 
@@ -620,14 +620,38 @@ export class AuroraDataApiDriver implements Driver {
     }
 
     /**
-     * Obtains a new database connection to a master server.
+     * Obtains a new database connection to a primary server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     *
+     * @deprecated
+     * @see obtainPrimaryConnection
+     */
+    obtainMasterConnection(): Promise<any> {
+        return this.obtainPrimaryConnection();
+    }
+
+    /**
+     * Obtains a new database connection to a replica server.
+     * Used for replication.
+     * If replication is not setup then returns replica (default) connection's database connection.
+     *
+     * @deprecated
+     * @see obtainReplicaConnection
+     */
+    obtainSlaveConnection(): Promise<any> {
+        return this.obtainReplicaConnection();
+    }
+
+    /**
+     * Obtains a new database connection to a primary server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    obtainMasterConnection(): Promise<any> {
+    obtainPrimaryConnection(): Promise<any> {
         return new Promise<any>((ok, fail) => {
             if (this.poolCluster) {
-                this.poolCluster.getConnection("MASTER", (err: any, dbConnection: any) => {
+                this.poolCluster.getConnection("PRIMARY", (err: any, dbConnection: any) => {
                     err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
                 });
 
@@ -642,16 +666,16 @@ export class AuroraDataApiDriver implements Driver {
     }
 
     /**
-     * Obtains a new database connection to a slave server.
+     * Obtains a new database connection to a replica server.
      * Used for replication.
-     * If replication is not setup then returns master (default) connection's database connection.
+     * If replication is not setup then returns primary (default) connection's database connection.
      */
-    obtainSlaveConnection(): Promise<any> {
+    obtainReplicaConnection(): Promise<any> {
         if (!this.poolCluster)
-            return this.obtainMasterConnection();
+            return this.obtainPrimaryConnection();
 
         return new Promise<any>((ok, fail) => {
-            this.poolCluster.getConnection("SLAVE*", (err: any, dbConnection: any) => {
+            this.poolCluster.getConnection("REPLICA*", (err: any, dbConnection: any) => {
                 err ? fail(err) : ok(dbConnection);
             });
         });

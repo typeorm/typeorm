@@ -258,7 +258,7 @@ export class Connection {
      */
     // TODO rename
     async dropDatabase(): Promise<void> {
-        const queryRunner = this.createQueryRunner("master");
+        const queryRunner = this.createQueryRunner("primary");
         try {
             if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver || this.driver instanceof AuroraDataApiDriver) {
                 const databases: string[] = this.driver.database ? [this.driver.database] : [];
@@ -394,7 +394,7 @@ export class Connection {
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
-        const usedQueryRunner = queryRunner || this.createQueryRunner("master");
+        const usedQueryRunner = queryRunner || this.createQueryRunner("primary");
 
         try {
             return await usedQueryRunner.query(query, parameters);  // await is needed here because we are using finally
@@ -439,11 +439,11 @@ export class Connection {
      * manually control your database transaction.
      *
      * Mode is used in replication mode and indicates whatever you want to connect
-     * to master database or any of slave databases.
-     * If you perform writes you must use master database,
-     * if you perform reads you can use slave databases.
+     * to primary database or any of replica databases.
+     * If you perform writes you must use primary database,
+     * if you perform reads you can use replica databases.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+    createQueryRunner(mode: "master"|"slave"|"primary"|"replica" = "primary"): QueryRunner {
         const queryRunner = this.driver.createQueryRunner(mode);
         const manager = this.createEntityManager(queryRunner);
         Object.assign(queryRunner, { manager: manager });
@@ -533,7 +533,13 @@ export class Connection {
             case "cockroachdb":
             case "mssql":
             case "oracle":
-                return DriverUtils.buildDriverOptions(options.replication ? options.replication.master : options).database;
+                if (options.replication) {
+                    const replication = options.replication;
+                    const primary = "primary" in replication ? replication.primary : replication.master;
+                    return DriverUtils.buildDriverOptions(primary).database;
+                } else {
+                    return DriverUtils.buildDriverOptions(options).database;
+                }
             default:
                 return DriverUtils.buildDriverOptions(options).database;
     }

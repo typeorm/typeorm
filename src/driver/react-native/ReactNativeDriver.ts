@@ -8,7 +8,7 @@ import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstal
 
 export class ReactNativeDriver extends AbstractSqliteDriver {
     options: ReactNativeConnectionOptions;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -28,7 +28,7 @@ export class ReactNativeDriver extends AbstractSqliteDriver {
         // load sqlite package
         this.loadDependencies();
     }
-    
+
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -43,17 +43,17 @@ export class ReactNativeDriver extends AbstractSqliteDriver {
             this.databaseConnection.close(ok, fail);
         });
     }
-    
+
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+    createQueryRunner(mode: "master"|"slave"|"primary"|"replica" = "primary"): QueryRunner {
         if (!this.queryRunner)
             this.queryRunner = new ReactNativeQueryRunner(this);
 
         return this.queryRunner;
     }
-    
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

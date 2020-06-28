@@ -11,12 +11,12 @@ describe("github issues > #4753 MySQL Replication Config broken", () => {
         const connection = getConnectionManager().create({
             type: "mysql",
             replication: {
-                master: {
+                primary: {
                     username: "test",
                     password: "test",
                     database: "test"
                 },
-                slaves: [
+                replicas: [
                     {
                         username: "test",
                         password: "test",

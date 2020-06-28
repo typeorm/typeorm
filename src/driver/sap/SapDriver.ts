@@ -34,15 +34,35 @@ export class SapDriver implements Driver {
     client: any;
 
     /**
-     * Pool for master database.
+     * Pool for primary database.
+     *
+     * @deprecated
+     * @see primary
      */
-    master: any;
+    get master(): any { return this.primary; }
+    set master(value: any) { this.primary = value; }
+
 
     /**
-     * Pool for slave databases.
+     * Pool for replica databases.
+     * Used in replication.
+     *
+     * @deprecated
+     * @see replicas
+     */
+    get slaves(): any[] { return this.replicas; }
+    set slaves(value: any[]) { this.replicas = value; }
+
+    /**
+     * Pool for primary database.
+     */
+    primary: any;
+
+    /**
+     * Pool for replica databases.
      * Used in replication.
      */
-    slaves: any[] = [];
+    replicas: any[] = [];
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -54,7 +74,7 @@ export class SapDriver implements Driver {
     options: SapConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Primary database used to perform all write queries.
      */
     database?: string;
 
@@ -242,7 +262,7 @@ export class SapDriver implements Driver {
         this.client.eventEmitter.on("poolError", poolErrorHandler);
 
         // create the pool
-        this.master = this.client.createPool(dbParams, options);
+        this.primary = this.client.createPool(dbParams, options);
 
         this.database = this.options.database;
     }
@@ -258,8 +278,8 @@ export class SapDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        const promise = this.master.clear();
-        this.master = undefined;
+        const promise = this.primary.clear();
+        this.primary = undefined;
         return promise;
     }
 
@@ -273,7 +293,7 @@ export class SapDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: "master"|"slave"|"primary"|"replica" = "primary") {
         return new SapQueryRunner(this, mode);
     }
 
@@ -532,21 +552,45 @@ export class SapDriver implements Driver {
     }
 
     /**
-     * Obtains a new database connection to a master server.
+     * Obtains a new database connection to a primary server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
+     *
+     * @deprecated
+     * @see obtainPrimaryConnection
      */
     obtainMasterConnection(): Promise<any> {
-        return this.master.getConnection();
+        return this.obtainPrimaryConnection();
     }
 
     /**
-     * Obtains a new database connection to a slave server.
+     * Obtains a new database connection to a replica server.
      * Used for replication.
-     * If replication is not setup then returns master (default) connection's database connection.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     *
+     * @deprecated
+     * @see obtainReplicaConnection
      */
     obtainSlaveConnection(): Promise<any> {
-        return this.obtainMasterConnection();
+        return this.obtainReplicaConnection();
+    }
+
+    /**
+     * Obtains a new database connection to a primary server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainPrimaryConnection(): Promise<any> {
+        return this.primary.getConnection();
+    }
+
+    /**
+     * Obtains a new database connection to a replica server.
+     * Used for replication.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     */
+    obtainReplicaConnection(): Promise<any> {
+        return this.obtainPrimaryConnection();
     }
 
     /**

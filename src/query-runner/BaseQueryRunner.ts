@@ -82,7 +82,7 @@ export abstract class BaseQueryRunner {
      * Used for replication.
      * If replication is not setup its value is ignored.
      */
-    protected mode: "master"|"slave";
+    protected mode: "master"|"slave"|"primary"|"replica";
 
     // -------------------------------------------------------------------------
     // Public Abstract Methods

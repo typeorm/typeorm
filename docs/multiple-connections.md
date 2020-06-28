@@ -36,7 +36,7 @@ const connections = await createConnections([{
 }]);
 ```
 
-This approach allows you to connect to any number of databases you have 
+This approach allows you to connect to any number of databases you have
 and each database will have its own configuration, own entities and overall ORM scope and settings.
 
 For each connection a new `Connection` instance will be created.
@@ -71,11 +71,11 @@ const db2Connection = getConnection("db2Connection");
 
 Benefit of using this approach is that you can configure multiple connections with different login credentials,
 host, port and even database type itself.
-Downside for might be that you'll need to manage and work with multiple connection instances. 
+Downside for might be that you'll need to manage and work with multiple connection instances.
 
 ## Using multiple databases in a single connection
 
-If you don't want to create multiple connections, 
+If you don't want to create multiple connections,
 but want to use multiple databases in a single connection,
 you can specify database name per-entity you use:
 
@@ -130,7 +130,7 @@ const users = await connection
 This code will produce following sql query (depend on database type):
 
 ```sql
-SELECT * FROM "secondDB"."user" "user", "thirdDB"."photo" "photo" 
+SELECT * FROM "secondDB"."user" "user", "thirdDB"."photo" "photo"
     WHERE "photo"."userId" = "user"."id"
 ```
 
@@ -203,7 +203,7 @@ const users = await connection
 This code will produce following sql query (depend on database type):
 
 ```sql
-SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo" 
+SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo"
     WHERE "photo"."userId" = "user"."id"
 ```
 
@@ -250,14 +250,14 @@ Example of replication connection settings:
   type: "mysql",
   logging: true,
   replication: {
-    master: {
+    primary: {
       host: "server1",
       port: 3306,
       username: "test",
       password: "test",
       database: "test"
     },
-    slaves: [{
+    replicas: [{
       host: "server2",
       port: 3306,
       username: "test",
@@ -274,21 +274,21 @@ Example of replication connection settings:
 }
 ```
 
-All schema update and write operations are performed using `master` server.
-All simple queries performed by find methods or select query builder are using a random `slave` instance. 
+All schema update and write operations are performed using `primary` server.
+All simple queries performed by find methods or select query builder are using a random `replica` instance.
 
-If you want to explicitly use master in SELECT created by query builder, you can use the following code:
+If you want to explicitly use primary in SELECT created by query builder, you can use the following code:
 
 ```typescript
-const masterQueryRunner = connection.createQueryRunner("master");
+const primaryQueryRunner = connection.createQueryRunner("primary");
 try {
-    const postsFromMaster = await connection.createQueryBuilder(Post, "post")
-        .setQueryRunner(masterQueryRunner)
+    const postsFromPrimary = await connection.createQueryBuilder(Post, "post")
+        .setQueryRunner(primaryQueryRunner)
         .getMany();
 } finally {
-      await masterQueryRunner.release();
+      await primaryQueryRunner.release();
 }
-        
+
 ```
 
 Note that connection created by a `QueryRunner` need to be explicitly released.
@@ -300,14 +300,14 @@ Mysql supports deep configuration:
 ```typescript
 {
   replication: {
-    master: {
+    primary: {
       host: "server1",
       port: 3306,
       username: "test",
       password: "test",
       database: "test"
     },
-    slaves: [{
+    replicas: [{
       host: "server2",
       port: 3306,
       username: "test",
@@ -320,7 +320,7 @@ Mysql supports deep configuration:
       password: "test",
       database: "test"
     }],
-    
+
     /**
     * If true, PoolCluster will attempt to reconnect when connection fails. (Default: true)
     */

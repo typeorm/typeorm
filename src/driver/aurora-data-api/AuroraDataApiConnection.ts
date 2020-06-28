@@ -13,7 +13,7 @@ export class AuroraDataApiConnection extends Connection {
         this.queryRunnter = queryRunner;
     }
 
-    public createQueryRunner(mode: "master" | "slave" = "master"): QueryRunner {
+    public createQueryRunner(mode: "master" | "slave" | "primary" | "replica" = "primary"): QueryRunner {
         return this.queryRunnter;
     }
 

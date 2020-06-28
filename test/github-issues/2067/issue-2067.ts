@@ -21,8 +21,8 @@ describe("github issues > #2067 Unhandled promise rejection warning on postgres 
         const connectionFailureMessage = "Test error to simulate a connection error";
 
         if (connection.driver instanceof PostgresDriver) {
-          connection.driver.obtainMasterConnection = () => Promise.reject<any>(new Error(connectionFailureMessage));
-          connection.driver.obtainSlaveConnection = () => Promise.reject<any>(new Error(connectionFailureMessage));
+          connection.driver.obtainPrimaryConnection = () => Promise.reject<any>(new Error(connectionFailureMessage));
+          connection.driver.obtainReplicaConnection = () => Promise.reject<any>(new Error(connectionFailureMessage));
         }
 
         const repository = connection.getRepository(User);
