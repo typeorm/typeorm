@@ -176,11 +176,10 @@ export class DateUtils {
 
     static stringToSimpleJson(value: any) {
         try {
-            const simpleJSON = JSON.parse(value);
-            return (typeof simpleJSON === "object") ? simpleJSON : {};
-       } catch (err) {
-            return {};
-       }
+            return value ? JSON.parse(value) : null;
+        } catch (err) {
+            return null;
+        }
     }
 
     static simpleEnumToString(value: any) {
