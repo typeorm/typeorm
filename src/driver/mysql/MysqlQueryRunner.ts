@@ -634,7 +634,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name;
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true)) {
+            if (this.isColumnChanged(oldColumn, newColumn, true, true)) {
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`));
             }

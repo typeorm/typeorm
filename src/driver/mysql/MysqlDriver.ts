@@ -773,7 +773,7 @@ export class MysqlDriver implements Driver {
                 || tableColumn.unsigned !== columnMetadata.unsigned
                 || tableColumn.asExpression !== columnMetadata.asExpression
                 || tableColumn.generatedType !== columnMetadata.generatedType
-                // || tableColumn.comment !== columnMetadata.comment // todo
+                || tableColumn.comment !== columnMetadata.comment // todo
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
                 || tableColumn.onUpdate !== columnMetadata.onUpdate
