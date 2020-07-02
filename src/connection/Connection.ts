@@ -279,11 +279,11 @@ export class Connection {
      * Runs all pending migrations.
      * Can be used only after connection to the database is established.
      */
-    async runMigrations(options?: { transaction?: "all" | "none" | "each" }): Promise<Migration[]> {
+    async runMigrations(options?: { transaction?: "all" | "none" | "each", queryRunner?: QueryRunner }): Promise<Migration[]> {
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name);
 
-        const migrationExecutor = new MigrationExecutor(this);
+        const migrationExecutor = new MigrationExecutor(this, (options && options.queryRunner) || undefined);
         migrationExecutor.transaction = (options && options.transaction) || "all";
 
         const successMigrations = await migrationExecutor.executePendingMigrations();
@@ -294,12 +294,11 @@ export class Connection {
      * Reverts last executed migration.
      * Can be used only after connection to the database is established.
      */
-    async undoLastMigration(options?: { transaction?: "all" | "none" | "each" }): Promise<void> {
+    async undoLastMigration(options?: { transaction?: "all" | "none" | "each", queryRunner?: QueryRunner }): Promise<void> {
 
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name);
-
-        const migrationExecutor = new MigrationExecutor(this);
+        const migrationExecutor = new MigrationExecutor(this, (options && options.queryRunner) || undefined);
         migrationExecutor.transaction = (options && options.transaction) || "all";
 
         await migrationExecutor.undoLastMigration();
@@ -309,11 +308,11 @@ export class Connection {
      * Lists all migrations and whether they have been run.
      * Returns true if there are pending migrations
      */
-    async showMigrations(): Promise<boolean> {
+    async showMigrations(options?: {queryRunner?: QueryRunner}): Promise<boolean> {
         if (!this.isConnected) {
             throw new CannotExecuteNotConnectedError(this.name);
         }
-        const migrationExecutor = new MigrationExecutor(this);
+        const migrationExecutor = new MigrationExecutor(this, (options && options.queryRunner) || undefined);
         return await migrationExecutor.showMigrations();
     }
 
