@@ -1,18 +1,17 @@
-import {Connection, SelectQueryBuilder} from "..";
-import {OrderByCondition} from "../find-options/OrderByCondition";
-import {TableType} from "../metadata/types/TableTypes";
+import { Connection, SelectQueryBuilder } from "..";
+import { OrderByCondition } from "../find-options/OrderByCondition";
+import { TableType } from "../metadata/types/TableTypes";
 
 /**
  * Arguments for TableMetadata class, helps to construct an TableMetadata object.
  */
 export interface TableMetadataArgs {
-
     /**
      * Class to which table is applied.
      * Function target is a table defined in the class.
      * String target is a table defined in a json schema.
      */
-    target: Function|string;
+    target: Function | string;
 
     /**
      * Table's name. If name is not set then table's name will be generated from target's name.
@@ -27,7 +26,7 @@ export interface TableMetadataArgs {
     /**
      * Specifies a default order by used for queries from this table when no explicit order by is specified.
      */
-    orderBy?: OrderByCondition|((object: any) => OrderByCondition|any);
+    orderBy?: OrderByCondition | ((object: any) => OrderByCondition | any);
 
     /**
      * Table's database engine type (like "InnoDB", "MyISAM", etc).
@@ -54,16 +53,16 @@ export interface TableMetadataArgs {
     /**
      * View expression.
      */
-    expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
+    expression?: string | ((connection: Connection) => SelectQueryBuilder<any>);
 
     /**
      * Indicates if view is materialized
      */
     materialized?: boolean;
 
-     /**
+    /**
      * If set to 'true' this option disables Sqlite's default behaviour of secretly creating
-     * an integer primary key column named 'rowid' on table creation. 
+     * an integer primary key column named 'rowid' on table creation.
      */
-    withoutRowid?: boolean;   
+    withoutRowid?: boolean;
 }

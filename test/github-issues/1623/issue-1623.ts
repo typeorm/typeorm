@@ -1,12 +1,14 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {ColumnMetadata} from "../../../src/metadata/ColumnMetadata";
-import {ColumnMetadataArgs} from "../../../src/metadata-args/ColumnMetadataArgs";
-import {User} from "./entity/User";
+import { Connection } from "../../../src/connection/Connection";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../utils/test-utils";
+import { ColumnMetadata } from "../../../src/metadata/ColumnMetadata";
+import { ColumnMetadataArgs } from "../../../src/metadata-args/ColumnMetadataArgs";
+import { User } from "./entity/User";
 
 describe("github issues > #1623 NOT NULL constraint failed after a new column is added (SQLite)", () => {
-
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
@@ -17,35 +19,36 @@ describe("github issues > #1623 NOT NULL constraint failed after a new column is
     });
     after(() => closeTestingConnections(connections));
 
-    it("should correctly add new column", () => Promise.all(connections.map(async connection => {
+    it("should correctly add new column", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const userMetadata = connection.getMetadata(User);
 
-        const userMetadata = connection.getMetadata(User);
+                const columnMetadata = new ColumnMetadata({
+                    namingStrategy: connection.namingStrategy,
+                    entityMetadata: userMetadata,
+                    args: <ColumnMetadataArgs>{
+                        target: User,
+                        propertyName: "userName",
+                        mode: "regular",
+                        options: {
+                            type: "varchar",
+                            name: "userName",
+                        },
+                    },
+                });
+                columnMetadata.build();
 
-        const columnMetadata = new ColumnMetadata({
-            connection: connection,
-            entityMetadata: userMetadata,
-            args: <ColumnMetadataArgs>{
-                target: User,
-                propertyName: "userName",
-                mode: "regular",
-                options: {
-                    type: "varchar",
-                    name: "userName"
-                }
-            }
-        });
-        columnMetadata.build(connection);
+                userMetadata.columns.push(columnMetadata);
 
-        userMetadata.columns.push(columnMetadata);
+                await connection.synchronize();
 
-        await connection.synchronize();
+                const queryRunner = connection.createQueryRunner();
+                const table = await queryRunner.getTable("user");
+                const column1 = table!.findColumnByName("userName")!;
+                await queryRunner.release();
 
-        const queryRunner = connection.createQueryRunner();
-        const table = await queryRunner.getTable("user");
-        const column1 = table!.findColumnByName("userName")!;
-        await queryRunner.release();
-
-        column1.should.be.exist;
-    })));
-
+                column1.should.be.exist;
+            })
+        ));
 });

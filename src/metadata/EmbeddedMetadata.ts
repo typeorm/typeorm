@@ -1,20 +1,17 @@
-import {ColumnMetadata} from "./ColumnMetadata";
-import {RelationMetadata} from "./RelationMetadata";
-import {EntityMetadata} from "./EntityMetadata";
-import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
-import {RelationIdMetadata} from "./RelationIdMetadata";
-import {RelationCountMetadata} from "./RelationCountMetadata";
-import {Connection} from "../connection/Connection";
-import {MongoDriver} from "../driver/mongodb/MongoDriver";
-import {EntityListenerMetadata} from "./EntityListenerMetadata";
-import {IndexMetadata} from "./IndexMetadata";
-import {UniqueMetadata} from "./UniqueMetadata";
+import { ColumnMetadata } from "./ColumnMetadata";
+import { RelationMetadata } from "./RelationMetadata";
+import { EntityMetadata } from "./EntityMetadata";
+import { EmbeddedMetadataArgs } from "../metadata-args/EmbeddedMetadataArgs";
+import { RelationIdMetadata } from "./RelationIdMetadata";
+import { RelationCountMetadata } from "./RelationCountMetadata";
+import { EntityListenerMetadata } from "./EntityListenerMetadata";
+import { IndexMetadata } from "./IndexMetadata";
+import { UniqueMetadata } from "./UniqueMetadata";
 
 /**
  * Contains all information about entity's embedded property.
  */
 export class EmbeddedMetadata {
-
     // ---------------------------------------------------------------------
     // Public Properties
     // ---------------------------------------------------------------------
@@ -97,7 +94,7 @@ export class EmbeddedMetadata {
      * Prefix of the embedded, used instead of propertyName.
      * If set to empty string or false, then prefix is not set at all.
      */
-    customPrefix: string|boolean|undefined;
+    customPrefix: string | boolean | undefined;
 
     /**
      * Gets the prefix of the columns.
@@ -172,8 +169,8 @@ export class EmbeddedMetadata {
     // ---------------------------------------------------------------------
 
     constructor(options: {
-        entityMetadata: EntityMetadata,
-        args: EmbeddedMetadataArgs,
+        entityMetadata: EntityMetadata;
+        args: EmbeddedMetadataArgs;
     }) {
         this.entityMetadata = options.entityMetadata;
         this.type = options.args.type();
@@ -190,16 +187,16 @@ export class EmbeddedMetadata {
      * Creates a new embedded object.
      */
     create(): any {
-        return new (this.type as any);
+        return new (this.type as any)();
     }
 
     // ---------------------------------------------------------------------
     // Builder Methods
     // ---------------------------------------------------------------------
 
-    build(connection: Connection): this {
-        this.embeddeds.forEach(embedded => embedded.build(connection));
-        this.prefix = this.buildPrefix(connection);
+    build(): this {
+        this.embeddeds.forEach((embedded) => embedded.build());
+        this.prefix = this.buildPrefix();
         this.parentPropertyNames = this.buildParentPropertyNames();
         this.parentPrefixes = this.buildParentPrefixes();
         this.propertyPath = this.parentPropertyNames.join(".");
@@ -234,16 +231,15 @@ export class EmbeddedMetadata {
             return [this.customPrefix];
         }
 
-        throw new Error(`Invalid prefix option given for ${this.entityMetadata.targetName}#${this.propertyName}`);
+        throw new Error(
+            `Invalid prefix option given for ${this.entityMetadata.targetName}#${this.propertyName}`
+        );
     }
 
-    protected buildPrefix(connection: Connection): string {
-        if (connection.driver instanceof MongoDriver)
-            return this.propertyName;
-
+    protected buildPrefix(): string {
         let prefixes: string[] = [];
         if (this.parentEmbeddedMetadata)
-            prefixes.push(this.parentEmbeddedMetadata.buildPrefix(connection));
+            prefixes.push(this.parentEmbeddedMetadata.buildPrefix());
 
         prefixes.push(...this.buildPartialPrefix());
 
@@ -251,43 +247,82 @@ export class EmbeddedMetadata {
     }
 
     protected buildParentPropertyNames(): string[] {
-        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildParentPropertyNames().concat(this.propertyName) : [this.propertyName];
+        return this.parentEmbeddedMetadata
+            ? this.parentEmbeddedMetadata
+                  .buildParentPropertyNames()
+                  .concat(this.propertyName)
+            : [this.propertyName];
     }
 
     protected buildParentPrefixes(): string[] {
-        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildParentPrefixes().concat(this.buildPartialPrefix()) : this.buildPartialPrefix();
+        return this.parentEmbeddedMetadata
+            ? this.parentEmbeddedMetadata
+                  .buildParentPrefixes()
+                  .concat(this.buildPartialPrefix())
+            : this.buildPartialPrefix();
     }
 
     protected buildEmbeddedMetadataTree(): EmbeddedMetadata[] {
-        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildEmbeddedMetadataTree().concat(this) : [this];
+        return this.parentEmbeddedMetadata
+            ? this.parentEmbeddedMetadata
+                  .buildEmbeddedMetadataTree()
+                  .concat(this)
+            : [this];
     }
 
     protected buildColumnsFromTree(): ColumnMetadata[] {
-        return this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.buildColumnsFromTree()), this.columns);
+        return this.embeddeds.reduce(
+            (columns, embedded) =>
+                columns.concat(embedded.buildColumnsFromTree()),
+            this.columns
+        );
     }
 
     protected buildRelationsFromTree(): RelationMetadata[] {
-        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildRelationsFromTree()), this.relations);
+        return this.embeddeds.reduce(
+            (relations, embedded) =>
+                relations.concat(embedded.buildRelationsFromTree()),
+            this.relations
+        );
     }
 
     protected buildListenersFromTree(): EntityListenerMetadata[] {
-        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildListenersFromTree()), this.listeners);
+        return this.embeddeds.reduce(
+            (relations, embedded) =>
+                relations.concat(embedded.buildListenersFromTree()),
+            this.listeners
+        );
     }
 
     protected buildIndicesFromTree(): IndexMetadata[] {
-        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildIndicesFromTree()), this.indices);
+        return this.embeddeds.reduce(
+            (relations, embedded) =>
+                relations.concat(embedded.buildIndicesFromTree()),
+            this.indices
+        );
     }
 
     protected buildUniquesFromTree(): UniqueMetadata[] {
-        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildUniquesFromTree()), this.uniques);
+        return this.embeddeds.reduce(
+            (relations, embedded) =>
+                relations.concat(embedded.buildUniquesFromTree()),
+            this.uniques
+        );
     }
 
     protected buildRelationIdsFromTree(): RelationIdMetadata[] {
-        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildRelationIdsFromTree()), this.relationIds);
+        return this.embeddeds.reduce(
+            (relations, embedded) =>
+                relations.concat(embedded.buildRelationIdsFromTree()),
+            this.relationIds
+        );
     }
 
     protected buildRelationCountsFromTree(): RelationCountMetadata[] {
-        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildRelationCountsFromTree()), this.relationCounts);
+        return this.embeddeds.reduce(
+            (relations, embedded) =>
+                relations.concat(embedded.buildRelationCountsFromTree()),
+            this.relationCounts
+        );
     }
-
 }
