@@ -31,7 +31,7 @@ plugins: [
 ]
 ```
 
-and make sure (sql-wasm.wasm)[https://github.com/sql-js/sql.js/blob/master/README.md#downloadingusing] file exists in your public path.
+and make sure [sql-wasm.wasm file](https://github.com/sql-js/sql.js/blob/master/README.md#downloadingusing) exists in your public path.
 
 **Example of configuration**
 
