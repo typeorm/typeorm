@@ -520,6 +520,8 @@ describe("repository > find options > operators", () => {
     })));
 
     it("ilike", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof PostgresDriver))
+            return;
 
         // insert some fake data
         const post1 = new Post();
@@ -540,7 +542,9 @@ describe("repository > find options > operators", () => {
     })));
 
     it("not(ilike)", () => Promise.all(connections.map(async connection => {
-
+        if (!(connection.driver instanceof PostgresDriver))
+            return;
+        
         // insert some fake data
         const post1 = new Post();
         post1.title = "about #1";
