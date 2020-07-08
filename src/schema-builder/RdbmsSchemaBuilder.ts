@@ -21,7 +21,6 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {TableUnique} from "./table/TableUnique";
 import {TableCheck} from "./table/TableCheck";
 import {TableExclusion} from "./table/TableExclusion";
-import {View} from "./view/View";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata";
 
@@ -154,7 +153,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Order of operations matter here.
      */
     protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
-        await this.dropOldViews();
         await this.dropOldForeignKeys();
         await this.dropOldIndices();
         await this.dropOldChecks();
@@ -172,7 +170,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.createNewExclusions();
         await this.createCompositeUniqueConstraints();
         await this.createForeignKeys();
-        await this.createViews();
     }
 
     /**
@@ -386,6 +383,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         });
     }
 
+    /*
     protected async createViews(): Promise<void> {
         await PromiseUtils.runInSequence(this.viewEntityToSyncMetadatas, async metadata => {
             // check if view does not exist yet
@@ -430,6 +428,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             this.queryRunner.loadedViews.splice(this.queryRunner.loadedViews.indexOf(view), 1);
         });
     }
+    */
 
     /**
      * Drops all columns that exist in the table, but does not exist in the metadata (left old).

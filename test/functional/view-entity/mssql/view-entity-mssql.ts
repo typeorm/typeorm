@@ -1,3 +1,4 @@
+/*
 import {expect} from "chai";
 import "reflect-metadata";
 import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
@@ -61,3 +62,4 @@ describe("view entity > mssql", () => {
 
     })));
 });
+*/

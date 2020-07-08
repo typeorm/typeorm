@@ -1,12 +1,9 @@
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {UniqueMetadata} from "../metadata/UniqueMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
-import {Connection} from "../connection/Connection";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { NamingStrategyInterface } from '../naming-strategy/NamingStrategyInterface';
 
 /**
  * Builds join column for the many-to-one and one-to-one owner relations.
@@ -44,7 +41,7 @@ export class RelationJoinColumnBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection) {
+    constructor(private readonly namingStrategy: NamingStrategyInterface) {
     }
 
     // -------------------------------------------------------------------------
@@ -66,7 +63,7 @@ export class RelationJoinColumnBuilder {
         const foreignKey = new ForeignKeyMetadata({
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
-            namingStrategy: this.connection.namingStrategy,
+            namingStrategy: this.namingStrategy,
             columns: columns,
             referencedColumns: referencedColumns,
             onDelete: relation.onDelete,
@@ -74,21 +71,17 @@ export class RelationJoinColumnBuilder {
             deferrable: relation.deferrable,
         });
 
-        // Oracle does not allow both primary and unique constraints on the same column
-        if (this.connection.driver instanceof OracleDriver && columns.every(column => column.isPrimary))
-            return { foreignKey, uniqueConstraint: undefined };
-
         // CockroachDB requires UNIQUE constraints on referenced columns
         if (referencedColumns.length > 0 && relation.isOneToOne) {
             const uniqueConstraint = new UniqueMetadata({
                 entityMetadata: relation.entityMetadata,
                 columns: foreignKey.columns,
                 args: {
-                    name: this.connection.namingStrategy.relationConstraintName(relation.entityMetadata.tablePath, foreignKey.columns.map(c => c.databaseName)),
+                    name: this.namingStrategy.relationConstraintName(relation.entityMetadata.tablePath, foreignKey.columns.map(c => c.databaseName)),
                     target: relation.entityMetadata.target,
                 }
             });
-            uniqueConstraint.build(this.connection.namingStrategy);
+            uniqueConstraint.build(this.namingStrategy);
             return {foreignKey, uniqueConstraint};
         }
 
@@ -131,12 +124,12 @@ export class RelationJoinColumnBuilder {
                 return (!joinColumn.referencedColumnName || joinColumn.referencedColumnName === referencedColumn.propertyName) &&
                     !!joinColumn.name;
             });
-            const joinColumnName = joinColumnMetadataArg ? joinColumnMetadataArg.name : this.connection.namingStrategy.joinColumnName(relation.propertyName, referencedColumn.propertyName);
+            const joinColumnName = joinColumnMetadataArg ? joinColumnMetadataArg.name : this.namingStrategy.joinColumnName(relation.propertyName, referencedColumn.propertyName);
 
             let relationalColumn = relation.entityMetadata.ownColumns.find(column => column.databaseName === joinColumnName);
             if (!relationalColumn) {
                 relationalColumn = new ColumnMetadata({
-                    connection: this.connection,
+                    namingStrategy: this.namingStrategy,
                     entityMetadata: relation.entityMetadata,
                     args: {
                         target: "",
@@ -145,11 +138,7 @@ export class RelationJoinColumnBuilder {
                         options: {
                             name: joinColumnName,
                             type: referencedColumn.type,
-                            length: !referencedColumn.length
-                                        && (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
-                                        && (referencedColumn.generationStrategy === "uuid" || referencedColumn.type === "uuid")
-                                    ? "36"
-                                    : referencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
+                            length: referencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
                             width: referencedColumn.width,
                             charset: referencedColumn.charset,
                             collation: referencedColumn.collation,
@@ -168,7 +157,7 @@ export class RelationJoinColumnBuilder {
             relationalColumn.referencedColumn = referencedColumn; // its important to set it here because we need to set referenced column for user defined join column
             relationalColumn.type = referencedColumn.type; // also since types of relational column and join column must be equal we override user defined column type
             relationalColumn.relationMetadata = relation;
-            relationalColumn.build(this.connection);
+            relationalColumn.build(this.namingStrategy);
             return relationalColumn;
         });
     }

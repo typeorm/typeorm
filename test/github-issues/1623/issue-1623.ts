@@ -22,7 +22,7 @@ describe("github issues > #1623 NOT NULL constraint failed after a new column is
         const userMetadata = connection.getMetadata(User);
 
         const columnMetadata = new ColumnMetadata({
-            connection: connection,
+            namingStrategy: connection.namingStrategy,
             entityMetadata: userMetadata,
             args: <ColumnMetadataArgs>{
                 target: User,
@@ -34,7 +34,7 @@ describe("github issues > #1623 NOT NULL constraint failed after a new column is
                 }
             }
         });
-        columnMetadata.build(connection);
+        columnMetadata.build(connection.namingStrategy);
 
         userMetadata.columns.push(columnMetadata);
 

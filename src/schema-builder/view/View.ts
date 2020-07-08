@@ -1,5 +1,4 @@
-import {Connection, Driver, SelectQueryBuilder} from "../..";
-import {EntityMetadata} from "../..";
+import {Connection, SelectQueryBuilder} from "../..";
 import {ViewOptions} from "../options/ViewOptions";
 
 /**
@@ -54,22 +53,4 @@ export class View {
             materialized: this.materialized,
         });
     }
-
-    // -------------------------------------------------------------------------
-    // Static Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Creates view from a given entity metadata.
-     */
-    static create(entityMetadata: EntityMetadata, driver: Driver): View {
-        const options: ViewOptions = {
-            name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
-            expression: entityMetadata.expression!,
-            materialized: entityMetadata.tableMetadataArgs.materialized
-        };
-
-        return new View(options);
-    }
-
 }

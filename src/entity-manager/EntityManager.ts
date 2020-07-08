@@ -274,12 +274,12 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
 
         if (!plainObjectOrObjects)
-            return metadata.create(this.queryRunner);
+            return metadata.create();
 
         if (Array.isArray(plainObjectOrObjects))
             return plainObjectOrObjects.map(plainEntityLike => this.create(entityClass as any, plainEntityLike));
 
-        const mergeIntoEntity = metadata.create(this.queryRunner);
+        const mergeIntoEntity = metadata.create();
         this.plainObjectToEntityTransformer.transform(mergeIntoEntity, plainObjectOrObjects, metadata, true);
         return mergeIntoEntity;
     }

@@ -23,7 +23,7 @@ describe("schema builder > add column", () => {
         const postMetadata = connection.getMetadata("post");
 
         const columnMetadata1 = new ColumnMetadata({
-            connection: connection,
+            namingStrategy: connection.namingStrategy,
             entityMetadata: postMetadata!,
             args: <ColumnMetadataArgs>{
                 target: Post,
@@ -37,10 +37,10 @@ describe("schema builder > add column", () => {
                 }
             }
         });
-        columnMetadata1.build(connection);
+        columnMetadata1.build(connection.namingStrategy);
 
         const columnMetadata2 = new ColumnMetadata({
-            connection: connection,
+            namingStrategy: connection.namingStrategy,
             entityMetadata: postMetadata!,
             args: <ColumnMetadataArgs>{
                 target: Post,
@@ -53,7 +53,7 @@ describe("schema builder > add column", () => {
                 }
             }
         });
-        columnMetadata2.build(connection);
+        columnMetadata2.build(connection.namingStrategy);
 
         postMetadata.columns.push(...[columnMetadata1, columnMetadata2]);
 

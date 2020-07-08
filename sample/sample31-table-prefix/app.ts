@@ -7,7 +7,6 @@ import {Category} from "./entity/Category";
 const options: ConnectionOptions = {
     type: "sqlite",
     database: "temp/sqlitedb.db",
-    entityPrefix: "samples_", // pay attention on this prefix
     synchronize: true,
     logging: ["query", "error"],
     entities: [Post, Author, Category],

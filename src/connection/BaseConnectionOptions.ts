@@ -99,11 +99,6 @@ export interface BaseConnectionOptions {
     readonly dropSchema?: boolean;
 
     /**
-     * Prefix to use on all tables (collections) of this connection in the database.
-     */
-    readonly entityPrefix?: string;
-
-    /**
      * Extra connection options to be passed to the underlying driver.
      *
      * todo: deprecate this and move all database-specific types into hts own connection options object.

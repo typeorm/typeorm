@@ -1,11 +1,4 @@
-import {QueryRunner, SelectQueryBuilder} from "..";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Connection} from "../connection/Connection";
-import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {SapDriver} from "../driver/sap/SapDriver";
-import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
@@ -25,6 +18,7 @@ import {RelationMetadata} from "./RelationMetadata";
 import {TableType} from "./types/TableTypes";
 import {TreeType} from "./types/TreeTypes";
 import {UniqueMetadata} from "./UniqueMetadata";
+import { NamingStrategyInterface } from '../naming-strategy/NamingStrategyInterface';
 
 /**
  * Contains all entity metadata.
@@ -35,10 +29,7 @@ export class EntityMetadata {
     // Properties
     // -------------------------------------------------------------------------
 
-    /**
-     * Connection where this entity metadata is created.
-     */
-    connection: Connection;
+    namingStrategy: NamingStrategyInterface;
 
     /**
      * Metadata arguments used to build this entity metadata.
@@ -95,12 +86,6 @@ export class EntityMetadata {
      * If target class is not then then it equals to table name.
      */
     name: string;
-
-    /**
-     * View's expression.
-     * Used in views
-     */
-    expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
 
     /**
      * Enables Sqlite "WITHOUT ROWID" modifier for the "CREATE TABLE" statement
@@ -491,14 +476,14 @@ export class EntityMetadata {
     // ---------------------------------------------------------------------
 
     constructor(options: {
-        connection: Connection,
+        namingStrategy: NamingStrategyInterface,
         inheritanceTree?: Function[],
         inheritancePattern?: "STI"/*|"CTI"*/,
         tableTree?: TreeMetadataArgs,
         parentClosureEntityMetadata?: EntityMetadata,
         args: TableMetadataArgs
     }) {
-        this.connection = options.connection;
+        this.namingStrategy = options.namingStrategy;
         this.inheritanceTree = options.inheritanceTree || [];
         this.inheritancePattern = options.inheritancePattern;
         this.treeType = options.tableTree ? options.tableTree.type : undefined;
@@ -506,7 +491,6 @@ export class EntityMetadata {
         this.tableMetadataArgs = options.args;
         this.target = this.tableMetadataArgs.target;
         this.tableType = this.tableMetadataArgs.type;
-        this.expression = this.tableMetadataArgs.expression;
         this.withoutRowid = this.tableMetadataArgs.withoutRowid;
     }
 
@@ -517,18 +501,16 @@ export class EntityMetadata {
     /**
      * Creates a new entity.
      */
-    create(queryRunner?: QueryRunner): any {
+    create(): any {
         // if target is set to a function (e.g. class) that can be created then create it
         let ret: any;
         if (this.target instanceof Function) {
             ret = new (<any> this.target)();
-            this.lazyRelations.forEach(relation => this.connection.relationLoader.enableLazyLoad(relation, ret, queryRunner));
             return ret;
         }
 
         // otherwise simply return a new empty object
         const newObject = {};
-        this.lazyRelations.forEach(relation => this.connection.relationLoader.enableLazyLoad(relation, newObject, queryRunner));
         return newObject;
     }
 
@@ -764,8 +746,6 @@ export class EntityMetadata {
     // ---------------------------------------------------------------------
 
     build() {
-        const namingStrategy = this.connection.namingStrategy;
-        const entityPrefix = this.connection.options.entityPrefix;
         this.engine = this.tableMetadataArgs.engine;
         this.database = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.database : this.tableMetadataArgs.database;
         if (this.tableMetadataArgs.schema) {
@@ -774,27 +754,23 @@ export class EntityMetadata {
         else if ((this.tableMetadataArgs.type === "entity-child") && this.parentEntityMetadata) {
             this.schema = this.parentEntityMetadata.schema;
         }
-        else {
-            this.schema = (this.connection.options as PostgresConnectionOptions|SqlServerConnectionOptions).schema;
-        }
         this.givenTableName = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.givenTableName : this.tableMetadataArgs.name;
         this.synchronize = this.tableMetadataArgs.synchronize === false ? false : true;
         this.targetName = this.tableMetadataArgs.target instanceof Function ? (this.tableMetadataArgs.target as any).name : this.tableMetadataArgs.target;
         if (this.tableMetadataArgs.type === "closure-junction") {
-            this.tableNameWithoutPrefix = namingStrategy.closureJunctionTableName(this.givenTableName!);
+            this.tableNameWithoutPrefix = this.namingStrategy.closureJunctionTableName(this.givenTableName!);
         } else if (this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata) {
-            this.tableNameWithoutPrefix = namingStrategy.tableName(this.parentEntityMetadata.targetName, this.parentEntityMetadata.givenTableName);
+            this.tableNameWithoutPrefix = this.namingStrategy.tableName(this.parentEntityMetadata.targetName, this.parentEntityMetadata.givenTableName);
         } else {
-            this.tableNameWithoutPrefix = namingStrategy.tableName(this.targetName, this.givenTableName);
+            this.tableNameWithoutPrefix = this.namingStrategy.tableName(this.targetName, this.givenTableName);
 
-            if (this.connection.driver.maxAliasLength && this.connection.driver.maxAliasLength > 0 && this.tableNameWithoutPrefix.length > this.connection.driver.maxAliasLength) {
+            if ( this.tableNameWithoutPrefix.length > 128) {
                 this.tableNameWithoutPrefix = shorten(this.tableNameWithoutPrefix, { separator: "_", segmentLength: 3 });
             }
         }
-        this.tableName = entityPrefix ? namingStrategy.prefixTableName(entityPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
+        this.tableName = this.tableNameWithoutPrefix;
         this.target = this.target ? this.target : this.tableName;
         this.name = this.targetName ? this.targetName : this.tableName;
-        this.expression = this.tableMetadataArgs.expression;
         this.withoutRowid = this.tableMetadataArgs.withoutRowid === true ? true : false;
         this.tablePath = this.buildTablePath();
         this.schemaPath = this.buildSchemaPath();
@@ -841,12 +817,12 @@ export class EntityMetadata {
      */
     protected buildTablePath(): string {
         let tablePath = this.tableName;
-        if (this.schema && ((this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
+        if (this.schema) {
             tablePath = this.schema + "." + tablePath;
         }
 
-        if (this.database && !(this.connection.driver instanceof PostgresDriver)) {
-            if (!this.schema && this.connection.driver instanceof SqlServerDriver) {
+        if (this.database) {
+            if (!this.schema) {
                 tablePath = this.database + ".." + tablePath;
             } else {
                 tablePath = this.database + "." + tablePath;
@@ -863,7 +839,6 @@ export class EntityMetadata {
         if (!this.schema)
             return undefined;
 
-        return this.database && !(this.connection.driver instanceof PostgresDriver) ? this.database + "." + this.schema : this.schema;
+        return this.database ? this.database + "." + this.schema : this.schema;
     }
-
 }

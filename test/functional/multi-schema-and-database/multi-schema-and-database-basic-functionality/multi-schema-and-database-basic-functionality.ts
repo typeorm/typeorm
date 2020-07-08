@@ -21,12 +21,13 @@ describe("multi-schema-and-database > basic-functionality", () => {
             connections = await createTestingConnections({
                 entities: [Post, User, Category],
                 enabledDrivers: ["mssql", "postgres"],
-                schema: "custom",
+                // schema: "custom",
             });
         });
         beforeEach(() => reloadTestingDatabases(connections));
         after(() => closeTestingConnections(connections));
 
+        /*
         it("should correctly create tables when custom table schema used", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
@@ -49,6 +50,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
             table!.name.should.be.equal("custom.post");
         })));
+        */
 
         it("should correctly create tables when custom table schema used in Entity decorator", () => Promise.all(connections.map(async connection => {
 
@@ -105,12 +107,12 @@ describe("multi-schema-and-database > basic-functionality", () => {
             if (connection.driver instanceof PostgresDriver)
                 sql.should.be.equal(`SELECT "category"."id" AS "category_id", "category"."name" AS "category_name",` +
                     ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
-                    ` FROM "guest"."category" "category" INNER JOIN "custom"."post" "post" ON "post"."id"="category"."postId" WHERE "category"."id" = $1`);
+                    ` FROM "guest"."category" "category" INNER JOIN "post" "post" ON "post"."id"="category"."postId" WHERE "category"."id" = $1`);
 
             if (connection.driver instanceof SqlServerDriver)
                 sql.should.be.equal(`SELECT "category"."id" AS "category_id", "category"."name" AS "category_name",` +
                     ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
-                    ` FROM "guest"."category" "category" INNER JOIN "custom"."post" "post" ON "post"."id"="category"."postId" WHERE "category"."id" = @0`);
+                    ` FROM "guest"."category" "category" INNER JOIN "post" "post" ON "post"."id"="category"."postId" WHERE "category"."id" = @0`);
 
             table!.name.should.be.equal("guest.category");
         })));
@@ -142,11 +144,11 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
             if (connection.driver instanceof PostgresDriver)
                 query.getSql().should.be.equal(`SELECT * FROM "guest"."category" "category", "userSchema"."user" "user",` +
-                    ` "custom"."post" "post" WHERE "category"."id" = $1 AND "post"."id" = "category"."postId"`);
+                    ` "post" "post" WHERE "category"."id" = $1 AND "post"."id" = "category"."postId"`);
 
             if (connection.driver instanceof SqlServerDriver)
                 query.getSql().should.be.equal(`SELECT * FROM "guest"."category" "category", "userSchema"."user" "user",` +
-                    ` "custom"."post" "post" WHERE "category"."id" = @0 AND "post"."id" = "category"."postId"`);
+                    ` "post" "post" WHERE "category"."id" = @0 AND "post"."id" = "category"."postId"`);
         })));
     });
 

@@ -1,3 +1,4 @@
+/*
 import "reflect-metadata";
 
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
@@ -56,3 +57,4 @@ describe("github issues > #2965 Reuse preloaded lazy relations", () => {
     })));
 
 });
+*/

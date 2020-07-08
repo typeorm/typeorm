@@ -1,12 +1,10 @@
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { NamingStrategyInterface } from '../naming-strategy/NamingStrategyInterface';
 
 /**
  * Creates EntityMetadata for junction tables.
@@ -18,7 +16,7 @@ export class JunctionEntityMetadataBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection) {
+    constructor(private readonly namingStrategy: NamingStrategyInterface) {
     }
 
     // -------------------------------------------------------------------------
@@ -32,7 +30,7 @@ export class JunctionEntityMetadataBuilder {
         const referencedColumns = this.collectReferencedColumns(relation, joinTable);
         const inverseReferencedColumns = this.collectInverseReferencedColumns(relation, joinTable);
 
-        const joinTableName = joinTable.name || this.connection.namingStrategy.joinTableName(
+        const joinTableName = joinTable.name || this.namingStrategy.joinTableName(
             relation.entityMetadata.tableNameWithoutPrefix,
             relation.inverseEntityMetadata.tableNameWithoutPrefix,
             relation.propertyPath,
@@ -40,7 +38,7 @@ export class JunctionEntityMetadataBuilder {
         );
 
         const entityMetadata = new EntityMetadata({
-            connection: this.connection,
+            namingStrategy: this.namingStrategy,
             args: {
                 target: "",
                 name: joinTableName,
@@ -58,10 +56,10 @@ export class JunctionEntityMetadataBuilder {
                     !!joinColumnArgs.name;
             }) : undefined;
             const columnName = joinColumn && joinColumn.name ? joinColumn.name
-                : this.connection.namingStrategy.joinTableColumnName(relation.entityMetadata.tableNameWithoutPrefix, referencedColumn.propertyName, referencedColumn.databaseName);
+                : this.namingStrategy.joinTableColumnName(relation.entityMetadata.tableNameWithoutPrefix, referencedColumn.propertyName, referencedColumn.databaseName);
 
             return new ColumnMetadata({
-                connection: this.connection,
+                namingStrategy: this.namingStrategy,
                 entityMetadata: entityMetadata,
                 referencedColumn: referencedColumn,
                 args: {
@@ -70,11 +68,7 @@ export class JunctionEntityMetadataBuilder {
                     propertyName: columnName,
                     options: {
                         name: columnName,
-                        length: !referencedColumn.length
-                        && (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
-                        && (referencedColumn.generationStrategy === "uuid" || referencedColumn.type === "uuid")
-                            ? "36"
-                            : referencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
+                        length: referencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
                         width: referencedColumn.width,
                         type: referencedColumn.type,
                         precision: referencedColumn.precision,
@@ -97,10 +91,10 @@ export class JunctionEntityMetadataBuilder {
                     !!joinColumnArgs.name;
             }) : undefined;
             const columnName = joinColumn && joinColumn.name ? joinColumn.name
-                : this.connection.namingStrategy.joinTableInverseColumnName(relation.inverseEntityMetadata.tableNameWithoutPrefix, inverseReferencedColumn.propertyName, inverseReferencedColumn.databaseName);
+                : this.namingStrategy.joinTableInverseColumnName(relation.inverseEntityMetadata.tableNameWithoutPrefix, inverseReferencedColumn.propertyName, inverseReferencedColumn.databaseName);
 
             return new ColumnMetadata({
-                connection: this.connection,
+                namingStrategy: this.namingStrategy,
                 entityMetadata: entityMetadata,
                 referencedColumn: inverseReferencedColumn,
                 args: {
@@ -108,11 +102,7 @@ export class JunctionEntityMetadataBuilder {
                     mode: "virtual",
                     propertyName: columnName,
                     options: {
-                        length: !inverseReferencedColumn.length
-                        && (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
-                        && (inverseReferencedColumn.generationStrategy === "uuid" || inverseReferencedColumn.type === "uuid")
-                            ? "36"
-                            : inverseReferencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
+                        length: inverseReferencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
                         type: inverseReferencedColumn.type,
                         precision: inverseReferencedColumn.precision,
                         scale: inverseReferencedColumn.scale,
@@ -224,11 +214,11 @@ export class JunctionEntityMetadataBuilder {
         junctionColumns.forEach(junctionColumn => {
             inverseJunctionColumns.forEach(inverseJunctionColumn => {
                 if (junctionColumn.givenDatabaseName === inverseJunctionColumn.givenDatabaseName) {
-                    const junctionColumnName = this.connection.namingStrategy.joinTableColumnDuplicationPrefix(junctionColumn.propertyName, 1);
+                    const junctionColumnName = this.namingStrategy.joinTableColumnDuplicationPrefix(junctionColumn.propertyName, 1);
                     junctionColumn.propertyName = junctionColumnName;
                     junctionColumn.givenDatabaseName = junctionColumnName;
 
-                    const inverseJunctionColumnName = this.connection.namingStrategy.joinTableColumnDuplicationPrefix(inverseJunctionColumn.propertyName, 2);
+                    const inverseJunctionColumnName = this.namingStrategy.joinTableColumnDuplicationPrefix(inverseJunctionColumn.propertyName, 2);
                     inverseJunctionColumn.propertyName = inverseJunctionColumnName;
                     inverseJunctionColumn.givenDatabaseName = inverseJunctionColumnName;
                 }

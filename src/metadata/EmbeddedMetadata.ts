@@ -4,8 +4,6 @@ import {EntityMetadata} from "./EntityMetadata";
 import {EmbeddedMetadataArgs} from "../metadata-args/EmbeddedMetadataArgs";
 import {RelationIdMetadata} from "./RelationIdMetadata";
 import {RelationCountMetadata} from "./RelationCountMetadata";
-import {Connection} from "../connection/Connection";
-import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {IndexMetadata} from "./IndexMetadata";
 import {UniqueMetadata} from "./UniqueMetadata";
@@ -197,9 +195,9 @@ export class EmbeddedMetadata {
     // Builder Methods
     // ---------------------------------------------------------------------
 
-    build(connection: Connection): this {
-        this.embeddeds.forEach(embedded => embedded.build(connection));
-        this.prefix = this.buildPrefix(connection);
+    build(): this {
+        this.embeddeds.forEach(embedded => embedded.build());
+        this.prefix = this.buildPrefix();
         this.parentPropertyNames = this.buildParentPropertyNames();
         this.parentPrefixes = this.buildParentPrefixes();
         this.propertyPath = this.parentPropertyNames.join(".");
@@ -237,13 +235,10 @@ export class EmbeddedMetadata {
         throw new Error(`Invalid prefix option given for ${this.entityMetadata.targetName}#${this.propertyName}`);
     }
 
-    protected buildPrefix(connection: Connection): string {
-        if (connection.driver instanceof MongoDriver)
-            return this.propertyName;
-
+    protected buildPrefix(): string {
         let prefixes: string[] = [];
         if (this.parentEmbeddedMetadata)
-            prefixes.push(this.parentEmbeddedMetadata.buildPrefix(connection));
+            prefixes.push(this.parentEmbeddedMetadata.buildPrefix());
 
         prefixes.push(...this.buildPartialPrefix());
 

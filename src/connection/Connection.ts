@@ -39,6 +39,19 @@ import {PromiseUtils} from "../";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {DriverUtils} from "../driver/DriverUtils";
+import {OrmUtils} from '../util/OrmUtils';
+
+interface IConnectionMetadata {
+    subscribers: EntitySubscriberInterface<any>[];
+    migrations: MigrationInterface[];
+    entityMetadatas: EntityMetadata[];
+}
+
+const connectionMetadataCache: Map<string, IConnectionMetadata> = new Map();
+
+export function clearConnectionMetadataCache() {
+    connectionMetadataCache.clear();
+}
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -497,30 +510,67 @@ export class Connection {
         });
     }
 
+    private calculateMetadataKey(): number {
+        const [
+            entityClassesOrSchemas,
+            entityDirectories,
+        ] = OrmUtils.splitClassesAndStrings(this.options.entities || []);
+        const entityClasses: string[] = entityClassesOrSchemas
+            .filter(
+                (entityClass: Function) =>
+                    entityClass instanceof EntitySchema === false
+            )
+            .map((entityClass: Function) => entityClass.name);
+
+        const key: string = [...entityClasses, ...entityDirectories].join();
+
+        var hash = 0, i, chr;
+        for (i = 0; i < key.length; i++) {
+            chr = key.charCodeAt(i);
+            hash = ((hash << 5) - hash) + chr;
+            hash |= 0;
+        }
+        
+        return hash;
+    }
+
     /**
      * Builds metadatas for all registered classes inside this connection.
      */
     protected buildMetadatas(): void {
-
-        const connectionMetadataBuilder = new ConnectionMetadataBuilder(this);
-        const entityMetadataValidator = new EntityMetadataValidator();
-
-        // create subscribers instances if they are not disallowed from high-level (for example they can disallowed from migrations run process)
-        const subscribers = connectionMetadataBuilder.buildSubscribers(this.options.subscribers || []);
-        ObjectUtils.assign(this, { subscribers: subscribers });
-
-        // build entity metadatas
-        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas(this.options.entities || []);
-        ObjectUtils.assign(this, { entityMetadatas: entityMetadatas });
-
-        // create migration instances
-        const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
-        ObjectUtils.assign(this, { migrations: migrations });
-
         this.driver.database = this.getDatabaseName();
 
-        // validate all created entity metadatas to make sure user created entities are valid and correct
-        entityMetadataValidator.validateMany(this.entityMetadatas.filter(metadata => metadata.tableType !== "view"), this.driver);
+        const key = `${this.options.type}-${this.calculateMetadataKey()}`;
+        let metadata: IConnectionMetadata | undefined = connectionMetadataCache.get(key);
+
+        if (!metadata) {
+            const connectionMetadataBuilder = new ConnectionMetadataBuilder(this.namingStrategy, this.logger);
+
+            // create subscribers instances if they are not disallowed from high-level (for example they can disallowed from migrations run process)
+            const subscribers = connectionMetadataBuilder.buildSubscribers(this.options.subscribers || []);
+
+            // build entity metadatas
+            const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas(this.options.entities || []);
+
+            // create migration instances
+            const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
+
+
+            // validate all created entity metadatas to make sure user created entities are valid and correct
+            const entityMetadataValidator = new EntityMetadataValidator();
+            entityMetadataValidator.validateMany(this.entityMetadatas.filter(metadata => metadata.tableType !== "view"), this.driver);
+
+            metadata = {
+                subscribers, 
+                entityMetadatas, 
+                migrations
+            };
+            connectionMetadataCache.set(key, metadata);
+        }
+
+        ObjectUtils.assign(this, { subscribers: metadata.subscribers });
+        ObjectUtils.assign(this, { entityMetadatas: metadata.entityMetadatas });
+        ObjectUtils.assign(this, { migrations: metadata.migrations });
     }
 
     // This database name property is nested for replication configs.

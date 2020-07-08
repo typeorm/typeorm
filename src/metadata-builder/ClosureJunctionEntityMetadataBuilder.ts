@@ -1,8 +1,8 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
-import {Connection} from "../connection/Connection";
 import {IndexMetadata} from "../metadata/IndexMetadata";
+import { NamingStrategyInterface } from '../naming-strategy/NamingStrategyInterface';
 
 /**
  * Creates EntityMetadata for junction tables of the closure entities.
@@ -14,7 +14,7 @@ export class ClosureJunctionEntityMetadataBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection) {
+    constructor(private readonly namingStrategy: NamingStrategyInterface) {
     }
 
     // -------------------------------------------------------------------------
@@ -29,7 +29,7 @@ export class ClosureJunctionEntityMetadataBuilder {
         // create entity metadata itself
         const entityMetadata = new EntityMetadata({
             parentClosureEntityMetadata: parentClosureEntityMetadata,
-            connection: this.connection,
+            namingStrategy: this.namingStrategy,
             args: {
                 target: "",
                 name: parentClosureEntityMetadata.tableNameWithoutPrefix,
@@ -41,7 +41,7 @@ export class ClosureJunctionEntityMetadataBuilder {
         // create ancestor and descendant columns for new closure junction table
         parentClosureEntityMetadata.primaryColumns.forEach(primaryColumn => {
             entityMetadata.ownColumns.push(new ColumnMetadata({
-                connection: this.connection,
+                namingStrategy: this.namingStrategy,
                 entityMetadata: entityMetadata,
                 closureType: "ancestor",
                 referencedColumn: primaryColumn,
@@ -57,7 +57,7 @@ export class ClosureJunctionEntityMetadataBuilder {
                 }
             }));
             entityMetadata.ownColumns.push(new ColumnMetadata({
-                connection: this.connection,
+                namingStrategy: this.namingStrategy,
                 entityMetadata: entityMetadata,
                 closureType: "descendant",
                 referencedColumn: primaryColumn,
@@ -96,14 +96,14 @@ export class ClosureJunctionEntityMetadataBuilder {
         // if tree level column was defined by a closure entity then add it to the junction columns as well
         if (parentClosureEntityMetadata.treeLevelColumn) {
             entityMetadata.ownColumns.push(new ColumnMetadata({
-                connection: this.connection,
+                namingStrategy: this.namingStrategy,
                 entityMetadata: entityMetadata,
                 args: {
                     target: "",
                     mode: "virtual",
                     propertyName: "level",
                     options: {
-                        type: this.connection.driver.mappedDataTypes.treeLevel,
+                        type: 'int'
                     }
                 }
             }));

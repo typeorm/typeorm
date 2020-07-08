@@ -21,7 +21,7 @@ describe("entity-metadata-validator > initialized relations", () => {
             database: "test",
             entities: [Post, Category]
         });
-        const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
+        const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection.namingStrategy, connection.logger);
         const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Post, Category]);
         const entityMetadataValidator = new EntityMetadataValidator();
         expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).to.throw(InitializedRelationError);
@@ -36,7 +36,7 @@ describe("entity-metadata-validator > initialized relations", () => {
             database: "test",
             entities: [Image, ImageInfo]
         });
-        const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
+        const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection.namingStrategy, connection.logger);
         const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Image, ImageInfo]);
         const entityMetadataValidator = new EntityMetadataValidator();
         expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).to.throw(InitializedRelationError);
@@ -51,7 +51,7 @@ describe("entity-metadata-validator > initialized relations", () => {
             database: "test",
             entities: [Category]
         });
-        const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
+        const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection.namingStrategy, connection.logger);
         const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Category]);
         const entityMetadataValidator = new EntityMetadataValidator();
         expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).not.to.throw(InitializedRelationError);
@@ -66,7 +66,7 @@ describe("entity-metadata-validator > initialized relations", () => {
             database: "test",
             entities: [Question, Category]
         });
-        const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
+        const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection.namingStrategy, connection.logger);
         const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Question, Category]);
         const entityMetadataValidator = new EntityMetadataValidator();
         expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).not.to.throw(InitializedRelationError);

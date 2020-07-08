@@ -4,13 +4,12 @@ import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
-import {Connection} from "../connection/Connection";
 import {OrmUtils} from "../util/OrmUtils";
 import {ValueTransformer} from "../decorator/options/ValueTransformer";
-import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {FindOperator} from "../find-options/FindOperator";
 import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
+import { NamingStrategyInterface } from '../naming-strategy/NamingStrategyInterface';
 
 /**
  * This metadata contains all information about entity's column.
@@ -312,7 +311,7 @@ export class ColumnMetadata {
     // ---------------------------------------------------------------------
 
     constructor(options: {
-        connection: Connection,
+        namingStrategy: NamingStrategyInterface;
         entityMetadata: EntityMetadata,
         embeddedMetadata?: EmbeddedMetadata,
         referencedColumn?: ColumnMetadata,
@@ -408,33 +407,27 @@ export class ColumnMetadata {
         if (options.args.options.srid !== undefined)
             this.srid = options.args.options.srid;
         if (this.isTreeLevel)
-            this.type = options.connection.driver.mappedDataTypes.treeLevel;
+            this.type = 'int';
         if (this.isCreateDate) {
             if (!this.type)
-                this.type = options.connection.driver.mappedDataTypes.createDate;
+                this.type = 'datetime2';
             if (!this.default)
-                this.default = () => options.connection.driver.mappedDataTypes.createDateDefault;
-            if (this.precision === undefined && options.connection.driver.mappedDataTypes.createDatePrecision)
-                this.precision = options.connection.driver.mappedDataTypes.createDatePrecision;
+                this.default = () => 'getdate()';
         }
         if (this.isUpdateDate) {
             if (!this.type)
-                this.type = options.connection.driver.mappedDataTypes.updateDate;
+                this.type = 'datetime2';
             if (!this.default)
-                this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
-            if (this.precision === undefined && options.connection.driver.mappedDataTypes.updateDatePrecision)
-                this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
+                this.default = () => 'getdate()';
         }
         if (this.isDeleteDate) {
             if (!this.type)
-                this.type = options.connection.driver.mappedDataTypes.deleteDate;
+                this.type = 'datetime2';
             if (!this.isNullable)
-                this.isNullable = options.connection.driver.mappedDataTypes.deleteDateNullable;
-            if (this.precision === undefined && options.connection.driver.mappedDataTypes.deleteDatePrecision)
-                this.precision = options.connection.driver.mappedDataTypes.deleteDatePrecision;
+                this.isNullable = true;
         }
         if (this.isVersion)
-            this.type = options.connection.driver.mappedDataTypes.version;
+            this.type = 'int';
         if (options.closureType)
             this.closureType = options.closureType;
         if (options.nestedSetLeft)
@@ -671,12 +664,12 @@ export class ColumnMetadata {
     // Builder Methods
     // ---------------------------------------------------------------------
 
-    build(connection: Connection): this {
+    build(namingStrategy: NamingStrategyInterface): this {
         this.propertyPath = this.buildPropertyPath();
         this.propertyAliasName = this.propertyPath.replace(".", "_");
-        this.databaseName = this.buildDatabaseName(connection);
+        this.databaseName = this.buildDatabaseName(namingStrategy);
         this.databasePath = this.buildDatabasePath();
-        this.databaseNameWithoutPrefixes = connection.namingStrategy.columnName(this.propertyName, this.givenDatabaseName, []);
+        this.databaseNameWithoutPrefixes = namingStrategy.columnName(this.propertyName, this.givenDatabaseName, []);
         return this;
     }
 
@@ -712,11 +705,8 @@ export class ColumnMetadata {
         return path;
     }
 
-    protected buildDatabaseName(connection: Connection): string {
+    protected buildDatabaseName(namingStrategy: NamingStrategyInterface): string {
         let propertyNames = this.embeddedMetadata ? this.embeddedMetadata.parentPrefixes : [];
-        if (connection.driver instanceof MongoDriver) // we don't need to include embedded name for the mongodb column names
-            propertyNames = [];
-        return connection.namingStrategy.columnName(this.propertyName, this.givenDatabaseName, propertyNames);
+        return namingStrategy.columnName(this.propertyName, this.givenDatabaseName, propertyNames);
     }
-
 }

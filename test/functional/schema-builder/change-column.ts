@@ -30,7 +30,7 @@ describe("schema builder > change column", () => {
         const postMetadata = connection.getMetadata(Post);
         const nameColumn = postMetadata.findColumnWithPropertyName("name")!;
         nameColumn.propertyName = "title";
-        nameColumn.build(connection);
+        nameColumn.build(connection.namingStrategy);
 
         await connection.synchronize();
 
@@ -43,7 +43,7 @@ describe("schema builder > change column", () => {
 
         // revert changes
         nameColumn.propertyName = "name";
-        nameColumn.build(connection);
+        nameColumn.build(connection.namingStrategy);
     }));
 
     it("should correctly change column length", () => PromiseUtils.runInSequence(connections, async connection => {

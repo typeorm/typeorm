@@ -98,7 +98,7 @@ export class RawSqlResultsToEntityTransformer {
             if (discriminatorMetadata)
                 metadata = discriminatorMetadata;
         }
-        let entity: any = this.expressionMap.options.indexOf("create-pojo") !== -1 ? {} : metadata.create(this.queryRunner);
+        let entity: any = this.expressionMap.options.indexOf("create-pojo") !== -1 ? {} : metadata.create();
 
         // get value from columns selections and put them into newly created entity
         const hasColumns = this.transformColumns(rawResults, alias, entity, metadata);
