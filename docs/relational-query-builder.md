@@ -124,3 +124,22 @@ post.author = await getConnection()
     .of(post) // you can use just post id as well
     .loadOne();
 ```
+
+Limitations about `RelationQueryBuilder` 
+
+`RelationQueryBuilder` is not designed to be used the transactions. It use the global connection entityManager.
+
+If you want to load relations inside a transaction, it's better to do this:
+
+```typescript
+
+import {getConnection} from "typeorm";
+post.author = await transactionalEntityManager
+    .getRepository(Post)
+    .reateQueryBuilder()
+    .andWhere('userId= :userId', {userId:user.id})
+    .getOne();
+```
+
+
+
