@@ -284,7 +284,7 @@ export class Connection {
             throw new CannotExecuteNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
-        migrationExecutor.transaction = (options && options.transaction) || "all";
+        migrationExecutor.transaction = options?.transaction || "all";
 
         const successMigrations = await migrationExecutor.executePendingMigrations();
         return successMigrations;
@@ -300,7 +300,7 @@ export class Connection {
             throw new CannotExecuteNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
-        migrationExecutor.transaction = (options && options.transaction) || "all";
+        migrationExecutor.transaction = options?.transaction || "all";
 
         await migrationExecutor.undoLastMigration();
     }

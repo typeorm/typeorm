@@ -59,7 +59,7 @@ export class ReturningResultsEntityUpdator {
                         throw new Error(`Cannot update entity because entity id is not set in the entity.`);
 
                     // execute query to get needed data
-                    const loadedReturningColumns = await this.queryRunner.manager
+                    const loadedReturningColumns: ObjectLiteral | undefined = await this.queryRunner.manager
                         .createQueryBuilder()
                         .select(metadata.primaryColumns.map(column => metadata.targetName + "." + column.propertyPath))
                         .addSelect(this.getUpdationReturningColumns().map(column => metadata.targetName + "." + column.propertyPath))
