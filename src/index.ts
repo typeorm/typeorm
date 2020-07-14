@@ -151,6 +151,7 @@ export {MongoRepository} from "./repository/MongoRepository";
 export {FindOneOptions} from "./find-options/FindOneOptions";
 export {FindManyOptions} from "./find-options/FindManyOptions";
 export {InsertEvent} from "./subscriber/event/InsertEvent";
+export {LoadEvent} from "./subscriber/event/LoadEvent";
 export {UpdateEvent} from "./subscriber/event/UpdateEvent";
 export {RemoveEvent} from "./subscriber/event/RemoveEvent";
 export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface";
