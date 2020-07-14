@@ -13,6 +13,7 @@ import {GeneratedMetadataArgs} from "../metadata-args/GeneratedMetadataArgs";
 import {UniqueMetadataArgs} from "../metadata-args/UniqueMetadataArgs";
 import {CheckMetadataArgs} from "../metadata-args/CheckMetadataArgs";
 import {ExclusionMetadataArgs} from "../metadata-args/ExclusionMetadataArgs";
+import {EntityListenerMetadataArgs} from "../metadata-args/EntityListenerMetadataArgs";
 
 /**
  * Transforms entity schema into metadata args storage.
@@ -237,6 +238,18 @@ export class EntitySchemaTransformer {
                         expression: exclusion.expression
                     };
                     metadataArgsStorage.exclusions.push(exclusionArgs);
+                });
+            }
+
+            // add listener metadata args from the schema
+            if (options.listeners) {
+                options.listeners.forEach(listener => {
+                    const listenerArgs: EntityListenerMetadataArgs = {
+                        target: options.target || options.name,
+                        propertyName: listener.propertyName,
+                        type: listener.type
+                    };
+                    metadataArgsStorage.entityListeners.push(listenerArgs);
                 });
             }
 

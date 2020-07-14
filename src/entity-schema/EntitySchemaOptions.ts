@@ -7,6 +7,7 @@ import {TableType} from "../metadata/types/TableTypes";
 import {EntitySchemaUniqueOptions} from "./EntitySchemaUniqueOptions";
 import {EntitySchemaCheckOptions} from "./EntitySchemaCheckOptions";
 import {EntitySchemaExclusionOptions} from "./EntitySchemaExclusionOptions";
+import {EntitySchemaListenerOptions} from "./EntitySchemaListenerOptions";
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
@@ -86,6 +87,11 @@ export class EntitySchemaOptions<T> {
     * Entity exclusion options.
     */
     exclusions?: EntitySchemaExclusionOptions[];
+
+    /**
+     * Entity listener options.
+     */
+    listeners?: EntitySchemaListenerOptions[];
 
     /**
      * Indicates if schema synchronization is enabled or disabled for this entity.

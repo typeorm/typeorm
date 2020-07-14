@@ -8,7 +8,7 @@ export interface EntityListenerMetadataArgs {
     /**
      * Class to which listener is applied.
      */
-    readonly target: Function;
+    readonly target: Function|string;
 
     /**
      * Class's property name to which listener is applied.
