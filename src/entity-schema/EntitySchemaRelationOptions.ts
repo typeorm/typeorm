@@ -55,7 +55,7 @@ export interface EntitySchemaRelationOptions {
     /**
      * Join column options of this column. If set to true then it simply means that it has a join column.
      */
-    joinColumn?: boolean|JoinColumnOptions;
+    joinColumn?: boolean|JoinColumnOptions|JoinColumnOptions[];
 
     /**
      * Indicates if this is a parent (can be only many-to-one relation) relation in the tree tables.
