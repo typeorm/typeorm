@@ -6,7 +6,7 @@ import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
  * Every time your entity will be persisted, this number will be increased by one -
  * so you can organize visioning and update strategies of your entity.
  */
-export function VersionColumn(options?: ColumnOptions): Function {
+export function VersionColumn(options?: ColumnOptions): PropertyDecorator {
     return function (object: Object, propertyName: string) {
 
         getMetadataArgsStorage().columns.push({
