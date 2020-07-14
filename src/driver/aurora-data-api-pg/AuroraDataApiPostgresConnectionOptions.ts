@@ -33,4 +33,6 @@ export interface AuroraDataApiPostgresConnectionOptions extends BaseConnectionOp
     readonly poolErrorHandler?: (err: any) => any;
 
     readonly serviceConfigOptions?: { [key: string]: any };
+
+    readonly formatOptions?: { [key: string]: any };
 }

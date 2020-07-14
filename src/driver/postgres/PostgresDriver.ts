@@ -1041,7 +1041,8 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper {
             this.options.resourceArn,
             this.options.database,
             (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
-            this.options.serviceConfigOptions
+            this.options.serviceConfigOptions,
+            this.options.formatOptions,
         );
     }
 
@@ -1090,4 +1091,80 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper {
         return this.client.query(query);
     }
 
+    /**
+     * Makes any action after connection (e.g. create extensions in Postgres driver).
+     */
+    async afterConnect(): Promise<void> {
+        const hasUuidColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0;
+        });
+        const hasCitextColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.columns.filter(column => column.type === "citext").length > 0;
+        });
+        const hasHstoreColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.columns.filter(column => column.type === "hstore").length > 0;
+        });
+        const hasCubeColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.columns.filter(column => column.type === "cube").length > 0;
+        });
+        const hasGeometryColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.columns.filter(column => this.spatialTypes.indexOf(column.type) >= 0).length > 0;
+        });
+        const hasExclusionConstraints = this.connection.entityMetadatas.some(metadata => {
+            return metadata.exclusions.length > 0;
+        });
+        if (hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns || hasCubeColumns || hasExclusionConstraints) {
+            const {logger} = this.connection;
+
+            if (hasUuidColumns) {
+                try {
+                    await this.executeQuery(this.connection, `CREATE EXTENSION IF NOT EXISTS "${this.options.uuidExtension || "uuid-ossp"}"`);
+                } catch (_) {
+                    logger.log("warn", `At least one of the entities has uuid column, but the '${this.options.uuidExtension || "uuid-ossp"}' extension cannot be installed automatically. Please install it manually using superuser rights, or select another uuid extension.`);
+                }
+            }
+
+            if (hasCitextColumns) {
+                try {
+                    await this.executeQuery(this.connection, `CREATE EXTENSION IF NOT EXISTS "citext"`);
+                } catch (_) {
+                    logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please install it manually using superuser rights");
+                }
+            }
+
+            if (hasHstoreColumns) {
+                try {
+                    await this.executeQuery(this.connection, `CREATE EXTENSION IF NOT EXISTS "hstore"`);
+                } catch (_) {
+                    logger.log("warn", "At least one of the entities has hstore column, but the 'hstore' extension cannot be installed automatically. Please install it manually using superuser rights");
+                }
+            }
+
+            if (hasGeometryColumns) {
+                try {
+                    await this.executeQuery(this.connection, `CREATE EXTENSION IF NOT EXISTS "postgis"`);
+                } catch (_) {
+                    logger.log("warn", "At least one of the entities has a geometry column, but the 'postgis' extension cannot be installed automatically. Please install it manually using superuser rights");
+                }
+            }
+
+            if (hasCubeColumns) {
+                try {
+                    await this.executeQuery(this.connection, `CREATE EXTENSION IF NOT EXISTS "cube"`);
+                } catch (_) {
+                    logger.log("warn", "At least one of the entities has a cube column, but the 'cube' extension cannot be installed automatically. Please install it manually using superuser rights");
+                }
+            }
+
+            if (hasExclusionConstraints) {
+                try {
+                    // The btree_gist extension provides operator support in PostgreSQL exclusion constraints
+                    await this.executeQuery(this.connection, `CREATE EXTENSION IF NOT EXISTS "btree_gist"`);
+                } catch (_) {
+                    logger.log("warn", "At least one of the entities has an exclusion constraint, but the 'btree_gist' extension cannot be installed automatically. Please install it manually using superuser rights");
+                }
+            }
+        }
+        return Promise.resolve();
+    }
 }
