@@ -1035,7 +1035,7 @@ createConnection(options).then(async connection => {
     metadata.width = 480;
     metadata.compressed = true;
     metadata.comment = "cybershoot";
-    metadata.orientation = "portait";
+    metadata.orientation = "portrait";
 
     photo.metadata = metadata; // this way we connect them
 
