@@ -662,7 +662,18 @@ export class ColumnMetadata {
             return extractEmbeddedColumnValue([...this.embeddedMetadata.embeddedMetadataTree], entity);
 
         } else {
-            entity[this.propertyName] = value;
+            // we write a deep object in this entity only if the column is virtual
+            // because if its not virtual it means the user defined a real column for this relation
+            // also we don't do it if column is inside a junction table
+            if (!this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName) {
+                if (!(this.propertyName in entity)) {
+                    entity[this.propertyName] = {};
+                }
+
+                entity[this.propertyName][this.referencedColumn.propertyName] = value;
+            } else {
+                entity[this.propertyName] = value;
+            }
         }
     }
 

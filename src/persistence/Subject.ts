@@ -289,7 +289,8 @@ export class Subject {
             if (this.parentSubject) {
                 this.metadata.primaryColumns.forEach(primaryColumn => {
                     if (primaryColumn.relationMetadata && primaryColumn.relationMetadata.inverseEntityMetadata === this.parentSubject!.metadata) {
-                        primaryColumn.setEntityValue(this.entityWithFulfilledIds!, this.parentSubject!.entity);
+                        const value = primaryColumn.referencedColumn!.getEntityValue(this.parentSubject!.entity!);
+                        primaryColumn.setEntityValue(this.entityWithFulfilledIds!, value);
                     }
                 });
             }
