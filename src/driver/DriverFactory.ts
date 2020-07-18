@@ -9,13 +9,12 @@ import {ReactNativeDriver} from "./react-native/ReactNativeDriver";
 import {NativescriptDriver} from "./nativescript/NativescriptDriver";
 import {SqljsDriver} from "./sqljs/SqljsDriver";
 import {MysqlDriver} from "./mysql/MysqlDriver";
-import {PostgresDriver} from "./postgres/PostgresDriver";
+import {PostgresDriver, AuroraDataApiPostgresDriver} from "./postgres/PostgresDriver";
 import {ExpoDriver} from "./expo/ExpoDriver";
 import {AuroraDataApiDriver} from "./aurora-data-api/AuroraDataApiDriver";
 import {Driver} from "./Driver";
 import {Connection} from "../connection/Connection";
 import {SapDriver} from "./sap/SapDriver";
-import {AuroraDataApiPostgresDriver} from "./aurora-data-api-pg/AuroraDataApiPostgresDriver";
 import {BetterSqlite3Driver} from "./better-sqlite3/BetterSqlite3Driver";
 
 /**
