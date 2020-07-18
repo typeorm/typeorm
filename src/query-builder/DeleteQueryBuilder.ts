@@ -16,6 +16,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../index";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -82,6 +83,10 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             } else if (driver instanceof OracleDriver) {
                 deleteResult.affected = result;
+
+            } else if (driver instanceof BetterSqlite3Driver) { // only works for better-sqlite3
+                deleteResult.raw = result;
+                deleteResult.affected = result.changes;
 
             } else {
                 deleteResult.raw = result;

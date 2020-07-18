@@ -5,7 +5,7 @@
 * [Create a new entity](#create-a-new-entity)
 * [Create a new subscriber](#create-a-new-subscriber)
 * [Create a new migration](#create-a-new-migration)
-* [Generate a migration from existing table schema](#generate-a-migration-from-exist-table-schema)
+* [Generate a migration from existing table schema](#generate-a-migration-from-existing-table-schema)
 * [Run migrations](#run-migrations)
 * [Revert migrations](#revert-migrations)
 * [Show migrations](#show-migrations)

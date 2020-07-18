@@ -90,7 +90,7 @@ export class MigrationExecutor {
         const executedMigrations = await this.getExecutedMigrations();
 
         return allMigrations.filter(migration =>
-            executedMigrations.find(
+            !executedMigrations.find(
                 executedMigration =>
                     executedMigration.name === migration.name
             )

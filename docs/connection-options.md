@@ -5,6 +5,7 @@
 * [`mysql` / `mariadb` connection options](#mysql--mariadb-connection-options)
 * [`postgres` / `cockroachdb` connection options](#postgres--cockroachdb-connection-options)
 * [`sqlite` connection options](#sqlite-connection-options)
+* [`better-sqlite3` connection options](#better-sqlite3-connection-options)
 * [`cordova` connection options](#cordova-connection-options)
 * [`react-native` connection options](#react-native-connection-options)
 * [`nativescript` connection options](#nativescript-connection-options)
@@ -22,7 +23,7 @@ Connection options is a connection configuration you pass to `createConnection`
 ## Common connection options
 
 * `type` - Database type. You must specify what database engine you use.
- Possible values are "mysql", "postgres", "cockroachdb", "mariadb", "sqlite", "cordova", "nativescript",
+ Possible values are "mysql", "postgres", "cockroachdb", "mariadb", "sqlite", "better-sqlite3", "cordova", "nativescript",
  "oracle", "mssql", "mongodb", "sqljs", "react-native".
  This option is **required**.
 
@@ -184,6 +185,14 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 ## `sqlite` connection options
 
 * `database` - Database path. For example "./mydb.sql"
+
+## `better-sqlite3` connection options
+
+* `database` - Database path. For example "./mydb.sql"
+
+* `statementCacheSize` - Cache size of sqlite statement to speed up queries (default 100).
+
+* `prepareDatabase` - Function to run before a database is used in typeorm. You can access original better-sqlite3 Database object here.
 
 ## `cordova` connection options
 

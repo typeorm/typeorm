@@ -9,21 +9,21 @@ import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  * Primary columns also creates a PRIMARY KEY for this column in a db.
  */
-export function PrimaryColumn(options?: ColumnOptions): Function;
+export function PrimaryColumn(options?: ColumnOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  * Primary columns also creates a PRIMARY KEY for this column in a db.
  */
-export function PrimaryColumn(type?: ColumnType, options?: ColumnOptions): Function;
+export function PrimaryColumn(type?: ColumnType, options?: ColumnOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  * Primary columns also creates a PRIMARY KEY for this column in a db.
  */
-export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?: ColumnOptions): Function {
+export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?: ColumnOptions): PropertyDecorator {
     return function (object: Object, propertyName: string) {
 
         // normalize parameters
