@@ -92,7 +92,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             return this.driver.master.release(this.databaseConnection);
         }
 
-        return Promise.resolve();        
+        return Promise.resolve();
     }
 
     /**
@@ -161,7 +161,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                const databaseConnection = await this.connect();
                // we disable autocommit because ROLLBACK does not work in autocommit mode
                databaseConnection.setAutoCommit(!this.isTransactionActive);
-               this.driver.connection.logger.logQuery(query, parameters, this);
+               this.logger.logQuery(query, parameters, this);
                const queryStartTime = +new Date();
                const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
 
@@ -173,7 +173,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                    const queryEndTime = +new Date();
                    const queryExecutionTime = queryEndTime - queryStartTime;
                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                       this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                       this.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
                    const resolveChain = () => {
                        if (promiseIndex !== -1)
@@ -186,17 +186,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                    let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
                    let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                    if (err) {
-                       this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                       this.logger.logQueryError(err, query, parameters, this);
                        resolveChain();
                        return fail(new QueryFailedError(query, parameters, err));
 
                    } else {
                        if (isInsertQuery) {
                            const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`;
-                           this.driver.connection.logger.logQuery(lastIdQuery, [], this);
+                           this.logger.logQuery(lastIdQuery, [], this);
                            databaseConnection.exec(lastIdQuery, (err: any, result: { "CURRENT_IDENTITY_VALUE()": number }[]) => {
                                if (err) {
-                                   this.driver.connection.logger.logQueryError(err, lastIdQuery, [], this);
+                                   this.logger.logQueryError(err, lastIdQuery, [], this);
                                    resolveChain();
                                    fail(new QueryFailedError(lastIdQuery, [], err));
                                    return;
@@ -1824,7 +1824,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         let indexType = "";
         if (index.isUnique) {
             indexType += "UNIQUE ";
-        } 
+        }
         if (index.isFulltext) {
             indexType += "FULLTEXT ";
         }

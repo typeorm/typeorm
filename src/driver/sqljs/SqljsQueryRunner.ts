@@ -25,7 +25,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     // -------------------------------------------------------------------------
     // Public methods
     // -------------------------------------------------------------------------
-    
+
     /**
      * Commits transaction.
      * Error will be thrown if transaction was not started.
@@ -44,7 +44,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
 
         return new Promise<any[]>(async (ok, fail) => {
             const databaseConnection = this.driver.databaseConnection;
-            this.driver.connection.logger.logQuery(query, parameters, this);
+            this.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
             let statement: any;
             try {
@@ -52,20 +52,20 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 if (parameters) {
                     statement.bind(parameters);
                 }
-                
+
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
                 const queryEndTime = +new Date();
                 const queryExecutionTime = queryEndTime - queryStartTime;
                 if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                    this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                    this.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
                 const result: any[] = [];
 
                 while (statement.step()) {
                     result.push(statement.getAsObject());
                 }
-                
+
                 statement.free();
                 ok(result);
             }
@@ -74,7 +74,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                     statement.free();
                 }
 
-                this.driver.connection.logger.logQueryError(e, query, parameters, this);
+                this.logger.logQueryError(e, query, parameters, this);
                 fail(new QueryFailedError(query, parameters, e));
             }
         });

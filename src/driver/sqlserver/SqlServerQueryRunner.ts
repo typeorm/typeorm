@@ -106,9 +106,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     return fail(err);
                 }
                 ok();
-                this.connection.logger.logQuery("BEGIN TRANSACTION");
+                this.logger.logQuery("BEGIN TRANSACTION");
                 if (isolationLevel) {
-                    this.connection.logger.logQuery("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
+                    this.logger.logQuery("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
                 }
             };
 
@@ -137,7 +137,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 this.isTransactionActive = false;
                 this.databaseConnection = null;
                 ok();
-                this.connection.logger.logQuery("COMMIT");
+                this.logger.logQuery("COMMIT");
             });
         });
     }
@@ -159,7 +159,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 this.isTransactionActive = false;
                 this.databaseConnection = null;
                 ok();
-                this.connection.logger.logQuery("ROLLBACK");
+                this.logger.logQuery("ROLLBACK");
             });
         });
     }
@@ -181,7 +181,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         const promise = new Promise(async (ok, fail) => {
             try {
-                this.driver.connection.logger.logQuery(query, parameters, this);
+                this.logger.logQuery(query, parameters, this);
                 const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
                 const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
                 if (parameters && parameters.length) {
@@ -206,7 +206,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     const queryEndTime = +new Date();
                     const queryExecutionTime = queryEndTime - queryStartTime;
                     if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                        this.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
                     const resolveChain = () => {
                         if (promiseIndex !== -1)
@@ -219,7 +219,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
                     let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                     if (err) {
-                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        this.logger.logQueryError(err, query, parameters, this);
                         resolveChain();
                         return fail(new QueryFailedError(query, parameters, err));
                     }
@@ -263,7 +263,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         const promise = new Promise<ReadStream>(async (ok, fail) => {
 
-            this.driver.connection.logger.logQuery(query, parameters, this);
+            this.logger.logQuery(query, parameters, this);
             const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
             const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
             request.stream = true;
@@ -289,7 +289,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
                 let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                 if (err) {
-                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                    this.logger.logQueryError(err, query, parameters, this);
                     resolveChain();
                     return fail(err);
                 }

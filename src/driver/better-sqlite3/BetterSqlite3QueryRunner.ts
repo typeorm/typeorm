@@ -56,8 +56,6 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const connection = this.driver.connection;
-
         parameters = parameters || [];
         for (let i = 0; i < parameters.length; i++) {
             // in "where" clauses the parameters are not escaped by the driver
@@ -65,7 +63,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                 parameters[i] = +parameters[i];
         }
 
-        this.driver.connection.logger.logQuery(query, parameters, this);
+        this.logger.logQuery(query, parameters, this);
         const queryStartTime = +new Date();
 
         const stmt = await this.getStmt(query);
@@ -83,15 +81,15 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             }
 
             // log slow queries if maxQueryExecution time is set
-            const maxQueryExecutionTime = connection.options.maxQueryExecutionTime;
+            const maxQueryExecutionTime = this.connection.options.maxQueryExecutionTime;
             const queryEndTime = +new Date();
             const queryExecutionTime = queryEndTime - queryStartTime;
             if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                this.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
             return result;
         } catch (err) {
-            connection.logger.logQueryError(err, query, parameters, this);
+            this.logger.logQueryError(err, query, parameters, this);
             throw new QueryFailedError(query, parameters, err);
         }
     }

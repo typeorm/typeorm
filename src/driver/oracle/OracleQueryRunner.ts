@@ -159,7 +159,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         return new Promise(async (ok, fail) => {
             try {
-                this.driver.connection.logger.logQuery(query, parameters, this);
+                this.logger.logQuery(query, parameters, this);
                 const queryStartTime = +new Date();
 
                 const handler = (err: any, result: any) => {
@@ -169,10 +169,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const queryEndTime = +new Date();
                     const queryExecutionTime = queryEndTime - queryStartTime;
                     if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                        this.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
                     if (err) {
-                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        this.logger.logQueryError(err, query, parameters, this);
                         return fail(new QueryFailedError(query, parameters, err));
                     }
                     // TODO: find better solution. Must return result instead of properties

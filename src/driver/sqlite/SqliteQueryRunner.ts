@@ -27,6 +27,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const connection = this.driver.connection;
+        const logger = this.logger;
 
         return new Promise<any[]>(async (ok, fail) => {
 
@@ -37,10 +38,10 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                 const queryEndTime = +new Date();
                 const queryExecutionTime = queryEndTime - queryStartTime;
                 if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                    connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                    logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
                 if (err) {
-                    connection.logger.logQueryError(err, query, parameters, this);
+                    logger.logQueryError(err, query, parameters, this);
                     fail(new QueryFailedError(query, parameters, err));
                 } else {
                     ok(isInsertQuery ? this["lastID"] : result);
@@ -48,7 +49,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
             };
 
             const databaseConnection = await this.connect();
-            this.driver.connection.logger.logQuery(query, parameters, this);
+            this.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
             if (isInsertQuery) {

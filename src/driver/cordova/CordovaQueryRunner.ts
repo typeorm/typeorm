@@ -26,7 +26,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
 
         return new Promise<any[]>(async (ok, fail) => {
             const databaseConnection = await this.connect();
-            this.driver.connection.logger.logQuery(query, parameters, this);
+            this.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
             databaseConnection.executeSql(query, parameters, (result: any) => {
 
@@ -35,7 +35,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                 const queryEndTime = +new Date();
                 const queryExecutionTime = queryEndTime - queryStartTime;
                 if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                    this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                    this.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
                 if (query.substr(0, 11) === "INSERT INTO") {
                     ok(result.insertId);
@@ -45,11 +45,11 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                     for (let i = 0; i < result.rows.length; i++) {
                         resultSet.push(result.rows.item(i));
                     }
-                    
+
                     ok(resultSet);
                 }
             }, (err: any) => {
-                this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                this.logger.logQueryError(err, query, parameters, this);
                 fail(new QueryFailedError(query, parameters, err));
             });
         });
@@ -68,7 +68,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
         const parameters = keys.map(key => keyValues[key]);
 
         return new Promise<InsertResult>(async (ok, fail) => {
-            this.driver.connection.logger.logQuery(sql, parameters, this);
+            this.logger.logQuery(sql, parameters, this);
             const __this = this;
             const databaseConnection = await this.connect();
             databaseConnection.executeSql(sql, parameters, (resultSet: any) => {
@@ -83,7 +83,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                     generatedMap: Object.keys(generatedMap).length > 0 ? generatedMap : undefined
                 });
             }, (err: any) => {
-                __this.driver.connection.logger.logQueryError(err, sql, parameters, this);
+                __this.logger.logQueryError(err, sql, parameters, this);
                 fail(err);
             });
         });
