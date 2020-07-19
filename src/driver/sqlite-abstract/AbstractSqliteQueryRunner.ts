@@ -18,6 +18,7 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import {Logger} from "../../logger/Logger";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -37,8 +38,14 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor() {
+    constructor(driver: AbstractSqliteDriver) {
         super();
+
+        this.driver = driver;
+        this.connection = driver.connection;
+        this.logger = driver.connection.logger;
+
+
     }
 
     // -------------------------------------------------------------------------

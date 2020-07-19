@@ -9,6 +9,7 @@ import {Table} from "../schema-builder/table/Table";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {Broadcaster} from "../subscriber/Broadcaster";
+import {Logger} from '../logger/Logger';
 
 export abstract class BaseQueryRunner {
 
@@ -20,6 +21,11 @@ export abstract class BaseQueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Logger used by this query runner.
+     */
+    logger: Logger;
 
     /**
      * Entity manager working only with current query runner.

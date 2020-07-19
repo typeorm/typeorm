@@ -3,27 +3,18 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {ReactNativeDriver} from "./ReactNativeDriver";
-import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single sqlite database connection.
  */
 export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
-    
-    /**
-     * Database driver used by connection.
-     */
-    driver: ReactNativeDriver;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(driver: ReactNativeDriver) {
-        super();
-        this.driver = driver;
-        this.connection = driver.connection;
-        this.broadcaster = new Broadcaster(this);
+        super(driver);
     }
 
     /**

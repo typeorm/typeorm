@@ -46,6 +46,7 @@ import { TableUnique } from "../../schema-builder/table/TableUnique";
 import { Broadcaster } from "../../subscriber/Broadcaster";
 import { TableCheck } from "../../schema-builder/table/TableCheck";
 import { TableExclusion } from "../../schema-builder/table/TableExclusion";
+import { Logger } from "../../logger/Logger";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -60,6 +61,11 @@ export class MongoQueryRunner implements QueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Logger used by this query runner.
+     */
+    logger: Logger;
 
     /**
      * Broadcaster used on this query runner to broadcast entity events.
@@ -111,6 +117,7 @@ export class MongoQueryRunner implements QueryRunner {
 
     constructor(connection: Connection, databaseConnection: Db) {
         this.connection = connection;
+        this.logger = connection.logger;
         this.databaseConnection = databaseConnection;
         this.broadcaster = new Broadcaster(this);
     }

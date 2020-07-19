@@ -53,6 +53,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         super();
         this.driver = driver;
         this.connection = driver.connection;
+        this.logger = driver.connection.logger;
         this.broadcaster = new Broadcaster(this);
     }
 

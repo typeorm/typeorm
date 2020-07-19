@@ -4,7 +4,6 @@ import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryR
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {ExpoDriver} from "./ExpoDriver";
-import {Broadcaster} from "../../subscriber/Broadcaster";
 
 // Needed to satisfy the Typescript compiler
 interface IResultSet {
@@ -29,11 +28,6 @@ interface ITransaction {
  * Runs queries on a single sqlite database connection.
  */
 export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
-    
-    /**
-     * Database driver used by connection.
-     */
-    driver: ExpoDriver;
 
     /**
      * Database transaction object
@@ -45,10 +39,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(driver: ExpoDriver) {
-        super();
-        this.driver = driver;
-        this.connection = driver.connection;
-        this.broadcaster = new Broadcaster(this);
+        super(driver);
     }
 
     /**

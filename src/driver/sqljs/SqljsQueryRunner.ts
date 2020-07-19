@@ -1,28 +1,25 @@
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {SqljsDriver} from "./SqljsDriver";
-import {Broadcaster} from "../../subscriber/Broadcaster";
 import {QueryFailedError} from "../../error/QueryFailedError";
 
 /**
  * Runs queries on a single sqlite database connection.
  */
 export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
-    
+
     /**
      * Database driver used by connection.
      */
     driver: SqljsDriver;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(driver: SqljsDriver) {
-        super();
+        super(driver);
         this.driver = driver;
-        this.connection = driver.connection;
-        this.broadcaster = new Broadcaster(this);
     }
 
     // -------------------------------------------------------------------------

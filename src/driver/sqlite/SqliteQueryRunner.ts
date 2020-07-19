@@ -2,7 +2,6 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {SqliteDriver} from "./SqliteDriver";
-import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -12,20 +11,12 @@ import {Broadcaster} from "../../subscriber/Broadcaster";
  */
 export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
 
-    /**
-     * Database driver used by connection.
-     */
-    driver: SqliteDriver;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(driver: SqliteDriver) {
-        super();
-        this.driver = driver;
-        this.connection = driver.connection;
-        this.broadcaster = new Broadcaster(this);
+        super(driver);
     }
 
     /**

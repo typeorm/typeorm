@@ -59,6 +59,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         super();
         this.driver = driver;
         this.connection = driver.connection;
+        this.logger = driver.connection.logger;
         this.broadcaster = new Broadcaster(this);
         this.mode = mode;
     }

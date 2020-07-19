@@ -13,6 +13,7 @@ import {Broadcaster} from "../subscriber/Broadcaster";
 import {TableCheck} from "../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {TableExclusion} from "../schema-builder/table/TableExclusion";
+import {Logger} from '../logger/Logger';
 
 /**
  * Runs queries on a single database connection.
@@ -23,6 +24,11 @@ export interface QueryRunner {
      * Connection used by this query runner.
      */
     readonly connection: Connection;
+
+    /**
+     * Logger used by this query runner.
+     */
+    readonly logger: Logger;
 
     /**
      * Broadcaster used on this query runner to broadcast entity events.

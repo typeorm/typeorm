@@ -1,7 +1,6 @@
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError";
 import { QueryFailedError } from "../../error/QueryFailedError";
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner";
-import { Broadcaster } from "../../subscriber/Broadcaster";
 import { BetterSqlite3Driver } from "./BetterSqlite3Driver";
 
 /**
@@ -12,22 +11,15 @@ import { BetterSqlite3Driver } from "./BetterSqlite3Driver";
  */
 export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
-    /**
-     * Database driver used by connection.
-     */
-    driver: BetterSqlite3Driver;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(driver: BetterSqlite3Driver) {
-        super();
-        this.driver = driver;
-        this.connection = driver.connection;
-        this.broadcaster = new Broadcaster(this);
-        if (typeof this.driver.options.statementCacheSize === "number") {
-            this.cacheSize = this.driver.options.statementCacheSize;
+        super(driver);
+
+        if (typeof driver.options.statementCacheSize === "number") {
+            this.cacheSize = driver.options.statementCacheSize;
         } else {
             this.cacheSize = 100;
         }
@@ -65,7 +57,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const connection = this.driver.connection;
-        
+
         parameters = parameters || [];
         for (let i = 0; i < parameters.length; i++) {
             // in "where" clauses the parameters are not escaped by the driver
