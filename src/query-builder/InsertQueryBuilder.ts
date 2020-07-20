@@ -43,14 +43,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     async execute(): Promise<InsertResult> {
         // console.time("QueryBuilder.execute");
         // console.time(".database stuff");
-        const queryRunner = this.obtainQueryRunner();
         let transactionStartedByUs: boolean = false;
 
         try {
 
             // start transaction if it was enabled
-            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
-                await queryRunner.startTransaction();
+            if (this.expressionMap.useTransaction === true && this.queryRunner.isTransactionActive === false) {
+                await this.queryRunner.startTransaction();
                 transactionStartedByUs = true;
             }
 
@@ -63,7 +62,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
                 const broadcastResult = new BroadcasterResult();
                 valueSets.forEach(valueSet => {
-                    queryRunner.broadcaster.broadcastBeforeInsertEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, valueSet);
+                    this.queryRunner.broadcaster.broadcastBeforeInsertEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, valueSet);
                 });
                 if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
             }
@@ -73,7 +72,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             // if update entity mode is enabled we may need extra columns for the returning statement
             // console.time(".prepare returning statement");
-            const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(queryRunner, this.expressionMap);
+            const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(this.queryRunner, this.expressionMap);
             if (this.expressionMap.updateEntity === true && this.expressionMap.mainAlias!.hasMetadata) {
                 this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getInsertionReturningColumns();
 
@@ -91,7 +90,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             const insertResult = new InsertResult();
             // console.time(".query execution by database");
             const statements = [declareSql, insertSql, selectOutputSql];
-            insertResult.raw = await queryRunner.query(
+            insertResult.raw = await this.queryRunner.query(
                 statements.filter(sql => sql != null).join(";\n\n"),
                 parameters,
             );
@@ -108,7 +107,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
                 const broadcastResult = new BroadcasterResult();
                 valueSets.forEach(valueSet => {
-                    queryRunner.broadcaster.broadcastAfterInsertEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, valueSet);
+                    this.queryRunner.broadcaster.broadcastAfterInsertEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, valueSet);
                 });
                 if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
             }
@@ -116,7 +115,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // close transaction if we started it
             // console.time(".commit");
             if (transactionStartedByUs) {
-                await queryRunner.commitTransaction();
+                await this.queryRunner.commitTransaction();
             }
             // console.timeEnd(".commit");
 
@@ -127,18 +126,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // rollback transaction if we started it
             if (transactionStartedByUs) {
                 try {
-                    await queryRunner.rollbackTransaction();
+                    await this.queryRunner.rollbackTransaction();
                 } catch (rollbackError) { }
             }
             throw error;
 
         } finally {
 
-            // console.time(".releasing connection");
-            if (queryRunner !== this.queryRunner) { // means we created our own query runner
-                await queryRunner.release();
-            }
-            if (this.connection.driver instanceof SqljsDriver && !queryRunner.isTransactionActive) {
+            if (this.connection.driver instanceof SqljsDriver && !this.queryRunner.isTransactionActive) {
                 await this.connection.driver.autoSave();
             }
             // console.timeEnd(".releasing connection");

@@ -49,29 +49,28 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     async execute(): Promise<DeleteResult> {
         const [sql, parameters] = this.getQueryAndParameters();
-        const queryRunner = this.obtainQueryRunner();
         let transactionStartedByUs: boolean = false;
 
         try {
 
             // start transaction if it was enabled
             if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
-                await queryRunner.startTransaction();
+                await this.queryRunner.startTransaction();
                 transactionStartedByUs = true;
             }
 
             // call before deletion methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
                 const broadcastResult = new BroadcasterResult();
-                queryRunner.broadcaster.broadcastBeforeRemoveEvent(broadcastResult, this.expressionMap.mainAlias!.metadata);
+                this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(broadcastResult, this.expressionMap.mainAlias!.metadata);
                 if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
             }
 
             // execute query
             const deleteResult = new DeleteResult();
-            const result = await queryRunner.query(sql, parameters);
+            const result = await this.queryRunner.query(sql, parameters);
 
-            const driver = queryRunner.connection.driver;
+            const driver = this.queryRunner.connection.driver;
             if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver) {
                 deleteResult.raw = result;
                 deleteResult.affected = result.affectedRows;
