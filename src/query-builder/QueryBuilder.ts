@@ -80,7 +80,7 @@ export abstract class QueryBuilder<Entity> {
     constructor(connection: Connection, queryRunner: QueryRunner, queryExpressionMap?: QueryExpressionMap) {
         this.connection = connection;
         this.queryRunner = queryRunner!;
-        this.expressionMap = queryExpressionMap || new QueryExpressionMap(this.connection);
+        this.expressionMap = queryExpressionMap ? queryExpressionMap : new QueryExpressionMap(this.connection);
     }
 
     // -------------------------------------------------------------------------
@@ -145,7 +145,11 @@ export abstract class QueryBuilder<Entity> {
         if (this instanceof SelectQueryBuilderCls)
             return this as any;
 
-        return new SelectQueryBuilderCls(this);
+        return new SelectQueryBuilderCls(
+            this.connection,
+            this.queryRunner,
+            this.expressionMap.clone()
+        );
     }
 
     /**
@@ -249,7 +253,11 @@ export abstract class QueryBuilder<Entity> {
         if (this instanceof SoftDeleteQueryBuilderCls)
             return this as any;
 
-        return new SoftDeleteQueryBuilderCls(this);
+        return new SoftDeleteQueryBuilderCls(
+            this.connection,
+            this.queryRunner,
+            this.expressionMap.clone()
+        );
     }
 
     restore(): SoftDeleteQueryBuilder<any> {
@@ -260,7 +268,11 @@ export abstract class QueryBuilder<Entity> {
         if (this instanceof SoftDeleteQueryBuilderCls)
             return this as any;
 
-        return new SoftDeleteQueryBuilderCls(this);
+        return new SoftDeleteQueryBuilderCls(
+            this.connection,
+            this.queryRunner,
+            this.expressionMap.clone()
+        );
     }
 
     /**
@@ -293,7 +305,11 @@ export abstract class QueryBuilder<Entity> {
         if (this instanceof RelationQueryBuilderCls)
             return this as any;
 
-        return new RelationQueryBuilderCls(this);
+        return new RelationQueryBuilderCls(
+            this.connection,
+            this.queryRunner,
+            this.expressionMap.clone()
+        );
     }
 
 
