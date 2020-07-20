@@ -25,6 +25,7 @@ import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver";
+import {QueryExpressionMap} from "./QueryExpressionMap";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -35,8 +36,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOrQueryBuilder: Connection|QueryBuilder<any>, queryRunner: QueryRunner) {
-        super(connectionOrQueryBuilder as any, queryRunner);
+    constructor(connection: Connection, queryRunner: QueryRunner, queryExpressionMap?: QueryExpressionMap) {
+        super(connection, queryRunner, queryExpressionMap);
         this.expressionMap.aliasNamePrefixingEnabled = false;
     }
 

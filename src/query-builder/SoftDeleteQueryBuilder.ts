@@ -21,6 +21,7 @@ import {MissingDeleteDateColumnError} from "../error/MissingDeleteDateColumnErro
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntitySchema} from "../entity-schema/EntitySchema";
+import {QueryExpressionMap} from "./QueryExpressionMap";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -31,8 +32,8 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOrQueryBuilder: Connection|QueryBuilder<any>, queryRunner: QueryRunner) {
-        super(connectionOrQueryBuilder as any, queryRunner);
+    constructor(connection: Connection, queryRunner: QueryRunner, queryExpressionMap?: QueryExpressionMap) {
+        super(connection, queryRunner, queryExpressionMap);
         this.expressionMap.aliasNamePrefixingEnabled = false;
     }
 

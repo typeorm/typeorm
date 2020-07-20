@@ -72,15 +72,10 @@ export abstract class QueryBuilder<Entity> {
     /**
      * QueryBuilder can be initialized from given Connection and QueryRunner objects or from given other QueryBuilder.
      */
-    constructor(connection: Connection, queryRunner: QueryRunner);
-
-    /**
-     * QueryBuilder can be initialized from given Connection and QueryRunner objects or from given other QueryBuilder.
-     */
     constructor(connection: Connection, queryRunner: QueryRunner, queryExpressionMap?: QueryExpressionMap) {
         this.connection = connection;
         this.queryRunner = queryRunner!;
-        this.expressionMap = queryExpressionMap ? queryExpressionMap : new QueryExpressionMap(this.connection);
+        this.expressionMap = queryExpressionMap == null ? new QueryExpressionMap(this.connection) : queryExpressionMap;
     }
 
     // -------------------------------------------------------------------------
