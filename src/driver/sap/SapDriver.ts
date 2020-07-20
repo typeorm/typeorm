@@ -1,4 +1,4 @@
-import {ColumnType, Connection, EntityMetadata, ObjectLiteral, TableColumn} from "../..";
+import {ColumnType, Connection, EntityMetadata, Logger, ObjectLiteral, QueryRunner, TableColumn} from "../..";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {PlatformTools} from "../../platform/PlatformTools";
@@ -273,8 +273,8 @@ export class SapDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
-        return new SapQueryRunner(this, mode);
+    createQueryRunner(mode: "master"|"slave" = "master", logger?: Logger): QueryRunner {
+        return new SapQueryRunner(this, mode, logger || this.connection.logger);
     }
 
     /**

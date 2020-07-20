@@ -3,6 +3,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {CordovaDriver} from "./CordovaDriver";
+import {Logger} from "../../logger/Logger";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -13,8 +14,8 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: CordovaDriver) {
-        super(driver);
+    constructor(driver: CordovaDriver, logger: Logger) {
+        super(driver, logger);
     }
 
     /**

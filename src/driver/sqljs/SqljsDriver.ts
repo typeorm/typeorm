@@ -9,6 +9,7 @@ import {PlatformTools} from "../../platform/PlatformTools";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {Logger} from "../../logger/Logger";
 
 // This is needed to satisfy the typescript compiler.
 interface Window {
@@ -56,7 +57,6 @@ export class SqljsDriver extends AbstractSqliteDriver {
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
             try {
-                this.queryRunner = undefined;
                 this.databaseConnection.close();
                 ok();
             }
@@ -69,11 +69,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master" | "slave" = "master"): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new SqljsQueryRunner(this);
-
-        return this.queryRunner;
+    createQueryRunner(mode: "master" | "slave" = "master", logger?: Logger): QueryRunner {
+        return new SqljsQueryRunner(this, logger || this.connection.logger);
     }
 
     /**

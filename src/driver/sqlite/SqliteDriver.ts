@@ -7,6 +7,7 @@ import { SqliteConnectionOptions } from "./SqliteConnectionOptions";
 import { ColumnType } from "../types/ColumnTypes";
 import { QueryRunner } from "../../query-runner/QueryRunner";
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver";
+import { Logger } from "../../logger/Logger";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -55,7 +56,6 @@ export class SqliteDriver extends AbstractSqliteDriver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
             this.databaseConnection.close((err: any) => err ? fail(err) : ok());
         });
     }
@@ -63,11 +63,8 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master" | "slave" = "master"): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new SqliteQueryRunner(this);
-
-        return this.queryRunner;
+    createQueryRunner(mode: "master" | "slave" = "master", logger?: Logger): QueryRunner {
+        return new SqliteQueryRunner(this, logger || this.connection.logger);
     }
 
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number | null, scale?: number }): string {

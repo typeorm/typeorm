@@ -65,7 +65,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: CockroachDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: CockroachDriver, mode: "master"|"slave" = "master", logger: Logger) {
         super();
         this.driver = driver;
         this.connection = driver.connection;

@@ -16,7 +16,7 @@ import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions"
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {Broadcaster} from "../../subscriber/Broadcaster";
-import {ColumnType, PromiseUtils} from "../../index";
+import {ColumnType, Logger, PromiseUtils} from "../../index";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
@@ -49,11 +49,11 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AuroraDataApiDriver) {
+    constructor(driver: AuroraDataApiDriver, logger: Logger) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
-        this.logger = driver.connection.logger;
+        this.logger = logger;
         this.broadcaster = new Broadcaster(this);
     }
 

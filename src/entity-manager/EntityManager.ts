@@ -35,6 +35,7 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {FindConditions} from "../find-options/FindConditions";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {ObjectUtils} from "../util/ObjectUtils";
+import {LoggerFactory} from "../logger/LoggerFactory.js";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -1026,7 +1027,17 @@ export class EntityManager {
         } else if (maybeOptions && FindOptionsUtils.isFindOneOptions(maybeOptions) && maybeOptions.join) {
             alias = maybeOptions.join.alias;
         }
-        const qb = this.createQueryBuilder<Entity>(entityClass as any, alias);
+
+        let queryRunner;
+
+        // Logger
+        if (findOptions && findOptions.logging) {
+            const logger = new LoggerFactory().create(this.connection.options.logger, findOptions.logging);
+
+            queryRunner = this.connection.createQueryRunner("master", logger);
+        }
+
+        const qb = this.createQueryBuilder<Entity>(entityClass as any, alias, queryRunner);
 
         if (!findOptions || findOptions.loadEagerRelations !== false)
             FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);

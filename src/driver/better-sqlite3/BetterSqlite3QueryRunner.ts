@@ -2,6 +2,7 @@ import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyR
 import { QueryFailedError } from "../../error/QueryFailedError";
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import { BetterSqlite3Driver } from "./BetterSqlite3Driver";
+import { Logger } from "../../logger/Logger";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -10,13 +11,18 @@ import { BetterSqlite3Driver } from "./BetterSqlite3Driver";
  * todo: need to throw exception for this case.
  */
 export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
+    private readonly cacheSize: number;
+
+    private readonly statementCache: Map<string, any>;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: BetterSqlite3Driver) {
-        super(driver);
+    constructor(driver: BetterSqlite3Driver, logger: Logger, statementCache: Map<string, any>) {
+        super(driver, logger);
+
+        this.statementCache = statementCache;
 
         if (typeof driver.options.statementCacheSize === "number") {
             this.cacheSize = driver.options.statementCacheSize;
@@ -25,21 +31,18 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
         }
     }
 
-    private cacheSize: number;
-    private stmtCache = new Map<string, any>();
-
     private async getStmt(query: string) {
         if (this.cacheSize > 0) {
-            let stmt = this.stmtCache.get(query);
+            let stmt = this.statementCache.get(query);
             if (!stmt) {
                 const databaseConnection = await this.connect();
                 stmt = databaseConnection.prepare(query);
-                this.stmtCache.set(query, stmt);
-                while (this.stmtCache.size > this.cacheSize) {
+                this.statementCache.set(query, stmt);
+                while (this.statementCache.size > this.cacheSize) {
                     // since es6 map keeps the insertion order,
                     // it comes to be FIFO cache
-                    const key = this.stmtCache.keys().next().value;
-                    this.stmtCache.delete(key);
+                    const key = this.statementCache.keys().next().value;
+                    this.statementCache.delete(key);
                 }
             }
             return stmt;

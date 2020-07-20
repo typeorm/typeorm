@@ -2,6 +2,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {SqljsDriver} from "./SqljsDriver";
 import {QueryFailedError} from "../../error/QueryFailedError";
+import {Logger} from '../../logger/Logger';
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -17,8 +18,8 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: SqljsDriver) {
-        super(driver);
+    constructor(driver: SqljsDriver, logger: Logger) {
+        super(driver, logger);
         this.driver = driver;
     }
 

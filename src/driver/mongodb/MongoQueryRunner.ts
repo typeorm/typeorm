@@ -115,9 +115,9 @@ export class MongoQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection, databaseConnection: Db) {
+    constructor(connection: Connection, databaseConnection: Db, logger: Logger) {
         this.connection = connection;
-        this.logger = connection.logger;
+        this.logger = logger;
         this.databaseConnection = databaseConnection;
         this.broadcaster = new Broadcaster(this);
     }

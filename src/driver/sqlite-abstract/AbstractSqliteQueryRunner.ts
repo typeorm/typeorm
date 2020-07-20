@@ -38,13 +38,12 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AbstractSqliteDriver) {
+    protected constructor(driver: AbstractSqliteDriver, logger: Logger) {
         super();
 
         this.driver = driver;
         this.connection = driver.connection;
-        this.logger = driver.connection.logger;
-
+        this.logger = logger;
 
     }
 

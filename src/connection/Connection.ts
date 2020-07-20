@@ -443,8 +443,8 @@ export class Connection {
      * If you perform writes you must use master database,
      * if you perform reads you can use slave databases.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
-        const queryRunner = this.driver.createQueryRunner(mode);
+    createQueryRunner(mode: "master"|"slave" = "master", logger?: Logger): QueryRunner {
+        const queryRunner = this.driver.createQueryRunner(mode, logger);
         const manager = this.createEntityManager(queryRunner);
         Object.assign(queryRunner, { manager: manager });
         return queryRunner;

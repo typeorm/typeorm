@@ -1,6 +1,7 @@
 import {JoinOptions} from "./JoinOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindConditions} from "./FindConditions";
+import {LoggerOptions} from "../logger/LoggerOptions.js";
 
 /**
  * Defines a special criteria to find specific entity.
@@ -58,5 +59,10 @@ export interface FindOneOptions<Entity = any> {
      * By default they are loaded when find methods are used.
      */
     loadEagerRelations?: boolean;
+
+    /**
+     * Override logger options for a `find` operation.
+     */
+    logging?: LoggerOptions;
 
 }

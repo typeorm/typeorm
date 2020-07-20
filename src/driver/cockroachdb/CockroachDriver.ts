@@ -19,6 +19,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {CockroachQueryRunner} from "./CockroachQueryRunner";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {Logger} from "../../logger/Logger";
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -284,8 +285,8 @@ export class CockroachDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
-        return new CockroachQueryRunner(this, mode);
+    createQueryRunner(mode: "master"|"slave" = "master", logger: Logger): QueryRunner {
+        return new CockroachQueryRunner(this, mode, logger);
     }
 
     /**

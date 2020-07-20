@@ -18,6 +18,8 @@ import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOpt
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {Logger} from "../../logger/Logger";
+import {QueryRunner} from "../..";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -385,7 +387,7 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: "master"|"slave" = "master", logger?: Logger): QueryRunner {
         return new MysqlQueryRunner(this, mode);
     }
 

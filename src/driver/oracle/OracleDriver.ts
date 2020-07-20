@@ -18,6 +18,7 @@ import {DriverUtils} from "../DriverUtils";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {Logger, QueryRunner} from "../..";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -287,8 +288,8 @@ export class OracleDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
-        return new OracleQueryRunner(this, mode);
+    createQueryRunner(mode: "master"|"slave" = "master", logger?: Logger): QueryRunner {
+        return new OracleQueryRunner(this, mode, logger || this.connection.logger);
     }
 
     /**

@@ -4,6 +4,7 @@ import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryR
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {ExpoDriver} from "./ExpoDriver";
+import {Logger} from "../../logger/Logger";
 
 // Needed to satisfy the Typescript compiler
 interface IResultSet {
@@ -38,8 +39,8 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: ExpoDriver) {
-        super(driver);
+    constructor(driver: ExpoDriver, logger: Logger) {
+        super(driver, logger);
     }
 
     /**

@@ -16,6 +16,8 @@ import {AuroraDataApiConnectionCredentialsOptions} from "./AuroraDataApiConnecti
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {Logger} from "../../logger/Logger";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -354,8 +356,8 @@ export class AuroraDataApiDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
-        return new AuroraDataApiQueryRunner(this);
+    createQueryRunner(mode: "master"|"slave" = "master", logger?: Logger): QueryRunner {
+        return new AuroraDataApiQueryRunner(this, logger || this.connection.logger);
     }
 
     /**

@@ -20,6 +20,7 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {Query} from "../Query";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {SapDriver} from "./SapDriver";
+import {Logger} from "../../logger/Logger";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -55,11 +56,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: SapDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: SapDriver, mode: "master"|"slave" = "master", logger: Logger) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
-        this.logger = driver.connection.logger;
+        this.logger = logger;
         this.broadcaster = new Broadcaster(this);
         this.mode = mode;
     }

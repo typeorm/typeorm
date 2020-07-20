@@ -7,6 +7,7 @@ import { QueryRunner } from "../../query-runner/QueryRunner";
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver";
 import { BetterSqlite3ConnectionOptions } from "./BetterSqlite3ConnectionOptions";
 import { BetterSqlite3QueryRunner } from "./BetterSqlite3QueryRunner";
+import { Logger } from "../../logger/Logger";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -26,6 +27,8 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      * SQLite underlying library.
      */
     sqlite: any;
+
+    private readonly statementCache = new Map<string, any>();
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -61,9 +64,13 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master" | "slave" = "master"): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new BetterSqlite3QueryRunner(this);
+    createQueryRunner(mode: "master" | "slave" = "master", logger?: Logger): QueryRunner {
+        if (!this.queryRunner) {
+            this.queryRunner = new BetterSqlite3QueryRunner(
+                this,
+                logger || this.connection.logger
+            );
+        }
 
         return this.queryRunner;
     }
@@ -88,7 +95,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         if (this.options.database !== ":memory:")
             await this.createDatabaseDirectory(this.options.database);
 
-        const { 
+        const {
             database,
             readonly = false,
             fileMustExist = false,

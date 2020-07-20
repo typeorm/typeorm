@@ -5,10 +5,11 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {Connection} from "../../connection/Connection";
 import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
+import {Logger} from "../../logger/Logger";
 
 export class ReactNativeDriver extends AbstractSqliteDriver {
     options: ReactNativeConnectionOptions;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -28,7 +29,7 @@ export class ReactNativeDriver extends AbstractSqliteDriver {
         // load sqlite package
         this.loadDependencies();
     }
-    
+
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -39,21 +40,17 @@ export class ReactNativeDriver extends AbstractSqliteDriver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
             this.databaseConnection.close(ok, fail);
         });
     }
-    
+
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new ReactNativeQueryRunner(this);
-
-        return this.queryRunner;
+    createQueryRunner(mode: "master"|"slave" = "master", logger?: Logger): QueryRunner {
+        return new ReactNativeQueryRunner(this, logger || this.connection.logger);
     }
-    
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

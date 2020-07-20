@@ -6,6 +6,7 @@ import {Connection} from "../../connection/Connection";
 import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {ColumnType} from "../types/ColumnTypes";
+import {Logger} from "../..";
 
 /**
  * Organizes communication with sqlite DBMS within Nativescript.
@@ -58,7 +59,6 @@ export class NativescriptDriver extends AbstractSqliteDriver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
             this.databaseConnection.close().then(ok).catch(fail);
         });
     }
@@ -66,12 +66,8 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
-        if (!this.queryRunner) {
-            this.queryRunner = new NativescriptQueryRunner(this);
-        }
-
-        return this.queryRunner;
+    createQueryRunner(mode: "master"|"slave" = "master", logger?: Logger): QueryRunner {
+        return new NativescriptQueryRunner(this, logger || this.connection.logger);
     }
 
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {

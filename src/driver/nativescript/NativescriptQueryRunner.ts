@@ -3,6 +3,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {NativescriptDriver} from "./NativescriptDriver";
+import {Logger} from "../../logger/Logger";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -13,8 +14,8 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: NativescriptDriver) {
-        super(driver);
+    constructor(driver: NativescriptDriver, logger: Logger) {
+        super(driver, logger);
     }
 
     /**

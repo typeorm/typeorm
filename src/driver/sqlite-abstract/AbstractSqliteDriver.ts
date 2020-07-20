@@ -13,6 +13,7 @@ import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {Logger} from "../../logger/Logger";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -27,11 +28,6 @@ export abstract class AbstractSqliteDriver implements Driver {
      * Connection used by driver.
      */
     connection: Connection;
-
-    /**
-     * Sqlite has a single QueryRunner because it works on a single database connection.
-     */
-    queryRunner?: QueryRunner;
 
     /**
      * Real database connection with sqlite database.
@@ -195,7 +191,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    abstract createQueryRunner(mode: "master"|"slave"): QueryRunner;
+    abstract createQueryRunner(mode: "master"|"slave", logger?: Logger): QueryRunner;
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -220,7 +216,6 @@ export abstract class AbstractSqliteDriver implements Driver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
             this.databaseConnection.close((err: any) => err ? fail(err) : ok());
         });
     }

@@ -17,7 +17,7 @@ import {Broadcaster} from "../../subscriber/Broadcaster";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
-import {ColumnType, PromiseUtils} from "../../index";
+import {ColumnType, Logger, PromiseUtils} from "../../index";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 
@@ -48,11 +48,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: OracleDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: OracleDriver, mode: "master"|"slave" = "master", logger: Logger) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
-        this.logger = driver.connection.logger;
+        this.logger = logger;
         this.broadcaster = new Broadcaster(this);
         this.mode = mode;
     }

@@ -16,6 +16,9 @@ import {ConnectionOptions} from "../../connection/ConnectionOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {ObjectUtils} from "../../util/ObjectUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {Db} from "./typings.js";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {Logger} from "../../logger/Logger";
 
 /**
  * Organizes communication with MongoDB.
@@ -131,6 +134,8 @@ export class MongoDriver implements Driver {
     // Protected Properties
     // -------------------------------------------------------------------------
 
+    protected client?: Db;
+
     /**
      * Valid mongo connection options
      * NOTE: Keep sync with MongoConnectionOptions
@@ -227,8 +232,8 @@ export class MongoDriver implements Driver {
                 (err: any, client: any) => {
                     if (err) return fail(err);
 
-                    this.queryRunner = new MongoQueryRunner(this.connection, client);
-                    ObjectUtils.assign(this.queryRunner, { manager: this.connection.manager });
+                    this.client = client;
+
                     ok();
                 });
         });
@@ -247,8 +252,9 @@ export class MongoDriver implements Driver {
                 return fail(new ConnectionIsNotSetError("mongodb"));
 
             const handler = (err: any) => err ? fail(err) : ok();
-            this.queryRunner.databaseConnection.close(handler);
-            this.queryRunner = undefined;
+            if (this.client) {
+                this.client.close(handler);
+            }
         });
     }
 
@@ -262,8 +268,10 @@ export class MongoDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
-        return this.queryRunner!;
+    createQueryRunner(mode: "master"|"slave" = "master", logger?: Logger): QueryRunner {
+        const queryRunner = new MongoQueryRunner(this.connection, this.client!, logger);
+        ObjectUtils.assign(queryRunner, { manager: this.connection.manager });
+        return queryRunner;
     }
 
     /**
