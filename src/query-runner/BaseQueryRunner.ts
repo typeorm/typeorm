@@ -9,7 +9,7 @@ import {Table} from "../schema-builder/table/Table";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {Broadcaster} from "../subscriber/Broadcaster";
-import {Logger} from '../logger/Logger';
+import {Logger} from "../logger/Logger";
 
 export abstract class BaseQueryRunner {
 
@@ -74,7 +74,7 @@ export abstract class BaseQueryRunner {
     protected databaseConnection: any;
 
     /**
-     * Indicates if special query runner mode in which sql queries won't be executed is enabled.
+     * Indicates if special query runner mode in which sql queries won"t be executed is enabled.
      */
     protected sqlMemoryMode: boolean = false;
 
@@ -112,7 +112,7 @@ export abstract class BaseQueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Loads given table's data from the database.
+     * Loads given table"s data from the database.
      */
     async getTable(tablePath: string): Promise<Table|undefined> {
         this.loadedTables = await this.loadTables([tablePath]);
@@ -128,7 +128,7 @@ export abstract class BaseQueryRunner {
     }
 
     /**
-     * Loads given view's data from the database.
+     * Loads given view"s data from the database.
      */
     async getView(viewPath: string): Promise<View|undefined> {
         this.loadedViews = await this.loadViews([viewPath]);
@@ -136,7 +136,7 @@ export abstract class BaseQueryRunner {
     }
 
     /**
-     * Loads given view's data from the database.
+     * Loads given view"s data from the database.
      */
     async getViews(viewPaths: string[]): Promise<View[]> {
         this.loadedViews = await this.loadViews(viewPaths);
@@ -144,7 +144,7 @@ export abstract class BaseQueryRunner {
     }
 
     /**
-     * Enables special query runner mode in which sql queries won't be executed,
+     * Enables special query runner mode in which sql queries won"t be executed,
      * instead they will be memorized into a special variable inside query runner.
      * You can get memorized sql using getMemorySql() method.
      */
@@ -154,7 +154,7 @@ export abstract class BaseQueryRunner {
     }
 
     /**
-     * Disables special query runner mode in which sql queries won't be executed
+     * Disables special query runner mode in which sql queries won"t be executed
      * started by calling enableSqlMemory() method.
      *
      * Previously memorized sql will be flushed.

@@ -2,7 +2,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {SqljsDriver} from "./SqljsDriver";
 import {QueryFailedError} from "../../error/QueryFailedError";
-import {Logger} from '../../logger/Logger';
+import {Logger} from "../../logger/Logger";
 
 /**
  * Runs queries on a single sqlite database connection.

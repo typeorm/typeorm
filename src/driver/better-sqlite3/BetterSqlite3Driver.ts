@@ -57,7 +57,6 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        this.queryRunner = undefined;
         this.databaseConnection.close();
     }
 
@@ -65,14 +64,11 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: "master" | "slave" = "master", logger?: Logger): QueryRunner {
-        if (!this.queryRunner) {
-            this.queryRunner = new BetterSqlite3QueryRunner(
-                this,
-                logger || this.connection.logger
-            );
-        }
-
-        return this.queryRunner;
+        return new BetterSqlite3QueryRunner(
+            this,
+            logger || this.connection.logger,
+            this.statementCache
+        );
     }
 
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number | null, scale?: number }): string {

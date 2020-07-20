@@ -13,7 +13,7 @@ import {Broadcaster} from "../subscriber/Broadcaster";
 import {TableCheck} from "../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {TableExclusion} from "../schema-builder/table/TableExclusion";
-import {Logger} from '../logger/Logger';
+import {Logger} from "../logger/Logger";
 
 /**
  * Runs queries on a single database connection.
@@ -184,7 +184,7 @@ export interface QueryRunner {
 
     /**
      * Drops table schema.
-     * For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
+     * For SqlServer can accept schema path (e.g. "dbName.schemaName") as parameter.
      * If schema path passed, it will drop schema in specified database.
      */
     dropSchema(schemaPath: string, ifExist?: boolean, isCascade?: boolean): Promise<void>;
@@ -366,19 +366,19 @@ export interface QueryRunner {
 
     /**
      * Clears all table contents.
-     * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     * Note: this operation uses SQL"s TRUNCATE query which cannot be reverted in transactions.
      */
     clearTable(tableName: string): Promise<void>;
 
     /**
-     * Enables special query runner mode in which sql queries won't be executed,
+     * Enables special query runner mode in which sql queries won"t be executed,
      * instead they will be memorized into a special variable inside query runner.
      * You can get memorized sql using getMemorySql() method.
      */
     enableSqlMemory(): void;
 
     /**
-     * Disables special query runner mode in which sql queries won't be executed
+     * Disables special query runner mode in which sql queries won"t be executed
      * started by calling enableSqlMemory() method.
      *
      * Previously memorized sql will be flushed.
