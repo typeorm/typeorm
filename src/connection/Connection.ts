@@ -422,15 +422,25 @@ export class Connection {
         if (this instanceof MongoEntityManager)
             throw new Error(`Query Builder is not supported by MongoDB.`);
 
+        if (!queryRunner) {
+            if (!alias) {
+                queryRunner = entityOrRunner as QueryRunner;
+            }
+
+            queryRunner = this.createQueryRunner();
+        }
+
+        let qb = new SelectQueryBuilder<Entity>(this, queryRunner);
+
         if (alias) {
             const metadata = this.getMetadata(entityOrRunner as Function|EntitySchema<Entity>|string);
-            return new SelectQueryBuilder(this, queryRunner)
+            qb = qb
                 .select(alias)
                 .from(metadata.target, alias);
 
-        } else {
-            return new SelectQueryBuilder(this, entityOrRunner as QueryRunner|undefined);
         }
+
+        return qb;
     }
 
     /**
