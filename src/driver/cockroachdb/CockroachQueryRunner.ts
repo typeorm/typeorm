@@ -22,6 +22,7 @@ import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {ColumnType} from "../../index";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import {Logger} from "../../logger/Logger";
 
 /**
  * Runs queries on a single postgres database connection.
