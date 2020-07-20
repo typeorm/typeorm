@@ -49,7 +49,6 @@ export class CordovaDriver extends AbstractSqliteDriver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
             this.databaseConnection.close(ok, fail);
         });
     }
@@ -59,8 +58,6 @@ export class CordovaDriver extends AbstractSqliteDriver {
      */
     createQueryRunner(mode: "master"|"slave" = "master", logger?: Logger): QueryRunner {
         return new CordovaQueryRunner(this, logger || this.connection.logger);
-
-        return this.queryRunner;
     }
 
     // -------------------------------------------------------------------------

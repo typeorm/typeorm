@@ -35,7 +35,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOrQueryBuilder: Connection|QueryBuilder<any>, queryRunner?: QueryRunner) {
+    constructor(connectionOrQueryBuilder: Connection|QueryBuilder<any>, queryRunner: QueryRunner) {
         super(connectionOrQueryBuilder as any, queryRunner);
         this.expressionMap.aliasNamePrefixingEnabled = false;
     }

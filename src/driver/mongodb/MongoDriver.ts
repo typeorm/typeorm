@@ -269,7 +269,7 @@ export class MongoDriver implements Driver {
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: "master"|"slave" = "master", logger?: Logger): QueryRunner {
-        const queryRunner = new MongoQueryRunner(this.connection, this.client!, logger);
+        const queryRunner = new MongoQueryRunner(this.connection, this.client!, logger || this.connection.logger);
         ObjectUtils.assign(queryRunner, { manager: this.connection.manager });
         return queryRunner;
     }
