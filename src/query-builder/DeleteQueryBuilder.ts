@@ -54,7 +54,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         try {
 
             // start transaction if it was enabled
-            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+            if (this.expressionMap.useTransaction === true && this.queryRunner.isTransactionActive === false) {
                 await this.queryRunner.startTransaction();
                 transactionStartedByUs = true;
             }
@@ -94,13 +94,13 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             // call after deletion methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
                 const broadcastResult = new BroadcasterResult();
-                queryRunner.broadcaster.broadcastAfterRemoveEvent(broadcastResult, this.expressionMap.mainAlias!.metadata);
+                this.queryRunner.broadcaster.broadcastAfterRemoveEvent(broadcastResult, this.expressionMap.mainAlias!.metadata);
                 if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
             }
 
             // close transaction if we started it
             if (transactionStartedByUs)
-                await queryRunner.commitTransaction();
+                await this.queryRunner.commitTransaction();
 
             return deleteResult;
 
@@ -109,16 +109,13 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             // rollback transaction if we started it
             if (transactionStartedByUs) {
                 try {
-                    await queryRunner.rollbackTransaction();
+                    await this.queryRunner.rollbackTransaction();
                 } catch (rollbackError) { }
             }
             throw error;
 
         } finally {
-            if (queryRunner !== this.queryRunner) { // means we created our own query runner
-                await queryRunner.release();
-            }
-            if (this.connection.driver instanceof SqljsDriver && !queryRunner.isTransactionActive) {
+            if (this.connection.driver instanceof SqljsDriver && !this.queryRunner.isTransactionActive) {
                 await this.connection.driver.autoSave();
             }
         }
