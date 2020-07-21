@@ -147,7 +147,7 @@ export abstract class QueryBuilder<Entity> {
         return new SelectQueryBuilderCls(
             this.connection,
             this.queryRunner,
-            this.expressionMap
+            this.expressionMap.clone()
         );
     }
 
@@ -162,7 +162,11 @@ export abstract class QueryBuilder<Entity> {
         if (this instanceof InsertQueryBuilderCls)
             return this as any;
 
-        return new InsertQueryBuilderCls(this);
+        return new InsertQueryBuilderCls(
+            this.connection,
+            this.queryRunner,
+            this.expressionMap.clone()
+        );
     }
 
     /**
@@ -216,7 +220,9 @@ export abstract class QueryBuilder<Entity> {
             return this as any;
 
         return new UpdateQueryBuilderCls(
-
+            this.connection,
+            this.queryRunner,
+            this.expressionMap.clone()
         );
     }
 
