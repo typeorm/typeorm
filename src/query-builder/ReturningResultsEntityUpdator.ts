@@ -120,6 +120,12 @@ export class ReturningResultsEntityUpdator {
             await Promise.all(entities.map(async (entity, entityIndex) => {
                 const entityId = metadata.getEntityIdMap(entity)!;
 
+                // We have to check for an empty `entityId` - if we don't, the query against the database
+                // effectively drops the `where` clause entirely and the first record will be returned -
+                // not what we want at all.
+                if (!entityId)
+                    throw new Error(`Cannot update entity because entity id is not set in the entity.`);
+
                 // to select just inserted entity we need a criteria to select by.
                 // for newly inserted entities in drivers which do not support returning statement
                 // row identifier can only be an increment column
