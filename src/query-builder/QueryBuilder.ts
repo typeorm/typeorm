@@ -252,7 +252,11 @@ export abstract class QueryBuilder<Entity> {
         if (this instanceof SoftDeleteQueryBuilderCls)
             return this as any;
 
-        return new SoftDeleteQueryBuilderCls(this);
+        return new SoftDeleteQueryBuilderCls(
+            this.connection,
+            this.queryRunner,
+            this.expressionMap.clone()
+        );
     }
 
     restore(): SoftDeleteQueryBuilder<any> {
