@@ -267,7 +267,11 @@ export abstract class QueryBuilder<Entity> {
         if (this instanceof SoftDeleteQueryBuilderCls)
             return this as any;
 
-        return new SoftDeleteQueryBuilderCls(this);
+        return new SoftDeleteQueryBuilderCls(
+            this.connection,
+            this.queryRunner,
+            this.expressionMap.clone()
+        );
     }
 
     /**
@@ -300,7 +304,11 @@ export abstract class QueryBuilder<Entity> {
         if (this instanceof RelationQueryBuilderCls)
             return this as any;
 
-        return new RelationQueryBuilderCls(this);
+        return new RelationQueryBuilderCls(
+            this.connection,
+            this.queryRunner,
+            this.expressionMap.clone()
+        );
     }
 
 
@@ -451,12 +459,11 @@ export abstract class QueryBuilder<Entity> {
 
     /**
      * Clones query builder as it is.
-     * Note: it uses new query runner, if you want query builder that uses exactly same query runner,
-     * you can create query builder using its constructor, for example new SelectQueryBuilder(queryBuilder)
-     * where queryBuilder is cloned QueryBuilder.
+     * Note: it uses the same query runner and expression map - if you want a fresh expression map,
+     * use `createQueryBuilder()`.
      */
     clone(): this {
-        return new (this.constructor as any)(this);
+        return new (this.constructor as any)(this.connection, this.queryRunner, this.expressionMap);
     }
 
     /**

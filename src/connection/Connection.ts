@@ -423,13 +423,21 @@ export class Connection {
             throw new Error(`Query Builder is not supported by MongoDB.`);
 
         if (alias) {
+            if (!queryRunner) {
+                queryRunner = this.createQueryRunner("slave");
+            }
+
             const metadata = this.getMetadata(entityOrRunner as Function|EntitySchema<Entity>|string);
             return new SelectQueryBuilder(this, queryRunner)
                 .select(alias)
                 .from(metadata.target, alias);
 
         } else {
-            return new SelectQueryBuilder(this, entityOrRunner as QueryRunner|undefined);
+            if (!entityOrRunner) {
+                entityOrRunner = this.createQueryRunner("slave");
+            }
+
+            return new SelectQueryBuilder(this, entityOrRunner as QueryRunner);
         }
     }
 
