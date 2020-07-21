@@ -25,7 +25,7 @@ import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver";
-import {QueryExpressionMap} from "./QueryExpressionMap.js";
+import {QueryExpressionMap} from "./QueryExpressionMap";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
