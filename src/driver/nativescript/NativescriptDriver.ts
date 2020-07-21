@@ -58,7 +58,6 @@ export class NativescriptDriver extends AbstractSqliteDriver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
             this.databaseConnection.close().then(ok).catch(fail);
         });
     }
@@ -67,11 +66,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
-        if (!this.queryRunner) {
-            this.queryRunner = new NativescriptQueryRunner(this);
-        }
-
-        return this.queryRunner;
+        return new NativescriptQueryRunner(this);
     }
 
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {

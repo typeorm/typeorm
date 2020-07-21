@@ -16,6 +16,8 @@ import {ConnectionOptions} from "../../connection/ConnectionOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {ObjectUtils} from "../../util/ObjectUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {Db} from "./typings";
+import {QueryRunner} from "../../query-runner/QueryRunner";
 
 /**
  * Organizes communication with MongoDB.
@@ -32,10 +34,9 @@ export class MongoDriver implements Driver {
     mongodb: any;
 
     /**
-     * Mongodb does not require to dynamically create query runner each time,
-     * because it does not have a regular connection pool as RDBMS systems have.
+     * Real database connection from a connection pool used to perform queries.
      */
-    queryRunner?: MongoQueryRunner;
+    databaseConnection?: Db;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -227,8 +228,7 @@ export class MongoDriver implements Driver {
                 (err: any, client: any) => {
                     if (err) return fail(err);
 
-                    this.queryRunner = new MongoQueryRunner(this.connection, client);
-                    ObjectUtils.assign(this.queryRunner, { manager: this.connection.manager });
+                    this.databaseConnection = client;
                     ok();
                 });
         });
@@ -243,12 +243,12 @@ export class MongoDriver implements Driver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            if (!this.queryRunner)
+            if (!this.databaseConnection)
                 return fail(new ConnectionIsNotSetError("mongodb"));
 
             const handler = (err: any) => err ? fail(err) : ok();
-            this.queryRunner.databaseConnection.close(handler);
-            this.queryRunner = undefined;
+            this.databaseConnection.close(handler);
+            this.databaseConnection = undefined;
         });
     }
 
@@ -262,8 +262,11 @@ export class MongoDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
-        return this.queryRunner!;
+    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+        const queryRunner = new MongoQueryRunner(this.connection, this.databaseConnection!);
+        ObjectUtils.assign(queryRunner, { manager: this.connection.manager });
+
+        return queryRunner;
     }
 
     /**

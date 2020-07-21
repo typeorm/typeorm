@@ -7,7 +7,7 @@ import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 
 export class ExpoDriver extends AbstractSqliteDriver {
     options: ExpoConnectionOptions;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -20,14 +20,14 @@ export class ExpoDriver extends AbstractSqliteDriver {
         // validate options to make sure everything is set
         if (!this.options.database)
             throw new DriverOptionNotSetError("database");
-        
+
         if (!this.options.driver)
             throw new DriverOptionNotSetError("driver");
 
         // load sqlite package
         this.sqlite = this.options.driver;
     }
-    
+
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -39,7 +39,6 @@ export class ExpoDriver extends AbstractSqliteDriver {
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
             try {
-                this.queryRunner = undefined;
                 this.databaseConnection._db.close();
                 this.databaseConnection = undefined;
                 ok();
@@ -48,17 +47,14 @@ export class ExpoDriver extends AbstractSqliteDriver {
             }
         });
     }
-    
+
     /**
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new ExpoQueryRunner(this);
-
-        return this.queryRunner;
+        return new ExpoQueryRunner(this);
     }
-    
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

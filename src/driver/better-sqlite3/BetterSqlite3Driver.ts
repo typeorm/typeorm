@@ -27,6 +27,8 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      */
     sqlite: any;
 
+    private readonly statementCache: Map<string, any>;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -42,6 +44,8 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         if (!this.options.database)
             throw new DriverOptionNotSetError("database");
 
+        this.statementCache = new Map<string, any>();
+
         // load sqlite package
         this.loadDependencies();
     }
@@ -54,7 +58,6 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        this.queryRunner = undefined;
         this.databaseConnection.close();
     }
 
@@ -62,10 +65,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: "master" | "slave" = "master"): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new BetterSqlite3QueryRunner(this);
-
-        return this.queryRunner;
+        return new BetterSqlite3QueryRunner(this, this.statementCache);
     }
 
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number | null, scale?: number }): string {
@@ -88,7 +88,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         if (this.options.database !== ":memory:")
             await this.createDatabaseDirectory(this.options.database);
 
-        const { 
+        const {
             database,
             readonly = false,
             fileMustExist = false,

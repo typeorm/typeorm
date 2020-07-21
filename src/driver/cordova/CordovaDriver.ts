@@ -15,7 +15,7 @@ declare var window: Window;
 
 export class CordovaDriver extends AbstractSqliteDriver {
     options: CordovaConnectionOptions;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -37,7 +37,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
         // load sqlite package
         this.loadDependencies();
     }
-    
+
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -48,21 +48,17 @@ export class CordovaDriver extends AbstractSqliteDriver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
             this.databaseConnection.close(ok, fail);
         });
     }
-    
+
     /**
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new CordovaQueryRunner(this);
-
-        return this.queryRunner;
+        return new CordovaQueryRunner(this);
     }
-    
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

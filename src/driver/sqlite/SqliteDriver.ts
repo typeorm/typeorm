@@ -55,7 +55,6 @@ export class SqliteDriver extends AbstractSqliteDriver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
             this.databaseConnection.close((err: any) => err ? fail(err) : ok());
         });
     }
@@ -64,10 +63,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: "master" | "slave" = "master"): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new SqliteQueryRunner(this);
-
-        return this.queryRunner;
+        return new SqliteQueryRunner(this);
     }
 
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number | null, scale?: number }): string {

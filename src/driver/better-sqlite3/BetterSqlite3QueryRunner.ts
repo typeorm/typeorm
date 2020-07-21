@@ -21,11 +21,12 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: BetterSqlite3Driver) {
+    constructor(driver: BetterSqlite3Driver, statementCache: Map<string, any>) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
         this.broadcaster = new Broadcaster(this);
+        this.stmtCache = statementCache;
         if (typeof this.driver.options.statementCacheSize === "number") {
             this.cacheSize = this.driver.options.statementCacheSize;
         } else {
@@ -34,7 +35,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
     }
 
     private cacheSize: number;
-    private stmtCache = new Map<string, any>();
+    private readonly stmtCache: Map<string, any>;
 
     private async getStmt(query: string) {
         if (this.cacheSize > 0) {
@@ -65,7 +66,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const connection = this.driver.connection;
-        
+
         parameters = parameters || [];
         for (let i = 0; i < parameters.length; i++) {
             // in "where" clauses the parameters are not escaped by the driver

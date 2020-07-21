@@ -39,7 +39,6 @@ import {
 } from "../driver/mongodb/typings";
 import { ObjectLiteral } from "../common/ObjectLiteral";
 import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner";
-import { MongoDriver } from "../driver/mongodb/MongoDriver";
 import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer";
 import { FindManyOptions } from "../find-options/FindManyOptions";
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils";
@@ -78,7 +77,7 @@ export class MongoEntityManager extends EntityManager {
      * Gets query runner used to execute queries.
      */
     get queryRunner(): MongoQueryRunner {
-        return (this.connection.driver as MongoDriver).queryRunner!;
+        return this.connection.driver.createQueryRunner("master") as MongoQueryRunner;
     }
 
     // -------------------------------------------------------------------------

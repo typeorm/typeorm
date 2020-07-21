@@ -29,11 +29,6 @@ export abstract class AbstractSqliteDriver implements Driver {
     connection: Connection;
 
     /**
-     * Sqlite has a single QueryRunner because it works on a single database connection.
-     */
-    queryRunner?: QueryRunner;
-
-    /**
      * Real database connection with sqlite database.
      */
     databaseConnection: any;
@@ -220,7 +215,6 @@ export abstract class AbstractSqliteDriver implements Driver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
             this.databaseConnection.close((err: any) => err ? fail(err) : ok());
         });
     }
