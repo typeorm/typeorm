@@ -63,7 +63,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Query runner used to execute query builder query.
      */
-    protected queryRunner?: QueryRunner;
+    protected queryRunner: QueryRunner;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -72,27 +72,14 @@ export abstract class QueryBuilder<Entity> {
     /**
      * QueryBuilder can be initialized from given Connection and QueryRunner objects or from given other QueryBuilder.
      */
-    constructor(queryBuilder: QueryBuilder<any>);
-
-    /**
-     * QueryBuilder can be initialized from given Connection and QueryRunner objects or from given other QueryBuilder.
-     */
-    constructor(connection: Connection, queryRunner?: QueryRunner);
-
-    /**
-     * QueryBuilder can be initialized from given Connection and QueryRunner objects or from given other QueryBuilder.
-     */
-    constructor(connectionOrQueryBuilder: Connection|QueryBuilder<any>, queryRunner?: QueryRunner) {
-        if (connectionOrQueryBuilder instanceof QueryBuilder) {
-            this.connection = connectionOrQueryBuilder.connection;
-            this.queryRunner = connectionOrQueryBuilder.queryRunner;
-            this.expressionMap = connectionOrQueryBuilder.expressionMap.clone();
-
-        } else {
-            this.connection = connectionOrQueryBuilder;
-            this.queryRunner = queryRunner;
-            this.expressionMap = new QueryExpressionMap(this.connection);
+    constructor(connection: Connection, queryRunner: QueryRunner, expressionMap?: QueryExpressionMap) {
+        if (!expressionMap) {
+            expressionMap = new QueryExpressionMap(this.connection);
         }
+
+        this.connection = connection;
+        this.queryRunner = queryRunner;
+        this.expressionMap = expressionMap;
     }
 
     // -------------------------------------------------------------------------
@@ -157,7 +144,11 @@ export abstract class QueryBuilder<Entity> {
         if (this instanceof SelectQueryBuilderCls)
             return this as any;
 
-        return new SelectQueryBuilderCls(this);
+        return new SelectQueryBuilderCls(
+            this.connection,
+            this.queryRunner,
+            this.expressionMap
+        );
     }
 
     /**
@@ -224,7 +215,9 @@ export abstract class QueryBuilder<Entity> {
         if (this instanceof UpdateQueryBuilderCls)
             return this as any;
 
-        return new UpdateQueryBuilderCls(this);
+        return new UpdateQueryBuilderCls(
+
+        );
     }
 
     /**
@@ -423,14 +416,11 @@ export abstract class QueryBuilder<Entity> {
      */
     async execute(): Promise<any> {
         const [sql, parameters] = this.getQueryAndParameters();
-        const queryRunner = this.obtainQueryRunner();
+
         try {
-            return await queryRunner.query(sql, parameters);  // await is needed here because we are using finally
+            return await this.queryRunner.query(sql, parameters);  // await is needed here because we are using finally
 
         } finally {
-            if (queryRunner !== this.queryRunner) { // means we created our own query runner
-                await queryRunner.release();
-            }
             if (this.connection.driver instanceof SqljsDriver) {
                 await this.connection.driver.autoSave();
             }
@@ -860,13 +850,6 @@ export abstract class QueryBuilder<Entity> {
         }
 
         return "";
-    }
-
-    /**
-     * Creates a query builder used to execute sql queries inside this query builder.
-     */
-    protected obtainQueryRunner() {
-        return this.queryRunner || this.connection.createQueryRunner("master");
     }
 
 }
