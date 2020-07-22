@@ -8,7 +8,7 @@ import {
 import { Connection, createConnection } from "../../../src";
 import { fail } from "assert";
 import { Query } from "../../../src/driver/Query";
-import { MysqlConnectionOptions } from '../../../src/driver/mysql/MysqlConnectionOptions';
+import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions";
 
 describe("github issues > #6642 JoinTable does not respect inverseJoinColumns referenced column width", () => {
     let connections: Connection[];
@@ -24,7 +24,7 @@ describe("github issues > #6642 JoinTable does not respect inverseJoinColumns re
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should generate a drop and create step", async () => {
+    it("should generate column widths equal to the referenced column widths", async () => {
         return Promise.all(
             connections.map(async function (connection) {
                 const options = setupSingleTestingConnection(
