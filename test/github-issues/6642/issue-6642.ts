@@ -21,46 +21,45 @@ describe("github issues > #6642 JoinTable does not respect inverseJoinColumns re
             enabledDrivers: ["mysql"]
         });
     });
-    beforeEach(() => reloadTestingDatabases(connections));
-    after(() => closeTestingConnections(connections));
+    beforeEach(async () => await reloadTestingDatabases(connections));
+    after(async () => await closeTestingConnections(connections));
 
     it("should generate column widths equal to the referenced column widths", async () => {
-        return Promise.all(
-            connections.map(async function (connection) {
-                const options = setupSingleTestingConnection(
-                    connection.options.type,
-                    {
-                        name: `${connection.name}-v2`,
-                        entities: [__dirname + "/entity/v2/*{.js,.ts}"],
-                        dropSchema: false,
-                        schemaCreate: false
-                    }
-                ) as MysqlConnectionOptions;
-                if (!options) {
-                    fail();
+
+        await Promise.all(connections.map(async (connection) => {
+            const options = setupSingleTestingConnection(
+                connection.options.type,
+                {
+                    name: `${connection.name}-v2`,
+                    entities: [__dirname + "/entity/v2/*{.js,.ts}"],
+                    dropSchema: false,
+                    schemaCreate: false
                 }
+            ) as MysqlConnectionOptions;
 
+            if (!options) {
+                fail();
+            }
 
-                const migrationConnection = await createConnection(options);
-                try {
-                    const sqlInMemory = await migrationConnection.driver
-                        .createSchemaBuilder()
-                        .log();
+            const migrationConnection = await createConnection(options);
+            try {
+                const sqlInMemory = await migrationConnection.driver
+                    .createSchemaBuilder()
+                    .log();
 
-                    const upQueries = sqlInMemory.upQueries.map(
-                        (query: Query) => query.query
-                    );
+                const upQueries = sqlInMemory.upQueries.map(
+                    (query: Query) => query.query
+                );
 
-                    upQueries.should.eql([
-                        "CREATE TABLE `foo_bars` (`foo_id` int(10) UNSIGNED NOT NULL, `bar_id` int(10) UNSIGNED NOT NULL, INDEX `IDX_319290776f044043e3ef3ba5a8` (`foo_id`), INDEX `IDX_b7fd4be386fa7cdb87ef8b12b6` (`bar_id`), PRIMARY KEY (`foo_id`, `bar_id`)) ENGINE=InnoDB",
-                        "ALTER TABLE `foo_bars` ADD CONSTRAINT `FK_319290776f044043e3ef3ba5a8d` FOREIGN KEY (`foo_id`) REFERENCES `foo_entity`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION",
-                        "ALTER TABLE `foo_bars` ADD CONSTRAINT `FK_b7fd4be386fa7cdb87ef8b12b69` FOREIGN KEY (`bar_id`) REFERENCES `bar_entity`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION"
-                    ]);
+                upQueries.should.eql([
+                    "CREATE TABLE `foo_bars` (`foo_id` int(10) UNSIGNED NOT NULL, `bar_id` int(10) UNSIGNED NOT NULL, INDEX `IDX_319290776f044043e3ef3ba5a8` (`foo_id`), INDEX `IDX_b7fd4be386fa7cdb87ef8b12b6` (`bar_id`), PRIMARY KEY (`foo_id`, `bar_id`)) ENGINE=InnoDB",
+                    "ALTER TABLE `foo_bars` ADD CONSTRAINT `FK_319290776f044043e3ef3ba5a8d` FOREIGN KEY (`foo_id`) REFERENCES `foo_entity`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION",
+                    "ALTER TABLE `foo_bars` ADD CONSTRAINT `FK_b7fd4be386fa7cdb87ef8b12b69` FOREIGN KEY (`bar_id`) REFERENCES `bar_entity`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION"
+                ]);
 
-                } finally {
-                    connection.close();
-                }
-            })
-        );
+            } finally {
+                await connection.close();
+            }
+        }));
     });
 });
