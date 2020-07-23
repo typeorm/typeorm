@@ -57,6 +57,8 @@
     "@types/sinon": "^7.0.8",
     "@types/source-map-support": "^0.4.2",
     "@types/yargs": "^12.0.9",
+    "@typescript-eslint/eslint-plugin": "^3.7.0",
+    "@typescript-eslint/parser": "^3.7.0",
     "better-sqlite3": "^7.0.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
@@ -64,14 +66,15 @@
     "conventional-changelog-angular": "^5.0.3",
     "conventional-changelog-cli": "^2.0.21",
     "del": "^3.0.0",
+    "eslint": "^7.5.0",
     "gulp": "^4.0.0",
+    "gulp-eslint": "^6.0.0",
     "gulp-istanbul": "^1.1.3",
     "gulp-mocha": "^6.0.0",
     "gulp-rename": "^1.2.2",
     "gulp-replace": "^1.0.0",
     "gulp-shell": "^0.6.5",
     "gulp-sourcemaps": "^2.6.5",
-    "gulp-tslint": "^8.1.4",
     "gulp-typescript": "^5.0.0",
     "gulpclass": "^0.2.0",
     "husky": "^1.3.1",
@@ -91,7 +94,6 @@
     "sql.js": "^1.0.0",
     "sqlite3": "^4.0.9",
     "ts-node": "^8.0.2",
-    "tslint": "^5.13.1",
     "typeorm-aurora-data-api-driver": "^1.3.0",
     "typescript": "^3.3.3333"
   },
@@ -114,7 +116,7 @@
   },
   "lint-staged": {
     "*.ts": [
-      "tslint --fix",
+      "eslint --fix",
       "git add"
     ]
   },
@@ -125,7 +127,7 @@
     "compile": "rimraf ./build && tsc",
     "watch": "./node_modules/.bin/tsc -w",
     "package": "gulp package",
-    "lint": "tslint -p .",
+    "lint": "eslint -c ./.eslintrc.js src/**/*.ts test/**/*.ts sample/**/*.ts",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 2"
   },
   "bin": {
