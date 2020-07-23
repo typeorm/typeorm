@@ -38,6 +38,7 @@ describe("github issues > #6642 JoinTable does not respect inverseJoinColumns re
             ) as MysqlConnectionOptions;
 
             if (!options) {
+                await connection.close();
                 fail();
             }
 
@@ -59,6 +60,7 @@ describe("github issues > #6642 JoinTable does not respect inverseJoinColumns re
 
             } finally {
                 await connection.close();
+                await migrationConnection.close();
             }
         }));
     });
