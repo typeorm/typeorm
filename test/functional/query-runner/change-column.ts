@@ -4,6 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
+import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 
 describe("query runner > change column", () => {
 
@@ -135,4 +136,45 @@ describe("query runner > change column", () => {
 
     })));
 
+    it("should correctly change generated as expression", () => Promise.all(connections.map(async connection => {
+
+        // Only works on postgres
+        if (!(connection.driver instanceof PostgresDriver)) return;
+
+        const queryRunner = connection.createQueryRunner();
+        let table = await queryRunner.getTable("post");
+
+        let generatedColumn = table!.findColumnByName("generated")!;
+        generatedColumn!.generatedType!.should.be.equals("STORED");
+        generatedColumn!.asExpression!.should.be.equals("text || tag");
+
+        let changedGeneratedColumn = generatedColumn.clone();
+        changedGeneratedColumn.asExpression = "text || tag || name";
+
+        await queryRunner.changeColumn(table!, generatedColumn, changedGeneratedColumn);
+
+        table = await queryRunner.getTable("post");
+        generatedColumn = table!.findColumnByName("generated")!;
+        generatedColumn!.generatedType!.should.be.equals("STORED");
+        generatedColumn!.asExpression!.should.be.equals("text || tag || name");
+
+        changedGeneratedColumn = generatedColumn.clone();
+        delete changedGeneratedColumn.generatedType;
+        await queryRunner.changeColumn(table!, generatedColumn, changedGeneratedColumn);
+
+        table = await queryRunner.getTable("post");
+        generatedColumn = table!.findColumnByName("generated")!;
+        generatedColumn!.should.not.haveOwnProperty("generatedType");
+        generatedColumn!.should.not.haveOwnProperty("asExpression");
+
+        changedGeneratedColumn = generatedColumn.clone();
+        changedGeneratedColumn.asExpression = "text || tag || name";
+        changedGeneratedColumn.generatedType = "STORED";
+        await queryRunner.changeColumn(table!, generatedColumn, changedGeneratedColumn);
+
+        table = await queryRunner.getTable("post");
+        generatedColumn = table!.findColumnByName("generated")!;
+        generatedColumn!.generatedType!.should.be.equals("STORED");
+        generatedColumn!.asExpression!.should.be.equals("text || tag || name");
+    })));
 });

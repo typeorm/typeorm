@@ -26,4 +26,6 @@ export class Post {
     @Column()
     tag: string;
 
+    @Column({ generatedType: "STORED", asExpression: "text || tag" })
+    generated: string;
 }
