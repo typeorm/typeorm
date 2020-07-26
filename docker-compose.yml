@@ -54,7 +54,7 @@ services:
     # mdillon/postgis is postgres + PostGIS (only). if you need additional
     # extensions, it's probably time to create a purpose-built image with all
     # necessary extensions. sorry, and thanks for adding support for them!
-    image: "postgis/postgis:12-2.5-alpine"
+    image: "postgis/postgis:12-2.5"
     container_name: "typeorm-postgres-12"
     ports:
       - "5532:5432"
