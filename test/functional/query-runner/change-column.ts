@@ -5,6 +5,7 @@ import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
+import {TableColumn} from "../../../src";
 
 describe("query runner > change column", () => {
 
@@ -145,9 +146,21 @@ describe("query runner > change column", () => {
         if (!await connection.driver.isGeneratedColumnsSupported()) return;
 
         const queryRunner = connection.createQueryRunner();
+
+        let generatedColumn = new TableColumn({
+            name: "generated",
+            type: "character varying",
+            generatedType: "STORED",
+            asExpression: "text || tag"
+        });
+
         let table = await queryRunner.getTable("post");
 
-        let generatedColumn = table!.findColumnByName("generated")!;
+        await queryRunner.addColumn(table!, generatedColumn);
+
+        table = await queryRunner.getTable("post");
+
+        generatedColumn = table!.findColumnByName("generated")!;
         generatedColumn!.generatedType!.should.be.equals("STORED");
         generatedColumn!.asExpression!.should.be.equals("text || tag");
 
