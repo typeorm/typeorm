@@ -75,8 +75,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             //  Remove condition or add new conditions if necessary (for CHECK constraints for example).
             if (this.viewEntityToSyncMetadatas.length > 0)
                 await this.createTypeormMetadataTable();
-            if (this.connection.driver instanceof PostgresDriver)
-                await this.createTypeormGeneratedMetadataTable();
+            if (this.connection.driver instanceof PostgresDriver) {
+                if (await this.connection.driver.isGeneratedColumnsSupported()) {
+                    await this.createTypeormGeneratedMetadataTable();
+                }
+            }
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
             await this.executeSchemaSyncOperationsInProperOrder();

@@ -141,6 +141,9 @@ describe("query runner > change column", () => {
         // Only works on postgres
         if (!(connection.driver instanceof PostgresDriver)) return;
 
+        // Database is running < postgres 12
+        if (!await connection.driver.isGeneratedColumnsSupported()) return;
+
         const queryRunner = connection.createQueryRunner();
         let table = await queryRunner.getTable("post");
 

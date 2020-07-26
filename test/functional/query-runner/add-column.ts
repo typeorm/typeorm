@@ -90,20 +90,30 @@ describe("query runner > add column", () => {
         column2!.default!.should.be.equal("'this is description'");
 
         if (connection.driver instanceof MysqlDriver || connection.driver instanceof PostgresDriver) {
-            await queryRunner.addColumn(table!, column3);
-            table = await queryRunner.getTable("post");
-            column3 = table!.findColumnByName("textAndTag")!;
-            column3.should.be.exist;
-            column3!.generatedType!.should.be.equals("STORED");
-            column3!.asExpression!.should.be.a("string");
-        }
-        if (connection.driver instanceof MysqlDriver) {
-            await queryRunner.addColumn(table!, column4);
-            table = await queryRunner.getTable("post");
-            column4 = table!.findColumnByName("textAndTag2")!;
-            column4.should.be.exist;
-            column4!.generatedType!.should.be.equals("VIRTUAL");
-            column4!.asExpression!.should.be.a("string");
+            const isMySQL = connection.driver instanceof MysqlDriver;
+            let postgresSupported = false;
+
+            if (connection.driver instanceof PostgresDriver) {
+                postgresSupported = await connection.driver.isGeneratedColumnsSupported();
+            }
+
+            if (isMySQL || postgresSupported) {
+                await queryRunner.addColumn(table!, column3);
+                table = await queryRunner.getTable("post");
+                column3 = table!.findColumnByName("textAndTag")!;
+                column3.should.be.exist;
+                column3!.generatedType!.should.be.equals("STORED");
+                column3!.asExpression!.should.be.a("string");
+
+                if (connection.driver instanceof MysqlDriver) {
+                    await queryRunner.addColumn(table!, column4);
+                    table = await queryRunner.getTable("post");
+                    column4 = table!.findColumnByName("textAndTag2")!;
+                    column4.should.be.exist;
+                    column4!.generatedType!.should.be.equals("VIRTUAL");
+                    column4!.asExpression!.should.be.a("string");
+                }
+            }
         }
 
         await queryRunner.executeMemoryDownSql();

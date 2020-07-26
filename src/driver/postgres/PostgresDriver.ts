@@ -911,6 +911,18 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Returns true if postgres supports generated columns
+     */
+    async isGeneratedColumnsSupported(): Promise<boolean> {
+        const runner = this.createQueryRunner();
+        const results = await runner.query("SHOW server_version;", []);
+        await runner.release();
+        const versionString = results[0]["server_version"] as string;
+        const version = parseFloat(versionString);
+        return version >= 12;
+    }
+
+    /**
      * Returns true if driver supports fulltext indices.
      */
     isFullTextColumnTypeSupported(): boolean {
