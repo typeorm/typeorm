@@ -883,7 +883,9 @@ export class PostgresDriver implements Driver {
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + ""))) // enums in postgres are always strings
                 || tableColumn.isGenerated !== columnMetadata.isGenerated
                 || (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase()
-                || tableColumn.srid !== columnMetadata.srid;
+                || tableColumn.srid !== columnMetadata.srid
+                || tableColumn.generatedType !== columnMetadata.generatedType
+                || (tableColumn.asExpression || "").trim() !== (columnMetadata.asExpression || "").trim();
         });
     }
 
