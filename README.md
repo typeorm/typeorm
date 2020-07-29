@@ -182,7 +182,7 @@ await timber.remove();
 
 3. You may need to install node typings:
 
-    `npm install @types/node --save`
+    `npm install @types/node --save-dev`
 
 4. Install a database driver:
 
