@@ -410,7 +410,10 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 columns.forEach(column => {
                     if (!column.isUpdate) { return; }
-                    updatedColumns.push(column);
+
+                    if (-1 === updatedColumns.indexOf(column)) {
+                        updatedColumns.push(column);
+                    }
 
                     const paramName = "upd_" + column.databaseName;
 
