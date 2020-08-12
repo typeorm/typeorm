@@ -10,7 +10,7 @@ import { fail } from "assert";
 import { Query } from "../../../src/driver/Query";
 import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions";
 
-describe("github issues > #6642 JoinTable does not respect inverseJoinColumns referenced column width", () => {
+describe("github issues > #6442 JoinTable does not respect inverseJoinColumns referenced column width", () => {
     let connections: Connection[];
 
     before(async () => {
