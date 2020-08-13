@@ -48,17 +48,6 @@
   },
   {
     "skip": false,
-    "name": "postgres-12",
-    "type": "postgres",
-    "host": "localhost",
-    "port": 5532,
-    "username": "test",
-    "password": "test",
-    "database": "test",
-    "logging": false
-  },
-  {
-    "skip": false,
     "name": "sqljs",
     "type": "sqljs",
     "logging": false

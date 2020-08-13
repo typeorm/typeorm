@@ -108,9 +108,38 @@ jobs:
       node-version:
         type: string
         default: "10"
+      postgres-version:
+        type: string
+        default: "9.6.11"
     working_directory: ~/typeorm
     docker:
       - image: circleci/node:<< parameters.node-version >>
+      - image: mysql:5.7.24
+        environment:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_DATABASE: "test"
+      - image: mariadb:10.1.37
+        name: mariadb
+        environment:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_DATABASE: "test"
+      - image: circleci/postgres:<< parameters.postgres-version >>-postgis
+        name: postgres
+        environment:
+          POSTGRES_USER: "test"
+          POSTGRES_PASSWORD: "test"
+          POSTGRES_DB: "test"
+      - image: cockroachdb/cockroach:latest
+        name: cockroachdb
+        command: start --insecure
+      - image: circleci/mongo:3.4.18
+        name: mongodb
+      - image: mcr.microsoft.com/mssql/server:2017-latest
+        name: mssql
+        environment:
+          SA_PASSWORD: "Admin123"
+          ACCEPT_EULA: "Y"
+
     steps:
       - checkout
       - setup_remote_docker
@@ -194,6 +223,7 @@ workflows:
             - build
           databases: "mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs"
           matrix:
+            databases: "mysql mariadb sqlite better-sqlite3 postgres sqljs mssql mongodb"
             parameters:
               node-version:
                 - "10"
@@ -206,6 +236,20 @@ workflows:
             - build
           databases: "cockroachdb"
           node-version: "12"
+      - test:
+          name: test (postgres-12) - Node v<< matrix.node-version >>
+          requires:
+            - lint
+            - build
+          matrix:
+            databases: "postgres"
+            parameters:
+              node-version:
+                - "10"
+                - "12"
+                - "13"
+              postgres-version:
+                - "12.3"
       - test:
           name: test (oracle) - Node v12
           requires:
