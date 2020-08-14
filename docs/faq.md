@@ -9,6 +9,7 @@
 * [How to handle outDir TypeScript compiler option?](#how-to-handle-outdir-typescript-compiler-option)
 * [How to use TypeORM with ts-node?](#how-to-use-typeorm-with-ts-node)
 * [How to use Webpack for the backend](#how-to-use-webpack-for-the-backend)
+* [How to view and debug your Database](#how-to-view-and-debug-your-database)
 
 
 ## How do I update a database schema?
@@ -277,3 +278,12 @@ module.exports = {
   ],
 };
 ```
+
+### How to view and debug your Database
+
+If you need to debug your database contents, use one of the following SQL GUIs
+- [Beekeeper Studio](https://www.beekeeperstudio.io) - Open Souce, Mac, Windows, Linux
+- [DBeaver](https://dbeaver.io) - Open source, Mac, Windows, Linux
+- [TablePlus](https://tableplus.com) - Commercial, Mac, Windows, Linux
+
+
