@@ -25,7 +25,7 @@ describe("github issues > #5501 Incorrect data loading from JSON string for colu
         await repo.save(post);
         const postFound = await repo.findOne(1);
         postFound!.id.should.eql(1);
-        postFound!.jsonField.should.eql("");
+        postFound!.jsonField.should.eql({});
     })));
 
     it("should correctly add/retrieve simple-json field with some object value", () =>

@@ -16,7 +16,7 @@ describe("github issues > #4440 simple-json column type throws error for string 
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should correctly add retrieve simple-json field a blank string value", () =>
+    it("should correctly add retrieve simple-json field with a blank string value", () =>
     Promise.all(connections.map(async (connection) => {
         const repo = connection.getRepository(Post);
         const post = new Post();
