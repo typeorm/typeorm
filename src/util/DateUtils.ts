@@ -178,7 +178,7 @@ export class DateUtils {
         try {
             return JSON.parse(value);
        } catch (err) {
-            return null;
+            return {};
        }
     }
 
