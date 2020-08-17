@@ -25,10 +25,10 @@ describe("github issues > #4440 simple-json column type throws error for string 
         await repo.save(post);
         const postFound = await repo.findOne(1);
         postFound!.id.should.eql(1);
-        postFound!.jsonField.should.eql({});
+        postFound!.jsonField.should.eql("");
     })));
 
-    it("should correctly add retrieve simple-json field with some value", () =>
+    it("should correctly add retrieve simple-json field with some object value", () =>
     Promise.all(connections.map(async (connection) => {
         const repo = connection.getRepository(Post);
         const post = new Post();
