@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { Connection } from "../../../src/connection/Connection";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { Post } from "./entity/Post";
+import { expect } from "chai";
 
 describe("github issues > #5501 Incorrect data loading from JSON string for column type 'simple-json'", () => {
 
@@ -61,7 +62,7 @@ describe("github issues > #5501 Incorrect data loading from JSON string for colu
         await repo.save(post);
         const postFound = await repo.findOne(1);
         postFound!.id.should.eql(1);
-        postFound!.jsonField.should.eql(null);
+        expect(postFound!.jsonField).to.eql(null);
     })));
 
 });
