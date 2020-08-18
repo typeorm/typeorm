@@ -2,21 +2,29 @@
 
 # Entities
 
-* [What is Entity?](#what-is-entity)
-* [Entity columns](#entity-columns)
-  * [Primary columns](#primary-columns)
-  * [Special columns](#special-columns)
-  * [Spatial columns](#spatial-columns)
-* [Column types](#column-types)
-  * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
-  * [Column types for `postgres` / `cockroachdb`](#column-types-for-postgres)
-  * [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
-  * [Column types for `mssql`](#column-types-for-mssql)
-  * [`enum` column type](#enum-column-type)
-  * [`simple-array` column type](#simple-array-column-type)
-  * [`simple-json` column type](#simple-json-column-type)
-  * [Columns with generated values](#columns-with-generated-values)
-* [Column options](#column-options)
+- [Entities](#entities)
+  - [What is Entity?](#what-is-entity)
+  - [Entity columns](#entity-columns)
+    - [Primary columns](#primary-columns)
+    - [Special columns](#special-columns)
+    - [Spatial columns](#spatial-columns)
+  - [Column types](#column-types)
+    - [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
+    - [Column types for `postgres`](#column-types-for-postgres)
+    - [Column types for `cockroachdb`](#column-types-for-cockroachdb)
+    - [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
+    - [Column types for `mssql`](#column-types-for-mssql)
+    - [Column types for `oracle`](#column-types-for-oracle)
+    - [`enum` column type](#enum-column-type)
+    - [`set` column type](#set-column-type)
+    - [`simple-array` column type](#simple-array-column-type)
+    - [`simple-json` column type](#simple-json-column-type)
+    - [Columns with generated values](#columns-with-generated-values)
+  - [Column options](#column-options)
+  - [Entity inheritance](#entity-inheritance)
+  - [Tree entities](#tree-entities)
+    - [Adjacency list](#adjacency-list)
+    - [Closure table](#closure-table)
 
 ## What is Entity?
 
@@ -196,13 +204,13 @@ There are several special column types with additional functionality available:
 * `@CreateDateColumn` is a special column that is automatically set to the entity's insertion date.
 You don't need to set this column - it will be automatically set.
 
-* `@UpdateDateColumn` is a special column that is automatically set to the entity's update time 
+* `@UpdateDateColumn` is a special column that is automatically set to the entity's update time
 each time you call `save` of entity manager or repository.
 You don't need to set this column - it will be automatically set.
 
 * `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted".
 
-* `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)  
+* `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)
 each time you call `save` of entity manager or repository.
 You don't need to set this column - it will be automatically set.
 
@@ -503,6 +511,12 @@ user.profile = { name: "John", nickname: "Malkovich" };
 
 Will be stored in a single database column as `{"name":"John","nickname":"Malkovich"}` value.
 When you'll load data from the database, you will have your object/array/primitive back via JSON.parse
+
+When assigning `"null"` (a string) to a `simple-json` type property, it will be treated as a string and stored in its
+string format in the database. That means that it will be stored as the string `"null"` not `NULL` in the database.
+However, using the javascript primitive `null` will persist a `NULL` in the database.
+To avoid storing `"null"` strings in the database, convert your data to a javascript object/array/primitive prior to
+assigning it to your entity.
 
 ### Columns with generated values
 

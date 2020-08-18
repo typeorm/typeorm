@@ -335,7 +335,6 @@ export abstract class AbstractSqliteDriver implements Driver {
             value = DateUtils.stringToSimpleArray(value);
 
         } else if (columnMetadata.type === "simple-json") {
-            console.log(value, typeof value);
             value = DateUtils.stringToSimpleJson(value);
 
         } else if ( columnMetadata.type === "simple-enum" ) {

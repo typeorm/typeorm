@@ -65,4 +65,16 @@ describe("github issues > #5501 Incorrect data loading from JSON string for colu
         expect(postFound!.jsonField).to.eql(null);
     })));
 
+    it.only("should correctly add/retrieve simple-json field with 'null' string value", () =>
+    Promise.all(connections.map(async (connection) => {
+        const repo = connection.getRepository(Post);
+        const post = new Post();
+        post.id = 1;
+        post.jsonField = "null";
+        await repo.save(post);
+        const postFound = await repo.findOne(1);
+        postFound!.id.should.eql(1);
+        expect(postFound!.jsonField).to.eql("null");
+    })));
+
 });
