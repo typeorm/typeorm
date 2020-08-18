@@ -176,10 +176,10 @@ export class DateUtils {
     }
 
     static stringToSimpleJson(value: any) {
-        if (typeof value !== "string") {
+        if (value && typeof value !== "string") {
             throw new SimpleJsonIsNotAStringError(value);
         }
-        return JSON.parse(value);
+        return value !== "" ? JSON.parse(value) : value;
     }
 
     static simpleEnumToString(value: any) {
