@@ -4,7 +4,7 @@ import { closeTestingConnections, createTestingConnections, reloadTestingDatabas
 import { Post } from "./entity/Post";
 import { expect } from "chai";
 
-describe("github issues > #5501 Incorrect data loading from JSON string for column type 'simple-json'", () => {
+describe.only("github issues > #5501 Incorrect data loading from JSON string for column type 'simple-json'", () => {
 
     let connections: Connection[];
     before(async () => {

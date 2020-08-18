@@ -1,4 +1,5 @@
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import { ColumnMetadata } from "../metadata/ColumnMetadata";
+import { SimpleJsonIsNotAStringError } from "../error/SimpleJsonIsNotAStringError";
 
 /**
  * Provides utilities to transform hydrated and persisted data.
@@ -175,7 +176,10 @@ export class DateUtils {
     }
 
     static stringToSimpleJson(value: any) {
-        return typeof value === "string" ? JSON.parse(value) : value;
+        if (typeof value !== "string") {
+            throw new SimpleJsonIsNotAStringError(value);
+        }
+        return JSON.parse(value);
     }
 
     static simpleEnumToString(value: any) {
