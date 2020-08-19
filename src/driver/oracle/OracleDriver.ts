@@ -635,7 +635,7 @@ export class OracleDriver implements Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return ":" + parameterName;
+        return ":" + (index + 1);
     }
 
     /**
