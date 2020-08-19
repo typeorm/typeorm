@@ -108,7 +108,7 @@ jobs:
           POSTGRES_USER: "test"
           POSTGRES_PASSWORD: "test"
           POSTGRES_DB: "test"
-      - image: cockroachdb/cockroach:latest
+      - image: cockroachdb/cockroach:v19.2.9
         name: cockroachdb
         command: start --insecure
       - image: circleci/mongo:3.4.18
