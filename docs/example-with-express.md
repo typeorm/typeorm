@@ -78,31 +78,28 @@ node src/app.js
 You should see the, "Application is up and running" message in your console right after you run the application.
 
 You must compile your files each time you make a change.
-Alternatively, you can setup watcher or install [ts-node](http://github.com/ts-node/ts-node) to avoid manual compilation each time.
+Alternatively, you can setup watcher or install [ts-node](https://github.com/TypeStrong/ts-node) to avoid manual compilation each time.
 
 ## Adding Express to the application
 
 Let's add Express to our application. First, let's install the packages we need:
 
 ```
-npm i express body-parser @types/express @types/body-parser --save
+npm i express  @types/express --save
 ```
 
 * `express` is the express engine itself. It allows us to create a web api
-* `body-parser` is used to setup how express would handle body sent by a client
 * `@types/express` is used to have a type information when using express
-* `@types/body-parser` is used to have a type information when using body parser
 
 Let's edit the `src/app.ts` file and add express-related logic:
 
 ```typescript
 import * as express from "express";
 import {Request, Response} from "express";
-import * as bodyParser from  "body-parser";
 
 // create and setup express app
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
 
 // register routes
 
@@ -195,7 +192,6 @@ Let's change `src/app.ts`:
 ```typescript
 import * as express from "express";
 import {Request, Response} from "express";
-import * as bodyParser from  "body-parser";
 import {createConnection} from "typeorm";
 import {User} from "./entity/User";
 
@@ -205,7 +201,7 @@ createConnection().then(connection => {
 
     // create and setup express app
     const app = express();
-    app.use(bodyParser.json());
+    app.use(express.json());
 
     // register routes
 

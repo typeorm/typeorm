@@ -1424,7 +1424,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             this.query(indicesSql),
             this.query(foreignKeysSql),
         ]);
-
         // if tables were not found in the db, no need to proceed
         if (!dbTables.length)
             return [];
@@ -1433,9 +1432,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
 
+            const getSchemaFromKey = (dbObject: any, key: string) => dbObject[key] === currentSchema && !this.driver.options.schema ? undefined : dbObject[key];
             // We do not need to join schema name, when database is by default.
             // In this case we need local variable `tableFullName` for below comparision.
-            const schema = dbTable["table_schema"] === currentSchema && !this.driver.options.schema ? undefined : dbTable["table_schema"];
+            const schema = getSchemaFromKey(dbTable, "table_schema");
             table.name = this.driver.buildTableName(dbTable["table_name"], schema);
             const tableFullName = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
 
@@ -1501,7 +1501,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                           "type"
                         FROM "geometry_columns"
                       ) AS _
-                      WHERE (${tablesCondition}) AND "column_name" = '${tableColumn.name}' AND "table_name" = '${table.name}'`;
+                      WHERE (${tablesCondition}) AND "column_name" = '${tableColumn.name}' AND "table_name" = '${dbTable["table_name"]}'`;
 
                         const results: ObjectLiteral[] = await this.query(geometryColumnSql);
                         tableColumn.spatialFeatureType = results[0].type;
@@ -1518,7 +1518,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                           "type"
                         FROM "geography_columns"
                       ) AS _
-                      WHERE (${tablesCondition}) AND "column_name" = '${tableColumn.name}' AND "table_name" = '${table.name}'`;
+                      WHERE (${tablesCondition}) AND "column_name" = '${tableColumn.name}' AND "table_name" = '${dbTable["table_name"]}'`;
 
                         const results: ObjectLiteral[] = await this.query(geographyColumnSql);
                         tableColumn.spatialFeatureType = results[0].type;
@@ -1612,7 +1612,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["constraint_name"] === dbForeignKey["constraint_name"]);
 
                 // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                const schema = dbForeignKey["referenced_table_schema"] === currentSchema ? undefined : dbForeignKey["referenced_table_schema"];
+                const schema = getSchemaFromKey(dbForeignKey, "referenced_table_schema");
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["referenced_table_name"], schema);
 
                 return new TableForeignKey({

@@ -19,6 +19,8 @@ import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredenti
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {AuroraDataApiPostgresConnectionOptions} from "../aurora-data-api-pg/AuroraDataApiPostgresConnectionOptions";
+import {AuroraDataApiPostgresQueryRunner} from "../aurora-data-api-pg/AuroraDataApiPostgresQueryRunner";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -149,7 +151,8 @@ export class PostgresDriver implements Driver {
         "daterange",
         "geometry",
         "geography",
-        "cube"
+        "cube",
+        "ltree"
     ];
 
     /**
@@ -248,7 +251,11 @@ export class PostgresDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection) {
+    constructor(connection?: Connection) {
+        if (!connection) {
+            return;
+        }
+
         this.connection = connection;
         this.options = connection.options as PostgresConnectionOptions;
         this.isReplicated = this.options.replication ? true : false;
@@ -295,6 +302,83 @@ export class PostgresDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
+        const extensionsMetadata = await this.checkMetadataForExtensions();
+
+        if (extensionsMetadata.hasExtensions) {
+            await Promise.all([this.master, ...this.slaves].map(pool => {
+                return new Promise((ok, fail) => {
+                    pool.connect(async (err: any, connection: any, release: Function) => {
+                        await this.enableExtensions(extensionsMetadata, connection);
+                        if (err) return fail(err);
+                        release();
+                        ok();
+                    });
+                });
+            }));
+        }
+
+        return Promise.resolve();
+    }
+
+    protected async enableExtensions(extensionsMetadata: any, connection: any) {
+        const { logger } = this.connection;
+
+        const {
+            hasUuidColumns,
+            hasCitextColumns,
+            hasHstoreColumns,
+            hasCubeColumns,
+            hasGeometryColumns,
+            hasLtreeColumns,
+            hasExclusionConstraints,
+        } = extensionsMetadata;
+
+        if (hasUuidColumns)
+            try {
+                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "${this.options.uuidExtension || "uuid-ossp"}"`);
+            } catch (_) {
+                logger.log("warn", `At least one of the entities has uuid column, but the '${this.options.uuidExtension || "uuid-ossp"}' extension cannot be installed automatically. Please install it manually using superuser rights, or select another uuid extension.`);
+            }
+        if (hasCitextColumns)
+            try {
+                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "citext"`);
+            } catch (_) {
+                logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please install it manually using superuser rights");
+            }
+        if (hasHstoreColumns)
+            try {
+                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "hstore"`);
+            } catch (_) {
+                logger.log("warn", "At least one of the entities has hstore column, but the 'hstore' extension cannot be installed automatically. Please install it manually using superuser rights");
+            }
+        if (hasGeometryColumns)
+            try {
+                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "postgis"`);
+            } catch (_) {
+                logger.log("warn", "At least one of the entities has a geometry column, but the 'postgis' extension cannot be installed automatically. Please install it manually using superuser rights");
+            }
+        if (hasCubeColumns)
+            try {
+                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "cube"`);
+            } catch (_) {
+                logger.log("warn", "At least one of the entities has a cube column, but the 'cube' extension cannot be installed automatically. Please install it manually using superuser rights");
+            }
+        if (hasLtreeColumns)
+            try {
+                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "ltree"`);
+            } catch (_) {
+                logger.log("warn", "At least one of the entities has a cube column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights");
+            }
+        if (hasExclusionConstraints)
+            try {
+                // The btree_gist extension provides operator support in PostgreSQL exclusion constraints
+                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "btree_gist"`);
+            } catch (_) {
+                logger.log("warn", "At least one of the entities has an exclusion constraint, but the 'btree_gist' extension cannot be installed automatically. Please install it manually using superuser rights");
+            }
+    }
+
+    protected async checkMetadataForExtensions() {
         const hasUuidColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0;
         });
@@ -310,60 +394,23 @@ export class PostgresDriver implements Driver {
         const hasGeometryColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.columns.filter(column => this.spatialTypes.indexOf(column.type) >= 0).length > 0;
         });
+        const hasLtreeColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.columns.filter(column => column.type === 'ltree').length > 0;
+        });
         const hasExclusionConstraints = this.connection.entityMetadatas.some(metadata => {
             return metadata.exclusions.length > 0;
         });
-        if (hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns || hasCubeColumns || hasExclusionConstraints) {
-            await Promise.all([this.master, ...this.slaves].map(pool => {
-                return new Promise((ok, fail) => {
-                    pool.connect(async (err: any, connection: any, release: Function) => {
-                        const { logger } = this.connection;
-                        if (err) return fail(err);
-                        if (hasUuidColumns)
-                            try {
-                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "${this.options.uuidExtension || "uuid-ossp"}"`);
-                            } catch (_) {
-                                logger.log("warn", `At least one of the entities has uuid column, but the '${this.options.uuidExtension || "uuid-ossp"}' extension cannot be installed automatically. Please install it manually using superuser rights, or select another uuid extension.`);
-                            }
-                        if (hasCitextColumns)
-                            try {
-                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "citext"`);
-                            } catch (_) {
-                                logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please install it manually using superuser rights");
-                            }
-                        if (hasHstoreColumns)
-                            try {
-                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "hstore"`);
-                            } catch (_) {
-                                logger.log("warn", "At least one of the entities has hstore column, but the 'hstore' extension cannot be installed automatically. Please install it manually using superuser rights");
-                            }
-                        if (hasGeometryColumns)
-                            try {
-                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "postgis"`);
-                            } catch (_) {
-                                logger.log("warn", "At least one of the entities has a geometry column, but the 'postgis' extension cannot be installed automatically. Please install it manually using superuser rights");
-                            }
-                        if (hasCubeColumns)
-                            try {
-                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "cube"`);
-                            } catch (_) {
-                                logger.log("warn", "At least one of the entities has a cube column, but the 'cube' extension cannot be installed automatically. Please install it manually using superuser rights");
-                            }
-                        if (hasExclusionConstraints)
-                            try {
-                                // The btree_gist extension provides operator support in PostgreSQL exclusion constraints
-                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "btree_gist"`);
-                            } catch (_) {
-                                logger.log("warn", "At least one of the entities has an exclusion constraint, but the 'btree_gist' extension cannot be installed automatically. Please install it manually using superuser rights");
-                            }
-                        release();
-                        ok();
-                    });
-                });
-            }));
-        }
 
-        return Promise.resolve();
+        return {
+            hasUuidColumns,
+            hasCitextColumns,
+            hasHstoreColumns,
+            hasCubeColumns,
+            hasGeometryColumns,
+            hasLtreeColumns,
+            hasExclusionConstraints,
+            hasExtensions: hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns || hasCubeColumns || hasLtreeColumns || hasExclusionConstraints,
+        };
     }
 
     /**
@@ -389,7 +436,7 @@ export class PostgresDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
         return new PostgresQueryRunner(this, mode);
     }
 
@@ -452,6 +499,8 @@ export class PostgresDriver implements Driver {
             }
             return `(${value.join(",")})`;
 
+        } else if (columnMetadata.type === "ltree") {
+            return value.split(".").filter(Boolean).join('.').replace(/[\s]+/g, "_");
         } else if (
             (
                 columnMetadata.type === "enum"
@@ -919,13 +968,15 @@ export class PostgresDriver implements Driver {
         credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
         // build connection options for the driver
+        // See: https://github.com/brianc/node-postgres/tree/master/packages/pg-pool#create
         const connectionOptions = Object.assign({}, {
             host: credentials.host,
             user: credentials.username,
             password: credentials.password,
             database: credentials.database,
             port: credentials.port,
-            ssl: credentials.ssl
+            ssl: credentials.ssl,
+            connectionTimeoutMillis: options.connectTimeoutMS
         }, options.extra || {});
 
         // create a connection pool
@@ -971,4 +1022,125 @@ export class PostgresDriver implements Driver {
         });
     }
 
+}
+
+abstract class PostgresWrapper extends PostgresDriver {
+    options: any;
+
+    abstract createQueryRunner(mode: "master"|"slave"): any;
+}
+
+export class AuroraDataApiPostgresDriver extends PostgresWrapper {
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Connection used by driver.
+     */
+    connection: Connection;
+
+    /**
+     * Aurora Data API underlying library.
+     */
+    DataApiDriver: any;
+
+    client: any;
+
+    // -------------------------------------------------------------------------
+    // Public Implemented Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Connection options.
+     */
+    options: AuroraDataApiPostgresConnectionOptions;
+
+    /**
+     * Master database used to perform all write queries.
+     */
+    database?: string;
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    constructor(connection: Connection) {
+        super();
+        this.connection = connection;
+        this.options = connection.options as AuroraDataApiPostgresConnectionOptions;
+        this.isReplicated = false;
+
+        // load data-api package
+        this.loadDependencies();
+
+        this.client = new this.DataApiDriver(
+            this.options.region,
+            this.options.secretArn,
+            this.options.resourceArn,
+            this.options.database,
+            (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
+            this.options.serviceConfigOptions,
+            this.options.formatOptions,
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Implemented Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Performs connection to the database.
+     * Based on pooling options, it can either create connection immediately,
+     * either create a pool and create connection when needed.
+     */
+    async connect(): Promise<void> {
+    }
+
+    /**
+     * Closes connection with database.
+     */
+    async disconnect(): Promise<void> {
+    }
+
+    /**
+     * Creates a query runner used to execute database queries.
+     */
+    createQueryRunner(mode: "master"|"slave" = "master") {
+        return new AuroraDataApiPostgresQueryRunner(this, mode);
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * If driver dependency is not given explicitly, then try to load it via "require".
+     */
+    protected loadDependencies(): void {
+        const { pg } = PlatformTools.load("typeorm-aurora-data-api-driver");
+
+        this.DataApiDriver = pg;
+    }
+
+    /**
+     * Executes given query.
+     */
+    protected executeQuery(connection: any, query: string) {
+        return this.client.query(query);
+    }
+
+    /**
+     * Makes any action after connection (e.g. create extensions in Postgres driver).
+     */
+    async afterConnect(): Promise<void> {
+        const extensionsMetadata = await this.checkMetadataForExtensions();
+
+        if (extensionsMetadata.hasExtensions) {
+            await this.enableExtensions(extensionsMetadata, this.connection);
+        }
+
+        return Promise.resolve();
+    }
 }

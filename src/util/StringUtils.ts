@@ -1,4 +1,4 @@
-import * as shajs from "sha.js";
+import shajs from "sha.js";
 
 /**
  * Converts string into camelCase.

@@ -38,7 +38,7 @@ export class ConnectionOptionsReader {
     async all(): Promise<ConnectionOptions[]> {
         const options = await this.load();
         if (!options)
-            throw new Error(`No connection options were found in any of configurations file.`);
+            throw new Error(`No connection options were found in any orm configuration files.`);
 
         return options;
     }
@@ -80,7 +80,7 @@ export class ConnectionOptionsReader {
     protected async load(): Promise<ConnectionOptions[]|undefined> {
         let connectionOptions: ConnectionOptions|ConnectionOptions[]|undefined = undefined;
 
-        const fileFormats = ["env", "js", "ts", "json", "yml", "yaml", "xml"];
+        const fileFormats = ["env", "js", "cjs", "ts", "json", "yml", "yaml", "xml"];
 
         // Detect if baseFilePath contains file extension
         const possibleExtension = this.baseFilePath.substr(this.baseFilePath.lastIndexOf("."));
@@ -107,7 +107,7 @@ export class ConnectionOptionsReader {
         if (PlatformTools.getEnvVariable("TYPEORM_CONNECTION") || PlatformTools.getEnvVariable("TYPEORM_URL")) {
             connectionOptions = new ConnectionOptionsEnvReader().read();
 
-        } else if (foundFileFormat === "js") {
+        } else if (foundFileFormat === "js" || foundFileFormat === "cjs") {
             connectionOptions = await PlatformTools.load(configFile);
 
         } else if (foundFileFormat === "ts") {
@@ -171,7 +171,7 @@ export class ConnectionOptionsReader {
             }
 
             // make database path file in sqlite relative to package.json
-            if (options.type === "sqlite") {
+            if (options.type === "sqlite" || options.type === "better-sqlite3") {
                 if (typeof options.database === "string" &&
                     options.database.substr(0, 1) !== "/" &&  // unix absolute
                     options.database.substr(1, 2) !== ":\\" && // windows absolute

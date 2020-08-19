@@ -249,4 +249,25 @@ describe("query builder > update", () => {
 
     })));
 
+    it("should throw error when unknown property in where criteria", () => Promise.all(connections.map(async connection => {
+
+        const user = new User();
+        user.name = "Alex Messer";
+
+        await connection.manager.save(user);
+
+        let error: Error | undefined;
+        try {
+            await connection.createQueryBuilder()
+                .update(User)
+                .set({ name: "John Doe" } as any)
+                .where( { unknownProp: "Alex Messer" })
+                .execute();
+        } catch (err) {
+            error = err;
+        }
+        expect(error).to.be.an.instanceof(EntityColumnNotFound);
+
+    })));
+
 });

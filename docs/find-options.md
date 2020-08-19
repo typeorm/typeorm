@@ -23,7 +23,7 @@ userRepository.find({ relations: ["profile", "photos", "videos", "videos.video_a
 * `join` - joins needs to be performed for the entity. Extended version of "relations".
 
 ```typescript
-userRepository.find({ 
+userRepository.find({
     join: {
         alias: "user",
         leftJoinAndSelect: {
@@ -40,7 +40,7 @@ userRepository.find({
 ```typescript
 userRepository.find({ where: { firstName: "Timber", lastName: "Saw" } });
 ```
-Querying a column from an embedded entity should be done with respect to the hierarchy in which it was defined. Example: 
+Querying a column from an embedded entity should be done with respect to the hierarchy in which it was defined. Example:
 
 ```typescript
 userRepository.find({ where: { name: { first: "Timber", last: "Saw" } } });
@@ -57,7 +57,7 @@ userRepository.find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "user" WHERE ("firstName" = 'Timber' AND "lastName" = 'Saw') OR ("firstName" = 'Stan' AND "lastName" = 'Lee')
@@ -66,7 +66,7 @@ SELECT * FROM "user" WHERE ("firstName" = 'Timber' AND "lastName" = 'Saw') OR ("
 * `order` - selection order.
 
 ```typescript
-userRepository.find({ 
+userRepository.find({
     order: {
         name: "ASC",
         id: "DESC"
@@ -79,7 +79,7 @@ userRepository.find({
 * `skip` - offset (paginated) from where entities should be taken.
 
 ```typescript
-userRepository.find({ 
+userRepository.find({
     skip: 5
 });
 ```
@@ -87,7 +87,7 @@ userRepository.find({
 * `take` - limit (paginated) - max number of entities that should be taken.
 
 ```typescript
-userRepository.find({ 
+userRepository.find({
     take: 10
 });
 ```
@@ -95,12 +95,12 @@ userRepository.find({
 ** If you are using typeorm with MSSQL, and want to use `take` or `limit`, you need to use order as well or you will receive the following error:   `'Invalid usage of the option NEXT in the FETCH statement.'`
 
 ```typescript
-userRepository.find({ 
-    order: { 
-        columnName: 'ASC' 
-        }, 
-    skip: 0, 
-    take: 10 
+userRepository.find({
+    order: {
+        columnName: 'ASC'
+        },
+    skip: 0,
+    take: 10
 })
 ```
 
@@ -120,7 +120,7 @@ userRepository.find({
 ```
 or
 ```ts
-{ mode: "pessimistic_read"|"pessimistic_write"|"dirty_read" }
+{ mode: "pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail" }
 ```
 
 for example:
@@ -131,15 +131,17 @@ userRepository.findOne(1, {
 })
 ```
 
+`pessimistic_partial_write` and `pessimistic_write_or_fail` are supported only on Postgres and are equivalents of `SELECT .. FOR UPDATE SKIP LOCKED` and `SELECT .. FOR UPDATE NOWAIT`, accordingly.
+
 Complete example of find options:
 
 ```typescript
-userRepository.find({ 
+userRepository.find({
     select: ["firstName", "lastName"],
     relations: ["profile", "photos", "videos"],
-    where: { 
-        firstName: "Timber", 
-        lastName: "Saw" 
+    where: {
+        firstName: "Timber",
+        lastName: "Saw"
     },
     order: {
         name: "ASC",
@@ -166,7 +168,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 })
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "title" != 'About #1'
@@ -182,7 +184,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "likes" < 10
@@ -198,7 +200,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "likes" <= 10
@@ -214,7 +216,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "likes" > 10
@@ -230,7 +232,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "likes" >= 10
@@ -246,7 +248,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "title" = 'About #2'
@@ -262,7 +264,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "title" LIKE '%out #%'
@@ -278,7 +280,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "likes" BETWEEN 1 AND 10
@@ -294,7 +296,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "title" IN ('About #2','About #3')
@@ -310,7 +312,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query (Postgres notation): 
+will execute following query (Postgres notation):
 
 ```sql
 SELECT * FROM "post" WHERE "title" = ANY(['About #2','About #3'])
@@ -326,7 +328,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "title" IS NULL
@@ -342,7 +344,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "likes" = "dislikes" - 4
@@ -359,7 +361,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "currentDate" > NOW()
@@ -379,7 +381,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-will execute following query: 
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE NOT("likes" > 10) AND NOT("title" = 'About #2')

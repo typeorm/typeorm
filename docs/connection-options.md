@@ -5,6 +5,7 @@
 * [`mysql` / `mariadb` connection options](#mysql--mariadb-connection-options)
 * [`postgres` / `cockroachdb` connection options](#postgres--cockroachdb-connection-options)
 * [`sqlite` connection options](#sqlite-connection-options)
+* [`better-sqlite3` connection options](#better-sqlite3-connection-options)
 * [`cordova` connection options](#cordova-connection-options)
 * [`react-native` connection options](#react-native-connection-options)
 * [`nativescript` connection options](#nativescript-connection-options)
@@ -22,7 +23,7 @@ Connection options is a connection configuration you pass to `createConnection`
 ## Common connection options
 
 * `type` - Database type. You must specify what database engine you use.
- Possible values are "mysql", "postgres", "cockroachdb", "mariadb", "sqlite", "cordova", "nativescript",
+ Possible values are "mysql", "postgres", "cockroachdb", "mariadb", "sqlite", "better-sqlite3", "cordova", "nativescript",
  "oracle", "mssql", "mongodb", "sqljs", "react-native".
  This option is **required**.
 
@@ -34,23 +35,18 @@ If connection name is not given then it will be called "default".
 * `extra` - Extra connection options to be passed to the underlying driver. 
 Use it if you want to pass extra settings to underlying database driver.
 
-* `entities` - Entities to be loaded and used for this connection.
-Accepts both entity classes and directories paths to load from.
+* `entities` - Entities, or Entity Schemas, to be loaded and used for this connection.
+Accepts both entity classes, entity schema classes, and directories paths to load from.
 Directories support glob patterns.
 Example: `entities: [Post, Category, "entity/*.js", "modules/**/entity/*.js"]`.
-Learn more about [Entities](./entities.md).
+Learn more about [Entities](./entities.md). 
+Learn more about [Entity Schemas](separating-entity-definition.md).
 
 * `subscribers` - Subscribers to be loaded and used for this connection.
 Accepts both entity classes and directories to load from.
 Directories support glob patterns.
 Example: `subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`.
 Learn more about [Subscribers](listeners-and-subscribers.md).
-
-* `entitySchemas` - Entity schemas to be loaded and used for this connection.
-Accepts both entity schema classes and directories to load from.
-Directories support glob patterns.
-Example: `entitySchemas: [PostSchema, CategorySchema, "entity-schema/*.json", "modules/**/entity-schema/*.json"]`.
-Learn more about [Entity Schemas](separating-entity-definition.md).
 
 * `migrations` - Migrations to be loaded and used for this connection.
 Accepts both migration classes and directories to load from.
@@ -178,6 +174,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `schema` - Schema name. Default is "public".
 
+* `connectTimeoutMS` - The milliseconds before a timeout occurs during the initial connection to the postgres server. If `undefined`, or set to `0`, there is no timeout. Defaults to `undefined`. 
+
 * `ssl` - Object with ssl parameters. See [TLS/SSL](https://node-postgres.com/features/ssl).
 
 * `uuidExtension` - The Postgres extension to use when generating UUIDs. Defaults to `uuid-ossp`. Can be changed to `pgcrypto` if the `uuid-ossp` extension is unavailable.
@@ -187,6 +185,14 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 ## `sqlite` connection options
 
 * `database` - Database path. For example "./mydb.sql"
+
+## `better-sqlite3` connection options
+
+* `database` - Database path. For example "./mydb.sql"
+
+* `statementCacheSize` - Cache size of sqlite statement to speed up queries (default 100).
+
+* `prepareDatabase` - Function to run before a database is used in typeorm. You can access original better-sqlite3 Database object here.
 
 ## `cordova` connection options
 

@@ -500,6 +500,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                             } else {
                               expression += `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)})::${column.type}`;
                             }
+                        } else if (this.connection.driver instanceof SqlServerDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                            expression += column.type + "::STGeomFromText(" + this.connection.driver.createParameter(paramName, parametersCount) + ", " + (column.srid || "0") + ")";
                         } else {
                             expression += this.connection.driver.createParameter(paramName, parametersCount);
                         }

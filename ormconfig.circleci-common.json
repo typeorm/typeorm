@@ -27,9 +27,15 @@
   },
   {
     "skip": false,
+    "name": "better-sqlite3",
+    "type": "better-sqlite3",
+    "database": "temp/better-sqlite3db.db"
+  },
+  {
+    "skip": false,
     "name": "postgres",
     "type": "postgres",
-    "host": "localhost",
+    "host": "postgres",
     "port": 5432,
     "username": "test",
     "password": "test",
@@ -41,19 +47,19 @@
     "type": "sqljs"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mssql",
     "type": "mssql",
-    "host": "localhost",
+    "host": "mssql",
     "username": "sa",
-    "password": "Admin12345",
+    "password": "Admin123",
     "database": "tempdb"
   },
   {
     "skip": true,
     "name": "sap",
     "type": "sap",
-    "host": "localhost",
+    "host": "sap",
     "port": 39015,
     "username": "SYSTEM",
     "password": "HXEHana1",
@@ -65,6 +71,7 @@
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
+    "host": "mongodb",
     "database": "test",
     "useNewUrlParser": true,
     "useUnifiedTopology": true
@@ -73,7 +80,7 @@
     "skip": true,
     "name": "cockroachdb",
     "type": "cockroachdb",
-    "host": "localhost",
+    "host": "cockroachdb",
     "port": 26257,
     "username": "root",
     "password": "",
@@ -83,7 +90,7 @@
     "skip": true,
     "name": "oracle",
     "type": "oracle",
-    "host": "localhost",
+    "host": "oracle",
     "username": "typeorm",
     "password": "Passw0rd",
     "port": 1521,

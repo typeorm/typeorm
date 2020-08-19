@@ -1,4 +1,4 @@
 # Documentation
 
 This directory contains all TypeORM documentation.
-This documentation is represented on a site.
+This documentation is [the TypeORM website](https://typeorm.io/)

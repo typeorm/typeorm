@@ -1,8 +1,8 @@
 import {Subject} from "./Subject";
 import {DateUtils} from "../util/DateUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {OrmUtils} from "../util/OrmUtils";
+import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
 
 /**
  * Finds what columns are changed in the subject entities.
@@ -63,7 +63,7 @@ export class SubjectChangedColumnsComputer {
             if (subject.databaseEntity) {
 
                 // get database value of the column
-                let databaseValue = column.getEntityValue(subject.databaseEntity);
+                let databaseValue = column.getEntityValue(subject.databaseEntity, true);
 
                 // filter out "relational columns" only in the case if there is a relation object in entity
                 if (column.relationMetadata) {
@@ -119,6 +119,10 @@ export class SubjectChangedColumnsComputer {
                             databaseValue = DateUtils.simpleJsonToString(databaseValue);
                             break;
                     }
+
+                    if (column.transformer) {
+                        normalizedValue = ApplyValueTransformers.transformTo(column.transformer, entityValue);
+                    }
                 }
 
                 // if value is not changed - then do nothing
@@ -168,7 +172,7 @@ export class SubjectChangedColumnsComputer {
                 const databaseRelatedEntityRelationIdMap = relation.getEntityValue(subject.databaseEntity);
 
                 // if relation ids are equal then we don't need to update anything
-                const areRelatedIdsEqual = EntityMetadata.compareIds(relatedEntityRelationIdMap, databaseRelatedEntityRelationIdMap);
+                const areRelatedIdsEqual = OrmUtils.compareIds(relatedEntityRelationIdMap, databaseRelatedEntityRelationIdMap);
                 if (areRelatedIdsEqual) {
                     return;
                 } else {

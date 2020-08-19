@@ -4,6 +4,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {Photo} from "./entity/Photo";
+import {EntityColumnNotFound} from "../../../../src/error/EntityColumnNotFound";
 
 describe("query builder > delete", () => {
 
@@ -95,6 +96,7 @@ describe("query builder > delete", () => {
     it("should return correct delete result", () => Promise.all(connections.map(async connection => {
 
         // don't run test for sqlite and sqljs as they don't return affected rows
+        // better-sqlite3 works correctly
         if (connection.name === "sqlite" || connection.name === "sqljs" || connection.name === "sap")
             return;
 
@@ -113,4 +115,24 @@ describe("query builder > delete", () => {
         expect(result.affected).to.equal(2);
     })));
 
+    it("should throw error when unknown property in where criteria", () => Promise.all(connections.map(async connection => {
+
+        const user = new User();
+        user.name = "Alex Messer";
+
+        await connection.manager.save(user);
+
+        let error: Error | undefined;
+        try {
+            await connection.createQueryBuilder()
+                .delete()
+                .from(User)
+                .where( { unknownProp: "Alex Messer" })
+                .execute();
+        } catch (err) {
+            error = err;
+        }
+        expect(error).to.be.an.instanceof(EntityColumnNotFound);
+
+    })));
 });

@@ -5,7 +5,7 @@
 * [Create a new entity](#create-a-new-entity)
 * [Create a new subscriber](#create-a-new-subscriber)
 * [Create a new migration](#create-a-new-migration)
-* [Generate a migration from existing table schema](#generate-a-migration-from-exist-table-schema)
+* [Generate a migration from existing table schema](#generate-a-migration-from-existing-table-schema)
 * [Run migrations](#run-migrations)
 * [Revert migrations](#revert-migrations)
 * [Show migrations](#show-migrations)
@@ -37,9 +37,11 @@ Add typeorm command under scripts section in package.json
 ```
 "scripts" {
     ...
-    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js"    
+    "typeorm": "node --require ts-node/register ./node_modules/typeorm/cli.js"    
 }
 ```
+
+If you want to load more modules like [module-alias](https://github.com/ilearnio/module-alias) you can add more `--require my-module-supporting-register`
 
 Then you may run the command like this:
 ```

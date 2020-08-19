@@ -4,7 +4,7 @@ import {Logger} from "../logger/Logger";
 /**
  * Loads all exported classes from the given directory.
  */
-export function importClassesFromDirectories(logger: Logger, directories: string[], formats = [".js", ".ts"]): Function[] {
+export function importClassesFromDirectories(logger: Logger, directories: string[], formats = [".js", ".cjs", ".ts"]): Function[] {
 
     const logLevel = "info";
     const classesNotFoundMessage = "No classes were found using the provided glob pattern: ";

@@ -295,7 +295,7 @@ const users = await connection.createQueryBuilder()
     .getMany();
 ```
 
-* `createQueryRunner` - Creates a query runner used manage and work with a single real database connection.
+* `createQueryRunner` - Creates a query runner used to manage and work with a single real database connection.
 Learn more about [QueryRunner](./query-runner.md). 
 
 ```typescript

@@ -82,17 +82,17 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             // we are using simple quoted string instead of template string syntax
             if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver) {
                 sqlInMemory.upQueries.forEach(upQuery => {
-                    upSqls.push("        await queryRunner.query(\"" + upQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\", " + JSON.stringify(upQuery.parameters) + ");");
+                    upSqls.push("        await queryRunner.query(\"" + upQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\"" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
                 });
                 sqlInMemory.downQueries.forEach(downQuery => {
-                    downSqls.push("        await queryRunner.query(\"" + downQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\", " + JSON.stringify(downQuery.parameters) + ");");
+                    downSqls.push("        await queryRunner.query(\"" + downQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\"" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
                 });
             } else {
                 sqlInMemory.upQueries.forEach(upQuery => {
-                    upSqls.push("        await queryRunner.query(`" + upQuery.query.replace(new RegExp("`", "g"), "\\`") + "`, " + JSON.stringify(upQuery.parameters) + ");");
+                    upSqls.push("        await queryRunner.query(`" + upQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
                 });
                 sqlInMemory.downQueries.forEach(downQuery => {
-                    downSqls.push("        await queryRunner.query(`" + downQuery.query.replace(new RegExp("`", "g"), "\\`") + "`, " + JSON.stringify(downQuery.parameters) + ");");
+                    downSqls.push("        await queryRunner.query(`" + downQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
                 });
             }
 
@@ -123,6 +123,17 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
     // -------------------------------------------------------------------------
     // Protected Static Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Formats query parameters for migration queries if parameters actually exist
+     */
+    protected static queryParams(parameters: any[] | undefined): string {
+      if (!parameters || !parameters.length) {
+        return "";
+      }
+
+      return `, ${JSON.stringify(parameters)}`;
+    }
 
     /**
      * Gets contents of the migration file.

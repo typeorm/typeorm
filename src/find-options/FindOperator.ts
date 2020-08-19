@@ -1,5 +1,7 @@
 import {FindOperatorType} from "./FindOperatorType";
 import {Connection} from "../";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 
 /**
  * Find Operator used in Find Conditions.
@@ -107,6 +109,9 @@ export class FindOperator<T> {
             case "between":
                 return `${aliasPath} BETWEEN ${parameters[0]} AND ${parameters[1]}`;
             case "in":
+                if ((connection.driver instanceof OracleDriver || connection.driver instanceof MysqlDriver) && parameters.length === 0) {
+                    return `${aliasPath} IN (null)`;
+                }
                 return `${aliasPath} IN (${parameters.join(", ")})`;
             case "any":
                 return `${aliasPath} = ANY(${parameters[0]})`;

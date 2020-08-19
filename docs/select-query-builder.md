@@ -3,7 +3,7 @@
 * [What is `QueryBuilder`](#what-is-querybuilder)
 * [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
 * [Getting values using QueryBuilder](#getting-values-using-querybuilder)
-* [What are aliases for?](#what-are-aliases-for?)
+* [What are aliases for?](#what-are-aliases-for)
 * [Using parameters to escape data](#using-parameters-to-escape-data)
 * [Adding `WHERE` expression](#adding-where-expression)
 * [Adding `HAVING` expression](#adding-having-expression)

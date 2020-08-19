@@ -38,6 +38,7 @@ import {ObjectUtils} from "../util/ObjectUtils";
 import {PromiseUtils} from "../";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {DriverUtils} from "../driver/DriverUtils";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -524,17 +525,17 @@ export class Connection {
 
     // This database name property is nested for replication configs.
     protected getDatabaseName(): string {
-    const options = this.options;
-    switch (options.type) {
-        case "mysql" :
-        case "mariadb" :
-        case "postgres":
-        case "cockroachdb":
-        case "mssql":
-        case "oracle":
-            return (options.replication ? options.replication.master.database : options.database) as string;
-        default:
-            return options.database as string;
+        const options = this.options;
+        switch (options.type) {
+            case "mysql" :
+            case "mariadb" :
+            case "postgres":
+            case "cockroachdb":
+            case "mssql":
+            case "oracle":
+                return DriverUtils.buildDriverOptions(options.replication ? options.replication.master : options).database;
+            default:
+                return DriverUtils.buildDriverOptions(options).database;
     }
 }
 

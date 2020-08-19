@@ -618,7 +618,7 @@ export class EntityMetadata {
         const secondEntityIdMap = this.getEntityIdMap(secondEntity);
         if (!secondEntityIdMap) return false;
 
-        return EntityMetadata.compareIds(firstEntityIdMap, secondEntityIdMap);
+        return OrmUtils.compareIds(firstEntityIdMap, secondEntityIdMap);
     }
 
     /**
@@ -739,19 +739,8 @@ export class EntityMetadata {
      */
     static difference(firstIdMaps: ObjectLiteral[], secondIdMaps: ObjectLiteral[]): ObjectLiteral[] {
         return firstIdMaps.filter(firstIdMap => {
-            return !secondIdMaps.find(secondIdMap => OrmUtils.deepCompare(firstIdMap, secondIdMap));
+            return !secondIdMaps.find(secondIdMap => OrmUtils.compareIds(firstIdMap, secondIdMap));
         });
-    }
-
-    /**
-     * Compares ids of the two entities.
-     * Returns true if they match, false otherwise.
-     */
-    static compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined): boolean {
-        if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
-            return false;
-
-        return OrmUtils.deepCompare(firstId, secondId);
     }
 
     /**

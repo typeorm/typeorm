@@ -193,7 +193,8 @@ export type SimpleColumnType =
     |"uniqueidentifier" // mssql
     |"rowversion" // mssql
     |"array" // cockroachdb, sap
-    |"cube"; // postgres
+    |"cube" // postgres
+    |"ltree"; // postgres
 
 /**
  * Any column type column can be.

@@ -1218,7 +1218,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             return `(\`s\`.\`TABLE_SCHEMA\` = '${database}' AND \`s\`.\`TABLE_NAME\` = '${name}')`;
         }).join(" OR ");
         const indicesSql = `SELECT \`s\`.* FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\` \`s\` ` +
-            `LEFT JOIN \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` \`rc\` ON \`s\`.\`INDEX_NAME\` = \`rc\`.\`CONSTRAINT_NAME\` ` +
+            `LEFT JOIN \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` \`rc\` ON \`s\`.\`INDEX_NAME\` = \`rc\`.\`CONSTRAINT_NAME\` AND \`s\`.\`TABLE_SCHEMA\` = \`rc\`.\`CONSTRAINT_SCHEMA\`` +
             `WHERE (${indicesCondition}) AND \`s\`.\`INDEX_NAME\` != 'PRIMARY' AND \`rc\`.\`CONSTRAINT_NAME\` IS NULL`;
 
         const foreignKeysCondition = tableNames.map(tableName => {
@@ -1680,7 +1680,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (column.isGenerated && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
         if (column.comment)
-            c += ` COMMENT '${column.comment}'`;
+            c += ` COMMENT '${column.comment.replace("'", "''")}'`;
         if (column.default !== undefined && column.default !== null)
             c += ` DEFAULT ${column.default}`;
         if (column.onUpdate)

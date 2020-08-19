@@ -12,7 +12,7 @@ describe("github issues > #2518 TreeRepository.findDescendantsTree does not load
         (connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             // data type text isn't compatible with oracle
-            enabledDrivers: ["postgres", "cockroachdb", "mariadb", "mssql", "mysql", "sqlite", "sqljs"]
+            enabledDrivers: ["postgres", "cockroachdb", "mariadb", "mssql", "mysql", "sqlite", "better-sqlite3", "sqljs"]
         }))
     );
 

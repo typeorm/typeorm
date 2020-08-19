@@ -4,6 +4,7 @@
 * [Creating a new migration](#creating-a-new-migration)
 * [Running and reverting migrations](#running-and-reverting-migrations)
 * [Generating migrations](#generating-migrations)
+* [Connection option](#connection-option)
 * [Using migration API to write migrations](#using-migration-api-to-write-migrations)
 
 ## How migrations work
@@ -195,6 +196,12 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 
 See, you don't need to write the queries on your own.
 The rule of thumb for generating migrations is that you generate them after "each" change you made to your models.
+
+## Connection option
+If you need to run/revert your migrations for another connection rather than the default, use the `-c` (alias for `--connection`) and pass the config name as an argument
+```
+typeorm -c <your-config-name> migration:{run|revert}
+```
 
 ## Using migration API to write migrations
 

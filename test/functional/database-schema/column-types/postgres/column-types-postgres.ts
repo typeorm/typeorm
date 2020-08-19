@@ -48,7 +48,7 @@ describe("database schema > column types > postgres", () => {
         post.text = "This is text";
         post.citext = "This is text";
         post.hstore = "name => Alice, surname => A, age => 30";
-        post.bytea = new Buffer("This is bytea");
+        post.bytea = Buffer.from("This is bytea");
         post.date = "2017-06-21";
         post.interval = "1 year 2 months 3 days 4 hours 5 minutes 6 seconds";
         post.time = "15:30:00";

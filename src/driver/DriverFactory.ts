@@ -9,12 +9,13 @@ import {ReactNativeDriver} from "./react-native/ReactNativeDriver";
 import {NativescriptDriver} from "./nativescript/NativescriptDriver";
 import {SqljsDriver} from "./sqljs/SqljsDriver";
 import {MysqlDriver} from "./mysql/MysqlDriver";
-import {PostgresDriver} from "./postgres/PostgresDriver";
+import {PostgresDriver, AuroraDataApiPostgresDriver} from "./postgres/PostgresDriver";
 import {ExpoDriver} from "./expo/ExpoDriver";
 import {AuroraDataApiDriver} from "./aurora-data-api/AuroraDataApiDriver";
 import {Driver} from "./Driver";
 import {Connection} from "../connection/Connection";
 import {SapDriver} from "./sap/SapDriver";
+import {BetterSqlite3Driver} from "./better-sqlite3/BetterSqlite3Driver";
 
 /**
  * Helps to create drivers.
@@ -39,6 +40,8 @@ export class DriverFactory {
                 return new MysqlDriver(connection);
             case "sqlite":
                 return new SqliteDriver(connection);
+            case "better-sqlite3":
+                return new BetterSqlite3Driver(connection);
             case "cordova":
                 return new CordovaDriver(connection);
             case "nativescript":
@@ -57,6 +60,8 @@ export class DriverFactory {
                 return new ExpoDriver(connection);
             case "aurora-data-api":
                 return new AuroraDataApiDriver(connection);
+            case "aurora-data-api-pg":
+                return new AuroraDataApiPostgresDriver(connection);
             default:
                 throw new MissingDriverError(type);
         }

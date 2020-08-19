@@ -403,6 +403,8 @@ export class EntityMetadataBuilder {
             }
         }
 
+        const { namingStrategy } = this.connection;
+
         // check if tree is used then we need to add extra columns for specific tree types
         if (entityMetadata.treeType === "materialized-path") {
             entityMetadata.ownColumns.push(new ColumnMetadata({
@@ -414,7 +416,7 @@ export class EntityMetadataBuilder {
                     mode: "virtual",
                     propertyName: "mpath",
                     options: /*tree.column || */ {
-                        name: "mpath",
+                        name: namingStrategy.materializedPathColumnName,
                         type: "varchar",
                         nullable: true,
                         default: ""
@@ -423,6 +425,7 @@ export class EntityMetadataBuilder {
             }));
 
         } else if (entityMetadata.treeType === "nested-set") {
+            const { left, right } = namingStrategy.nestedSetColumnNames;
             entityMetadata.ownColumns.push(new ColumnMetadata({
                 connection: this.connection,
                 entityMetadata: entityMetadata,
@@ -430,9 +433,9 @@ export class EntityMetadataBuilder {
                 args: {
                     target: entityMetadata.target,
                     mode: "virtual",
-                    propertyName: "nsleft",
+                    propertyName: left,
                     options: /*tree.column || */ {
-                        name: "nsleft",
+                        name: left,
                         type: "integer",
                         nullable: false,
                         default: 1
@@ -446,9 +449,9 @@ export class EntityMetadataBuilder {
                 args: {
                     target: entityMetadata.target,
                     mode: "virtual",
-                    propertyName: "nsright",
+                    propertyName: right,
                     options: /*tree.column || */ {
-                        name: "nsright",
+                        name: right,
                         type: "integer",
                         nullable: false,
                         default: 2
