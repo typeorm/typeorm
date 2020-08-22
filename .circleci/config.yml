@@ -93,42 +93,72 @@ jobs:
     working_directory: ~/typeorm
     docker:
       - image: circleci/node:<< parameters.node-version >>
-      - image: mysql:5.7.24
-        environment:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_DATABASE: "test"
-      - image: mariadb:10.1.37
-        name: mariadb
-        environment:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_DATABASE: "test"
-      - image: circleci/postgres:9.6.11-postgis
-        name: postgres
-        environment:
-          POSTGRES_USER: "test"
-          POSTGRES_PASSWORD: "test"
-          POSTGRES_DB: "test"
-      - image: cockroachdb/cockroach:v19.2.9
-        name: cockroachdb
-        command: start --insecure
-      - image: circleci/mongo:3.4.18
-        name: mongodb
-      - image: mcr.microsoft.com/mssql/server:2017-latest
-        name: mssql
-        environment:
-          SA_PASSWORD: "Admin123"
-          ACCEPT_EULA: "Y"
-
     steps:
       - checkout
+      - setup_remote_docker
       - attach_workspace:
           at: ~/typeorm
       - create-typeorm-config:
           databases: << parameters.databases >>
-      # Download and cache dependencies
+      - run:
+          name: Start all Relevant Services
+          command: |
+            SERVICES=$(
+              npx js-yaml ./docker-compose.yml \
+                | jq -r '.services | keys | map(select(. | IN($ARGS.positional[]))) | join(" ")' --args << parameters.databases >>
+            )
+
+            docker-compose --project-name typeorm --no-ansi up --detach $SERVICES
       - install-packages:
-          cache-key: node<< parameters.node-version >>
-      - run: npx nyc npm run test-fast
+         cache-key: node<< parameters.node-version >>
+      - run:
+          name: Set up TypeORM Test Runner
+          command: |
+            docker run \
+              --volume /typeorm \
+              --name typeorm-code \
+              --workdir /typeorm \
+              circleci/node:<< parameters.node-version >> \
+              /bin/bash -c "sudo chmod 777 /typeorm && sudo chown circleci /typeorm"
+            docker cp ./ typeorm-code:/typeorm
+      - run:
+          name: Wait for Services to be Available
+          command: |
+            COMMANDS=$(
+                cat ormconfig.json \
+                  | jq -r '
+                    map(select(.skip == false)
+                      | select(.host)
+                      | select(.port)
+                      | "nc -z " + .host + " " + (.port|tostring) + " && echo " + .host + " " + (.port|tostring) + " is up")
+                      | join(" && ")
+                  '
+            )
+            echo "Running '$COMMANDS'"
+
+            docker run \
+              --network typeorm_default \
+              --tty \
+              ubuntu:trusty \
+              timeout 60 sh -c "until ($COMMANDS); do echo \"Waiting for Services to be Available ...\"; sleep 5; done"
+      # Download and cache dependencies
+      - run:
+          name: "Run Tests with Coverage"
+          command: |
+            docker run \
+              --env LD_LIBRARY_PATH='/typeorm/node_modules/oracledb/instantclient_19_8/:$LD_LIBRARY_PATH' \
+              --volumes-from typeorm-code \
+              --network typeorm_default \
+              --tty \
+              --workdir /typeorm \
+              --name typeorm-testrunner \
+              circleci/node:<< parameters.node-version >> \
+              npx nyc npm run test-fast
+
+            docker cp typeorm-testrunner:/typeorm/coverage/ ./
+      - run:
+          name: Stop all Relevant Services
+          command: docker-compose down
       - store_artifacts:
           path: coverage
       - codecov/upload
@@ -140,12 +170,12 @@ workflows:
       - lint
       - build
       - test:
-          name: test (mysql mariadb sqlite better-sqlite3 postgres sqljs mssql mongodb) - Node v<< matrix.node-version >>
+          name: test (mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs) - Node v<< matrix.node-version >>
           requires:
             - lint
             - build
+          databases: "mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs"
           matrix:
-            databases: "mysql mariadb sqlite better-sqlite3 postgres sqljs mssql mongodb"
             parameters:
               node-version:
                 - "10"
