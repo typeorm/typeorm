@@ -51,6 +51,24 @@ commands:
             if [ ! -d node_modules ]; then
               npm install
             fi
+      - run:
+          # This is pretty terrible but OracleDB requires you to grab the binaries OOB
+          # from the normal installation, place them in the LD Path
+          # also - not super well documented - grab `libaio` as well
+          # Because this is technically the same image as the runner we'll snag
+          # the libaio1 and place them in the same instantclient directory.
+          name: Download Required OracleDB Binaries
+          command: |
+            if [ ! -d node_modules/oracledb/instantclient_19_8 ]; then
+              curl -sf -o node_modules/oracledb/instantclient.zip $BLOB_URL
+              unzip -qqo node_modules/oracledb/instantclient.zip -d node_modules/oracledb/
+              rm node_modules/oracledb/instantclient.zip
+
+              DEBIAN_FRONTEND=noninteractive sudo apt-get -qq -y install libaio1
+              cp /lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/
+            fi
+          environment:
+            BLOB_URL: https://download.oracle.com/otn_software/linux/instantclient/19800/instantclient-basiclite-linux.x64-19.8.0.0.0dbru.zip
       - save_cache:
           name: Save node_modules cache
           key: node_modules-{{ checksum "package-lock.json" }}
@@ -187,4 +205,11 @@ workflows:
             - lint
             - build
           databases: "cockroachdb"
+          node-version: "12"
+      - test:
+          name: test (oracle) - Node v12
+          requires:
+            - lint
+            - build
+          databases: "oracle"
           node-version: "12"
