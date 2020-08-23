@@ -128,6 +128,15 @@ export class PlatformTools {
                 case "glob":
                     return require("glob");
 
+                case "dotenv":
+                    return require("dotenv");
+
+                case "xml2js":
+                    return require("xml2js");
+
+                case "js-yaml":
+                    return require("js-yaml");
+
                 case "typeorm-aurora-data-api-driver":
                     return require("typeorm-aurora-data-api-driver");
                 /**
