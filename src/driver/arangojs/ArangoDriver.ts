@@ -1,24 +1,25 @@
 import {Driver} from "../Driver";
-// import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
-import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {ArangoQueryRunner} from "./ArangoQueryRunner";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
-import {ArangoConnectionOptions} from "./ArangoConnectionOptions";
-import {MappedColumnTypes} from "../types/MappedColumnTypes";
-import {ColumnType} from "../types/ColumnTypes";
-import {MongoSchemaBuilder} from "../../schema-builder/MongoSchemaBuilder";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/table/TableColumn";
-import {ConnectionOptions} from "../../connection/ConnectionOptions";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
-// import {ObjectUtils} from "../../util/ObjectUtils";
-import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import { Database } from 'arangojs'
+import { ArangoConnectionOptions } from "./ArangoConnectionOptions";
+import { Connection } from "../../connection/Connection";
+import { ColumnType } from "../types/ColumnTypes";
+import { MappedColumnTypes } from "../types/MappedColumnTypes";
+import { DataTypeDefaults } from "../types/DataTypeDefaults";
+import { PlatformTools } from "../../platform/PlatformTools";
+import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
+import { ConnectionIsNotSetError}  from "../../error/ConnectionIsNotSetError";
+import { ArangoQueryRunner } from "./ArangoQueryRunner";
+import { ArangoSchemaBuilder } from "../../schema-builder/ArangoSchemaBuilder";
+import { ColumnMetadata } from "../../metadata/ColumnMetadata";
+import { ApplyValueTransformers } from "../../util/ApplyValueTransformers";
+
+// import {ObjectLiteral} from "../../common/ObjectLiteral";
+// import {TableColumn} from "../../schema-builder/table/TableColumn";
+// import {EntityMetadata} from "../../metadata/EntityMetadata";
+// // import {ObjectUtils} from "../../util/ObjectUtils";
 
 /**
- * Organizes communication with MongoDB.
+ * Organizes communication with ArangoDB.
  */
 export class ArangoDriver implements Driver {
 
@@ -27,9 +28,9 @@ export class ArangoDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Underlying mongodb library.
+     * Arangojs instance
      */
-    arangojs: any;
+    arangojs: Database;
 
     /**
      * Mongodb does not require to dynamically create query runner each time,
@@ -208,7 +209,7 @@ export class ArangoDriver implements Driver {
         // validate options to make sure everything is correct and driver will be able to establish connection
         this.validateOptions(connection.options);
 
-        // load mongodb package
+        // load arangojs package
         this.loadDependencies();
     }
 
@@ -221,18 +222,20 @@ export class ArangoDriver implements Driver {
      */
     connect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            return fail(new Error('Not defined'))
-
-            // this.arangojs.MongoClient.connect(
-            //     this.buildConnectionUrl(),
-            //     this.buildConnectionOptions(),
-            //     (err: any, client: any) => {
-            //         if (err) return fail(err);
-
-            //         this.queryRunner = new ArangoQueryRunner(this.connection, client);
-            //         ObjectUtils.assign(this.queryRunner, { manager: this.connection.manager });
-            //         ok();
-            //     });
+            try {
+                this.arangojs = new Database(this.options)
+    
+                if(this.options.database) {
+                    this.arangojs.useDatabase(this.options.database)
+                }
+                if (this.options.username) {
+                    this.arangojs.useBasicAuth(this.options.username, this.options.password || "")
+                }
+                if (this.options.token) {
+                    this.arangojs.useBearerAuth(this.options.token)
+                }
+                return ok()
+            } catch (error){ return fail(error)}
         });
     }
 
@@ -245,13 +248,11 @@ export class ArangoDriver implements Driver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            return fail(new Error('Not defined'))
-            // if (!this.queryRunner)
-            //     return fail(new ConnectionIsNotSetError("arangojs"));
-
-            // const handler = (err: any) => err ? fail(err) : ok();
-            // this.queryRunner.databaseConnection.close(handler);
-            // this.queryRunner = undefined;
+            if (!this.queryRunner)
+                return fail(new ConnectionIsNotSetError("arangojs"));
+            this.queryRunner.databaseConnection.close();
+            this.queryRunner = undefined;
+            return ok()
         });
     }
 
@@ -259,7 +260,7 @@ export class ArangoDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new MongoSchemaBuilder(this.connection);
+        return new ArangoSchemaBuilder(this.connection);
     }
 
     /**
@@ -273,8 +274,8 @@ export class ArangoDriver implements Driver {
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        throw new Error(`This operation is not supported by Mongodb driver.`);
+    escapeQueryWithParameters(sql: string, parameters: any, nativeParameters: any): [string, any[]] {
+        throw new Error(`This operation is not supported by Arangodb driver.`);
     }
 
     /**
@@ -406,11 +407,17 @@ export class ArangoDriver implements Driver {
     /**
      * Validate driver options to make sure everything is correct and driver will be able to establish connection.
      */
-    protected validateOptions(options: ConnectionOptions) { // todo: fix
-        // if (!options.url) {
-        //     if (!options.database)
-        //         throw new DriverOptionNotSetError("database");
-        // }
+    protected validateOptions(options: any) {
+        // Arangojs will connect using defaults is no configs are passed as arguments.
+
+        if (options.database && options.isAbsolute) {
+            console.warn(`Should not set "isAbsolute" to true if "database" is selected. See https://www.arangodb.com/docs/stable/drivers/js-reference-database.html#databaseusedatabase`)
+        }
+        // Not likely to happen, in case it does, let's warn that it is happening. 
+        if (options.username && !options.password) {
+            console.warn(`connecting to username ${options.username} without password`)
+        }
+        return
     }
 
     /**

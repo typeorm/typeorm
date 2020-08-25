@@ -82,10 +82,19 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
+    "database": "test",
+    "useNewUrlParser": true,
+    "useUnifiedTopology": true
+  },
+  {
+    "skip": false,
+    "disabledIfNotEnabledImplicitly": true,
+    "name": "arangodb",
+    "type": "arangodb",
     "database": "test",
     "useNewUrlParser": true,
     "useUnifiedTopology": true

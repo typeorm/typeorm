@@ -5,47 +5,19 @@ import { Table } from "../../schema-builder/table/Table";
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 import { TableIndex } from "../../schema-builder/table/TableIndex";
 import {View} from "../../schema-builder/view/View";
-import {
-    AggregationCursor,
-    BulkWriteOpResultObject,
-    ChangeStream,
-    ChangeStreamOptions,
-    Code,
-    Collection,
-    CollectionAggregationOptions,
-    CollectionBulkWriteOptions,
-    CollectionInsertManyOptions,
-    CollectionInsertOneOptions,
-    CollectionOptions,
-    CollStats,
-    CommandCursor,
-    Cursor,
-    Db,
-    DeleteWriteOpResultObject,
-    FindAndModifyWriteOpResultObject,
-    FindOneAndReplaceOption,
-    GeoHaystackSearchOptions,
-    GeoNearOptions,
-    InsertOneWriteOpResult,
-    InsertWriteOpResult,
-    MapReduceOptions,
-    MongoCountPreferences,
-    MongodbIndexOptions,
-    OrderedBulkOperation,
-    ParallelCollectionScanOptions,
-    ReadPreference,
-    ReplaceOneOptions,
-    UnorderedBulkOperation,
-    UpdateWriteOpResult
-} from "./typings";
 import { Connection } from "../../connection/Connection";
 import { ReadStream } from "../../platform/PlatformTools";
-import { MongoEntityManager } from "../../entity-manager/MongoEntityManager";
+import { ArangoEntityManager } from "../../entity-manager/ArangoEntityManager";
 import { SqlInMemory } from "../SqlInMemory";
 import { TableUnique } from "../../schema-builder/table/TableUnique";
 import { Broadcaster } from "../../subscriber/Broadcaster";
 import { TableCheck } from "../../schema-builder/table/TableCheck";
 import { TableExclusion } from "../../schema-builder/table/TableExclusion";
+import { Database, DocumentCollection } from 'arangojs';
+import { ArrayCursor } from 'arangojs/lib/cjs/cursor';
+import { AqlQuery } from 'arangojs/lib/cjs/aql-query';
+import { ImportResult } from 'arangojs/lib/cjs/collection';
+import { RemoveByExampleOptions, UpdateByExampleOptions, CollectionFigures } from 'arangojs/lib/cjs/util/types';
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -69,18 +41,18 @@ export class ArangoQueryRunner implements QueryRunner {
     /**
      * Entity manager working only with current query runner.
      */
-    manager: MongoEntityManager;
+    manager: ArangoEntityManager;
 
     /**
      * Indicates if connection for this query runner is released.
      * Once its released, query runner cannot run queries anymore.
-     * Always false for mongodb since mongodb has a single query executor instance.
+     * Always false for arangodb since arangodb has a single query executor instance.
      */
     isReleased = false;
 
     /**
      * Indicates if transaction is active in this query executor.
-     * Always false for mongodb since mongodb does not support transactions.
+     * Always false for arangodb since arangodb does not support transactions.
      */
     isTransactionActive = false;
 
@@ -103,13 +75,13 @@ export class ArangoQueryRunner implements QueryRunner {
     /**
      * Real database connection from a connection pool used to perform queries.
      */
-    databaseConnection: Db;
+    databaseConnection: Database;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection, databaseConnection: Db) {
+    constructor(connection: Connection, databaseConnection: Database) {
         this.connection = connection;
         this.databaseConnection = databaseConnection;
         this.broadcaster = new Broadcaster(this);
@@ -120,83 +92,85 @@ export class ArangoQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a cursor for a query that can be used to iterate over results from MongoDB.
+     * Creates a cursor for a query that can be used to iterate over results from ArangoDB.
      */
-    cursor(collectionName: string, query?: ObjectLiteral): Cursor<any> {
-        // return this.getCollection(collectionName).find(query || {});
+    async cursor(collectionName: string, query?: AqlQuery): Promise<ArrayCursor> {
+        // if (query) {
+        //     return await this.databaseConnection.query(query)
+        // }
+        // const collection = this.getCollection(collectionName)
+        // return await this.databaseConnection.query(aql`for i in ${collection} return i`)
         throw new Error('Not defined.')
     }
 
     /**
      * Execute an aggregation framework pipeline against the collection.
      */
-    aggregate(collectionName: string, pipeline: ObjectLiteral[], options?: CollectionAggregationOptions): AggregationCursor<any> {
-        // return this.getCollection(collectionName).aggregate(pipeline, options);
+    aggregate(collectionName: string, pipeline: ObjectLiteral[], options?: ObjectLiteral): Promise<ArrayCursor> {
         throw new Error('Not defined.')
     }
 
     /**
      * Perform a bulkWrite operation without a fluent API.
+     * Not supported in arangojs
      */
-    async bulkWrite(collectionName: string, operations: ObjectLiteral[], options?: CollectionBulkWriteOptions): Promise<BulkWriteOpResultObject> {
-        // return await this.getCollection(collectionName).bulkWrite(operations, options);
+    async bulkWrite(collectionName: string, operations: ObjectLiteral[], options?: any): Promise<any> {
         throw new Error('Not defined.')
     }
 
     /**
      * Count number of matching documents in the db to a query.
      */
-    async count(collectionName: string, query?: ObjectLiteral, options?: MongoCountPreferences): Promise<any> {
-        // return await this.getCollection(collectionName).countDocuments(query || {}, options);
+    async count(collectionName: string, query?: AqlQuery): Promise<number> {
+        // const cur = await this.cursor(collectionName, query);
+        // return cur.count
         throw new Error('Not defined.')
     }
 
     /**
      * Creates an index on the db and collection.
      */
-    async createCollectionIndex(collectionName: string, fieldOrSpec: string | any, options?: MongodbIndexOptions): Promise<string> {
-        // return await this.getCollection(collectionName).createIndex(fieldOrSpec, options);
+    async createCollectionIndex(collectionName: string, details: ObjectLiteral): Promise<string> {
+        // return await this.getCollection(collectionName).ensurevIndex(details);
         throw new Error('Not defined.')
     }
 
     /**
-     * Creates multiple indexes in the collection, this method is only supported for MongoDB 2.6 or higher.
-     * Earlier version of MongoDB will throw a command not supported error. Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
+     * Creates multiple indexes in the collection.
      */
-    async createCollectionIndexes(collectionName: string, indexSpecs: ObjectLiteral[]): Promise<void> {
-        // return await this.getCollection(collectionName).createIndexes(indexSpecs);
+    async createCollectionIndexes(collectionName: string, indexSpecs: ObjectLiteral[]): Promise<any> {
+        // return await Promise.all(indexSpecs.map(async (i) => await this.getCollection(collectionName).createIndex(i) ))
         throw new Error('Not defined.')
     }
 
     /**
-     * Delete multiple documents on MongoDB.
+     * Delete multiple documents.
      */
-    async deleteMany(collectionName: string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
-        // return await this.getCollection(collectionName).deleteMany(query, options);
+    async deleteMany(collectionName: string, example: ObjectLiteral, options?: RemoveByExampleOptions): Promise<any> {
+        // return await this.getCollection(collectionName).removeByExample(example, options);
         throw new Error('Not defined.')
     }
 
     /**
-     * Delete a document on MongoDB.
+     * Delete a document on ArangoDB.
      */
-    async deleteOne(collectionName: string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
-        // return await this.getCollection(collectionName).deleteOne(query, options);
+    async deleteOne(collectionName: string, example: Object, options?: RemoveByExampleOptions): Promise<any> {
+        // return await this.getCollection(collectionName).removeByExample(example, Object.assign(options, {limit: 1}));
         throw new Error('Not defined.')
     }
 
     /**
-     * The distinct command returns returns a list of distinct values for the given key across a collection.
+     * The distinct command returns a list of distinct values for the given key across a collection.
+     * Not supported in arango
      */
-    async distinct(collectionName: string, key: string, query: ObjectLiteral, options?: { readPreference?: ReadPreference | string }): Promise<any> {
-        // return await this.getCollection(collectionName).distinct(key, query, options);
+    async distinct(collectionName: string, key: string, query: AqlQuery): Promise<any> {
         throw new Error('Not defined.')
     }
-
     /**
      * Drops an index from this collection.
      */
-    async dropCollectionIndex(collectionName: string, indexName: string, options?: CollectionOptions): Promise<any> {
-        // return await this.getCollection(collectionName).dropIndex(indexName, options);
+    async dropCollectionIndex(collectionName: string, indexName: string): Promise<any> {
+        // return await this.getCollection(collectionName).dropIndex(indexName);
         throw new Error('Not defined.')
     }
 
@@ -204,55 +178,56 @@ export class ArangoQueryRunner implements QueryRunner {
      * Drops all indexes from the collection.
      */
     async dropCollectionIndexes(collectionName: string): Promise<any> {
-        // return await this.getCollection(collectionName).dropIndexes();
+        // const indexes: any[] = await this.getCollection(collectionName).indexes()
+        // return Promise.all(indexes.map(i => await this.getCollection(collectionName).dropIndex(i))
         throw new Error('Not defined.')
     }
 
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    async findOneAndDelete(collectionName: string, query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
-        // return await this.getCollection(collectionName).findOneAndDelete(query, options);
+    async findOneAndDelete(collectionName: string, example: Object, options?: RemoveByExampleOptions): Promise<any> {
+        // return await this.getCollection(collectionName).removeByExample(example, Object.assign(options, {limit: 1}))
         throw new Error('Not defined.')
     }
 
     /**
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    async findOneAndReplace(collectionName: string, query: ObjectLiteral, replacement: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
-        // return await this.getCollection(collectionName).findOneAndReplace(query, replacement, options);
+    async findOneAndReplace(collectionName: string, example: any, replacement: any, options?: {
+        waitForSync?: boolean;
+        limit?: number;
+    }): Promise<any> {
+        // return await this.getCollection(collectionName).replaceByExample(example, Object.assign(options, {limit: 1}));
         throw new Error('Not defined.')
     }
 
     /**
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    async findOneAndUpdate(collectionName: string, query: ObjectLiteral, update: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
-        // return await this.getCollection(collectionName).findOneAndUpdate(query, update, options);
+    async findOneAndUpdate(collectionName: string, example: ObjectLiteral, update: Object, options?: UpdateByExampleOptions): Promise<any> {
+        // return await this.getCollection(collectionName).updateByExample(example, update, Object.assign(options, {limit: 1}));
         throw new Error('Not defined.')
     }
 
     /**
      * Execute a geo search using a geo haystack index on a collection.
      */
-    async geoHaystackSearch(collectionName: string, x: number, y: number, options?: GeoHaystackSearchOptions): Promise<any> {
-        // return await this.getCollection(collectionName).geoHaystackSearch(x, y, options);
+    async geoHaystackSearch(collectionName: string, x: number, y: number, options?: any): Promise<any> {
         throw new Error('Not defined.')
     }
 
     /**
      * Execute the geoNear command to search for items in the collection.
      */
-    async geoNear(collectionName: string, x: number, y: number, options?: GeoNearOptions): Promise<any> {
-        // return await this.getCollection(collectionName).geoNear(x, y, options);
+    async geoNear(collectionName: string, x: number, y: number, options?: any): Promise<any> {
         throw new Error('Not defined.')
     }
 
     /**
      * Run a group command across a collection.
      */
-    async group(collectionName: string, keys: Object | Array<any> | Function | Code, condition: Object, initial: Object, reduce: Function | Code, finalize: Function | Code, command: boolean, options?: { readPreference?: ReadPreference | string }): Promise<any> {
-        // return await this.getCollection(collectionName).group(keys, condition, initial, reduce, finalize, command, options);
+    async group(collectionName: string, keys: Object | Array<any> | Function, condition: Object, initial: Object, reduce: Function , finalize: Function , command: boolean, options?: any): Promise<any> {
         throw new Error('Not defined.')
     }
 
@@ -268,7 +243,6 @@ export class ArangoQueryRunner implements QueryRunner {
      * Retrieve all the indexes on the collection.
      */
     async collectionIndexExists(collectionName: string, indexes: string | string[]): Promise<boolean> {
-        // return await this.getCollection(collectionName).indexExists(indexes);
         throw new Error('Not defined.')
     }
 
@@ -276,39 +250,53 @@ export class ArangoQueryRunner implements QueryRunner {
      * Retrieves this collections index info.
      */
     async collectionIndexInformation(collectionName: string, options?: { full: boolean }): Promise<any> {
-        // return await this.getCollection(collectionName).indexInformation(options);
         throw new Error('Not defined.')
     }
 
     /**
      * Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
+     * ArangoDB does not have such a concept.
      */
-    initializeOrderedBulkOp(collectionName: string, options?: CollectionOptions): OrderedBulkOperation {
-        // return this.getCollection(collectionName).initializeOrderedBulkOp(options);
+    initializeOrderedBulkOp(collectionName: string, options?: any): any {
         throw new Error('Not defined.')
     }
 
     /**
      * Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
+     * ArangoDB does not have such a concept.
      */
-    initializeUnorderedBulkOp(collectionName: string, options?: CollectionOptions): UnorderedBulkOperation {
-        // return this.getCollection(collectionName).initializeUnorderedBulkOp(options);
+    initializeUnorderedBulkOp(collectionName: string, options?: any): any {
         throw new Error('Not defined.')
     }
 
     /**
      * Inserts an array of documents into MongoDB.
      */
-    async insertMany(collectionName: string, docs: ObjectLiteral[], options?: CollectionInsertManyOptions): Promise<InsertWriteOpResult> {
-        // return await this.getCollection(collectionName).insertMany(docs, options);
+    async insertMany(collectionName: string, docs: ObjectLiteral[], options?: {
+        type?: 'auto' | 'documents' | 'array'
+        fromPrefix?: string
+        toPrefix?: string
+        overwrite?: boolean
+        waitForSync?: boolean
+        onDuplicate?: 'error' | 'replace' | 'update' | 'ignore'
+        complete?: boolean
+        details?: boolean
+    }): Promise<ImportResult> {
+        // return await this.getCollection(collectionName).import(docs, options);
         throw new Error('Not defined.')
     }
 
     /**
      * Inserts a single document into MongoDB.
      */
-    async insertOne(collectionName: string, doc: ObjectLiteral, options?: CollectionInsertOneOptions): Promise<InsertOneWriteOpResult> {
-        // return await this.getCollection(collectionName).insertOne(doc, options);
+    async insertOne(collectionName: string, doc: ObjectLiteral, options?: {
+        waitForSync?: boolean
+        returnNew?: boolean
+        returnOld?: boolean
+        silent?: boolean
+        overwrite?: boolean
+    }): Promise<any> {
+        // return await this.getCollection(collectionName).save(doc, options);
         throw new Error('Not defined.')
     }
 
@@ -316,22 +304,22 @@ export class ArangoQueryRunner implements QueryRunner {
      * Returns if the collection is a capped collection.
      */
     async isCapped(collectionName: string): Promise<any> {
-        // return await this.getCollection(collectionName).isCapped();
         throw new Error('Not defined.')
     }
 
     /**
      * Get the list of all indexes information for the collection.
      */
-    listCollectionIndexes(collectionName: string, options?: { batchSize?: number, readPreference?: ReadPreference | string }): CommandCursor {
-        // return this.getCollection(collectionName).listIndexes(options);
+    async listCollectionIndexes(collectionName: string): Promise<any> {
+        // return await this.getCollection(collectionName).indexes();
         throw new Error('Not defined.')
     }
 
     /**
      * Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
+     * No such concept in Arangodb
      */
-    async mapReduce(collectionName: string, map: Function | string, reduce: Function | string, options?: MapReduceOptions): Promise<any> {
+    async mapReduce(collectionName: string, map: Function | string, reduce: Function | string, options?: any): Promise<any> {
         // return await this.getCollection(collectionName).mapReduce(map, reduce, options);
         throw new Error('Not defined.')
     }
@@ -339,65 +327,80 @@ export class ArangoQueryRunner implements QueryRunner {
     /**
      * Return N number of parallel cursors for a collection allowing parallel reading of entire collection.
      * There are no ordering guarantees for returned results.
+     * No such concept in Arangodb
      */
-    async parallelCollectionScan(collectionName: string, options?: ParallelCollectionScanOptions): Promise<Cursor<any>[]> {
-        // return await this.getCollection(collectionName).parallelCollectionScan(options);
+    async parallelCollectionScan(collectionName: string, options?: any): Promise<any> {
         throw new Error('Not defined.')
     }
 
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
+     * No such concept in Arangodb
      */
     async reIndex(collectionName: string): Promise<any> {
-        // return await this.getCollection(collectionName).reIndex();
         throw new Error('Not defined.')
     }
 
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
-    async rename(collectionName: string, newName: string, options?: { dropTarget?: boolean }): Promise<Collection<any>> {
-        // return await this.getCollection(collectionName).rename(newName, options);
+    async rename(collectionName: string, newName: string): Promise<any> {
+        // return await this.getCollection(collectionName).rename(newName);
         throw new Error('Not defined.')
     }
 
     /**
      * Replace a document on MongoDB.
      */
-    async replaceOne(collectionName: string, query: ObjectLiteral, doc: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
-        // return await this.getCollection(collectionName).replaceOne(query, doc, options);
+    async replaceOne(collectionName: string, handle: string, doc: ObjectLiteral, options?: {
+        waitForSync?: boolean
+        rev?: string
+        policy?: 'last' | 'error'
+    }): Promise<any> {
+        // return await this.getCollection(collectionName).replace(handle, doc, options);
         throw new Error('Not defined.')
     }
 
     /**
      * Get all the collection statistics.
      */
-    async stats(collectionName: string, options?: { scale: number }): Promise<CollStats> {
-        // return await this.getCollection(collectionName).stats(options);
+    async stats(collectionName: string): Promise<CollectionFigures> {
+        // return await this.getCollection(collectionName).figures();
         throw new Error('Not defined.')
     }
 
     /**
      * Watching new changes as stream.
+     * No such concept in Arangodb
      */
-    watch(collectionName: string, pipeline?: Object[], options?: ChangeStreamOptions): ChangeStream {
-        // return this.getCollection(collectionName).watch(pipeline, options);
+    watch(collectionName: string, pipeline?: Object[], options?: any): any {
         throw new Error('Not defined.')
     }
 
     /**
      * Update multiple documents on MongoDB.
      */
-    async updateMany(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: { upsert?: boolean, w?: any, wtimeout?: number, j?: boolean }): Promise<UpdateWriteOpResult> {
-        // return await this.getCollection(collectionName).updateMany(query, update, options);
+    async updateMany(collectionName: string, update: ObjectLiteral, options?: { 
+        waitForSync?: boolean
+        keepNull?: boolean
+        mergeObjects?: boolean
+        returnOld?: boolean
+        returnNew?: boolean
+        ignoreRevs?: boolean
+    }): Promise<any> {
+        // return await this.getCollection(collectionName).bulkUpdate( update, options);
         throw new Error('Not defined.')
     }
 
     /**
      * Update a single document on MongoDB.
      */
-    async updateOne(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
-        // return await this.getCollection(collectionName).updateOne(query, update, options);
+    async updateOne(collectionName: string, example: ObjectLiteral, update: ObjectLiteral, options?: {
+        keepNull?: boolean
+        waitForSync?: boolean
+        mergeObjects?: boolean
+    }): Promise<any> {
+        // return await this.getCollection(collectionName).updateByExample(example, update, Object.assign(options, {limit: 1}));
         throw new Error('Not defined.')
     }
 
@@ -411,7 +414,8 @@ export class ArangoQueryRunner implements QueryRunner {
      * (because it can clear all your database).
      */
     async clearDatabase(): Promise<void> {
-        // await this.databaseConnection.db(this.connection.driver.database!).dropDatabase();
+        // await this.databaseConnection.truncate()
+        // return
         throw new Error('Not defined.')
     }
 
@@ -432,6 +436,7 @@ export class ArangoQueryRunner implements QueryRunner {
      * Starts transaction.
      */
     async startTransaction(): Promise<void> {
+        // return this.databaseConnection.beginTransaction()
         // transactions are not supported by Arangodb driver, so simply don't do anything here
     }
 
@@ -439,6 +444,10 @@ export class ArangoQueryRunner implements QueryRunner {
      * Commits transaction.
      */
     async commitTransaction(): Promise<void> {
+        // const transaction = this.databaseConnection.transaction()
+        // await transaction.commit()
+        // return
+
         // transactions are not supported by Arangodb driver, so simply don't do anything here
     }
 
@@ -847,9 +856,8 @@ export class ArangoQueryRunner implements QueryRunner {
      * Drops collection.
      */
     async clearTable(collectionName: string): Promise<void> {
-        await this.databaseConnection
-            .db(this.connection.driver.database!)
-            .dropCollection(collectionName);
+        await this.getCollection(collectionName).drop()
+        return
     }
 
     /**
@@ -906,9 +914,8 @@ export class ArangoQueryRunner implements QueryRunner {
     /**
      * Gets collection from the database with a given name.
      */
-    protected getCollection(collectionName: string): Collection<any> {
-        // return this.databaseConnection.db(this.connection.driver.database!).collection(collectionName);
-        throw new Error('Not defined.')
+    protected getCollection(collectionName: string): DocumentCollection<any> {
+        return this.databaseConnection.collection(collectionName)
     }
 
 }
