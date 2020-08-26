@@ -581,17 +581,6 @@ export class EntityManager {
      * You can execute bulk inserts using this method.
      */
     async insert<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, entity: QueryDeepPartialEntity<Entity>|(QueryDeepPartialEntity<Entity>[])): Promise<InsertResult> {
-
-        // If user passed empty array of entities then we don't need to do
-        // anything.
-        //
-        // Fixes GitHub issue #5734.  If we were to let this through we would
-        // run into problems downstream, like subscribers getting invoked with
-        // the empty array where they expect an entity, and SQL queries with an
-        // empty VALUES clause.
-        if (Array.isArray(entity) && entity.length === 0)
-            return Promise.resolve(new InsertResult());
-
         // TODO: Oracle does not support multiple values. Need to create another nice solution.
         if (this.connection.driver instanceof OracleDriver && Array.isArray(entity)) {
             const results = await Promise.all(entity.map(entity => this.insert(target, entity)));

@@ -62,7 +62,7 @@
     "better-sqlite3": "^7.0.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "class-transformer": "^0.2.3",
+    "class-transformer": "^0.3.1",
     "conventional-changelog-angular": "^5.0.3",
     "conventional-changelog-cli": "^2.0.21",
     "del": "^3.0.0",
