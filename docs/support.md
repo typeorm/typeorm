@@ -6,7 +6,7 @@ If you found a bug, issue, or you just want to propose a new feature, create [an
 
 ### Have a question?
 
-If you have a question, you can ask it on [StackOverflow](https://stackoverflow.com/questions/tagged/typeorm).
+If you have a question, you can ask it on [StackOverflow](https://stackoverflow.com/questions/tagged/typeorm) or other community support channels.
 
 ### Want community support?
 
