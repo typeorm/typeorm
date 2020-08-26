@@ -176,7 +176,7 @@ export class EmbeddedMetadata {
         args: EmbeddedMetadataArgs,
     }) {
         this.entityMetadata = options.entityMetadata;
-        this.type = options.args.type();
+        this.type = options.args.type(undefined, options.args.target, options.args.propertyName);
         this.propertyName = options.args.propertyName;
         this.customPrefix = options.args.prefix;
         this.isArray = options.args.isArray;

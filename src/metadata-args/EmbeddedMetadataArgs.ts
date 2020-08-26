@@ -27,6 +27,6 @@ export interface EmbeddedMetadataArgs {
     /**
      * Type of the class to be embedded.
      */
-    type: ((type?: any) => Function);
+    type: ((type?: any, target?: Function, propertyName?: string) => Function);
 
 }

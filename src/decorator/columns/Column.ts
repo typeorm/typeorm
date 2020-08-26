@@ -90,13 +90,13 @@ export function Column(type: "hstore", options?: ColumnCommonOptions & ColumnHst
  * single table of the entity where Embedded is used. And on hydration all columns which supposed to be in the
  * embedded will be mapped to it from the single table.
  */
-export function Column(type: (type?: any) => Function, options?: ColumnEmbeddedOptions): PropertyDecorator;
+export function Column(type: (type?: any, target?: Function, propertyName?: string) => Function, options?: ColumnEmbeddedOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(ColumnOptions&ColumnEmbeddedOptions), options?: (ColumnOptions&ColumnEmbeddedOptions)): PropertyDecorator {
+export function Column(typeOrOptions?: ((type?: any, target?: Function, propertyName?: string) => Function)|ColumnType|(ColumnOptions&ColumnEmbeddedOptions), options?: (ColumnOptions&ColumnEmbeddedOptions)): PropertyDecorator {
     return function (object: Object, propertyName: string) {
 
         // normalize parameters
