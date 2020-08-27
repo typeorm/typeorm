@@ -185,8 +185,11 @@ export class RedisQueryResultCache implements QueryResultCache {
      */
     protected loadRedis(): any {
         try {
-            return PlatformTools.load(this.clientType);
-
+            if (this.clientType === "ioredis/cluster") {
+                return PlatformTools.load("ioredis");
+            } else {
+                return PlatformTools.load(this.clientType);
+            }
         } catch (e) {
             throw new Error(`Cannot use cache because ${this.clientType} is not installed. Please run "npm i ${this.clientType} --save".`);
         }

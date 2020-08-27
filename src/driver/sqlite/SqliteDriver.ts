@@ -1,3 +1,5 @@
+import mkdirp from 'mkdirp';
+import path from 'path';
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
 import { SqliteQueryRunner } from "./SqliteQueryRunner";
 import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
@@ -132,10 +134,8 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * Auto creates database directory if it does not exist.
      */
-    protected createDatabaseDirectory(fullPath: string): Promise<void> {
-        const mkdirp = PlatformTools.load("mkdirp");
-        const path = PlatformTools.load("path");
-        return mkdirp(path.dirname(fullPath));
+    protected async createDatabaseDirectory(fullPath: string): Promise<void> {
+        await mkdirp(path.dirname(fullPath));
     }
 
 }

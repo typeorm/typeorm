@@ -1,4 +1,5 @@
 import {LoggerOptions, FileLoggerOptions} from "./LoggerOptions";
+import appRootPath from "app-root-path";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Logger} from "./Logger";
 import {PlatformTools} from "../platform/PlatformTools";
@@ -100,7 +101,7 @@ export class FileLogger implements Logger {
      */
     protected write(strings: string|string[]) {
         strings = Array.isArray(strings) ? strings : [strings];
-        const basePath = PlatformTools.load("app-root-path").path + "/";
+        const basePath = appRootPath.path + "/";
         let logPath = "ormlogs.log";
         if (this.fileLoggerOptions && this.fileLoggerOptions.logPath) {
             logPath = PlatformTools.pathNormalize(this.fileLoggerOptions.logPath);

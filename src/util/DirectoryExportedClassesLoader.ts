@@ -1,3 +1,4 @@
+import glob from "glob";
 import {PlatformTools} from "../platform/PlatformTools";
 import {EntitySchema} from "../index";
 import {Logger} from "../logger/Logger";
@@ -24,7 +25,7 @@ export function importClassesFromDirectories(logger: Logger, directories: string
     }
 
     const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(PlatformTools.load("glob").sync(PlatformTools.pathNormalize(dir)));
+        return allDirs.concat(glob.sync(PlatformTools.pathNormalize(dir)));
     }, [] as string[]);
 
     if (directories.length > 0 && allFiles.length === 0) {
@@ -37,7 +38,7 @@ export function importClassesFromDirectories(logger: Logger, directories: string
             const dtsExtension = file.substring(file.length - 5, file.length);
             return formats.indexOf(PlatformTools.pathExtname(file)) !== -1 && dtsExtension !== ".d.ts";
         })
-        .map(file => PlatformTools.load(PlatformTools.pathResolve(file)));
+        .map(file => require(PlatformTools.pathResolve(file)));
 
     return loadFileClasses(dirs, []);
 }
@@ -48,10 +49,10 @@ export function importClassesFromDirectories(logger: Logger, directories: string
 export function importJsonsFromDirectories(directories: string[], format = ".json"): any[] {
 
     const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(PlatformTools.load("glob").sync(PlatformTools.pathNormalize(dir)));
+        return allDirs.concat(glob.sync(PlatformTools.pathNormalize(dir)));
     }, [] as string[]);
 
     return allFiles
         .filter(file => PlatformTools.pathExtname(file) === format)
-        .map(file => PlatformTools.load(PlatformTools.pathResolve(file)));
+        .map(file => require(PlatformTools.pathResolve(file)));
 }

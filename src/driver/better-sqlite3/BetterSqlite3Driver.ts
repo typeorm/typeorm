@@ -1,3 +1,5 @@
+import mkdirp from 'mkdirp';
+import path from 'path';
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
 import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
 import { PlatformTools } from "../../platform/PlatformTools";
@@ -88,7 +90,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         if (this.options.database !== ":memory:")
             await this.createDatabaseDirectory(this.options.database);
 
-        const { 
+        const {
             database,
             readonly = false,
             fileMustExist = false,
@@ -132,10 +134,8 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     /**
      * Auto creates database directory if it does not exist.
      */
-    protected createDatabaseDirectory(fullPath: string): Promise<void> {
-        const mkdirp = PlatformTools.load("mkdirp");
-        const path = PlatformTools.load("path");
-        return mkdirp(path.dirname(fullPath));
+    protected async createDatabaseDirectory(fullPath: string): Promise<void> {
+        await mkdirp(path.dirname(fullPath));
     }
 
 }
