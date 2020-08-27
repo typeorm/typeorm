@@ -1861,7 +1861,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 const columnAlias = this.escape(DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName));
                 if (!orderBys[columnAlias]) // make sure we aren't overriding user-defined order in inverse direction
                     orderBys[columnAlias] = "ASC";
-                return `${distinctAlias}.${columnAlias} as "ids_${DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName)}"`;
+
+                const alias = DriverUtils.buildColumnAlias(
+                    this.connection.driver,
+                    "ids_" + mainAliasName,
+                    primaryColumn.databaseName
+                );
+
+                return `${distinctAlias}.${columnAlias} as "${alias}"`;
             });
 
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
@@ -1888,7 +1895,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
-                    const ids = rawResults.map(result => result["ids_" + DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, metadata.primaryColumns[0].databaseName)]);
+                    const alias = DriverUtils.buildColumnAlias(
+                        this.connection.driver,
+                        "ids_" + mainAliasName,
+                        metadata.primaryColumns[0].databaseName
+                    );
+
+                    const ids = rawResults.map(result => result[alias]);
                     const areAllNumbers = ids.every((id: any) => typeof id === "number");
                     if (areAllNumbers) {
                         // fixes #190. if all numbers then its safe to perform query without parameter
