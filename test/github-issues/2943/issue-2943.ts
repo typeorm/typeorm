@@ -4,7 +4,7 @@ import { Connection } from "../../../src";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { Test } from "./entity/Test";
 
-describe.only("github issues > #2943 Inappropriate migration generated", () => {
+describe("github issues > #2943 Inappropriate migration generated", () => {
 
     let connections: Connection[];
 
