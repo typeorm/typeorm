@@ -6,7 +6,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {camelCase} from "../util/StringUtils";
 import * as yargs from "yargs";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-const chalk = require("chalk");
+import chalk from "chalk";
 
 /**
  * Generates a new migration file with sql needs to be executed to update schema.

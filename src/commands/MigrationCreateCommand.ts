@@ -2,7 +2,7 @@ import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
 import {camelCase} from "../util/StringUtils";
 import * as yargs from "yargs";
-const chalk = require("chalk");
+import chalk from "chalk";
 
 /**
  * Creates a new migration file.
