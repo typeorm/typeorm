@@ -324,10 +324,18 @@ export abstract class BaseQueryRunner {
                 return false;
         }
 
-        if (this.connection.driver.dataTypeDefaults
+        const defaultWidthForType = this.connection.driver.dataTypeDefaults
             && this.connection.driver.dataTypeDefaults[column.type]
-            && this.connection.driver.dataTypeDefaults[column.type].width) {
-            return this.connection.driver.dataTypeDefaults[column.type].width === width;
+            && this.connection.driver.dataTypeDefaults[column.type].width;
+
+        if (defaultWidthForType) {
+            // the default widths of these numeric types are 1 less when the column is unsigned.
+            const typesWithReducedUnsignedDefault = ["int", "tinyint", "smallint", "mediumint"];
+            if (column.unsigned && -1 < typesWithReducedUnsignedDefault.indexOf(column.type)) {
+                return (defaultWidthForType - 1) === width;
+            } else {
+                return defaultWidthForType === width;
+            }
         }
 
         return false;
