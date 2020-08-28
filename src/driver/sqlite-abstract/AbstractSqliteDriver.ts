@@ -130,12 +130,31 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Gets list of column data types that support precision by a driver.
      */
-    withPrecisionColumnTypes: ColumnType[] = [];
+    withPrecisionColumnTypes: ColumnType[] = [
+        "real",
+        "double",
+        "double precision",
+        "float",
+        "real",
+        "numeric",
+        "decimal",
+        "date",
+        "time",
+        "datetime"
+    ];
 
     /**
      * Gets list of column data types that support scale by a driver.
      */
-    withScaleColumnTypes: ColumnType[] = [];
+    withScaleColumnTypes: ColumnType[] = [
+        "real",
+        "double",
+        "double precision",
+        "float",
+        "real",
+        "numeric",
+        "decimal",
+    ];
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
