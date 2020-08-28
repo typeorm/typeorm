@@ -277,7 +277,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         if (indexMetadata.isSpatial !== tableIndex.isSpatial)
                             return true;
 
-                        if (indexMetadata.isFulltext !== tableIndex.isFulltext)
+                        // Only MySQL supports fulltext indices
+                        if (this.connection.driver instanceof MysqlDriver && indexMetadata.isFulltext !== tableIndex.isFulltext)
                             return true;
 
                         if (indexMetadata.columns.length !== tableIndex.columnNames.length)
