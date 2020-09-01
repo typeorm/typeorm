@@ -464,7 +464,7 @@ export class Photo {
 }
 ```
 
-列类型是特定于数据库的。你可以设置数据库支持的任何列类型。有关支持的列类型的更多信息，请参见[此处](./docs/entities.md#column-types)。
+列类型是特定于数据库的。你可以设置数据库支持的任何列类型。有关支持的列类型的更多信息，请参见[此处](./docs/zh_CN/entities.md#列类型)。
 
 ### 创建数据库的连接
 
@@ -613,7 +613,7 @@ createConnection(/*...*/)
 
 `savedPhotos` 是一个 Photo 对象数组，其中包含从数据库加载的数据。
 
-了解更多有关 [EntityManager](./docs/working-with-entity-manager.md) 的信息。
+了解更多有关 [EntityManager](./docs/zh_CN/working-with-entity-manager.md) 的信息。
 
 ### 使用 Repositories
 
@@ -643,7 +643,7 @@ createConnection(/*...*/)
   .catch(error => console.log(error));
 ```
 
-了解更多有关 [Repository](./docs/working-with-repository.md) 的信息。
+了解更多有关 [Repository](./docs/zh_CN/working-with-repository.md) 的信息。
 
 ### 从数据库加载
 
@@ -869,7 +869,7 @@ createConnection(/*...*/)
   .catch(error => console.log(error));
 ```
 
-photos 包含来自数据库的 photos 数组，每个 photo 包含其 photo metadata。详细了解本文档中的[Find 选项](./docs/find-options.md)。
+photos 包含来自数据库的 photos 数组，每个 photo 包含其 photo metadata。详细了解本文档中的[Find 选项](./docs/zh_CN/find-options.md)。
 
 使用find选项很简单，但是如果你需要更复杂的查询，则应该使用 `QueryBuilder`。 `QueryBuilder` 使用更优雅的方式执行更复杂的查询：
 
@@ -1128,7 +1128,7 @@ let photos = await connection
 此查询选择所有 published 的 name 等于"My"或"Mishka"的 photos。它将从结果中的第 5 个（分页偏移）开始，并且仅选择 10 个结果（分页限制）。得到的结果将按 ID 降序排序。photo 的 albums 将被 left-joined，其元数据将被 inner joined。
 
 由于 QueryBuilder 的自由度更高，因此在项目中可能会大量的使用它。
-更多关于 QueryBuilder 的信息，[可查看](./docs/select-query-builder.md)。
+更多关于 QueryBuilder 的信息，[可查看](./docs/zh_CN/select-query-builder.md)。
 
 ## 示例
 
