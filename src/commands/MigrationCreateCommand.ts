@@ -59,7 +59,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                 } catch (err) { }
             }
 
-            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+            const path = (directory.startsWith("/") ? "" : process.cwd() + "/") + (directory ? (directory + "/") : "") + filename;
             await CommandUtils.createFile(path, fileContent);
             console.log(`Migration ${chalk.blue(path)} has been generated successfully.`);
 
