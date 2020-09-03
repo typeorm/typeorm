@@ -14,7 +14,7 @@ describe("github issues > #6636 migration issues with scale & precision", () => 
     after(() => closeTestingConnections(connections));
 
     it("should not create migrations columns with precision", () => {
-        Promise.all(connections.map(async (connection) => {
+        await Promise.all(connections.map(async (connection) => {
                 const sqlInMemory = await connection.driver.createSchemaBuilder().log();
                 expect(sqlInMemory.upQueries).to.eql([]);
                 expect(sqlInMemory.downQueries).to.eql([]);
