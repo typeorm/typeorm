@@ -139,7 +139,7 @@ export class ReturningResultsEntityUpdator {
 
             entities.forEach((entity, entityIndex) => {
                 this.queryRunner.manager.merge(metadata.target as any, generatedMaps[entityIndex], returningResult[entityIndex]);
-            })
+            });
         }
 
         entities.forEach((entity, entityIndex) => {
