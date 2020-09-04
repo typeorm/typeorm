@@ -511,6 +511,8 @@ export abstract class AbstractSqliteDriver implements Driver {
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult) {
+                // NOTE: When INSERT statement is successfully completed, the last inserted row ID is returned.
+                // see also: SqliteQueryRunner.query()
                 value = insertResult - entityNum + entityIndex + 1;
             // } else if (generatedColumn.generationStrategy === "uuid") {
             //     value = insertValue[generatedColumn.databaseName];

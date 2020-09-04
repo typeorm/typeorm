@@ -713,7 +713,7 @@ export class MysqlDriver implements Driver {
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
-                // When multiple rows is inserted by a single INSERT statement,
+                // NOTE: When multiple rows is inserted by a single INSERT statement,
                 // `insertId` is the value generated for the first inserted row only.
                 value = insertResult.insertId + entityIndex;
             // } else if (generatedColumn.generationStrategy === "uuid") {
