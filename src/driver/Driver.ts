@@ -175,7 +175,7 @@ export interface Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertResult: any): ObjectLiteral|undefined;
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any, entityIndex?: number, entityNum?: number): ObjectLiteral|undefined;
 
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
