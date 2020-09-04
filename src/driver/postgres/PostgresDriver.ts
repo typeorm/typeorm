@@ -912,6 +912,13 @@ export class PostgresDriver implements Driver {
         return true;
     }
 
+    /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
+        return false;
+    }
+
     get uuidGenerator(): string {
         return this.options.uuidExtension === "pgcrypto" ? "gen_random_uuid()" : "uuid_generate_v4()";
     }
