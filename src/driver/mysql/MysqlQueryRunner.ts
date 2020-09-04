@@ -1694,4 +1694,35 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         return result[0]["version"];
     }
 
+    /**
+     * Checks if column display width is by default.
+     */
+    protected isDefaultColumnWidth(table: Table, column: TableColumn, width: number): boolean {
+        // if table have metadata, we check if length is specified in column metadata
+        if (this.connection.hasMetadata(table.name)) {
+            const metadata = this.connection.getMetadata(table.name);
+            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+            if (columnMetadata && columnMetadata.width)
+                return false;
+        }
+
+        const defaultWidthForType = this.connection.driver.dataTypeDefaults
+            && this.connection.driver.dataTypeDefaults[column.type]
+            && this.connection.driver.dataTypeDefaults[column.type].width;
+
+        if (defaultWidthForType) {
+            // In MariaDB, the default widths of certain numeric types are 1 less than
+            // the usual defaults when the column is unsigned.
+            const isMariaDb = this.driver.options.type === "mariadb";
+            const typesWithReducedUnsignedDefault = ["int", "tinyint", "smallint", "mediumint"];
+            if (isMariaDb && column.unsigned && -1 < typesWithReducedUnsignedDefault.indexOf(column.type)) {
+                return (defaultWidthForType - 1) === width;
+            } else {
+                return defaultWidthForType === width;
+            }
+        }
+
+        return false;
+    }
+
 }
