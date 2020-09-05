@@ -709,7 +709,7 @@ export class EntityMetadata {
     }
 
     private getInverseEntityMetadata(value: any, relation: RelationMetadata): EntityMetadata {
-        const childEntityMetadata = relation.inverseEntityMetadata.childEntityMetadatas.find(metadata => 
+        const childEntityMetadata = relation.inverseEntityMetadata.childEntityMetadatas.find(metadata =>
             metadata.target === value.constructor
         );
         return childEntityMetadata ? childEntityMetadata : relation.inverseEntityMetadata;
@@ -794,7 +794,7 @@ export class EntityMetadata {
         } else {
             this.tableNameWithoutPrefix = namingStrategy.tableName(this.targetName, this.givenTableName);
 
-            if (this.connection.driver.maxAliasLength && this.connection.driver.maxAliasLength > 0 && this.tableNameWithoutPrefix.length > this.connection.driver.maxAliasLength) {
+            if (this.tableMetadataArgs.truncate && this.connection.driver.maxAliasLength && this.connection.driver.maxAliasLength > 0 && this.tableNameWithoutPrefix.length > this.connection.driver.maxAliasLength) {
                 this.tableNameWithoutPrefix = shorten(this.tableNameWithoutPrefix, { separator: "_", segmentLength: 3 });
             }
         }
