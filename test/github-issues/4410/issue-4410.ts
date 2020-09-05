@@ -14,7 +14,6 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
         schemaCreate: true,
         dropSchema: true,
     };
-    const testQuery = "SELECT COUNT(*) from username;";
 
     before(() => stub = sinon.stub(PlatformTools, "appendFileSync"));
     beforeEach(() => reloadTestingDatabases(connections));
@@ -29,8 +28,10 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
                 createLogger: () => new FileLogger("all"),
             });
         });
-        it("writes to the base path", async () => 
+        it("writes to the base path", async () =>
         Promise.all(connections.map(async (connection) => {
+            const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape('username')}`;
+
             await connection.query(testQuery);
             sinon.assert.calledWith(
                 stub,
@@ -51,6 +52,8 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
         });
         it("writes to the given filename", async () =>
         Promise.all(connections.map(async (connection) => {
+            const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape('username')}`;
+
             await connection.query(testQuery);
             sinon.assert.calledWith(
                 stub,
@@ -71,6 +74,8 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
         });
         it("writes to the given path", () =>
         Promise.all(connections.map(async (connection) => {
+            const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape('username')}`;
+
             await connection.query(testQuery);
             sinon.assert.calledWith(
                 stub,
