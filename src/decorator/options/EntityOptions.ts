@@ -43,8 +43,14 @@ export interface EntityOptions {
 
     /**
      * If set to 'true' this option disables Sqlite's default behaviour of secretly creating
-     * an integer primary key column named 'rowid' on table creation. 
-     * @see https://www.sqlite.org/withoutrowid.html. 
+     * an integer primary key column named 'rowid' on table creation.
+     * @see https://www.sqlite.org/withoutrowid.html.
      */
     withoutRowid?: boolean;
+
+    /**
+     * If set to `true` this option will use the table name as it is provided, otherwise it
+     * will truncate according to the current rules
+     */
+    noTruncate?: boolean;
 }
