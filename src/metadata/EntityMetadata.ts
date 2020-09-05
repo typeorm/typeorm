@@ -794,7 +794,7 @@ export class EntityMetadata {
         } else {
             this.tableNameWithoutPrefix = namingStrategy.tableName(this.targetName, this.givenTableName);
 
-            if (this.tableMetadataArgs.truncate && this.connection.driver.maxAliasLength && this.connection.driver.maxAliasLength > 0 && this.tableNameWithoutPrefix.length > this.connection.driver.maxAliasLength) {
+            if (this.tableMetadataArgs.noTruncate && this.connection.driver.maxAliasLength && this.connection.driver.maxAliasLength > 0 && this.tableNameWithoutPrefix.length > this.connection.driver.maxAliasLength) {
                 this.tableNameWithoutPrefix = shorten(this.tableNameWithoutPrefix, { separator: "_", segmentLength: 3 });
             }
         }

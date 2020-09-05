@@ -68,8 +68,8 @@ export interface TableMetadataArgs {
     withoutRowid?: boolean;
 
     /**
-     * If set to `false` this option will use the table name as it is provided, otherwise it
-     * will truncate according to the
+     * If set to `true` this option will use the table name as it is provided, otherwise it
+     * will truncate according to the current rules
      */
-    truncate: boolean;
+    noTruncate: boolean;
 }
