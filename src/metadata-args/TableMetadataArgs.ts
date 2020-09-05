@@ -71,5 +71,5 @@ export interface TableMetadataArgs {
      * If set to `true` this option will use the table name as it is provided, otherwise it
      * will truncate according to the current rules
      */
-    noTruncate: boolean;
+    noTruncate?: boolean;
 }
