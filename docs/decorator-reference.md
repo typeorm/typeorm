@@ -60,6 +60,7 @@ You can also specify some additional entity options:
 * `engine` - database engine to be set during table creation (works only in some databases).
 * `synchronize` - entities marked with `false` are skipped from schema updates.
 * `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`.
+* `exact` - determines if the `name` should not be modified and used exactly as it is specified
 
 Example:
 
@@ -169,7 +170,7 @@ By default the column name is generated from the name of the property.
 You can change it by specifying your own name.
 * `length: string|number` - Column type's length. For example, if you want to create `varchar(150)` type
 you specify column type and length options.
-* `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
+* `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html).
 * `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 * `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database.
 By default column is `nullable: false`.
