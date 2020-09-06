@@ -61,9 +61,16 @@ export interface TableMetadataArgs {
      */
     materialized?: boolean;
 
-     /**
+    /**
      * If set to 'true' this option disables Sqlite's default behaviour of secretly creating
-     * an integer primary key column named 'rowid' on table creation. 
+     * an integer primary key column named 'rowid' on table creation.
      */
-    withoutRowid?: boolean;   
+    withoutRowid?: boolean;
+
+    /**
+     * If set to `true`, the name of the table will NOT be changed in anyway. This is
+     * to counteract the truncation of the table by underscore delimiter and leaving a
+     * malformed table name when the full name is to remain as-is.
+     */
+    exact?: boolean;
 }

@@ -506,13 +506,17 @@ export abstract class QueryBuilder<Entity> {
      * schema name, otherwise returns escaped table name.
      */
     protected getTableName(tablePath: string): string {
-        return tablePath.split(".")
-            .map(i => {
-                // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
-                if (i === "")
-                    return i;
-                return this.escape(i);
-            }).join(".");
+        if(this.connection.driver instanceof OracleDriver) {
+            return tablePath;
+        } else {
+            return tablePath.split(".")
+                .map(i => {
+                    // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
+                    if (i === "")
+                        return i;
+                    return this.escape(i);
+                }).join(".");
+        }
     }
 
     /**
