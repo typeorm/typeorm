@@ -250,7 +250,7 @@ export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
                 {
                   name: 'created_at',
                   type: 'timestamp',
-                  default: 'now()',
+                  default: 'now()'
                 }
             ]
         }), true);
