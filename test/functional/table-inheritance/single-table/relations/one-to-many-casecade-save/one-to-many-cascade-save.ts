@@ -4,6 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases
 } from "../../../../../utils/test-utils";
+import {expect} from "chai";
 import {Connection} from "../../../../../../src/connection/Connection";
 import {Faculty} from "./entity/Faculty";
 import {Professor} from "./entity/Professor";
@@ -34,8 +35,8 @@ describe("table-inheritance > single-table > relations > one-to-many-cascade-sav
 
         const loadedFaculty = await connection.getRepository(Faculty).findOne() as Faculty;
 
-        loadedFaculty.staff[0].type.should.equal("PROFESSOR");
-        loadedFaculty.staff[1].type.should.equal("RESEARCHER");
+        expect(loadedFaculty.staff.find(staff => staff.type === "PROFESSOR")).to.not.be.undefined;
+        expect(loadedFaculty.staff.find(staff => staff.type === "RESEARCHER")).to.not.be.undefined;
     })));
 
 });
