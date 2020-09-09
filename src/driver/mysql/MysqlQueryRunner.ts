@@ -1711,11 +1711,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             && this.connection.driver.dataTypeDefaults[column.type].width;
 
         if (defaultWidthForType) {
-            // In MariaDB, the default widths of certain numeric types are 1 less than
+            // In MariaDB & MySQL 5.7, the default widths of certain numeric types are 1 less than
             // the usual defaults when the column is unsigned.
-            const isMariaDb = this.driver.options.type === "mariadb";
             const typesWithReducedUnsignedDefault = ["int", "tinyint", "smallint", "mediumint"];
-            if (isMariaDb && column.unsigned && -1 < typesWithReducedUnsignedDefault.indexOf(column.type)) {
+            if (column.unsigned && -1 < typesWithReducedUnsignedDefault.indexOf(column.type)) {
                 return (defaultWidthForType - 1) === width;
             } else {
                 return defaultWidthForType === width;
