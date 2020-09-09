@@ -27,7 +27,8 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             .option("n", {
                 alias: "name",
                 describe: "Name of the migration class.",
-                demand: true
+                demand: true,
+                type: "string"
             })
             .option("d", {
                 alias: "dir",
