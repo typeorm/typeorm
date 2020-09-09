@@ -195,7 +195,7 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 ```
 
 See, you don't need to write the queries on your own.
-The rule of thumb for generating migrations is that you generate them after "each" change you made to your models.
+The rule of thumb for generating migrations is that you generate them after "each" change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
 
 ## Connection option
 If you need to run/revert your migrations for another connection rather than the default, use the `-c` (alias for `--connection`) and pass the config name as an argument

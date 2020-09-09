@@ -47,6 +47,7 @@
     "oracle-orm"
   ],
   "devDependencies": {
+    "@sqltools/formatter": "^1.2.2",
     "@types/app-root-path": "^1.2.4",
     "@types/chai": "^4.1.2",
     "@types/chai-as-promised": "7.1.0",
