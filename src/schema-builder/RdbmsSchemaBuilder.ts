@@ -307,8 +307,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!table)
                 return;
 
+						// Checks created for simple-enum types are NOT metadata checks
+						// Do not consider simple-enum check constraints
+						// (indicated by ENUM prefix, see buildCreateColumnSql in simple-enum-compatible query runners)
             const oldChecks = table.checks.filter(tableCheck => {
-                return !metadata.checks.find(checkMetadata => checkMetadata.name === tableCheck.name);
+                return (tableCheck.name && tableCheck.name.startsWith("ENUM")) ? false : !metadata.checks.find(checkMetadata => checkMetadata.name === tableCheck.name);
             });
 
             if (oldChecks.length === 0)

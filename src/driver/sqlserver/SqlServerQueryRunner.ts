@@ -1678,7 +1678,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                             for (const checkConstraint of columnCheckConstraints) {
                                 if (isEnumRegexp.test(checkConstraint["definition"])) {
                                     // This is an enum constraint, make column into an enum
-                                    tableColumn.type = "simple-enum";
                                     tableColumn.enum = [];
                                     const enumValueRegexp = new RegExp("\\[" + tableColumn.name + "\\]='([^']+)'", "g");
                                     let result;
@@ -2089,9 +2088,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     protected buildCreateColumnSql(table: Table, column: TableColumn, skipIdentity: boolean, createDefault: boolean) {
         let c = `"${column.name}" ${this.connection.driver.createFullType(column)}`;
 
-        if (column.enum)
-            c += " CHECK( " + column.name + " IN (" + column.enum.map(val => "'" + val + "'").join(",") + ") )";
-
+        if (column.enum) {
+						const checkName = this.connection.namingStrategy.checkConstraintName(table.name, column.name);
+            c += `CONSTRAINT "ENUM_${checkName} CHECK(${column.name} IN (${column.enum.map(val => "'" + val + "'").join(",")}) )`;
+				}
         if (column.collation)
             c += " COLLATE " + column.collation;
 
@@ -2113,8 +2113,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             c += ` CONSTRAINT "${defaultName}" DEFAULT NEWSEQUENTIALID()`;
         }
         return c;
-    }
-
+		}
+		
     /**
      * Converts MssqlParameter into real mssql parameter type.
      */

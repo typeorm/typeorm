@@ -820,7 +820,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                     const enumMatch = sql.match(new RegExp("\"(" + tableColumn.name + ")\" varchar CHECK\\s*\\(\\s*\\1\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)"));
                     if (enumMatch) {
                         // This is an enum
-                        tableColumn.type = "simple-enum";
                         tableColumn.enum = enumMatch[2].substr(1, enumMatch[2].length - 2).split("','");
                     }
                 }
@@ -951,7 +950,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (skipPrimary && hasAutoIncrement)
             throw new Error(`Sqlite does not support AUTOINCREMENT on composite primary key`);
 
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, skipPrimary)).join(", ");
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(table, column, skipPrimary)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
 
         // need for `addColumn()` method, because it recreates table.
@@ -1089,7 +1088,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: TableColumn, skipPrimary?: boolean): string {
+    protected buildCreateColumnSql(table: Table, column: TableColumn, skipPrimary?: boolean): string {
         let c = "\"" + column.name + "\"";
         if (column instanceof ColumnMetadata) {
             c += " " + this.driver.normalizeType(column);
@@ -1097,8 +1096,10 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             c += " " + this.connection.driver.createFullType(column);
         }
 
-        if (column.enum)
-            c += " CHECK( " + column.name + " IN (" + column.enum.map(val => "'" + val + "'").join(",") + ") )";
+        if (column.enum) {
+						const checkName = this.connection.namingStrategy.checkConstraintName(table.name, column.name);
+            c += ` CONSTRAINT ENUM_${checkName} CHECK(${column.name}) IN (${column.enum.map(val => "'" + val + "'").join(",")}))`;
+				}
         if (column.isPrimary && !skipPrimary)
             c += " PRIMARY KEY";
         if (column.isGenerated === true && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
