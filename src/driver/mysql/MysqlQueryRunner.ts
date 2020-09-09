@@ -1296,6 +1296,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     tableColumn.name = dbColumn["COLUMN_NAME"];
                     tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase();
 
+                    tableColumn.zerofill = dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1;
                     tableColumn.unsigned = tableColumn.zerofill ? true : dbColumn["COLUMN_TYPE"].indexOf("unsigned") !== -1;
                     if (this.driver.withWidthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
                         const width = dbColumn["COLUMN_TYPE"].substring(dbColumn["COLUMN_TYPE"].indexOf("(") + 1, dbColumn["COLUMN_TYPE"].indexOf(")"));
@@ -1333,7 +1334,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     tableColumn.isPrimary = dbPrimaryKeys.some(dbPrimaryKey => {
                         return this.driver.buildTableName(dbPrimaryKey["TABLE_NAME"], undefined, dbPrimaryKey["TABLE_SCHEMA"]) === tableFullName && dbPrimaryKey["COLUMN_NAME"] === tableColumn.name;
                     });
-                    tableColumn.zerofill = dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1;
                     tableColumn.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
                     if (tableColumn.isGenerated)
                         tableColumn.generationStrategy = "increment";
@@ -1714,7 +1714,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // In MariaDB & MySQL 5.7, the default widths of certain numeric types are 1 less than
             // the usual defaults when the column is unsigned.
             const typesWithReducedUnsignedDefault = ["int", "tinyint", "smallint", "mediumint"];
-            if (column.unsigned && -1 < typesWithReducedUnsignedDefault.indexOf(column.type)) {
+            const needsAdjustment = typesWithReducedUnsignedDefault.indexOf(column.type) !== -1;
+            if (column.unsigned && needsAdjustment) {
                 return (defaultWidthForType - 1) === width;
             } else {
                 return defaultWidthForType === width;
