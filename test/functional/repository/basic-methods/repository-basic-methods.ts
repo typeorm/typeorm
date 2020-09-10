@@ -9,7 +9,7 @@ import {Question} from "./model/Question";
 import {Blog} from "./entity/Blog";
 import {Category} from "./entity/Category";
 import {DeepPartial} from "../../../../src/common/DeepPartial";
-import {EntitySchema} from "../../../../src";
+import {EntitySchema, Repository} from "../../../../src";
 
 describe("repository > basic methods", () => {
 
@@ -152,7 +152,7 @@ describe("repository > basic methods", () => {
         }));
 
         it("should create a new empty object if entity schema is used", () => connections.forEach(connection => {
-            const repository = connection.getRepository("User");
+            const repository = connection.getRepository("User") as Repository<User>;
             repository.create().should.be.eql({});
         }));
 

@@ -30,6 +30,7 @@ module.exports = {
             "error"
         ],
         "@typescript-eslint/type-annotation-spacing": "error",
+        "@typescript-eslint/no-redeclare": "error",
         "eqeqeq": [
             "error",
             "smart"
@@ -48,7 +49,6 @@ module.exports = {
         ],
         "id-match": "error",
         "no-eval": "error",
-        "no-redeclare": "error",
         "no-var": "error"
     }
 };

@@ -18,13 +18,13 @@ describe("github issues > #1014 Transaction doesn't rollback", () => {
 
         const testEntity = new TestEntity();
         testEntity.name = "Hello Test";
-        await connection.manager.save(testEntity);
+        await connection.manager.save(testEntity, { reload: true });
 
         let error: any;
         try {
             await connection.transaction(manager => {
                 return PromiseUtils.settle([
-                    manager.remove(TestEntity, { id: 1 }),
+                    manager.remove(testEntity),
                     Promise.reject(new Error()),
                     new Promise((resolve, reject) => reject(new Error())),
                 ]);
