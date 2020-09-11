@@ -4,7 +4,6 @@ import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryR
 import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
 import {SqliteDriver} from "./SqliteDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
-import {IsolationLevel} from "../types/IsolationLevel";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -80,13 +79,5 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
 
             await execute();
         });
-    }
-
-    async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        if ((this.connection.options as SqliteConnectionOptions).enableWAL === true) {
-            await this.query("PRAGMA journal_mode = WAL");
-        }
-
-        return super.startTransaction(isolationLevel);
     }
 }
