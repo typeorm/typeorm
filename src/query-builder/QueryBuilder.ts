@@ -8,7 +8,7 @@ import {DeleteQueryBuilder} from "./DeleteQueryBuilder";
 import {SoftDeleteQueryBuilder} from "./SoftDeleteQueryBuilder";
 import {InsertQueryBuilder} from "./InsertQueryBuilder";
 import {RelationQueryBuilder} from "./RelationQueryBuilder";
-import {ObjectType} from "../common/ObjectType";
+import {EntityTarget} from "../common/EntityTarget";
 import {Alias} from "./Alias";
 import {Brackets} from "./Brackets";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
@@ -187,17 +187,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update<T>(entity: ObjectType<T>, updateSet?: QueryDeepPartialEntity<T>): UpdateQueryBuilder<T>;
-
-    /**
-     * Creates UPDATE query for the given entity and applies given update values.
-     */
-    update<T>(entity: EntitySchema<T>, updateSet?: QueryDeepPartialEntity<T>): UpdateQueryBuilder<T>;
-
-    /**
-     * Creates UPDATE query for the given entity and applies given update values.
-     */
-    update(entity: Function|EntitySchema<Entity>|string, updateSet?: QueryDeepPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
+    update<Entity>(entity: EntityTarget<Entity>, updateSet?: QueryDeepPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query for the given table name and applies given update values.
@@ -207,7 +197,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query and applies given update values.
      */
-    update(entityOrTableNameUpdateSet?: string|Function|EntitySchema<any>|ObjectLiteral, maybeUpdateSet?: ObjectLiteral): UpdateQueryBuilder<any> {
+    update(entityOrTableNameUpdateSet?: EntityTarget<any>|ObjectLiteral, maybeUpdateSet?: ObjectLiteral): UpdateQueryBuilder<any> {
         const updateSet = maybeUpdateSet ? maybeUpdateSet : entityOrTableNameUpdateSet as ObjectLiteral|undefined;
         entityOrTableNameUpdateSet = entityOrTableNameUpdateSet instanceof EntitySchema ? entityOrTableNameUpdateSet.options.name : entityOrTableNameUpdateSet;
 
@@ -271,7 +261,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets entity's relation with which this query builder gonna work.
      */
-    relation<T>(entityTarget: ObjectType<T>|string, propertyPath: string): RelationQueryBuilder<T>;
+    relation<T>(entityTarget: EntityTarget<T>, propertyPath: string): RelationQueryBuilder<T>;
 
     /**
      * Sets entity's relation with which this query builder gonna work.
@@ -303,7 +293,7 @@ export abstract class QueryBuilder<Entity> {
      *
      * todo: move this method to manager? or create a shortcut?
      */
-    hasRelation<T>(target: ObjectType<T>|string, relation: string): boolean;
+    hasRelation<T>(target: EntityTarget<T>, relation: string): boolean;
 
     /**
      * Checks if given relations exist in the entity.
@@ -311,7 +301,7 @@ export abstract class QueryBuilder<Entity> {
      *
      * todo: move this method to manager? or create a shortcut?
      */
-    hasRelation<T>(target: ObjectType<T>|string, relation: string[]): boolean;
+    hasRelation<T>(target: EntityTarget<T>, relation: string[]): boolean;
 
     /**
      * Checks if given relation or relations exist in the entity.
@@ -319,7 +309,7 @@ export abstract class QueryBuilder<Entity> {
      *
      * todo: move this method to manager? or create a shortcut?
      */
-    hasRelation<T>(target: ObjectType<T>|string, relation: string|string[]): boolean {
+    hasRelation<T>(target: EntityTarget<T>, relation: string|string[]): boolean {
         const entityMetadata = this.connection.getMetadata(target);
         const relations = Array.isArray(relation) ? relation : [relation];
         return relations.every(relation => {
@@ -532,7 +522,7 @@ export abstract class QueryBuilder<Entity> {
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    protected createFromAlias(entityTarget: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName?: string): Alias {
+    protected createFromAlias(entityTarget: EntityTarget<any>|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName?: string): Alias {
 
         // if table has a metadata then find it to properly escape its properties
         // const metadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === tableName);
@@ -547,21 +537,25 @@ export abstract class QueryBuilder<Entity> {
             });
 
         } else {
-            let subQuery: string = "";
-            if (entityTarget instanceof Function) {
-                const subQueryBuilder: SelectQueryBuilder<any> = (entityTarget as any)(((this as any) as SelectQueryBuilder<any>).subQuery());
-                this.setParameters(subQueryBuilder.getParameters());
-                subQuery = subQueryBuilder.getQuery();
+            if (typeof entityTarget === "string") {
+                const isSubquery = entityTarget.substr(0, 1) === "(" && entityTarget.substr(-1) === ")";
 
-            } else {
-                subQuery = entityTarget;
+                return this.expressionMap.createAlias({
+                    type: "from",
+                    name: aliasName,
+                    tablePath: !isSubquery ? entityTarget as string : undefined,
+                    subQuery: isSubquery ? entityTarget : undefined,
+                });
             }
-            const isSubQuery = entityTarget instanceof Function || entityTarget.substr(0, 1) === "(" && entityTarget.substr(-1) === ")";
+
+            const subQueryBuilder: SelectQueryBuilder<any> = (entityTarget as any)(((this as any) as SelectQueryBuilder<any>).subQuery());
+            this.setParameters(subQueryBuilder.getParameters());
+            const subquery = subQueryBuilder.getQuery();
+
             return this.expressionMap.createAlias({
                 type: "from",
                 name: aliasName,
-                tablePath: isSubQuery === false ? entityTarget as string : undefined,
-                subQuery: isSubQuery === true ? subQuery : undefined,
+                subQuery: subquery
             });
         }
     }

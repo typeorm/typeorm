@@ -147,7 +147,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Saves one or many given entities.
      */
     save<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
-        return this.manager.save<T>(this.metadata.target as any, entityOrEntities as any, options);
+        return this.manager.save<Entity, T>(this.metadata.target as any, entityOrEntities as any, options);
     }
 
     /**
@@ -191,7 +191,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Records the delete date of one or many given entities.
      */
     softRemove<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
-        return this.manager.softRemove<T>(this.metadata.target as any, entityOrEntities as any, options);
+        return this.manager.softRemove<Entity, T>(this.metadata.target as any, entityOrEntities as any, options);
     }
 
     /**
@@ -218,7 +218,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Recovers one or many given entities.
      */
     recover<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
-        return this.manager.recover<T>(this.metadata.target as any, entityOrEntities as any, options);
+        return this.manager.recover<Entity, T>(this.metadata.target as any, entityOrEntities as any, options);
     }
 
     /**
