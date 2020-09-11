@@ -386,8 +386,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         // rename table
-        upQueries.push(new Query(`ALTER TABLE ${oldTable.name}" RENAME TO "${newTable.name}"`));
-        downQueries.push(new Query(`ALTER TABLE ${newTable.name}" RENAME TO "${oldTable.name}"`));
+        upQueries.push(new Query(`ALTER TABLE ${oldTable.name} RENAME TO "${newTable.name}"`));
+        downQueries.push(new Query(`ALTER TABLE ${newTable.name} RENAME TO "${oldTable.name}"`));
 
         // rename primary key constraint
         if (newTable.primaryColumns.length > 0) {
@@ -397,8 +397,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const newPkName = this.connection.namingStrategy.primaryKeyName(newTable, columnNames);
 
             // build queries
-            upQueries.push(new Query(`ALTER TABLE ${newTable.name}" RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`));
-            downQueries.push(new Query(`ALTER TABLE ${newTable.name}" RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`));
+            upQueries.push(new Query(`ALTER TABLE ${newTable.name} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`));
+            downQueries.push(new Query(`ALTER TABLE ${newTable.name} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`));
         }
 
         // rename unique constraints
@@ -407,8 +407,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(newTable, unique.columnNames);
 
             // build queries
-            upQueries.push(new Query(`ALTER TABLE ${newTable.name}" RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`));
-            downQueries.push(new Query(`ALTER TABLE ${newTable.name}" RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`));
+            upQueries.push(new Query(`ALTER TABLE ${newTable.name} RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`));
+            downQueries.push(new Query(`ALTER TABLE ${newTable.name} RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`));
 
             // replace constraint name
             unique.name = newUniqueName;
