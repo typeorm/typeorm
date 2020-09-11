@@ -56,11 +56,8 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
             };
 
             const handler = function (err: any, result: any) {
-
-                if (err) {
-                    if (err.toString().indexOf("SQLITE_BUSY:") !== -1 &&
-                        typeof options.busyErrorRetry === "number" &&
-                        options.busyErrorRetry) {
+                if (err && err.toString().indexOf("SQLITE_BUSY:") !== -1) {
+                    if (typeof options.busyErrorRetry === "number" && options.busyErrorRetry > 0) {
                         setTimeout(execute, options.busyErrorRetry);
                         return;
                     }
