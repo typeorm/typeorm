@@ -51,7 +51,7 @@ export class PlatformTools {
                 case "@sap/hana-client":
                     return require("@sap/hana-client");
 
-                case "@sap/hdb-pool":
+                case "hdb-pool":
                     return require("hdb-pool");
 
                 /**
