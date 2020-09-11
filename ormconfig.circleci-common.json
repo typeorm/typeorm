@@ -106,7 +106,7 @@
     "sid": "XE",
     "username": "system",
     "password": "oracle",
-    "logging": false,
+    "logging": true,
     "extra": {
       "connectString": "typeorm-oracle:1521/XE"
     }
