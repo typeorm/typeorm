@@ -1496,7 +1496,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds create foreign key sql.
      */
     protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): Query {
-        const columnNames = foreignKey.columnNames.map(column => `'${column}'`).join(", ");
+        const columnNames = foreignKey.columnNames.map(column => `${column}`).join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => column).join(",");
         let sql = `ALTER TABLE ${table.name} ADD CONSTRAINT ${foreignKey.name} FOREIGN KEY (${columnNames}) ` +
             `REFERENCES ${foreignKey.referencedTableName} (${referencedColumnNames})`;
