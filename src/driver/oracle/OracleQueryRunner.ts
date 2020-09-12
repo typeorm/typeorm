@@ -1511,7 +1511,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds drop foreign key sql.
      */
     protected dropForeignKeySql(table: Table, foreignKeyOrName: TableForeignKey|string): Query {
-        const foreignKeyName = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName.name?.toUpperCase() : foreignKeyOrName.toUpperCase();
+        const foreignKeyName = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName.name : foreignKeyOrName;
         return new Query(`ALTER TABLE ${table.name} DROP CONSTRAINT ${foreignKeyName}`);
     }
 
