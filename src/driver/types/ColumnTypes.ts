@@ -48,7 +48,8 @@ export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
     |"timestamp" // mysql, postgres, mssql, oracle, cockroachdb
     |"timestamp without time zone" // postgres, cockroachdb
     |"timestamp with time zone" // postgres, oracle, cockroachdb
-    |"timestamp with local time zone"; // oracle
+    |"timestamp with local time zone" // oracle
+    |"sysdate"; //oracle
 
 /**
  * Column types where column length is used.

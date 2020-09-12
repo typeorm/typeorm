@@ -101,6 +101,7 @@ export class OracleDriver implements Driver {
         "timestamp",
         "timestamp with time zone",
         "timestamp with local time zone",
+        "sysdate",
         "interval year to month",
         "interval day to second",
         "bfile",
@@ -151,9 +152,9 @@ export class OracleDriver implements Driver {
      * Column types are driver dependant.
      */
     mappedDataTypes: MappedColumnTypes = {
-        createDate: "timestamp",
+        createDate: "sysdate",
         createDateDefault: "CURRENT_TIMESTAMP",
-        updateDate: "timestamp",
+        updateDate: "sysdate",
         updateDateDefault: "CURRENT_TIMESTAMP",
         deleteDate: "timestamp",
         deleteDateNullable: true,
