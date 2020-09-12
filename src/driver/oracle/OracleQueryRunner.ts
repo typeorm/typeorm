@@ -241,7 +241,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const sql = `SELECT COLUMN_NAME FROM USER_TAB_COLS WHERE TABLE_NAME = '${tableName}' AND COLUMN_NAME = '${columnName}'`;
+        const sql = `SELECT COLUMN_NAME FROM USER_TAB_COLS WHERE TABLE_NAME = '${tableName.toUpperCase()}' AND COLUMN_NAME = '${columnName.toUpperCase()}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
