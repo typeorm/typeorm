@@ -842,7 +842,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const primaryColumns = clonedTable.primaryColumns;
         if (primaryColumns.length > 0) {
             const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
-            const columnNamesString = primaryColumns.map(column => `${column.name}`).join(", ");
+            const columnNamesString = primaryColumns.map(column => `'${column.name}'`).join(", ");
             upQueries.push(new Query(`ALTER TABLE ${table.name} DROP CONSTRAINT ${pkName}`));
             downQueries.push(new Query(`ALTER TABLE ${table.name} ADD CONSTRAINT ${pkName} PRIMARY KEY (${columnNamesString})`));
         }
@@ -853,7 +853,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             .forEach(column => column.isPrimary = true);
 
         const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, columnNames);
-        const columnNamesString = columnNames.map(columnName => `${columnName}`).join(", ");
+        const columnNamesString = columnNames.map(columnName => `'${columnName}'`).join(", ");
         upQueries.push(new Query(`ALTER TABLE ${table.name} ADD CONSTRAINT ${pkName} PRIMARY KEY (${columnNamesString})`));
         downQueries.push(new Query(`ALTER TABLE ${table.name} DROP CONSTRAINT ${pkName}`));
 
@@ -1131,7 +1131,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!hasTable)
             return Promise.resolve([]);
 
-        const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
+        const viewNamesString = viewNames.map(name => `'${name}'`).join(", ");
         let query = `SELECT T.* FROM ${this.getTypeormMetadataTableName()} T INNER JOIN USER_VIEWS V ON V.VIEW_NAME = T.name WHERE T.type = 'VIEW'`;
         if (viewNamesString.length > 0)
             query += ` AND T.name IN (${viewNamesString})`;
@@ -1154,7 +1154,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             return [];
 
         // load tables, columns, indices and foreign keys
-        const tableNamesString = tableNames.map(name => name).join(", ");
+        const tableNamesString = tableNames.map(name => `'${name}'`).join(", ");
         const tablesSql = `SELECT * FROM USER_TABLES WHERE TABLE_NAME IN (${tableNamesString})`;
         const columnsSql = `SELECT * FROM USER_TAB_COLS WHERE TABLE_NAME IN (${tableNamesString})`;
 
@@ -1448,7 +1448,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
         const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
-        const columnNamesString = columnNames.map(columnName => `${columnName}`).join(", ");
+        const columnNamesString = columnNames.map(columnName => `'${columnName}'`).join(", ");
         return new Query(`ALTER TABLE ${table.name} ADD CONSTRAINT ${primaryKeyName} PRIMARY KEY (${columnNamesString})`);
     }
 
@@ -1465,7 +1465,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds create unique constraint sql.
      */
     protected createUniqueConstraintSql(table: Table, uniqueConstraint: TableUnique): Query {
-        const columnNames = uniqueConstraint.columnNames.map(column => column).join(", ");
+        const columnNames = uniqueConstraint.columnNames.map(column => `'${column}'`).join(", ");
         return new Query(`ALTER TABLE ${table.name} ADD CONSTRAINT ${uniqueConstraint.name} UNIQUE (${columnNames})`);
     }
 
@@ -1496,7 +1496,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds create foreign key sql.
      */
     protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): Query {
-        const columnNames = foreignKey.columnNames.map(column => column).join(", ");
+        const columnNames = foreignKey.columnNames.map(column => `'${column}'`).join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => column).join(",");
         let sql = `ALTER TABLE ${table.name} ADD CONSTRAINT ${foreignKey.name} FOREIGN KEY (${columnNames}) ` +
             `REFERENCES ${foreignKey.referencedTableName} (${referencedColumnNames})`;
