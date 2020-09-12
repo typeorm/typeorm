@@ -339,7 +339,7 @@ export class OracleDriver implements Driver {
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return `"${columnName}"`;
+        return columnName.toUpperCase();
     }
 
     /**
@@ -347,7 +347,7 @@ export class OracleDriver implements Driver {
      * Oracle does not support table schemas. One user can have only one schema.
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
-        return tableName;
+        return tableName.toUpperCase();
     }
 
     /**

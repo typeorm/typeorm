@@ -60,6 +60,8 @@ You can also specify some additional entity options:
 * `engine` - database engine to be set during table creation (works only in some databases).
 * `synchronize` - entities marked with `false` are skipped from schema updates.
 * `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`.
+* `exact` - use full table name. If not specified, truncating of table will be done as per Driver `maxAliasLength` value.
+
 
 Example:
 
@@ -73,7 +75,8 @@ Example:
     orderBy: {
         name: "ASC",
         id: "DESC"
-    }
+    },
+    exact: false,
 })
 export class User {
 ```

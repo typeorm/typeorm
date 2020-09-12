@@ -231,7 +231,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const sql = `SELECT "TABLE_NAME" FROM "USER_TABLES" WHERE "TABLE_NAME" = '${tableName}'`;
+        const sql = `SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME = '${tableName.toUpperCase()}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -241,7 +241,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const sql = `SELECT "COLUMN_NAME" FROM "USER_TAB_COLS" WHERE "TABLE_NAME" = '${tableName}' AND "COLUMN_NAME" = '${columnName}'`;
+        const sql = `SELECT COLUMN_NAME FROM USER_TAB_COLS WHERE TABLE_NAME = '${tableName.toUpperCase()}' AND COLUMN_NAME = '${columnName.toUpperCase()}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -250,7 +250,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new database.
      */
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
-        await this.query(`CREATE DATABASE IF NOT EXISTS "${database}"`);
+        await this.query(`CREATE DATABASE IF NOT EXISTS ${database}`);
     }
 
     /**
@@ -1131,10 +1131,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!hasTable)
             return Promise.resolve([]);
 
-        const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
-        let query = `SELECT "T".* FROM "${this.getTypeormMetadataTableName()}" "T" INNER JOIN "USER_VIEWS" "V" ON "V"."VIEW_NAME" = "T"."name" WHERE "T"."type" = 'VIEW'`;
+        const viewNamesString = viewNames.map(name => "'" + name.toUpperCase() + "'").join(", ");
+        let query = `SELECT T.* FROM ${this.getTypeormMetadataTableName()} T INNER JOIN USER_VIEWS V ON V.VIEW_NAME = T.name WHERE T.type = 'VIEW'`;
         if (viewNamesString.length > 0)
-            query += ` AND "T"."name" IN (${viewNamesString})`;
+            query += ` AND T.name IN (${viewNamesString})`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
@@ -1154,29 +1154,29 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             return [];
 
         // load tables, columns, indices and foreign keys
-        const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
-        const tablesSql = `SELECT * FROM "USER_TABLES" WHERE "TABLE_NAME" IN (${tableNamesString})`;
-        const columnsSql = `SELECT * FROM "USER_TAB_COLS" WHERE "TABLE_NAME" IN (${tableNamesString})`;
+        const tableNamesString = tableNames.map(name => "'" + name.toUpperCase() + "'").join(", ");
+        const tablesSql = `SELECT * FROM USER_TABLES WHERE TABLE_NAME IN (${tableNamesString})`;
+        const columnsSql = `SELECT * FROM USER_TAB_COLS WHERE TABLE_NAME IN (${tableNamesString})`;
 
-        const indicesSql = `SELECT "IND"."INDEX_NAME", "IND"."TABLE_NAME", "IND"."UNIQUENESS", ` +
-            `LISTAGG ("COL"."COLUMN_NAME", ',') WITHIN GROUP (ORDER BY "COL"."COLUMN_NAME") AS "COLUMN_NAMES" ` +
-            `FROM "USER_INDEXES" "IND" ` +
-            `INNER JOIN "USER_IND_COLUMNS" "COL" ON "COL"."INDEX_NAME" = "IND"."INDEX_NAME" ` +
-            `LEFT JOIN "USER_CONSTRAINTS" "CON" ON "CON"."CONSTRAINT_NAME" = "IND"."INDEX_NAME" ` +
-            `WHERE "IND"."TABLE_NAME" IN (${tableNamesString}) AND "CON"."CONSTRAINT_NAME" IS NULL ` +
-            `GROUP BY "IND"."INDEX_NAME", "IND"."TABLE_NAME", "IND"."UNIQUENESS"`;
+        const indicesSql = `SELECT IND.INDEX_NAME, IND.TABLE_NAME, IND.UNIQUENESS, ` +
+            `LISTAGG (COL.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY COL.COLUMN_NAME) AS COLUMN_NAMES ` +
+            `FROM USER_INDEXES IND ` +
+            `INNER JOIN USER_IND_COLUMNS COL ON COL.INDEX_NAME = IND.INDEX_NAME ` +
+            `LEFT JOIN USER_CONSTRAINTS CON ON CON.CONSTRAINT_NAME = IND.INDEX_NAME ` +
+            `WHERE IND.TABLE_NAME IN (${tableNamesString}) AND CON.CONSTRAINT_NAME IS NULL ` +
+            `GROUP BY IND.INDEX_NAME, IND.TABLE_NAME, IND.UNIQUENESS`;
 
-        const foreignKeysSql = `SELECT "C"."CONSTRAINT_NAME", "C"."TABLE_NAME", "COL"."COLUMN_NAME", "REF_COL"."TABLE_NAME" AS "REFERENCED_TABLE_NAME", ` +
-            `"REF_COL"."COLUMN_NAME" AS "REFERENCED_COLUMN_NAME", "C"."DELETE_RULE" AS "ON_DELETE" ` +
-            `FROM "USER_CONSTRAINTS" "C" ` +
-            `INNER JOIN "USER_CONS_COLUMNS" "COL" ON "COL"."OWNER" = "C"."OWNER" AND "COL"."CONSTRAINT_NAME" = "C"."CONSTRAINT_NAME" ` +
-            `INNER JOIN "USER_CONS_COLUMNS" "REF_COL" ON "REF_COL"."OWNER" = "C"."R_OWNER" AND "REF_COL"."CONSTRAINT_NAME" = "C"."R_CONSTRAINT_NAME" AND "REF_COL"."POSITION" = "COL"."POSITION" ` +
-            `WHERE "C"."TABLE_NAME" IN (${tableNamesString}) AND "C"."CONSTRAINT_TYPE" = 'R'`;
+        const foreignKeysSql = `SELECT C.CONSTRAINT_NAME, C.TABLE_NAME, COL.COLUMN_NAME, REF_COL.TABLE_NAME AS REFERENCED_TABLE_NAME, ` +
+            `REF_COL.COLUMN_NAME AS REFERENCED_COLUMN_NAME, C.DELETE_RULE AS ON_DELETE ` +
+            `FROM USER_CONSTRAINTS C ` +
+            `INNER JOIN USER_CONS_COLUMNS COL ON COL.OWNER = C.OWNER AND COL.CONSTRAINT_NAME = C.CONSTRAINT_NAME ` +
+            `INNER JOIN USER_CONS_COLUMNS REF_COL ON REF_COL.OWNER = C.R_OWNER AND REF_COL.CONSTRAINT_NAME = C.R_CONSTRAINT_NAME AND REF_COL.POSITION = COL.POSITION ` +
+            `WHERE C.TABLE_NAME IN (${tableNamesString}) AND C.CONSTRAINT_TYPE = 'R'`;
 
-        const constraintsSql = `SELECT "C"."CONSTRAINT_NAME", "C"."CONSTRAINT_TYPE", "C"."TABLE_NAME", "COL"."COLUMN_NAME", "C"."SEARCH_CONDITION" ` +
-            `FROM "USER_CONSTRAINTS" "C" ` +
-            `INNER JOIN "USER_CONS_COLUMNS" "COL" ON "COL"."OWNER" = "C"."OWNER" AND "COL"."CONSTRAINT_NAME" = "C"."CONSTRAINT_NAME" ` +
-            `WHERE "C"."TABLE_NAME" IN (${tableNamesString}) AND "C"."CONSTRAINT_TYPE" IN ('C', 'U', 'P') AND "C"."GENERATED" = 'USER NAME'`;
+        const constraintsSql = `SELECT C.CONSTRAINT_NAME, C.CONSTRAINT_TYPE, C.TABLE_NAME, COL.COLUMN_NAME, C.SEARCH_CONDITION ` +
+            `FROM USER_CONSTRAINTS C ` +
+            `INNER JOIN USER_CONS_COLUMNS COL ON COL.OWNER = C.OWNER AND COL.CONSTRAINT_NAME = C.CONSTRAINT_NAME ` +
+            `WHERE C.TABLE_NAME IN (${tableNamesString}) AND C.CONSTRAINT_TYPE IN ('C', 'U', 'P') AND C.GENERATED = 'USER NAME'`;
 
         const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbConstraints]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
