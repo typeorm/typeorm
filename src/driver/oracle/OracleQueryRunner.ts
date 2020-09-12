@@ -1131,7 +1131,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!hasTable)
             return Promise.resolve([]);
 
-        const viewNamesString = viewNames.map(name => name.toUpperCase()).join(", ");
+        const viewNamesString = viewNames.map(name => `'${name.toUpperCase()}'`).join(", ");
         let query = `SELECT T.* FROM ${this.getTypeormMetadataTableName()} T INNER JOIN USER_VIEWS V ON V.VIEW_NAME = T.name WHERE T.type = 'VIEW'`;
         if (viewNamesString.length > 0)
             query += ` AND T.name IN (${viewNamesString})`;
@@ -1349,7 +1349,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (table.foreignKeys.length > 0 && createForeignKeys) {
             const foreignKeysSql = table.foreignKeys.map(fk => {
-                const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
+                const columnNames = fk.columnNames.map(columnName => `${columnName}`).join(", ");
                 if (!fk.name)
                     fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `${columnName}`).join(", ");
@@ -1387,9 +1387,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected createViewSql(view: View): Query {
         const materializedClause = view.materialized ? "MATERIALIZED " : "";
         if (typeof view.expression === "string") {
-            return new Query(`CREATE ${materializedClause}VIEW "${view.name}" AS ${view.expression}`);
+            return new Query(`CREATE ${materializedClause}VIEW ${view.name} AS ${view.expression}`);
         } else {
-            return new Query(`CREATE ${materializedClause}VIEW "${view.name}" AS ${view.expression(this.connection).getQuery()}`);
+            return new Query(`CREATE ${materializedClause}VIEW ${view.name} AS ${view.expression(this.connection).getQuery()}`);
         }
     }
 
@@ -1409,7 +1409,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropViewSql(viewOrPath: View|string): Query {
         const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
-        return new Query(`DROP VIEW "${viewName}"`);
+        return new Query(`DROP VIEW ${viewName}`);
     }
 
     /**
@@ -1432,7 +1432,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames.map(columnName => `${columnName}`).join(", ");
-        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table.name}" (${columns})`);
+        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX ${index.name} ON ${table.name} (${columns})`);
     }
 
     /**
@@ -1440,7 +1440,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropIndexSql(indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        return new Query(`DROP INDEX "${indexName}"`);
+        return new Query(`DROP INDEX ${indexName}`);
     }
 
     /**
@@ -1497,7 +1497,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): Query {
         const columnNames = foreignKey.columnNames.map(column => column).join(", ");
-        const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
+        const referencedColumnNames = foreignKey.referencedColumnNames.map(column => column).join(",");
         let sql = `ALTER TABLE ${table.name} ADD CONSTRAINT ${foreignKey.name} FOREIGN KEY (${columnNames}) ` +
             `REFERENCES ${foreignKey.referencedTableName} (${referencedColumnNames})`;
         // Oracle does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
