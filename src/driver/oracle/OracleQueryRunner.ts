@@ -1104,11 +1104,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     async clearDatabase(): Promise<void> {
         await this.startTransaction();
         try {
-            const dropViewsQuery = `SELECT 'DROP VIEW ' || VIEW_NAME || ' AS query FROM USER_VIEWS`;
+            const dropViewsQuery = `SELECT 'DROP VIEW "' || VIEW_NAME || '"' AS "query" FROM "USER_VIEWS"`;
             const dropViewQueries: ObjectLiteral[] = await this.query(dropViewsQuery);
             await Promise.all(dropViewQueries.map(query => this.query(query["query"])));
 
-            const dropTablesQuery = `SELECT 'DROP TABLE ' || TABLE_NAME || ' CASCADE CONSTRAINTS' AS query FROM USER_TABLES`;
+            const dropTablesQuery = `SELECT 'DROP TABLE "' || TABLE_NAME || '" CASCADE CONSTRAINTS' AS "query" FROM "USER_TABLES"`;
             const dropTableQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
             await Promise.all(dropTableQueries.map(query => this.query(query["query"])));
             await this.commitTransaction();
