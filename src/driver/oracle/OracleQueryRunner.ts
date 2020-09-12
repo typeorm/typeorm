@@ -1132,7 +1132,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             return Promise.resolve([]);
 
         const viewNamesString = viewNames.map(name => `'${name.toUpperCase()}'`).join(", ");
-        let query = `SELECT T.* FROM ${this.getTypeormMetadataTableName()} T INNER JOIN USER_VIEWS V ON V.VIEW_NAME = T.name WHERE T.type = 'VIEW'`;
+        let query = `SELECT T.* FROM ${this.getTypeormMetadataTableName().toUpperCase()} T INNER JOIN USER_VIEWS V ON V.VIEW_NAME = T.name WHERE T.type = 'VIEW'`;
         if (viewNamesString.length > 0)
             query += ` AND T.name IN (${viewNamesString})`;
         const dbViews = await this.query(query);
