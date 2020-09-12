@@ -1497,7 +1497,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): Query {
         const columnNames = foreignKey.columnNames.map(column => `${column.toUpperCase()}`).join(", ");
-        const referencedColumnNames = foreignKey.referencedColumnNames.map(column => column).join(",");
+        const referencedColumnNames = foreignKey.referencedColumnNames.map(column => column.toUpperCase()).join(",");
         let sql = `ALTER TABLE ${table.name} ADD CONSTRAINT ${foreignKey.name} FOREIGN KEY (${columnNames}) ` +
             `REFERENCES ${foreignKey.referencedTableName} (${referencedColumnNames})`;
         // Oracle does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
@@ -1511,7 +1511,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds drop foreign key sql.
      */
     protected dropForeignKeySql(table: Table, foreignKeyOrName: TableForeignKey|string): Query {
-        const foreignKeyName = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName.name : foreignKeyOrName;
+        const foreignKeyName = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName.name?.toUpperCase() : foreignKeyOrName.toUpperCase();
         return new Query(`ALTER TABLE ${table.name} DROP CONSTRAINT ${foreignKeyName}`);
     }
 
@@ -1519,7 +1519,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds a query for create column.
      */
     protected buildCreateColumnSql(column: TableColumn) {
-        let c = `${column.name} ` + this.connection.driver.createFullType(column);
+        let c = `${column.name} ` + this.connection.driver.createFullType(column).toUpperCase();
         if (column.charset)
             c += " CHARACTER SET " + column.charset;
         if (column.collation)
