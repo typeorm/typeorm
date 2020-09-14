@@ -21,7 +21,7 @@ import {ColumnType, PromiseUtils} from "../../index";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
-import { VersionUtils } from "../../util/VersionUtils";
+import {VersionUtils} from "../../util/VersionUtils";
 
 /**
  * Runs queries on a single mysql database connection.
