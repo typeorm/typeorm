@@ -1320,8 +1320,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.default = `'${dbColumn["COLUMN_DEFAULT"]}'`;
                     }
 
-                    if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
-                        tableColumn.onUpdate = dbColumn["EXTRA"].substring(dbColumn["EXTRA"].indexOf("on update") + 10);
+                    if (dbColumn["EXTRA"].toLowerCase().indexOf("on update") !== -1) {
+                        tableColumn.onUpdate = dbColumn["EXTRA"].substring(dbColumn["EXTRA"].toLowerCase().indexOf("on update") + 10);
                     }
 
                     if (dbColumn["GENERATION_EXPRESSION"]) {
