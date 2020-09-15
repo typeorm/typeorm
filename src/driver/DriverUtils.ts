@@ -45,8 +45,11 @@ export class DriverUtils {
      *
      * @return An alias allowing to select/transform the target `column`.
      */
-    static buildColumnAlias({ maxAliasLength }: Driver, alias: string, column: string): string {
-        const columnAliasName = alias + "_" + column;
+    static buildColumnAlias({ maxAliasLength, options }: Driver, alias: string, column: string): string {
+        let columnAliasName = alias + "_" + column;
+        if(options.type === "oracle") {
+            columnAliasName = columnAliasName.toUpperCase();
+        }
 
         if (maxAliasLength && maxAliasLength > 0 && columnAliasName.length > maxAliasLength) {
             return hash(columnAliasName, { length: maxAliasLength });

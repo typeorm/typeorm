@@ -1747,12 +1747,18 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     selectionPath = `${asText}(${selectionPath})`;
                 }
 
-                if (this.connection.driver instanceof PostgresDriver)
+                if(this.connection.driver instanceof OracleDriver) {
+                    selectionPath = selectionPath.toUpperCase();
+                }
+
+                if (this.connection.driver instanceof PostgresDriver) {
                     // cast to JSON to trigger parsing in the driver
                     selectionPath = `ST_AsGeoJSON(${selectionPath})::json`;
+                }
 
-                if (this.connection.driver instanceof SqlServerDriver)
+                if (this.connection.driver instanceof SqlServerDriver) {
                     selectionPath = `${selectionPath}.ToString()`;
+                }
             }
             return {
                 selection: selectionPath,
@@ -1996,7 +2002,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 query: queryId,
                 duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
             }, queryRunner);
-            if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
+            if (savedQueryResultCacheOptions?.result && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
                 return JSON.parse(savedQueryResultCacheOptions.result);
         }
 

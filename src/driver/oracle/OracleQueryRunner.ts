@@ -1519,7 +1519,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds a query for create column.
      */
     protected buildCreateColumnSql(column: TableColumn) {
-        let c = `"${column.name}" ` + this.connection.driver.createFullType(column);
+        let c = `${column.name.toUpperCase()} ` + this.connection.driver.createFullType(column);
         if (column.charset)
             c += " CHARACTER SET " + column.charset;
         if (column.collation)

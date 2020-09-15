@@ -3,7 +3,7 @@ import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryG
 import {Column} from "../../../../src/decorator/columns/Column";
 
 @Entity()
-export class User {
+export class UserCache {
 
     @PrimaryGeneratedColumn()
     id: number;

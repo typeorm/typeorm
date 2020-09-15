@@ -11,7 +11,7 @@ import {QueryResultCache} from "../../../../src/cache/QueryResultCache";
 import {QueryResultCacheOptions} from "../../../../src/cache/QueryResultCacheOptions";
 
 /**
- * Caches query result into current database, into separate table called "mock-query-result-cache".
+ * Caches query result into current database, into separate table called "mockqueryresultcache".
  */
 export class MockQueryResultCache implements QueryResultCache {
 
@@ -29,7 +29,7 @@ export class MockQueryResultCache implements QueryResultCache {
 
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
         const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
-        const cacheTableName = cacheOptions.tableName || "mock-query-result-cache";
+        const cacheTableName = cacheOptions.tableName || "mockqueryresultcache";
 
         this.queryResultCacheTable = this.connection.driver.buildTableName(cacheTableName, options.schema, options.database);
     }

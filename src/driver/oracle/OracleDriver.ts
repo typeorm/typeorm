@@ -339,7 +339,7 @@ export class OracleDriver implements Driver {
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return columnName.toUpperCase();
+        return columnName;
     }
 
     /**
