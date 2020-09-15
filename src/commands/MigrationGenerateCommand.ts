@@ -92,7 +92,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     downQuery.query = MigrationGenerateCommand.prettifyQuery(downQuery.query);
                 });
             }
-            
+
             const upSqls: string[] = [], downSqls: string[] = [];
 
             // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
@@ -178,7 +178,7 @@ ${downSqls.join(`
     }
 
     /**
-     * 
+     *
      */
     protected static prettifyQuery(query: string) {
         const formattedQuery = format(query, { indent: "    " });

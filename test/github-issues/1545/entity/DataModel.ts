@@ -1,6 +1,6 @@
-import { Entity, ManyToOne, JoinColumn, Column } from "../../../../src/index";
-import { MainModel } from "./MainModel";
-import { ValidationModel } from "./ValidationModel";
+import {Column, Entity, JoinColumn, ManyToOne} from "../../../../src/index";
+import {MainModel} from "./MainModel";
+import {ValidationModel} from "./ValidationModel";
 
 @Entity()
 export class DataModel {
