@@ -31,7 +31,7 @@ describe("github issues > #6714 Migration:generate issue with onUpdate using mar
     });
     it("recognizing on update changes", async () => {
         // this connection create database with a Session entity
-        await createTestingConnections({
+        const baseConnections = await createTestingConnections({
             entities: [baseEntity],
             schemaCreate: true, // create the database
             dropSchema: true,
@@ -53,6 +53,7 @@ describe("github issues > #6714 Migration:generate issue with onUpdate using mar
                 expect(syncQueries.upQueries.length).not.to.be.eql(0);
             })
         );
+        await closeTestingConnections(baseConnections);
         await closeTestingConnections(connections);
     });
 });
