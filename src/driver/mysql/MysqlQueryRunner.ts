@@ -1320,7 +1320,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.default = `'${dbColumn["COLUMN_DEFAULT"]}'`;
                     }
 
-                    if (dbColumn["EXTRA"].toLowerCase().indexOf("on update") !== -1) {
+                    if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
                         // New versions of MariaDB return expressions in lowercase.  We need to set it in
                         // uppercase so the comparison in MysqlDriver#compareExtraValues does not fail.
                         tableColumn.onUpdate = dbColumn["EXTRA"].substring(dbColumn["EXTRA"].indexOf("on update") + 10).toUpperCase();
