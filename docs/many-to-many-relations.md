@@ -175,6 +175,7 @@ const questions = await connection
 ```
 
 With eager loading enabled on a relation you don't have to specify relation or join it - it will ALWAYS be loaded automatically.
+If you use `QueryBuilder` eager relations are disabled.
 
 ## bi-directional relations
 
