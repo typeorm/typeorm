@@ -5,6 +5,7 @@
   - [`mysql`/`mariadb`](#mysql/mariadb)
   - [`postgres`/`cockroachdb`连接选项](#postgres/cockroachdb连接选项)
   - [`sqlite`](#sqlite)
+  - [`better-sqlite3`](#better-sqlite3)
   - [`cordova`](#cordova)
   - [`react-native`](#react-native)
   - [`nativescript`](#nativescript)
@@ -20,7 +21,7 @@
 
 ## 常用的连接选项
 
-- `type` - 数据库类型。你必须指定要使用的数据库引擎。该值可以是"mysql"，"postgres"，"mariadb"，"sqlite"，"cordova"，"nativescript"，"oracle"，"mssql"，"mongodb"，"sqljs"，"react-native"。此选项是**必需**的。
+- `type` - 数据库类型。你必须指定要使用的数据库引擎。该值可以是"mysql"，"postgres"，"mariadb"，"sqlite", "better-sqlite3"，"cordova"，"nativescript"，"oracle"，"mssql"，"mongodb"，"sqljs"，"react-native"。此选项是**必需**的。
 
 - `name` - 连接名。 在使用 `getConnection(name: string)`
   或 `ConnectionManager.get(name: string)`时候需要用到。不同连接的连接名称不能相同，它们都必须是唯一的。如果没有给出连接名称，那么它将被设置为"default"。
@@ -127,6 +128,14 @@
 ## `sqlite`
 
 - `database` - 数据库路径。 例如 "./mydb.sql"
+
+## `better-sqlite3`
+
+* `database` - 数据库路径。 例如 "./mydb.sql"
+
+* `statementCacheSize` - Sqlite 查询 Statement 缓存大小。默认100
+
+* `prepareDatabase` - 在数据库投入使用前运行的函数。你可以在这里访问到better-sqlite3原始数据库对象。
 
 ## `cordova`
 

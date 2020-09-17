@@ -8,7 +8,7 @@ import {TreeType} from "../../metadata/types/TreeTypes";
  * @TreeParent decorator must be used in tree entities.
  * TreeRepository can be used to manipulate with tree entities.
  */
-export function Tree(type: TreeType): Function {
+export function Tree(type: TreeType): ClassDecorator {
     return function (target: Function) {
 
         getMetadataArgsStorage().trees.push({

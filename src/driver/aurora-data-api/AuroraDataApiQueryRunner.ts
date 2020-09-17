@@ -1623,4 +1623,26 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         return c;
     }
 
+    /**
+     * Checks if column display width is by default.
+     */
+    protected isDefaultColumnWidth(table: Table, column: TableColumn, width: number): boolean {
+        // if table have metadata, we check if length is specified in column metadata
+        if (this.connection.hasMetadata(table.name)) {
+            const metadata = this.connection.getMetadata(table.name);
+            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+            if (columnMetadata && columnMetadata.width)
+                return false;
+        }
+
+        const defaultWidthForType = this.connection.driver.dataTypeDefaults
+            && this.connection.driver.dataTypeDefaults[column.type]
+            && this.connection.driver.dataTypeDefaults[column.type].width;
+
+        if (defaultWidthForType) {
+            return defaultWidthForType === width;
+        }
+        return false;
+    }
+
 }

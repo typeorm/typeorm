@@ -4,8 +4,8 @@
   </a>
   <br>
   <br>
-	<a href="https://travis-ci.org/typeorm/typeorm">
-		<img src="https://travis-ci.org/typeorm/typeorm.svg?branch=master">
+	<a href="https://app.circleci.com/pipelines/github/typeorm/typeorm">
+		<img src="https://circleci.com/gh/typeorm/typeorm/tree/master.svg?style=shield">
 	</a>
 	<a href="https://badge.fury.io/js/typeorm">
 		<img src="https://badge.fury.io/js/typeorm.svg">
@@ -16,7 +16,7 @@
     <a href="https://codecov.io/gh/typeorm/typeorm">
         <img alt="Codecov" src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg">
     </a>
-	<a href="https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTUxNTZhM2Q4NDNhMjMzNjQ2NGM1ZjI1ZGRkNjJjYzI4OTZjMGYyYTc0MzAxYTdjMWE3ZDIxOWUzZTdlM2QxNTY">
+	<a href="https://join.slack.com/t/typeorm/shared_invite/zt-gej3gc00-hR~L~DqGUJ7qOpGy4SSq3g">
 		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg">
 	</a>
   <br>
@@ -38,8 +38,8 @@ maintainable applications the most productive way.
 
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
  [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
-
-Some TypeORM features:
+ 
+## Features
 
 * supports both [DataMapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice)
 * entities and columns
@@ -106,6 +106,8 @@ export class User {
 And your domain logic looks like this:
 
 ```typescript
+const repository = connection.getRepository(User);
+
 const user = new User();
 user.firstName = "Timber";
 user.lastName = "Saw";
@@ -175,7 +177,7 @@ await timber.remove();
 
 3. You may need to install node typings:
 
-    `npm install @types/node --save`
+    `npm install @types/node --save-dev`
 
 4. Install a database driver:
 
@@ -213,6 +215,8 @@ await timber.remove();
         npm i @sap/hana-client
 		npm i hdb-pool
         ```
+        
+        *SAP Hana support made possible by sponsorship of [Neptune Software](https://www.neptune-software.com/).*
 
     * for **MongoDB** (experimental)
 
@@ -880,7 +884,7 @@ createConnection(/*...*/).then(async connection => {
     metadata.width = 480;
     metadata.compressed = true;
     metadata.comment = "cybershoot";
-    metadata.orientation = "portait";
+    metadata.orientation = "portrait";
     metadata.photo = photo; // this way we connect them
 
     // get entity repositories
@@ -1031,7 +1035,7 @@ createConnection(options).then(async connection => {
     metadata.width = 480;
     metadata.compressed = true;
     metadata.comment = "cybershoot";
-    metadata.orientation = "portait";
+    metadata.orientation = "portrait";
 
     photo.metadata = metadata; // this way we connect them
 

@@ -1,6 +1,7 @@
 import {Driver} from "../driver/Driver";
 import {Repository} from "../repository/Repository";
 import {EntitySubscriberInterface} from "../subscriber/EntitySubscriberInterface";
+import {EntityTarget} from "../common/EntityTarget";
 import {ObjectType} from "../common/ObjectType";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
@@ -320,14 +321,14 @@ export class Connection {
     /**
      * Checks if entity metadata exist for the given entity class, target name or table name.
      */
-    hasMetadata(target: Function|EntitySchema<any>|string): boolean {
+    hasMetadata(target: EntityTarget<any>): boolean {
         return !!this.findMetadata(target);
     }
 
     /**
      * Gets entity metadata for the given entity class or schema name.
      */
-    getMetadata(target: Function|EntitySchema<any>|string): EntityMetadata {
+    getMetadata(target: EntityTarget<any>): EntityMetadata {
         const metadata = this.findMetadata(target);
         if (!metadata)
             throw new EntityMetadataNotFoundError(target);
@@ -338,7 +339,7 @@ export class Connection {
     /**
      * Gets repository for the given entity.
      */
-    getRepository<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string): Repository<Entity> {
+    getRepository<Entity>(target: EntityTarget<Entity>): Repository<Entity> {
         return this.manager.getRepository(target);
     }
 
@@ -346,7 +347,7 @@ export class Connection {
      * Gets tree repository for the given entity class or name.
      * Only tree-type entities can have a TreeRepository, like ones decorated with @Tree decorator.
      */
-    getTreeRepository<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string): TreeRepository<Entity> {
+    getTreeRepository<Entity>(target: EntityTarget<Entity>): TreeRepository<Entity> {
         return this.manager.getTreeRepository(target);
     }
 
@@ -354,7 +355,7 @@ export class Connection {
      * Gets mongodb-specific repository for the given entity class or name.
      * Works only if connection is mongodb-specific.
      */
-    getMongoRepository<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string): MongoRepository<Entity> {
+    getMongoRepository<Entity>(target: EntityTarget<Entity>): MongoRepository<Entity> {
         if (!(this.driver instanceof MongoDriver))
             throw new Error(`You can use getMongoRepository only for MongoDB connections.`);
 
@@ -408,7 +409,7 @@ export class Connection {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|Function|string, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
+    createQueryBuilder<Entity>(entityClass: EntityTarget<Entity>, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
 
     /**
      * Creates a new query builder that can be used to build a sql query.
@@ -418,12 +419,12 @@ export class Connection {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityOrRunner?: ObjectType<Entity>|EntitySchema<Entity>|Function|string|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
+    createQueryBuilder<Entity>(entityOrRunner?: EntityTarget<Entity>|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         if (this instanceof MongoEntityManager)
             throw new Error(`Query Builder is not supported by MongoDB.`);
 
         if (alias) {
-            const metadata = this.getMetadata(entityOrRunner as Function|EntitySchema<Entity>|string);
+            const metadata = this.getMetadata(entityOrRunner as EntityTarget<Entity>);
             return new SelectQueryBuilder(this, queryRunner)
                 .select(alias)
                 .from(metadata.target, alias);
@@ -453,7 +454,7 @@ export class Connection {
     /**
      * Gets entity metadata of the junction table (many-to-many table).
      */
-    getManyToManyMetadata(entityTarget: Function|string, relationPropertyPath: string) {
+    getManyToManyMetadata(entityTarget: EntityTarget<any>, relationPropertyPath: string) {
         const relationMetadata = this.getMetadata(entityTarget).findRelationWithPropertyPath(relationPropertyPath);
         if (!relationMetadata)
             throw new Error(`Relation "${relationPropertyPath}" was not found in ${entityTarget} entity.`);
@@ -478,7 +479,7 @@ export class Connection {
     /**
      * Finds exist entity metadata by the given entity class, target name or table name.
      */
-    protected findMetadata(target: Function|EntitySchema<any>|string): EntityMetadata|undefined {
+    protected findMetadata(target: EntityTarget<any>): EntityMetadata|undefined {
         return this.entityMetadatas.find(metadata => {
             if (metadata.target === target)
                 return true;

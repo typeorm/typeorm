@@ -313,27 +313,6 @@ export abstract class BaseQueryRunner {
     }
 
     /**
-     * Checks if column display width is by default. Used only for MySQL.
-     */
-    protected isDefaultColumnWidth(table: Table, column: TableColumn, width: number): boolean {
-        // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name);
-            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
-            if (columnMetadata && columnMetadata.width)
-                return false;
-        }
-
-        if (this.connection.driver.dataTypeDefaults
-            && this.connection.driver.dataTypeDefaults[column.type]
-            && this.connection.driver.dataTypeDefaults[column.type].width) {
-            return this.connection.driver.dataTypeDefaults[column.type].width === width;
-        }
-
-        return false;
-    }
-
-    /**
      * Checks if column precision is by default.
      */
     protected isDefaultColumnPrecision(table: Table, column: TableColumn, precision: number): boolean {

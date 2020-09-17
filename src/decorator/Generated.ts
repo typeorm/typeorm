@@ -10,7 +10,7 @@ import {GeneratedMetadataArgs} from "../metadata-args/GeneratedMetadataArgs";
  *
  * Note, some databases do not support non-primary generation columns.
  */
-export function Generated(strategy: "increment"|"uuid"|"rowid" = "increment"): Function {
+export function Generated(strategy: "increment"|"uuid"|"rowid" = "increment"): PropertyDecorator {
     return function (object: Object, propertyName: string) {
 
         getMetadataArgsStorage().generations.push({

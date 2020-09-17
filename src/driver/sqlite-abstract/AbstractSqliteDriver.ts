@@ -130,12 +130,31 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Gets list of column data types that support precision by a driver.
      */
-    withPrecisionColumnTypes: ColumnType[] = [];
+    withPrecisionColumnTypes: ColumnType[] = [
+        "real",
+        "double",
+        "double precision",
+        "float",
+        "real",
+        "numeric",
+        "decimal",
+        "date",
+        "time",
+        "datetime"
+    ];
 
     /**
      * Gets list of column data types that support scale by a driver.
      */
-    withScaleColumnTypes: ColumnType[] = [];
+    withScaleColumnTypes: ColumnType[] = [
+        "real",
+        "double",
+        "double precision",
+        "float",
+        "real",
+        "numeric",
+        "decimal",
+    ];
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
@@ -507,11 +526,13 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any, entityIndex: number, entityNum: number) {
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult) {
-                value = insertResult;
+                // NOTE: When INSERT statement is successfully completed, the last inserted row ID is returned.
+                // see also: SqliteQueryRunner.query()
+                value = insertResult - entityNum + entityIndex + 1;
             // } else if (generatedColumn.generationStrategy === "uuid") {
             //     value = insertValue[generatedColumn.databaseName];
             }
@@ -572,6 +593,13 @@ export abstract class AbstractSqliteDriver implements Driver {
      * Returns true if driver supports uuid values generation on its own.
      */
     isUUIDGenerationSupported(): boolean {
+        return false;
+    }
+
+    /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
         return false;
     }
 

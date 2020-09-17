@@ -79,10 +79,17 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return this.databaseConnectionPromise;
 
         if (this.mode === "slave" && this.driver.isReplicated)  {
-            this.databaseConnectionPromise = this.driver.obtainSlaveConnection().then(([ connection, release]: any[]) => {
+            this.databaseConnectionPromise = this.driver.obtainSlaveConnection().then(([connection, release]: any[]) => {
                 this.driver.connectedQueryRunners.push(this);
                 this.databaseConnection = connection;
-                this.releaseCallback = release;
+
+                const onErrorCallback = () => this.release();
+                this.releaseCallback = () => {
+                    this.databaseConnection.removeListener("error", onErrorCallback);
+                    release();
+                };
+                this.databaseConnection.on("error", onErrorCallback);
+
                 return this.databaseConnection;
             });
 
@@ -90,7 +97,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             this.databaseConnectionPromise = this.driver.obtainMasterConnection().then(([connection, release]: any[]) => {
                 this.driver.connectedQueryRunners.push(this);
                 this.databaseConnection = connection;
-                this.releaseCallback = release;
+
+                const onErrorCallback = () => this.release();
+                this.releaseCallback = () => {
+                    this.databaseConnection.removeListener("error", onErrorCallback);
+                    release();
+                };
+                this.databaseConnection.on("error", onErrorCallback);
+
                 return this.databaseConnection;
             });
         }
@@ -103,6 +117,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * You cannot use query runner methods once its released.
      */
     release(): Promise<void> {
+        if (this.isReleased) {
+            return Promise.resolve();
+        }
+
         this.isReleased = true;
         if (this.releaseCallback)
             this.releaseCallback();
@@ -165,7 +183,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const queryStartTime = +new Date();
 
                 databaseConnection.query(query, parameters, (err: any, result: any) => {
-
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
                     const queryEndTime = +new Date();

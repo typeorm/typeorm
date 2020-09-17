@@ -1,3 +1,5 @@
+import mkdirp from 'mkdirp';
+import path from 'path';
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
 import { SqliteQueryRunner } from "./SqliteQueryRunner";
 import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
@@ -105,6 +107,10 @@ export class SqliteDriver extends AbstractSqliteDriver {
             });
         }
 
+        if (this.options.enableWAL) {
+            await run(`PRAGMA journal_mode = WAL;`);
+        }
+
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
         // working properly. this also makes onDelete to work with sqlite.
         await run(`PRAGMA foreign_keys = ON;`);
@@ -132,10 +138,8 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * Auto creates database directory if it does not exist.
      */
-    protected createDatabaseDirectory(fullPath: string): Promise<void> {
-        const mkdirp = PlatformTools.load("mkdirp");
-        const path = PlatformTools.load("path");
-        return mkdirp(path.dirname(fullPath));
+    protected async createDatabaseDirectory(fullPath: string): Promise<void> {
+        await mkdirp(path.dirname(fullPath));
     }
 
 }

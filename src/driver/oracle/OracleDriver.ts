@@ -392,7 +392,7 @@ export class OracleDriver implements Driver {
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         if (columnMetadata.type === Boolean) {
-            value = value ? true : false;
+            value = !!value;
 
         } else if (columnMetadata.type === "date") {
             value = DateUtils.mixedDateToDateString(value);
@@ -620,6 +620,13 @@ export class OracleDriver implements Driver {
      * Returns true if driver supports uuid values generation on its own.
      */
     isUUIDGenerationSupported(): boolean {
+        return false;
+    }
+
+    /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
         return false;
     }
 

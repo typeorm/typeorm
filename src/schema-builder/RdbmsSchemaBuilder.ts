@@ -277,7 +277,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         if (indexMetadata.isSpatial !== tableIndex.isSpatial)
                             return true;
 
-                        if (indexMetadata.isFulltext !== tableIndex.isFulltext)
+                        if (this.connection.driver.isFullTextColumnTypeSupported() && indexMetadata.isFulltext !== tableIndex.isFulltext)
                             return true;
 
                         if (indexMetadata.columns.length !== tableIndex.columnNames.length)

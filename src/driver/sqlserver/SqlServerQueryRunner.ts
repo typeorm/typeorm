@@ -359,7 +359,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
         const schema = parsedTableName.schema === "SCHEMA_NAME()" ? parsedTableName.schema : `'${parsedTableName.schema}'`;
-        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = '${parsedTableName.name}' AND "COLUMN_NAME" = '${columnName}' AND "TABLE_SCHEMA" = ${schema}`;
+        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = '${parsedTableName.name}' AND "COLUMN_NAME" = '${columnName}' AND "TABLE_SCHEMA" = ${schema}`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }

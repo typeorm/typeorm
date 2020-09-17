@@ -3,8 +3,7 @@ import {Connection} from "../connection/Connection";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {highlight} from "cli-highlight";
 import * as yargs from "yargs";
-
-const chalk = require("chalk");
+import chalk from "chalk";
 
 /**
  * Shows sql to be executed by schema:sync command.
@@ -53,7 +52,7 @@ export class SchemaLogCommand implements yargs.CommandModule {
             } else {
                 const lengthSeparators = String(sqlInMemory.upQueries.length).split("").map(char => "-").join("");
                 console.log(chalk.yellow("---------------------------------------------------------------" + lengthSeparators));
-                console.log(chalk.yellow.bold(`-- Schema syncronization will execute following sql queries (${chalk.white(sqlInMemory.upQueries.length)}):`));
+                console.log(chalk.yellow.bold(`-- Schema syncronization will execute following sql queries (${chalk.white(sqlInMemory.upQueries.length.toString())}):`));
                 console.log(chalk.yellow("---------------------------------------------------------------" + lengthSeparators));
 
                 sqlInMemory.upQueries.forEach(upQuery => {
