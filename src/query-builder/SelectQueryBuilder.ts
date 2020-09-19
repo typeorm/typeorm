@@ -2002,7 +2002,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 query: queryId,
                 duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
             }, queryRunner);
-            if (savedQueryResultCacheOptions?.result && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
+            if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
                 return JSON.parse(savedQueryResultCacheOptions.result);
         }
 
