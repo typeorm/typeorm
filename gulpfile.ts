@@ -74,6 +74,15 @@ export class Gulpfile {
      * Replaces PlatformTools with browser-specific implementation called BrowserPlatformTools.
      */
     @Task()
+    browserCopyDirectoryExportedClassesLoader() {
+        return gulp.src("./src/platform/BrowserDirectoryExportedClassesLoader.template")
+            .pipe(rename("BrowserDirectoryExportedClassesLoader.ts"))
+            .pipe(gulp.dest("./build/browser/src/platform"));
+    }
+    /**
+     * Replaces PlatformTools with browser-specific implementation called BrowserPlatformTools.
+     */
+    @Task()
     browserCopyPlatformTools() {
         return gulp.src("./src/platform/BrowserPlatformTools.template")
             .pipe(rename("PlatformTools.ts"))
@@ -97,7 +106,10 @@ export class Gulpfile {
             "lib": ["es5", "es6", "dom"],
             typescript: require("typescript")
         });
-        const tsResult = gulp.src(["./build/browser/src/**/*.ts", "./node_modules/reflect-metadata/**/*.d.ts", "./node_modules/@types/**/*.ts"])
+        const tsResult = gulp.src([
+            "./build/browser/src/**/*.ts",
+            "./node_modules/reflect-metadata/**/*.d.ts"
+        ])
             .pipe(sourcemaps.init())
             .pipe(tsProject());
 
@@ -151,8 +163,7 @@ export class Gulpfile {
             typescript: require("typescript")
         });
         const tsResult = gulp.src([
-            "./src/**/*.ts",
-            "./node_modules/@types/**/*.ts",
+            "./src/**/*.ts"
         ])
             .pipe(sourcemaps.init())
             .pipe(tsProject());
@@ -231,7 +242,7 @@ export class Gulpfile {
     package() {
         return [
             "clean",
-            ["browserCopySources", "browserCopyPlatformTools", "browserCopyDisabledDriversDummy"],
+            ["browserCopySources", "browserCopyPlatformTools", "browserCopyDisabledDriversDummy", "browserCopyDirectoryExportedClassesLoader"],
             ["packageCompile", "browserCompile"],
             "packageMoveCompiledFiles",
             [

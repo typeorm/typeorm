@@ -1001,6 +1001,15 @@ export class PostgresDriver implements Driver {
         return new Promise((ok, fail) => {
             pool.connect((err: any, connection: any, release: Function) => {
                 if (err) return fail(err);
+
+                if (options.logNotifications) {
+                    connection.on("notice", (msg: any) => {
+                        msg && this.connection.logger.log("info", msg.message);
+                    });
+                    connection.on("notification", (msg: any) => {
+                        msg && this.connection.logger.log("info", `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`);
+                    });
+                }
                 release();
                 ok(pool);
             });
