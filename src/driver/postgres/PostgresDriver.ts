@@ -21,6 +21,7 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {AuroraDataApiPostgresConnectionOptions} from "../aurora-data-api-pg/AuroraDataApiPostgresConnectionOptions";
 import {AuroraDataApiPostgresQueryRunner} from "../aurora-data-api-pg/AuroraDataApiPostgresQueryRunner";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -436,7 +437,7 @@ export class PostgresDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+    createQueryRunner(mode: ReplicationMode): QueryRunner {
         return new PostgresQueryRunner(this, mode);
     }
 
@@ -1043,7 +1044,7 @@ export class PostgresDriver implements Driver {
 abstract class PostgresWrapper extends PostgresDriver {
     options: any;
 
-    abstract createQueryRunner(mode: "master"|"slave"): any;
+    abstract createQueryRunner(mode: ReplicationMode): any;
 }
 
 export class AuroraDataApiPostgresDriver extends PostgresWrapper {
@@ -1123,7 +1124,7 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new AuroraDataApiPostgresQueryRunner(this, mode);
     }
 

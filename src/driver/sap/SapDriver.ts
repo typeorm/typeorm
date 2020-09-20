@@ -11,6 +11,7 @@ import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {SapConnectionOptions} from "./SapConnectionOptions";
 import {SapQueryRunner} from "./SapQueryRunner";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -273,7 +274,7 @@ export class SapDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new SapQueryRunner(this, mode);
     }
 

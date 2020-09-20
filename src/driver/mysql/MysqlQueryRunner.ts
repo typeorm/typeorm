@@ -22,6 +22,7 @@ import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {VersionUtils} from "../../util/VersionUtils";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -50,7 +51,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: MysqlDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: MysqlDriver, mode: ReplicationMode) {
         super();
         this.driver = driver;
         this.connection = driver.connection;

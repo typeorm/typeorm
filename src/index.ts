@@ -120,6 +120,7 @@ export * from "./schema-builder/table/TableUnique";
 export * from "./schema-builder/table/Table";
 export * from "./driver/mongodb/typings";
 export * from "./driver/types/DatabaseType";
+export * from "./driver/types/ReplicationMode";
 export * from "./driver/sqlserver/MssqlParameter";
 
 export {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";

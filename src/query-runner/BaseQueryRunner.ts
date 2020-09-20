@@ -9,6 +9,7 @@ import {Table} from "../schema-builder/table/Table";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {Broadcaster} from "../subscriber/Broadcaster";
+import {ReplicationMode} from "../driver/types/ReplicationMode";
 
 export abstract class BaseQueryRunner {
 
@@ -82,7 +83,7 @@ export abstract class BaseQueryRunner {
      * Used for replication.
      * If replication is not setup its value is ignored.
      */
-    protected mode: "master"|"slave";
+    protected mode: ReplicationMode;
 
     // -------------------------------------------------------------------------
     // Public Abstract Methods

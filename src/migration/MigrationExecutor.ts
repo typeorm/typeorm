@@ -129,7 +129,7 @@ export class MigrationExecutor {
      */
     async showMigrations(): Promise<boolean> {
         let hasUnappliedMigrations = false;
-        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner);
         // get all migrations that are executed and saved in the database
@@ -163,7 +163,7 @@ export class MigrationExecutor {
      */
     async executePendingMigrations(): Promise<Migration[]> {
 
-        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner);
         // get all migrations that are executed and saved in the database
@@ -265,7 +265,7 @@ export class MigrationExecutor {
      */
     async undoLastMigration(): Promise<void> {
 
-        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
 
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner);
@@ -496,7 +496,7 @@ export class MigrationExecutor {
     }
 
     protected async withQueryRunner<T extends any>(callback: (queryRunner: QueryRunner) => T) {
-        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
 
         try {
             return callback(queryRunner);

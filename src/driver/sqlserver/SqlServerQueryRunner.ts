@@ -22,6 +22,7 @@ import {Query} from "../Query";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {MssqlParameter} from "./MssqlParameter";
 import {SqlServerDriver} from "./SqlServerDriver";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -54,7 +55,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: SqlServerDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: SqlServerDriver, mode: ReplicationMode) {
         super();
         this.driver = driver;
         this.connection = driver.connection;

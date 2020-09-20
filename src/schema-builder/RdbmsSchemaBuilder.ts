@@ -65,7 +65,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates complete schemas for the given entity metadatas.
      */
     async build(): Promise<void> {
-        this.queryRunner = this.connection.createQueryRunner("master");
+        this.queryRunner = this.connection.createQueryRunner();
         // CockroachDB implements asynchronous schema sync operations which can not been executed in transaction.
         // E.g. if you try to DROP column and ADD it again in the same transaction, crdb throws error.
         if (!(this.connection.driver instanceof CockroachDriver))
@@ -104,7 +104,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Returns sql queries to be executed by schema builder.
      */
     async log(): Promise<SqlInMemory> {
-        this.queryRunner = this.connection.createQueryRunner("master");
+        this.queryRunner = this.connection.createQueryRunner();
         try {
             const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
             // TODO: typeorm_metadata table needs only for Views for now.

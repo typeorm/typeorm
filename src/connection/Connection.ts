@@ -40,6 +40,7 @@ import {PromiseUtils} from "../";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {DriverUtils} from "../driver/DriverUtils";
+import {ReplicationMode} from "../driver/types/ReplicationMode";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -259,7 +260,7 @@ export class Connection {
      */
     // TODO rename
     async dropDatabase(): Promise<void> {
-        const queryRunner = this.createQueryRunner("master");
+        const queryRunner = this.createQueryRunner();
         try {
             if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver || this.driver instanceof AuroraDataApiDriver) {
                 const databases: string[] = this.driver.database ? [this.driver.database] : [];
@@ -395,7 +396,7 @@ export class Connection {
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
-        const usedQueryRunner = queryRunner || this.createQueryRunner("master");
+        const usedQueryRunner = queryRunner || this.createQueryRunner();
 
         try {
             return await usedQueryRunner.query(query, parameters);  // await is needed here because we are using finally
@@ -444,7 +445,7 @@ export class Connection {
      * If you perform writes you must use master database,
      * if you perform reads you can use slave databases.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+    createQueryRunner(mode: ReplicationMode = "master"): QueryRunner {
         const queryRunner = this.driver.createQueryRunner(mode);
         const manager = this.createEntityManager(queryRunner);
         Object.assign(queryRunner, { manager: manager });

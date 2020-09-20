@@ -20,6 +20,7 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {Query} from "../Query";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {SapDriver} from "./SapDriver";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -55,7 +56,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: SapDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: SapDriver, mode: ReplicationMode) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
@@ -91,7 +92,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             return this.driver.master.release(this.databaseConnection);
         }
 
-        return Promise.resolve();        
+        return Promise.resolve();
     }
 
     /**
@@ -1823,7 +1824,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         let indexType = "";
         if (index.isUnique) {
             indexType += "UNIQUE ";
-        } 
+        }
         if (index.isFulltext) {
             indexType += "FULLTEXT ";
         }

@@ -20,6 +20,7 @@ import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {ColumnType, PromiseUtils} from "../../index";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -48,7 +49,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: OracleDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: OracleDriver, mode: ReplicationMode) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
