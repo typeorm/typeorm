@@ -266,7 +266,10 @@ export class Connection {
                     if (metadata.database && databases.indexOf(metadata.database) === -1)
                         databases.push(metadata.database);
                 });
-                await Promise.all(databases.map(database => queryRunner.clearDatabase(database)));
+
+                for (const database of databases) {
+                    await queryRunner.clearDatabase(database);
+                }
             } else {
                 await queryRunner.clearDatabase();
             }

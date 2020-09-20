@@ -251,7 +251,10 @@ export async function createTestingConnections(options?: TestingOptions): Promis
         });
 
         const queryRunner = connection.createQueryRunner();
-        await Promise.all(databases.map(database => queryRunner.createDatabase(database, true)));
+
+        for (const database of databases) {
+            await queryRunner.createDatabase(database, true);
+        }
 
         // create new schemas
         if (connection.driver instanceof PostgresDriver || connection.driver instanceof SqlServerDriver) {
@@ -268,7 +271,9 @@ export async function createTestingConnections(options?: TestingOptions): Promis
             if (schema && schemaPaths.indexOf(schema) === -1)
                 schemaPaths.push(schema);
 
-            await Promise.all(schemaPaths.map(schemaPath => queryRunner.createSchema(schemaPath, true)));
+            for (const schemaPath of schemaPaths) {
+                await queryRunner.createSchema(schemaPath, true);
+            }
         }
 
         await queryRunner.release();
