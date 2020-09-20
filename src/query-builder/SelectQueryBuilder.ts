@@ -36,7 +36,7 @@ import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import {CockroachDriver} from '../driver/cockroachdb/CockroachDriver';
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
