@@ -6,7 +6,6 @@ import {DatabaseType} from "../../src/driver/types/DatabaseType";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 import {createConnections} from "../../src/index";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
-import {PromiseUtils} from "../../src/util/PromiseUtils";
 import {QueryResultCache} from "../../src/cache/QueryResultCache";
 import {Logger} from "../../src/logger/Logger";
 
@@ -252,7 +251,7 @@ export async function createTestingConnections(options?: TestingOptions): Promis
         });
 
         const queryRunner = connection.createQueryRunner();
-        await PromiseUtils.runInSequence(databases, database => queryRunner.createDatabase(database, true));
+        await Promise.all(databases.map(database => queryRunner.createDatabase(database, true)));
 
         // create new schemas
         if (connection.driver instanceof PostgresDriver || connection.driver instanceof SqlServerDriver) {
@@ -269,7 +268,7 @@ export async function createTestingConnections(options?: TestingOptions): Promis
             if (schema && schemaPaths.indexOf(schema) === -1)
                 schemaPaths.push(schema);
 
-            await PromiseUtils.runInSequence(schemaPaths, schemaPath => queryRunner.createSchema(schemaPath, true));
+            await Promise.all(schemaPaths.map(schemaPath => queryRunner.createSchema(schemaPath, true)));
         }
 
         await queryRunner.release();

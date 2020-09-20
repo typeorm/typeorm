@@ -3,7 +3,6 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
-import {PromiseUtils} from "../../../src/util/PromiseUtils";
 
 describe("entity-model", () => {
 
@@ -14,7 +13,7 @@ describe("entity-model", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should save successfully and use static methods successfully", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should save successfully and use static methods successfully", () => Promise.all(connections.map(async connection => {
         Post.useConnection(connection); // change connection each time because of AR specifics
 
         const post = Post.create();
@@ -28,9 +27,9 @@ describe("entity-model", () => {
         loadedPost!.id.should.be.eql(post.id);
         loadedPost!.title.should.be.eql("About ActiveRecord");
         loadedPost!.text.should.be.eql("Huge discussion how good or bad ActiveRecord is.");
-    }));
+    })));
 
-    it("should reload given entity successfully", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should reload given entity successfully", () => Promise.all(connections.map(async connection => {
         await connection.synchronize(true);
         Post.useConnection(connection);
         Category.useConnection(connection);
@@ -68,6 +67,6 @@ describe("entity-model", () => {
             name: "Persistence and Entity"
         });
 
-    }));
+    })));
 
 });
