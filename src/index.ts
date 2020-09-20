@@ -13,7 +13,6 @@ import {PlatformTools} from "./platform/PlatformTools";
 import {TreeRepository} from "./repository/TreeRepository";
 import {MongoRepository} from "./repository/MongoRepository";
 import {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
-import {PromiseUtils} from "./util/PromiseUtils";
 import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
 import {SelectQueryBuilder} from "./query-builder/SelectQueryBuilder";
@@ -240,7 +239,7 @@ export async function createConnections(options?: ConnectionOptions[]): Promise<
     if (!options)
         options = await new ConnectionOptionsReader().all();
     const connections = options.map(options => getConnectionManager().create(options));
-    return PromiseUtils.runInSequence(connections, connection => connection.connect());
+    return Promise.all(connections.map(connection => connection.connect()));
 }
 
 /**
