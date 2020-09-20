@@ -156,7 +156,6 @@ export {EntitySchemaColumnOptions} from "./entity-schema/EntitySchemaColumnOptio
 export {EntitySchemaIndexOptions} from "./entity-schema/EntitySchemaIndexOptions";
 export {EntitySchemaRelationOptions} from "./entity-schema/EntitySchemaRelationOptions";
 export {ColumnType} from "./driver/types/ColumnTypes";
-export {PromiseUtils} from "./util/PromiseUtils";
 
 // -------------------------------------------------------------------------
 // Deprecated
