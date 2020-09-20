@@ -2,7 +2,6 @@ import {Table} from "../schema-builder/table/Table";
 import {Connection} from "../connection/Connection";
 import {Migration} from "./Migration";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {PromiseUtils} from "../util/PromiseUtils";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
@@ -218,13 +217,13 @@ export class MigrationExecutor {
 
         // run all pending migrations in a sequence
         try {
-            await PromiseUtils.runInSequence(pendingMigrations, async migration => {
+            for (const migration of pendingMigrations) {
                 if (this.transaction === "each" && !queryRunner.isTransactionActive) {
                     await queryRunner.startTransaction();
                     transactionStartedByUs = true;
                 }
 
-                return migration.instance!.up(queryRunner)
+                await migration.instance!.up(queryRunner)
                     .then(async () => { // now when migration is executed we need to insert record about it into the database
                         await this.insertExecutedMigration(queryRunner, migration);
                         // commit transaction if we started it
@@ -235,7 +234,7 @@ export class MigrationExecutor {
                         successMigrations.push(migration);
                         this.connection.logger.logSchemaBuild(`Migration ${migration.name} has been executed successfully.`);
                     });
-            });
+            }
 
             // commit transaction if we started it
             if (this.transaction === "all" && transactionStartedByUs)

@@ -13,7 +13,6 @@ import {ManyToManySubjectBuilder} from "./subject-builder/ManyToManySubjectBuild
 import {SubjectDatabaseEntityLoader} from "./SubjectDatabaseEntityLoader";
 import {CascadesSubjectBuilder} from "./subject-builder/CascadesSubjectBuilder";
 import {OrmUtils} from "../util/OrmUtils";
-import {PromiseUtils} from "../util/PromiseUtils";
 
 /**
  * Persists a single entity or multiple entities - saves or removes them.
@@ -144,7 +143,9 @@ export class EntityPersistExecutor {
 
                     // execute all persistence operations for all entities we have
                     // console.time("executing subject executors...");
-                    await PromiseUtils.runInSequence(executorsWithExecutableOperations, executor => executor.execute());
+                    for (const executor of executorsWithExecutableOperations) {
+                        await executor.execute();
+                    }
                     // console.timeEnd("executing subject executors...");
 
                     // commit transaction if it was started by us
