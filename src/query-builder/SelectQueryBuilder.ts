@@ -1793,6 +1793,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     const propertyName = this.escape(primaryColumn.databaseName);
                     return `${distinctAlias}.${propertyName}::text`;
                 }).join(", ") + "))) as \"cnt\"";
+            } else if (this.connection.driver instanceof OracleDriver) {
+                countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
+                    const propertyName = this.escape(primaryColumn.databaseName);
+                    return `${distinctAlias}.${propertyName}`;
+                }).join(" || ") + ")) as \"cnt\"";
             } else {
                 countSql = `COUNT(DISTINCT(CONCAT(` + metadata.primaryColumns.map((primaryColumn, index) => {
                     const propertyName = this.escape(primaryColumn.databaseName);
