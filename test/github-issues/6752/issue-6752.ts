@@ -9,7 +9,7 @@ import { expect } from "chai";
 import { Block } from "./entity/Block";
 import { PlanOfRecord } from "./entity/PlanOfRecord";
 
-describe("github issues > #6714 Migration:generate issue with onUpdate using mariadb 10.4", () => {
+describe("github issues > #6752 column name not been find on unique index decorator", () => {
     it("dont change anything", async () => {
         let connections: Connection[];
         connections = await createTestingConnections({
