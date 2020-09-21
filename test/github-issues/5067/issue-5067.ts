@@ -4,10 +4,11 @@ import {Connection} from "../../../src";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
 
-describe.only("github issues > #5067 ORA-00972: identifier is too long", () => {
+describe("github issues > #5067 ORA-00972: identifier is too long", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"]
+        entities: [__dirname + "/entity/*{.js,.ts}"],
+        enabledDrivers: ["oracle"]
     }));
     after(() => closeTestingConnections(connections));
 
