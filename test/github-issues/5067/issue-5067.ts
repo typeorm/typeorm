@@ -2,28 +2,19 @@ import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../src";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
 
 describe("github issues > #5067 ORA-00972: identifier is too long", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
         enabledDrivers: ["oracle"]
     }));
     after(() => closeTestingConnections(connections));
 
-    it("generated parameter name returns index instead of parameter name", () => Promise.all(connections.map(async connection => {
-        if (connection.driver instanceof OracleDriver)
-        {
-            const paramName = "output_";
-            const parametersCount = 0;
-            const createdParameter = await connection.driver.createParameter(paramName, parametersCount);
+    it("generated parameter name is within the size constraints", () => Promise.all(connections.map(async connection => {
+        const paramName = "output_that_is_really_long_and_must_be_truncated_in_this_driver";
+        const createdParameter = await connection.driver.createParameter(paramName, 0);
 
-            expect(createdParameter).to.be.not.undefined;
-            expect(createdParameter).to.be.not.null;
-            expect(createdParameter).to.be.an("String");
-            expect(createdParameter).to.not.match(/(?:output_)/);
-            expect(await connection.driver.createParameter(paramName, 2)).to.equal(":" + 3);
-        }
+        expect(createdParameter).to.be.an("String");
+        expect(createdParameter.length).to.be.lessThan(30);
     })));
 });
