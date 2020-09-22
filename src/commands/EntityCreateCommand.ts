@@ -51,13 +51,9 @@ export class EntityCreateCommand implements yargs.CommandModule {
                 } catch (err) { }
             }
 
-            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
-            const fileExists = await CommandUtils.fileExists(path);
-            if (fileExists) {
-                throw `File ${chalk.blue(path)} already exists`;
-            }
+              const path = (directory.startsWith("/") ? "" : process.cwd() + "/") + (directory ? (directory + "/") : "") + filename;
             await CommandUtils.createFile(path, fileContent);
-            console.log(chalk.green(`Entity ${chalk.blue(path)} has been created successfully.`));
+            console.log(`Migration ${chalk.blue(path)} has been generated successfully.`);
 
         } catch (err) {
             console.log(chalk.black.bgRed("Error during entity creation:"));
