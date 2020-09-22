@@ -9,6 +9,7 @@ import {PlatformTools} from "../../platform/PlatformTools";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 // This is needed to satisfy the typescript compiler.
 interface Window {
@@ -69,7 +70,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master" | "slave" = "master"): QueryRunner {
+    createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner)
             this.queryRunner = new SqljsQueryRunner(this);
 

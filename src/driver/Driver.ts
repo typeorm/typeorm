@@ -8,6 +8,7 @@ import {DataTypeDefaults} from "./types/DataTypeDefaults";
 import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {ReplicationMode} from "./types/ReplicationMode";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -102,7 +103,7 @@ export interface Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    createQueryRunner(mode: "master"|"slave"): QueryRunner;
+    createQueryRunner(mode: ReplicationMode): QueryRunner;
 
     /**
      * Replaces parameters in the given sql with special escaping character

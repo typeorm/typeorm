@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import appRootPath from "app-root-path";
 import {ConnectionOptions} from "./ConnectionOptions";
 import {PlatformTools} from "../platform/PlatformTools";
@@ -95,9 +94,9 @@ export class ConnectionOptionsReader {
 
         // if .env file found then load all its variables into process.env using dotenv package
         if (foundFileFormat === "env") {
-            dotenv.config({ path: this.baseFilePath });
+            PlatformTools.dotenv(this.baseFilePath);
         } else if (PlatformTools.fileExist(".env")) {
-            dotenv.config({ path: ".env" });
+            PlatformTools.dotenv(".env");
         }
 
         // Determine config file name

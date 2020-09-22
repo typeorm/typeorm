@@ -860,7 +860,7 @@ export abstract class QueryBuilder<Entity> {
      * Creates a query builder used to execute sql queries inside this query builder.
      */
     protected obtainQueryRunner() {
-        return this.queryRunner || this.connection.createQueryRunner("master");
+        return this.queryRunner || this.connection.createQueryRunner();
     }
 
 }

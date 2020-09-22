@@ -3,7 +3,6 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../src/connection/Connection";
 import {TestEntity} from "./entity/TestEntity";
 import {expect} from "chai";
-import {PromiseUtils} from "../../../src/util/PromiseUtils";
 
 describe("github issues > #1014 Transaction doesn't rollback", () => {
 
@@ -22,12 +21,10 @@ describe("github issues > #1014 Transaction doesn't rollback", () => {
 
         let error: any;
         try {
-            await connection.transaction(manager => {
-                return PromiseUtils.settle([
-                    manager.remove(testEntity),
-                    Promise.reject(new Error()),
-                    new Promise((resolve, reject) => reject(new Error())),
-                ]);
+            await connection.transaction(async manager => {
+                await manager.remove(testEntity);
+
+                throw new Error();
             });
         } catch (err) { error = err; }
 

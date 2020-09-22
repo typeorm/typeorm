@@ -2,7 +2,7 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {ColumnType, PromiseUtils, QueryFailedError} from "../../index";
+import {ColumnType, QueryFailedError} from "../../index";
 import {ReadStream} from "../../platform/PlatformTools";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {QueryRunner} from "../../query-runner/QueryRunner";
@@ -20,6 +20,7 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {Query} from "../Query";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {SapDriver} from "./SapDriver";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -55,7 +56,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: SapDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: SapDriver, mode: ReplicationMode) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
@@ -91,7 +92,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             return this.driver.master.release(this.databaseConnection);
         }
 
-        return Promise.resolve();        
+        return Promise.resolve();
     }
 
     /**
@@ -633,7 +634,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new columns from the column in the table.
      */
     async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        await PromiseUtils.runInSequence(columns, column => this.addColumn(tableOrName, column));
+        for (const column of columns) {
+            await this.addColumn(tableOrName, column);
+        }
     }
 
     /**
@@ -869,7 +872,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Changes a column in the table.
      */
     async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
-        await PromiseUtils.runInSequence(changedColumns, changedColumn => this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn));
+        for (const {oldColumn, newColumn} of changedColumns) {
+            await this.changeColumn(tableOrName, oldColumn, newColumn)
+        }
     }
 
     /**
@@ -989,7 +994,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops the columns in the table.
      */
     async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        await PromiseUtils.runInSequence(columns, column => this.dropColumn(tableOrName, column));
+        for (const column of columns) {
+            await this.dropColumn(tableOrName, column);
+        }
     }
 
     /**
@@ -1823,7 +1830,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         let indexType = "";
         if (index.isUnique) {
             indexType += "UNIQUE ";
-        } 
+        }
         if (index.isFulltext) {
             indexType += "FULLTEXT ";
         }

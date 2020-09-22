@@ -2,7 +2,6 @@ import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {User} from "./entity/User";
-import {PromiseUtils} from "../../../src";
 
 describe("github issues > #3422 cannot save to nested-tree table if schema is used in postgres", () => {
 
@@ -16,7 +15,7 @@ describe("github issues > #3422 cannot save to nested-tree table if schema is us
     });
     after(() => closeTestingConnections(connections));
 
-    it("should not fail when using schema and nested-tree", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should not fail when using schema and nested-tree", () => Promise.all(connections.map(async connection => {
         await connection.query("CREATE SCHEMA IF NOT EXISTS admin");
         await connection.synchronize();
         const parent = new User();
@@ -28,5 +27,5 @@ describe("github issues > #3422 cannot save to nested-tree table if schema is us
         const user = await connection.manager.getRepository(User).findOne(child.id, {relations: ["manager"]});
         user!.id.should.be.equal(child.id);
         user!.manager.id.should.be.equal(parent.id);
-    }));
+    })));
 });

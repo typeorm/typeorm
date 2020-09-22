@@ -36,6 +36,7 @@ import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1787,6 +1788,16 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     return `${distinctAlias}.${propertyName}`;
                 }).join(" || ") + ")) as \"cnt\"";
 
+            } else if (this.connection.driver instanceof CockroachDriver) {
+                countSql = `COUNT(DISTINCT(CONCAT(` + metadata.primaryColumns.map((primaryColumn, index) => {
+                    const propertyName = this.escape(primaryColumn.databaseName);
+                    return `${distinctAlias}.${propertyName}::text`;
+                }).join(", ") + "))) as \"cnt\"";
+            } else if (this.connection.driver instanceof OracleDriver) {
+                countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
+                    const propertyName = this.escape(primaryColumn.databaseName);
+                    return `${distinctAlias}.${propertyName}`;
+                }).join(" || ") + ")) as \"cnt\"";
             } else {
                 countSql = `COUNT(DISTINCT(CONCAT(` + metadata.primaryColumns.map((primaryColumn, index) => {
                     const propertyName = this.escape(primaryColumn.databaseName);

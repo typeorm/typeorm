@@ -9,6 +9,7 @@ import { QueryRunner } from "../../query-runner/QueryRunner";
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver";
 import { BetterSqlite3ConnectionOptions } from "./BetterSqlite3ConnectionOptions";
 import { BetterSqlite3QueryRunner } from "./BetterSqlite3QueryRunner";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -63,7 +64,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master" | "slave" = "master"): QueryRunner {
+    createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner)
             this.queryRunner = new BetterSqlite3QueryRunner(this);
 
