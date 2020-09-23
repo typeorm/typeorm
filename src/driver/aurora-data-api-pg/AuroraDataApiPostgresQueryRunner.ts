@@ -3,7 +3,7 @@ import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStar
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {IsolationLevel} from "../types/IsolationLevel";
-import {AuroraDataApiPostgresDriver} from "../postgres/PostgresDriver";
+import {AuroraDataApiPostgresDriver} from "./AuroraDataApiPostgresDriver";
 import {PostgresQueryRunner} from "../postgres/PostgresQueryRunner";
 import {ReplicationMode} from "../types/ReplicationMode";
 
