@@ -16,8 +16,8 @@ export class ConnectionOptionsEnvReader {
     /**
      * Reads connection options from environment variables.
      */
-    read(): ConnectionOptions {
-        return {
+    async read(): Promise<ConnectionOptions[]> {
+        return [{
             type: PlatformTools.getEnvVariable("TYPEORM_CONNECTION") || (PlatformTools.getEnvVariable("TYPEORM_URL") ? PlatformTools.getEnvVariable("TYPEORM_URL").split("://")[0] : undefined),
             url: PlatformTools.getEnvVariable("TYPEORM_URL"),
             host: PlatformTools.getEnvVariable("TYPEORM_HOST"),
@@ -47,7 +47,7 @@ export class ConnectionOptionsEnvReader {
             },
             cache: this.transformCaching(),
             uuidExtension: PlatformTools.getEnvVariable("TYPEORM_UUID_EXTENSION")
-        };
+        }];
     }
 
     // -------------------------------------------------------------------------
