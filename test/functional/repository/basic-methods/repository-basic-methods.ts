@@ -9,7 +9,7 @@ import {Question} from "./model/Question";
 import {Blog} from "./entity/Blog";
 import {Category} from "./entity/Category";
 import {DeepPartial} from "../../../../src/common/DeepPartial";
-import {EntitySchema} from "../../../../src";
+import {EntitySchema, Repository} from "../../../../src";
 
 describe("repository > basic methods", () => {
 
@@ -43,7 +43,7 @@ describe("repository > basic methods", () => {
         }));
 
     });
-    
+
     describe("hasId", function() {
 
         it("should return true if entity has an id", () => connections.forEach(connection => {
@@ -152,7 +152,7 @@ describe("repository > basic methods", () => {
         }));
 
         it("should create a new empty object if entity schema is used", () => connections.forEach(connection => {
-            const repository = connection.getRepository("User");
+            const repository = connection.getRepository("User") as Repository<User>;
             repository.create().should.be.eql({});
         }));
 
@@ -222,7 +222,7 @@ describe("repository > basic methods", () => {
             blog.text = "Blog about good people";
             blog.categories = [category];
             await blogRepository.save(blog);
-            
+
             // and preload it
             const plainBlogWithId = { id: 1 };
             const preloadedBlog = await blogRepository.preload(plainBlogWithId);
@@ -247,7 +247,7 @@ describe("repository > basic methods", () => {
             blog.text = "Blog about good people";
             blog.categories = [category];
             await blogRepository.save(blog);
-            
+
             // and preload it
             const plainBlogWithId = { id: 1, categories: [{ id: 1 }] };
             const preloadedBlog = await blogRepository.preload(plainBlogWithId);
@@ -348,7 +348,7 @@ describe("repository > basic methods", () => {
             const saved = await postRepository.save(dbPost);
 
             saved.should.be.instanceOf(Post);
-            
+
             saved.id!.should.be.equal(1);
             saved.title.should.be.equal("New title");
             saved.dateAdded.should.be.instanceof(Date);

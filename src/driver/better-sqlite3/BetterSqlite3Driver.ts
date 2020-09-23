@@ -1,3 +1,5 @@
+import mkdirp from 'mkdirp';
+import path from 'path';
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
 import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
 import { PlatformTools } from "../../platform/PlatformTools";
@@ -7,6 +9,7 @@ import { QueryRunner } from "../../query-runner/QueryRunner";
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver";
 import { BetterSqlite3ConnectionOptions } from "./BetterSqlite3ConnectionOptions";
 import { BetterSqlite3QueryRunner } from "./BetterSqlite3QueryRunner";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -61,7 +64,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master" | "slave" = "master"): QueryRunner {
+    createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner)
             this.queryRunner = new BetterSqlite3QueryRunner(this);
 
@@ -88,7 +91,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         if (this.options.database !== ":memory:")
             await this.createDatabaseDirectory(this.options.database);
 
-        const { 
+        const {
             database,
             readonly = false,
             fileMustExist = false,
@@ -132,10 +135,8 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     /**
      * Auto creates database directory if it does not exist.
      */
-    protected createDatabaseDirectory(fullPath: string): Promise<void> {
-        const mkdirp = PlatformTools.load("mkdirp");
-        const path = PlatformTools.load("path");
-        return mkdirp(path.dirname(fullPath));
+    protected async createDatabaseDirectory(fullPath: string): Promise<void> {
+        await mkdirp(path.dirname(fullPath));
     }
 
 }

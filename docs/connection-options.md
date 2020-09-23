@@ -182,6 +182,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `poolErrorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
 
+* `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
+
 ## `sqlite` connection options
 
 * `database` - Database path. For example "./mydb.sql"

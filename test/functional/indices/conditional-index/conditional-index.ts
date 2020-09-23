@@ -37,7 +37,7 @@ describe("indices > conditional index", () => {
         expect(table!.indices[0].where).to.be.not.empty;
         expect(table!.indices[1].where).to.be.not.empty;
 
-        await queryRunner.dropIndices(table!, table!.indices);
+        await queryRunner.dropIndices(table!, [...table!.indices]);
 
         table = await queryRunner.getTable("post");
         table!.indices.length.should.be.equal(0);

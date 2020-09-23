@@ -1,3 +1,44 @@
+## [0.2.26](https://github.com/typeorm/typeorm/compare/0.2.25...0.2.26) (2020-09-10)
+
+### Bug Fixes
+
+* @JoinTable does not respect inverseJoinColumns referenced column width ([#6444](https://github.com/typeorm/typeorm/issues/6444)) ([f642a9e](https://github.com/typeorm/typeorm/commit/f642a9e)), closes [#6442](https://github.com/typeorm/typeorm/issues/6442)
+* add missing schema for OracleDriver ([#6673](https://github.com/typeorm/typeorm/issues/6673)) ([8b8bc35](https://github.com/typeorm/typeorm/commit/8b8bc35))
+* change InsertQueryBuilder.values() with an empty array into a no-op ([#6584](https://github.com/typeorm/typeorm/issues/6584)) ([9d2df28](https://github.com/typeorm/typeorm/commit/9d2df28)), closes [#3111](https://github.com/typeorm/typeorm/issues/3111)
+* Child entities not being saved correctly with cascade actions ([#6219](https://github.com/typeorm/typeorm/issues/6219)) ([16a2d80](https://github.com/typeorm/typeorm/commit/16a2d80))
+* correctly parse connection URI with query params ([#6390](https://github.com/typeorm/typeorm/issues/6390)) ([54a3a15](https://github.com/typeorm/typeorm/commit/54a3a15)), closes [#6389](https://github.com/typeorm/typeorm/issues/6389)
+* decorators should implement the official TypeScript interface ([#6398](https://github.com/typeorm/typeorm/issues/6398)) ([c23c888](https://github.com/typeorm/typeorm/commit/c23c888)), closes [#5922](https://github.com/typeorm/typeorm/issues/5922)
+* DeepPartial with any and {[k: string]: any} ([#6581](https://github.com/typeorm/typeorm/issues/6581)) ([8d90d40](https://github.com/typeorm/typeorm/commit/8d90d40)), closes [#6580](https://github.com/typeorm/typeorm/issues/6580) [#6580](https://github.com/typeorm/typeorm/issues/6580)
+* exporting missing load event ([#6396](https://github.com/typeorm/typeorm/issues/6396)) ([c6336aa](https://github.com/typeorm/typeorm/commit/c6336aa))
+* get correct insert ids for multiple entities inserted ([#6668](https://github.com/typeorm/typeorm/issues/6668)) ([ef2011d](https://github.com/typeorm/typeorm/commit/ef2011d)), closes [#2131](https://github.com/typeorm/typeorm/issues/2131) [#5973](https://github.com/typeorm/typeorm/issues/5973) [#2131](https://github.com/typeorm/typeorm/issues/2131)
+* getPendingMigrations isn't properly working ([#6372](https://github.com/typeorm/typeorm/issues/6372)) ([7c0da1c](https://github.com/typeorm/typeorm/commit/7c0da1c))
+* handle 'error' events from pool connection ([#6262](https://github.com/typeorm/typeorm/issues/6262)) ([ae3cf0e](https://github.com/typeorm/typeorm/commit/ae3cf0e))
+* insert IN(null) instead of IN() when In([]) empty array for mysqlDriver ([#6237](https://github.com/typeorm/typeorm/issues/6237)) ([6f6bdbd](https://github.com/typeorm/typeorm/commit/6f6bdbd))
+* make only a single SELECT to get inserted default and generated values of multiple entities ([#6669](https://github.com/typeorm/typeorm/issues/6669)) ([4fc4a1b](https://github.com/typeorm/typeorm/commit/4fc4a1b)), closes [#6266](https://github.com/typeorm/typeorm/issues/6266) [#6266](https://github.com/typeorm/typeorm/issues/6266)
+* Migration issues with scale & precision in sqlite/sql.js ([#6638](https://github.com/typeorm/typeorm/issues/6638)) ([0397e44](https://github.com/typeorm/typeorm/commit/0397e44)), closes [#6636](https://github.com/typeorm/typeorm/issues/6636)
+* mysql migration: make sure the indices sql which left-join be the same database ([#6426](https://github.com/typeorm/typeorm/issues/6426)) ([906d97f](https://github.com/typeorm/typeorm/commit/906d97f))
+* pass `ids_` to alias builder to prevent length overflow ([#6624](https://github.com/typeorm/typeorm/issues/6624)) ([cf3ad62](https://github.com/typeorm/typeorm/commit/cf3ad62))
+* pass formatOptions to Data API Client, fix extensions ([#6404](https://github.com/typeorm/typeorm/issues/6404)) ([9abab82](https://github.com/typeorm/typeorm/commit/9abab82)), closes [#1](https://github.com/typeorm/typeorm/issues/1)
+* Query builder makes query with joins, without limit for inherited entities ([#6402](https://github.com/typeorm/typeorm/issues/6402)) ([874e573](https://github.com/typeorm/typeorm/commit/874e573)), closes [#6399](https://github.com/typeorm/typeorm/issues/6399)
+* remove unnecessary optionality from Raw operator's columnAlias argument ([#6321](https://github.com/typeorm/typeorm/issues/6321)) ([0d99b46](https://github.com/typeorm/typeorm/commit/0d99b46))
+* resolve missing decorators on shim ([#6354](https://github.com/typeorm/typeorm/issues/6354)) ([8e2d97d](https://github.com/typeorm/typeorm/commit/8e2d97d)), closes [#6093](https://github.com/typeorm/typeorm/issues/6093)
+* revert fix handle URL objects as column field values ([#6145](https://github.com/typeorm/typeorm/issues/6145)) ([e073e02](https://github.com/typeorm/typeorm/commit/e073e02))
+* SqlQueryRunner.hasColumn was not working ([#6146](https://github.com/typeorm/typeorm/issues/6146)) ([a595fed](https://github.com/typeorm/typeorm/commit/a595fed)), closes [#5718](https://github.com/typeorm/typeorm/issues/5718)
+* support multiple `JoinColumn`s in EntitySchema ([#6397](https://github.com/typeorm/typeorm/issues/6397)) ([298a3b9](https://github.com/typeorm/typeorm/commit/298a3b9)), closes [#5444](https://github.com/typeorm/typeorm/issues/5444)
+* Unnecessary migrations for fulltext indices ([#6634](https://github.com/typeorm/typeorm/issues/6634)) ([c81b405](https://github.com/typeorm/typeorm/commit/c81b405)), closes [#6633](https://github.com/typeorm/typeorm/issues/6633)
+* unnecessary migrations for unsigned numeric types ([#6632](https://github.com/typeorm/typeorm/issues/6632)) ([7ddaf23](https://github.com/typeorm/typeorm/commit/7ddaf23)), closes [#2943](https://github.com/typeorm/typeorm/issues/2943) [/github.com/typeorm/typeorm/pull/6632#pullrequestreview-480932808](https://github.com//github.com/typeorm/typeorm/pull/6632/issues/pullrequestreview-480932808)
+* update query deep partial TypeScript definition ([#6085](https://github.com/typeorm/typeorm/issues/6085)) ([23110d1](https://github.com/typeorm/typeorm/commit/23110d1))
+
+### Features
+
+* add AWS configurationOptions to aurora-data-api-pg connector ([#6106](https://github.com/typeorm/typeorm/issues/6106)) ([203f51d](https://github.com/typeorm/typeorm/commit/203f51d))
+* add better-sqlite3 driver ([#6224](https://github.com/typeorm/typeorm/issues/6224)) ([2241451](https://github.com/typeorm/typeorm/commit/2241451))
+* add postgres connection timeout option ([#6160](https://github.com/typeorm/typeorm/issues/6160)) ([0072149](https://github.com/typeorm/typeorm/commit/0072149))
+* FileLogger accepts custom file path ([#6642](https://github.com/typeorm/typeorm/issues/6642)) ([c99ba40](https://github.com/typeorm/typeorm/commit/c99ba40)), closes [#4410](https://github.com/typeorm/typeorm/issues/4410)
+* implement postgres ltree ([#6480](https://github.com/typeorm/typeorm/issues/6480)) ([43a7386](https://github.com/typeorm/typeorm/commit/43a7386)), closes [#4193](https://github.com/typeorm/typeorm/issues/4193)
+* support absolute paths in migrationsDir for the CLI ([#6660](https://github.com/typeorm/typeorm/issues/6660)) ([2b5f139](https://github.com/typeorm/typeorm/commit/2b5f139))
+* support cjs extension for ormconfig ([#6285](https://github.com/typeorm/typeorm/issues/6285)) ([6eeb03a](https://github.com/typeorm/typeorm/commit/6eeb03a))
+
 ## [0.2.25](https://github.com/typeorm/typeorm/compare/0.2.24...0.2.25) (2020-05-19)
 
 ### Bug Fixes

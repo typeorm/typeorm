@@ -19,6 +19,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {CockroachQueryRunner} from "./CockroachQueryRunner";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -284,7 +285,7 @@ export class CockroachDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new CockroachQueryRunner(this, mode);
     }
 
@@ -647,6 +648,13 @@ export class CockroachDriver implements Driver {
      */
     isUUIDGenerationSupported(): boolean {
         return true;
+    }
+
+    /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
+        return false;
     }
 
     /**

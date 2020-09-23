@@ -11,7 +11,7 @@ const replace = require("gulp-replace");
 const rename = require("gulp-rename");
 const mocha = require("gulp-mocha");
 const chai = require("chai");
-const tslint = require("gulp-tslint");
+const eslint = require("gulp-eslint");
 const sourcemaps = require("gulp-sourcemaps");
 const istanbul = require("gulp-istanbul");
 const remapIstanbul = require("remap-istanbul/lib/gulpRemapIstanbul");
@@ -74,6 +74,15 @@ export class Gulpfile {
      * Replaces PlatformTools with browser-specific implementation called BrowserPlatformTools.
      */
     @Task()
+    browserCopyDirectoryExportedClassesLoader() {
+        return gulp.src("./src/platform/BrowserDirectoryExportedClassesLoader.template")
+            .pipe(rename("BrowserDirectoryExportedClassesLoader.ts"))
+            .pipe(gulp.dest("./build/browser/src/platform"));
+    }
+    /**
+     * Replaces PlatformTools with browser-specific implementation called BrowserPlatformTools.
+     */
+    @Task()
     browserCopyPlatformTools() {
         return gulp.src("./src/platform/BrowserPlatformTools.template")
             .pipe(rename("PlatformTools.ts"))
@@ -97,7 +106,10 @@ export class Gulpfile {
             "lib": ["es5", "es6", "dom"],
             typescript: require("typescript")
         });
-        const tsResult = gulp.src(["./build/browser/src/**/*.ts", "./node_modules/reflect-metadata/**/*.d.ts", "./node_modules/@types/**/*.ts"])
+        const tsResult = gulp.src([
+            "./build/browser/src/**/*.ts",
+            "./node_modules/reflect-metadata/**/*.d.ts"
+        ])
             .pipe(sourcemaps.init())
             .pipe(tsProject());
 
@@ -151,8 +163,7 @@ export class Gulpfile {
             typescript: require("typescript")
         });
         const tsResult = gulp.src([
-            "./src/**/*.ts",
-            "./node_modules/@types/**/*.ts",
+            "./src/**/*.ts"
         ])
             .pipe(sourcemaps.init())
             .pipe(tsProject());
@@ -231,7 +242,7 @@ export class Gulpfile {
     package() {
         return [
             "clean",
-            ["browserCopySources", "browserCopyPlatformTools", "browserCopyDisabledDriversDummy"],
+            ["browserCopySources", "browserCopyPlatformTools", "browserCopyDisabledDriversDummy", "browserCopyDirectoryExportedClassesLoader"],
             ["packageCompile", "browserCompile"],
             "packageMoveCompiledFiles",
             [
@@ -269,18 +280,11 @@ export class Gulpfile {
      * Runs ts linting to validate source code.
      */
     @Task()
-    tslint() {
+    eslint() {
         return gulp.src(["./src/**/*.ts", "./test/**/*.ts", "./sample/**/*.ts"])
-            .pipe(
-                tslint({
-                    formatter: "stylish"
-                })
-            )
-            .pipe(tslint.report({
-                emitError: true,
-                sort: true,
-                bell: true
-            }));
+            .pipe(eslint())
+            .pipe(eslint.format('stylish'))
+            .pipe(eslint.failAfterError())
     }
 
     /**

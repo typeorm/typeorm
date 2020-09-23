@@ -52,4 +52,9 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
     * Defaults to logging error with `warn` level.
      */
     readonly poolErrorHandler?: (err: any) => any;
+
+    /**
+     * Include notification messages from Postgres server in client logs
+     */
+    readonly logNotifications?: boolean;
 }

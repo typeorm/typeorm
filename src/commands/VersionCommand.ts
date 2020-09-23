@@ -1,5 +1,5 @@
 import * as yargs from "yargs";
-const exec = require("child_process").exec;
+import {exec} from "child_process";
 
 /**
  * Shows typeorm version.

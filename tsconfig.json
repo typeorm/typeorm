@@ -4,7 +4,7 @@
         "lib": ["es5", "es6"],
         "outDir": "build/compiled",
         "allowSyntheticDefaultImports": true,
-	      "esModuleInterop": true,
+        "esModuleInterop": true,
         "target": "es5",
         "module": "commonjs",
         "moduleResolution": "node",

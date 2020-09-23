@@ -18,6 +18,7 @@ import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOpt
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -385,7 +386,7 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new MysqlQueryRunner(this, mode);
     }
 
@@ -709,11 +710,13 @@ export class MysqlDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any, entityIndex: number) {
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
-                value = insertResult.insertId;
+                // NOTE: When multiple rows is inserted by a single INSERT statement,
+                // `insertId` is the value generated for the first inserted row only.
+                value = insertResult.insertId + entityIndex;
             // } else if (generatedColumn.generationStrategy === "uuid") {
             //     console.log("getting db value:", generatedColumn.databaseName);
             //     value = generatedColumn.getEntityValue(uuidMap);
@@ -796,6 +799,13 @@ export class MysqlDriver implements Driver {
      */
     isUUIDGenerationSupported(): boolean {
         return false;
+    }
+
+    /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
+        return true;
     }
 
     /**

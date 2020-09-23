@@ -62,11 +62,17 @@ services:
 
   # cockroachdb
   cockroachdb:
-    image: "cockroachdb/cockroach-unstable:v19.1.0-rc.2"
+    image: "cockroachdb/cockroach:v19.2.9"
     container_name: "typeorm-cockroachdb"
     command: start --insecure
     ports:
       - "26257:26257"
+
+  oracle:
+    image: imnotjames/oracle-xe:18
+    container_name: "typeorm-oracle"
+    ports:
+      - "1521:1521"
 
   # sap hana (works only on linux)
   # hanaexpress:

@@ -1,114 +1,215 @@
-# Javascript Node CircleCI 2.0 configuration file
-# Check https://circleci.com/docs/2.0/language-javascript/ for more details
-version: 2
-jobs:
-  common:
-    working_directory: ~/typeorm
-    docker:
-      - image: circleci/node:10.16.0
-      - image: mysql:5.7.24
-        environment:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_DATABASE: "test"
-      - image: mariadb:10.1.37
-        name: mariadb
-        environment:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_DATABASE: "test"
-      - image: circleci/postgres:9.6.11-postgis
-        environment:
-          POSTGRES_USER: "test"
-          POSTGRES_PASSWORD: "test"
-          POSTGRES_DB: "test"
-      - image: circleci/mongo:3.4.18
-      # - image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
-      #   environment:
-      #     SA_PASSWORD: "Admin12345"
-      #     ACCEPT_EULA: "Y"
+version: 2.1
 
-    steps:
-      - checkout
-      - run: cp ormconfig.circleci-common.json ormconfig.json
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "package.json" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
-      - run: npm install
-      - save_cache:
-          paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
-      - run: npm run lint
-      - run: npm test
+orbs:
+  codecov: codecov/codecov@1.1.1
 
-  cockroachdb:
-    working_directory: ~/typeorm
-    docker:
-      - image: circleci/node:10.15.0
-      - image: cockroachdb/cockroach:latest
-        command: start --insecure
+commands:
+  create-typeorm-config:
+    parameters:
+      databases:
+        type: string
+        default: ""
     steps:
-      - checkout
-      - run: cp ormconfig.circleci-cockroach.json ormconfig.json
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "package.json" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
-      - run: npm install
-      - save_cache:
-          paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
-      - run: npm run lint
+      - when:
+          condition:
+            equal: [ << parameters.databases >>, "" ]
+          steps:
+            - run:
+                name: "Enabling Databases in ORM config"
+                command: cp ormconfig.circleci-common.json ./ormconfig.json
+      - unless:
+          condition:
+            equal: [ << parameters.databases >>, "" ]
+          steps:
+            - run:
+                name: "Enabling Databases in ORM config"
+                command: >
+                  cat ormconfig.circleci-common.json \
+                    | jq 'map(.skip = if (.name | IN($ARGS.positional[])) then false else true end)' --args << parameters.databases >> \
+                    > ormconfig.json
       - run:
-          npm test
-  oracle:
-    working_directory: ~/typeorm
-    docker:
-    - image: circleci/node:10.16.0
-    - image: "store/oracle/database-enterprise:12.2.0.1-slim"
-      auth:
-        username: $DOCKER_USER
-        password: $DOCKER_PASSWORD
-    environment:
-        DB_SID: "sys"
-        SYS_PASSWORD: "ORCLCDB"
+          name: Check ORMConfig
+          command: cat ormconfig.json
+
+  install-packages:
+    parameters:
+      cache-key:
+        type: string
+        default: ""
     steps:
-      - run: if [ -z "$DOCKER_USER" ]; then echo "DOCKER_USER is unset"; circleci step halt; fi
-      - checkout
-      - run: sudo npm install -g npm@latest
-      - run: cp ormconfig.circleci-oracle.json ormconfig.json
-      # Download and cache dependencies
       - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "package.json" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
-      - run: npm install
+          name: Restore node_modules cache
+          key: node_modules-<< parameters.cache-key >>-{{ checksum "package-lock.json" }}
+      - run:
+          name: Verify `package.json` and `package-lock.json` are in sync
+          command: npx lock-verify
+      - run:
+          # This uses `npm install` instead of `npm ci`
+          # because of https://github.com/npm/cli/issues/558
+          name: Install Node Packages
+          command: |
+            if [ ! -d node_modules ]; then
+              npm install
+            fi
+      - run:
+          # This is pretty terrible but OracleDB requires you to grab the binaries OOB
+          # from the normal installation, place them in the LD Path
+          # also - not super well documented - grab `libaio` as well
+          # Because this is technically the same image as the runner we'll snag
+          # the libaio1 and place them in the same instantclient directory.
+          name: Download Required OracleDB Binaries
+          command: |
+            if [ ! -d node_modules/oracledb/instantclient_19_8 ]; then
+              curl -sf -o node_modules/oracledb/instantclient.zip $BLOB_URL
+              unzip -qqo node_modules/oracledb/instantclient.zip -d node_modules/oracledb/
+              rm node_modules/oracledb/instantclient.zip
+
+              DEBIAN_FRONTEND=noninteractive sudo apt-get -qq -y install libaio1
+              cp /lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/
+            fi
+          environment:
+            BLOB_URL: https://download.oracle.com/otn_software/linux/instantclient/19800/instantclient-basiclite-linux.x64-19.8.0.0.0dbru.zip
       - save_cache:
+          name: Save node_modules cache
+          key: node_modules-{{ checksum "package-lock.json" }}
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
-      - run: wget https://download.oracle.com/otn_software/linux/instantclient/195000/instantclient-basiclite-linux.x64-19.5.0.0.0dbru.zip
-      - run: unzip instantclient-basiclite-linux.x64-19.5.0.0.0dbru.zip -d /tmp/oracle
-      - run: wget https://download.oracle.com/otn_software/linux/instantclient/195000/instantclient-sqlplus-linux.x64-19.5.0.0.0dbru.zip
-      - run: unzip instantclient-sqlplus-linux.x64-19.5.0.0.0dbru.zip -d /tmp/oracle
-      - run: echo "export LD_LIBRARY_PATH=/tmp/oracle/instantclient_19_5" >> $BASH_ENV
-      - run: sudo sh -c "echo /tmp/oracle/instantclient_19_5 > /etc/ld.so.conf.d/oracle-instantclient.conf";sudo ldconfig
-      - run: sh -c 'echo WHENEVER SQLERROR EXIT FAILURE > /tmp/user.sql; echo CREATE USER typeorm IDENTIFIED BY Passw0rd\; >> /tmp/user.sql;  echo GRANT CONNECT TO typeorm\; >> /tmp/user.sql;  echo GRANT UNLIMITED TABLESPACE TO typeorm\; >> /tmp/user.sql;  echo exit >> /tmp/user.sql'
-      - run: sudo apt install libaio1
-      - run: until  /tmp/oracle/instantclient_19_5/sqlplus -L -S sys/Oradoc_db1@//localhost:1521/orclpdb1.localdomain as sysdba @/tmp/user.sql ; do echo waiting for oracle; sleep 10; done;
-      - run: npm install oracledb --no-save
+
+jobs:
+  lint:
+    working_directory: ~/typeorm
+    docker:
+      - image: circleci/node:12
+    steps:
+      - checkout
+      - install-packages:
+          cache-key: node12
       - run: npm run lint
-      - run: npm test
+
+  build:
+    working_directory: ~/typeorm
+    docker:
+      - image: circleci/node:12
+    steps:
+      - checkout
+      - install-packages:
+          cache-key: node12
+      - run: npm run compile
+      - persist_to_workspace:
+          root: ~/typeorm
+          paths:
+            - build/
+
+  test:
+    parameters:
+      databases:
+        type: string
+        default: ""
+      node-version:
+        type: string
+        default: "10"
+    working_directory: ~/typeorm
+    docker:
+      - image: circleci/node:<< parameters.node-version >>
+    steps:
+      - checkout
+      - setup_remote_docker
+      - attach_workspace:
+          at: ~/typeorm
+      - create-typeorm-config:
+          databases: << parameters.databases >>
+      - run:
+          name: Start all Relevant Services
+          command: |
+            SERVICES=$(
+              npx js-yaml ./docker-compose.yml \
+                | jq -r '.services | keys | map(select(. | IN($ARGS.positional[]))) | join(" ")' --args << parameters.databases >>
+            )
+
+            docker-compose --project-name typeorm --no-ansi up --detach $SERVICES
+      - install-packages:
+         cache-key: node<< parameters.node-version >>
+      - run:
+          name: Set up TypeORM Test Runner
+          command: |
+            docker run \
+              --volume /typeorm \
+              --name typeorm-code \
+              --workdir /typeorm \
+              circleci/node:<< parameters.node-version >> \
+              /bin/bash -c "sudo chmod 777 /typeorm && sudo chown circleci /typeorm"
+            docker cp ./ typeorm-code:/typeorm
+      - run:
+          name: Wait for Services to be Available
+          command: |
+            COMMANDS=$(
+                cat ormconfig.json \
+                  | jq -r '
+                    map(select(.skip == false)
+                      | select(.host)
+                      | select(.port)
+                      | "nc -z " + .host + " " + (.port|tostring) + " && echo " + .host + " " + (.port|tostring) + " is up")
+                      | join(" && ")
+                  '
+            )
+            echo "Running '$COMMANDS'"
+
+            docker run \
+              --network typeorm_default \
+              --tty \
+              ubuntu:trusty \
+              timeout 60 sh -c "until ($COMMANDS); do echo \"Waiting for Services to be Available ...\"; sleep 5; done"
+      # Download and cache dependencies
+      - run:
+          name: "Run Tests with Coverage"
+          command: |
+            docker run \
+              --env LD_LIBRARY_PATH='/typeorm/node_modules/oracledb/instantclient_19_8/:$LD_LIBRARY_PATH' \
+              --volumes-from typeorm-code \
+              --network typeorm_default \
+              --tty \
+              --workdir /typeorm \
+              --name typeorm-testrunner \
+              circleci/node:<< parameters.node-version >> \
+              npx nyc npm run test-fast
+
+            docker cp typeorm-testrunner:/typeorm/coverage/ ./
+      - run:
+          name: Stop all Relevant Services
+          command: docker-compose down
+      - store_artifacts:
+          path: coverage
+      - codecov/upload
+
 workflows:
   version: 2
   test:
     jobs:
-      - common
-      - cockroachdb
-      # - oracle
+      - lint
+      - build
+      - test:
+          name: test (mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs) - Node v<< matrix.node-version >>
+          requires:
+            - lint
+            - build
+          databases: "mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs"
+          matrix:
+            parameters:
+              node-version:
+                - "10"
+                - "12"
+                - "13"
+      - test:
+          name: test (cockroachdb) - Node v12
+          requires:
+            - lint
+            - build
+          databases: "cockroachdb"
+          node-version: "12"
+      - test:
+          name: test (oracle) - Node v12
+          requires:
+            - lint
+            - build
+          databases: "oracle"
+          node-version: "12"

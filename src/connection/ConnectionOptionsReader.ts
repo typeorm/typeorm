@@ -1,3 +1,4 @@
+import appRootPath from "app-root-path";
 import {ConnectionOptions} from "./ConnectionOptions";
 import {PlatformTools} from "../platform/PlatformTools";
 import {ConnectionOptionsEnvReader} from "./options-reader/ConnectionOptionsEnvReader";
@@ -93,11 +94,9 @@ export class ConnectionOptionsReader {
 
         // if .env file found then load all its variables into process.env using dotenv package
         if (foundFileFormat === "env") {
-            const dotenv = PlatformTools.load("dotenv");
-            dotenv.config({ path: this.baseFilePath });
+            PlatformTools.dotenv(this.baseFilePath);
         } else if (PlatformTools.fileExist(".env")) {
-            const dotenv = PlatformTools.load("dotenv");
-            dotenv.config({ path: ".env" });
+            PlatformTools.dotenv(".env");
         }
 
         // Determine config file name
@@ -108,13 +107,13 @@ export class ConnectionOptionsReader {
             connectionOptions = new ConnectionOptionsEnvReader().read();
 
         } else if (foundFileFormat === "js" || foundFileFormat === "cjs") {
-            connectionOptions = await PlatformTools.load(configFile);
+            connectionOptions = await require(configFile);
 
         } else if (foundFileFormat === "ts") {
-            connectionOptions = await PlatformTools.load(configFile);
+            connectionOptions = await require(configFile);
 
         } else if (foundFileFormat === "json") {
-            connectionOptions = PlatformTools.load(configFile);
+            connectionOptions = require(configFile);
 
         } else if (foundFileFormat === "yml") {
             connectionOptions = new ConnectionOptionsYmlReader().read(configFile);
@@ -200,7 +199,7 @@ export class ConnectionOptionsReader {
         if (this.options && this.options.root)
             return this.options.root;
 
-        return PlatformTools.load("app-root-path").path;
+        return appRootPath.path;
     }
 
     /**
