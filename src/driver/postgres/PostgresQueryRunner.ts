@@ -1434,6 +1434,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             }
             return `("ns"."nspname" = '${schema}' AND "cl"."relname" = '${name}')`;
         }).join(" OR ");
+
+        const hasRelispartitionColumn = await this.hasSupportForPartitionedTables();
+        const isPartitionCondition = hasRelispartitionColumn ? ` AND "cl"."relispartition" = 'f'` : "";
+
         const foreignKeysSql = `SELECT "con"."conname" AS "constraint_name", "con"."nspname" AS "table_schema", "con"."relname" AS "table_name", "att2"."attname" AS "column_name", ` +
             `"ns"."nspname" AS "referenced_table_schema", "cl"."relname" AS "referenced_table_name", "att"."attname" AS "referenced_column_name", "con"."confdeltype" AS "on_delete", ` +
             `"con"."confupdtype" AS "on_update", "con"."condeferrable" AS "deferrable", "con"."condeferred" AS "deferred" ` +
@@ -1449,7 +1453,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             `WHERE "con1"."contype" = 'f' AND (${foreignKeysCondition}) ` +
             `) "con" ` +
             `INNER JOIN "pg_attribute" "att" ON "att"."attrelid" = "con"."confrelid" AND "att"."attnum" = "con"."child" ` +
-            `INNER JOIN "pg_class" "cl" ON "cl"."oid" = "con"."confrelid" ` +
+            `INNER JOIN "pg_class" "cl" ON "cl"."oid" = "con"."confrelid" ${isPartitionCondition}` +
             `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
             `INNER JOIN "pg_attribute" "att2" ON "att2"."attrelid" = "con"."conrelid" AND "att2"."attnum" = "con"."parent"`;
         const [dbTables, dbColumns, dbConstraints, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
@@ -2125,4 +2129,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         return c;
     }
 
+    /**
+     * Checks if the PostgreSQL server has support for partitioned tables
+     */
+    protected async hasSupportForPartitionedTables() {
+        const result = await this.query(`SELECT TRUE FROM information_schema.columns WHERE table_name = 'pg_class' and column_name = 'relispartition'`);
+        return result.length ? true : false;
+    }
 }
