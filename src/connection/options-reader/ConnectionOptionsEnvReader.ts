@@ -21,7 +21,7 @@ export class ConnectionOptionsEnvReader {
             type: PlatformTools.getEnvVariable("TYPEORM_CONNECTION") || (PlatformTools.getEnvVariable("TYPEORM_URL") ? PlatformTools.getEnvVariable("TYPEORM_URL").split("://")[0] : undefined),
             url: PlatformTools.getEnvVariable("TYPEORM_URL"),
             host: PlatformTools.getEnvVariable("TYPEORM_HOST"),
-            port: PlatformTools.getEnvVariable("TYPEORM_PORT"),
+            port: this.stringToNumber(PlatformTools.getEnvVariable("TYPEORM_PORT")),
             username: PlatformTools.getEnvVariable("TYPEORM_USERNAME"),
             password: PlatformTools.getEnvVariable("TYPEORM_PASSWORD"),
             database: PlatformTools.getEnvVariable("TYPEORM_DATABASE"),
@@ -95,4 +95,14 @@ export class ConnectionOptionsEnvReader {
         return variable.split(",").map(str => str.trim());
     }
 
+    /**
+     * Converts a string which contains a number into a javascript number
+     */
+    private stringToNumber(value: any): number|undefined {
+        if (!value) {
+            return undefined;
+        }
+
+        return parseInt(value);
+    }
 }
