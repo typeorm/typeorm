@@ -202,7 +202,8 @@ export class EntitySchemaTransformer {
                         synchronize: index.synchronize === false ? false : true,
                         where: index.where,
                         sparse: index.sparse,
-                        columns: index.columns
+                        columns: index.columns,
+                        orderBy: index.orderBy
                     };
                     metadataArgsStorage.indices.push(indexAgrs);
                 });

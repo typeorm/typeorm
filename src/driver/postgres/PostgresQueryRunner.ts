@@ -3,7 +3,7 @@ import {QueryFailedError} from "../../error/QueryFailedError";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {ColumnType} from "../../index";
+import {ColumnType, OrderByCondition} from "../../index";
 import {ReadStream} from "../../platform/PlatformTools";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {QueryRunner} from "../../query-runner/QueryRunner";
@@ -1416,12 +1416,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         const indicesSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
-            `"types"."typname" AS "type_name" ` +
+            `"types"."typname" AS "type_name", "ixes"."indexdef" AS "index_definition"` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
             `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
             `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
+            `INNER JOIN "pg_indexes" "ixes" ON "ixes"."indexname" = "i"."relname" ` +
             `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
             `WHERE "t"."relkind" = 'r' AND "cnst"."contype" IS NULL AND (${constraintsCondition})`;
@@ -1672,6 +1673,38 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         && index["table_name"] === constraint["table_name"]
                         && index["constraint_name"] === constraint["constraint_name"];
                 });
+
+                let orderBy: OrderByCondition = {};
+                for (let index of indices) {
+                    // String of the form: (<column_name> <DESC/NULL LAST>, ...)
+                    let definitionString = (index["index_definition"] as string)
+                        .substring(
+                            (index["index_definition"] as string).lastIndexOf("(") + 1,
+                            (index["index_definition"] as string).lastIndexOf(")")
+                        );
+
+                    let columnIndex = definitionString.indexOf(index["column_name"]);
+                    let commaIndex = definitionString.indexOf(",", columnIndex + 1);
+                    if (commaIndex >= 0) {
+                        definitionString = definitionString.substring(
+                            columnIndex,
+                            commaIndex
+                        );
+                    } else {
+                        definitionString = definitionString.substring(columnIndex);
+                    }
+
+                    let orderString: "ASC" | "DESC" = definitionString.indexOf("DESC") > -1 ? "DESC" : "ASC";
+
+                    orderBy[index["column_name"]] = {
+                        order: orderString,
+                        nulls: orderString === "ASC" ?
+                            (definitionString.indexOf("NULLS FIRST") > -1 ? "NULLS FIRST" : "NULLS LAST")
+                            :
+                            (definitionString.indexOf("NULLS LAST") > -1 ? "NULLS LAST" : "NULLS FIRST")
+                    };
+                }
+
                 return new TableIndex(<TableIndexOptions>{
                     table: table,
                     name: constraint["constraint_name"],
@@ -1679,7 +1712,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     isUnique: constraint["is_unique"] === "TRUE",
                     where: constraint["condition"],
                     isSpatial: indices.every(i => this.driver.spatialTypes.indexOf(i["type_name"]) >= 0),
-                    isFulltext: false
+                    isFulltext: false,
+                    orderBy: orderBy
                 });
             });
 
@@ -1894,7 +1928,19 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds create index sql.
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
-        const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
+        const columns = index.columnNames.map(columnName => {
+            // If index.orderBy[columnName] does not exist and index.orderBy is not a string it means
+            // that the index.orderBy is an object implementing OrderByCondition and it was not specified
+            // for this column
+            if (!index.orderBy || (typeof index.orderBy !== "string") && !index.orderBy.hasOwnProperty(columnName))
+                return `"${columnName}"`;
+            if (typeof index.orderBy === "string")
+                return `"${columnName}" ${index.orderBy}`;
+
+            let orderBy = index.orderBy[columnName];
+            return `"${columnName}" ${typeof orderBy === "string" ? orderBy : `${orderBy.order} ${orderBy.nulls ? orderBy.nulls : ""}`}`;
+        }).join(", ");
+
         return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapePath(table)} ${index.isSpatial ? "USING GiST " : ""}(${columns}) ${index.where ? "WHERE " + index.where : ""}`);
     }
 

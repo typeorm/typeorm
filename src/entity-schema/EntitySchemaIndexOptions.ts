@@ -1,3 +1,5 @@
+import {IndexOrderOptions} from "../metadata/types/IndexOrderOptions";
+
 export interface EntitySchemaIndexOptions {
 
     /**
@@ -38,7 +40,7 @@ export interface EntitySchemaIndexOptions {
      * Works only in MySQL.
      */
     fulltext?: boolean;
-    
+
     /**
      * Fulltext parser.
      * Works only in MySQL.
@@ -49,5 +51,10 @@ export interface EntitySchemaIndexOptions {
      * Index filter condition.
      */
     where?: string;
+
+    /**
+     * Specifies a sort order used in index creation.
+     */
+    orderBy?: IndexOrderOptions;
 
 }

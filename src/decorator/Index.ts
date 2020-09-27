@@ -1,5 +1,6 @@
 import {getMetadataArgsStorage, IndexOptions} from "../";
 import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
+import {IndexOrderOptions} from "../metadata/types/IndexOrderOptions";
 
 /**
  * Creates a database index.
@@ -67,6 +68,20 @@ export function Index(nameOrFieldsOrOptions?: string|string[]|((object: any) => 
         options = (typeof maybeFieldsOrOptions === "object" && !Array.isArray(maybeFieldsOrOptions)) ? maybeFieldsOrOptions as IndexOptions : maybeOptions;
 
     return function (clsOrObject: Function|Object, propertyName?: string | symbol) {
+        let orderBy: IndexOrderOptions | undefined;
+        if (options) {
+            if (!propertyName || typeof options.orderBy === "string") {
+                orderBy = options.orderBy;
+            } else if (propertyName && options.orderBy && options.orderBy.hasOwnProperty(propertyName)) {
+                orderBy = {
+                    [propertyName]: options.orderBy[propertyName.toString()]
+                };
+            } else {
+                orderBy = undefined;
+            }
+        } else {
+            orderBy = undefined;
+        }
 
         getMetadataArgsStorage().indices.push({
             target: propertyName ? clsOrObject.constructor : clsOrObject as Function,
@@ -80,7 +95,8 @@ export function Index(nameOrFieldsOrOptions?: string|string[]|((object: any) => 
             parser: options ? options.parser : undefined,
             sparse: options && options.sparse ? true : false,
             background: options && options.background ? true : false,
-            expireAfterSeconds: options ? options.expireAfterSeconds : undefined
+            expireAfterSeconds: options ? options.expireAfterSeconds : undefined,
+            orderBy: orderBy
         } as IndexMetadataArgs);
     };
 }

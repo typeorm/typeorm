@@ -1,6 +1,8 @@
 /**
  * Database's table index options.
  */
+import {IndexOrderOptions} from "../../metadata/types/IndexOrderOptions";
+
 export interface TableIndexOptions {
 
     // -------------------------------------------------------------------------
@@ -45,4 +47,8 @@ export interface TableIndexOptions {
      */
     where?: string;
 
+    /**
+     * Specifies a sort order used in index creation.
+     */
+    orderBy?: IndexOrderOptions;
 }

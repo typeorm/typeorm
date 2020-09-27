@@ -3,6 +3,7 @@ import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
+import {IndexOrderOptions} from "./types/IndexOrderOptions";
 
 /**
  * Index metadata contains all information about table's index.
@@ -103,6 +104,11 @@ export class IndexMetadata {
     where?: string;
 
     /**
+     * Specifies a sort order used in index creation.
+     */
+    orderBy?: IndexOrderOptions;
+
+    /**
      * Map of column names with order set.
      * Used only by MongoDB driver.
      */
@@ -137,6 +143,7 @@ export class IndexMetadata {
             this.expireAfterSeconds = options.args.expireAfterSeconds;
             this.givenName = options.args.name;
             this.givenColumnNames = options.args.columns;
+            this.orderBy = options.args.orderBy;
         }
     }
 

@@ -18,6 +18,7 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import {OrderByCondition} from "../..";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -919,10 +920,19 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                     const indexDef = dbIndicesDef.find(dbIndexDef => dbIndexDef["name"] === dbIndexName);
                     const condition = /WHERE (.*)/.exec(indexDef!["sql"]);
                     const dbIndex = dbIndices.find(dbIndex => dbIndex["name"] === dbIndexName);
-                    const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${dbIndex!["name"]}")`);
+                    const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_xinfo("${dbIndex!["name"]}")`);
                     const indexColumns = indexInfos
                         .sort((indexInfo1, indexInfo2) => parseInt(indexInfo1["seqno"]) - parseInt(indexInfo2["seqno"]))
                         .map(indexInfo => indexInfo["name"]);
+
+                    let orderBy: OrderByCondition = {};
+                    for (let info of indexInfos) {
+                        let orderString: "ASC" | "DESC" = info["desc"] === 1 ? "DESC" : "ASC";
+
+                        orderBy[info["name"]] = {
+                            order: orderString
+                        };
+                    }
 
                     const isUnique = dbIndex!["unique"] === "1" || dbIndex!["unique"] === 1;
                     return new TableIndex(<TableIndexOptions>{
@@ -930,7 +940,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                         name: dbIndex!["name"],
                         columnNames: indexColumns,
                         isUnique: isUnique,
-                        where: condition ? condition[1] : undefined
+                        where: condition ? condition[1] : undefined,
+                        orderBy: orderBy
                     });
                 });
             const indices = await Promise.all(indicesPromises);
@@ -1074,7 +1085,20 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * Builds create index sql.
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
-        const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
+        const columns = index.columnNames.map(columnName => {
+            // If index.orderBy[columnName] does not exist and index.orderBy is not a string it means
+            // that the index.orderBy is an object implementing OrderByCondition and it was not specified
+            // for this column
+            if (!index.orderBy || (typeof index.orderBy !== "string") && !index.orderBy.hasOwnProperty(columnName))
+                return `"${columnName}"`;
+            if (typeof index.orderBy === "string")
+                return `"${columnName}" ${index.orderBy}`;
+
+            let orderBy = index.orderBy[columnName];
+            // NULLS FIRST and NULLS LAST not supported by Sqlite
+            return `"${columnName}" ${typeof orderBy === "string" ? orderBy : `${orderBy.order}`}`;
+        }).join(", ");
+
         return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table.name}" (${columns}) ${index.where ? "WHERE " + index.where : ""}`);
     }
 

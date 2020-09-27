@@ -1,5 +1,6 @@
 import {IndexMetadata} from "../../metadata/IndexMetadata";
 import {TableIndexOptions} from "../options/TableIndexOptions";
+import {IndexOrderOptions} from "../../metadata/types/IndexOrderOptions";
 
 /**
  * Database's table index stored in this class.
@@ -48,6 +49,11 @@ export class TableIndex {
      */
     where: string;
 
+    /**
+     * Specifies a sort order used in index creation.
+     */
+    orderBy?: IndexOrderOptions;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -60,6 +66,7 @@ export class TableIndex {
         this.isFulltext = !!options.isFulltext;
         this.parser = options.parser;
         this.where = options.where ? options.where : "";
+        this.orderBy = options.orderBy;
     }
 
     // -------------------------------------------------------------------------
@@ -77,7 +84,8 @@ export class TableIndex {
             isSpatial: this.isSpatial,
             isFulltext: this.isFulltext,
             parser: this.parser,
-            where: this.where
+            where: this.where,
+            orderBy: this.orderBy
         });
     }
 
@@ -96,7 +104,8 @@ export class TableIndex {
             isSpatial: indexMetadata.isSpatial,
             isFulltext: indexMetadata.isFulltext,
             parser: indexMetadata.parser,
-            where: indexMetadata.where
+            where: indexMetadata.where,
+            orderBy: indexMetadata.orderBy
         });
     }
 

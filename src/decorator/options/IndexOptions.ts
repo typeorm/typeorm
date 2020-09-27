@@ -1,6 +1,8 @@
 /**
  * Describes all index options.
  */
+import {IndexOrderOptions} from "../../metadata/types/IndexOrderOptions";
+
 export interface IndexOptions {
 
     /**
@@ -50,4 +52,8 @@ export interface IndexOptions {
      */
     expireAfterSeconds?: number;
 
+    /**
+     * Specifies a sort order used in index creation.
+     */
+    orderBy?: IndexOrderOptions;
 }

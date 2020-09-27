@@ -1,6 +1,8 @@
 /**
  * Arguments for IndexMetadata class.
  */
+import {IndexOrderOptions} from "../metadata/types/IndexOrderOptions";
+
 export interface IndexMetadataArgs {
 
     /**
@@ -34,7 +36,7 @@ export interface IndexMetadataArgs {
      * Works only in MySQL.
      */
     fulltext?: boolean;
-    
+
     /**
      * Fulltext parser.
      * Works only in MySQL.
@@ -69,4 +71,9 @@ export interface IndexMetadataArgs {
      * This option is only supported for mongodb database.
      */
     expireAfterSeconds?: number;
+
+    /**
+     * Specifies a sort order used in index creation.
+     */
+    orderBy?: IndexOrderOptions;
 }
