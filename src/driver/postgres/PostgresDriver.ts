@@ -818,11 +818,7 @@ export class PostgresDriver implements Driver {
      * If replication is not setup then returns default connection's database connection.
      */
     obtainMasterConnection(): Promise<any> {
-        return new Promise((ok, fail) => {
-            this.master.connect((err: any, connection: any, release: any) => {
-                err ? fail(err) : ok([connection, release]);
-            });
-        });
+        return this.obtainPoolConnection(this.master);
     }
 
     /**
@@ -834,12 +830,8 @@ export class PostgresDriver implements Driver {
         if (!this.slaves.length)
             return this.obtainMasterConnection();
 
-        return new Promise((ok, fail) => {
-            const random = Math.floor(Math.random() * this.slaves.length);
-            this.slaves[random].connect((err: any, connection: any, release: any) => {
-                err ? fail(err) : ok([connection, release]);
-            });
-        });
+        const random = Math.floor(Math.random() * this.slaves.length);
+        return this.obtainPoolConnection(this.slaves[random]);
     }
 
     /**
@@ -964,6 +956,24 @@ export class PostgresDriver implements Driver {
         } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("Postgres", "pg");
         }
+    }
+
+    /**
+     * Obtains a new database connection given a specific pool
+     */
+    async obtainPoolConnection(pool: any): Promise<any> {
+        const [connection, release] = await new Promise((ok, fail) => {
+            pool.connect((err: any, connection: any, release: any) => {
+                if (err) return fail(err);
+                err ? fail(err) : ok([connection, release]);
+            });
+        });
+
+        if (this.options.schema) {
+            await connection.query(`SET search_path TO '${this.options.schema}', 'public';`);
+        }
+
+        return [connection, release];
     }
 
     /**

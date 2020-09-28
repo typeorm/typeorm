@@ -335,6 +335,25 @@ describe("Connection", () => {
 
         });
 
+        it("sets the default schema search path", () => {
+            return Promise.all(connections.map(async connection => {
+                await connection.synchronize(true);
+                const schemaName = (connection.options as PostgresConnectionOptions).schema;
+                const comment = new CommentV1();
+                comment.title = "Change SchemaName";
+                comment.context = `To ${schemaName}`;
+
+                const commentRepo = connection.getRepository(CommentV1);
+                await commentRepo.save(comment);
+
+                const queryRunner = connection.createQueryRunner();
+                const rows = await queryRunner.query(`select * from "comment" where id = $1`, [comment.id]);
+                await queryRunner.release();
+                expect(rows[0]["context"]).to.be.eq(comment.context);
+            }));
+
+        });
+
     });
 
 });
