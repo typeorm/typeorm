@@ -1237,7 +1237,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const indicesSubQuery = `SELECT \`rcsub\`.* FROM \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` \`rcsub\` WHERE (${indicesSubQueryCondition})`;
 
         const indicesSql = `SELECT \`s\`.* FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\` \`s\` ` +
-            `LEFT JOIN (${indicesSubQuery}) \`rc\` ON \`s\`.\`INDEX_NAME\` = \`rc\`.\`CONSTRAINT_NAME\` AND \`s\`.\`TABLE_SCHEMA\` = \`rc\`.\`CONSTRAINT_SCHEMA\`` +
+            `LEFT JOIN (${indicesSubQuery}) \`rc\` ON \`s\`.\`INDEX_NAME\` = \`rc\`.\`CONSTRAINT_NAME\` AND \`s\`.\`TABLE_SCHEMA\` = \`rc\`.\`CONSTRAINT_SCHEMA\` ` +
             `WHERE (${indicesCondition}) AND \`s\`.\`INDEX_NAME\` != 'PRIMARY' AND \`rc\`.\`CONSTRAINT_NAME\` IS NULL`;
 
         const foreignKeysCondition = tableNames.map(tableName => {
