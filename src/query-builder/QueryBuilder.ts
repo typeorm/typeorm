@@ -17,6 +17,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {EntitySchema} from "../";
 import {FindOperator} from "../find-options/FindOperator";
 import {In} from "../find-options/operator/In";
@@ -816,8 +817,8 @@ export abstract class QueryBuilder<Entity> {
                                         parameters.push(this.connection.driver.createParameter(parameterName + (parameterBaseCount + realParameterValueIndex), parameterIndex - 1));
                                     });
                                 }
-                                return parameterValue.toSql(this.connection, aliasPath, parameters);
 
+                                return this.computeFindOperatorExpression(parameterValue, aliasPath, parameters);
                             } else {
                                 this.expressionMap.nativeParameters[parameterName] = parameterValue;
                                 parameterIndex++;
@@ -854,6 +855,51 @@ export abstract class QueryBuilder<Entity> {
         }
 
         return "";
+    }
+
+    /**
+     * Gets SQL needs to be inserted into final query.
+     */
+    protected computeFindOperatorExpression(operator: FindOperator<any>, aliasPath: string, parameters: any[]): string {
+        switch (operator.type) {
+            case "not":
+                if (operator.child) {
+                    return `NOT(${this.computeFindOperatorExpression(operator.child, aliasPath, parameters)})`;
+                } else {
+                    return `${aliasPath} != ${parameters[0]}`;
+                }
+            case "lessThan":
+                return `${aliasPath} < ${parameters[0]}`;
+            case "lessThanOrEqual":
+                return `${aliasPath} <= ${parameters[0]}`;
+            case "moreThan":
+                return `${aliasPath} > ${parameters[0]}`;
+            case "moreThanOrEqual":
+                return `${aliasPath} >= ${parameters[0]}`;
+            case "equal":
+                return `${aliasPath} = ${parameters[0]}`;
+            case "like":
+                return `${aliasPath} LIKE ${parameters[0]}`;
+            case "between":
+                return `${aliasPath} BETWEEN ${parameters[0]} AND ${parameters[1]}`;
+            case "in":
+                if ((this.connection.driver instanceof OracleDriver || this.connection.driver instanceof MysqlDriver) && parameters.length === 0) {
+                    return `${aliasPath} IN (null)`;
+                }
+                return `${aliasPath} IN (${parameters.join(", ")})`;
+            case "any":
+                return `${aliasPath} = ANY(${parameters[0]})`;
+            case "isNull":
+                return `${aliasPath} IS NULL`;
+            case "raw":
+                if (typeof operator.value === "function") {
+                    return operator.value(aliasPath);
+                } else {
+                    return `${aliasPath} = ${operator.value}`;
+                }
+        }
+
+        throw new TypeError(`Unsupported FindOperator ${FindOperator.constructor.name}`);
     }
 
     /**
