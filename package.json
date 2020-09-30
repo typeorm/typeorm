@@ -111,7 +111,7 @@
     "sqlite3": "^5.0.0",
     "ts-node": "^9.0.0",
     "typeorm-aurora-data-api-driver": "^1.4.0",
-    "typescript": "^3.9.7"
+    "typescript": "~3.6.0"
   },
   "dependencies": {
     "@sqltools/formatter": "1.2.2",

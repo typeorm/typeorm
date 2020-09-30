@@ -1,5 +1,4 @@
 {
-    "version": "2.1.1",
     "compilerOptions": {
         "lib": ["es5", "es6"],
         "outDir": "build/compiled",
@@ -22,6 +21,11 @@
         "noUnusedLocals": true,
         "downlevelIteration": true
     },
+    "include": [
+      "sample",
+      "src",
+      "test"
+    ],
     "exclude": [
         "tmp",
         "temp",
