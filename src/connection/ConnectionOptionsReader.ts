@@ -11,6 +11,11 @@ import {ConnectionOptionsXmlReader} from "./options-reader/ConnectionOptionsXmlR
  */
 export class ConnectionOptionsReader {
 
+    static findOptionByName(options: ConnectionOptions[], name = "default") {
+        const [targetOptions] = options.filter(options => options && options.name === name || (name === "default" && options && !options.name));
+        return targetOptions;
+    }
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -50,7 +55,7 @@ export class ConnectionOptionsReader {
      */
     async get(name: string): Promise<ConnectionOptions> {
         const allOptions = await this.all();
-        const targetOptions = allOptions.find(options => options.name === name || (name === "default" && !options.name));
+        const targetOptions = ConnectionOptionsReader.findOptionByName(allOptions, name);
         if (!targetOptions)
             throw new Error(`Cannot find connection ${name} because its not defined in any orm configuration files.`);
 
@@ -65,7 +70,7 @@ export class ConnectionOptionsReader {
         if (!allOptions)
             return false;
 
-        const targetOptions = allOptions.find(options => options.name === name || (name === "default" && !options.name));
+        const targetOptions = ConnectionOptionsReader.findOptionByName(allOptions, name);
         return !!targetOptions;
     }
 
