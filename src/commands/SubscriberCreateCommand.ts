@@ -48,7 +48,7 @@ export class SubscriberCreateCommand implements yargs.CommandModule {
                         configName: args.config as any
                     });
                     const connectionOptions = await connectionOptionsReader.get(args.connection as any);
-                    directory = connectionOptions.cli ? connectionOptions.cli.subscribersDir : undefined;
+                    directory = connectionOptions.cli ? (connectionOptions.cli.entitiesDir || "") : "";
                 } catch (err) { }
             }
 
