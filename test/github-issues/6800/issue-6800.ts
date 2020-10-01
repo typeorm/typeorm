@@ -76,8 +76,8 @@ describe("github issues > #6800 fix performance and wrong foreign key in mysql m
             dropSchema: false,
         });
 
-        for (let i = 0; i < connections.length; i++) {
-            const queryRunner = connections[i].createQueryRunner();
+        if (connections.length > 0) {
+            const queryRunner = connections[0].createQueryRunner();
             await createDB(queryRunner, "test1");
             await createDB(queryRunner, "test2");
             await queryRunner.release();
@@ -87,8 +87,8 @@ describe("github issues > #6800 fix performance and wrong foreign key in mysql m
     beforeEach(() => reloadTestingDatabases(connections));
 
     after(async () => {
-        for (let i = 0; i < connections.length; i++) {
-            const queryRunner = connections[i].createQueryRunner();
+        if (connections.length > 0) {
+            const queryRunner = connections[0].createQueryRunner();
             await queryRunner.dropDatabase("test1");
             await queryRunner.dropDatabase("test2");
             await queryRunner.release();
