@@ -76,19 +76,23 @@ describe("github issues > #6800 fix performance and wrong foreign key in mysql m
             dropSchema: false,
         });
 
-        const queryRunner = connections[0].createQueryRunner();
-        await createDB(queryRunner, "test1");
-        await createDB(queryRunner, "test2");
-        await queryRunner.release();
+        for (let i = 0; i < connections.length; i++) {
+            const queryRunner = connections[i].createQueryRunner();
+            await createDB(queryRunner, "test1");
+            await createDB(queryRunner, "test2");
+            await queryRunner.release();
+        };
     });
 
     beforeEach(() => reloadTestingDatabases(connections));
 
     after(async () => {
-        const queryRunner = connections[0].createQueryRunner();
-        await queryRunner.dropDatabase("test1");
-        await queryRunner.dropDatabase("test2");
-        await queryRunner.release();
+        for (let i = 0; i < connections.length; i++) {
+            const queryRunner = connections[i].createQueryRunner();
+            await queryRunner.dropDatabase("test1");
+            await queryRunner.dropDatabase("test2");
+            await queryRunner.release();
+        };
 
         await closeTestingConnections(connections);
         await Promise.all(testQueryRunners.map(queryRunner => queryRunner.release()));
