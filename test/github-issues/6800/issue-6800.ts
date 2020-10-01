@@ -4,7 +4,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Table} from "../../../src/schema-builder/table/Table";
 import { QueryRunner, createConnection } from "../../../src";
 import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions";
-import { expect } from 'chai';
+import { expect } from "chai";
 
 const questionName = "question";
 const categoryName = "category";
