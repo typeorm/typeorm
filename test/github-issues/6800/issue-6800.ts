@@ -79,7 +79,9 @@ describe("github issues > #6800 fix performance and wrong foreign key in mysql m
         await createDB(queryRunner, "test2");
         await queryRunner.release();
     });
+
     beforeEach(() => reloadTestingDatabases(connections));
+    
     after(async () => {
         const queryRunner = connections[0].createQueryRunner();
         await queryRunner.dropDatabase("test1");
