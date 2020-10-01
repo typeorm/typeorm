@@ -66,6 +66,8 @@ const createDB = async (queryRunner: QueryRunner, dbName: string) => {
 describe("github issues > #6800 fix performance and wrong foreign key in mysql multi-tenanted DB", () => {
 
     let connections: Connection[];
+    let testConnections = [] as Connection[];
+    let testQueryRunners = [] as QueryRunner[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -81,7 +83,7 @@ describe("github issues > #6800 fix performance and wrong foreign key in mysql m
     });
 
     beforeEach(() => reloadTestingDatabases(connections));
-    
+
     after(async () => {
         const queryRunner = connections[0].createQueryRunner();
         await queryRunner.dropDatabase("test1");
@@ -89,13 +91,17 @@ describe("github issues > #6800 fix performance and wrong foreign key in mysql m
         await queryRunner.release();
 
         await closeTestingConnections(connections);
+        await Promise.all(testQueryRunners.map(queryRunner => queryRunner.release()));
+        await closeTestingConnections(testConnections);
     });
 
     it("should correctly load foreign keys and indices", () => Promise.all(connections.map(async connection => {
         const options = connection.options as MysqlConnectionOptions;
 
         const connectionTest1 = await createConnection({ ...options, name: "test1", database: "test1" });
+        testConnections.push(connectionTest1);
         const queryRunnerTest1 = connectionTest1.createQueryRunner();
+        testQueryRunners.push(queryRunnerTest1);
         const [questionTable1, categoryTable1] = await queryRunnerTest1.getTables([questionName, categoryName]);
 
         expect(questionTable1.foreignKeys.length).to.eq(1);
