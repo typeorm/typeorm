@@ -4,6 +4,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Table} from "../../../src/schema-builder/table/Table";
 import { QueryRunner, createConnection } from "../../../src";
 import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions";
+import { expect } from 'chai';
 
 const questionName = "question";
 const categoryName = "category";
@@ -88,8 +89,17 @@ describe("github issues > #6800 fix performance and wrong foreign key in mysql m
 
         const connectionTest1 = await createConnection({ ...options, name: "test1", database: "test1" });
         const queryRunnerTest1 = connectionTest1.createQueryRunner();
-        const tablesTest1 = await queryRunnerTest1.getTables([questionName, categoryName]);
-        console.log(tablesTest1.length);
+        const [questionTable1, categoryTable1] = await queryRunnerTest1.getTables([questionName, categoryName]);
+
+        expect(questionTable1.foreignKeys.length).to.eq(1);
+        expect(questionTable1.foreignKeys[0].columnNames.length).to.eq(1);  // before the fix this was 2, one for each schema
+        expect(questionTable1.foreignKeys[0].columnNames[0]).to.eq("FK_CATEGORY_QUESTION");
+        expect(questionTable1.indices.length).to.eq(0);
+
+        expect(categoryTable1.foreignKeys.length).to.eq(0);
+        expect(categoryTable1.indices.length).to.eq(1);
+        expect(categoryTable1.indices[0].columnNames.length).to.eq(1);
+        expect(categoryTable1.indices[0].columnNames[0]).to.eq("IDX_QUESTION_NAME");
 
         await queryRunner.dropDatabase("test1");
         await queryRunner.dropDatabase("test2");
