@@ -2,12 +2,16 @@ import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Table} from "../../../src/schema-builder/table/Table";
-import { QueryRunner } from "../../../src";
+import { QueryRunner, createConnection } from "../../../src";
+import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions";
+
+const questionName = "question";
+const categoryName = "category";
 
 const createDB = async (queryRunner: QueryRunner, dbName: string) => {
     await queryRunner.createDatabase(dbName, true);
-    const questionTableName = `${dbName}.question`;
-    const categoryTableName = `${dbName}.category`;
+    const questionTableName = `${dbName}.${questionName}`;
+    const categoryTableName = `${dbName}.${categoryName}`;
 
     await queryRunner.createTable(new Table({
         name: questionTableName,
@@ -66,8 +70,8 @@ describe("github issues > #6800 fix performance and wrong foreign key in mysql m
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
-            schemaCreate: true,
-            dropSchema: true,
+            schemaCreate: false,
+            dropSchema: false,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
@@ -79,6 +83,13 @@ describe("github issues > #6800 fix performance and wrong foreign key in mysql m
         const queryRunner = connection.createQueryRunner();
         await createDB(queryRunner, "test1");
         await createDB(queryRunner, "test2");
+
+        const options = connection.options as MysqlConnectionOptions;
+
+        const connectionTest1 = await createConnection({ ...options, name: "test1", database: "test1" });
+        const queryRunnerTest1 = connectionTest1.createQueryRunner();
+        const tablesTest1 = await queryRunnerTest1.getTables([questionName, categoryName]);
+        console.log(tablesTest1.length);
 
         await queryRunner.dropDatabase("test1");
         await queryRunner.dropDatabase("test2");
