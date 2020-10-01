@@ -52,7 +52,8 @@ const createDB = async (queryRunner: QueryRunner, dbName: string) => {
             {
                 columnNames: ["questionId"],
                 referencedTableName: questionTableName,
-                referencedColumnNames: ["id"]
+                referencedColumnNames: ["id"],
+                name: "FK_CATEGORY_QUESTION"
             }
         ]
     }), true);
@@ -79,10 +80,9 @@ describe("github issues > #6800 fix performance and wrong foreign key in mysql m
         await createDB(queryRunner, "test1");
         await createDB(queryRunner, "test2");
 
-        await queryRunner.release();
-
         await queryRunner.dropDatabase("test1");
         await queryRunner.dropDatabase("test2");
+        await queryRunner.release();
     })));
 
 });
