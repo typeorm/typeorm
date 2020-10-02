@@ -484,7 +484,7 @@ export class Connection {
      */
     protected findMetadata(target: EntityTarget<any>): EntityMetadata|undefined {
         return this.entityMetadatas.find(metadata => {
-            if (metadata.target === target)
+            if (metadata.target.toString() === target.toString())
                 return true;
             if (target instanceof EntitySchema) {
                 return metadata.name === target.options.name;
