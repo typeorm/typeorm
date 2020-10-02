@@ -100,13 +100,16 @@ describe("github issues > #6168 fix multiple foreign keys with the same name in 
         testConnections.push(connectionTest1);
         const queryRunnerTest1 = connectionTest1.createQueryRunner();
         testQueryRunners.push(queryRunnerTest1);
-        const [questionTable1, categoryTable1] = await queryRunnerTest1.getTables([questionName, categoryName]);
+        const tables = await queryRunnerTest1.getTables([questionName, categoryName]);
 
-        expect(questionTable1.foreignKeys.length).to.eq(1);
-        expect(questionTable1.foreignKeys[0].name).to.eq("FK_CATEGORY_QUESTION");
-        expect(questionTable1.foreignKeys[0].columnNames.length).to.eq(1);  // before the fix this was 2, one for each schema
-        expect(questionTable1.foreignKeys[0].columnNames[0]).to.eq("questionId");
+        const questionTable1 = tables.find(table => table.name === questionName) as Table;
+        const categoryTable1 = tables.find(table => table.name === categoryName) as Table;
 
-        expect(categoryTable1.foreignKeys.length).to.eq(0);
+        expect(categoryTable1.foreignKeys.length).to.eq(1);
+        expect(categoryTable1.foreignKeys[0].name).to.eq("FK_CATEGORY_QUESTION");
+        expect(categoryTable1.foreignKeys[0].columnNames.length).to.eq(1);  // before the fix this was 2, one for each schema
+        expect(categoryTable1.foreignKeys[0].columnNames[0]).to.eq("questionId");
+
+        expect(questionTable1.foreignKeys.length).to.eq(0);
     })));
 });
