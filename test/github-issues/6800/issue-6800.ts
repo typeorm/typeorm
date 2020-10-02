@@ -56,6 +56,10 @@ const createDB = async (queryRunner: QueryRunner, dbName: string) => {
                 generationStrategy: "increment"
             },
             {
+                name: "questionId",
+                type: "int",
+            },
+            {
                 name: "name",
                 type: "int",
             }
@@ -64,12 +68,20 @@ const createDB = async (queryRunner: QueryRunner, dbName: string) => {
           {
               columnNames: ["name"],
               name: "IDX_CATEGORY_NAME"
+          },
+        ],
+        foreignKeys: [
+          {
+              columnNames: ["questionId"],
+              referencedTableName: questionTableName,
+              referencedColumnNames: ["id"],
+              name: "FK_CATEGORY_QUESTION"
           }
-      ]
+        ]
     }), true);
 };
 
-describe("github issues > #6800 fix indices performance in mysql multi-tenanted DB", () => {
+describe("github issues > #6800 fix foreign key and indices query performance in mysql multi-tenanted DB", () => {
 
     let connections: Connection[];
     let testConnections = [] as Connection[];
@@ -105,7 +117,7 @@ describe("github issues > #6800 fix indices performance in mysql multi-tenanted 
         await closeTestingConnections(testConnections);
     });
 
-    it("should load indices correctly just as it did before the change, the performance improvement shouldn't affect the result",
+    it("should load foreign keys and indices correctly just as it did before the change, the performance improvement shouldn't affect the result",
       () => Promise.all(connections.map(async connection => {
         const options = connection.options as MysqlConnectionOptions;
 
@@ -127,10 +139,17 @@ describe("github issues > #6800 fix indices performance in mysql multi-tenanted 
         expect(questionNameIndex.columnNames[0]).to.eq("name");
         expect(questionTypeIndex.columnNames.length).to.eq(1);
         expect(questionTypeIndex.columnNames[0]).to.eq("type");
+        
+        expect(questionTable1.foreignKeys.length).to.eq(0);
 
         expect(categoryTable1.indices.length).to.eq(1);
         expect(categoryTable1.indices[0].name).to.eq("IDX_CATEGORY_NAME");
         expect(categoryTable1.indices[0].columnNames.length).to.eq(1);
         expect(categoryTable1.indices[0].columnNames[0]).to.eq("name");
+
+        expect(categoryTable1.foreignKeys.length).to.eq(1);
+        expect(categoryTable1.foreignKeys[0].name).to.eq("FK_CATEGORY_QUESTION");
+        expect(categoryTable1.foreignKeys[0].columnNames.length).to.eq(1);
+        expect(categoryTable1.foreignKeys[0].columnNames[0]).to.eq("questionId");
     })));
 });
