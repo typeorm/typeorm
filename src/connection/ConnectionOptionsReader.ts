@@ -5,16 +5,15 @@ import {ConnectionOptionsEnvReader} from "./options-reader/ConnectionOptionsEnvR
 import {ConnectionOptionsYmlReader} from "./options-reader/ConnectionOptionsYmlReader";
 import {ConnectionOptionsXmlReader} from "./options-reader/ConnectionOptionsXmlReader";
 
+
+const findOptionByName = (options: ConnectionOptions[], name = "default") =>
+    options.find(options => typeof options === "object" && options.name === name || (name === "default" && options && !options.name));
+
 /**
  * Reads connection options from the ormconfig.
  * Can read from multiple file extensions including env, json, js, xml and yml.
  */
 export class ConnectionOptionsReader {
-
-    static findOptionByName(options: ConnectionOptions[], name = "default") {
-        const [targetOptions] = options.filter(options => options && options.name === name || (name === "default" && options && !options.name));
-        return targetOptions;
-    }
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -55,7 +54,7 @@ export class ConnectionOptionsReader {
      */
     async get(name: string): Promise<ConnectionOptions> {
         const allOptions = await this.all();
-        const targetOptions = ConnectionOptionsReader.findOptionByName(allOptions, name);
+        const targetOptions = findOptionByName(allOptions, name);
         if (!targetOptions)
             throw new Error(`Cannot find connection ${name} because its not defined in any orm configuration files.`);
 
@@ -70,7 +69,7 @@ export class ConnectionOptionsReader {
         if (!allOptions)
             return false;
 
-        const targetOptions = ConnectionOptionsReader.findOptionByName(allOptions, name);
+        const targetOptions = findOptionByName(allOptions, name);
         return !!targetOptions;
     }
 
@@ -153,7 +152,7 @@ export class ConnectionOptionsReader {
 
                     return entity;
                 });
-                Object.assign(connectionOptions, { entities: entities });
+                Object.assign(options, { entities: entities });
             }
             if (options.subscribers) {
                 const subscribers = (options.subscribers as any[]).map(subscriber => {
@@ -162,7 +161,7 @@ export class ConnectionOptionsReader {
 
                     return subscriber;
                 });
-                Object.assign(connectionOptions, { subscribers: subscribers });
+                Object.assign(options, { subscribers: subscribers });
             }
             if (options.migrations) {
                 const migrations = (options.migrations as any[]).map(migration => {
@@ -171,7 +170,7 @@ export class ConnectionOptionsReader {
 
                     return migration;
                 });
-                Object.assign(connectionOptions, { migrations: migrations });
+                Object.assign(options, { migrations: migrations });
             }
 
             // make database path file in sqlite relative to package.json
