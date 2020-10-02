@@ -104,15 +104,18 @@ describe("github issues > #6800 fix indices performance in mysql multi-tenanted 
         testConnections.push(connectionTest1);
         const queryRunnerTest1 = connectionTest1.createQueryRunner();
         testQueryRunners.push(queryRunnerTest1);
-        const [questionTable1, categoryTable1] = await queryRunnerTest1.getTables([questionName, categoryName]);
+        const tables = await queryRunnerTest1.getTables([questionName, categoryName]);
+
+        const questionTable1 = tables.find(table => table.name === questionName) as Table;
+        const categoryTable1 = tables.find(table => table.name === categoryName) as Table;
 
         expect(questionTable1.indices.length).to.eq(1);
-        expect(questionTable1.indices[0].name).to.eq("IDX_CATEGORY_NAME");
+        expect(questionTable1.indices[0].name).to.eq("IDX_QUESTION_NAME");
         expect(questionTable1.indices[0].columnNames.length).to.eq(1);
         expect(questionTable1.indices[0].columnNames[0]).to.eq("name");
 
         expect(categoryTable1.indices.length).to.eq(1);
-        expect(categoryTable1.indices[0].name).to.eq("IDX_QUESTION_NAME");
+        expect(categoryTable1.indices[0].name).to.eq("IDX_CATEGORY_NAME");
         expect(categoryTable1.indices[0].columnNames.length).to.eq(1);
         expect(categoryTable1.indices[0].columnNames[0]).to.eq("name");
     })));
