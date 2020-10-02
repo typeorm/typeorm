@@ -1246,7 +1246,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 name = database;
                 database = this.driver.database || currentDatabase;
             }
-            return `(\`kcu\`.\`TABLE_SCHEMA\` = '${database}' AND \`kcu\`.\`TABLE_NAME\` = '${name}' AND \`rc\`.\`CONSTRAINT_SCHEMA\` = '${database}')`;
+            return `(\`kcu\`.\`TABLE_SCHEMA\` = '${database}' AND \`kcu\`.\`TABLE_NAME\` = '${name}' AND \`rc\`.\`CONSTRAINT_SCHEMA\` = '${database}' AND \`rc\`.\`TABLE_NAME\` = '${name}')`;
         }).join(" OR ");
         const foreignKeysSql = `SELECT \`kcu\`.\`TABLE_SCHEMA\`, \`kcu\`.\`TABLE_NAME\`, \`kcu\`.\`CONSTRAINT_NAME\`, \`kcu\`.\`COLUMN_NAME\`, \`kcu\`.\`REFERENCED_TABLE_SCHEMA\`, ` +
             `\`kcu\`.\`REFERENCED_TABLE_NAME\`, \`kcu\`.\`REFERENCED_COLUMN_NAME\`, \`rc\`.\`DELETE_RULE\` \`ON_DELETE\`, \`rc\`.\`UPDATE_RULE\` \`ON_UPDATE\` ` +
