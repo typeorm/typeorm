@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Table} from "../../../src/schema-builder/table/Table";
-import { QueryRunner, createConnection } from "../../../src";
+import { QueryRunner, createConnection, TableIndex } from "../../../src";
 import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions";
 import { expect } from "chai";
 
@@ -27,13 +27,21 @@ const createDB = async (queryRunner: QueryRunner, dbName: string) => {
             {
                 name: "name",
                 type: "varchar",
-            }
+            },
+            {
+              name: "type",
+              type: "varchar",
+          }
         ],
         indices: [
             {
                 columnNames: ["name"],
                 name: "IDX_QUESTION_NAME"
-            }
+            },
+            {
+              columnNames: ["type"],
+              name: "IDX_QUESTION_TYPE"
+          }
         ]
     }), true);
 
@@ -109,10 +117,15 @@ describe("github issues > #6800 fix indices performance in mysql multi-tenanted 
         const questionTable1 = tables.find(table => table.name === questionName) as Table;
         const categoryTable1 = tables.find(table => table.name === categoryName) as Table;
 
-        expect(questionTable1.indices.length).to.eq(1);
-        expect(questionTable1.indices[0].name).to.eq("IDX_QUESTION_NAME");
-        expect(questionTable1.indices[0].columnNames.length).to.eq(1);
-        expect(questionTable1.indices[0].columnNames[0]).to.eq("name");
+        expect(questionTable1.indices.length).to.eq(2);
+
+        const questionNameIndex = questionTable1.indices.find(index => index.name === "IDX_QUESTION_NAME") as TableIndex;
+        const questionTypeIndex = questionTable1.indices.find(index => index.name === "IDX_QUESTION_TYPE") as TableIndex;
+
+        expect(questionNameIndex.columnNames.length).to.eq(1);
+        expect(questionNameIndex.columnNames[0]).to.eq("name");
+        expect(questionTypeIndex.columnNames.length).to.eq(1);
+        expect(questionTypeIndex.columnNames[0]).to.eq("type");
 
         expect(categoryTable1.indices.length).to.eq(1);
         expect(categoryTable1.indices[0].name).to.eq("IDX_CATEGORY_NAME");
