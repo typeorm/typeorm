@@ -70,6 +70,10 @@ export class RawSqlResultsToEntityTransformer {
                     return keyValue.toString("hex");
                 }
 
+                if (typeof keyValue === "object") {
+                    return JSON.stringify(keyValue);
+                }
+
                 return keyValue;
             }).join("_"); // todo: check partial
 
