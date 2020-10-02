@@ -105,7 +105,8 @@ describe("github issues > #6800 fix indices performance in mysql multi-tenanted 
         await closeTestingConnections(testConnections);
     });
 
-    it("should load indices correctly just as it did before the change, the performance improvement shouldn't affect the result", () => Promise.all(connections.map(async connection => {
+    it("should load indices correctly just as it did before the change, the performance improvement shouldn't affect the result",
+      () => Promise.all(connections.map(async connection => {
         const options = connection.options as MysqlConnectionOptions;
 
         const connectionTest1 = await createConnection({ ...options, name: "test1", database: "test1" });
