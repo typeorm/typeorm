@@ -38,7 +38,7 @@ maintainable applications the most productive way.
 
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
  [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
- 
+
 ## Features
 
 * supports both [DataMapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice)
@@ -215,7 +215,7 @@ await timber.remove();
         npm i @sap/hana-client
 		npm i hdb-pool
         ```
-        
+
         *SAP Hana support made possible by sponsorship of [Neptune Software](https://www.neptune-software.com/).*
 
     * for **MongoDB** (experimental)
@@ -327,6 +327,9 @@ creating more entities.
 
 > You can generate an even more advanced project with express installed by running
 `typeorm init --name MyProject --database mysql --express` command.
+
+> You can generate docker-compose file by running
+`typeorm init --name MyProject --database postgres --docker` command.
 
 ## Step-by-Step Guide
 
