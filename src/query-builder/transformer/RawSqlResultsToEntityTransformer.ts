@@ -253,7 +253,7 @@ export class RawSqlResultsToEntityTransformer {
                     }
                 }
                 return idMap;
-            }).filter(result => result);
+            }).filter(result => result !== undefined);
 
             const properties = rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyPath.split(".");
             const mapToProperty = (properties: string[], map: ObjectLiteral, value: any): any => {
