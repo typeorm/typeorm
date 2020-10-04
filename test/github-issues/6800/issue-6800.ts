@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Table} from "../../../src/schema-builder/table/Table";
 import { QueryRunner, TableIndex } from "../../../src";
 import { expect } from "chai";
@@ -90,6 +90,8 @@ describe("github issues > #6800 fix foreign key and indices query performance in
             dropSchema: false,
         });
 
+        await reloadTestingDatabases(connections);
+        
         for (const connection of connections) {
             const queryRunner = connection.createQueryRunner();
             await createTables(queryRunner, String(connection.driver.database));
