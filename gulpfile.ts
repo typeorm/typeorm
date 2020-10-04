@@ -64,38 +64,18 @@ export class Gulpfile {
             "!./src/commands/*.ts",
             "!./src/cli.ts",
             "!./src/typeorm.ts",
-            "!./src/typeorm-model-shim.ts",
-            "!./src/platform/PlatformTools.ts"
+            "!./src/typeorm-model-shim.ts"
         ])
         .pipe(gulp.dest("./build/browser/src"));
     }
 
     /**
-     * Replaces PlatformTools with browser-specific implementation called BrowserPlatformTools.
+     * Copies templates for compilation
      */
     @Task()
-    browserCopyDirectoryExportedClassesLoader() {
-        return gulp.src("./src/platform/BrowserDirectoryExportedClassesLoader.template")
-            .pipe(rename("BrowserDirectoryExportedClassesLoader.ts"))
-            .pipe(gulp.dest("./build/browser/src/platform"));
-    }
-    /**
-     * Replaces PlatformTools with browser-specific implementation called BrowserPlatformTools.
-     */
-    @Task()
-    browserCopyPlatformTools() {
-        return gulp.src("./src/platform/BrowserPlatformTools.template")
-            .pipe(rename("PlatformTools.ts"))
-            .pipe(gulp.dest("./build/browser/src/platform"));
-    }
-
-    /**
-     * Adds dummy classes for disabled drivers (replacement is done via browser entry point in package.json)
-     */
-    @Task()
-    browserCopyDisabledDriversDummy() {
-        return gulp.src("./src/platform/BrowserDisabledDriversDummy.template")
-            .pipe(rename("BrowserDisabledDriversDummy.ts"))
+    browserCopyTemplates() {
+        return gulp.src("./src/platform/*.template")
+            .pipe(rename((p: any) => { p.extname = '.ts'; }))
             .pipe(gulp.dest("./build/browser/src/platform"));
     }
 
@@ -242,7 +222,7 @@ export class Gulpfile {
     package() {
         return [
             "clean",
-            ["browserCopySources", "browserCopyPlatformTools", "browserCopyDisabledDriversDummy", "browserCopyDirectoryExportedClassesLoader"],
+            ["browserCopySources", "browserCopyTemplates"],
             ["packageCompile", "browserCompile"],
             "packageMoveCompiledFiles",
             [

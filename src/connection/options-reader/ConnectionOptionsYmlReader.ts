@@ -14,7 +14,7 @@ export class ConnectionOptionsYmlReader {
     /**
      * Reads connection options from given yml file.
      */
-    read(path: string): ConnectionOptions[] {
+    async read(path: string): Promise<ConnectionOptions[]> {
         const contentsBuffer = PlatformTools.readFileSync(path);
         const contents = contentsBuffer.toString();
 

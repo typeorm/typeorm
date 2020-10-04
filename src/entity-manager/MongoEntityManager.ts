@@ -570,7 +570,7 @@ export class MongoEntityManager extends EntityManager {
         if (!optionsOrConditions)
             return undefined;
 
-        if (FindOptionsUtils.isFindManyOptions(optionsOrConditions))
+        if (FindOptionsUtils.isFindManyOptions<Entity>(optionsOrConditions))
         // If where condition is passed as a string which contains sql we have to ignore
         // as mongo is not a sql database
             return typeof optionsOrConditions.where === "string"
@@ -587,7 +587,7 @@ export class MongoEntityManager extends EntityManager {
         if (!optionsOrConditions)
             return undefined;
 
-        if (FindOptionsUtils.isFindOneOptions(optionsOrConditions))
+        if (FindOptionsUtils.isFindOneOptions<Entity>(optionsOrConditions))
         // If where condition is passed as a string which contains sql we have to ignore
         // as mongo is not a sql database
             return typeof optionsOrConditions.where === "string"

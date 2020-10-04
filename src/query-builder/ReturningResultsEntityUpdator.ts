@@ -119,6 +119,13 @@ export class ReturningResultsEntityUpdator {
         if (this.queryRunner.connection.driver.isReturningSqlSupported() === false && insertionColumns.length > 0) {
             const entityIds = entities.map((entity) => {
                 const entityId = metadata.getEntityIdMap(entity)!;
+
+                // We have to check for an empty `entityId` - if we don't, the query against the database
+                // effectively drops the `where` clause entirely and the first record will be returned -
+                // not what we want at all.
+                if (!entityId)
+                    throw new Error(`Cannot update entity because entity id is not set in the entity.`);
+
                 return entityId;
             });
 

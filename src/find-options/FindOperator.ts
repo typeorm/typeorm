@@ -1,7 +1,4 @@
 import {FindOperatorType} from "./FindOperatorType";
-import {Connection} from "../";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 
 /**
  * Find Operator used in Find Conditions.
@@ -70,6 +67,13 @@ export class FindOperator<T> {
     }
 
     /**
+     * Gets the Type of this FindOperator
+     */
+    get type(): string {
+        return this._type;
+    }
+
+    /**
      * Gets the final value needs to be used as parameter value.
      */
     get value(): T {
@@ -79,53 +83,13 @@ export class FindOperator<T> {
         return this._value;
     }
 
-    // -------------------------------------------------------------------------
-    // Public Methods
-    // -------------------------------------------------------------------------
-
     /**
-     * Gets SQL needs to be inserted into final query.
+     * Gets the child FindOperator if it exists
      */
-    toSql(connection: Connection, aliasPath: string, parameters: string[]): string {
-        switch (this._type) {
-            case "not":
-                if (this._value instanceof FindOperator) {
-                    return `NOT(${this._value.toSql(connection, aliasPath, parameters)})`;
-                } else {
-                    return `${aliasPath} != ${parameters[0]}`;
-                }
-            case "lessThan":
-                return `${aliasPath} < ${parameters[0]}`;
-            case "lessThanOrEqual":
-                return `${aliasPath} <= ${parameters[0]}`;
-            case "moreThan":
-                return `${aliasPath} > ${parameters[0]}`;
-            case "moreThanOrEqual":
-                return `${aliasPath} >= ${parameters[0]}`;
-            case "equal":
-                return `${aliasPath} = ${parameters[0]}`;
-            case "like":
-                return `${aliasPath} LIKE ${parameters[0]}`;
-            case "between":
-                return `${aliasPath} BETWEEN ${parameters[0]} AND ${parameters[1]}`;
-            case "in":
-                if ((connection.driver instanceof OracleDriver || connection.driver instanceof MysqlDriver) && parameters.length === 0) {
-                    return `${aliasPath} IN (null)`;
-                }
-                return `${aliasPath} IN (${parameters.join(", ")})`;
-            case "any":
-                return `${aliasPath} = ANY(${parameters[0]})`;
-            case "isNull":
-                return `${aliasPath} IS NULL`;
-            case "raw":
-                if (this.value instanceof Function) {
-                    return this.value(aliasPath);
-                } else {
-                    return `${aliasPath} = ${this.value}`;
-                }
-        }
+    get child(): FindOperator<T>|undefined {
+        if (this._value instanceof FindOperator)
+            return this._value;
 
-        return "";
+        return undefined;
     }
-
 }

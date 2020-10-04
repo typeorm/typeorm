@@ -1,3 +1,38 @@
+## [0.2.28](https://github.com/typeorm/typeorm/compare/0.2.27...0.2.28) (2020-09-30)
+
+### Bug Fixes
+
+* FindManyOptions order in parameter typing is important ([51608ae](https://github.com/typeorm/typeorm/commit/51608aebccd31570fc33ba0cd90c3147cdfc70b8))
+* lock Typescript to 3.6.0 ([#6810](https://github.com/typeorm/typeorm/issues/6810)) ([7f7e4d5](https://github.com/typeorm/typeorm/commit/7f7e4d53119506bdbb86999606707cd740859fe7)), closes [#6809](https://github.com/typeorm/typeorm/issues/6809) [#6805](https://github.com/typeorm/typeorm/issues/6805)
+
+## [0.2.27](https://github.com/typeorm/typeorm/compare/0.2.26...0.2.27) (2020-09-29)
+
+### Bug Fixes
+
+* add dummy for FileLogger, ConnectionOptionsReaders, and update gulpfile ([#6763](https://github.com/typeorm/typeorm/issues/6763)) ([180fbd4](https://github.com/typeorm/typeorm/commit/180fbd415da80ce383b426f6d38486aa3826296d))
+* backport FindOperator return types ([#6717](https://github.com/typeorm/typeorm/issues/6717)) ([2b37808](https://github.com/typeorm/typeorm/commit/2b3780836f5fd737fdc58fe4e0eb2ea4200cae66))
+* coerce port to number in ConnectionOptionsEnvReader ([#6786](https://github.com/typeorm/typeorm/issues/6786)) ([55fbb69](https://github.com/typeorm/typeorm/commit/55fbb696c6c2324a67a08061322dc5726844b7d1)), closes [#6781](https://github.com/typeorm/typeorm/issues/6781)
+* count() method for multiple primary keys for cockroachdb ([#6745](https://github.com/typeorm/typeorm/issues/6745)) ([dfe8259](https://github.com/typeorm/typeorm/commit/dfe8259ef53a432f1c02607e6ffee662dd4fd8a9))
+* enforce name argument of migration generate command ([#2719](https://github.com/typeorm/typeorm/issues/2719)) ([#6690](https://github.com/typeorm/typeorm/issues/6690)) ([dfcb2db](https://github.com/typeorm/typeorm/commit/dfcb2db216d6ed33946dfa190e19eb14c0fed390)), closes [#4798](https://github.com/typeorm/typeorm/issues/4798) [#4805](https://github.com/typeorm/typeorm/issues/4805) [#4798](https://github.com/typeorm/typeorm/issues/4798) [#4805](https://github.com/typeorm/typeorm/issues/4805)
+* ensure browser builds don't include any non-browser modules ([#6743](https://github.com/typeorm/typeorm/issues/6743)) ([c714867](https://github.com/typeorm/typeorm/commit/c714867d3d0c43ccbb7ca8fb3ce969207e4d5c04)), closes [#6739](https://github.com/typeorm/typeorm/issues/6739)
+* hdb-pool is not namespaced under [@sap](https://github.com/sap) ([#6700](https://github.com/typeorm/typeorm/issues/6700)) ([9583430](https://github.com/typeorm/typeorm/commit/9583430e8282d1ad758724957971a5d5d9664f63)), closes [#6697](https://github.com/typeorm/typeorm/issues/6697)
+* migration:generate issue with onUpdate using mariadb 10.4 ([#6714](https://github.com/typeorm/typeorm/issues/6714)) ([6e28322](https://github.com/typeorm/typeorm/commit/6e28322ca65ba739bf0d767075016bc0cae7a48c))
+* prevent multiple `release` listeners in PostgresQueryRunner ([#6708](https://github.com/typeorm/typeorm/issues/6708)) ([208cf6b](https://github.com/typeorm/typeorm/commit/208cf6b0511a2d565c7999837497bb6cf8f8e7c7)), closes [#6699](https://github.com/typeorm/typeorm/issues/6699)
+* prevent wrong returned entity in ReturningResultsEntityUpdator ([#6440](https://github.com/typeorm/typeorm/issues/6440)) ([c1c8e88](https://github.com/typeorm/typeorm/commit/c1c8e88f8945bf6a03bde728de370f5c61c5bdb8))
+* resolve issues ora-00972:identifier is too long ([#6751](https://github.com/typeorm/typeorm/issues/6751)) ([b55a417](https://github.com/typeorm/typeorm/commit/b55a417ea4852ad2e66091cfa800534f7ccdd3c9)), closes [#5067](https://github.com/typeorm/typeorm/issues/5067) [#5067](https://github.com/typeorm/typeorm/issues/5067)
+* sql.js v1.2+ don't support undefined parameters ([#6698](https://github.com/typeorm/typeorm/issues/6698)) ([ea59b8d](https://github.com/typeorm/typeorm/commit/ea59b8d46b2a36ac251f43c8a8fb98ff15ab4e2d)), closes [#5720](https://github.com/typeorm/typeorm/issues/5720)
+
+### Features
+
+* add option to pass postgres server notices to client logger ([#6215](https://github.com/typeorm/typeorm/issues/6215)) ([5084e47](https://github.com/typeorm/typeorm/commit/5084e47be4fd42316ad47e6102645534fae45d9f)), closes [#2216](https://github.com/typeorm/typeorm/issues/2216)
+* backport SQLite Busy handler & WAL mode enable ([#6588](https://github.com/typeorm/typeorm/issues/6588)) ([7a52f18](https://github.com/typeorm/typeorm/commit/7a52f18c86613292c3503484eac332f59141a6e3))
+* Beautify generated SQL for migrations ([#6685](https://github.com/typeorm/typeorm/issues/6685)) ([370442c](https://github.com/typeorm/typeorm/commit/370442c27a0aecd67eeb44f6077922dda16bcef8)), closes [#4415](https://github.com/typeorm/typeorm/issues/4415)
+* create EntityTarget and use instead of EntitySchema / ObjectType / etc ([#6701](https://github.com/typeorm/typeorm/issues/6701)) ([8b68f40](https://github.com/typeorm/typeorm/commit/8b68f40a01b6cdc0e8d21492d988fe21cbef64de))
+
+### Reverts
+
+* Revert "fix: properly override database url properties (#6247)" (#6802) ([45b980c](https://github.com/typeorm/typeorm/commit/45b980cf7fd61b0ee2e9560d9aadb96ce331d5cb)), closes [#6247](https://github.com/typeorm/typeorm/issues/6247) [#6802](https://github.com/typeorm/typeorm/issues/6802)
+
 ## [0.2.26](https://github.com/typeorm/typeorm/compare/0.2.25...0.2.26) (2020-09-10)
 
 ### Bug Fixes
