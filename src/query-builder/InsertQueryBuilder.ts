@@ -479,7 +479,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                             // otherwise use null for sqlite and sap (becauze these dbs not supported defaults in schema)
                             // of use default keyword for other databases
                             if (this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) {
-                                expression += "NULL"
+                                expression += "NULL";
                             } else {
                                 expression += "DEFAULT";
                             }
