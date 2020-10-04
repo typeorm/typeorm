@@ -472,17 +472,18 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
-                            if (column.default !== undefined) { // try to use default defined in the column
-                                expression += this.connection.driver.normalizeDefault(column);
-                            } else {
-                                expression += "NULL"; // otherwise simply use NULL and pray if column is nullable
-                            }
-
+                        if (column.default !== undefined) {
+                            // if default value presented in the default property then use it
+                            expression += this.connection.driver.normalizeDefault(column);
                         } else {
-                            expression += "DEFAULT";
+                            // otherwise use null for sqlite and sap (becauze these dbs not supported defaults in schema)
+                            // of use default keyword for other databases
+                            if (this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) {
+                                expression += "NULL"
+                            } else {
+                                expression += "DEFAULT";
+                            }
                         }
-
                     // support for SQL expressions in queries
                     } else if (value instanceof Function) {
                         expression += value();
