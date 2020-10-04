@@ -1,16 +1,14 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {Table} from "../../../src/schema-builder/table/Table";
-import { QueryRunner, createConnection } from "../../../src";
-import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions";
+import { QueryRunner } from "../../../src";
 import { expect } from "chai";
 
 const questionName = "question";
 const categoryName = "category";
 
-const createDB = async (queryRunner: QueryRunner, dbName: string) => {
-    await queryRunner.createDatabase(dbName, true);
+const createTables = async (queryRunner: QueryRunner, dbName: string) => {
     const questionTableName = `${dbName}.${questionName}`;
     const categoryTableName = `${dbName}.${categoryName}`;
 
@@ -60,8 +58,6 @@ const createDB = async (queryRunner: QueryRunner, dbName: string) => {
 describe("github issues > #6168 fix multiple foreign keys with the same name in a mysql multi-tenanted DB", () => {
 
     let connections: Connection[];
-    let testConnections = [] as Connection[];
-    let testQueryRunners = [] as QueryRunner[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -70,46 +66,39 @@ describe("github issues > #6168 fix multiple foreign keys with the same name in 
             dropSchema: false,
         });
 
-        if (connections.length > 0) {
-            const queryRunner = connections[0].createQueryRunner();
-            await createDB(queryRunner, "test1");
-            await createDB(queryRunner, "test2");
+        for (const connection of connections) {
+            const queryRunner = connection.createQueryRunner();
+            await createTables(queryRunner, String(connection.driver.database));
+            await queryRunner.createDatabase("test2", true);
+            await createTables(queryRunner, "test2");
             await queryRunner.release();
         };
     });
 
-    beforeEach(() => reloadTestingDatabases(connections));
-
     after(async () => {
-        if (connections.length > 0) {
-            const queryRunner = connections[0].createQueryRunner();
-            await queryRunner.dropDatabase("test1");
+        for (const connection of connections) {
+            const queryRunner = connection.createQueryRunner();
             await queryRunner.dropDatabase("test2");
             await queryRunner.release();
         };
 
         await closeTestingConnections(connections);
-        await Promise.all(testQueryRunners.map(queryRunner => queryRunner.release()));
-        await closeTestingConnections(testConnections);
     });
 
     it("should only have one foreign key column", () => Promise.all(connections.map(async connection => {
-        const options = connection.options as MysqlConnectionOptions;
+        const queryRunner = connection.createQueryRunner();
+        const tables = await queryRunner.getTables([questionName, categoryName]);
 
-        const connectionTest1 = await createConnection({ ...options, name: "test1", database: "test1" });
-        testConnections.push(connectionTest1);
-        const queryRunnerTest1 = connectionTest1.createQueryRunner();
-        testQueryRunners.push(queryRunnerTest1);
-        const tables = await queryRunnerTest1.getTables([questionName, categoryName]);
+        const questionTable = tables.find(table => table.name === questionName) as Table;
+        const categoryTable = tables.find(table => table.name === categoryName) as Table;
 
-        const questionTable1 = tables.find(table => table.name === questionName) as Table;
-        const categoryTable1 = tables.find(table => table.name === categoryName) as Table;
+        queryRunner.release();
 
-        expect(categoryTable1.foreignKeys.length).to.eq(1);
-        expect(categoryTable1.foreignKeys[0].name).to.eq("FK_CATEGORY_QUESTION");
-        expect(categoryTable1.foreignKeys[0].columnNames.length).to.eq(1);  // before the fix this was 2, one for each schema
-        expect(categoryTable1.foreignKeys[0].columnNames[0]).to.eq("questionId");
+        expect(categoryTable.foreignKeys.length).to.eq(1);
+        expect(categoryTable.foreignKeys[0].name).to.eq("FK_CATEGORY_QUESTION");
+        expect(categoryTable.foreignKeys[0].columnNames.length).to.eq(1);  // before the fix this was 2, one for each schema 
+        expect(categoryTable.foreignKeys[0].columnNames[0]).to.eq("questionId");
 
-        expect(questionTable1.foreignKeys.length).to.eq(0);
+        expect(questionTable.foreignKeys.length).to.eq(0);
     })));
 });
