@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {Table} from "../../../src/schema-builder/table/Table";
 import { QueryRunner } from "../../../src";
 import { expect } from "chai";
@@ -82,7 +82,6 @@ describe("github issues > #6168 fix multiple foreign keys with the same name in 
             await queryRunner.release();
         };
 
-        await reloadTestingDatabases(connections);
         await closeTestingConnections(connections);
     });
 
