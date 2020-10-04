@@ -70,8 +70,8 @@ describe("github issues > #6168 fix multiple foreign keys with the same name in 
             dropSchema: false,
         });
 
-        if (connections.length > 0) {
-            const queryRunner = connections[0].createQueryRunner();
+        for (const connection of connections) {
+            const queryRunner = connection.createQueryRunner();
             await createDB(queryRunner, "test1");
             await createDB(queryRunner, "test2");
             await queryRunner.release();
@@ -81,8 +81,8 @@ describe("github issues > #6168 fix multiple foreign keys with the same name in 
     beforeEach(() => reloadTestingDatabases(connections));
 
     after(async () => {
-        if (connections.length > 0) {
-            const queryRunner = connections[0].createQueryRunner();
+        for (const connection of connections) {
+            const queryRunner = connection.createQueryRunner();
             await queryRunner.dropDatabase("test1");
             await queryRunner.dropDatabase("test2");
             await queryRunner.release();
