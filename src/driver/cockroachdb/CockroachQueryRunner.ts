@@ -112,15 +112,17 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
-    release(): Promise<void> {
+    async release(): Promise<void> {
+        if (this.isTransactionActive) {
+            await this.rollbackTransaction();
+        }
+
         this.isReleased = true;
         if (this.releaseCallback)
             this.releaseCallback();
 
         const index = this.driver.connectedQueryRunners.indexOf(this);
         if (index !== -1) this.driver.connectedQueryRunners.splice(index);
-
-        return Promise.resolve();
     }
 
     /**

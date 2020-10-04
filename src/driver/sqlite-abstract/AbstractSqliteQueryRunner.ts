@@ -55,12 +55,16 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
     /**
      * Releases used database connection.
-     * We just clear loaded tables and sql in memory, because sqlite do not support multiple connections thus query runners.
+     * We just roll back any open transactions and clear loaded tables / sql in memory,
+     * because sqlite does not support multiple connections thus query runners.
      */
-    release(): Promise<void> {
+    async release(): Promise<void> {
+        if (this.isTransactionActive) {
+            await this.rollbackTransaction();
+        }
+
         this.loadedTables = [];
         this.clearSqlMemory();
-        return Promise.resolve();
     }
 
     /**
