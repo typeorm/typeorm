@@ -9,7 +9,7 @@ import {FindOperator} from "../FindOperator";
  * Example: { someField: Raw((columnAlias, parameters) => `${columnAlias} = ${parameters[0]}`, [5]) }
  */
 export function Raw<T>(
-    valueOrSqlGenerator: string | ((columnAlias: string, parameters: string[]) => string),
+    valueOrSqlGenerator: string | ((columnAlias: string, parameters: any[]) => string),
     sqlGeneratorParameters?: any[],
 ): FindOperator<any> {
     if (typeof valueOrSqlGenerator === 'function') {
