@@ -897,7 +897,7 @@ export abstract class QueryBuilder<Entity> {
                 return `${aliasPath} IS NULL`;
             case "raw":
                 if (operator.getSql) {
-                    return operator.getSql(aliasPath, parameters);
+                    return operator.getSql(aliasPath);
                 } else {
                     return `${aliasPath} = ${operator.value}`;
                 }

@@ -1,7 +1,7 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindOperatorType} from "./FindOperatorType";
 
-type SqlGeneratorType = (aliasPath: string, parameters: any[]) => string;
+type SqlGeneratorType = (aliasPath: string) => string;
 
 /**
  * Find Operator used in Find Conditions.
