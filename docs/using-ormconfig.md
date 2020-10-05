@@ -80,6 +80,19 @@ module.exports = {
 }
 ```
 
+Alternatively, you may use the ECMAScript module format if your environment supports it:
+
+```javascript
+export default {
+   "type": "mysql",
+   "host": "localhost",
+   "port": 3306,
+   "username": "test",
+   "password": "test",
+   "database": "test"
+}
+```
+
 You can specify any other options from [ConnectionOptions](./connection-options.md).
 If you want to create multiple connections then simply create multiple connections in a single array and return it.
 

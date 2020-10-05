@@ -106,11 +106,14 @@ export class ConnectionOptionsReader {
         if (PlatformTools.getEnvVariable("TYPEORM_CONNECTION") || PlatformTools.getEnvVariable("TYPEORM_URL")) {
             connectionOptions = await new ConnectionOptionsEnvReader().read();
 
-        } else if (foundFileFormat === "js" || foundFileFormat === "cjs") {
-            connectionOptions = await require(configFile);
+        } else if (foundFileFormat === "js" || foundFileFormat === "cjs" || foundFileFormat === "ts") {
+            const configModule = await require(configFile);
 
-        } else if (foundFileFormat === "ts") {
-            connectionOptions = await require(configFile);
+            if (configModule && "__esModule" in configModule && "default" in configModule) {
+                connectionOptions = configModule.default;
+            } else {
+                connectionOptions = configModule;
+            }
 
         } else if (foundFileFormat === "json") {
             connectionOptions = require(configFile);
