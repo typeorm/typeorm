@@ -1,5 +1,7 @@
 import {FindOperatorType} from "./FindOperatorType";
 
+type SqlGeneratorType = (aliasPath: string, parameters: any[]) => string;
+
 /**
  * Find Operator used in Find Conditions.
  */
@@ -29,15 +31,27 @@ export class FindOperator<T> {
      */
     private _multipleParameters: boolean;
 
+    /**
+     * SQL generator
+     */
+    private _getSql: SqlGeneratorType|undefined;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(type: FindOperatorType, value: T|FindOperator<T>, useParameter: boolean = true, multipleParameters: boolean = false) {
+    constructor(
+        type: FindOperatorType,
+        value: T|FindOperator<T>,
+        useParameter: boolean = true,
+        multipleParameters: boolean = false,
+        getSql?: SqlGeneratorType,
+    ) {
         this._type = type;
         this._value = value;
         this._useParameter = useParameter;
         this._multipleParameters = multipleParameters;
+        this._getSql = getSql; 
     }
 
     // -------------------------------------------------------------------------
@@ -91,5 +105,15 @@ export class FindOperator<T> {
             return this._value;
 
         return undefined;
+    }
+
+    /**
+     * Gets the SQL generator
+     */
+    get getSql(): SqlGeneratorType|undefined {
+        if (this._value instanceof FindOperator)
+            return this._value.getSql;
+
+        return this._getSql;
     }
 }

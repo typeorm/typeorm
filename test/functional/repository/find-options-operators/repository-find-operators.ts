@@ -531,7 +531,61 @@ describe("repository > find options > operators", () => {
             likes: Raw(columnAlias => "1 + " + columnAlias + " = 4")
         });
         loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+    })));
 
+    it("raw (function with parameters)", () => Promise.all(connections.map(async connection => {
+        const createPost = (index: number): Post => {
+            const post = new Post();
+            post.title = `About #${index}`;
+            post.likes = index;
+
+            return post;
+        }
+
+        // insert some fake data
+        await connection.manager.save([
+            createPost(1),
+            createPost(2),
+            createPost(3),
+            createPost(4),
+            createPost(5),
+            createPost(6),
+        ]);
+
+        // check operator
+        const result1 = await connection.getRepository(Post).find({
+            likes: Raw((columnAlias, parameters) => {
+                return `(${columnAlias} = ${parameters[0]}) OR (${columnAlias} = ${parameters[1]})`
+            }, [2, 3]),
+        });
+        result1.should.be.eql([
+            { id: 2, likes: 2, title: "About #2" },
+            { id: 3, likes: 3, title: "About #3" },
+        ]);
+
+        // check operator
+        const result2 = await connection.getRepository(Post).find({
+            likes: Raw((columnAlias, parameters) => {
+                return `(${columnAlias} = ANY(${parameters[0]})) AND (${columnAlias} < ${parameters[1]})`
+            }, [[1, 4, 5, 6], 6]),
+        });
+        result2.should.be.eql([
+            { id: 1, likes: 1, title: "About #1" },
+            { id: 4, likes: 4, title: "About #4" },
+            { id: 5, likes: 5, title: "About #5" },
+        ]);
+        
+        // check operator
+        const result3 = await connection.getRepository(Post).find({
+            title: Raw((columnAlias, parameters) => {
+                return `${columnAlias} = ANY(${parameters[0]})`;
+            }, [["About #1", "About #3", "About #5"]]),
+            likes: Raw((columnAlias, parameters) => `${columnAlias} IN (${parameters[0]}, ${parameters[1]})`, [5, 1]),
+        });
+        result3.should.be.eql([
+            { id: 1, likes: 1, title: "About #1" },
+            { id: 5, likes: 5, title: "About #5" },
+        ]);
     })));
 
     it("should work with ActiveRecord model", async () => {
