@@ -1,3 +1,4 @@
+import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindOperatorType} from "./FindOperatorType";
 
 type SqlGeneratorType = (aliasPath: string, parameters: any[]) => string;
@@ -20,6 +21,11 @@ export class FindOperator<T> {
      * Parameter value.
      */
     private _value: T|FindOperator<T>;
+
+    /**
+     * ObjectLiteral parameters.
+     */
+    private _objectLiteralParameters: ObjectLiteral|undefined;
 
     /**
      * Indicates if parameter is used or not for this operator.
@@ -46,12 +52,14 @@ export class FindOperator<T> {
         useParameter: boolean = true,
         multipleParameters: boolean = false,
         getSql?: SqlGeneratorType,
+        objectLiteralParameters?: ObjectLiteral,
     ) {
         this._type = type;
         this._value = value;
         this._useParameter = useParameter;
         this._multipleParameters = multipleParameters;
         this._getSql = getSql; 
+        this._objectLiteralParameters = objectLiteralParameters;
     }
 
     // -------------------------------------------------------------------------
@@ -96,6 +104,17 @@ export class FindOperator<T> {
 
         return this._value;
     }
+
+    /**
+     * Gets ObjectLiteral parameters.
+     */
+    get objectLiteralParameters(): ObjectLiteral|undefined {
+        if (this._value instanceof FindOperator)
+            return this._value.objectLiteralParameters;
+
+        return this._objectLiteralParameters;
+    }
+
 
     /**
      * Gets the child FindOperator if it exists

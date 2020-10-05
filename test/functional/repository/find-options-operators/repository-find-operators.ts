@@ -616,6 +616,71 @@ describe("repository > find options > operators", () => {
         }
     })));
 
+    it("raw (function with object literal parameters)", () => Promise.all(connections.map(async connection => {
+        const createPost = (index: number): Post => {
+            const post = new Post();
+            post.title = `About #${index}`;
+            post.likes = index;
+
+            return post;
+        }
+
+        // insert some fake data
+        await connection.manager.save([
+            createPost(1),
+            createPost(2),
+            createPost(3),
+            createPost(4),
+            createPost(5),
+            createPost(6),
+        ]);
+
+        // check operator
+        const result1 = await connection.getRepository(Post).find({
+            likes: Raw((columnAlias) => {
+                return `(${columnAlias} = :value1) OR (${columnAlias} = :value2)`
+            }, { value1: 2, value2: 3 }),
+        });
+        result1.should.be.eql([
+            { id: 2, likes: 2, title: "About #2" },
+            { id: 3, likes: 3, title: "About #3" },
+        ]);
+
+        // check operator
+        const result2 = await connection.getRepository(Post).find({
+            likes: Raw((columnAlias) => {
+                return `(${columnAlias} IN (1, 4, 5, 6)) AND (${columnAlias} < :maxValue)`
+            }, { maxValue: 6 }),
+        });
+        result2.should.be.eql([
+            { id: 1, likes: 1, title: "About #1" },
+            { id: 4, likes: 4, title: "About #4" },
+            { id: 5, likes: 5, title: "About #5" },
+        ]);
+
+        // check operator
+        const result3 = await connection.getRepository(Post).find({
+            title: Raw((columnAlias) => {
+                return `${columnAlias} IN (:a, :b, :c)`;
+            }, { a: "About #1", b: "About #3", c: "About #5" }),
+            likes: Raw((columnAlias) => `${columnAlias} IN (:d, :e)`, { d: 5, e: 1 }),
+        });
+        result3.should.be.eql([
+            { id: 1, likes: 1, title: "About #1" },
+            { id: 5, likes: 5, title: "About #5" },
+        ]);
+
+        // check operator
+        const result4 = await connection.getRepository(Post).find({
+            likes: Raw((columnAlias) => `${columnAlias} IN (2, 6)`, { }),
+        });
+        result4.should.be.eql([
+            { id: 2, likes: 2, title: "About #2" },
+            { id: 6, likes: 6, title: "About #6" },
+        ]);
+    })));
+
+
     it("should work with ActiveRecord model", async () => {
         // These must run sequentially as we have the global context of the `PersonAR` ActiveRecord class
         for (const connection of connections) {

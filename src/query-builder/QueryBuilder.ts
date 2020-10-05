@@ -810,12 +810,16 @@ export abstract class QueryBuilder<Entity> {
                             } else if (parameterValue instanceof FindOperator) {
                                 let parameters: any[] = [];
                                 if (parameterValue.useParameter) {
-                                    const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
-                                    realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
-                                        this.expressionMap.nativeParameters[parameterName + (parameterBaseCount + realParameterValueIndex)] = realParameterValue;
-                                        parameterIndex++;
-                                        parameters.push(this.connection.driver.createParameter(parameterName + (parameterBaseCount + realParameterValueIndex), parameterIndex - 1));
-                                    });
+                                    if (parameterValue.objectLiteralParameters) {
+                                        this.setParameters(parameterValue.objectLiteralParameters);
+                                    } else {
+                                        const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
+                                        realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
+                                            this.expressionMap.nativeParameters[parameterName + (parameterBaseCount + realParameterValueIndex)] = realParameterValue;
+                                            parameterIndex++;
+                                            parameters.push(this.connection.driver.createParameter(parameterName + (parameterBaseCount + realParameterValueIndex), parameterIndex - 1));
+                                        });
+                                    }
                                 }
 
                                 return this.computeFindOperatorExpression(parameterValue, aliasPath, parameters);
