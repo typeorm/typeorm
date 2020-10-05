@@ -3,7 +3,7 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 /**
  * Find Options Operator.
- * Example: { someField: Raw([...]) }
+ * Example: { someField: Raw("12") }
  */
 export function Raw<T>(value: string): FindOperator<any>;
 
