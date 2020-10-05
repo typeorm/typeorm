@@ -18,6 +18,7 @@ describe("github issues > #3118 shorten alias names (for RDBMS with a limit) whe
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
+        enabledDrivers: ["mysql", "postgres", "cockroachdb", "sap", "mariadb", "mssql"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

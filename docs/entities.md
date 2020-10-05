@@ -311,7 +311,7 @@ or
 `date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`,
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`,
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
-`tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`, `cube`
+`tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`, `cube`, `ltree`
 
 ### Column types for `cockroachdb`
 

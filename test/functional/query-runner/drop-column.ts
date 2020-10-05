@@ -28,6 +28,11 @@ describe("query runner > drop column", () => {
         nameColumn!.should.be.exist;
         versionColumn!.should.be.exist;
 
+        // better-sqlite3 seems not able to create a check constraint on a non-existing column
+        if (connection.name === "better-sqlite3") {
+            await queryRunner.dropCheckConstraints(table!, table!.checks);
+        }
+
         // In Sqlite 'dropColumns' method is more optimal than 'dropColumn', because it recreate table just once,
         // without all removed columns. In other drivers it's no difference between these methods, because 'dropColumns'
         // calls 'dropColumn' method for each removed column.

@@ -1,3 +1,4 @@
+import {parseString as xmlParser} from 'xml2js';
 import {PlatformTools} from "../../platform/PlatformTools";
 import {ConnectionOptions} from "../ConnectionOptions";
 
@@ -43,7 +44,6 @@ export class ConnectionOptionsXmlReader {
      * Reads xml file contents and returns them in a promise.
      */
     protected readXml(path: string): Promise<any> {
-        const xmlParser = PlatformTools.load("xml2js").parseString;
         const xmlOptions = { trim: true, explicitRoot: false };
         return new Promise((ok, fail) => {
             xmlParser(PlatformTools.readFileSync(path), xmlOptions, (err: any, result: any) => err ? fail(err) : ok(result));

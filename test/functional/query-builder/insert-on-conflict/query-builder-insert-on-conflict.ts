@@ -8,7 +8,7 @@ describe("query builder > insertion > on conflict", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["postgres", "sqlite"] // since on conflict statement is only supported in postgres and sqlite >= 3.24.0
+        enabledDrivers: ["postgres", "sqlite", "better-sqlite3"] // since on conflict statement is only supported in postgres and sqlite >= 3.24.0
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

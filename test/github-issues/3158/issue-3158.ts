@@ -8,7 +8,7 @@ it("github issues > #3158 Cannot run sync a second time", async () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
-            enabledDrivers: ["mysql", "mariadb", "oracle", "mssql", "sqljs", "sqlite"],
+            enabledDrivers: ["mysql", "mariadb", "oracle", "mssql", "sqljs", "sqlite", "better-sqlite3"],
             // todo(AlexMesser): check why tests are failing under postgres driver
         });
         await reloadTestingDatabases(connections);

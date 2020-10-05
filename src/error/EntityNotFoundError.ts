@@ -1,4 +1,4 @@
-import {ObjectType} from "../common/ObjectType";
+import {EntityTarget} from "../common/EntityTarget";
 import {EntitySchema} from "../index";
 
 /**
@@ -7,13 +7,15 @@ import {EntitySchema} from "../index";
 export class EntityNotFoundError extends Error {
     name = "EntityNotFound";
 
-    constructor(entityClass: ObjectType<any>|EntitySchema<any>|string, criteria: any) {
+    constructor(entityClass: EntityTarget<any>, criteria: any) {
         super();
         Object.setPrototypeOf(this, EntityNotFoundError.prototype);
         let targetName: string;
         if (entityClass instanceof EntitySchema) {
             targetName = entityClass.options.name;
         } else if (typeof entityClass === "function") {
+            targetName = entityClass.name;
+        } else if (typeof entityClass === "object" && "name" in entityClass) {
             targetName = entityClass.name;
         } else {
             targetName = entityClass;

@@ -9,7 +9,7 @@ describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mysql", "mariadb", "sqlite"],
+        enabledDrivers: ["mysql", "mariadb", "sqlite", "better-sqlite3"],
         schemaCreate: true,
         dropSchema: true
     }));

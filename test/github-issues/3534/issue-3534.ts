@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {expect} from "chai";
-import { Connection, PromiseUtils } from "../../../src";
+import { Connection } from "../../../src";
 import { Foo } from "./entity/Foo";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 
@@ -14,7 +14,7 @@ describe("github issues > #3534: store regexp", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("allows entities with regexp columns", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("allows entities with regexp columns", () => Promise.all(connections.map(async connection => {
         const repository = connection.getRepository(Foo);
 
         const foo = new Foo();
@@ -25,6 +25,6 @@ describe("github issues > #3534: store regexp", () => {
         const storedFoo = await repository.findOneOrFail(foo.id);
         expect(storedFoo.bar).to.instanceOf(RegExp);
         expect(storedFoo.bar.toString()).to.eq(/foo/i.toString());
-    }));
+    })));
 
 });

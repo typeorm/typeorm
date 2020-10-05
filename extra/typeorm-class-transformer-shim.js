@@ -59,11 +59,20 @@ function makePropertyDecorator(typeFunction) {
 
 // columns
 
-/* export */
-function Column(typeOrOptions, options) {
+/* export */ function Column(typeOrOptions, options) {
   return makePropertyDecorator(typeOrOptions);
 }
 exports.Column = Column;
+
+/* export */ function ViewColumn(typeOrOptions, options) {
+  return makePropertyDecorator(typeOrOptions);
+}
+exports.ViewColumn = ViewColumn;
+
+/* export */ function DeleteDateColumn(options) {
+  return function(object, propertyName) {};
+}
+exports.DeleteDateColumn = DeleteDateColumn;
 
 /* export */ function CreateDateColumn(options) {
   return function(object, propertyName) {};
@@ -191,6 +200,11 @@ exports.ChildEntity = ChildEntity;
   return function(object) {};
 }
 exports.Entity = Entity;
+
+/* export */ function ViewEntity(options) {
+  return function(object) {};
+}
+exports.ViewEntity = ViewEntity;
 
 /* export */ function TableInheritance(type) {
   return function(object) {};

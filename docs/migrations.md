@@ -87,7 +87,7 @@ typeorm migration:create -n PostRefactoring
 ```
 
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
-After you run the command you can see a new file generated in the "migration" directory 
+After you run the command you can see a new file generated in the "migration" directory
 named `{TIMESTAMP}-PostRefactoring.ts` where `{TIMESTAMP}` is the current timestamp when the migration was generated.
 Now you can open the file and add your migration sql queries there.
 
@@ -144,7 +144,7 @@ Once you have a migration to run on production, you can run them using a CLI com
 typeorm migration:run
 ```
 
-**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files. The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files. 
+**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files. The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files.
 
 Example with `ts-node`:
 ```
@@ -161,8 +161,8 @@ If for some reason you want to revert the changes, you can run:
 typeorm migration:revert
 ```
 
-This command will execute `down` in the latest executed migration. 
-If you need to revert multiple migrations you must call this command multiple times. 
+This command will execute `down` in the latest executed migration.
+If you need to revert multiple migrations you must call this command multiple times.
 
 ## Generating migrations
 
@@ -195,7 +195,7 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 ```
 
 See, you don't need to write the queries on your own.
-The rule of thumb for generating migrations is that you generate them after "each" change you made to your models.
+The rule of thumb for generating migrations is that you generate them after "each" change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
 
 ## Connection option
 If you need to run/revert your migrations for another connection rather than the default, use the `-c` (alias for `--connection`) and pass the config name as an argument
@@ -246,6 +246,11 @@ export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
                 {
                     name: "name",
                     type: "varchar",
+                },
+                {
+                  name: 'created_at',
+                  type: 'timestamp',
+                  default: 'now()'
                 }
             ]
         }), true);
@@ -383,7 +388,7 @@ Drops database.
 createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void>
 ```
 
-- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter. 
+- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
 If schema path passed, it will create schema in specified database
 - `ifNotExist` - skips creation if `true`, otherwise throws error if schema already exist
 
@@ -395,7 +400,7 @@ Creates a new table schema.
 dropSchema(schemaPath: string, ifExist?: boolean, isCascade?: boolean): Promise<void>
 ```
 
-- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter. 
+- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
 If schema path passed, it will drop schema in specified database
 - `ifExist` - skips deletion if `true`, otherwise throws error if schema was not found
 - `isCascade` - If `true`, automatically drop objects (tables, functions, etc.) that are contained in the schema.

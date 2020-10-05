@@ -24,7 +24,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {QueryExpressionMap} from "./QueryExpressionMap";
-import {ObjectType} from "../common/ObjectType";
+import {EntityTarget} from "../common/EntityTarget";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {WhereExpression} from "./WhereExpression";
 import {Brackets} from "./Brackets";
@@ -36,6 +36,7 @@ import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -188,14 +189,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T>;
+    from<T>(entityTarget: EntityTarget<T>, aliasName: string): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
+    from<T>(entityTarget: EntityTarget<T>|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
         const mainAlias = this.createFromAlias(entityTarget, aliasName);
         this.expressionMap.setMainAlias(mainAlias);
         return (this as any) as SelectQueryBuilder<T>;
@@ -211,13 +212,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T>;
+    addFrom<T>(entityTarget: EntityTarget<T>, aliasName: string): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
+    addFrom<T>(entityTarget: EntityTarget<T>|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
         const alias = this.createFromAlias(entityTarget, aliasName);
         if (!this.expressionMap.mainAlias)
             this.expressionMap.setMainAlias(alias);
@@ -1787,6 +1788,16 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     return `${distinctAlias}.${propertyName}`;
                 }).join(" || ") + ")) as \"cnt\"";
 
+            } else if (this.connection.driver instanceof CockroachDriver) {
+                countSql = `COUNT(DISTINCT(CONCAT(` + metadata.primaryColumns.map((primaryColumn, index) => {
+                    const propertyName = this.escape(primaryColumn.databaseName);
+                    return `${distinctAlias}.${propertyName}::text`;
+                }).join(", ") + "))) as \"cnt\"";
+            } else if (this.connection.driver instanceof OracleDriver) {
+                countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
+                    const propertyName = this.escape(primaryColumn.databaseName);
+                    return `${distinctAlias}.${propertyName}`;
+                }).join(" || ") + ")) as \"cnt\"";
             } else {
                 countSql = `COUNT(DISTINCT(CONCAT(` + metadata.primaryColumns.map((primaryColumn, index) => {
                     const propertyName = this.escape(primaryColumn.databaseName);
@@ -1861,7 +1872,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 const columnAlias = this.escape(DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName));
                 if (!orderBys[columnAlias]) // make sure we aren't overriding user-defined order in inverse direction
                     orderBys[columnAlias] = "ASC";
-                return `${distinctAlias}.${columnAlias} as "ids_${DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName)}"`;
+
+                const alias = DriverUtils.buildColumnAlias(
+                    this.connection.driver,
+                    "ids_" + mainAliasName,
+                    primaryColumn.databaseName
+                );
+
+                return `${distinctAlias}.${columnAlias} as "${alias}"`;
             });
 
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
@@ -1888,7 +1906,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
-                    const ids = rawResults.map(result => result["ids_" + DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, metadata.primaryColumns[0].databaseName)]);
+                    const alias = DriverUtils.buildColumnAlias(
+                        this.connection.driver,
+                        "ids_" + mainAliasName,
+                        metadata.primaryColumns[0].databaseName
+                    );
+
+                    const ids = rawResults.map(result => result[alias]);
                     const areAllNumbers = ids.every((id: any) => typeof id === "number");
                     if (areAllNumbers) {
                         // fixes #190. if all numbers then its safe to perform query without parameter

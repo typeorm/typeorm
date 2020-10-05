@@ -54,7 +54,7 @@ describe("github issues > #1123 load relation eagerly by setting isEager propert
         const loadedPost = await connection.manager
           .createQueryBuilder("Post", "post")
           .where("post.id = :id", { id: 1 })
-          .getOne();
+          .getOne() as Post;
 
         loadedPost!.should.be.eql({
           id: 1,

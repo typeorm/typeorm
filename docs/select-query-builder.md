@@ -342,7 +342,7 @@ createQueryBuilder("user")
 Which will produce the following SQL query:
 
 ```sql
-SELECT ... FROM users user WHERE user.firstName IN (1, 2, 3, 4)
+SELECT ... FROM users user WHERE user.id IN (1, 2, 3, 4)
 ```
 
 
