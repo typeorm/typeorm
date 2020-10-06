@@ -13,6 +13,6 @@ export class Profile {
     @Column()
     photo: string;
 
-    @OneToOne(type => User, user => user.profile, { onDelete: "CASCADE" })
+    @OneToOne(type => User, user => user.profile/*, { onDelete: "CASCADE" }*/)
     user: User;
 }
