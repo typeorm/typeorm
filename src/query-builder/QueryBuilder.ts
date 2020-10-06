@@ -882,6 +882,8 @@ export abstract class QueryBuilder<Entity> {
                 return `${aliasPath} >= ${parameters[0]}`;
             case "equal":
                 return `${aliasPath} = ${parameters[0]}`;
+            case "ilike":
+                return `${aliasPath} ILIKE ${parameters[0]}`;
             case "like":
                 return `${aliasPath} LIKE ${parameters[0]}`;
             case "between":

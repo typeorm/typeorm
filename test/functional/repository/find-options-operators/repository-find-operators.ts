@@ -5,6 +5,7 @@ import {
     Between,
     Connection,
     Equal,
+    ILike,
     In,
     IsNull,
     LessThan,
@@ -268,6 +269,50 @@ describe("repository > find options > operators", () => {
             title: Not(Equal("About #2"))
         });
         loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+
+    })));
+
+    it("ilike", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof PostgresDriver))
+            return;
+
+        // insert some fake data
+        const post1 = new Post();
+        post1.title = "about #1";
+        post1.likes = 12;
+        await connection.manager.save(post1);
+        const post2 = new Post();
+        post2.title = "ABOUT #2";
+        post2.likes = 3;
+        await connection.manager.save(post2);
+
+        // check operator
+        const loadedPosts = await connection.getRepository(Post).find({
+            title: ILike("%out #%")
+        });
+        loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "about #1" }, { id: 2, likes: 3, title: "ABOUT #2" }]);
+
+    })));
+
+    it("not(ilike)", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof PostgresDriver))
+            return;
+
+        // insert some fake data
+        const post1 = new Post();
+        post1.title = "about #1";
+        post1.likes = 12;
+        await connection.manager.save(post1);
+        const post2 = new Post();
+        post2.title = "ABOUT #2";
+        post2.likes = 3;
+        await connection.manager.save(post2);
+
+        // check operator
+        const loadedPosts = await connection.getRepository(Post).find({
+            title: Not(ILike("%out #1"))
+        });
+        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "ABOUT #2" }]);
 
     })));
 
