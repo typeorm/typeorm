@@ -4,16 +4,15 @@ import { User } from "./User";
 @Entity()
 export class Profile {
 
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @Column()
-  gender: string;
+    @Column()
+    gender: string;
 
-  @Column()
-  photo: string;
+    @Column()
+    photo: string;
 
-  @OneToOne(type => User, user => user.profile, { onDelete: "CASCADE" })
-  user: User;
-
+    @OneToOne(type => User, user => user.profile, { onDelete: "CASCADE" })
+    user: User;
 }
