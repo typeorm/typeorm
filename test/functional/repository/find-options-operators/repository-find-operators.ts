@@ -605,6 +605,16 @@ describe("repository > find options > operators", () => {
             { id: 3, likes: 3, title: "About #3" },
             { id: 6, likes: 6, title: "About #6" },
         ]);
+
+        // check operator
+        const result6 = await connection.getRepository(Post).find({
+            likes: Raw((columnAlias) => `${columnAlias} IN (:...values)`, { values: [2, 3, 6] }),
+        });
+        result6.should.be.eql([
+            { id: 2, likes: 2, title: "About #2" },
+            { id: 3, likes: 3, title: "About #3" },
+            { id: 6, likes: 6, title: "About #6" },
+        ]);
     })));
 
     it("should work with ActiveRecord model", async () => {
