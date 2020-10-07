@@ -195,7 +195,8 @@ export class MongoDriver implements Driver {
         "minSize",
         "monitorCommands",
         "useNewUrlParser",
-        "useUnifiedTopology"
+        "useUnifiedTopology",
+        "autoEncryption"
     ];
 
     // -------------------------------------------------------------------------
