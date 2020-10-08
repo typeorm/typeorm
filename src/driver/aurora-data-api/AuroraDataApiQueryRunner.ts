@@ -36,6 +36,8 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
 
     driver: AuroraDataApiDriver;
 
+    client: any
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
@@ -49,10 +51,11 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AuroraDataApiDriver) {
+    constructor(driver: AuroraDataApiDriver, client: any) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
+        this.client = client;
         this.broadcaster = new Broadcaster(this);
     }
 
@@ -87,7 +90,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
             throw new TransactionAlreadyStartedError();
 
         this.isTransactionActive = true;
-        await this.driver.client.startTransaction();
+        await this.client.startTransaction();
     }
 
     /**
@@ -98,7 +101,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.driver.client.commitTransaction();
+        await this.client.commitTransaction();
         this.isTransactionActive = false;
     }
 
@@ -110,7 +113,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.driver.client.rollbackTransaction();
+        await this.client.rollbackTransaction();
         this.isTransactionActive = false;
     }
 
@@ -121,7 +124,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const result = await this.driver.client.query(query, parameters);
+        const result = await this.client.query(query, parameters);
 
         if (result.records) {
             return result.records;

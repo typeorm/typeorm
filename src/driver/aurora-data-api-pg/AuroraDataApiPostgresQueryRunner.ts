@@ -29,6 +29,8 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
      */
     driver: AuroraDataApiPostgresDriver;
 
+    client: any;
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
@@ -47,8 +49,10 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AuroraDataApiPostgresDriver, mode: ReplicationMode) {
+    constructor(driver: AuroraDataApiPostgresDriver, client: any, mode: ReplicationMode) {
         super(driver, mode);
+
+        this.client = client
     }
 
     // -------------------------------------------------------------------------
@@ -94,7 +98,7 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
             throw new TransactionAlreadyStartedError();
 
         this.isTransactionActive = true;
-        await this.driver.client.startTransaction();
+        await this.client.startTransaction();
     }
 
     /**
@@ -105,7 +109,7 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.driver.client.commitTransaction();
+        await this.client.commitTransaction();
         this.isTransactionActive = false;
     }
 
@@ -117,7 +121,7 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.driver.client.rollbackTransaction();
+        await this.client.rollbackTransaction();
         this.isTransactionActive = false;
     }
 
@@ -128,7 +132,7 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const result = await this.driver.client.query(query, parameters);
+        const result = await this.client.query(query, parameters);
 
         if (result.records) {
             return result.records;

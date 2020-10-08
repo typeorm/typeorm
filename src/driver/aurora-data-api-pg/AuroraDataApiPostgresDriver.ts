@@ -90,7 +90,19 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new AuroraDataApiPostgresQueryRunner(this, mode);
+        return new AuroraDataApiPostgresQueryRunner(
+            this,
+            new this.DataApiDriver(
+                this.options.region,
+                this.options.secretArn,
+                this.options.resourceArn,
+                this.options.database,
+                (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
+                this.options.serviceConfigOptions,
+                this.options.formatOptions,
+            ),
+            mode
+        );
     }
 
     // -------------------------------------------------------------------------
