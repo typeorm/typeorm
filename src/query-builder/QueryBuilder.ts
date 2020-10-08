@@ -574,36 +574,38 @@ export abstract class QueryBuilder<Entity> {
             const replaceAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? `${alias.name}.` : "";
             const replacementAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? `${this.escape(alias.name)}.` : "";
 
-            const replacements: { [key: string]: ColumnMetadata } = {};
+            const replacements: { [key: string]: string } = {};
 
             for (const column of alias.metadata.columns) {
                 if (!(column.propertyPath in replacements))
-                    replacements[column.propertyPath] = column;
+                    replacements[column.propertyPath] = column.databaseName;
                 if (!(column.propertyName in replacements))
-                    replacements[column.propertyName] = column;
+                    replacements[column.propertyName] = column.databaseName;
+                if (!(column.databaseName in replacements))
+                    replacements[column.databaseName] = column.databaseName;
             }
 
             for (const relation of alias.metadata.relations) {
                 for (const joinColumn of [...relation.joinColumns, ...relation.inverseJoinColumns]) {
-                    const key =
-                        `${relation.propertyPath}.${
-                        joinColumn.referencedColumn!.propertyPath}`;
+                    const key = `${relation.propertyPath}.${joinColumn.referencedColumn!.propertyPath}`;
                     if (!(key in replacements))
-                        replacements[key] = joinColumn;
+                        replacements[key] = joinColumn.databaseName;
                 }
+
                 if (relation.joinColumns.length > 0 && !(relation.propertyPath in replacements))
-                    replacements[relation.propertyPath] = relation.joinColumns[0];
+                    replacements[relation.propertyPath] = relation.joinColumns[0].databaseName;
             }
 
             const replacementKeys = Object.keys(replacements);
+
             if (replacementKeys.length) {
                 statement = statement.replace(new RegExp(
-                    `(?<=[ =\(]|^)` +
+                    `(?<=[ =\(]|^.{0})` +
                     `${escapeRegExp(replaceAliasNamePrefix)}(${replacementKeys.map(escapeRegExp).join("|")})` +
-                    `(?=[ =\)\,]|$)`,
+                    `(?=[ =\)\,]|.{0}$)`,
                     "gm"
                 ), (_, p) =>
-                    `${replacementAliasNamePrefix}${this.escape(replacements[p].databaseName)}`
+                    `${replacementAliasNamePrefix}${this.escape(replacements[p])}`
                 );
             }
         }
