@@ -276,7 +276,7 @@ Example of replication connection settings:
 
 All schema update and write operations are performed using `master` server.
 All simple queries performed by find methods or select query builder are using a random `slave` instance.
-All raw queries performed by query method are always performed using `master` server.
+All queries performed by query method are performed using the `master` instance.
 
 If you want to explicitly use master in SELECT created by query builder, you can use the following code:
 
