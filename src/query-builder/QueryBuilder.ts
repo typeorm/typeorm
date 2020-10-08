@@ -565,9 +565,13 @@ export abstract class QueryBuilder<Entity> {
      * Replaces all entity's propertyName to name in the given statement.
      */
     protected replacePropertyNames(statement: string) {
+        // Escape special characters in regular expressions
+        // Per https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
+        const escapeRegExp = (s: String) => s.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue;
-            const replaceAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? `${alias.name}\\.` : "";
+            const replaceAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? `${alias.name}.` : "";
             const replacementAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? `${this.escape(alias.name)}.` : "";
 
             const replacements: { [key: string]: ColumnMetadata } = {};
@@ -591,15 +595,15 @@ export abstract class QueryBuilder<Entity> {
                     replacements[relation.propertyPath] = relation.joinColumns[0];
             }
 
-            const replacementKeys = Object.keys(replacements)
-                .map(k => k.replace(/\./g, "\\."));
+            const replacementKeys = Object.keys(replacements);
             if (replacementKeys.length) {
                 statement = statement.replace(new RegExp(
-                    `([ =\(]|^.{0})${replaceAliasNamePrefix}(${
-                    replacementKeys.join("|")})([ =\)\,]|.{0}$)`,
+                    `(?<=[ =\(]|^)` +
+                    `${escapeRegExp(replaceAliasNamePrefix)}(${replacementKeys.map(escapeRegExp).join("|")})` +
+                    `(?=[ =\)\,]|$)`,
                     "gm"
-                ), (_, pre, p, post) =>
-                    `${pre}${replacementAliasNamePrefix}${this.escape(replacements[p].databaseName)}${post}`
+                ), (_, p) =>
+                    `${replacementAliasNamePrefix}${this.escape(replacements[p].databaseName)}`
                 );
             }
         }
