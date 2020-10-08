@@ -327,4 +327,9 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * https://github.com/mongodb/node-mongodb-native/releases/tag/v3.2.1
      */
     readonly useUnifiedTopology?: boolean;
+    
+    /**
+     * Automatic Client-Side Field Level Encryption configuration.
+     */
+    readonly autoEncryption?: any;
 }
