@@ -297,13 +297,11 @@ If you want to use `slave` in raw queries, you also need to explicitly specify t
 ```typescript
 
 const slaveQueryRunner = connection.createQueryRunner("slave");
-await connection.query('SELECT * FROM users WHERE id = $1', [userId], slaveQueryRunner)
-  .then((result) => {
-    // Do your stuff
-  })
-  .finally(() => {
-    return slaveQueryRunner.release()
-  })
+try {
+    const userFromSlave = await connection.query('SELECT * FROM users WHERE id = $1', [userId], slaveQueryRunner);
+} finally {
+    return slaveQueryRunner.release();
+}
 ```
 
 Note that connection created by a `QueryRunner` need to be explicitly released.
