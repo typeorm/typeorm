@@ -134,7 +134,7 @@ export class MongoDriver implements Driver {
     /**
      * Valid mongo connection options
      * NOTE: Keep sync with MongoConnectionOptions
-     * Sync with http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html
+     * Sync with http://mongodb.github.io/node-mongodb-native/3.5/api/MongoClient.html
      */
     protected validOptionNames: string[] = [
         "poolSize",
