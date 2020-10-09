@@ -326,7 +326,7 @@ describe("basic-lazy-relations", () => {
         loadedPost.title.should.be.equal("post with great category");
     })));
 
-    it("should successfully load relations within a transaction", () => Promise.all(connections.filter((connection) => (new Set(["mysql", "sqlite", "postgres"])).has(connection.options.type)).map(async connection => {
+    it("should successfully load relations within a transaction", () => Promise.all(connections.filter((connection) => (new Set(["mysql", "sqlite", "better-sqlite3", "postgres"])).has(connection.options.type)).map(async connection => {
         await connection.manager.transaction(async (manager) => {
             const category = new Category();
             category.name = "category of great post";
@@ -344,7 +344,7 @@ describe("basic-lazy-relations", () => {
         });
     })));
 
-    it("should successfully load relations outside a transaction with entity generated within a transaction", () => Promise.all(connections.filter((connection) => (new Set(["mysql", "sqlite", "postgres"])).has(connection.options.type)).map(async connection => {
+    it("should successfully load relations outside a transaction with entity generated within a transaction", () => Promise.all(connections.filter((connection) => (new Set(["mysql", "sqlite", "better-sqlite3", "postgres"])).has(connection.options.type)).map(async connection => {
         const loadedCategory = await connection.manager.transaction(async (manager) => {
             const category = new Category();
             category.name = "category of great post";

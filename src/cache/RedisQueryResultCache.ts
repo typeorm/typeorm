@@ -61,7 +61,7 @@ export class RedisQueryResultCache implements QueryResultCache {
                 this.client = new this.redis();
             }
         } else if (this.clientType === "ioredis/cluster") {
-            if (cacheOptions && cacheOptions.options && cacheOptions.options instanceof Array) {
+            if (cacheOptions && cacheOptions.options && Array.isArray(cacheOptions.options)) {
                 this.client = new this.redis.Cluster(cacheOptions.options);
             } else if (cacheOptions && cacheOptions.options && cacheOptions.options.startupNodes) {
                 this.client = new this.redis.Cluster(cacheOptions.options.startupNodes, cacheOptions.options.options);
@@ -185,8 +185,11 @@ export class RedisQueryResultCache implements QueryResultCache {
      */
     protected loadRedis(): any {
         try {
-            return PlatformTools.load(this.clientType);
-
+            if (this.clientType === "ioredis/cluster") {
+                return PlatformTools.load("ioredis");
+            } else {
+                return PlatformTools.load(this.clientType);
+            }
         } catch (e) {
             throw new Error(`Cannot use cache because ${this.clientType} is not installed. Please run "npm i ${this.clientType} --save".`);
         }

@@ -70,9 +70,12 @@ export class RawSqlResultsToEntityTransformer {
                     return keyValue.toString("hex");
                 }
 
+                if (typeof keyValue === "object") {
+                    return JSON.stringify(keyValue);
+                }
+
                 return keyValue;
             }).join("_"); // todo: check partial
-            if (!id) return;
 
             const items = map.get(id);
             if (!items) {
@@ -214,7 +217,7 @@ export class RawSqlResultsToEntityTransformer {
 
             const idMaps = rawRelationIdResult.results.map(result => {
                 const entityPrimaryIds = this.extractEntityPrimaryIds(relation, result);
-                if (EntityMetadata.compareIds(entityPrimaryIds, valueMap) === false)
+                if (OrmUtils.compareIds(entityPrimaryIds, valueMap) === false)
                     return;
 
                 let columns: ColumnMetadata[];
@@ -254,8 +257,7 @@ export class RawSqlResultsToEntityTransformer {
                     }
                 }
                 return idMap;
-            }).filter(result => result);
-
+            }).filter(result => result !== undefined);
 
             const properties = rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyPath.split(".");
             const mapToProperty = (properties: string[], map: ObjectLiteral, value: any): any => {

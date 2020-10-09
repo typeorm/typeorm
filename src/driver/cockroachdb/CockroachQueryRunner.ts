@@ -17,11 +17,11 @@ import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions"
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
-import {PromiseUtils} from "../../";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {ColumnType} from "../../index";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -65,7 +65,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: CockroachDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: CockroachDriver, mode: ReplicationMode) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
@@ -158,7 +158,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         } catch (e) {
             if (e.code === "40001") {
                 await this.query("ROLLBACK TO SAVEPOINT cockroach_restart");
-                await PromiseUtils.runInSequence(this.queries, q => this.query(q.query, q.parameters));
+                for (const q of this.queries) {
+                    await this.query(q.query, q.parameters);
+                }
                 await this.commitTransaction();
             }
         }
@@ -593,7 +595,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new columns from the column in the table.
      */
     async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        await PromiseUtils.runInSequence(columns, column => this.addColumn(tableOrName, column));
+        for (const column of columns) {
+            await this.addColumn(tableOrName, column);
+        }
     }
 
     /**
@@ -843,7 +847,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Changes a column in the table.
      */
     async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
-        await PromiseUtils.runInSequence(changedColumns, changedColumn => this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn));
+        for (const {oldColumn, newColumn} of changedColumns) {
+            await this.changeColumn(tableOrName, oldColumn, newColumn);
+        }
     }
 
     /**
@@ -922,7 +928,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops the columns in the table.
      */
     async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        await PromiseUtils.runInSequence(columns, column => this.dropColumn(tableOrName, column));
+        for (const column of columns) {
+            await this.dropColumn(tableOrName, column);
+        }
     }
 
     /**
@@ -1013,7 +1021,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates new unique constraints.
      */
     async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        await PromiseUtils.runInSequence(uniqueConstraints, uniqueConstraint => this.createUniqueConstraint(tableOrName, uniqueConstraint));
+        for (const uniqueConstraint of uniqueConstraints) {
+            await this.createUniqueConstraint(tableOrName, uniqueConstraint);
+        }
     }
 
     /**
@@ -1037,7 +1047,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops unique constraints.
      */
     async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        await PromiseUtils.runInSequence(uniqueConstraints, uniqueConstraint => this.dropUniqueConstraint(tableOrName, uniqueConstraint));
+        for (const uniqueConstraint of uniqueConstraints) {
+            await this.dropUniqueConstraint(tableOrName, uniqueConstraint);
+        }
     }
 
     /**
@@ -1135,7 +1147,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new foreign keys.
      */
     async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        await PromiseUtils.runInSequence(foreignKeys, foreignKey => this.createForeignKey(tableOrName, foreignKey));
+        for (const foreignKey of foreignKeys) {
+            await this.createForeignKey(tableOrName, foreignKey);
+        }
     }
 
     /**
@@ -1157,7 +1171,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops a foreign keys from the table.
      */
     async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        await PromiseUtils.runInSequence(foreignKeys, foreignKey => this.dropForeignKey(tableOrName, foreignKey));
+        for (const foreignKey of foreignKeys) {
+            await this.dropForeignKey(tableOrName, foreignKey);
+        }
     }
 
     /**
@@ -1195,7 +1211,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new indices
      */
     async createIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
-        await PromiseUtils.runInSequence(indices, index => this.createIndex(tableOrName, index));
+        for (const index of indices) {
+            await this.createIndex(tableOrName, index);
+        }
     }
 
     /**
@@ -1217,7 +1235,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops an indices from the table.
      */
     async dropIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
-        await PromiseUtils.runInSequence(indices, index => this.dropIndex(tableOrName, index));
+        for (const index of indices) {
+            await this.dropIndex(tableOrName, index);
+        }
     }
 
     /**
@@ -1336,7 +1356,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         }).join(" OR ");
 
         const constraintsSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "cnst"."conname" AS "constraint_name", ` +
-            `CASE "cnst"."contype" WHEN 'x' THEN pg_get_constraintdef("cnst"."oid", true) ELSE "cnst"."consrc" END AS "expression", ` +
+            `pg_get_constraintdef("cnst"."oid") AS "expression", ` +
             `CASE "cnst"."contype" WHEN 'p' THEN 'PRIMARY' WHEN 'u' THEN 'UNIQUE' WHEN 'c' THEN 'CHECK' WHEN 'x' THEN 'EXCLUDE' END AS "constraint_type", "a"."attname" AS "column_name" ` +
             `FROM "pg_constraint" "cnst" ` +
             `INNER JOIN "pg_class" "t" ON "t"."oid" = "cnst"."conrelid" ` +
@@ -1507,7 +1527,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 return new TableCheck({
                     name: constraint["constraint_name"],
                     columnNames: checks.map(c => c["column_name"]),
-                    expression: constraint["expression"] // column names are not escaped, may cause problems
+                    expression: constraint["expression"].replace(/^\s*CHECK\s*\((.*)\)\s*$/i, "$1")
                 });
             });
 
@@ -1533,7 +1553,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["constraint_name"] === dbForeignKey["constraint_name"]);
 
                 // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                const schema = dbForeignKey["referenced_table_schema"] === currentSchema ? undefined : dbTable["referenced_table_schema"];
+                const schema = dbForeignKey["referenced_table_schema"] === currentSchema ? undefined : dbForeignKey["referenced_table_schema"];
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["referenced_table_name"], schema);
 
                 return new TableForeignKey({

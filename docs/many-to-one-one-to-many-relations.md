@@ -17,7 +17,7 @@ export class Photo {
     @Column()
     url: string;
     
-    @ManyToOne(type => User, user => user.photos)
+    @ManyToOne(() => User, user => user.photos)
     user: User;
     
 }
@@ -36,7 +36,7 @@ export class User {
     @Column()
     name: string;
     
-    @OneToMany(type => Photo, photo => photo.user)
+    @OneToMany(() => Photo, photo => photo.user)
     photos: Photo[];
     
 }
@@ -102,7 +102,7 @@ photo2.user = user;
 await connection.manager.save(photo2);
 ```
 
-With cascades enabled you can save this relation with only one `save` call.
+With [cascades](https://github.com/typeorm/typeorm/blob/master/docs/relations.md#cascades) enabled you can save this relation with only one `save` call.
 
 To load a user with photos inside you must specify the relation in `FindOptions`:
  

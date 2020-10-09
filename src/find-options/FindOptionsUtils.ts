@@ -17,14 +17,14 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindOneOptions interface.
      */
-    static isFindOneOptions(obj: any): obj is FindOneOptions<any> {
-        const possibleOptions: FindOneOptions<any> = obj;
+    static isFindOneOptions<Entity = any>(obj: any): obj is FindOneOptions<Entity> {
+        const possibleOptions: FindOneOptions<Entity> = obj;
         return possibleOptions &&
                 (
-                    possibleOptions.select instanceof Array ||
+                    Array.isArray(possibleOptions.select) ||
                     possibleOptions.where instanceof Object ||
                     typeof possibleOptions.where === "string" ||
-                    possibleOptions.relations instanceof Array ||
+                    Array.isArray(possibleOptions.relations) ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
                     possibleOptions.cache instanceof Object ||
@@ -33,15 +33,16 @@ export class FindOptionsUtils {
                     possibleOptions.lock instanceof Object ||
                     possibleOptions.loadRelationIds instanceof Object ||
                     typeof possibleOptions.loadRelationIds === "boolean" ||
-                    typeof possibleOptions.loadEagerRelations === "boolean"
+                    typeof possibleOptions.loadEagerRelations === "boolean" ||
+                    typeof possibleOptions.withDeleted === "boolean"
                 );
     }
 
     /**
      * Checks if given object is really instance of FindManyOptions interface.
      */
-    static isFindManyOptions(obj: any): obj is FindManyOptions<any> {
-        const possibleOptions: FindManyOptions<any> = obj;
+    static isFindManyOptions<Entity = any>(obj: any): obj is FindManyOptions<Entity> {
+        const possibleOptions: FindManyOptions<Entity> = obj;
         return possibleOptions && (
             this.isFindOneOptions(possibleOptions) ||
             typeof (possibleOptions as FindManyOptions<any>).skip === "number" ||
@@ -175,9 +176,13 @@ export class FindOptionsUtils {
         if (options.lock) {
             if (options.lock.mode === "optimistic") {
                 qb.setLock(options.lock.mode, options.lock.version as any);
-            } else if (options.lock.mode === "pessimistic_read" || options.lock.mode === "pessimistic_write" || options.lock.mode === "dirty_read") {
+            } else if (options.lock.mode === "pessimistic_read" || options.lock.mode === "pessimistic_write" || options.lock.mode === "dirty_read" || options.lock.mode === "pessimistic_partial_write" || options.lock.mode === "pessimistic_write_or_fail") {
                 qb.setLock(options.lock.mode);
             }
+        }
+
+        if (options.withDeleted) {
+            qb.withDeleted();
         }
 
         if (options.loadRelationIds === true) {

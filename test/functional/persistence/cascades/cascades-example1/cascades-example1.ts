@@ -22,6 +22,7 @@ describe("persistence > cascades > example 1", () => {
         profile.photo = photo;
 
         const user = new User();
+        user.name = "Umed";
         user.profile = profile;
 
         await connection.manager.save(user);
@@ -35,13 +36,16 @@ describe("persistence > cascades > example 1", () => {
 
         loadedUser!.should.be.eql({
             id: 1,
+            name: "Umed",
             profile: {
                 id: 1,
                 photo: {
-                    id: 1
+                    id: 1,
+                    name: "My photo"
                 },
                 user: {
-                    id: 1
+                    id: 1,
+                    name: "Umed"
                 }
             }
         });

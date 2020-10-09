@@ -3,12 +3,12 @@ import {Query} from "../driver/Query";
 import {SqlInMemory} from "../driver/SqlInMemory";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {View} from "../schema-builder/view/View";
-import {PromiseUtils} from "../util/PromiseUtils";
 import {Connection} from "../connection/Connection";
 import {Table} from "../schema-builder/table/Table";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {Broadcaster} from "../subscriber/Broadcaster";
+import {ReplicationMode} from "../driver/types/ReplicationMode";
 
 export abstract class BaseQueryRunner {
 
@@ -82,7 +82,7 @@ export abstract class BaseQueryRunner {
      * Used for replication.
      * If replication is not setup its value is ignored.
      */
-    protected mode: "master"|"slave";
+    protected mode: ReplicationMode;
 
     // -------------------------------------------------------------------------
     // Public Abstract Methods
@@ -176,14 +176,18 @@ export abstract class BaseQueryRunner {
      * Executes up sql queries.
      */
     async executeMemoryUpSql(): Promise<void> {
-        await PromiseUtils.runInSequence(this.sqlInMemory.upQueries, upQuery => this.query(upQuery.query, upQuery.parameters));
+        for (const {query, parameters} of this.sqlInMemory.upQueries) {
+            await this.query(query, parameters);
+        }
     }
 
     /**
      * Executes down sql queries.
      */
     async executeMemoryDownSql(): Promise<void> {
-        await PromiseUtils.runInSequence(this.sqlInMemory.downQueries.reverse(), downQuery => this.query(downQuery.query, downQuery.parameters));
+        for (const {query, parameters} of this.sqlInMemory.downQueries.reverse()) {
+            await this.query(query, parameters);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -313,27 +317,6 @@ export abstract class BaseQueryRunner {
     }
 
     /**
-     * Checks if column display width is by default. Used only for MySQL.
-     */
-    protected isDefaultColumnWidth(table: Table, column: TableColumn, width: number): boolean {
-        // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name);
-            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
-            if (columnMetadata && columnMetadata.width)
-                return false;
-        }
-
-        if (this.connection.driver.dataTypeDefaults
-            && this.connection.driver.dataTypeDefaults[column.type]
-            && this.connection.driver.dataTypeDefaults[column.type].width) {
-            return this.connection.driver.dataTypeDefaults[column.type].width === width;
-        }
-
-        return false;
-    }
-
-    /**
      * Checks if column precision is by default.
      */
     protected isDefaultColumnPrecision(table: Table, column: TableColumn, precision: number): boolean {
@@ -391,7 +374,9 @@ export abstract class BaseQueryRunner {
         if (this.sqlMemoryMode === true)
             return Promise.resolve() as Promise<any>;
 
-        await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery.query, upQuery.parameters));
+        for (const {query, parameters} of upQueries) {
+            await this.query(query, parameters);
+        }
     }
 
 }

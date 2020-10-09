@@ -19,6 +19,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {CockroachQueryRunner} from "./CockroachQueryRunner";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -172,6 +173,8 @@ export class CockroachDriver implements Driver {
         createDateDefault: "now()",
         updateDate: "timestamptz",
         updateDateDefault: "now()",
+        deleteDate: "timestamptz",
+        deleteDateNullable: true,
         version: Number,
         treeLevel: Number,
         migrationId: Number,
@@ -282,7 +285,7 @@ export class CockroachDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new CockroachQueryRunner(this, mode);
     }
 
@@ -335,7 +338,8 @@ export class CockroachDriver implements Driver {
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         // unique_rowid() generates bigint value and should not be converted to number
-        if ((columnMetadata.type === Number && !columnMetadata.isArray) || columnMetadata.generationStrategy === "increment") {
+        if (([Number, "int4", "smallint", "int2"].some(v => v === columnMetadata.type)
+            && !columnMetadata.isArray) || columnMetadata.generationStrategy === "increment") {
             value = parseInt(value);
 
         } else if (columnMetadata.type === Boolean) {
@@ -647,6 +651,13 @@ export class CockroachDriver implements Driver {
     }
 
     /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
+        return false;
+    }
+
+    /**
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
@@ -695,7 +706,7 @@ export class CockroachDriver implements Driver {
      */
     protected async createPool(options: CockroachConnectionOptions, credentials: CockroachConnectionCredentialsOptions): Promise<any> {
 
-        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+        credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
         // build connection options for the driver
         const connectionOptions = Object.assign({}, {

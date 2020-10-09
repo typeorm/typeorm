@@ -46,7 +46,7 @@ export class RelationLoader {
      *              INNER JOIN post Post ON Post.category=category.id WHERE Post.id=1
      */
     loadManyToOneOrOneToOneOwner(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[], queryRunner?: QueryRunner): Promise<any> {
-        const entities = entityOrEntities instanceof Array ? entityOrEntities : [entityOrEntities];
+        const entities = Array.isArray(entityOrEntities) ? entityOrEntities : [entityOrEntities];
         const columns = relation.entityMetadata.primaryColumns;
         const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation!.joinColumns;
         const conditions = joinColumns.map(joinColumn => {
@@ -87,7 +87,7 @@ export class RelationLoader {
      * WHERE post.[joinColumn.name] = entity[joinColumn.referencedColumn]
      */
     loadOneToManyOrOneToOneNotOwner(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[], queryRunner?: QueryRunner): Promise<any> {
-        const entities = entityOrEntities instanceof Array ? entityOrEntities : [entityOrEntities];
+        const entities = Array.isArray(entityOrEntities) ? entityOrEntities : [entityOrEntities];
         const aliasName = relation.propertyName;
         const columns = relation.inverseRelation!.joinColumns;
         const qb = this.connection
@@ -123,7 +123,7 @@ export class RelationLoader {
      * AND post_categories.categoryId = category.id
      */
     loadManyToManyOwner(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[], queryRunner?: QueryRunner): Promise<any> {
-        const entities = entityOrEntities instanceof Array ? entityOrEntities : [entityOrEntities];
+        const entities = Array.isArray(entityOrEntities) ? entityOrEntities : [entityOrEntities];
         const mainAlias = relation.propertyName;
         const joinAlias = relation.junctionEntityMetadata!.tableName;
         const joinColumnConditions = relation.joinColumns.map(joinColumn => {
@@ -156,7 +156,7 @@ export class RelationLoader {
      * AND post_categories.categoryId = post_categories.categoryId
      */
     loadManyToManyNotOwner(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[], queryRunner?: QueryRunner): Promise<any> {
-        const entities = entityOrEntities instanceof Array ? entityOrEntities : [entityOrEntities];
+        const entities = Array.isArray(entityOrEntities) ? entityOrEntities : [entityOrEntities];
         const mainAlias = relation.propertyName;
         const joinAlias = relation.junctionEntityMetadata!.tableName;
         const joinColumnConditions = relation.inverseRelation!.joinColumns.map(joinColumn => {
@@ -189,6 +189,23 @@ export class RelationLoader {
         const promiseIndex = "__promise_" + relation.propertyName + "__"; // in what property of the entity loading promise will be stored
         const resolveIndex = "__has_" + relation.propertyName + "__"; // indicates if relation data already was loaded or not, we need this flag if loaded data is empty
 
+        const setData = (entity: ObjectLiteral, value: any) => {
+            entity[dataIndex] = value;
+            entity[resolveIndex] = true;
+            delete entity[promiseIndex];
+            return value;
+        };
+        const setPromise = (entity: ObjectLiteral, value: Promise<any>) => {
+            delete entity[resolveIndex];
+            delete entity[dataIndex];
+            entity[promiseIndex] = value;
+            value.then(
+              // ensure different value is not assigned yet
+              result => entity[promiseIndex] === value ? setData(entity, result) : result
+            );
+            return value;
+        };
+
         Object.defineProperty(entity, relation.propertyName, {
             get: function() {
                 if (this[resolveIndex] === true || this[dataIndex] !== undefined) // if related data already was loaded then simply return it
@@ -198,25 +215,16 @@ export class RelationLoader {
                     return this[promiseIndex];
 
                 // nothing is loaded yet, load relation data and save it in the model once they are loaded
-                this[promiseIndex] = relationLoader.load(relation, this, queryRunner).then(result => {
-                    if (relation.isOneToOne || relation.isManyToOne) result = result[0];
-                    this[dataIndex] = result;
-                    this[resolveIndex] = true;
-                    delete this[promiseIndex];
-                    return this[dataIndex];
-                });
-                return this[promiseIndex];
+                const loader = relationLoader.load(relation, this, queryRunner).then(
+                    result => relation.isOneToOne || relation.isManyToOne ? result[0] : result
+                );
+                return setPromise(this, loader);
             },
             set: function(value: any|Promise<any>) {
                 if (value instanceof Promise) { // if set data is a promise then wait for its resolve and save in the object
-                    value.then(result => {
-                        this[dataIndex] = result;
-                        this[resolveIndex] = true;
-                    });
-
+                    setPromise(this, value);
                 } else { // if its direct data set (non promise, probably not safe-typed)
-                    this[dataIndex] = value;
-                    this[resolveIndex] = true;
+                    setData(this, value);
                 }
             },
             configurable: true

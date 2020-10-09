@@ -8,7 +8,6 @@ import {Connection} from "../connection/Connection";
 import {OrmUtils} from "../util/OrmUtils";
 import {ValueTransformer} from "../decorator/options/ValueTransformer";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
-import {PromiseUtils} from "../util/PromiseUtils";
 import {FindOperator} from "../find-options/FindOperator";
 import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
 
@@ -247,6 +246,11 @@ export class ColumnMetadata {
     isUpdateDate: boolean = false;
 
     /**
+     * Indicates if this column contains an entity delete date.
+     */
+    isDeleteDate: boolean = false;
+
+    /**
      * Indicates if this column contains an entity version.
      */
     isVersion: boolean = false;
@@ -392,6 +396,7 @@ export class ColumnMetadata {
             this.isTreeLevel = options.args.mode === "treeLevel";
             this.isCreateDate = options.args.mode === "createDate";
             this.isUpdateDate = options.args.mode === "updateDate";
+            this.isDeleteDate = options.args.mode === "deleteDate";
             this.isVersion = options.args.mode === "version";
             this.isObjectId = options.args.mode === "objectId";
         }
@@ -399,7 +404,7 @@ export class ColumnMetadata {
             this.transformer = options.args.options.transformer;
         if (options.args.options.spatialFeatureType)
             this.spatialFeatureType = options.args.options.spatialFeatureType;
-        if (options.args.options.srid)
+        if (options.args.options.srid !== undefined)
             this.srid = options.args.options.srid;
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;
@@ -418,6 +423,14 @@ export class ColumnMetadata {
                 this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
             if (this.precision === undefined && options.connection.driver.mappedDataTypes.updateDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
+        }
+        if (this.isDeleteDate) {
+            if (!this.type)
+                this.type = options.connection.driver.mappedDataTypes.deleteDate;
+            if (!this.isNullable)
+                this.isNullable = options.connection.driver.mappedDataTypes.deleteDateNullable;
+            if (this.precision === undefined && options.connection.driver.mappedDataTypes.deleteDatePrecision)
+                this.precision = options.connection.driver.mappedDataTypes.deleteDatePrecision;
         }
         if (this.isVersion)
             this.type = options.connection.driver.mappedDataTypes.version;
@@ -464,7 +477,7 @@ export class ColumnMetadata {
                 }
 
                 // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-                if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
+                if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint" && value !== null)
                     value = String(value);
 
                 map[useDatabaseName ? this.databaseName : this.propertyName] = value;
@@ -475,7 +488,7 @@ export class ColumnMetadata {
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
 
             // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-            if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
+            if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint" && value !== null)
                 value = String(value);
 
             return { [useDatabaseName ? this.databaseName : this.propertyName]: value };
@@ -578,21 +591,21 @@ export class ColumnMetadata {
                 if (this.relationMetadata && this.referencedColumn) {
                     const relatedEntity = this.relationMetadata.getEntityValue(embeddedObject);
                     if (relatedEntity && relatedEntity instanceof Object && !(relatedEntity instanceof FindOperator)) {
-                        value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
+                        value = this.referencedColumn.getEntityValue(relatedEntity);
 
                     } else if (embeddedObject[this.propertyName] && embeddedObject[this.propertyName] instanceof Object && !(embeddedObject[this.propertyName] instanceof FindOperator)) {
-                        value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(embeddedObject[this.propertyName]));
+                        value = this.referencedColumn.getEntityValue(embeddedObject[this.propertyName]);
 
                     } else {
-                        value = PromiseUtils.extractValue(embeddedObject[this.propertyName]);
+                        value = embeddedObject[this.propertyName];
 
                     }
 
                 } else if (this.referencedColumn) {
-                    value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(embeddedObject[this.propertyName]));
+                    value = this.referencedColumn.getEntityValue(embeddedObject[this.propertyName]);
 
                 } else {
-                    value = PromiseUtils.extractValue(embeddedObject[this.propertyName]);
+                    value = embeddedObject[this.propertyName];
                 }
             }
 
@@ -600,17 +613,17 @@ export class ColumnMetadata {
             if (this.relationMetadata && this.referencedColumn) {
                 const relatedEntity = this.relationMetadata.getEntityValue(entity);
                 if (relatedEntity && relatedEntity instanceof Object && !(relatedEntity instanceof FindOperator) && !(relatedEntity instanceof Function)) {
-                    value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
+                    value = this.referencedColumn.getEntityValue(relatedEntity);
 
                 } else if (entity[this.propertyName] && entity[this.propertyName] instanceof Object && !(entity[this.propertyName] instanceof FindOperator) && !(entity[this.propertyName] instanceof Function)) {
-                    value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
+                    value = this.referencedColumn.getEntityValue(entity[this.propertyName]);
 
                 } else {
                     value = entity[this.propertyName];
                 }
 
             } else if (this.referencedColumn) {
-                value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
+                value = this.referencedColumn.getEntityValue(entity[this.propertyName]);
 
             } else {
                 value = entity[this.propertyName];

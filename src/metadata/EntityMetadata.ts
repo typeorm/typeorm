@@ -3,8 +3,10 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {SapDriver} from "../driver/sap/SapDriver";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
@@ -104,7 +106,7 @@ export class EntityMetadata {
     /**
      * Enables Sqlite "WITHOUT ROWID" modifier for the "CREATE TABLE" statement
      */
-    withoutRowid?: boolean = false;    
+    withoutRowid?: boolean = false;
 
     /**
      * Original user-given table name (taken from schema or @Entity(tableName) decorator).
@@ -267,6 +269,11 @@ export class EntityMetadata {
      * Gets entity column which contains an update date value.
      */
     updateDateColumn?: ColumnMetadata;
+
+    /**
+     * Gets entity column which contains a delete date value.
+     */
+    deleteDateColumn?: ColumnMetadata;
 
     /**
      * Gets entity column which contains an entity version.
@@ -612,7 +619,7 @@ export class EntityMetadata {
         const secondEntityIdMap = this.getEntityIdMap(secondEntity);
         if (!secondEntityIdMap) return false;
 
-        return EntityMetadata.compareIds(firstEntityIdMap, secondEntityIdMap);
+        return OrmUtils.compareIds(firstEntityIdMap, secondEntityIdMap);
     }
 
     /**
@@ -693,13 +700,20 @@ export class EntityMetadata {
         const relationsAndValues: [RelationMetadata, any, EntityMetadata][] = [];
         relations.forEach(relation => {
             const value = relation.getEntityValue(entity);
-            if (value instanceof Array) {
-                value.forEach(subValue => relationsAndValues.push([relation, subValue, relation.inverseEntityMetadata]));
+            if (Array.isArray(value)) {
+                value.forEach(subValue => relationsAndValues.push([relation, subValue, this.getInverseEntityMetadata(subValue, relation)]));
             } else if (value) {
-                relationsAndValues.push([relation, value, relation.inverseEntityMetadata]);
+                relationsAndValues.push([relation, value, this.getInverseEntityMetadata(value, relation)]);
             }
         });
         return relationsAndValues;
+    }
+
+    private getInverseEntityMetadata(value: any, relation: RelationMetadata): EntityMetadata {
+        const childEntityMetadata = relation.inverseEntityMetadata.childEntityMetadatas.find(metadata =>
+            metadata.target === value.constructor
+        );
+        return childEntityMetadata ? childEntityMetadata : relation.inverseEntityMetadata;
     }
 
     // -------------------------------------------------------------------------
@@ -733,19 +747,8 @@ export class EntityMetadata {
      */
     static difference(firstIdMaps: ObjectLiteral[], secondIdMaps: ObjectLiteral[]): ObjectLiteral[] {
         return firstIdMaps.filter(firstIdMap => {
-            return !secondIdMaps.find(secondIdMap => OrmUtils.deepCompare(firstIdMap, secondIdMap));
+            return !secondIdMaps.find(secondIdMap => OrmUtils.compareIds(firstIdMap, secondIdMap));
         });
-    }
-
-    /**
-     * Compares ids of the two entities.
-     * Returns true if they match, false otherwise.
-     */
-    static compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined): boolean {
-        if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
-            return false;
-
-        return OrmUtils.deepCompare(firstId, secondId);
     }
 
     /**
@@ -846,7 +849,7 @@ export class EntityMetadata {
      */
     protected buildTablePath(): string {
         let tablePath = this.tableName;
-        if (this.schema && ((this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver))) {
+        if (this.schema && ((this.connection.driver instanceof OracleDriver) || (this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
             tablePath = this.schema + "." + tablePath;
         }
 

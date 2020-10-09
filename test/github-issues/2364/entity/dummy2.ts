@@ -1,5 +1,5 @@
 import {Entity} from "../../../../src/decorator/entity/Entity";
-import { PrimaryColumn } from "../../../../src";
+import {Column, PrimaryColumn} from "../../../../src";
 
 @Entity()
 export class Dummy2 {
@@ -9,5 +9,8 @@ export class Dummy2 {
         primary: true,
     })
     id: number;
+
+    @Column({ default: "name" })
+    name: string;
 }
 

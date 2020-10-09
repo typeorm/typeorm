@@ -1,6 +1,12 @@
 **Issue type:**
 
-[ ] question
+<!--
+     Have a question?
+     Check the "Support" Documentation on the best places to ask questions!
+     ---
+     https://github.com/typeorm/typeorm/blob/master/docs/support.md
+-->
+
 [ ] bug report
 [ ] feature request
 [ ] documentation issue
@@ -33,4 +39,4 @@
     [ ] `postgres`
 
     Also, please format your code properly (by taking code blocks into ```ts .... ```)
-!>
+--!>

@@ -30,6 +30,13 @@
   },
   {
     "skip": false,
+    "name": "better-sqlite3",
+    "type": "better-sqlite3",
+    "database": "temp/better-sqlite3db.db",
+    "logging": false
+  },
+  {
+    "skip": false,
     "name": "postgres",
     "type": "postgres",
     "host": "localhost",
@@ -72,6 +79,17 @@
   },
   {
     "skip": false,
+    "name": "sap",
+    "type": "sap",
+    "host": "192.168.56.102",
+    "port": 39015,
+    "username": "SYSTEM",
+    "password": "MySuperHanaPwd123!",
+    "database": "HXE",
+    "logging": false
+  },
+  {
+    "skip": false,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
@@ -79,5 +97,31 @@
     "logging": false,
     "useNewUrlParser": true,
     "useUnifiedTopology": true
+  },
+  {
+    "skip": true,
+    "name": "aurora-data-api",
+    "type": "aurora-data-api",
+    "region": "us-east-1",
+    "secretArn": "mysecret",
+    "resourceArn": "app-dbcluster",
+    "database": "app-dbcluster-mine",
+    "serviceConfigOptions": {
+      "maxRetries": 3
+    },
+    "logging": false
+  },
+  {
+    "skip": true,
+    "name": "aurora-data-api-pg",
+    "type": "aurora-data-api-pg",
+    "region": "us-east-1",
+    "secretArn": "mysecret",
+    "resourceArn": "app-dbcluster",
+    "database": "app-dbcluster-mine",
+    "serviceConfigOptions": {
+      "maxRetries": 3
+    },
+    "logging": false
   }
 ]

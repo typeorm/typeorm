@@ -13,7 +13,6 @@ import {ManyToManySubjectBuilder} from "./subject-builder/ManyToManySubjectBuild
 import {SubjectDatabaseEntityLoader} from "./SubjectDatabaseEntityLoader";
 import {CascadesSubjectBuilder} from "./subject-builder/CascadesSubjectBuilder";
 import {OrmUtils} from "../util/OrmUtils";
-import {PromiseUtils} from "../util/PromiseUtils";
 
 /**
  * Persists a single entity or multiple entities - saves or removes them.
@@ -26,7 +25,7 @@ export class EntityPersistExecutor {
 
     constructor(protected connection: Connection,
                 protected queryRunner: QueryRunner|undefined,
-                protected mode: "save"|"remove",
+                protected mode: "save"|"remove"|"soft-remove"|"recover",
                 protected target: Function|string|undefined,
                 protected entity: ObjectLiteral|ObjectLiteral[],
                 protected options?: SaveOptions & RemoveOptions) {
@@ -50,7 +49,7 @@ export class EntityPersistExecutor {
 
             // if query runner is already defined in this class, it means this entity manager was already created for a single connection
             // if its not defined we create a new query runner - single connection where we'll execute all our operations
-            const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+            const queryRunner = this.queryRunner || this.connection.createQueryRunner();
 
             // save data in the query runner - this is useful functionality to share data from outside of the world
             // with third classes - like subscribers and listener methods
@@ -60,7 +59,7 @@ export class EntityPersistExecutor {
             try {
 
                 // collect all operate subjects
-                const entities: ObjectLiteral[] = this.entity instanceof Array ? this.entity : [this.entity];
+                const entities: ObjectLiteral[] = Array.isArray(this.entity) ? this.entity : [this.entity];
                 const entitiesInChunks = this.options && this.options.chunk && this.options.chunk > 0 ? OrmUtils.chunk(entities, this.options.chunk) : [entities];
 
                 // console.time("building subject executors...");
@@ -78,7 +77,9 @@ export class EntityPersistExecutor {
                             entity: entity,
                             canBeInserted: this.mode === "save",
                             canBeUpdated: this.mode === "save",
-                            mustBeRemoved: this.mode === "remove"
+                            mustBeRemoved: this.mode === "remove",
+                            canBeSoftRemoved: this.mode === "soft-remove",
+                            canBeRecovered: this.mode === "recover"
                         }));
                     });
 
@@ -88,7 +89,7 @@ export class EntityPersistExecutor {
                     subjects.forEach(subject => {
                         // next step we build list of subjects we will operate with
                         // these subjects are subjects that we need to insert or update alongside with main persisted entity
-                        cascadesSubjectBuilder.build(subject);
+                        cascadesSubjectBuilder.build(subject, this.mode);
                     });
                     // console.timeEnd("building cascades...");
 
@@ -100,7 +101,7 @@ export class EntityPersistExecutor {
 
                     // console.time("other subjects...");
                     // build all related subjects and change maps
-                    if (this.mode === "save") {
+                    if (this.mode === "save" || this.mode === "soft-remove" || this.mode === "recover") {
                         new OneToManySubjectBuilder(subjects).build();
                         new OneToOneInverseSideSubjectBuilder(subjects).build();
                         new ManyToManySubjectBuilder(subjects).build();
@@ -142,7 +143,9 @@ export class EntityPersistExecutor {
 
                     // execute all persistence operations for all entities we have
                     // console.time("executing subject executors...");
-                    await PromiseUtils.runInSequence(executorsWithExecutableOperations, executor => executor.execute());
+                    for (const executor of executorsWithExecutableOperations) {
+                        await executor.execute();
+                    }
                     // console.timeEnd("executing subject executors...");
 
                     // commit transaction if it was started by us

@@ -8,8 +8,7 @@ describe.skip("github issues > #1960 Migration generator produces duplicated cha
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mysql"],
-        logging: true
+        enabledDrivers: ["mysql"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

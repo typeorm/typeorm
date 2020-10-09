@@ -18,6 +18,7 @@ import {DriverUtils} from "../DriverUtils";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -155,6 +156,8 @@ export class OracleDriver implements Driver {
         createDateDefault: "CURRENT_TIMESTAMP",
         updateDate: "timestamp",
         updateDateDefault: "CURRENT_TIMESTAMP",
+        deleteDate: "timestamp",
+        deleteDateNullable: true,
         version: "number",
         treeLevel: "number",
         migrationId: "number",
@@ -285,7 +288,7 @@ export class OracleDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new OracleQueryRunner(this, mode);
     }
 
@@ -390,7 +393,7 @@ export class OracleDriver implements Driver {
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         if (columnMetadata.type === Boolean) {
-            value = value ? true : false;
+            value = !!value;
 
         } else if (columnMetadata.type === "date") {
             value = DateUtils.mixedDateToDateString(value);
@@ -622,10 +625,17 @@ export class OracleDriver implements Driver {
     }
 
     /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
+        return false;
+    }
+
+    /**
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return ":" + parameterName;
+        return ":" + (index + 1);
     }
 
     /**
@@ -679,7 +689,7 @@ export class OracleDriver implements Driver {
      */
     protected async createPool(options: OracleConnectionOptions, credentials: OracleConnectionCredentialsOptions): Promise<any> {
 
-        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+        credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
         // build connection options for the driver
         const connectionOptions = Object.assign({}, {

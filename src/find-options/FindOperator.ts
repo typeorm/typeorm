@@ -1,5 +1,7 @@
+import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindOperatorType} from "./FindOperatorType";
-import {Connection} from "../";
+
+type SqlGeneratorType = (aliasPath: string) => string;
 
 /**
  * Find Operator used in Find Conditions.
@@ -21,6 +23,11 @@ export class FindOperator<T> {
     private _value: T|FindOperator<T>;
 
     /**
+     * ObjectLiteral parameters.
+     */
+    private _objectLiteralParameters: ObjectLiteral|undefined;
+
+    /**
      * Indicates if parameter is used or not for this operator.
      */
     private _useParameter: boolean;
@@ -30,15 +37,29 @@ export class FindOperator<T> {
      */
     private _multipleParameters: boolean;
 
+    /**
+     * SQL generator
+     */
+    private _getSql: SqlGeneratorType|undefined;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(type: FindOperatorType, value: T|FindOperator<T>, useParameter: boolean = true, multipleParameters: boolean = false) {
+    constructor(
+        type: FindOperatorType,
+        value: T|FindOperator<T>,
+        useParameter: boolean = true,
+        multipleParameters: boolean = false,
+        getSql?: SqlGeneratorType,
+        objectLiteralParameters?: ObjectLiteral,
+    ) {
         this._type = type;
         this._value = value;
         this._useParameter = useParameter;
         this._multipleParameters = multipleParameters;
+        this._getSql = getSql; 
+        this._objectLiteralParameters = objectLiteralParameters;
     }
 
     // -------------------------------------------------------------------------
@@ -68,6 +89,13 @@ export class FindOperator<T> {
     }
 
     /**
+     * Gets the Type of this FindOperator
+     */
+    get type(): string {
+        return this._type;
+    }
+
+    /**
      * Gets the final value needs to be used as parameter value.
      */
     get value(): T {
@@ -77,50 +105,34 @@ export class FindOperator<T> {
         return this._value;
     }
 
-    // -------------------------------------------------------------------------
-    // Public Methods
-    // -------------------------------------------------------------------------
-
     /**
-     * Gets SQL needs to be inserted into final query.
+     * Gets ObjectLiteral parameters.
      */
-    toSql(connection: Connection, aliasPath: string, parameters: string[]): string {
-        switch (this._type) {
-            case "not":
-                if (this._value instanceof FindOperator) {
-                    return `NOT(${this._value.toSql(connection, aliasPath, parameters)})`;
-                } else {
-                    return `${aliasPath} != ${parameters[0]}`;
-                }
-            case "lessThan":
-                return `${aliasPath} < ${parameters[0]}`;
-            case "lessThanOrEqual":
-                return `${aliasPath} <= ${parameters[0]}`;
-            case "moreThan":
-                return `${aliasPath} > ${parameters[0]}`;
-            case "moreThanOrEqual":
-                return `${aliasPath} >= ${parameters[0]}`;
-            case "equal":
-                return `${aliasPath} = ${parameters[0]}`;
-            case "like":
-                return `${aliasPath} LIKE ${parameters[0]}`;
-            case "between":
-                return `${aliasPath} BETWEEN ${parameters[0]} AND ${parameters[1]}`;
-            case "in":
-                return `${aliasPath} IN (${parameters.join(", ")})`;
-            case "any":
-                return `${aliasPath} = ANY(${parameters[0]})`;
-            case "isNull":
-                return `${aliasPath} IS NULL`;
-            case "raw":
-                if (this.value instanceof Function) {
-                    return this.value(aliasPath);
-                } else {
-                    return `${aliasPath} = ${this.value}`;
-                }
-        }
+    get objectLiteralParameters(): ObjectLiteral|undefined {
+        if (this._value instanceof FindOperator)
+            return this._value.objectLiteralParameters;
 
-        return "";
+        return this._objectLiteralParameters;
     }
 
+
+    /**
+     * Gets the child FindOperator if it exists
+     */
+    get child(): FindOperator<T>|undefined {
+        if (this._value instanceof FindOperator)
+            return this._value;
+
+        return undefined;
+    }
+
+    /**
+     * Gets the SQL generator
+     */
+    get getSql(): SqlGeneratorType|undefined {
+        if (this._value instanceof FindOperator)
+            return this._value.getSql;
+
+        return this._getSql;
+    }
 }

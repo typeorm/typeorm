@@ -4,8 +4,8 @@
   </a>
   <br>
   <br>
-	<a href="https://travis-ci.org/typeorm/typeorm">
-		<img src="https://travis-ci.org/typeorm/typeorm.svg?branch=master">
+	<a href="https://app.circleci.com/pipelines/github/typeorm/typeorm">
+		<img src="https://circleci.com/gh/typeorm/typeorm/tree/master.svg?style=shield">
 	</a>
 	<a href="https://badge.fury.io/js/typeorm">
 		<img src="https://badge.fury.io/js/typeorm.svg">
@@ -16,7 +16,7 @@
     <a href="https://codecov.io/gh/typeorm/typeorm">
         <img alt="Codecov" src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg">
     </a>
-	<a href="https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTUxNTZhM2Q4NDNhMjMzNjQ2NGM1ZjI1ZGRkNjJjYzI4OTZjMGYyYTc0MzAxYTdjMWE3ZDIxOWUzZTdlM2QxNTY">
+	<a href="https://join.slack.com/t/typeorm/shared_invite/zt-gej3gc00-hR~L~DqGUJ7qOpGy4SSq3g">
 		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg">
 	</a>
   <br>
@@ -31,7 +31,7 @@ that help you to develop any kind of application that uses databases - from
 small applications with a few tables to large scale enterprise applications
 with multiple databases.
 
-TypeORM supports both [Active Record](docs/active-record-data-mapper.md#what-is-the-active-record-pattern) and [Data Mapper](docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) patterns,
+TypeORM supports both [Active Record](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) and [Data Mapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) patterns,
 unlike all other JavaScript ORMs currently in existence,
 which means you can write high quality, loosely coupled, scalable,
 maintainable applications the most productive way.
@@ -39,9 +39,9 @@ maintainable applications the most productive way.
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
  [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
 
-Some TypeORM features:
+## Features
 
-* supports both [DataMapper](active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice)
+* supports both [DataMapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice)
 * entities and columns
 * database-specific column types
 * entity manager
@@ -70,7 +70,7 @@ Some TypeORM features:
 * supports closure table pattern
 * schema declaration in models or separate configuration files
 * connection configuration in json / xml / yml / env formats
-* supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / sql.js
+* supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js
 * supports MongoDB NoSQL database
 * works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms
 * TypeScript and JavaScript support
@@ -106,6 +106,8 @@ export class User {
 And your domain logic looks like this:
 
 ```typescript
+const repository = connection.getRepository(User);
+
 const user = new User();
 user.firstName = "Timber";
 user.lastName = "Saw";
@@ -175,7 +177,7 @@ await timber.remove();
 
 3. You may need to install node typings:
 
-    `npm install @types/node --save`
+    `npm install @types/node --save-dev`
 
 4. Install a database driver:
 
@@ -203,10 +205,18 @@ await timber.remove();
 
         `npm install oracledb --save`
 
-        Install only *one* of them, depending on which database you use.
-
         To make the Oracle driver work, you need to follow the installation instructions from
         [their](https://github.com/oracle/node-oracledb) site.
+
+    * for **SAP Hana**
+
+        ```
+        npm config set @sap:registry https://npm.sap.com
+        npm i @sap/hana-client
+		npm i hdb-pool
+        ```
+
+        *SAP Hana support made possible by sponsorship of [Neptune Software](https://www.neptune-software.com/).*
 
     * for **MongoDB** (experimental)
 
@@ -214,13 +224,14 @@ await timber.remove();
 
     * for **NativeScript**, **react-native** and **Cordova**
 
-        Check [documentation of supported platforms](docs/supported-platforms.md)
+        Check [documentation of supported platforms](./docs/supported-platforms.md)
 
+    Install only *one* of them, depending on which database you use.
 
 
 ##### TypeScript configuration
 
-Also, make sure you are using TypeScript compiler version **3.3** or greater,
+Also, make sure you are using TypeScript version **3.3** or higher,
 and you have enabled the following settings in `tsconfig.json`:
 
 ```json
@@ -317,6 +328,9 @@ creating more entities.
 > You can generate an even more advanced project with express installed by running
 `typeorm init --name MyProject --database mysql --express` command.
 
+> You can generate docker-compose file by running
+`typeorm init --name MyProject --database postgres --docker` command.
+
 ## Step-by-Step Guide
 
 What are you expecting from ORM?
@@ -411,7 +425,7 @@ export class Photo {
 Now `id`, `name`, `description`, `filename`, `views` and `isPublished` columns will be added to the `photo` table.
 Column types in the database are inferred from the property types you used, e.g.
 `number` will be converted into `integer`, `string` into `varchar`, `boolean` into `bool`, etc.
-But you can use any column type your database supports by implicitly specifying a column type into the `@Column` decorator.
+But you can use any column type your database supports by explicitly specifying a column type into the `@Column` decorator.
 
 We generated a database table with columns, but there is one thing left.
 Each database table must have a column with a primary key.
@@ -873,7 +887,7 @@ createConnection(/*...*/).then(async connection => {
     metadata.width = 480;
     metadata.compressed = true;
     metadata.comment = "cybershoot";
-    metadata.orientation = "portait";
+    metadata.orientation = "portrait";
     metadata.photo = photo; // this way we connect them
 
     // get entity repositories
@@ -1024,7 +1038,7 @@ createConnection(options).then(async connection => {
     metadata.width = 480;
     metadata.compressed = true;
     metadata.comment = "cybershoot";
-    metadata.orientation = "portait";
+    metadata.orientation = "portrait";
 
     photo.metadata = metadata; // this way we connect them
 
@@ -1038,6 +1052,8 @@ createConnection(options).then(async connection => {
 
 }).catch(error => console.log(error));
 ```
+
+Notice that we now set the photo's `metadata` property, instead of the metadata's `photo` property as before. The `cascade` feature only works if you connect the photo to its metadata from the photo's side. If you set the metadata's side, the metadata would not be saved automatically.
 
 ### Creating a many-to-one / one-to-many relation
 

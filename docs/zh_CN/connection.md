@@ -87,7 +87,7 @@ const secondConnection: Connection = await createConnection("test2-connection");
 const connections: Connection[] = await createConnections();
 ```
 
-不同的连接必须具有不同的名称默。认情况下，如果未指定连接名称，则为`default`。
+不同的连接必须具有不同的名称。默认情况下，如果未指定连接名称，则为`default`。
 通常在你使用多个数据库或多个连接配置时才会使用多连接。
 
 创建连接后，你可以使用`getConnection`函数从应用程序中的任何位置使用它：

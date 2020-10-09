@@ -21,16 +21,16 @@ export class CascadesSubjectBuilder {
     /**
      * Builds a cascade subjects tree and pushes them in into the given array of subjects.
      */
-    build(subject: Subject) {
+    build(subject: Subject, operationType: "save"|"remove"|"soft-remove"|"recover") {
 
         subject.metadata
             .extractRelationValuesFromEntity(subject.entity!, subject.metadata.relations) // todo: we can create EntityMetadata.cascadeRelations
             .forEach(([relation, relationEntity, relationEntityMetadata]) => {
 
-                // we need only defined values and insert or update cascades of the relation should be set
+                // we need only defined values and insert, update, soft-remove or recover cascades of the relation should be set
                 if (relationEntity === undefined ||
                     relationEntity === null ||
-                    (!relation.isCascadeInsert && !relation.isCascadeUpdate))
+                    (!relation.isCascadeInsert && !relation.isCascadeUpdate && !relation.isCascadeSoftRemove && !relation.isCascadeRecover))
                     return;
 
                 // if relation entity is just a relation id set (for example post.tag = 1)
@@ -42,9 +42,13 @@ export class CascadesSubjectBuilder {
                 const alreadyExistRelationEntitySubject = this.findByPersistEntityLike(relationEntityMetadata.target, relationEntity);
                 if (alreadyExistRelationEntitySubject) {
                     if (alreadyExistRelationEntitySubject.canBeInserted === false) // if its not marked for insertion yet
-                        alreadyExistRelationEntitySubject.canBeInserted = relation.isCascadeInsert === true;
+                        alreadyExistRelationEntitySubject.canBeInserted = relation.isCascadeInsert === true && operationType === "save";
                     if (alreadyExistRelationEntitySubject.canBeUpdated === false) // if its not marked for update yet
-                        alreadyExistRelationEntitySubject.canBeUpdated = relation.isCascadeUpdate === true;
+                        alreadyExistRelationEntitySubject.canBeUpdated = relation.isCascadeUpdate === true && operationType === "save";
+                    if (alreadyExistRelationEntitySubject.canBeSoftRemoved === false) // if its not marked for removal yet
+                        alreadyExistRelationEntitySubject.canBeSoftRemoved = relation.isCascadeSoftRemove === true && operationType === "soft-remove";
+                    if (alreadyExistRelationEntitySubject.canBeRecovered === false) // if its not marked for recovery yet
+                        alreadyExistRelationEntitySubject.canBeRecovered = relation.isCascadeRecover === true && operationType === "recover";
                     return;
                 }
 
@@ -54,13 +58,15 @@ export class CascadesSubjectBuilder {
                     metadata: relationEntityMetadata,
                     parentSubject: subject,
                     entity: relationEntity,
-                    canBeInserted: relation.isCascadeInsert === true,
-                    canBeUpdated: relation.isCascadeUpdate === true
+                    canBeInserted: relation.isCascadeInsert === true && operationType === "save",
+                    canBeUpdated: relation.isCascadeUpdate === true && operationType === "save",
+                    canBeSoftRemoved: relation.isCascadeSoftRemove === true && operationType === "soft-remove",
+                    canBeRecovered: relation.isCascadeRecover === true && operationType === "recover"
                 });
                 this.allSubjects.push(relationEntitySubject);
 
                 // go recursively and find other entities we need to insert/update
-                this.build(relationEntitySubject);
+                this.build(relationEntitySubject, operationType);
             });
     }
 

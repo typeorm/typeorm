@@ -6,7 +6,8 @@ import {DatabaseType} from "../../src/driver/types/DatabaseType";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 import {createConnections} from "../../src/index";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
-import {PromiseUtils} from "../../src/util/PromiseUtils";
+import {QueryResultCache} from "../../src/cache/QueryResultCache";
+import {Logger} from "../../src/logger/Logger";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -101,7 +102,12 @@ export interface TestingOptions {
          * - "mongodb" means cached values will be stored in mongodb database. You must provide mongodb connection options.
          * - "redis" means cached values will be stored inside redis. You must provide redis connection options.
          */
-        type?: "database" | "redis";
+        readonly type?: "database" | "redis" | "ioredis" | "ioredis/cluster"; // todo: add mongodb and other cache providers as well in the future
+
+        /**
+         * Factory function for custom cache providers that implement QueryResultCache.
+         */
+        readonly provider?: (connection: Connection) => QueryResultCache;
 
         /**
          * Used to provide mongodb / redis connection options.
@@ -127,6 +133,11 @@ export interface TestingOptions {
      * They are passed down to the enabled drivers.
      */
     driverSpecific?: Object;
+
+    /**
+     * Factory to create a logger for each test connection.
+     */
+    createLogger?: () => "advanced-console"|"simple-console"|"file"|"debug"|Logger;
 }
 
 /**
@@ -213,6 +224,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.schema = options.schema;
             if (options && options.logging !== undefined)
                 newOptions.logging = options.logging;
+            if (options && options.createLogger !== undefined)
+                newOptions.logger = options.createLogger();
             if (options && options.__dirname)
                 newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"];
             if (options && options.__dirname)
@@ -238,7 +251,10 @@ export async function createTestingConnections(options?: TestingOptions): Promis
         });
 
         const queryRunner = connection.createQueryRunner();
-        await PromiseUtils.runInSequence(databases, database => queryRunner.createDatabase(database, true));
+
+        for (const database of databases) {
+            await queryRunner.createDatabase(database, true);
+        }
 
         // create new schemas
         if (connection.driver instanceof PostgresDriver || connection.driver instanceof SqlServerDriver) {
@@ -255,7 +271,9 @@ export async function createTestingConnections(options?: TestingOptions): Promis
             if (schema && schemaPaths.indexOf(schema) === -1)
                 schemaPaths.push(schema);
 
-            await PromiseUtils.runInSequence(schemaPaths, schemaPath => queryRunner.createSchema(schemaPath, true));
+            for (const schemaPath of schemaPaths) {
+                await queryRunner.createSchema(schemaPath, true);
+            }
         }
 
         await queryRunner.release();

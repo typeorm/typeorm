@@ -9,6 +9,7 @@ import {Photo} from "./Photo";
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("photo.id", "id")
         .addSelect("photo.name", "name")
+        .addSelect("photo.albumId", "albumId")
         .addSelect("category.name", "categoryName")
         .addSelect("album.name", "albumName")
         .from(Photo, "photo")
@@ -29,4 +30,7 @@ export class PhotoAlbumCategory {
 
     @ViewColumn()
     albumName: string;
+
+    @ViewColumn({ name: "albumId" })
+    photoAlbumId: number;
 }

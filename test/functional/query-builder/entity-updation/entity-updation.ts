@@ -99,7 +99,7 @@ describe("query builder > entity updation", () => {
         post.version.should.be.equal(2);
     })));
 
-    it("should not update special entity properties after entity updation if updateEntity is set to true", () => Promise.all(connections.map(async connection => {
+    it("should not update special entity properties after entity updation if updateEntity is set to false", () => Promise.all(connections.map(async connection => {
 
         const post = new Post();
         post.title = "about entity updation in query builder";

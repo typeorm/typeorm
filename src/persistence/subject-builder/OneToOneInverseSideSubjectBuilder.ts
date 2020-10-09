@@ -139,7 +139,7 @@ export class OneToOneInverseSideSubjectBuilder {
 
         // check if this binding really exist in the database
         // by example: find our post if its already bind to category in the database and its not equal to what user tries to set
-        const areRelatedIdEqualWithDatabase = relatedEntityDatabaseRelationId && OrmUtils.deepCompare(relationIdMap, relatedEntityDatabaseRelationId);
+        const areRelatedIdEqualWithDatabase = relatedEntityDatabaseRelationId && OrmUtils.compareIds(relationIdMap, relatedEntityDatabaseRelationId);
 
         // if they aren't equal it means its a new relation and we need to "bind" them
         // by example: this will tell category to insert into its post relation our post we are working with

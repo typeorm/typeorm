@@ -33,17 +33,17 @@ export class Category {
     @OneToMany(type => Category, category => category.oneManyCategory, {
         cascade: true
     })
-    oneManyCategories: Category[] = [];
+    oneManyCategories: Category[];
 
     @ManyToMany(type => Category, category => category.manyInverseCategories, {
         cascade: true
     })
     @JoinTable()
-    manyCategories: Category[] = [];
+    manyCategories: Category[];
 
     @ManyToMany(type => Category, category => category.manyCategories, {
         cascade: true
     })
-    manyInverseCategories: Category[] = [];
+    manyInverseCategories: Category[];
 
 }

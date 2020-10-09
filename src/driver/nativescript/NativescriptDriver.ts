@@ -6,6 +6,7 @@ import {Connection} from "../../connection/Connection";
 import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {ColumnType} from "../types/ColumnTypes";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with sqlite DBMS within Nativescript.
@@ -66,7 +67,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+    createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner) {
             this.queryRunner = new NativescriptQueryRunner(this);
         }
@@ -91,10 +92,15 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     protected createDatabaseConnection() {
         return new Promise<void>((ok, fail) => {
             const options = Object.assign({}, {
-                name: this.options.database,
+                readOnly: this.options.readOnly,
+                key: this.options.key,
+                multithreading: this.options.multithreading,
+                migrate: this.options.migrate,
+                iosFlags: this.options.iosFlags,
+                androidFlags: this.options.androidFlags,
             }, this.options.extra || {});
 
-            new this.sqlite(options.name, (err: Error, db: any): any => {
+            new this.sqlite(this.options.database, options, (err: Error, db: any): any => {
                 if (err) return fail(err);
 
                 // use object mode to work with TypeORM

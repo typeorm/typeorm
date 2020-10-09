@@ -38,9 +38,14 @@ export interface FindOneOptions<Entity = any> {
     cache?: boolean | number | { id: any, milliseconds: number };
 
     /**
-     * Enables or disables query result caching.
+     * Indicates what locking mode should be used.
      */
-    lock?: { mode: "optimistic", version: number|Date } | { mode: "pessimistic_read"|"pessimistic_write"|"dirty_read" };
+    lock?: { mode: "optimistic", version: number|Date } | { mode: "pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail" };
+
+    /**
+     * Indicates if soft-deleted rows should be included in entity result.
+     */
+    withDeleted?: boolean;
 
     /**
      * If sets to true then loads all relation ids of the entity and maps them into relation values (not relation objects).

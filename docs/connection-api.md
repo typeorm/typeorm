@@ -183,7 +183,7 @@ await connection.close();
 ```
 
 * `synchronize` - Synchronizes database schema. When `synchronize: true` is set in connection options it calls this method. 
-Usually, you call this method when your application is shutting down.
+Usually, you call this method when your application is starting.
 
 ```typescript
 await connection.synchronize();
@@ -295,7 +295,7 @@ const users = await connection.createQueryBuilder()
     .getMany();
 ```
 
-* `createQueryRunner` - Creates a query runner used manage and work with a single real database connection.
+* `createQueryRunner` - Creates a query runner used to manage and work with a single real database connection.
 Learn more about [QueryRunner](./query-runner.md). 
 
 ```typescript

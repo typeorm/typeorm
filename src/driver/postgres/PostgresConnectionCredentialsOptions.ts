@@ -1,4 +1,4 @@
-import { TlsOptions } from "tls";
+import {TlsOptions} from "tls";
 
 /**
  * Postgres specific connection credential options.
@@ -28,7 +28,7 @@ export interface PostgresConnectionCredentialsOptions {
     /**
      * Database password.
      */
-    readonly password?: string;
+    readonly password?: string | (() => string) | (() => Promise<string>);
 
     /**
      * Database name to connect to.

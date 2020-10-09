@@ -825,16 +825,30 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                     }
                 }
 
-                // parse datatype and attempt to retrieve length
+                // parse datatype and attempt to retrieve length, precision and scale
                 let pos = tableColumn.type.indexOf("(");
                 if (pos !== -1) {
-                    let dataType = tableColumn.type.substr(0, pos);
+                    const fullType = tableColumn.type;
+                    let dataType = fullType.substr(0, pos);
                     if (!!this.driver.withLengthColumnTypes.find(col => col === dataType)) {
-                        let len = parseInt(tableColumn.type.substring(pos + 1, tableColumn.type.length - 1));
+                        let len = parseInt(fullType.substring(pos + 1, fullType.length - 1));
                         if (len) {
                             tableColumn.length = len.toString();
                             tableColumn.type = dataType; // remove the length part from the datatype
                         }
+                    }
+                    if (!!this.driver.withPrecisionColumnTypes.find(col => col === dataType)) {
+                        const re = new RegExp(`^${dataType}\\((\\d+),?\\s?(\\d+)?\\)`);
+                        const matches = fullType.match(re);
+                        if (matches && matches[1]) {
+                            tableColumn.precision = +matches[1];
+                        }
+                        if (!!this.driver.withScaleColumnTypes.find(col => col === dataType)) {
+                            if (matches && matches[2]) {
+                                tableColumn.scale = +matches[2];
+                            }
+                        }
+                        tableColumn.type = dataType; // remove the precision/scale part from the datatype
                     }
                 }
 

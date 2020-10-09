@@ -28,4 +28,11 @@ describe("github issues > #798 sqlite: 'database' path in ormconfig.json is not 
         assert.strictEqual(connection.isConnected, true);
     });
 
+    it("should find the sqlite database if the cwd is changed for better-sqlite3", async function () {
+        const options = await getConnectionOptions("better-sqlite3");
+        connection = await createConnection(options);
+
+        assert.strictEqual(connection.isConnected, true);
+    });
+
 });

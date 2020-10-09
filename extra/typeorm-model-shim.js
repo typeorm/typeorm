@@ -29,6 +29,18 @@
 }
 exports.Column = Column;
 
+/* export */ function ViewColumn(typeOrOptions, options) {
+    return function (object, propertyName) { 
+    };
+}
+exports.ViewColumn = ViewColumn;
+
+/* export */ function DeleteDateColumn(options) {
+    return function (object, propertyName) {
+    };
+}
+exports.DeleteDateColumn = DeleteDateColumn;
+
 /* export */ function CreateDateColumn(options) {
     return function (object, propertyName) {
     };
@@ -78,6 +90,12 @@ exports.ChildEntity = ChildEntity;
     };
 }
 exports.Entity = Entity;
+
+/* export */ function ViewEntity(name, options) {
+    return function (object) {
+    };
+}
+exports.ViewEntity = ViewEntity;
 
 /* export */ function TableInheritance(type) {
     return function (object) {

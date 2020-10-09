@@ -37,6 +37,21 @@ export interface MappedColumnTypes {
     updateDateDefault: string;
 
     /**
+     * Column type for the delete date column.
+     */
+    deleteDate: ColumnType;
+
+    /**
+     * Precision of datetime column. Used in MySql to define milliseconds.
+     */
+    deleteDatePrecision?: number;
+
+    /**
+     * Nullable value should be used by a database for "deleted date" column.
+     */
+    deleteDateNullable: boolean;
+
+    /**
      * Column type for the version column.
      */
     version: ColumnType;

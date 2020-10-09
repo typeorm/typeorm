@@ -1,3 +1,4 @@
+import {SapDriver} from "../driver/sap/SapDriver";
 import {RawSqlResultsToEntityTransformer} from "./transformer/RawSqlResultsToEntityTransformer";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -23,7 +24,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {QueryExpressionMap} from "./QueryExpressionMap";
-import {ObjectType} from "../common/ObjectType";
+import {EntityTarget} from "../common/EntityTarget";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {WhereExpression} from "./WhereExpression";
 import {Brackets} from "./Brackets";
@@ -35,6 +36,7 @@ import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -107,7 +109,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     select(selection?: string|string[]|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), selectionAliasName?: string): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select";
-        if (selection instanceof Array) {
+        if (Array.isArray(selection)) {
             this.expressionMap.selects = selection.map(selection => ({ selection: selection }));
 
         } else if (selection instanceof Function) {
@@ -144,7 +146,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (!selection)
             return this;
 
-        if (selection instanceof Array) {
+        if (Array.isArray(selection)) {
             this.expressionMap.selects = this.expressionMap.selects.concat(selection.map(selection => ({ selection: selection })));
 
         } else if (selection instanceof Function) {
@@ -168,6 +170,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Sets the distinct on clause for Postgres.
+     */
+    distinctOn(distinctOn: string[]): this {
+        this.expressionMap.selectDistinctOn = distinctOn;
+        return this;
+    }
+
+    /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
@@ -179,14 +189,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T>;
+    from<T>(entityTarget: EntityTarget<T>, aliasName: string): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
+    from<T>(entityTarget: EntityTarget<T>|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
         const mainAlias = this.createFromAlias(entityTarget, aliasName);
         this.expressionMap.setMainAlias(mainAlias);
         return (this as any) as SelectQueryBuilder<T>;
@@ -202,13 +212,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: ObjectType<T>|string, aliasName: string): SelectQueryBuilder<T>;
+    addFrom<T>(entityTarget: EntityTarget<T>, aliasName: string): SelectQueryBuilder<T>;
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: ObjectType<T>|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
+    addFrom<T>(entityTarget: EntityTarget<T>|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string): SelectQueryBuilder<T> {
         const alias = this.createFromAlias(entityTarget, aliasName);
         if (!this.expressionMap.mainAlias)
             this.expressionMap.setMainAlias(alias);
@@ -958,12 +968,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "pessimistic_read"|"pessimistic_write"|"dirty_read"): this;
+    setLock(lockMode: "pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail"|"for_no_key_update"): this;
 
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read", lockVersion?: number|Date): this {
+    setLock(lockMode: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail"|"for_no_key_update", lockVersion?: number|Date): this {
         this.expressionMap.lockMode = lockMode;
         this.expressionMap.lockVersion = lockVersion;
         return this;
@@ -971,16 +981,24 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Disables the global condition of "non-deleted" for the entity with delete date columns.
+     */
+    withDeleted(): this {
+        this.expressionMap.withDeleted = true;
+        return this;
+    }
+
+    /**
      * Gets first raw result returned by execution of generated query builder sql.
      */
-    async getRawOne(): Promise<any> {
+    async getRawOne<T = any>(): Promise<T> {
         return (await this.getRawMany())[0];
     }
 
     /**
      * Gets all raw results returned by execution of generated query builder sql.
      */
-    async getRawMany(): Promise<any[]> {
+    async getRawMany<T = any>(): Promise<T[]> {
         if (this.expressionMap.lockMode === "optimistic")
             throw new OptimisticLockCanNotBeUsedError();
 
@@ -1024,7 +1042,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Executes sql generated by query builder and returns object with raw results and entities created from them.
      */
-    async getRawAndEntities(): Promise<{ entities: Entity[], raw: any[] }> {
+    async getRawAndEntities<T = any>(): Promise<{ entities: Entity[], raw: T[] }> {
         const queryRunner = this.obtainQueryRunner();
         let transactionStartedByUs: boolean = false;
         try {
@@ -1409,9 +1427,32 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 return this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
             });
-        const select = "SELECT " + (this.expressionMap.selectDistinct ? "DISTINCT " : "");
+
+        const select = this.createSelectDistinctExpression();
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
+
         return select + selection + " FROM " + froms.join(", ") + lock;
+    }
+
+    /**
+     * Creates select | select distinct part of SQL query.
+     */
+    protected createSelectDistinctExpression(): string {
+        const {selectDistinct, selectDistinctOn} = this.expressionMap;
+        const {driver} = this.connection;
+
+        let select = "SELECT ";
+        if (driver instanceof PostgresDriver && selectDistinctOn.length > 0) {
+            const selectDistinctOnMap = selectDistinctOn.map(
+              (on) => this.replacePropertyNames(on)
+            ).join(", ");
+
+            select = `SELECT DISTINCT ON (${selectDistinctOnMap}) `;
+        } else if (selectDistinct) {
+            select = "SELECT DISTINCT ";
+        }
+
+        return select;
     }
 
     /**
@@ -1561,14 +1602,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             if (offset)
                 return prefix + " OFFSET " + offset + " ROWS";
 
-        } else if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
+        } else if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver || this.connection.driver instanceof SapDriver) {
 
             if (limit && offset)
                 return " LIMIT " + limit + " OFFSET " + offset;
             if (limit)
                 return " LIMIT " + limit;
             if (offset)
-                throw new OffsetWithoutLimitNotSupportedError("MySQL");
+                throw new OffsetWithoutLimitNotSupportedError();
 
         } else if (this.connection.driver instanceof AbstractSqliteDriver) {
 
@@ -1632,6 +1673,26 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
                 }
+            case "pessimistic_partial_write":
+                if (driver instanceof PostgresDriver) {
+                    return " FOR UPDATE SKIP LOCKED";
+
+                } else {
+                    throw new LockNotSupportedOnGivenDriverError();
+                }
+            case "pessimistic_write_or_fail":
+                if (driver instanceof PostgresDriver) {
+                    return " FOR UPDATE NOWAIT";
+                } else {
+                    throw new LockNotSupportedOnGivenDriverError();
+                }
+
+            case "for_no_key_update":
+                if (driver instanceof PostgresDriver) {
+                    return " FOR NO KEY UPDATE";
+                } else {
+                    throw new LockNotSupportedOnGivenDriverError();
+                }
             default:
                 return "";
         }
@@ -1681,8 +1742,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
             let selectionPath = this.escape(aliasName) + "." + this.escape(column.databaseName);
             if (this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
-                    selectionPath = `AsText(${selectionPath})`;
+                if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
+                    const useLegacy = this.connection.driver.options.legacySpatialSupport;
+                    const asText = useLegacy ? "AsText" : "ST_AsText";
+                    selectionPath = `${asText}(${selectionPath})`;
+                }
 
                 if (this.connection.driver instanceof PostgresDriver)
                     // cast to JSON to trigger parsing in the driver
@@ -1710,33 +1774,74 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         });
     }
 
-    protected async executeCountQuery(queryRunner: QueryRunner): Promise<number> {
-
+    private computeCountExpression() {
         const mainAlias = this.expressionMap.mainAlias!.name; // todo: will this work with "fromTableName"?
         const metadata = this.expressionMap.mainAlias!.metadata;
 
+        const primaryColumns = metadata.primaryColumns;
         const distinctAlias = this.escape(mainAlias);
-        let countSql: string = "";
-        if (metadata.hasMultiplePrimaryKeys) {
-            if (this.connection.driver instanceof AbstractSqliteDriver) {
-                countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                    const propertyName = this.escape(primaryColumn.databaseName);
-                    return `${distinctAlias}.${propertyName}`;
-                }).join(" || ") + ")) as \"cnt\"";
 
-            } else {
-                countSql = `COUNT(DISTINCT(CONCAT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                    const propertyName = this.escape(primaryColumn.databaseName);
-                    return `${distinctAlias}.${propertyName}`;
-                }).join(", ") + "))) as \"cnt\"";
+        // If we aren't doing anything that will create a join, we can use a simpler `COUNT` instead
+        // so we prevent poor query patterns in the most likely cases
+        if (
+            this.expressionMap.joinAttributes.length === 0 &&
+            this.expressionMap.relationIdAttributes.length === 0 &&
+            this.expressionMap.relationCountAttributes.length === 0
+        ) {
+            return "COUNT(1)";
+        }
+
+        // For everything else, we'll need to do some hackery to get the correct count values.
+
+        if (this.connection.driver instanceof CockroachDriver || this.connection.driver instanceof PostgresDriver) {
+            // Postgres and CockroachDB can pass multiple parameters to the `DISTINCT` function
+            // https://www.postgresql.org/docs/9.5/sql-select.html#SQL-DISTINCT
+            return "COUNT(DISTINCT(" +
+                primaryColumns.map(c => `${distinctAlias}.${this.escape(c.databaseName)}`).join(", ") +
+                "))";
+        }
+
+        if (this.connection.driver instanceof MysqlDriver) {
+            // MySQL & MariaDB can pass multiple parameters to the `DISTINCT` language construct
+            // https://mariadb.com/kb/en/count-distinct/
+            return "COUNT(DISTINCT " +
+                primaryColumns.map(c => `${distinctAlias}.${this.escape(c.databaseName)}`).join(", ") +
+                ")";
+        }
+
+        if (this.connection.driver instanceof SqlServerDriver) {
+            // SQL Server has gotta be different from everyone else.  They don't support
+            // distinct counting multiple columns & they don't have the same operator
+            // characteristic for concatenating, so we gotta use the `CONCAT` function.
+            // However, If it's exactly 1 column we can omit the `CONCAT` for better performance.
+
+            const columnsExpression = primaryColumns.map(
+                primaryColumn => `${distinctAlias}.${this.escape(primaryColumn.databaseName)}`
+            ).join(", '|;|', ");
+
+            if (primaryColumns.length === 1) {
+
+                return `COUNT(DISTINCT(${columnsExpression}))`;
             }
 
-        } else {
-            countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                const propertyName = this.escape(primaryColumn.databaseName);
-                return `${distinctAlias}.${propertyName}`;
-            }).join(", ") + ")) as \"cnt\"";
+            return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`;
+
         }
+
+        // If all else fails, fall back to a `COUNT` and `DISTINCT` across all the primary columns concatenated.
+        // Per the SQL spec, this is the canonical string concatenation mechanism which is most
+        // likely to work across servers implementing the SQL standard.
+
+        // Please note, if there is only one primary column that the concatenation does not occur in this
+        // query and the query is a standard `COUNT DISTINCT` in that case.
+
+        return `COUNT(DISTINCT(` +
+            primaryColumns.map(c => `${distinctAlias}.${this.escape(c.databaseName)}`).join(" || '|;|' || ") +
+            "))";
+    }
+
+    protected async executeCountQuery(queryRunner: QueryRunner): Promise<number> {
+        const countSql = this.computeCountExpression();
 
         const results = await this.clone()
             .orderBy()
@@ -1745,7 +1850,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             .limit(undefined)
             .skip(undefined)
             .take(undefined)
-            .select(countSql)
+            .select(countSql, "cnt")
             .setOption("disable-global-order")
             .loadRawResults(queryRunner);
 
@@ -1763,7 +1868,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (!this.expressionMap.mainAlias)
             throw new Error(`Alias is not set. Use "from" method to set an alias.`);
 
-        if ((this.expressionMap.lockMode === "pessimistic_read" || this.expressionMap.lockMode === "pessimistic_write") && !queryRunner.isTransactionActive)
+        if ((this.expressionMap.lockMode === "pessimistic_read" || this.expressionMap.lockMode === "pessimistic_write" || this.expressionMap.lockMode === "pessimistic_partial_write" || this.expressionMap.lockMode === "pessimistic_write_or_fail" || this.expressionMap.lockMode === "for_no_key_update") && !queryRunner.isTransactionActive)
             throw new PessimisticLockTransactionRequiredError();
 
         if (this.expressionMap.lockMode === "optimistic") {
@@ -1798,7 +1903,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 const columnAlias = this.escape(DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName));
                 if (!orderBys[columnAlias]) // make sure we aren't overriding user-defined order in inverse direction
                     orderBys[columnAlias] = "ASC";
-                return `${distinctAlias}.${columnAlias} as "ids_${DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName)}"`;
+
+                const alias = DriverUtils.buildColumnAlias(
+                    this.connection.driver,
+                    "ids_" + mainAliasName,
+                    primaryColumn.databaseName
+                );
+
+                return `${distinctAlias}.${columnAlias} as "${alias}"`;
             });
 
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
@@ -1819,19 +1931,26 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (metadata.hasMultiplePrimaryKeys) {
                     condition = rawResults.map((result, index) => {
                         return metadata.primaryColumns.map(primaryColumn => {
-                            parameters[`ids_${index}_${primaryColumn.databaseName}`] = result[`ids_${mainAliasName}_${primaryColumn.databaseName}`];
-                            return `${mainAliasName}.${primaryColumn.propertyPath}=:ids_${index}_${primaryColumn.databaseName}`;
+                            const paramKey = `orm_distinct_ids_${index}_${primaryColumn.databaseName}`;
+                            parameters[paramKey] = result[`ids_${mainAliasName}_${primaryColumn.databaseName}`];
+                            return `${mainAliasName}.${primaryColumn.propertyPath}=:${paramKey}`;
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
-                    const ids = rawResults.map(result => result["ids_" + DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, metadata.primaryColumns[0].databaseName)]);
+                    const alias = DriverUtils.buildColumnAlias(
+                        this.connection.driver,
+                        "ids_" + mainAliasName,
+                        metadata.primaryColumns[0].databaseName
+                    );
+
+                    const ids = rawResults.map(result => result[alias]);
                     const areAllNumbers = ids.every((id: any) => typeof id === "number");
                     if (areAllNumbers) {
                         // fixes #190. if all numbers then its safe to perform query without parameter
                         condition = `${mainAliasName}.${metadata.primaryColumns[0].propertyPath} IN (${ids.join(", ")})`;
                     } else {
-                        parameters["ids"] = ids;
-                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyPath + " IN (:...ids)";
+                        parameters["orm_distinct_ids"] = ids;
+                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyPath + " IN (:...orm_distinct_ids)";
                     }
                 }
                 rawResults = await this.clone()

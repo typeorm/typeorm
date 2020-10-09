@@ -16,6 +16,7 @@ import {AuroraDataApiConnectionCredentialsOptions} from "./AuroraDataApiConnecti
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -231,6 +232,9 @@ export class AuroraDataApiDriver implements Driver {
         updateDate: "datetime",
         updateDatePrecision: 6,
         updateDateDefault: "CURRENT_TIMESTAMP(6)",
+        deleteDate: "datetime",
+        deleteDatePrecision: 6,
+        deleteDateNullable: true,
         version: "int",
         treeLevel: "int",
         migrationId: "int",
@@ -303,6 +307,8 @@ export class AuroraDataApiDriver implements Driver {
             this.options.resourceArn,
             this.options.database,
             (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
+            this.options.serviceConfigOptions,
+            this.options.formatOptions,
         );
 
         // validate options to make sure everything is set
@@ -350,7 +356,7 @@ export class AuroraDataApiDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new AuroraDataApiQueryRunner(this);
     }
 
@@ -746,6 +752,13 @@ export class AuroraDataApiDriver implements Driver {
     }
 
     /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
+        return true;
+    }
+
+    /**
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
@@ -761,6 +774,10 @@ export class AuroraDataApiDriver implements Driver {
      */
     protected loadDependencies(): void {
         this.DataApiDriver = PlatformTools.load("typeorm-aurora-data-api-driver");
+
+        // Driver uses rollup for publishing, which has issues when using typeorm in combination with webpack
+        // See https://github.com/webpack/webpack/issues/4742#issuecomment-295556787
+        this.DataApiDriver = this.DataApiDriver.default || this.DataApiDriver;
     }
 
     /**
@@ -768,7 +785,7 @@ export class AuroraDataApiDriver implements Driver {
      */
     protected createConnectionOptions(options: AuroraDataApiConnectionOptions, credentials: AuroraDataApiConnectionCredentialsOptions): Promise<any> {
 
-        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+        credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
         // build connection options for the driver
         return Object.assign({}, {

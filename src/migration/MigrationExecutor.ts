@@ -2,7 +2,6 @@ import {Table} from "../schema-builder/table/Table";
 import {Connection} from "../connection/Connection";
 import {Migration} from "./Migration";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {PromiseUtils} from "../util/PromiseUtils";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
@@ -53,12 +52,84 @@ export class MigrationExecutor {
     // -------------------------------------------------------------------------
 
     /**
+     * Tries to execute a single migration given.
+     */
+    public async executeMigration(migration: Migration): Promise<Migration> {
+        return this.withQueryRunner(async (queryRunner) => {
+            await this.createMigrationsTableIfNotExist(queryRunner);
+            await (migration.instance as any).up(queryRunner);
+            await this.insertExecutedMigration(queryRunner, migration);
+
+            return migration;
+        });
+    }
+
+    /**
+     * Returns an array of all migrations.
+     */
+    public async getAllMigrations(): Promise<Migration[]> {
+        return Promise.resolve(this.getMigrations());
+    }
+
+    /**
+     * Returns an array of all executed migrations.
+     */
+    public async getExecutedMigrations(): Promise<Migration[]> {
+        return this.withQueryRunner(async queryRunner => {
+            await this.createMigrationsTableIfNotExist(queryRunner);
+
+            return await this.loadExecutedMigrations(queryRunner);
+        });
+    }
+
+    /**
+     * Returns an array of all pending migrations.
+     */
+    public async getPendingMigrations(): Promise<Migration[]> {
+        const allMigrations = await this.getAllMigrations();
+        const executedMigrations = await this.getExecutedMigrations();
+
+        return allMigrations.filter(migration =>
+            !executedMigrations.find(
+                executedMigration =>
+                    executedMigration.name === migration.name
+            )
+        );
+    }
+
+    /**
+     * Inserts an executed migration.
+     */
+    public insertMigration(migration: Migration): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.withQueryRunner(queryRunner => {
+                this.insertExecutedMigration(queryRunner, migration)
+                    .then(resolve)
+                    .catch(reject);
+            });
+        });
+    }
+
+    /**
+     * Deletes an executed migration.
+     */
+    public deleteMigration(migration: Migration): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.withQueryRunner(queryRunner => {
+                this.deleteExecutedMigration(queryRunner, migration)
+                    .then(resolve)
+                    .catch(reject);
+            });
+        });
+    }
+
+    /**
      * Lists all migrations and whether they have been executed or not
      * returns true if there are unapplied migrations
      */
     async showMigrations(): Promise<boolean> {
         let hasUnappliedMigrations = false;
-        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner);
         // get all migrations that are executed and saved in the database
@@ -92,7 +163,7 @@ export class MigrationExecutor {
      */
     async executePendingMigrations(): Promise<Migration[]> {
 
-        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner);
 
@@ -155,13 +226,13 @@ export class MigrationExecutor {
 
         // run all pending migrations in a sequence
         try {
-            await PromiseUtils.runInSequence(pendingMigrations, async migration => {
+            for (const migration of pendingMigrations) {
                 if (this.transaction === "each" && !queryRunner.isTransactionActive) {
                     await queryRunner.startTransaction();
                     transactionStartedByUs = true;
                 }
 
-                return migration.instance!.up(queryRunner)
+                await migration.instance!.up(queryRunner)
                     .then(async () => { // now when migration is executed we need to insert record about it into the database
                         await this.insertExecutedMigration(queryRunner, migration);
                         // commit transaction if we started it
@@ -172,7 +243,7 @@ export class MigrationExecutor {
                         successMigrations.push(migration);
                         this.connection.logger.logSchemaBuild(`Migration ${migration.name} has been executed successfully.`);
                     });
-            });
+            }
 
             // commit transaction if we started it
             if (this.transaction === "all" && transactionStartedByUs)
@@ -202,7 +273,7 @@ export class MigrationExecutor {
      */
     async undoLastMigration(): Promise<void> {
 
-        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
 
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner);
@@ -320,13 +391,13 @@ export class MigrationExecutor {
             .db(this.connection.driver.database!)
             .collection(this.migrationsTableName)
             .find<Migration>()
-            .sort("_id", -1)
+            .sort({"_id": -1})
             .toArray();
         } else {
             const migrationsRaw: ObjectLiteral[] = await this.connection.manager
             .createQueryBuilder(queryRunner)
             .select()
-            .orderBy("id", "DESC")
+            .orderBy(this.connection.driver.escape("id"), "DESC")
             .from(this.migrationsTable, this.migrationsTableName)
             .getRawMany();
             return migrationsRaw.map(migrationRaw => {
@@ -341,9 +412,10 @@ export class MigrationExecutor {
     protected getMigrations(): Migration[] {
         const migrations = this.connection.migrations.map(migration => {
             const migrationClassName = migration.name || (migration.constructor as any).name;
-            const migrationTimestamp = parseInt(migrationClassName.substr(-13));
-            if (!migrationTimestamp)
+            const migrationTimestamp = parseInt(migrationClassName.substr(-13), 10);
+            if (!migrationTimestamp || isNaN(migrationTimestamp)) {
                 throw new Error(`${migrationClassName} migration name is wrong. Migration class name should have a JavaScript timestamp appended.`);
+            }
 
             return new Migration(undefined, migrationTimestamp, migrationClassName, migration);
         });
@@ -429,5 +501,17 @@ export class MigrationExecutor {
                 .execute();
         }
 
+    }
+
+    protected async withQueryRunner<T extends any>(callback: (queryRunner: QueryRunner) => T) {
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner();
+
+        try {
+            return callback(queryRunner);
+        } finally {
+            if (!this.queryRunner) {
+                await queryRunner.release();
+            }
+        }
     }
 }

@@ -19,6 +19,7 @@ import {SqlServerConnectionCredentialsOptions} from "./SqlServerConnectionCreden
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -164,6 +165,8 @@ export class SqlServerDriver implements Driver {
         createDateDefault: "getdate()",
         updateDate: "datetime2",
         updateDateDefault: "getdate()",
+        deleteDate: "datetime2",
+        deleteDateNullable: true,
         version: "int",
         treeLevel: "int",
         migrationId: "int",
@@ -294,7 +297,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new SqlServerQueryRunner(this, mode);
     }
 
@@ -613,7 +616,7 @@ export class SqlServerDriver implements Driver {
         });
     }
     private lowerDefaultValueIfNessesary(value: string | undefined) {
-        // SqlServer saves function calls in default value as lowercase #2733
+        // SqlServer saves function calls in default value as lowercase https://github.com/typeorm/typeorm/issues/2733
         if (!value) {
             return value;
         }
@@ -636,6 +639,13 @@ export class SqlServerDriver implements Driver {
      */
     isUUIDGenerationSupported(): boolean {
         return true;
+    }
+
+    /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
+        return false;
     }
 
     /**
@@ -700,6 +710,20 @@ export class SqlServerDriver implements Driver {
         }, {} as ObjectLiteral);
     }
 
+    buildTableVariableDeclaration(identifier: string, columns: ColumnMetadata[]): string {
+        const outputColumns = columns.map(column => {
+            return `${this.escape(column.databaseName)} ${this.createFullType(new TableColumn({
+                name: column.databaseName,
+                type: this.normalizeType(column),
+                length: column.length,
+                isNullable: column.isNullable,
+                isArray: column.isArray,
+            }))}`;
+        });
+
+        return `DECLARE ${identifier} TABLE (${outputColumns.join(", ")})`;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -721,7 +745,7 @@ export class SqlServerDriver implements Driver {
      */
     protected createPool(options: SqlServerConnectionOptions, credentials: SqlServerConnectionCredentialsOptions): Promise<any> {
 
-        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+        credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
         // build connection options for the driver
         const connectionOptions = Object.assign({}, {

@@ -31,6 +31,18 @@ describe("ConnectionOptionsReader", () => {
     expect(fileOptions.database).to.have.string("/test-js");
   });
 
+  it("properly loads asynchronous config with specified file path", async () => {
+    const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/test-path-config-async.js" });
+    const fileOptions: ConnectionOptions = await connectionOptionsReader.get("file");
+    expect(fileOptions.database).to.have.string("/test-js-async");
+  });
+
+  it("properly loads config with specified file path from esm in js", async () => {
+    const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/test-path-config-esm.js" });
+    const fileOptions: ConnectionOptions = await connectionOptionsReader.get("file");
+    expect(fileOptions.database).to.have.string("/test-js");
+  });
+
   // TODO This test requires the configs/.env file be moved to the matching directory in build/compiled
   it.skip("properly loads config from .env file", async () => {
     const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/.env" });
