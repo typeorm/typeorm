@@ -28,7 +28,6 @@ describe("migrations > generate command", () => {
 
         const sqlInMemory = await connection.driver.createSchemaBuilder().log();
 
-        console.log(sqlInMemory.upQueries);
         sqlInMemory.upQueries.length.should.be.equal(0);
         sqlInMemory.downQueries.length.should.be.equal(0);
 

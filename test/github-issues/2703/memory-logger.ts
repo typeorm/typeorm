@@ -22,10 +22,6 @@ export class MemoryLogger implements Logger {
 
     log(level: "log" | "info" | "warn", message: any) {}
 
-    writeToConsole() {
-        this.queries.forEach(q => console.log(`query: ${q}`));
-    }
-
     clear() {
         this._queries = [];
     }
