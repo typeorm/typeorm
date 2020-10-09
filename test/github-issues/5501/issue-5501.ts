@@ -18,99 +18,71 @@ describe("github issues > #5501 Incorrect data loading from JSON string for colu
     after(() => closeTestingConnections(connections));
 
     it("should correctly store simple-json field", () => Promise.all(connections.map(async (connection) => {
-        const repo = connection.getRepository(Post);
+        let id = 0;
+        const runTestCase = async (input: any, expected: any, message: string) => {
+            id++;
 
-        await repo.save({ id: 1, jsonField: "hello world" });
-        await repo.save({ id: 2, jsonField: "" });
-        await repo.save({ id: 3, jsonField: "null" });
-        await repo.save({ id: 4, jsonField: { "key": "value" } });
-        await repo.save({ id: 5, jsonField: [ "hello" ] });
-        await repo.save({ id: 6, jsonField: null });
-        await repo.save({ id: 7, jsonField: 1 });
-        await repo.save({ id: 8, jsonField: 0.3 });
-        await repo.save({ id: 9, jsonField: true });
-        await repo.save({ id: 10, jsonField: [ { hello: "earth", planet: true }, { hello: "moon", planet: false } ] });
+            await connection.getRepository(Post).save({ id , jsonField: input });
 
-        const getJson = async (id: number) =>
-            (
+            const actual = (
                 await connection.createQueryBuilder()
                     .from("Post", "post")
                     .select("post.jsonField", "json")
-                    .where("post.id = :id", { id })
+                    .where("post.id = :id", {id})
                     .getRawOne()
-            )!.json;
+                )!.json;
 
-        const actualString = await getJson(1);
-        const actualStringEmpty = await getJson(2);
-        const actualStringNull = await getJson(3);
-        const actualObject = await getJson(4);
-        const actualArray = await getJson(5);
-        const actualNull = await getJson(6);
-        const actualNumberInteger = await getJson(7);
-        const actualNumberFloat = await getJson(8);
-        const actualBoolean = await getJson(9);
-        const actualComplex = await getJson(10);
+            expect(actual).to.be.equal(expected, message);
+        }
 
-        expect(actualString).to.be.equal("\"hello world\"", "normal string");
-        expect(actualStringEmpty).to.be.equal("\"\"", "empty string");
-        expect(actualStringNull).to.be.equal("\"null\"", "string containing the word null");
-        expect(actualObject).to.be.equal("{\"key\":\"value\"}", "object containing a key and string value");
-        expect(actualArray).to.be.equal("[\"hello\"]", "array containing a string");
-        expect(actualNull).to.be.equal(null, "a null object value");
-        expect(actualNumberInteger).to.be.equal("1", "the real number 1");
-        expect(actualNumberFloat).to.be.equal("0.3", "the number 0.3");
-        expect(actualBoolean).to.be.equal("true", "the boolean value true");
-        expect(actualComplex).to.be.equal("[{\"hello\":\"earth\",\"planet\":true},{\"hello\":\"moon\",\"planet\":false}]", "a complex object example");
+        await runTestCase("hello world", "\"hello world\"", "normal string");
+        await runTestCase("", "\"\"", "empty string");
+        await runTestCase("null", "\"null\"", "string containing the word null");
+        await runTestCase( { "key": "value" }, "{\"key\":\"value\"}", "object containing a key and string value");
+        await runTestCase([ "hello" ], "[\"hello\"]", "array containing a string");
+        await runTestCase(null, null, "a null object value");
+        await runTestCase(1, "1", "the real number 1");
+        await runTestCase(0.3, "0.3", "the number 0.3");
+        await runTestCase(true, "true", "the boolean value true");
+        await runTestCase(
+            [ { hello: "earth", planet: true }, { hello: "moon", planet: false } ],
+            "[{\"hello\":\"earth\",\"planet\":true},{\"hello\":\"moon\",\"planet\":false}]",
+            "a complex object example"
+        );
     })));
 
     it("should correctly retrieve simple-json field", () => Promise.all(connections.map(async (connection) => {
-        const insert = (id: number, value: string | null) =>
-            connection.createQueryBuilder()
+        let id = 0;
+        const runTestCase = async (input: string | null, expected: any, message: string) => {
+            id++;
+            await connection.createQueryBuilder()
                 .insert()
                 .into(Post)
-                .values({ id, jsonField: () => ':field' } as any) // A bit of a hack to get the raw value inserting
-                .setParameter('field', value)
-                .execute()
+                .values({id, jsonField: () => ':field'} as any) // A bit of a hack to get the raw value inserting
+                .setParameter('field', input)
+                .execute();
 
-        await insert(1, "\"hello world\"");
-        await insert(2, "\"\"");
-        await insert(3, "\"null\"");
-        await insert(4, "{\"key\":\"value\"}");
-        await insert(5, "[\"hello\"]");
-        await insert(6, null);
-        await insert(7, "1");
-        await insert(8, "0.3");
-        await insert(9, "true");
-        await insert(10, "[{\"hello\":\"earth\",\"planet\":true},{\"hello\":\"moon\",\"planet\":false}]");
+            const actual = (
+                    await connection.getRepository(Post).findOne({ where: { id } })
+                )!.jsonField;
 
-        const repo = connection.getRepository(Post);
+            expect(actual).to.be.eql(expected, message);
+        }
 
-        const getJson = async (id: number) =>
-            (
-                await repo.findOne({ where: { id } })
-            )!.jsonField;
-
-        const actualString = await getJson(1);
-        const actualStringEmpty = await getJson(2);
-        const actualStringNull = await getJson(3);
-        const actualObject = await getJson(4);
-        const actualArray = await getJson(5);
-        const actualNull = await getJson(6);
-        const actualNumberInteger = await getJson(7);
-        const actualNumberFloat = await getJson(8);
-        const actualBoolean = await getJson(9);
-        const actualComplex = await getJson(10);
-
-        expect(actualString).to.be.eql("hello world", "normal string" + connection.name);
-        expect(actualStringEmpty).to.be.eql("", "empty string");
-        expect(actualStringNull).to.be.eql("null", "string containing the word null");
-        expect(actualObject).to.be.eql({ "key": "value" }, "object containing a key and string value");
-        expect(actualArray).to.be.eql([ "hello" ], "array containing a string");
-        expect(actualNull).to.be.eql(null, "a null object value");
-        expect(actualNumberInteger).to.be.eql(1, "the real number 1");
-        expect(actualNumberFloat).to.be.eql(0.3, "the number 0.3");
-        expect(actualBoolean).to.be.eql(true, "the boolean value true");
-        expect(actualComplex).to.be.eql([{"hello":"earth","planet":true},{"hello":"moon","planet":false}], "a complex object example");
+        await runTestCase("\"hello world\"", "hello world", "normal string");
+        await runTestCase("\"\"", "", "empty string");
+        await runTestCase("\"null\"", "null", "string containing the word null");
+        await runTestCase("{\"key\":\"value\"}", { "key": "value" }, "object containing a key and string value");
+        await runTestCase("[\"hello\"]", [ "hello" ], "array containing a string");
+        await runTestCase(null, null, "a null object value");;
+        await runTestCase("1", 1, "the real number 1");
+        await runTestCase("0.3", 0.3, "the number 0.3");
+        await runTestCase("true", true, "the boolean value true");
+        await runTestCase(
+            "[{\"hello\":\"earth\",\"planet\":true},{\"hello\":\"moon\",\"planet\":false}]",
+            [{"hello":"earth","planet":true},{"hello":"moon","planet":false}],
+            "a complex object example"
+        );
     })));
 
     it("should throw an error when the data in the database is invalid", () => Promise.all(connections.map(async (connection) => {
