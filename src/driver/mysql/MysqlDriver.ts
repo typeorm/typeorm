@@ -591,7 +591,7 @@ export class MysqlDriver implements Driver {
         }
 
         if (typeof defaultValue === "number") {
-            return "" + defaultValue;
+            return `'${defaultValue.toFixed(columnMetadata.scale)}'`;
 
         } else if (typeof defaultValue === "boolean") {
             return defaultValue === true ? "1" : "0";
@@ -770,8 +770,8 @@ export class MysqlDriver implements Driver {
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadataLength
                 || tableColumn.width !== columnMetadata.width
-                || tableColumn.precision !== columnMetadata.precision
-                || tableColumn.scale !== columnMetadata.scale
+                || (columnMetadata.precision !== undefined && tableColumn.precision !== columnMetadata.precision)
+                || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
                 || tableColumn.zerofill !== columnMetadata.zerofill
                 || tableColumn.unsigned !== columnMetadata.unsigned
                 || tableColumn.asExpression !== columnMetadata.asExpression

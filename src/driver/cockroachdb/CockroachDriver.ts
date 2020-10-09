@@ -484,7 +484,7 @@ export class CockroachDriver implements Driver {
         const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
 
         if (typeof defaultValue === "number") {
-            return "" + defaultValue;
+            return `(${defaultValue})`;
 
         } else if (typeof defaultValue === "boolean") {
             return defaultValue === true ? "true" : "false";
@@ -618,7 +618,7 @@ export class CockroachDriver implements Driver {
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
-                || tableColumn.scale !== columnMetadata.scale
+                || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
                 // || tableColumn.comment !== columnMetadata.comment // todo
                 || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
