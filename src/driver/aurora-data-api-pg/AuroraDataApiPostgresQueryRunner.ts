@@ -29,7 +29,7 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
      */
     driver: AuroraDataApiPostgresDriver;
 
-    client: any;
+    protected client: any;
 
     // -------------------------------------------------------------------------
     // Protected Properties

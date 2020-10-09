@@ -36,7 +36,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
 
     driver: AuroraDataApiDriver;
 
-    client: any
+    protected client: any
 
     // -------------------------------------------------------------------------
     // Protected Properties
