@@ -150,6 +150,7 @@
   "bin": {
     "typeorm": "./cli.js"
   },
+  "funding": "https://opencollective.com/typeorm",
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/typeorm",
