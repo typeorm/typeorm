@@ -94,7 +94,7 @@ describe("query runner > add column", () => {
             let postgresSupported = false;
 
             if (connection.driver instanceof PostgresDriver) {
-                postgresSupported = await connection.driver.isGeneratedColumnsSupported();
+                postgresSupported = await connection.driver.isGeneratedColumnsSupported("master");
             }
 
             if (isMySQL || postgresSupported) {

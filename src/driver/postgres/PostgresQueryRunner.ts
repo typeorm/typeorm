@@ -344,7 +344,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 return Promise.resolve();
             }));
 
-        if (await this.driver.isGeneratedColumnsSupported()) {
+        if (await this.driver.isGeneratedColumnsSupported(this.mode)) {
             // if table have column with generated type, we must add the expression to the meta table
             await Promise.all(table.columns
                 .filter(column => column.generatedType === "STORED" && column.asExpression)
@@ -579,7 +579,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`));
         }
 
-        if (column.generatedType === "STORED" && column.asExpression && await this.driver.isGeneratedColumnsSupported()) {
+        if (column.generatedType === "STORED" && column.asExpression && await this.driver.isGeneratedColumnsSupported(this.mode)) {
             const tableName = await this.getTableNameWithSchema(table.name);
             const deleteQuery = new Query(`DELETE FROM typeorm_generation_meta WHERE table_name = $1 AND column_name = $2`, [tableName, column.name]);
             upQueries.push(deleteQuery);
@@ -910,7 +910,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`));
             }
 
-            if (newColumn.generatedType !== oldColumn.generatedType && await this.driver.isGeneratedColumnsSupported()) {
+            if (newColumn.generatedType !== oldColumn.generatedType && await this.driver.isGeneratedColumnsSupported(this.mode)) {
                 // Convert generated column data to normal column
                 if (!newColumn.generatedType || newColumn.generatedType === "VIRTUAL") {
                     // We can copy the generated data to the new column
@@ -1014,7 +1014,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             }
         }
 
-        if (column.generatedType === "STORED" && await this.driver.isGeneratedColumnsSupported()) {
+        if (column.generatedType === "STORED" && await this.driver.isGeneratedColumnsSupported(this.mode)) {
             const tableName = await this.getTableNameWithSchema(table.name);
             upQueries.push(new Query(`DELETE FROM typeorm_generation_meta WHERE table_name = $1 AND column_name = $2`, [tableName, column.name]));
             downQueries.push(new Query(`INSERT INTO typeorm_generation_meta(table_name, column_name, generation_expression) VALUES ($1, $2, $3)`, [tableName, column.name, column.asExpression]));
@@ -1518,7 +1518,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!dbTables.length)
             return [];
 
-        const supportsGeneratedColumns = await this.driver.isGeneratedColumnsSupported();
+        const supportsGeneratedColumns = await this.driver.isGeneratedColumnsSupported(this.mode);
 
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {

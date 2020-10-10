@@ -915,8 +915,8 @@ export class PostgresDriver implements Driver {
     /**
      * Returns true if postgres supports generated columns
      */
-    async isGeneratedColumnsSupported(): Promise<boolean> {
-        const runner = this.createQueryRunner();
+    async isGeneratedColumnsSupported(mode: ReplicationMode): Promise<boolean> {
+        const runner = this.createQueryRunner(mode);
         const results = await runner.query("SHOW server_version;", []);
         await runner.release();
         const versionString = results[0]["server_version"] as string;

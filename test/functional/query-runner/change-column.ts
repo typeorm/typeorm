@@ -143,7 +143,7 @@ describe("query runner > change column", () => {
         if (!(connection.driver instanceof PostgresDriver)) return;
 
         // Database is running < postgres 12
-        if (!await connection.driver.isGeneratedColumnsSupported()) return;
+        if (!await connection.driver.isGeneratedColumnsSupported("master")) return;
 
         const queryRunner = connection.createQueryRunner();
 
