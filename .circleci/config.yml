@@ -63,7 +63,6 @@ commands:
               curl -sf -o node_modules/oracledb/instantclient.zip $BLOB_URL
               unzip -qqo node_modules/oracledb/instantclient.zip -d node_modules/oracledb/
               rm node_modules/oracledb/instantclient.zip
-
               DEBIAN_FRONTEND=noninteractive sudo apt-get -qq -y install libaio1
               cp /lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/
             fi
@@ -108,38 +107,9 @@ jobs:
       node-version:
         type: string
         default: "10"
-      postgres-version:
-        type: string
-        default: "9.6.11"
     working_directory: ~/typeorm
     docker:
       - image: circleci/node:<< parameters.node-version >>
-      - image: mysql:5.7.24
-        environment:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_DATABASE: "test"
-      - image: mariadb:10.1.37
-        name: mariadb
-        environment:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_DATABASE: "test"
-      - image: circleci/postgres:<< parameters.postgres-version >>-postgis
-        name: postgres
-        environment:
-          POSTGRES_USER: "test"
-          POSTGRES_PASSWORD: "test"
-          POSTGRES_DB: "test"
-      - image: cockroachdb/cockroach:latest
-        name: cockroachdb
-        command: start --insecure
-      - image: circleci/mongo:3.4.18
-        name: mongodb
-      - image: mcr.microsoft.com/mssql/server:2017-latest
-        name: mssql
-        environment:
-          SA_PASSWORD: "Admin123"
-          ACCEPT_EULA: "Y"
-
     steps:
       - checkout
       - setup_remote_docker
@@ -154,10 +124,9 @@ jobs:
               npx js-yaml ./docker-compose.yml \
                 | jq -r '.services | keys | map(select(. | IN($ARGS.positional[]))) | join(" ")' --args << parameters.databases >>
             )
-
             docker-compose --project-name typeorm --no-ansi up --detach $SERVICES
       - install-packages:
-         cache-key: node<< parameters.node-version >>
+          cache-key: node<< parameters.node-version >>
       - run:
           name: Set up TypeORM Test Runner
           command: |
@@ -182,7 +151,6 @@ jobs:
                   '
             )
             echo "Running '$COMMANDS'"
-
             docker run \
               --network typeorm_default \
               --tty \
@@ -201,7 +169,6 @@ jobs:
               --name typeorm-testrunner \
               circleci/node:<< parameters.node-version >> \
               npx nyc npm run test-fast
-
             docker cp typeorm-testrunner:/typeorm/coverage/ ./
       - run:
           name: Stop all Relevant Services
@@ -223,7 +190,6 @@ workflows:
             - build
           databases: "mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs"
           matrix:
-            databases: "mysql mariadb sqlite better-sqlite3 postgres sqljs mssql mongodb"
             parameters:
               node-version:
                 - "10"
@@ -237,23 +203,17 @@ workflows:
           databases: "cockroachdb"
           node-version: "12"
       - test:
-          name: test (postgres-12) - Node v<< matrix.node-version >>
-          requires:
-            - lint
-            - build
-          matrix:
-            databases: "postgres"
-            parameters:
-              node-version:
-                - "10"
-                - "12"
-                - "13"
-              postgres-version:
-                - "12.3"
-      - test:
           name: test (oracle) - Node v12
           requires:
             - lint
             - build
           databases: "oracle"
+          node-version: "12"
+
+      - test:
+          name: test (postgres 12) - Node v12
+          requires:
+            - lint
+            - build
+          databases: "postgres-12"
           node-version: "12"
