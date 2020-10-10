@@ -37,6 +37,7 @@ import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
+import {EntityNotFoundError} from "../error/EntityNotFoundError";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1102,6 +1103,19 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         }
 
         return result;
+    }
+
+    /**
+     * Gets the first entity returned by execution of generated query builder sql or rejects the returned promise on error.
+     */
+    async getOneOrFail(): Promise<Entity> {
+        const entity = await this.getOne();
+
+        if (!entity) {
+            throw new EntityNotFoundError(this.expressionMap.mainAlias!.target, this);
+        }
+
+        return entity;
     }
 
     /**
