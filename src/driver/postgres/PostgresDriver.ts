@@ -393,7 +393,7 @@ export class PostgresDriver implements Driver {
             return metadata.columns.filter(column => this.spatialTypes.indexOf(column.type) >= 0).length > 0;
         });
         const hasLtreeColumns = this.connection.entityMetadatas.some(metadata => {
-            return metadata.columns.filter(column => column.type === 'ltree').length > 0;
+            return metadata.columns.filter(column => column.type === "ltree").length > 0;
         });
         const hasExclusionConstraints = this.connection.entityMetadatas.some(metadata => {
             return metadata.exclusions.length > 0;
@@ -498,7 +498,7 @@ export class PostgresDriver implements Driver {
             return `(${value.join(",")})`;
 
         } else if (columnMetadata.type === "ltree") {
-            return value.split(".").filter(Boolean).join('.').replace(/[\s]+/g, "_");
+            return value.split(".").filter(Boolean).join(".").replace(/[\s]+/g, "_");
         } else if (
             (
                 columnMetadata.type === "enum"
