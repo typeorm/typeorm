@@ -433,6 +433,10 @@ describe("repository > find options > operators", () => {
         });
         loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
 
+        const noPosts = await connection.getRepository(Post).find({
+            title: In([])
+        });
+        noPosts.length.should.be.eql(0);
     })));
 
     it("not(in)", () => Promise.all(connections.map(async connection => {
@@ -453,6 +457,10 @@ describe("repository > find options > operators", () => {
         });
         loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
 
+        const noPosts = await connection.getRepository(Post).find({
+            title: Not(In([]))
+        });
+        noPosts.length.should.be.eql(2);
     })));
 
     it("any", () => Promise.all(connections.map(async connection => {
