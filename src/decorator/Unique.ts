@@ -1,6 +1,6 @@
 import { getMetadataArgsStorage } from "../index";
 import { UniqueMetadataArgs } from "../metadata-args/UniqueMetadataArgs";
-import { UniqueOptions } from './options/UniqueOptions';
+import { UniqueOptions } from "./options/UniqueOptions";
 
 /**
  * Composite unique constraint must be set on entity classes and must specify entity's fields to be unique.

@@ -1,4 +1,4 @@
-import { UniqueOptions } from '../decorator/options/UniqueOptions';
+import { UniqueOptions } from "../decorator/options/UniqueOptions";
 
 export interface EntitySchemaUniqueOptions {
 
