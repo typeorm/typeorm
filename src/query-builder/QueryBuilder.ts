@@ -17,7 +17,6 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {EntitySchema} from "../";
 import {FindOperator} from "../find-options/FindOperator";
 import {In} from "../find-options/operator/In";
@@ -916,8 +915,8 @@ export abstract class QueryBuilder<Entity> {
             case "between":
                 return `${aliasPath} BETWEEN ${parameters[0]} AND ${parameters[1]}`;
             case "in":
-                if ((this.connection.driver instanceof OracleDriver || this.connection.driver instanceof MysqlDriver) && parameters.length === 0) {
-                    return `${aliasPath} IN (null)`;
+                if (parameters.length === 0) {
+                    return "0=1";
                 }
                 return `${aliasPath} IN (${parameters.join(", ")})`;
             case "any":
