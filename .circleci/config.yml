@@ -63,6 +63,7 @@ commands:
               curl -sf -o node_modules/oracledb/instantclient.zip $BLOB_URL
               unzip -qqo node_modules/oracledb/instantclient.zip -d node_modules/oracledb/
               rm node_modules/oracledb/instantclient.zip
+
               DEBIAN_FRONTEND=noninteractive sudo apt-get -qq -y install libaio1
               cp /lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/
             fi
@@ -124,6 +125,7 @@ jobs:
               npx js-yaml ./docker-compose.yml \
                 | jq -r '.services | keys | map(select(. | IN($ARGS.positional[]))) | join(" ")' --args << parameters.databases >>
             )
+
             docker-compose --project-name typeorm --no-ansi up --detach $SERVICES
       - install-packages:
           cache-key: node<< parameters.node-version >>
@@ -151,6 +153,7 @@ jobs:
                   '
             )
             echo "Running '$COMMANDS'"
+
             docker run \
               --network typeorm_default \
               --tty \
@@ -169,6 +172,7 @@ jobs:
               --name typeorm-testrunner \
               circleci/node:<< parameters.node-version >> \
               npx nyc npm run test-fast
+
             docker cp typeorm-testrunner:/typeorm/coverage/ ./
       - run:
           name: Stop all Relevant Services
@@ -209,7 +213,6 @@ workflows:
             - build
           databases: "oracle"
           node-version: "12"
-
       - test:
           name: test (postgres 12) - Node v12
           requires:
