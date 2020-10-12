@@ -447,6 +447,16 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
+     * Includes a Query comment in the query builder.  This is helpful for debugging purposes,
+     * such as finding a specific query in the database server's logs, or for categorization using
+     * an APM product.
+     */
+    comment(comment: string): this {
+        this.expressionMap.comment = comment;
+        return this;
+    }
+
+    /**
      * Disables escaping.
      */
     disableEscaping(): this {
@@ -611,6 +621,19 @@ export abstract class QueryBuilder<Entity> {
         }
 
         return statement;
+    }
+
+    protected createComment(): string {
+        if (!this.expressionMap.comment) {
+            return "";
+        }
+
+        // ANSI SQL 2003 support C style comments - comments that start with `/*` and end with `*/`
+        // In some dialects query nesting is available - but not all.  Because of this, we'll need
+        // to scrub "ending" characters from the SQL but otherwise we can leave everything else
+        // as-is and it should be valid.
+
+        return `/* ${this.expressionMap.comment.replace("*/", "")} */ `;
     }
 
     /**

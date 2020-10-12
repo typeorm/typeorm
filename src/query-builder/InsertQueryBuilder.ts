@@ -33,7 +33,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createInsertExpression();
+        let sql = this.createComment();
+        sql += this.createInsertExpression();
         return sql.trim();
     }
 
