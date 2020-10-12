@@ -354,7 +354,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     upQueries.push(deleteQuery);
                     upQueries.push(new Query(`INSERT INTO typeorm_generation_meta(table_name, column_name, generation_expression) VALUES ($1, $2, $3)`, [tableName, column.name, column.asExpression]));
                     downQueries.push(deleteQuery);
-                    return Promise.resolve();
                 }));
         } else {
             table.columns = table.columns.filter(column => !column.generatedType);
