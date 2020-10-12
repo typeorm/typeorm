@@ -795,7 +795,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates typeorm service table for storing user defined generated columns as expressions.
      */
     protected async createTypeormGeneratedMetadataTable() {
-        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
+        const options = <PostgresConnectionOptions>this.connection.driver.options;
         const typeormMetadataTable = this.connection.driver.buildTableName("typeorm_generation_meta", options.schema, options.database);
 
         await this.queryRunner.createTable(new Table(
