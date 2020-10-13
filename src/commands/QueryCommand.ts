@@ -10,11 +10,15 @@ import chalk from "chalk";
  * Executes an sql query on the given connection.
  */
 export class QueryCommand implements yargs.CommandModule {
-    command = "query";
+    command = "query [query]";
     describe = "Executes given SQL query on a default connection. Specify connection name to run query on a specific connection.";
 
     builder(args: yargs.Argv) {
         return args
+            .positional("query", {
+                describe: "The SQL Query to run",
+                type: "string"
+            })
             .option("c", {
                 alias: "connection",
                 default: "default",
