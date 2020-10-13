@@ -9,8 +9,8 @@ describe("columns > comments", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [Test],
-        // Only supported on mysql
-        enabledDrivers: ["mysql"]
+        // Only supported on postgres, cockroachdb, and mysql
+        enabledDrivers: ["postgres", "cockroachdb", "mysql"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

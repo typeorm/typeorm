@@ -250,7 +250,7 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column comment", () => Promise.all(connections.map(async connection => {
         // Skip thie contents of this test if not one of the drivers that support comments
-        if (!(connection.driver instanceof MysqlDriver)) {
+        if (!(connection.driver instanceof CockroachDriver || connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver)) {
             return;
         }
 

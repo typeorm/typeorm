@@ -585,6 +585,12 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             downQueries.push(this.dropIndexSql(table, uniqueConstraint.name!)); // CockroachDB creates indices for unique constraints
         }
 
+        // create column's comment
+        if (column.comment) {
+            upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${column.name}" IS ${this.escapeComment(column.comment)}`));
+            downQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${column.name}" IS ${this.escapeComment(column.comment)}`));
+        }
+
         await this.executeQueries(upQueries, downQueries);
 
         clonedTable.addColumn(column);
@@ -738,8 +744,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             }
 
             if (oldColumn.comment !== newColumn.comment) {
-                upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${oldColumn.name}" IS '${newColumn.comment}'`));
-                downQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${newColumn.name}" IS '${oldColumn.comment}'`));
+                upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${oldColumn.name}" IS ${this.escapeComment(newColumn.comment)}`));
+                downQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${newColumn.name}" IS ${this.escapeComment(oldColumn.comment)}`));
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
@@ -1344,7 +1350,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
         }).join(" OR ");
         const tablesSql = `SELECT * FROM "information_schema"."tables" WHERE ` + tablesCondition;
-        const columnsSql = `SELECT * FROM "information_schema"."columns" WHERE "is_hidden" = 'NO' AND ` + tablesCondition;
+
+        const columnsSql = `
+            SELECT
+                *,
+                pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) as description
+            FROM "information_schema"."columns"
+            WHERE "is_hidden" = 'NO' AND ` + tablesCondition;
 
         const constraintsCondition = tableNames.map(tableName => {
             let [schema, name] = tableName.split(".");
@@ -1496,7 +1508,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                         }
                     }
 
-                    tableColumn.comment = ""; // dbColumn["COLUMN_COMMENT"];
+                    tableColumn.comment = dbColumn["description"] == null ? undefined : dbColumn["description"];
                     if (dbColumn["character_set_name"])
                         tableColumn.charset = dbColumn["character_set_name"];
 
@@ -1662,6 +1674,11 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         sql += `)`;
+
+        table.columns
+            .filter(it => it.comment)
+            .forEach(it => sql += `; COMMENT ON COLUMN ${this.escapePath(table)}."${it.name}" IS ${this.escapeComment(it.comment)}`);
+
 
         return new Query(sql);
     }
@@ -1839,6 +1856,21 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     protected buildSequenceName(table: Table, columnOrName: TableColumn|string, disableEscape?: true): string {
         const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
         return disableEscape ? `${table.name}_${columnName}_seq` : `"${table.name}_${columnName}_seq"`;
+    }
+
+    /**
+     * Escapes a given comment so it's safe to include in a query.
+     */
+    protected escapeComment(comment?: string) {
+        if (comment === undefined || comment.length === 0) {
+            return 'NULL';
+        }
+
+        comment = comment
+            .replace("'", "''")
+            .replace("\0", ""); // Null bytes aren't allowed in comments
+
+        return `'${comment}'`;
     }
 
     /**
