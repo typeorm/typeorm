@@ -248,4 +248,35 @@ describe("schema builder > change column", () => {
 
     })));
 
+    it("should correctly change column comment", () => Promise.all(connections.map(async connection => {
+        // Skip thie contents of this test if not one of the drivers that support comments
+        if (!(connection.driver instanceof MysqlDriver)) {
+            return;
+        }
+
+        const teacherMetadata = connection.getMetadata("teacher");
+        const idColumn = teacherMetadata.findColumnWithPropertyName("id")!;
+
+        idColumn.comment = "The Teacher's Key";
+
+        await connection.synchronize();
+
+        const queryRunnerA = connection.createQueryRunner();
+        const teacherTableA = await queryRunnerA.getTable("teacher");
+        await queryRunnerA.release();
+
+        expect(teacherTableA!.findColumnByName("id")!.comment).to.be.equal("The Teacher's Key", connection.name);
+
+        // revert changes
+        idColumn.comment = "";
+
+        await connection.synchronize();
+
+        const queryRunnerB = connection.createQueryRunner();
+        const teacherTableB = await queryRunnerB.getTable("teacher");
+        await queryRunnerB.release();
+
+        expect(teacherTableB!.findColumnByName("id")!.comment).to.be.undefined;
+
+    })));
 });

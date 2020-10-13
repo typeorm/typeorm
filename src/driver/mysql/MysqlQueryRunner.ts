@@ -637,7 +637,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name;
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true)) {
+            if (this.isColumnChanged(oldColumn, newColumn, true, true)) {
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`));
             }
@@ -1347,7 +1347,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     if (tableColumn.isGenerated)
                         tableColumn.generationStrategy = "increment";
 
-                    tableColumn.comment = dbColumn["COLUMN_COMMENT"];
+                    tableColumn.comment = (typeof dbColumn["COLUMN_COMMENT"] === "string" && dbColumn["COLUMN_COMMENT"].length === 0) ? undefined : dbColumn["COLUMN_COMMENT"];
                     if (dbColumn["CHARACTER_SET_NAME"])
                         tableColumn.charset = dbColumn["CHARACTER_SET_NAME"] === defaultCharset ? undefined : dbColumn["CHARACTER_SET_NAME"];
                     if (dbColumn["COLLATION_NAME"])
@@ -1648,6 +1648,22 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Escapes a given comment so it's safe to include in a query.
+     */
+    protected escapeComment(comment?: string) {
+        if (comment === undefined || comment.length === 0) {
+            return `''`;
+        }
+
+        comment = comment
+            .replace("\\", "\\\\") // MySQL allows escaping characters via backslashes
+            .replace("'", "''")
+            .replace("\0", ""); // Null bytes aren't allowed in comments
+
+        return `'${comment}'`;
+    }
+
+    /**
      * Escapes given table or view path.
      */
     protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
@@ -1688,8 +1704,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += " PRIMARY KEY";
         if (column.isGenerated && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
-        if (column.comment)
-            c += ` COMMENT '${column.comment.replace("'", "''")}'`;
+        if (column.comment !== undefined && column.comment.length > 0)
+            c += ` COMMENT ${this.escapeComment(column.comment)}`;
         if (column.default !== undefined && column.default !== null)
             c += ` DEFAULT ${column.default}`;
         if (column.onUpdate)

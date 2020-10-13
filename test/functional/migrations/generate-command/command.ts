@@ -7,7 +7,7 @@ describe("migrations > generate command", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         migrations: [],
-        enabledDrivers: ["postgres"],
+        enabledDrivers: ["postgres", "cockroachdb", "mysql"],
         schemaCreate: false,
         dropSchema: true,
         entities: [Post, Category],
