@@ -37,6 +37,7 @@ export class InitCommand implements yargs.CommandModule {
             })
             .option("pm", {
                 alias: "manager",
+                choices: ["npm", "yarn"],
                 describe: "Install packages, expected values are npm or yarn."
             });
     }
@@ -77,9 +78,9 @@ export class InitCommand implements yargs.CommandModule {
             }
 
             if (args.pm && installNpm) {
-                InitCommand.executeCommand("npm install");
+                await InitCommand.executeCommand("npm install");
             } else {
-                InitCommand.executeCommand("yarn install");
+                await InitCommand.executeCommand("yarn install");
             }
 
         } catch (err) {
@@ -225,7 +226,7 @@ export class InitCommand implements yargs.CommandModule {
                 sourceMap: true
             }
         }
-            , undefined, 3);
+        , undefined, 3);
     }
 
     /**
@@ -244,13 +245,13 @@ temp/`;
      * Gets contents of the user entity.
      */
     protected static getUserEntityTemplate(database: string): string {
-        return `import {Entity, ${database === "mongodb" ? "ObjectIdColumn, ObjectID" : "PrimaryGeneratedColumn"}, Column} from "typeorm";
+        return `import {Entity, ${ database === "mongodb" ? "ObjectIdColumn, ObjectID" : "PrimaryGeneratedColumn" }, Column} from "typeorm";
 
 @Entity()
 export class User {
 
-    ${database === "mongodb" ? "@ObjectIdColumn()" : "@PrimaryGeneratedColumn()"}
-    id: ${database === "mongodb" ? "ObjectID" : "number"};
+    ${ database === "mongodb" ? "@ObjectIdColumn()" : "@PrimaryGeneratedColumn()" }
+    id: ${ database === "mongodb" ? "ObjectID" : "number" };
 
     @Column()
     firstName: string;
