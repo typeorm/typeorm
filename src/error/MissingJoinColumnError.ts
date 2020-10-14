@@ -1,14 +1,11 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
+import {TypeORMError} from "./TypeORMError";
 
-/**
- */
-export class MissingJoinColumnError extends Error {
-    name = "MissingJoinColumnError";
-
+export class MissingJoinColumnError extends TypeORMError {
     constructor(entityMetadata: EntityMetadata, relation: RelationMetadata) {
         super();
-        Object.setPrototypeOf(this, MissingJoinColumnError.prototype);
+
         if (relation.inverseRelation) {
             this.message = `JoinColumn is missing on both sides of ${entityMetadata.name}#${relation.propertyName} and ` +
                 `${relation.inverseEntityMetadata.name}#${relation.inverseRelation.propertyName} one-to-one relationship. ` +
@@ -18,5 +15,4 @@ export class MissingJoinColumnError extends Error {
                 `You need to put JoinColumn decorator on it.`;
         }
     }
-
 }

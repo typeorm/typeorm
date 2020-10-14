@@ -1,15 +1,14 @@
 import {EntityTarget} from "../common/EntityTarget";
 import {EntitySchema} from "../index";
+import {TypeORMError} from "./TypeORMError";
 
 /**
  * Thrown when repository for the given class is not found.
  */
-export class RepositoryNotTreeError extends Error {
-    name = "RepositoryNotTreeError";
-
+export class RepositoryNotTreeError extends TypeORMError {
     constructor(entityClass: EntityTarget<any>) {
         super();
-        Object.setPrototypeOf(this, RepositoryNotTreeError.prototype);
+
         let targetName: string;
         if (entityClass instanceof EntitySchema) {
             targetName = entityClass.options.name;
@@ -22,5 +21,4 @@ export class RepositoryNotTreeError extends Error {
         }
         this.message = `Repository of the "${targetName}" class is not a TreeRepository. Try to apply @Tree decorator on your entity.`;
     }
-
 }
