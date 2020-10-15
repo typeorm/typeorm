@@ -55,8 +55,13 @@ export class QueryCommand implements yargs.CommandModule {
             queryRunner = connection.createQueryRunner();
             console.log(chalk.green("Running query: ") + PlatformTools.highlightSql(args._[1]));
             const queryResult = await queryRunner.query(args._[1]);
-            console.log(chalk.green("Query has been executed. Result: "));
-            console.log(PlatformTools.highlightJson(JSON.stringify(queryResult, undefined, 2)));
+
+            if (typeof queryResult === "undefined") {
+                console.log(chalk.green("Query has been executed. No result was returned."));
+            } else {
+                console.log(chalk.green("Query has been executed. Result: "));
+                console.log(PlatformTools.highlightJson(JSON.stringify(queryResult, undefined, 2)));
+            }
 
             await queryRunner.release();
             await connection.close();
