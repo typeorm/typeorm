@@ -18,7 +18,7 @@ describe("query builder > comment", () => {
             .comment("Hello World */")
             .getSql();
 
-        expect(sql).to.match(/^\/\* Hello World  \*\/ SELECT/);
+        expect(sql).to.match(/^\/\* Hello World  \*\/ /);
     })));
 
     it("should not allow an empty comment", () => Promise.all(connections.map(async connection => {
@@ -26,7 +26,7 @@ describe("query builder > comment", () => {
             .comment("")
             .getSql();
 
-        expect(sql).to.not.match(/^\/\* Hello World  \*\/ SELECT/);
+        expect(sql).to.not.match(/^\/\* Hello World  \*\/ /);
     })));
 
     it("should allow a comment with just whitespaces", () => Promise.all(connections.map(async connection => {
@@ -34,7 +34,7 @@ describe("query builder > comment", () => {
             .comment(" ")
             .getSql();
 
-        expect(sql).to.match(/^\/\*   \*\/ SELECT/);
+        expect(sql).to.match(/^\/\*   \*\/ /);
     })));
 
     it("should allow a multi-line comment", () => Promise.all(connections.map(async connection => {
@@ -42,7 +42,7 @@ describe("query builder > comment", () => {
             .comment("Hello World\nIt's a beautiful day!")
             .getSql();
 
-        expect(sql).to.match(/^\/\* Hello World\nIt's a beautiful day! \*\/ SELECT/);
+        expect(sql).to.match(/^\/\* Hello World\nIt's a beautiful day! \*\/ /);
     })));
 
     it("should include comment in select", () => Promise.all(connections.map(async connection => {
@@ -50,7 +50,7 @@ describe("query builder > comment", () => {
             .comment("Hello World")
             .getSql();
 
-        expect(sql).to.match(/^\/\* Hello World \*\/ SELECT/);
+        expect(sql).to.match(/^\/\* Hello World \*\/ /);
     })));
 
     it("should include comment in update", () => Promise.all(connections.map(async connection => {
@@ -60,7 +60,7 @@ describe("query builder > comment", () => {
             .comment("Hello World")
             .getSql();
 
-        expect(sql).to.match(/^\/\* Hello World \*\/ UPDATE/);
+        expect(sql).to.match(/^\/\* Hello World \*\/ /);
     })));
 
     it("should include comment in insert", () => Promise.all(connections.map(async connection => {
@@ -70,7 +70,7 @@ describe("query builder > comment", () => {
             .comment("Hello World")
             .getSql();
 
-        expect(sql).to.match(/^\/\* Hello World \*\/ INSERT/);
+        expect(sql).to.match(/^\/\* Hello World \*\/ /);
     })));
 
     it("should include comment in delete", () => Promise.all(connections.map(async connection => {
@@ -79,7 +79,7 @@ describe("query builder > comment", () => {
             .comment("Hello World")
             .getSql();
 
-        expect(sql).to.match(/^\/\* Hello World \*\/ DELETE/);
+        expect(sql).to.match(/^\/\* Hello World \*\/ /);
     })));
 
 });
