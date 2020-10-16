@@ -1811,9 +1811,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (this.connection.driver instanceof CockroachDriver || this.connection.driver instanceof PostgresDriver) {
             // Postgres and CockroachDB can pass multiple parameters to the `DISTINCT` function
             // https://www.postgresql.org/docs/9.5/sql-select.html#SQL-DISTINCT
-            return "COUNT(DISTINCT(" +
-                primaryColumns.map(c => `${distinctAlias}.${this.escape(c.databaseName)}`).join(", ") +
-                "))";
+            let columnsExpression = primaryColumns.map(c => `${distinctAlias}.${this.escape(c.databaseName)}`).join(", ");
+
+            // In case of the relation be a table that hasn't primary columns or be a view,
+            // the expression should be the table name/alias.
+            if (primaryColumns.length === 0) {
+                columnsExpression = distinctAlias;
+            }
+
+            return `COUNT(DISTINCT(${columnsExpression}))`;
         }
 
         if (this.connection.driver instanceof MysqlDriver) {
