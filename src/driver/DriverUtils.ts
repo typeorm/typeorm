@@ -16,18 +16,18 @@ export class DriverUtils {
      */
     static buildDriverOptions(options: any, buildOptions?: { useSid: boolean }): any {
         if (options.url) {
-            const parsedUrl = this.parseConnectionUrl(options.url);
-            let urlDriverOptions: any = {
-                type: parsedUrl.type,
-                host: parsedUrl.host,
-                username: parsedUrl.username,
-                password: parsedUrl.password,
-                port: parsedUrl.port,
-                database: parsedUrl.database
-            };
-            if (buildOptions && buildOptions.useSid) {
-                urlDriverOptions.sid = parsedUrl.database;
+            const urlDriverOptions = this.parseConnectionUrl(options.url) as { [key: string]: any };
+
+            if (buildOptions && buildOptions.useSid && urlDriverOptions.database) {
+                urlDriverOptions.sid = urlDriverOptions.database;
             }
+
+            for (const key of Object.keys(urlDriverOptions)) {
+                if (typeof urlDriverOptions[key] === 'undefined') {
+                    delete urlDriverOptions[key];
+                }
+            }
+
             return Object.assign({}, options, urlDriverOptions);
         }
         return Object.assign({}, options);
