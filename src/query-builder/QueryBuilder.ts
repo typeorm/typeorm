@@ -757,11 +757,11 @@ export abstract class QueryBuilder<Entity> {
         return this.expressionMap.wheres.map((where, index) => {
             switch (where.type) {
                 case "and":
-                    return (index > 0 ? "AND " : "") + this.replacePropertyNames(where.condition);
+                    return (index > 0 ? "AND " : "") + "(" + this.replacePropertyNames(where.condition) + ")";
                 case "or":
-                    return (index > 0 ? "OR " : "") + this.replacePropertyNames(where.condition);
+                    return (index > 0 ? "OR " : "") + "(" + this.replacePropertyNames(where.condition) + ")";
                 default:
-                    return this.replacePropertyNames(where.condition);
+                    return "(" + this.replacePropertyNames(where.condition) + ")";
             }
         }).join(" ");
     }
@@ -802,7 +802,7 @@ export abstract class QueryBuilder<Entity> {
                 this.expressionMap.nativeParameters[parameterName] = primaryColumn.getEntityValue(id, true);
                 parameterIndex++;
             });
-            return whereSubStrings.join(" AND ");
+            return whereSubStrings.map(where => "(" + where + ")").join(" AND ");
         });
 
         return whereStrings.length > 1
@@ -879,8 +879,8 @@ export abstract class QueryBuilder<Entity> {
                                 return `${aliasPath} = ${parameter}`;
                             }
 
-                        }).filter(expression => !!expression).join(" AND ");
-                    }).filter(expression => !!expression).join(" AND ");
+                        }).filter(expression => !!expression).map(w => "(" + w + ")").join(" AND ");
+                    }).filter(expression => !!expression).map(w => "(" + w + ")").join(" AND ");
                 });
 
             } else {

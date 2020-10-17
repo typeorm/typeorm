@@ -42,10 +42,10 @@ describe("multi-schema-and-database > basic-functionality", () => {
                 .getSql();
 
             if (connection.driver instanceof PostgresDriver)
-                sql.should.be.equal(`SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "custom"."post" "post" WHERE "post"."id" = $1`);
+                sql.should.be.equal(`SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "custom"."post" "post" WHERE ("post"."id" = $1)`);
 
             if (connection.driver instanceof SqlServerDriver)
-                sql.should.be.equal(`SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "custom"."post" "post" WHERE "post"."id" = @0`);
+                sql.should.be.equal(`SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "custom"."post" "post" WHERE ("post"."id" = @0)`);
 
             table!.name.should.be.equal("custom.post");
         })));
@@ -65,10 +65,10 @@ describe("multi-schema-and-database > basic-functionality", () => {
                 .getSql();
 
             if (connection.driver instanceof PostgresDriver)
-                sql.should.be.equal(`SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = $1`);
+                sql.should.be.equal(`SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE ("user"."id" = $1)`);
 
             if (connection.driver instanceof SqlServerDriver)
-                sql.should.be.equal(`SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = @0`);
+                sql.should.be.equal(`SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE ("user"."id" = @0)`);
 
             table!.name.should.be.equal("userSchema.user");
         })));
@@ -105,12 +105,12 @@ describe("multi-schema-and-database > basic-functionality", () => {
             if (connection.driver instanceof PostgresDriver)
                 sql.should.be.equal(`SELECT "category"."id" AS "category_id", "category"."name" AS "category_name",` +
                     ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
-                    ` FROM "guest"."category" "category" INNER JOIN "custom"."post" "post" ON "post"."id"="category"."postId" WHERE "category"."id" = $1`);
+                    ` FROM "guest"."category" "category" INNER JOIN "custom"."post" "post" ON "post"."id"="category"."postId" WHERE ("category"."id" = $1)`);
 
             if (connection.driver instanceof SqlServerDriver)
                 sql.should.be.equal(`SELECT "category"."id" AS "category_id", "category"."name" AS "category_name",` +
                     ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
-                    ` FROM "guest"."category" "category" INNER JOIN "custom"."post" "post" ON "post"."id"="category"."postId" WHERE "category"."id" = @0`);
+                    ` FROM "guest"."category" "category" INNER JOIN "custom"."post" "post" ON "post"."id"="category"."postId" WHERE ("category"."id" = @0)`);
 
             table!.name.should.be.equal("guest.category");
         })));
@@ -142,11 +142,11 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
             if (connection.driver instanceof PostgresDriver)
                 query.getSql().should.be.equal(`SELECT * FROM "guest"."category" "category", "userSchema"."user" "user",` +
-                    ` "custom"."post" "post" WHERE "category"."id" = $1 AND "post"."id" = "category"."postId"`);
+                    ` "custom"."post" "post" WHERE ("category"."id" = $1) AND ("post"."id" = "category"."postId")`);
 
             if (connection.driver instanceof SqlServerDriver)
                 query.getSql().should.be.equal(`SELECT * FROM "guest"."category" "category", "userSchema"."user" "user",` +
-                    ` "custom"."post" "post" WHERE "category"."id" = @0 AND "post"."id" = "category"."postId"`);
+                    ` "custom"."post" "post" WHERE ("category"."id" = @0) AND ("post"."id" = "category"."postId")`);
         })));
     });
 
@@ -176,7 +176,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                 .where("question.id = :id", {id: 1})
                 .getSql();
 
-            sql.should.be.equal(`SELECT "question"."id" AS "question_id", "question"."name" AS "question_name" FROM "testDB"."questions"."question" "question" WHERE "question"."id" = @0`);
+            sql.should.be.equal(`SELECT "question"."id" AS "question_id", "question"."name" AS "question_name" FROM "testDB"."questions"."question" "question" WHERE ("question"."id" = @0)`);
             table!.name.should.be.equal("testDB.questions.question");
         })));
 
@@ -211,7 +211,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
             expect(await query.getRawOne()).to.be.not.empty;
 
             query.getSql().should.be.equal(`SELECT * FROM "testDB"."questions"."question" "question", "secondDB"."answers"."answer"` +
-                ` "answer" WHERE "question"."id" = @0 AND "answer"."questionId" = "question"."id"`);
+                ` "answer" WHERE ("question"."id" = @0) AND ("answer"."questionId" = "question"."id")`);
 
             questionTable!.name.should.be.equal("testDB.questions.question");
             answerTable!.name.should.be.equal("secondDB.answers.answer");
@@ -246,10 +246,10 @@ describe("multi-schema-and-database > basic-functionality", () => {
                 .getSql();
 
             if (connection.driver instanceof SqlServerDriver)
-                sql.should.be.equal(`SELECT "person"."id" AS "person_id", "person"."name" AS "person_name" FROM "secondDB".."person" "person" WHERE "person"."id" = @0`);
+                sql.should.be.equal(`SELECT "person"."id" AS "person_id", "person"."name" AS "person_name" FROM "secondDB".."person" "person" WHERE ("person"."id" = @0)`);
 
             if (connection.driver instanceof MysqlDriver)
-                sql.should.be.equal("SELECT `person`.`id` AS `person_id`, `person`.`name` AS `person_name` FROM `secondDB`.`person` `person` WHERE `person`.`id` = ?");
+                sql.should.be.equal("SELECT `person`.`id` AS `person_id`, `person`.`name` AS `person_name` FROM `secondDB`.`person` `person` WHERE (`person`.`id` = ?)");
 
             table!.name.should.be.equal(tablePath);
         })));

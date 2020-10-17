@@ -77,9 +77,9 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
                 .getSql();
     
             if (connection.driver instanceof SqlServerDriver) {
-                expect(sql).to.equal("UPDATE user SET name = @0 OUTPUT inserted.* WHERE name = @1");
+                expect(sql).to.equal("UPDATE user SET name = @0 OUTPUT inserted.* WHERE (name = @1)");
             } else if (connection.driver instanceof PostgresDriver) {
-                expect(sql).to.equal("UPDATE user SET name = $1 WHERE name = $2 RETURNING *");
+                expect(sql).to.equal("UPDATE user SET name = $1 WHERE (name = $2) RETURNING *");
             }
         } catch (err) {
             expect(err.message).to.eql(new ReturningStatementNotSupportedError().message);
@@ -122,9 +122,9 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
                 .getSql();
     
             if (connection.driver instanceof SqlServerDriver) {
-                expect(sql).to.equal("DELETE FROM user OUTPUT deleted.* WHERE name = @0");
+                expect(sql).to.equal("DELETE FROM user OUTPUT deleted.* WHERE (name = @0)");
             } else if (connection.driver instanceof PostgresDriver) {
-                expect(sql).to.equal("DELETE FROM user WHERE name = $1 RETURNING *");
+                expect(sql).to.equal("DELETE FROM user WHERE (name = $1) RETURNING *");
             }
         } catch (err) {
             expect(err.message).to.eql(new ReturningStatementNotSupportedError().message);
