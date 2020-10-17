@@ -87,8 +87,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // console.time(".prepare returning statement");
             const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(queryRunner, this.expressionMap);
             if (this.expressionMap.updateEntity === true && this.expressionMap.mainAlias!.hasMetadata) {
-                this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getInsertionReturningColumns();
-
+                if (!(valueSets.length > 1 && this.connection.driver instanceof OracleDriver)) {
+                    this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getInsertionReturningColumns();
+                }
                 if (this.expressionMap.extraReturningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
                     declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", this.expressionMap.extraReturningColumns);
                     selectOutputSql = `SELECT * FROM @OutputTable`;
@@ -293,7 +294,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected createInsertExpression() {
         const tableName = this.getTableName(this.getMainTableName());
         const valuesExpression = this.createValuesExpression(); // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
-        const returningExpression = this.createReturningExpression();
+        const returningExpression = (this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1) ? null : this.createReturningExpression(); // oracle doesnt support returning with multi-row insert
         const columnsExpression = this.createColumnNamesExpression();
         let query = "INSERT ";
 
@@ -318,7 +319,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         // add VALUES expression
         if (valuesExpression) {
-            query += ` VALUES ${valuesExpression}`;
+            if (this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1) {
+                query += ` ${valuesExpression}`;
+            } else {
+                query += ` VALUES ${valuesExpression}`;
+            }
         } else {
             if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) { // special syntax for mysql DEFAULT VALUES insertion
                 query += " VALUES ()";
@@ -413,7 +418,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             valueSets.forEach((valueSet, valueSetIndex) => {
                 columns.forEach((column, columnIndex) => {
                     if (columnIndex === 0) {
-                        expression += "(";
+                        if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
+                            expression += " SELECT ";
+                        } else {
+                            expression += "(";
+                        }
                     }
                     const paramName = "i" + valueSetIndex + "_" + column.databaseName;
 
@@ -473,7 +482,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
+                        if ((this.connection.driver instanceof OracleDriver && valueSets.length > 1) || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
                             if (column.default !== undefined) { // try to use default defined in the column
                                 expression += this.connection.driver.normalizeDefault(column);
                             } else {
@@ -522,9 +531,17 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     if (columnIndex === columns.length - 1) {
                         if (valueSetIndex === valueSets.length - 1) {
-                            expression += ")";
+                            if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
+                                expression += " FROM DUAL ";
+                            } else {
+                                expression += ")";
+                            }
                         } else {
-                            expression += "), ";
+                            if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
+                                expression += " FROM DUAL UNION ALL ";
+                            } else {
+                                expression += "), ";
+                            }
                         }
                     } else {
                         expression += ", ";
