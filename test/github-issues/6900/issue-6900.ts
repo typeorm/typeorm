@@ -6,6 +6,7 @@ import {
 import {MongoDriver} from "../../../src/driver/mongodb/MongoDriver";
 import {Connection, ConnectionOptions, createConnection, MongoClient} from "../../../src";
 import {Warn} from "./entity/Warn";
+import {MongoConnectionOptions} from "../../../src/driver/mongodb/MongoConnectionOptions";
 
 describe("github issues > #6900 MongoDB ConnectionManager doesn't select given database, creates new database \"test\" instead", () => {
     let connections: Connection[] = [];
@@ -22,9 +23,11 @@ describe("github issues > #6900 MongoDB ConnectionManager doesn't select given d
             return;
         }
 
+        const host: string = (options[0] as MongoConnectionOptions).host || 'localhost';
+
         const connection = await createConnection({
             ...options[0],
-            url: 'mongodb://localhost',
+            url: `mongodb://${host}`,
             database: 'foo'
         } as ConnectionOptions);
         connections.push(connection);
@@ -46,10 +49,12 @@ describe("github issues > #6900 MongoDB ConnectionManager doesn't select given d
             return;
         }
 
+        const host: string = (options[0] as MongoConnectionOptions).host || 'localhost';
+
         const connection = await createConnection({
             ...options[0],
             entities: [ Warn ],
-            url: 'mongodb://localhost',
+            url: `mongodb://${host}`,
             database: 'foo'
         } as ConnectionOptions);
         connections.push(connection);
