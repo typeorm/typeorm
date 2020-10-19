@@ -335,7 +335,12 @@ export class EntityMetadataBuilder {
         const entityInheritance = this.metadataArgsStorage.findInheritanceType(entityMetadata.target);
 
         const discriminatorValue = this.metadataArgsStorage.findDiscriminatorValue(entityMetadata.target);
-        entityMetadata.discriminatorValue = discriminatorValue ? discriminatorValue.value : (entityMetadata.target as any).name; // todo: pass this to naming strategy to generate a name
+
+        if (typeof discriminatorValue !== "undefined") {
+            entityMetadata.discriminatorValue = discriminatorValue.value;
+        } else {
+            entityMetadata.discriminatorValue = (entityMetadata.target as any).name;
+        }
 
         // if single table inheritance is used, we need to mark all embedded columns as nullable
         entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(entityMetadata.inheritanceTree))
