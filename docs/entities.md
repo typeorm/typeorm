@@ -705,11 +705,11 @@ export class Category {
     @Column()
     description: string;
 
-    @OneToMany(type => Category, category => category.children)
+    @ManyToOne(type => Category, category => category.children)
     parent: Category;
 
-    @ManyToOne(type => Category, category => category.parent)
-    children: Category;
+    @OneToMany(type => Category, category => category.parent)
+    children: Category[];
 }
 
 ```
