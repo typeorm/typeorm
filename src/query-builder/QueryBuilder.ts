@@ -15,6 +15,8 @@ import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {EntitySchema} from "../";
@@ -914,6 +916,8 @@ export abstract class QueryBuilder<Entity> {
      * Gets SQL needs to be inserted into final query.
      */
     protected computeFindOperatorExpression(operator: FindOperator<any>, aliasPath: string, parameters: any[]): string {
+        const { driver } = this.connection
+
         switch (operator.type) {
             case "not":
                 if (operator.child) {
@@ -932,7 +936,11 @@ export abstract class QueryBuilder<Entity> {
             case "equal":
                 return `${aliasPath} = ${parameters[0]}`;
             case "ilike":
-                return `${aliasPath} ILIKE ${parameters[0]}`;
+                if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
+                    return `${aliasPath} ILIKE ${parameters[0]}`;
+                }
+
+                return `UPPER(${aliasPath}) LIKE UPPER(${parameters[0]})`;
             case "like":
                 return `${aliasPath} LIKE ${parameters[0]}`;
             case "between":
