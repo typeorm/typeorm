@@ -59,7 +59,8 @@ typeorm.createConnection({
 
 ```typescript
 module.exports = {
-    name: "Category",
+    name: "Category", // Will use table name `category` as default behaviour.
+    tableName: "categories", // Optional: Provide `tableName` property to override the default behaviour for table name. 
     columns: {
         id: {
             primary: true,
@@ -77,7 +78,8 @@ module.exports = {
 
 ```typescript
 module.exports = {
-    name: "Post",
+    name: "Post", // Will use table name `post` as default behaviour.
+    tableName: "posts", // Optional: Provide `tableName` property to override the default behaviour for table name. 
     columns: {
         id: {
             primary: true,
