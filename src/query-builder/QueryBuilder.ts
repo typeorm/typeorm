@@ -916,7 +916,7 @@ export abstract class QueryBuilder<Entity> {
      * Gets SQL needs to be inserted into final query.
      */
     protected computeFindOperatorExpression(operator: FindOperator<any>, aliasPath: string, parameters: any[]): string {
-        const { driver } = this.connection
+        const { driver } = this.connection;
 
         switch (operator.type) {
             case "not":
