@@ -16,7 +16,7 @@ typeorm.createConnection({
     password: "admin",
     database: "test",
     synchronize: true,
-    entitySchemas: [
+    entities: [
         require("./entity/Post"),
         require("./entity/Category")
     ]
