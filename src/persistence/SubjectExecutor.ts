@@ -428,7 +428,17 @@ export class SubjectExecutor {
                 }
 
                 const updateResult = await updateQueryBuilder.execute();
-                subject.generatedMap = updateResult.generatedMaps[0];
+                const generatedMap = updateResult.generatedMaps[0];
+
+                if (generatedMap) {
+                    // subject.generatedMap can already exist by preceding insertion
+                    if (subject.generatedMap) {
+                        subject.generatedMap = OrmUtils.mergeDeep(subject.generatedMap, generatedMap);
+                    } else {
+                        subject.generatedMap = generatedMap;
+                    }
+                }
+
                 if (subject.generatedMap) {
                     subject.metadata.columns.forEach(column => {
                         const value = column.getEntityValue(subject.generatedMap!);
