@@ -11,6 +11,7 @@ import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {SapConnectionOptions} from "./SapConnectionOptions";
 import {SapQueryRunner} from "./SapQueryRunner";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -228,7 +229,7 @@ export class SapDriver implements Driver {
         // pool options
         const options: any = {
             min: this.options.pool && this.options.pool.min ? this.options.pool.min : 1,
-            max: this.options.pool && this.options.pool.max ? this.options.pool.max : 1,
+            max: this.options.pool && this.options.pool.max ? this.options.pool.max : 10,
         };
 
         if (this.options.pool && this.options.pool.checkInterval) options.checkInterval = this.options.pool.checkInterval;
@@ -273,7 +274,7 @@ export class SapDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new SapQueryRunner(this, mode);
     }
 
@@ -283,6 +284,10 @@ export class SapDriver implements Driver {
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
         const builtParameters: any[] = Object.keys(nativeParameters).map(key => {
+
+            if (nativeParameters[key] instanceof Date)
+                return DateUtils.mixedDateToDatetimeString(nativeParameters[key], true);
+
             return nativeParameters[key];
         });
 
@@ -309,6 +314,9 @@ export class SapDriver implements Driver {
 
             } else if (value instanceof Function) {
                 return value();
+
+            } else if (value instanceof Date) {
+                return DateUtils.mixedDateToDatetimeString(value, true);
 
             } else {
                 builtParameters.push(value);
@@ -615,6 +623,13 @@ export class SapDriver implements Driver {
      */
     isUUIDGenerationSupported(): boolean {
         return false;
+    }
+
+    /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
+        return true;
     }
 
     /**

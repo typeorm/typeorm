@@ -235,6 +235,8 @@ const user = await repository.findOneOrFail(1);
 const timber = await repository.findOneOrFail({ firstName: "Timber" });
 ```
 
+>Note: It is strongly recommended to ensure that your `id` or `FindOptions` value is not `null` or `undefined` before calling `findOne` and `findOneOrFail`. When passed `null` or `undefined`, the query will match with every entity in the repository and return the first record.
+
 * `query` - Executes a raw SQL query.
 
 ```typescript

@@ -4,7 +4,7 @@ import {InheritanceMetadataArgs} from "../../metadata-args/InheritanceMetadataAr
 /**
  * Sets for entity to use table inheritance pattern.
  */
-export function TableInheritance(options?: { pattern?: "STI"/*|"CTI"*/, column?: string|ColumnOptions }) {
+export function TableInheritance(options?: { pattern?: "STI"/*|"CTI"*/, column?: string|ColumnOptions }): ClassDecorator {
     return function (target: Function) {
 
         getMetadataArgsStorage().inheritances.push({

@@ -271,6 +271,11 @@ export class QueryExpressionMap {
      */
     nativeParameters: ObjectLiteral = {};
 
+    /**
+     * Query Comment to include extra information for debugging or other purposes.
+     */
+    comment?: string;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

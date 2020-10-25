@@ -24,6 +24,7 @@ import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -47,7 +48,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createUpdateExpression();
+        let sql = this.createComment();
+        sql += this.createUpdateExpression();
         sql += this.createOrderByExpression();
         sql += this.createLimitExpression();
         return sql.trim();
@@ -107,6 +109,10 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             else if (this.connection.driver instanceof MysqlDriver) {
                 updateResult.raw = result;
                 updateResult.affected = result.affectedRows;
+            }
+            else if (this.connection.driver instanceof BetterSqlite3Driver) { // only works for better-sqlite3
+                updateResult.raw = result;
+                updateResult.affected = result.changes;
             }
             else {
                 updateResult.raw = result;

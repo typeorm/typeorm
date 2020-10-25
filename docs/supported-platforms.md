@@ -13,7 +13,7 @@ TypeORM was tested on Node.js version 4 and above.
 
 ## Browser
 
-You can use [sql.js](https://github.com/kripken/sql.js) in the browser.
+You can use [sql.js](https://sql.js.org) in the browser.
 
 **Webpack configuration**
     
@@ -31,7 +31,7 @@ plugins: [
 ]
 ```
 
-and make sure (sql-wasm.wasm)[https://github.com/sql-js/sql.js/blob/master/README.md#downloadingusing] file exists in your public path.
+and make sure [sql-wasm.wasm file](https://github.com/sql-js/sql.js/blob/master/README.md#downloadingusing) exists in your public path.
 
 **Example of configuration**
 
@@ -61,7 +61,7 @@ You have the option to choose between module loaders just like in browser packag
 For an example how to use TypeORM in Cordova see [typeorm/cordova-example](https://github.com/typeorm/cordova-example) and for Ionic see [typeorm/ionic-example](https://github.com/typeorm/ionic-example). **Important**: For use with Ionic, a custom webpack config file is needed! Please checkout the example to see the needed changes.
 
 ## React Native
-TypeORM is able to on React Native apps using the [react-native-sqlite-storage](https://github.com/andpor/react-native-sqlite-storage) plugin. For an example see [typeom/react-native-example](https://github.com/typeorm/react-native-example).
+TypeORM is able to run on React Native apps using the [react-native-sqlite-storage](https://github.com/andpor/react-native-sqlite-storage) plugin. For an example see [typeorm/react-native-example](https://github.com/typeorm/react-native-example).
 
 ## Expo
 

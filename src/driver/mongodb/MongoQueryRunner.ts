@@ -1,9 +1,9 @@
-import { QueryRunner } from "../../query-runner/QueryRunner";
-import { ObjectLiteral } from "../../common/ObjectLiteral";
-import { TableColumn } from "../../schema-builder/table/TableColumn";
-import { Table } from "../../schema-builder/table/Table";
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
-import { TableIndex } from "../../schema-builder/table/TableIndex";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
+import {Table} from "../../schema-builder/table/Table";
+import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {View} from "../../schema-builder/view/View";
 import {
     AggregationCursor,
@@ -20,7 +20,6 @@ import {
     CollStats,
     CommandCursor,
     Cursor,
-    Db,
     DeleteWriteOpResultObject,
     FindAndModifyWriteOpResultObject,
     FindOneAndReplaceOption,
@@ -29,6 +28,7 @@ import {
     InsertOneWriteOpResult,
     InsertWriteOpResult,
     MapReduceOptions,
+    MongoClient,
     MongoCountPreferences,
     MongodbIndexOptions,
     OrderedBulkOperation,
@@ -38,14 +38,14 @@ import {
     UnorderedBulkOperation,
     UpdateWriteOpResult
 } from "./typings";
-import { Connection } from "../../connection/Connection";
-import { ReadStream } from "../../platform/PlatformTools";
-import { MongoEntityManager } from "../../entity-manager/MongoEntityManager";
-import { SqlInMemory } from "../SqlInMemory";
-import { TableUnique } from "../../schema-builder/table/TableUnique";
-import { Broadcaster } from "../../subscriber/Broadcaster";
-import { TableCheck } from "../../schema-builder/table/TableCheck";
-import { TableExclusion } from "../../schema-builder/table/TableExclusion";
+import {Connection} from "../../connection/Connection";
+import {ReadStream} from "../../platform/PlatformTools";
+import {MongoEntityManager} from "../../entity-manager/MongoEntityManager";
+import {SqlInMemory} from "../SqlInMemory";
+import {TableUnique} from "../../schema-builder/table/TableUnique";
+import {Broadcaster} from "../../subscriber/Broadcaster";
+import {TableCheck} from "../../schema-builder/table/TableCheck";
+import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -103,13 +103,13 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Real database connection from a connection pool used to perform queries.
      */
-    databaseConnection: Db;
+    databaseConnection: MongoClient;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection, databaseConnection: Db) {
+    constructor(connection: Connection, databaseConnection: MongoClient) {
         this.connection = connection;
         this.databaseConnection = databaseConnection;
         this.broadcaster = new Broadcaster(this);

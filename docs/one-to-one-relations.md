@@ -35,7 +35,7 @@ export class User {
     @Column()
     name: string;
     
-    @OneToOne(type => Profile)
+    @OneToOne(() => Profile)
     @JoinColumn()
     profile: Profile;
     
@@ -82,7 +82,7 @@ user.profile = profile;
 await connection.manager.save(user);
 ```
 
-With cascades enabled you can save this relation with only one `save` call.
+With [cascades](https://github.com/typeorm/typeorm/blob/master/docs/relations.md#cascades) enabled you can save this relation with only one `save` call.
 
 To load user with profile inside you must specify relation in `FindOptions`:
  
@@ -125,7 +125,7 @@ export class Profile {
     @Column()
     photo: string;
     
-    @OneToOne(type => User, user => user.profile) // specify inverse side as a second parameter
+    @OneToOne(() => User, user => user.profile) // specify inverse side as a second parameter
     user: User;
     
 }
@@ -144,7 +144,7 @@ export class User {
     @Column()
     name: string;
     
-    @OneToOne(type => Profile, profile => profile.user) // specify inverse side as a second parameter
+    @OneToOne(() => Profile, profile => profile.user) // specify inverse side as a second parameter
     @JoinColumn()
     profile: Profile;
     

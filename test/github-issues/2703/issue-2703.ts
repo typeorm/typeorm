@@ -5,7 +5,7 @@ import {Dummy} from "./entity/Dummy";
 import {WrappedString} from "./wrapped-string";
 import {MemoryLogger} from "./memory-logger";
 
-describe.only("github issues > #2703 Column with transformer is not normalized for update", () => {
+describe("github issues > #2703 Column with transformer is not normalized for update", () => {
     let connections: Connection[];
 
     before(async () => connections = await createTestingConnections({

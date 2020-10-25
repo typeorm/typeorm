@@ -10,6 +10,7 @@ describe("github issues > #1972 STI problem - empty columns", () => {
 
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
+        enabledDrivers: ['mysql']
     }));
 
     beforeEach(() => reloadTestingDatabases(connections));
@@ -31,7 +32,6 @@ describe("github issues > #1972 STI problem - empty columns", () => {
 
         // find user participant in the DB
         const result = await connection.manager.findOne(TournamentUserParticipant);
-
         if (result) {
             assert(result.user instanceof User);
         }

@@ -367,8 +367,39 @@ will execute following query:
 SELECT * FROM "post" WHERE "currentDate" > NOW()
 ```
 
-> Note: beware with `Raw` operator. It executes pure SQL from supplied expression and should not contain a user input,
- otherwise it will lead to SQL-injection.
+If you need to provide user input, you should not include the user input directly in your query as this may create a SQL injection vulnerability.  Instead, you can use the second argument of the `Raw` function to provide a list of parameters to bind to the query.
+
+```ts
+import {Raw} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    currentDate: Raw(alias =>`${alias} > ':date'`, { date: "2020-10-06" })
+});
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "currentDate" > '2020-10-06'
+```
+
+If you need to provide user input that is an array, you can bind them as a list of values in the SQL statement by using the special expression syntax:
+
+```ts
+import {Raw} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    title: Raw(alias =>`${alias} IN (:...titles)`, { titles: ["Go To Statement Considered Harmful", "Structured Programming"] })
+});
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "titles" IN ('Go To Statement Considered Harmful', 'Structured Programming')
+```
+
+## Combining Advanced Options
 
 Also you can combine these operators with `Not` operator:
 

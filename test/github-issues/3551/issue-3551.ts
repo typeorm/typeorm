@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {PromiseUtils} from "../../../src";
 import { Book } from "./entity/Book";
 
 describe("github issues > #3551 array of embedded documents through multiple levels are not handled", () => {
@@ -16,7 +15,7 @@ describe("github issues > #3551 array of embedded documents through multiple lev
     });
     after(() => closeTestingConnections(connections));
 
-    it("should return entity with all these embedded documents", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should return entity with all these embedded documents", () => Promise.all(connections.map(async connection => {
         const bookInput = {
             title: "Book 1",
             chapters: [
@@ -59,5 +58,5 @@ describe("github issues > #3551 array of embedded documents through multiple lev
         book!.chapters[1].pages.should.have.lengthOf(2);
         book!.chapters[1].pages[0].number.should.be.equal(bookInput.chapters[1].pages[0].number);
         book!.chapters[1].pages[1].number.should.be.equal(bookInput.chapters[1].pages[1].number);
-    }));
+    })));
 });

@@ -3,6 +3,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
+import {EntityNotFoundError} from "../../../../src/error/EntityNotFoundError";
 
 describe("query builder > select", () => {
 
@@ -110,4 +111,46 @@ describe("query builder > select", () => {
         expect(sql).to.equal("SELECT post.name FROM post post");
     })));
 
+    it("should return a single entity for getOne when found", () => Promise.all(connections.map(async connection => {
+        await connection.getRepository(Post).save({ id: 1, title: "Hello", description: 'World', rating: 0 });
+
+        const entity = await connection.createQueryBuilder(Post, "post")
+            .where("post.id = :id", { id: 1 })
+            .getOne();
+
+        expect(entity).not.to.be.undefined;
+        expect(entity!.id).to.equal(1);
+        expect(entity!.title).to.equal("Hello");
+    })));
+
+    it("should return undefined for getOne when not found", () => Promise.all(connections.map(async connection => {
+        await connection.getRepository(Post).save({ id: 1, title: "Hello", description: 'World', rating: 0 });
+
+        const entity = await connection.createQueryBuilder(Post, "post")
+            .where("post.id = :id", { id: 2 })
+            .getOne();
+
+        expect(entity).to.be.undefined;
+    })));
+
+    it("should return a single entity for getOneOrFail when found", () => Promise.all(connections.map(async connection => {
+        await connection.getRepository(Post).save({ id: 1, title: "Hello", description: 'World', rating: 0 });
+
+        const entity = await connection.createQueryBuilder(Post, "post")
+            .where("post.id = :id", { id: 1 })
+            .getOneOrFail();
+
+        expect(entity.id).to.equal(1);
+        expect(entity.title).to.equal("Hello");
+    })));
+
+    it("should throw an Error for getOneOrFail when not found", () => Promise.all(connections.map(async connection => {
+        await connection.getRepository(Post).save({ id: 1, title: "Hello", description: 'World', rating: 0 });
+
+        await expect(
+            connection.createQueryBuilder(Post, "post")
+            .where("post.id = :id", { id: 2 })
+            .getOneOrFail()
+        ).to.be.rejectedWith(EntityNotFoundError);
+    })));
 });

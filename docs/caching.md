@@ -113,7 +113,7 @@ await connection.queryResultCache.remove(["users_admins"]);
 
 
 By default, TypeORM uses a separate table called `query-result-cache` and stores all queries and results there.
-Table name is configurable, so you could change its by give the value in the tableName property.
+Table name is configurable, so you could change it by specifying a different value in the tableName property.
 Example:
 
 ```typescript
@@ -188,7 +188,7 @@ In case you want to connect to a redis-cluster using IORedis's cluster functiona
 }
 ```
 
-Note that, you can still use options as first argument of IORedis's cluster constructor.
+Note that, you can still use options as the first argument of IORedis's cluster constructor.
 
 ```typescript
 {

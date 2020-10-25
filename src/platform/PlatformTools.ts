@@ -1,11 +1,12 @@
 import * as path from "path";
 import * as fs from "fs";
+import dotenv from "dotenv";
+import chalk from "chalk";
 import {highlight, Theme} from "cli-highlight";
+
 export {ReadStream} from "fs";
 export {EventEmitter} from "events";
 export {Readable, Writable} from "stream";
-
-const chalk = require("chalk");
 
 /**
  * Platform-specific tools.
@@ -49,8 +50,11 @@ export class PlatformTools {
                 /**
                 * hana
                 */
-                case "@sap/hdbext":
-                    return require("@sap/hdbext");
+                case "@sap/hana-client":
+                    return require("@sap/hana-client");
+
+                case "hdb-pool":
+                    return require("hdb-pool");
 
                 /**
                 * mysql
@@ -79,18 +83,23 @@ export class PlatformTools {
                 case "pg-query-stream":
                     return require("pg-query-stream");
 
+                case "typeorm-aurora-data-api-driver":
+                    return require("typeorm-aurora-data-api-driver");
+
                 /**
                 * redis
                 */
                 case "redis":
                     return require("redis");
 
-                /**
-                 * ioredis
-                 */
                 case "ioredis":
-                case "ioredis/cluster":
                     return require("ioredis");
+
+                /**
+                 * better-sqlite3
+                 */
+                case "better-sqlite3":
+                    return require("better-sqlite3");
 
                 /**
                 * sqlite
@@ -111,40 +120,21 @@ export class PlatformTools {
                     return require("mssql");
 
                 /**
-                * other modules
-                */
-                case "mkdirp":
-                    return require("mkdirp");
-
-                case "path":
-                    return require("path");
-
-                case "debug":
-                    return require("debug");
-
-                case "app-root-path":
-                    return require("app-root-path");
-
-                case "glob":
-                    return require("glob");
-
-                case "typeorm-aurora-data-api-driver":
-                    return require("typeorm-aurora-data-api-driver");
-                /**
-                * default
-                */
-                default:
-                    return require(name);
-
+                 * react-native-sqlite
+                 */
+                case "react-native-sqlite-storage":
+                    return require("react-native-sqlite-storage");
             }
 
         } catch (err) {
-            if (!path.isAbsolute(name) && name.substr(0, 2) !== "./" && name.substr(0, 3) !== "../") {
-                return require(path.resolve(process.cwd() + "/node_modules/" + name));
-            }
-
-            throw err;
+            return require(path.resolve(process.cwd() + "/node_modules/" + name));
         }
+
+        // If nothing above matched and we get here, the package was not listed within PlatformTools
+        // and is an Invalid Package.  To make it explicit that this is NOT the intended use case for
+        // PlatformTools.load - it's not just a way to replace `require` all willy-nilly - let's throw
+        // an error.
+        throw new TypeError(`Invalid Package for PlatformTools.load: ${name}`);
     }
 
     /**
@@ -190,6 +180,15 @@ export class PlatformTools {
                 ok();
             });
         });
+    }
+
+    /**
+     * Loads a dotenv file into the environment variables.
+     *
+     * @param path The file to load as a dotenv configuration
+     */
+    static dotenv(pathStr: string): void {
+        dotenv.config({ path: pathStr });
     }
 
     /**

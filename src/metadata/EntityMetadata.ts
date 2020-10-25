@@ -6,6 +6,7 @@ import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SapDriver} from "../driver/sap/SapDriver";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
@@ -700,12 +701,19 @@ export class EntityMetadata {
         relations.forEach(relation => {
             const value = relation.getEntityValue(entity);
             if (Array.isArray(value)) {
-                value.forEach(subValue => relationsAndValues.push([relation, subValue, relation.inverseEntityMetadata]));
+                value.forEach(subValue => relationsAndValues.push([relation, subValue, this.getInverseEntityMetadata(subValue, relation)]));
             } else if (value) {
-                relationsAndValues.push([relation, value, relation.inverseEntityMetadata]);
+                relationsAndValues.push([relation, value, this.getInverseEntityMetadata(value, relation)]);
             }
         });
         return relationsAndValues;
+    }
+
+    private getInverseEntityMetadata(value: any, relation: RelationMetadata): EntityMetadata {
+        const childEntityMetadata = relation.inverseEntityMetadata.childEntityMetadatas.find(metadata =>
+            metadata.target === value.constructor
+        );
+        return childEntityMetadata ? childEntityMetadata : relation.inverseEntityMetadata;
     }
 
     // -------------------------------------------------------------------------
@@ -841,7 +849,7 @@ export class EntityMetadata {
      */
     protected buildTablePath(): string {
         let tablePath = this.tableName;
-        if (this.schema && ((this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
+        if (this.schema && ((this.connection.driver instanceof OracleDriver) || (this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
             tablePath = this.schema + "." + tablePath;
         }
 

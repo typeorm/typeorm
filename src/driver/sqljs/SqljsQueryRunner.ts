@@ -53,6 +53,8 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             try {
                 statement = databaseConnection.prepare(query);
                 if (parameters) {
+                    parameters = parameters.map(p => typeof p !== 'undefined' ? p : null);
+
                     statement.bind(parameters);
                 }
                 

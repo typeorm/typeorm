@@ -5,7 +5,7 @@ import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
  * Marks a entity property as a children of the tree.
  * "Tree children" will contain all children (bind) of this entity.
  */
-export function TreeChildren(options?: { cascade?: boolean|("insert"|"update"|"remove"|"soft-remove"|"recover")[] }): Function {
+export function TreeChildren(options?: { cascade?: boolean|("insert"|"update"|"remove"|"soft-remove"|"recover")[] }): PropertyDecorator {
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 

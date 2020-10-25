@@ -17,11 +17,11 @@ import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions"
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
-import {PromiseUtils} from "../../";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {ColumnType} from "../../index";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -65,7 +65,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: CockroachDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: CockroachDriver, mode: ReplicationMode) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
@@ -158,7 +158,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         } catch (e) {
             if (e.code === "40001") {
                 await this.query("ROLLBACK TO SAVEPOINT cockroach_restart");
-                await PromiseUtils.runInSequence(this.queries, q => this.query(q.query, q.parameters));
+                for (const q of this.queries) {
+                    await this.query(q.query, q.parameters);
+                }
                 await this.commitTransaction();
             }
         }
@@ -583,6 +585,12 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             downQueries.push(this.dropIndexSql(table, uniqueConstraint.name!)); // CockroachDB creates indices for unique constraints
         }
 
+        // create column's comment
+        if (column.comment) {
+            upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${column.name}" IS ${this.escapeComment(column.comment)}`));
+            downQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${column.name}" IS ${this.escapeComment(column.comment)}`));
+        }
+
         await this.executeQueries(upQueries, downQueries);
 
         clonedTable.addColumn(column);
@@ -593,7 +601,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new columns from the column in the table.
      */
     async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        await PromiseUtils.runInSequence(columns, column => this.addColumn(tableOrName, column));
+        for (const column of columns) {
+            await this.addColumn(tableOrName, column);
+        }
     }
 
     /**
@@ -734,8 +744,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             }
 
             if (oldColumn.comment !== newColumn.comment) {
-                upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${oldColumn.name}" IS '${newColumn.comment}'`));
-                downQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${newColumn.name}" IS '${oldColumn.comment}'`));
+                upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${oldColumn.name}" IS ${this.escapeComment(newColumn.comment)}`));
+                downQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${newColumn.name}" IS ${this.escapeComment(oldColumn.comment)}`));
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
@@ -843,7 +853,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Changes a column in the table.
      */
     async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
-        await PromiseUtils.runInSequence(changedColumns, changedColumn => this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn));
+        for (const {oldColumn, newColumn} of changedColumns) {
+            await this.changeColumn(tableOrName, oldColumn, newColumn);
+        }
     }
 
     /**
@@ -922,7 +934,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops the columns in the table.
      */
     async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        await PromiseUtils.runInSequence(columns, column => this.dropColumn(tableOrName, column));
+        for (const column of columns) {
+            await this.dropColumn(tableOrName, column);
+        }
     }
 
     /**
@@ -1013,7 +1027,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates new unique constraints.
      */
     async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        await PromiseUtils.runInSequence(uniqueConstraints, uniqueConstraint => this.createUniqueConstraint(tableOrName, uniqueConstraint));
+        for (const uniqueConstraint of uniqueConstraints) {
+            await this.createUniqueConstraint(tableOrName, uniqueConstraint);
+        }
     }
 
     /**
@@ -1037,7 +1053,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops unique constraints.
      */
     async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        await PromiseUtils.runInSequence(uniqueConstraints, uniqueConstraint => this.dropUniqueConstraint(tableOrName, uniqueConstraint));
+        for (const uniqueConstraint of uniqueConstraints) {
+            await this.dropUniqueConstraint(tableOrName, uniqueConstraint);
+        }
     }
 
     /**
@@ -1135,7 +1153,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new foreign keys.
      */
     async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        await PromiseUtils.runInSequence(foreignKeys, foreignKey => this.createForeignKey(tableOrName, foreignKey));
+        for (const foreignKey of foreignKeys) {
+            await this.createForeignKey(tableOrName, foreignKey);
+        }
     }
 
     /**
@@ -1157,7 +1177,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops a foreign keys from the table.
      */
     async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        await PromiseUtils.runInSequence(foreignKeys, foreignKey => this.dropForeignKey(tableOrName, foreignKey));
+        for (const foreignKey of foreignKeys) {
+            await this.dropForeignKey(tableOrName, foreignKey);
+        }
     }
 
     /**
@@ -1195,7 +1217,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new indices
      */
     async createIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
-        await PromiseUtils.runInSequence(indices, index => this.createIndex(tableOrName, index));
+        for (const index of indices) {
+            await this.createIndex(tableOrName, index);
+        }
     }
 
     /**
@@ -1217,7 +1241,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops an indices from the table.
      */
     async dropIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
-        await PromiseUtils.runInSequence(indices, index => this.dropIndex(tableOrName, index));
+        for (const index of indices) {
+            await this.dropIndex(tableOrName, index);
+        }
     }
 
     /**
@@ -1324,7 +1350,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
         }).join(" OR ");
         const tablesSql = `SELECT * FROM "information_schema"."tables" WHERE ` + tablesCondition;
-        const columnsSql = `SELECT * FROM "information_schema"."columns" WHERE "is_hidden" = 'NO' AND ` + tablesCondition;
+
+        const columnsSql = `
+            SELECT
+                *,
+                pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) as description
+            FROM "information_schema"."columns"
+            WHERE "is_hidden" = 'NO' AND ` + tablesCondition;
 
         const constraintsCondition = tableNames.map(tableName => {
             let [schema, name] = tableName.split(".");
@@ -1472,10 +1504,11 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
                         } else {
                             tableColumn.default = dbColumn["column_default"].replace(/:::.*/, "");
+                            tableColumn.default = tableColumn.default.replace(/^(-?[\d\.]+)$/, "($1)");
                         }
                     }
 
-                    tableColumn.comment = ""; // dbColumn["COLUMN_COMMENT"];
+                    tableColumn.comment = dbColumn["description"] == null ? undefined : dbColumn["description"];
                     if (dbColumn["character_set_name"])
                         tableColumn.charset = dbColumn["character_set_name"];
 
@@ -1641,6 +1674,11 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         sql += `)`;
+
+        table.columns
+            .filter(it => it.comment)
+            .forEach(it => sql += `; COMMENT ON COLUMN ${this.escapePath(table)}."${it.name}" IS ${this.escapeComment(it.comment)}`);
+
 
         return new Query(sql);
     }
@@ -1818,6 +1856,21 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     protected buildSequenceName(table: Table, columnOrName: TableColumn|string, disableEscape?: true): string {
         const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
         return disableEscape ? `${table.name}_${columnName}_seq` : `"${table.name}_${columnName}_seq"`;
+    }
+
+    /**
+     * Escapes a given comment so it's safe to include in a query.
+     */
+    protected escapeComment(comment?: string) {
+        if (comment === undefined || comment.length === 0) {
+            return 'NULL';
+        }
+
+        comment = comment
+            .replace("'", "''")
+            .replace("\0", ""); // Null bytes aren't allowed in comments
+
+        return `'${comment}'`;
     }
 
     /**

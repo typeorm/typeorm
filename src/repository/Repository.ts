@@ -107,7 +107,7 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * Creates a new entity from the given plain javascript object. If entity already exist in the database, then
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
@@ -147,7 +147,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Saves one or many given entities.
      */
     save<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
-        return this.manager.save<T>(this.metadata.target as any, entityOrEntities as any, options);
+        return this.manager.save<Entity, T>(this.metadata.target as any, entityOrEntities as any, options);
     }
 
     /**
@@ -191,7 +191,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Records the delete date of one or many given entities.
      */
     softRemove<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
-        return this.manager.softRemove<T>(this.metadata.target as any, entityOrEntities as any, options);
+        return this.manager.softRemove<Entity, T>(this.metadata.target as any, entityOrEntities as any, options);
     }
 
     /**
@@ -218,7 +218,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Recovers one or many given entities.
      */
     recover<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
-        return this.manager.recover<T>(this.metadata.target as any, entityOrEntities as any, options);
+        return this.manager.recover<Entity, T>(this.metadata.target as any, entityOrEntities as any, options);
     }
 
     /**

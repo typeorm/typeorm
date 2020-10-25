@@ -17,8 +17,8 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindOneOptions interface.
      */
-    static isFindOneOptions(obj: any): obj is FindOneOptions<any> {
-        const possibleOptions: FindOneOptions<any> = obj;
+    static isFindOneOptions<Entity = any>(obj: any): obj is FindOneOptions<Entity> {
+        const possibleOptions: FindOneOptions<Entity> = obj;
         return possibleOptions &&
                 (
                     Array.isArray(possibleOptions.select) ||
@@ -41,8 +41,8 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindManyOptions interface.
      */
-    static isFindManyOptions(obj: any): obj is FindManyOptions<any> {
-        const possibleOptions: FindManyOptions<any> = obj;
+    static isFindManyOptions<Entity = any>(obj: any): obj is FindManyOptions<Entity> {
+        const possibleOptions: FindManyOptions<Entity> = obj;
         return possibleOptions && (
             this.isFindOneOptions(possibleOptions) ||
             typeof (possibleOptions as FindManyOptions<any>).skip === "number" ||

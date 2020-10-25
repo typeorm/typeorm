@@ -10,7 +10,7 @@ describe("save child and parent entity", () => {
     let connections: Connection[] = [];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mysql", "mariadb", "sqlite", "sqljs"]
+        enabledDrivers: ["mysql", "mariadb", "sqlite", "better-sqlite3", "sqljs"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
