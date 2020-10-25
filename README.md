@@ -1205,6 +1205,7 @@ let photo = new Photo();
 photo.name = "Me and Bears";
 photo.description = "I am near polar bears";
 photo.filename = "photo-with-bears.jpg";
+photo.views = 1
 photo.albums = [album1, album2];
 await connection.manager.save(photo);
 
