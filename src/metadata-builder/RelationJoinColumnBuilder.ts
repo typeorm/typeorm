@@ -133,11 +133,19 @@ export class RelationJoinColumnBuilder {
             });
             const joinColumnName = joinColumnMetadataArg ? joinColumnMetadataArg.name : this.connection.namingStrategy.joinColumnName(relation.propertyName, referencedColumn.propertyName);
 
-            let relationalColumn = relation.entityMetadata.ownColumns.find(column => column.databaseName === joinColumnName);
+            let relationalColumn: ColumnMetadata | undefined;
+            if (this.connection.options.enableNextFeatures) {
+                // TODO: NEXT 0.3.0 default to fixed embedded columns
+                const relationalColumns = relation.embeddedMetadata ? relation.embeddedMetadata.columns : relation.entityMetadata.ownColumns;
+                relationalColumn = relationalColumns.find(column => column.databaseNameWithoutPrefixes === joinColumnName);
+            } else {
+                relationalColumn = relation.entityMetadata.ownColumns.find(column => column.databaseName === joinColumnName);
+            }
             if (!relationalColumn) {
                 relationalColumn = new ColumnMetadata({
                     connection: this.connection,
                     entityMetadata: relation.entityMetadata,
+                    embeddedMetadata: this.connection.options.enableNextFeatures ? relation.embeddedMetadata : undefined, // TODO: NEXT 0.3.0 default to fixed embedded columns
                     args: {
                         target: "",
                         mode: "virtual",
