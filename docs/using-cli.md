@@ -203,6 +203,8 @@ Learn more about [Migrations](./migrations.md).
 Automatic migration generation creates a new migration file
 and writes all sql queries that must be executed to update the database.
 
+If no there were no changes generated, the command will exit with code 1.
+
 ```
 typeorm migration:generate -n UserMigration
 ```

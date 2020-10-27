@@ -1,6 +1,5 @@
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
-import {Connection} from "../connection/Connection";
 import {createConnection} from "../index";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {camelCase} from "../util/StringUtils";
@@ -69,7 +68,6 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             } catch (err) { }
         }
 
-        let connection: Connection|undefined = undefined;
         try {
             const connectionOptionsReader = new ConnectionOptionsReader({
                 root: process.cwd(),
@@ -82,36 +80,41 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 dropSchema: false,
                 logging: false
             });
-            connection = await createConnection(connectionOptions);
-            const sqlInMemory = await connection.driver.createSchemaBuilder().log();
-
-            if (args.pretty) {
-                sqlInMemory.upQueries.forEach(upQuery => {
-                    upQuery.query = MigrationGenerateCommand.prettifyQuery(upQuery.query);
-                });
-                sqlInMemory.downQueries.forEach(downQuery => {
-                    downQuery.query = MigrationGenerateCommand.prettifyQuery(downQuery.query);
-                });
-            }
 
             const upSqls: string[] = [], downSqls: string[] = [];
 
-            // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
-            // we are using simple quoted string instead of template string syntax
-            if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver) {
-                sqlInMemory.upQueries.forEach(upQuery => {
-                    upSqls.push("        await queryRunner.query(\"" + upQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\"" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
-                });
-                sqlInMemory.downQueries.forEach(downQuery => {
-                    downSqls.push("        await queryRunner.query(\"" + downQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\"" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
-                });
-            } else {
-                sqlInMemory.upQueries.forEach(upQuery => {
-                    upSqls.push("        await queryRunner.query(`" + upQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
-                });
-                sqlInMemory.downQueries.forEach(downQuery => {
-                    downSqls.push("        await queryRunner.query(`" + downQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
-                });
+            const connection = await createConnection(connectionOptions);
+            try {
+                const sqlInMemory = await connection.driver.createSchemaBuilder().log();
+
+                if (args.pretty) {
+                    sqlInMemory.upQueries.forEach(upQuery => {
+                        upQuery.query = MigrationGenerateCommand.prettifyQuery(upQuery.query);
+                    });
+                    sqlInMemory.downQueries.forEach(downQuery => {
+                        downQuery.query = MigrationGenerateCommand.prettifyQuery(downQuery.query);
+                    });
+                }
+
+                // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
+                // we are using simple quoted string instead of template string syntax
+                if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver) {
+                    sqlInMemory.upQueries.forEach(upQuery => {
+                        upSqls.push("        await queryRunner.query(\"" + upQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\"" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
+                    });
+                    sqlInMemory.downQueries.forEach(downQuery => {
+                        downSqls.push("        await queryRunner.query(\"" + downQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\"" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
+                    });
+                } else {
+                    sqlInMemory.upQueries.forEach(upQuery => {
+                        upSqls.push("        await queryRunner.query(`" + upQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
+                    });
+                    sqlInMemory.downQueries.forEach(downQuery => {
+                        downSqls.push("        await queryRunner.query(`" + downQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
+                    });
+                }
+            } finally {
+                await connection.close();
             }
 
             if (upSqls.length) {
@@ -126,12 +129,9 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 }
             } else {
                 console.log(chalk.yellow(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`));
+                process.exit(1);
             }
-            await connection.close();
-
         } catch (err) {
-            if (connection) await (connection as Connection).close();
-
             console.log(chalk.black.bgRed("Error during migration generation:"));
             console.error(err);
             process.exit(1);
