@@ -33,7 +33,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         const escapeAlias = (alias: string) => this.manager.connection.driver.escape(alias);
         const escapeColumn = (column: string) => this.manager.connection.driver.escape(column);
         const parentPropertyName = this.manager.connection.namingStrategy.joinColumnName(
-          this.metadata.treeParentRelation!.propertyName, "id"
+          this.metadata.treeParentRelation!.propertyName, this.metadata.primaryColumns[0].propertyName
         );
 
         return this.createQueryBuilder("treeEntity")
