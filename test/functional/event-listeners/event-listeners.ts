@@ -16,7 +16,7 @@ import {AuroraDataApiPostgresDriver} from "../../../src/driver/aurora-data-api-p
 import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 
-describe("entity-listeners", () => {
+describe("event-listeners", () => {
 
     let beforeTransactionStart = sinon.spy()
     let afterTransactionStart = sinon.spy()
@@ -83,8 +83,6 @@ describe("entity-listeners", () => {
         subscribers: [PostSubscriber],
         dropSchema: true,
         schemaCreate: true,
-        logging: true,
-        enabledDrivers: ["postgres"],
     }));
     after(() => closeTestingConnections(connections));
 
