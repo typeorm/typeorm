@@ -1,3 +1,4 @@
+import { CommitEvent } from "./event/CommitEvent";
 import {UpdateEvent} from "./event/UpdateEvent";
 import {RemoveEvent} from "./event/RemoveEvent";
 import {InsertEvent} from "./event/InsertEvent";
@@ -53,5 +54,25 @@ export interface EntitySubscriberInterface<Entity = any> {
      * Called after entity is removed from the database.
      */
     afterRemove?(event: RemoveEvent<Entity>): Promise<any>|void;
+
+    /**
+     * Called before transaction is started.
+     */
+    beforeTransactionStart?(event: CommitEvent<Entity>): Promise<any>|void;
+
+    /**
+     * Called after transaction is started.
+     */
+    afterTransactionStart?(event: CommitEvent<Entity>): Promise<any>|void;
+
+    /**
+     * Called after transaction is committed.
+     */
+    beforeCommit?(event: CommitEvent<Entity>): Promise<any>|void;
+
+    /**
+     * Called after transaction is committed.
+     */
+    afterCommit?(event: CommitEvent<Entity>): Promise<any>|void;
 
 }
