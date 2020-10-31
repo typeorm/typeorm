@@ -8,6 +8,7 @@ import {Table} from "../../schema-builder/table/Table";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {View} from "../../schema-builder/view/View";
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult";
 import {Query} from "../Query";
 import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
 import {ReadStream} from "../../platform/PlatformTools";
@@ -70,6 +71,10 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         this.isTransactionActive = true;
 
         if (isolationLevel) {
@@ -85,6 +90,10 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         }
 
         await this.query("BEGIN TRANSACTION");
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -108,6 +117,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             throw new TransactionNotStartedError();
 
         await this.query("ROLLBACK");
+
         this.isTransactionActive = false;
     }
 
