@@ -8,25 +8,17 @@ export type EventListenerType =
     | "before-update"
     | "after-update"
     | "before-remove"
-    | "after-remove"
-    | "before-transaction-start"
-    | "after-transaction-start"
-    | "before-commit"
-    | "after-commit";
+    | "after-remove";
 
 /**
  * Provides a constants for each entity listener type.
  */
 export class EventListenerTypes {
-    static AFTER_LOAD: EventListenerType = "after-load";
-    static BEFORE_INSERT: EventListenerType = "before-insert";
-    static AFTER_INSERT: EventListenerType = "after-insert";
-    static BEFORE_UPDATE: EventListenerType = "before-update";
-    static AFTER_UPDATE: EventListenerType = "after-update";
-    static BEFORE_REMOVE: EventListenerType = "before-remove";
-    static AFTER_REMOVE: EventListenerType = "after-remove";
-    static BEFORE_TRANSACTION_START: EventListenerType = "before-transaction-start";
-    static AFTER_TRANSACTION_START: EventListenerType = "after-transaction-start";
-    static BEFORE_COMMIT: EventListenerType = "before-commit";
-    static AFTER_COMMIT: EventListenerType = "after-commit";
+    static AFTER_LOAD = "after-load" as const;
+    static BEFORE_INSERT = "before-insert" as const;
+    static AFTER_INSERT = "after-insert" as const;
+    static BEFORE_UPDATE = "before-update" as const;
+    static AFTER_UPDATE = "after-update" as const;
+    static BEFORE_REMOVE = "before-remove" as const;
+    static AFTER_REMOVE = "after-remove" as const;
 }

@@ -1,4 +1,6 @@
-import { CommitEvent } from "./event/CommitEvent";
+import { TransactionCommitEvent } from "./event/TransactionCommitEvent";
+import { TransactionRollbackEvent } from "./event/TransactionRollbackEvent";
+import { TransactionStartEvent } from "./event/TransactionStartEvent";
 import {UpdateEvent} from "./event/UpdateEvent";
 import {RemoveEvent} from "./event/RemoveEvent";
 import {InsertEvent} from "./event/InsertEvent";
@@ -58,21 +60,31 @@ export interface EntitySubscriberInterface<Entity = any> {
     /**
      * Called before transaction is started.
      */
-    beforeTransactionStart?(event: CommitEvent<Entity>): Promise<any>|void;
+    beforeTransactionStart?(event: TransactionStartEvent): Promise<any>|void;
 
     /**
      * Called after transaction is started.
      */
-    afterTransactionStart?(event: CommitEvent<Entity>): Promise<any>|void;
+    afterTransactionStart?(event: TransactionStartEvent): Promise<any>|void;
+
+    /**
+     * Called before transaction is committed.
+     */
+    beforeTransactionCommit?(event: TransactionCommitEvent): Promise<any>|void;
 
     /**
      * Called after transaction is committed.
      */
-    beforeCommit?(event: CommitEvent<Entity>): Promise<any>|void;
+    afterTransactionCommit?(event: TransactionCommitEvent): Promise<any>|void;
 
     /**
-     * Called after transaction is committed.
+     * Called before transaction rollback.
      */
-    afterCommit?(event: CommitEvent<Entity>): Promise<any>|void;
+    beforeTransactionRollback?(event: TransactionRollbackEvent): Promise<any>|void;
+
+    /**
+     * Called after transaction rollback.
+     */
+    afterTransactionRollback?(event: TransactionRollbackEvent): Promise<any>|void;
 
 }
