@@ -34,7 +34,8 @@ export class FindOptionsUtils {
                     possibleOptions.loadRelationIds instanceof Object ||
                     typeof possibleOptions.loadRelationIds === "boolean" ||
                     typeof possibleOptions.loadEagerRelations === "boolean" ||
-                    typeof possibleOptions.withDeleted === "boolean"
+                    typeof possibleOptions.withDeleted === "boolean" ||
+                    typeof possibleOptions.transaction === "boolean"
                 );
     }
 
