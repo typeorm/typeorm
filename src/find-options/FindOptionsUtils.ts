@@ -84,6 +84,10 @@ export class FindOptionsUtils {
         if (!options || (!this.isFindOneOptions(options) && !this.isFindManyOptions(options)))
             return qb;
 
+        if (options.transaction === true) {
+            qb.expressionMap.useTransaction = true;
+        }
+
         if (!qb.expressionMap.mainAlias || !qb.expressionMap.mainAlias.hasMetadata)
             return qb;
 
