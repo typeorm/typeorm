@@ -1,11 +1,7 @@
 import {
-    BeforeUpdate,
-    Column,
     Connection,
-    Entity,
     EntitySubscriberInterface,
     EventSubscriber,
-    PrimaryGeneratedColumn
 } from "../../../src";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import sinon from "sinon";
@@ -16,7 +12,7 @@ import {AuroraDataApiPostgresDriver} from "../../../src/driver/aurora-data-api-p
 import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 
-describe("event-listeners", () => {
+describe("entity subscriber transaction flow", () => {
 
     let beforeTransactionStart = sinon.spy()
     let afterTransactionStart = sinon.spy()
@@ -24,24 +20,6 @@ describe("event-listeners", () => {
     let afterTransactionCommit = sinon.spy()
     let beforeTransactionRollback = sinon.spy()
     let afterTransactionRollback = sinon.spy()
-
-    @Entity()
-    class Post {
-
-        @PrimaryGeneratedColumn()
-        id: number;
-
-        @Column()
-        title: string;
-
-        @Column()
-        text: string;
-
-        @BeforeUpdate()
-        beforeUpdate() {
-            this.title = this.title.trim();
-        }
-    }
 
     @EventSubscriber()
     class PostSubscriber implements EntitySubscriberInterface {
@@ -79,7 +57,6 @@ describe("event-listeners", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Post],
         subscribers: [PostSubscriber],
         dropSchema: true,
         schemaCreate: true,
@@ -87,6 +64,8 @@ describe("event-listeners", () => {
     after(() => closeTestingConnections(connections));
 
     it("transactionStart", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof SqlServerDriver) return;
+
         beforeTransactionStart.resetHistory()
         afterTransactionStart.resetHistory()
 
@@ -107,8 +86,6 @@ describe("event-listeners", () => {
             startTransactionFn.restore()
             await queryRunner.commitTransaction()
 
-        } else if (connection.driver instanceof SqlServerDriver) {
-            // skip for now
         } else {
             const startTransactionFn = sinon.spy(queryRunner, "query")
 
@@ -140,6 +117,8 @@ describe("event-listeners", () => {
     })));
 
     it("transactionCommit", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof SqlServerDriver) return;
+
         beforeTransactionCommit.resetHistory()
         afterTransactionCommit.resetHistory()
 
@@ -155,8 +134,6 @@ describe("event-listeners", () => {
 
             commitTransactionFn.restore()
 
-        } else if (connection.driver instanceof SqlServerDriver) {
-            // skip for now
         } else {
             const commitTransactionFn = sinon.spy(queryRunner, "query")
 
@@ -183,6 +160,8 @@ describe("event-listeners", () => {
     })));
 
     it("transactionRollback", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof SqlServerDriver) return;
+
         beforeTransactionRollback.resetHistory()
         afterTransactionRollback.resetHistory()
 
@@ -198,8 +177,6 @@ describe("event-listeners", () => {
 
             rollbackTransactionFn.restore()
 
-        } else if (connection.driver instanceof SqlServerDriver) {
-            // skip for now
         } else {
             const rollbackTransactionFn = sinon.spy(queryRunner, "query")
 
