@@ -172,13 +172,6 @@ To listen to any entity you just omit `listenTo` method and use `any`:
 export class PostSubscriber implements EntitySubscriberInterface {
 
     /**
-     * Called before entity insertion.
-     */
-    beforeInsert(event: InsertEvent<any>) {
-        console.log(`BEFORE ENTITY INSERTED: `, event.entity);
-    }
-
-    /**
      * Called after entity is loaded.
      */
     afterLoad(entity: any) {
@@ -221,7 +214,7 @@ export class PostSubscriber implements EntitySubscriberInterface {
     }
 
     /**
-     * Called after entity insertion.
+     * Called after entity removal.
      */
     afterRemove(event: RemoveEvent<any>) {
         console.log(`AFTER ENTITY WITH ID ${event.entityId} REMOVED: `, event.entity);
@@ -242,28 +235,28 @@ export class PostSubscriber implements EntitySubscriberInterface {
     }
 
     /**
-     * Called before transaction commit
+     * Called before transaction commit.
      */
     beforeTransactionCommit(event: TransactionCommitEvent) {
-        console.log(`BEFORE TRANSACTION COMMITED: `, event);
+        console.log(`BEFORE TRANSACTION COMMITTED: `, event);
     }
 
     /**
-     * Called after transaction commit
+     * Called after transaction commit.
      */
     afterTransactionCommit(event: TransactionCommitEvent) {
-        console.log(`AFTER TRANSACTION COMMITED: `, event);
+        console.log(`AFTER TRANSACTION COMMITTED: `, event);
     }
 
     /**
-     * Called before transaction rollback
+     * Called before transaction rollback.
      */
     beforeTransactionRollback(event: TransactionRollbackEvent) {
         console.log(`BEFORE TRANSACTION ROLLBACK: `, event);
     }
 
     /**
-     * Called after transaction rollback
+     * Called after transaction rollback.
      */
     afterTransactionRollback(event: TransactionRollbackEvent) {
         console.log(`AFTER TRANSACTION ROLLBACK: `, event);

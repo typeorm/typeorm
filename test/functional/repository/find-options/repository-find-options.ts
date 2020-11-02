@@ -58,10 +58,13 @@ describe("repository > find options", () => {
         await connection.manager.save(user);
 
 
-        const queryRunner = await connection.createQueryRunner()
+        const queryRunner = await connection.createQueryRunner();
 
-        const startTransactionFn = sinon.spy(queryRunner, "startTransaction")
-        const commitTransactionFn = sinon.spy(queryRunner, "commitTransaction")
+        const startTransactionFn = sinon.spy(queryRunner, "startTransaction");
+        const commitTransactionFn = sinon.spy(queryRunner, "commitTransaction");
+
+        expect(startTransactionFn.calledOnce).to.be.false;
+        expect(commitTransactionFn.calledOnce).to.be.false;
 
         await connection
             .createEntityManager(queryRunner)
@@ -70,10 +73,10 @@ describe("repository > find options", () => {
                 transaction: true
             });
 
-        expect(startTransactionFn.calledOnce).to.be.true
-        expect(commitTransactionFn.calledOnce).to.be.true
+        expect(startTransactionFn.calledOnce).to.be.false;
+        expect(commitTransactionFn.calledOnce).to.be.false;
 
-        await queryRunner.release()
+        await queryRunner.release();
 
     })));
 
