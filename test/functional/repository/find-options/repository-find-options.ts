@@ -63,8 +63,8 @@ describe("repository > find options", () => {
         const startTransactionFn = sinon.spy(queryRunner, "startTransaction");
         const commitTransactionFn = sinon.spy(queryRunner, "commitTransaction");
 
-        expect(startTransactionFn.calledOnce).to.be.false;
-        expect(commitTransactionFn.calledOnce).to.be.false;
+        expect(startTransactionFn.called).to.be.false;
+        expect(commitTransactionFn.called).to.be.false;
 
         await connection
             .createEntityManager(queryRunner)
@@ -73,8 +73,8 @@ describe("repository > find options", () => {
                 transaction: true
             });
 
-        expect(startTransactionFn.calledOnce).to.be.false;
-        expect(commitTransactionFn.calledOnce).to.be.false;
+        expect(startTransactionFn.calledOnce).to.be.true;
+        expect(commitTransactionFn.calledOnce).to.be.true;
 
         await queryRunner.release();
 
