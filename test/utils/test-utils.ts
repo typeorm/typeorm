@@ -129,6 +129,11 @@ export interface TestingOptions {
     };
 
     /**
+     * Flag to enable breaking changes that are planned for release in next version.
+     */
+    enableNextFeatures?: boolean;
+
+    /**
      * Options that may be specific to a driver.
      * They are passed down to the enabled drivers.
      */
@@ -155,7 +160,8 @@ export function setupSingleTestingConnection(driverType: DatabaseType, options: 
         enabledDrivers: [driverType],
         cache: options.cache,
         schema: options.schema ? options.schema : undefined,
-        namingStrategy: options.namingStrategy ? options.namingStrategy : undefined
+        namingStrategy: options.namingStrategy ? options.namingStrategy : undefined,
+        enableNextFeatures: options.enableNextFeatures ? options.enableNextFeatures : false
     });
     if (!testingConnections.length)
         return undefined;
@@ -208,13 +214,14 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
             return true;
         })
         .map(connectionOptions => {
-            let newOptions: any = Object.assign({}, connectionOptions as ConnectionOptions, {
+            let newOptions: any = Object.assign({}, connectionOptions as ConnectionOptions, <ConnectionOptions>{
                 name: options && options.name ? options.name : connectionOptions.name,
                 entities: options && options.entities ? options.entities : [],
                 migrations: options && options.migrations ? options.migrations : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
                 dropSchema: options && options.dropSchema !== undefined ? options.dropSchema : false,
                 cache: options ? options.cache : undefined,
+                enableNextFeatures: options && options.enableNextFeatures !== undefined ? options.enableNextFeatures : false
             });
             if (options && options.driverSpecific)
                 newOptions = Object.assign({}, options.driverSpecific, newOptions);

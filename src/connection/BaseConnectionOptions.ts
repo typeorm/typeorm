@@ -175,4 +175,8 @@ export interface BaseConnectionOptions {
 
     };
 
+    /**
+     * Flag to enable breaking changes that are planned for release in next version.
+     */
+    readonly enableNextFeatures?: boolean;
 }

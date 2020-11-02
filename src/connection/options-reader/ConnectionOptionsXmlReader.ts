@@ -16,7 +16,7 @@ export class ConnectionOptionsXmlReader {
      */
     async read(path: string): Promise<ConnectionOptions[]> {
         const xml = await this.readXml(path);
-        return (xml.connection as any[]).map(connection => {
+        return (xml.connection as any[]).map<ConnectionOptions>(connection => {
             return {
                 name: connection.$.name,
                 type: connection.$.type,
@@ -32,6 +32,7 @@ export class ConnectionOptionsXmlReader {
                 entities: connection.entities ? connection.entities[0].entity : [],
                 subscribers: connection.subscribers ? connection.subscribers[0].entity : [],
                 logging: connection.logging[0] ? connection.logging[0].split(",") : undefined,
+                enableNextFeatures: !!connection.enableNextFeatures
             };
         });
     }
