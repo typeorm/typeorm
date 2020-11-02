@@ -14,44 +14,44 @@ import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 
 describe("entity subscriber transaction flow", () => {
 
-    let beforeTransactionStart = sinon.spy()
-    let afterTransactionStart = sinon.spy()
-    let beforeTransactionCommit = sinon.spy()
-    let afterTransactionCommit = sinon.spy()
-    let beforeTransactionRollback = sinon.spy()
-    let afterTransactionRollback = sinon.spy()
+    let beforeTransactionStart = sinon.spy();
+    let afterTransactionStart = sinon.spy();
+    let beforeTransactionCommit = sinon.spy();
+    let afterTransactionCommit = sinon.spy();
+    let beforeTransactionRollback = sinon.spy();
+    let afterTransactionRollback = sinon.spy();
 
     @EventSubscriber()
     class PostSubscriber implements EntitySubscriberInterface {
 
         beforeTransactionStart() {
             if (beforeTransactionStart)
-                beforeTransactionStart()
+                beforeTransactionStart();
         }
 
         afterTransactionStart() {
             if (afterTransactionStart)
-                afterTransactionStart()
+                afterTransactionStart();
         }
 
         beforeTransactionCommit() {
             if (beforeTransactionCommit)
-                beforeTransactionCommit()
+                beforeTransactionCommit();
         }
 
         afterTransactionCommit() {
             if (afterTransactionCommit)
-                afterTransactionCommit()
+                afterTransactionCommit();
         }
 
         beforeTransactionRollback() {
             if (beforeTransactionRollback)
-                beforeTransactionRollback()
+                beforeTransactionRollback();
         }
 
         afterTransactionRollback() {
             if (afterTransactionRollback)
-                afterTransactionRollback()
+                afterTransactionRollback();
         }
     }
 
@@ -63,143 +63,151 @@ describe("entity subscriber transaction flow", () => {
     }));
     after(() => closeTestingConnections(connections));
 
-    it("transactionStart", () => Promise.all(connections.map(async connection => {
-        if (connection.driver instanceof SqlServerDriver) return;
+    it("transactionStart", async () => {
+        for (let connection of connections) {
+            if (connection.driver instanceof SqlServerDriver) return;
 
-        beforeTransactionStart.resetHistory()
-        afterTransactionStart.resetHistory()
+            beforeTransactionStart.resetHistory();
+            afterTransactionStart.resetHistory();
 
-        let isolationLevel: any = undefined
-        if (connection.driver instanceof SapDriver || connection.driver instanceof OracleDriver) {
-            isolationLevel = "READ COMMITTED"
+            let isolationLevel: any = undefined;
+            if (connection.driver instanceof SapDriver || connection.driver instanceof OracleDriver) {
+                isolationLevel = "READ COMMITTED";
+            }
+
+            const queryRunner = await connection.createQueryRunner();
+
+            if (connection.driver instanceof AuroraDataApiPostgresDriver || connection.driver instanceof AuroraDataApiDriver) {
+                const startTransactionFn = sinon.spy(connection.driver.client.startTransaction);
+                await queryRunner.startTransaction();
+
+                expect(beforeTransactionStart.calledBefore(startTransactionFn)).to.be.true;
+                expect(afterTransactionStart.calledAfter(startTransactionFn)).to.be.true;
+
+                startTransactionFn.restore();
+                await queryRunner.commitTransaction();
+
+            } else {
+                const startTransactionFn = sinon.spy(queryRunner, "query");
+
+                const queryCallBeforeTransactionStart = startTransactionFn.getCalls().find(call => {
+                    return call.args[0] === "BEGIN TRANSACTION"
+                        || call.args[0] === "START TRANSACTION"
+                        || call.args[0] === "SET TRANSACTION ISOLATION LEVEL READ COMMITTED";
+                })
+                expect(queryCallBeforeTransactionStart).to.be.undefined;
+
+                await queryRunner.startTransaction(isolationLevel);
+
+                const queryCallAfterTransactionStart = startTransactionFn.getCalls().find(call => {
+                    return call.args[0] === "BEGIN TRANSACTION"
+                        || call.args[0] === "START TRANSACTION"
+                        || call.args[0] === "SET TRANSACTION ISOLATION LEVEL READ COMMITTED";
+                });
+                expect(beforeTransactionStart.called).to.be.true;
+                expect(afterTransactionStart.called).to.be.true;
+                expect(queryCallAfterTransactionStart).to.be.not.undefined;
+                expect(beforeTransactionStart.getCall(0).calledBefore(queryCallAfterTransactionStart!)).to.be.true;
+                expect(afterTransactionStart.getCall(0).calledAfter(queryCallAfterTransactionStart!)).to.be.true;
+
+                await queryRunner.commitTransaction();
+                startTransactionFn.restore();
+            }
+
+            await queryRunner.release();
         }
+    });
 
-        const queryRunner = await connection.createQueryRunner()
+    it("transactionCommit", async () => {
 
-        if (connection.driver instanceof AuroraDataApiPostgresDriver || connection.driver instanceof AuroraDataApiDriver) {
-            const startTransactionFn = sinon.spy(connection.driver.client.startTransaction)
-            await queryRunner.startTransaction()
+        for (let connection of connections) {
+            if (connection.driver instanceof SqlServerDriver) return;
 
-            expect(beforeTransactionStart.calledBefore(startTransactionFn)).to.be.true;
-            expect(afterTransactionStart.calledAfter(startTransactionFn)).to.be.true;
+            beforeTransactionCommit.resetHistory();
+            afterTransactionCommit.resetHistory();
 
-            startTransactionFn.restore()
-            await queryRunner.commitTransaction()
+            const queryRunner = await connection.createQueryRunner();
+            await queryRunner.startTransaction();
 
-        } else {
-            const startTransactionFn = sinon.spy(queryRunner, "query")
+            if (connection.driver instanceof AuroraDataApiPostgresDriver || connection.driver instanceof AuroraDataApiDriver) {
+                const commitTransactionFn = sinon.spy(connection.driver.client.commitTransaction);
+                await queryRunner.commitTransaction();
 
-            const queryCallBeforeTransactionStart = startTransactionFn.getCalls().find(call => {
-                return call.args[0] === "BEGIN TRANSACTION"
-                    || call.args[0] === "START TRANSACTION"
-                    || call.args[0] === "SET TRANSACTION ISOLATION LEVEL READ COMMITTED"
-            })
-            expect(queryCallBeforeTransactionStart).to.be.undefined;
+                expect(beforeTransactionCommit.calledBefore(commitTransactionFn)).to.be.true;
+                expect(afterTransactionCommit.calledAfter(commitTransactionFn)).to.be.true;
 
-            await queryRunner.startTransaction(isolationLevel)
+                commitTransactionFn.restore();
 
-            const queryCallAfterTransactionStart = startTransactionFn.getCalls().find(call => {
-                return call.args[0] === "BEGIN TRANSACTION"
-                    || call.args[0] === "START TRANSACTION"
-                    || call.args[0] === "SET TRANSACTION ISOLATION LEVEL READ COMMITTED"
-            })
-            expect(beforeTransactionStart.called).to.be.true;
-            expect(afterTransactionStart.called).to.be.true;
-            expect(queryCallAfterTransactionStart).to.be.not.undefined;
-            expect(beforeTransactionStart.getCall(0).calledBefore(queryCallAfterTransactionStart!)).to.be.true;
-            expect(afterTransactionStart.getCall(0).calledAfter(queryCallAfterTransactionStart!)).to.be.true;
+            } else {
+                const commitTransactionFn = sinon.spy(queryRunner, "query");
 
-            await queryRunner.commitTransaction()
-            startTransactionFn.restore()
+                const queryCallBeforeTransactionCommit = commitTransactionFn.getCalls().find(call => {
+                    return call.args[0] === "COMMIT";
+                });
+                expect(queryCallBeforeTransactionCommit).to.be.undefined;
+
+                await queryRunner.commitTransaction();
+
+                const queryCallAfterTransactionCommit = commitTransactionFn.getCalls().find(call => {
+                    return call.args[0] === "COMMIT";
+                });
+                expect(queryCallAfterTransactionCommit).to.be.not.undefined;
+                expect(beforeTransactionCommit.called).to.be.true;
+                expect(afterTransactionCommit.called).to.be.true;
+                expect(beforeTransactionCommit.getCall(0).calledBefore(queryCallAfterTransactionCommit!)).to.be.true;
+                expect(afterTransactionCommit.getCall(0).calledAfter(queryCallAfterTransactionCommit!)).to.be.true;
+
+                commitTransactionFn.restore();
+            }
+
+            await queryRunner.release();
         }
+    });
 
-        await queryRunner.release()
-    })));
+    it("transactionRollback", async () => {
 
-    it("transactionCommit", () => Promise.all(connections.map(async connection => {
-        if (connection.driver instanceof SqlServerDriver) return;
+        for (let connection of connections) {
+            if (connection.driver instanceof SqlServerDriver) return;
 
-        beforeTransactionCommit.resetHistory()
-        afterTransactionCommit.resetHistory()
+            beforeTransactionRollback.resetHistory();
+            afterTransactionRollback.resetHistory();
 
-        const queryRunner = await connection.createQueryRunner()
-        await queryRunner.startTransaction()
+            const queryRunner = await connection.createQueryRunner();
+            await queryRunner.startTransaction();
 
-        if (connection.driver instanceof AuroraDataApiPostgresDriver || connection.driver instanceof AuroraDataApiDriver) {
-            const commitTransactionFn = sinon.spy(connection.driver.client.commitTransaction)
-            await queryRunner.commitTransaction()
+            if (connection.driver instanceof AuroraDataApiPostgresDriver || connection.driver instanceof AuroraDataApiDriver) {
+                const rollbackTransactionFn = sinon.spy(connection.driver.client.rollbackTransaction);
+                await queryRunner.rollbackTransaction();
 
-            expect(beforeTransactionCommit.calledBefore(commitTransactionFn)).to.be.true;
-            expect(afterTransactionCommit.calledAfter(commitTransactionFn)).to.be.true;
+                expect(beforeTransactionRollback.calledBefore(rollbackTransactionFn)).to.be.true;
+                expect(afterTransactionRollback.calledAfter(rollbackTransactionFn)).to.be.true;
 
-            commitTransactionFn.restore()
+                rollbackTransactionFn.restore();
 
-        } else {
-            const commitTransactionFn = sinon.spy(queryRunner, "query")
+            } else {
+                const rollbackTransactionFn = sinon.spy(queryRunner, "query");
 
-            const queryCallBeforeTransactionCommit = commitTransactionFn.getCalls().find(call => {
-                return call.args[0] === "COMMIT"
-            })
-            expect(queryCallBeforeTransactionCommit).to.be.undefined;
+                const queryCallBeforeTransactionRollback = rollbackTransactionFn.getCalls().find(call => {
+                    return call.args[0] === "ROLLBACK";
+                });
+                expect(queryCallBeforeTransactionRollback).to.be.undefined;
 
-            await queryRunner.commitTransaction()
+                await queryRunner.rollbackTransaction();
 
-            const queryCallAfterTransactionCommit = commitTransactionFn.getCalls().find(call => {
-                return call.args[0] === "COMMIT"
-            })
-            expect(queryCallAfterTransactionCommit).to.be.not.undefined;
-            expect(beforeTransactionCommit.called).to.be.true;
-            expect(afterTransactionCommit.called).to.be.true;
-            expect(beforeTransactionCommit.getCall(0).calledBefore(queryCallAfterTransactionCommit!)).to.be.true;
-            expect(afterTransactionCommit.getCall(0).calledAfter(queryCallAfterTransactionCommit!)).to.be.true;
+                const queryCallAfterTransactionRollback = rollbackTransactionFn.getCalls().find(call => {
+                    return call.args[0] === "ROLLBACK";
+                });
+                expect(queryCallAfterTransactionRollback).to.be.not.undefined;
+                expect(beforeTransactionRollback.called).to.be.true;
+                expect(afterTransactionRollback.called).to.be.true;
+                expect(beforeTransactionRollback.getCall(0).calledBefore(queryCallAfterTransactionRollback!)).to.be.true;
+                expect(afterTransactionRollback.getCall(0).calledAfter(queryCallAfterTransactionRollback!)).to.be.true;
 
-            commitTransactionFn.restore()
+                rollbackTransactionFn.restore();
+            }
+
+            await queryRunner.release();
         }
-
-        await queryRunner.release()
-    })));
-
-    it("transactionRollback", () => Promise.all(connections.map(async connection => {
-        if (connection.driver instanceof SqlServerDriver) return;
-
-        beforeTransactionRollback.resetHistory()
-        afterTransactionRollback.resetHistory()
-
-        const queryRunner = await connection.createQueryRunner()
-        await queryRunner.startTransaction()
-
-        if (connection.driver instanceof AuroraDataApiPostgresDriver || connection.driver instanceof AuroraDataApiDriver) {
-            const rollbackTransactionFn = sinon.spy(connection.driver.client.rollbackTransaction)
-            await queryRunner.rollbackTransaction()
-
-            expect(beforeTransactionRollback.calledBefore(rollbackTransactionFn)).to.be.true;
-            expect(afterTransactionRollback.calledAfter(rollbackTransactionFn)).to.be.true;
-
-            rollbackTransactionFn.restore()
-
-        } else {
-            const rollbackTransactionFn = sinon.spy(queryRunner, "query")
-
-            const queryCallBeforeTransactionRollback = rollbackTransactionFn.getCalls().find(call => {
-                return call.args[0] === "ROLLBACK"
-            })
-            expect(queryCallBeforeTransactionRollback).to.be.undefined;
-
-            await queryRunner.rollbackTransaction()
-
-            const queryCallAfterTransactionRollback = rollbackTransactionFn.getCalls().find(call => {
-                return call.args[0] === "ROLLBACK"
-            })
-            expect(queryCallAfterTransactionRollback).to.be.not.undefined;
-            expect(beforeTransactionRollback.called).to.be.true;
-            expect(afterTransactionRollback.called).to.be.true;
-            expect(beforeTransactionRollback.getCall(0).calledBefore(queryCallAfterTransactionRollback!)).to.be.true;
-            expect(afterTransactionRollback.getCall(0).calledAfter(queryCallAfterTransactionRollback!)).to.be.true;
-
-            rollbackTransactionFn.restore()
-        }
-
-        await queryRunner.release()
-    })));
+    });
 
 });
