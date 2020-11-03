@@ -305,7 +305,7 @@ export class Table {
         const options: TableOptions = {
             name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
             engine: entityMetadata.engine,
-            columns: entityMetadata.columns
+            columns: entityMetadata.databaseColumns
                 .filter(column => column)
                 .map(column => TableUtils.createTableColumnOptions(column, driver)),
             indices: entityMetadata.indices

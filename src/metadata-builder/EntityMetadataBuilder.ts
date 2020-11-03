@@ -625,6 +625,7 @@ export class EntityMetadataBuilder {
         entityMetadata.beforeRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE);
         entityMetadata.indices = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
         entityMetadata.uniques = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.uniquesFromTree), entityMetadata.ownUniques);
+        entityMetadata.databaseColumns = entityMetadata.columns.filter(column => !column.isComputed);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
         entityMetadata.nonVirtualColumns = entityMetadata.columns.filter(column => !column.isVirtual);
         entityMetadata.ancestorColumns = entityMetadata.columns.filter(column => column.closureType === "ancestor");

@@ -224,6 +224,11 @@ export class EntityMetadata {
     columns: ColumnMetadata[] = [];
 
     /**
+     * Columns of the entity that are to be stored in the database (excluding computed).
+     */
+    databaseColumns: ColumnMetadata[] = [];
+
+    /**
      * Ancestor columns used only in closure junction tables.
      */
     ancestorColumns: ColumnMetadata[] = [];

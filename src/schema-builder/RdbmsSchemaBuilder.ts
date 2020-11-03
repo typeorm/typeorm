@@ -220,10 +220,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!table)
                 continue;
 
-            if (metadata.columns.length !== table.columns.length)
+            if (metadata.databaseColumns.length !== table.columns.length)
                 continue;
 
-            const renamedMetadataColumns = metadata.columns.filter(column => {
+            const renamedMetadataColumns = metadata.databaseColumns.filter(column => {
                 return !table.columns.find(tableColumn => {
                     return tableColumn.name === column.databaseName
                         && tableColumn.type === this.connection.driver.normalizeType(column)
@@ -236,7 +236,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 continue;
 
             const renamedTableColumns = table.columns.filter(tableColumn => {
-                return !metadata.columns.find(column => {
+                return !metadata.databaseColumns.find(column => {
                     return column.databaseName === tableColumn.name
                         && this.connection.driver.normalizeType(column) === tableColumn.type
                         && column.isNullable === tableColumn.isNullable
@@ -440,7 +440,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // find columns that exist in the database but does not exist in the metadata
             const droppedTableColumns = table.columns.filter(tableColumn => {
-                return !metadata.columns.find(columnMetadata => columnMetadata.databaseName === tableColumn.name);
+                return !metadata.databaseColumns.find(columnMetadata => columnMetadata.databaseName === tableColumn.name);
             });
             if (droppedTableColumns.length === 0)
                 continue;
@@ -463,7 +463,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 continue;
 
             // find which columns are new
-            const newColumnMetadatas = metadata.columns.filter(columnMetadata => {
+            const newColumnMetadatas = metadata.databaseColumns.filter(columnMetadata => {
                 return !table.columns.find(tableColumn => tableColumn.name === columnMetadata.databaseName);
             });
             if (newColumnMetadatas.length === 0)
@@ -490,7 +490,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!table)
                 continue;
 
-            const primaryMetadataColumns = metadata.columns.filter(column => column.isPrimary);
+            const primaryMetadataColumns = metadata.databaseColumns.filter(column => column.isPrimary);
             const primaryTableColumns = table.columns.filter(column => column.isPrimary);
             if (primaryTableColumns.length !== primaryMetadataColumns.length && primaryMetadataColumns.length > 1) {
                 const changedPrimaryColumns = primaryMetadataColumns.map(primaryMetadataColumn => {
@@ -511,7 +511,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!table)
                 continue;
 
-            const changedColumns = this.connection.driver.findChangedColumns(table.columns, metadata.columns);
+            const changedColumns = this.connection.driver.findChangedColumns(table.columns, metadata.databaseColumns);
             if (changedColumns.length === 0)
                 continue;
 

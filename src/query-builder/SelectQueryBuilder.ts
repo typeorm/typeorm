@@ -164,6 +164,35 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Adds new property mapped selection to the SELECT query.
+     */
+    addSelectAndMap(selection: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, mapToProperty: string): this;
+
+    /**
+     * Adds new property mapped selection to the SELECT query.
+     */
+    addSelectAndMap(selection: string, mapToProperty: string): this;
+
+    /**
+     * Adds new property mapped selection to the SELECT query.
+     */
+    addSelectAndMap(selection: string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), mapToProperty: string): this {
+        if (!selection)
+            return this;
+
+        if (selection instanceof Function) {
+            const subQueryBuilder = selection(this.subQuery());
+            this.setParameters(subQueryBuilder.getParameters());
+            this.expressionMap.selects.push({ selection: subQueryBuilder.getQuery(), mapToProperty: mapToProperty });
+
+        } else if (selection) {
+            this.expressionMap.selects.push({ selection: selection, mapToProperty: mapToProperty });
+        }
+
+        return this;
+    }
+
+    /**
      * Sets whether the selection is DISTINCT.
      */
     distinct(distinct: boolean = true): this {
@@ -589,29 +618,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         this.join("LEFT", entityOrProperty, alias, condition, parameters, mapToProperty, false);
         return this;
     }
-
-    /**
-     */
-    // selectAndMap(mapToProperty: string, property: string, aliasName: string, qbFactory: ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)): this;
-
-    /**
-     */
-    // selectAndMap(mapToProperty: string, entity: Function|string, aliasName: string, qbFactory: ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)): this;
-
-    /**
-     */
-    // selectAndMap(mapToProperty: string, tableName: string, aliasName: string, qbFactory: ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)): this;
-
-    /**
-     */
-    // selectAndMap(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, qbFactory: ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)): this {
-    //     const select = new SelectAttribute(this.expressionMap);
-    //     select.mapToProperty = mapToProperty;
-    //     select.entityOrProperty = entityOrProperty;
-    //     select.aliasName = aliasName;
-    //     select.qbFactory = qbFactory;
-    //     return this;
-    // }
 
     /**
      * LEFT JOINs relation id and maps it into some entity's property.
@@ -1738,10 +1744,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         const columns: ColumnMetadata[] = [];
         if (hasMainAlias) {
-            columns.push(...metadata.columns.filter(column => column.isSelect === true));
+            columns.push(...metadata.databaseColumns.filter(column => column.isSelect));
         }
         columns.push(...metadata.columns.filter(column => {
-            return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyPath);
+            return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyPath || select.mapToProperty === column.propertyPath);
         }));
 
         // if user used partial selection and did not select some primary columns which are required to be selected
@@ -1754,8 +1760,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const allColumns = [...columns, ...nonSelectedPrimaryColumns];
 
         return allColumns.map(column => {
-            const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
-            let selectionPath = this.escape(aliasName) + "." + this.escape(column.databaseName);
+            const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath || select.mapToProperty === column.propertyPath);
+            let selectionPath = selection && selection.mapToProperty === column.propertyPath ? selection.selection : this.escape(aliasName) + "." + this.escape(column.databaseName);
             if (this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                 if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
                     const useLegacy = this.connection.driver.options.legacySpatialSupport;
@@ -1781,12 +1787,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
     protected findEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
         const mainSelect = this.expressionMap.selects.find(select => select.selection === aliasName);
-        if (mainSelect)
-            return [mainSelect];
 
-        return this.expressionMap.selects.filter(select => {
-            return metadata.columns.some(column => select.selection === aliasName + "." + column.propertyPath);
-        });
+        return [...(mainSelect ? [mainSelect] : []), ...this.expressionMap.selects.filter(select => {
+            return metadata.columns.some(column => select.selection === aliasName + "." + column.propertyPath || select.mapToProperty === column.propertyPath);
+        })];
     }
 
     private computeCountExpression() {

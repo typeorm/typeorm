@@ -226,6 +226,11 @@ export class ColumnMetadata {
     isVirtual: boolean = false;
 
     /**
+     * Indicates if column is computed. Computed columns are created in the database.
+     */
+    isComputed: boolean = false;
+
+    /**
      * Indicates if column is discriminator. Discriminator columns are not mapped to the entity.
      */
     isDiscriminator: boolean = false;
@@ -393,6 +398,7 @@ export class ColumnMetadata {
             this.isArray = options.args.options.array;
         if (options.args.mode) {
             this.isVirtual = options.args.mode === "virtual";
+            this.isComputed = options.args.mode === "computed";
             this.isTreeLevel = options.args.mode === "treeLevel";
             this.isCreateDate = options.args.mode === "createDate";
             this.isUpdateDate = options.args.mode === "updateDate";
