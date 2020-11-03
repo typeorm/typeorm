@@ -150,9 +150,11 @@ export class IgniteDriver implements Driver {
   }
 
   async connect(): Promise<void> {
-    const { endpoint } = this.options;
+    const { endpoint, username, password } = this.options;
     const { IgniteClientConfiguration } = this.IgniteClient;
-    const config = new IgniteClientConfiguration(...(Array.isArray(endpoint) ? endpoint : [endpoint]));
+    let config = new IgniteClientConfiguration(...(Array.isArray(endpoint) ? endpoint : [endpoint]));
+    if (username) config = config.setUserName(username);
+    if (password) config = config.setPassword(password);
 
     await this.client.connect(config);
   }
