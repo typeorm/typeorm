@@ -110,5 +110,13 @@
     "extra": {
       "connectString": "typeorm-oracle:1521/XE"
     }
+  },
+  {
+    "skip": true,
+    "name": "ignite",
+    "type": "ignite",
+    "endpoint": "typeorm-ignite:10800",
+    "database": "test",
+    "logging": false
   }
 ]

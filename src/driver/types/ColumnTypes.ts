@@ -1,22 +1,22 @@
 /**
  * Column types used for @PrimaryGeneratedColumn() decorator.
  */
-export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite, sap
+export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite, sap, ignite
     |"int2" // postgres, sqlite, cockroachdb
     |"int4" // postgres, cockroachdb
     |"int8" // postgres, sqlite, cockroachdb
     |"integer" // postgres, oracle, sqlite, mysql, cockroachdb, sap
-    |"tinyint" // mysql, mssql, sqlite, sap
-    |"smallint" // mysql, postgres, mssql, oracle, sqlite, cockroachdb, sap
+    |"tinyint" // mysql, mssql, sqlite, sap, ignite
+    |"smallint" // mysql, postgres, mssql, oracle, sqlite, cockroachdb, sap, ignite
     |"mediumint" // mysql, sqlite
     |"bigint" // mysql, postgres, mssql, sqlite, cockroachdb, sap
-    |"dec" // oracle, mssql, sap
+    |"dec" // oracle, mssql, sap, ignite
     |"decimal" // mysql, postgres, mssql, sqlite, sap
     |"smalldecimal" // sap
     |"fixed" // mysql
     |"numeric" // postgres, mssql, sqlite
     |"number" // oracle
-    |"uuid"; // postgres
+    |"uuid"; // postgres, ignite
 
 /**
  * Column types where spatial properties are used.
@@ -30,22 +30,22 @@ export type SpatialColumnType = "geometry" // postgres
  * Column types where precision and scale properties are used.
  */
 export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
-    |"double" // mysql, sqlite
+    |"double" // mysql, sqlite, ignite
     |"dec" // oracle, mssql, mysql
-    |"decimal" // mysql, postgres, mssql, sqlite
+    |"decimal" // mysql, postgres, mssql, sqlite, ignite
     |"smalldecimal" // sap
     |"fixed" // mysql
     |"numeric" // postgres, mssql, sqlite, mysql
-    |"real" // mysql, postgres, mssql, oracle, sqlite, cockroachdb, sap
+    |"real" // mysql, postgres, mssql, oracle, sqlite, cockroachdb, sap, ignite
     |"double precision" // postgres, oracle, sqlite, mysql, cockroachdb
     |"number" // oracle
     |"datetime" // mssql, mysql, sqlite
     |"datetime2" // mssql
     |"datetimeoffset" // mssql
-    |"time" // mysql, postgres, mssql, cockroachdb
+    |"time" // mysql, postgres, mssql, cockroachdb, ignite
     |"time with time zone" // postgres, cockroachdb
     |"time without time zone" // postgres
-    |"timestamp" // mysql, postgres, mssql, oracle, cockroachdb
+    |"timestamp" // mysql, postgres, mssql, oracle, cockroachdb, ignite
     |"timestamp without time zone" // postgres, cockroachdb
     |"timestamp with time zone" // postgres, oracle, cockroachdb
     |"timestamp with local time zone"; // oracle
@@ -60,8 +60,8 @@ export type WithLengthColumnType = "character varying" // postgres, cockroachdb
     |"national varchar" // mysql
     |"character" // mysql, postgres, sqlite, cockroachdb
     |"native character" // sqlite
-    |"varchar" // mysql, postgres, mssql, sqlite, cockroachdb
-    |"char" // mysql, postgres, mssql, oracle, cockroachdb, sap
+    |"varchar" // mysql, postgres, mssql, sqlite, cockroachdb, ignite
+    |"char" // mysql, postgres, mssql, oracle, cockroachdb, sap, ignite
     |"nchar" // mssql, oracle, sqlite, mysql, sap
     |"national char" // mysql
     |"varchar2" // oracle
@@ -69,7 +69,7 @@ export type WithLengthColumnType = "character varying" // postgres, cockroachdb
     |"alphanum" // sap
     |"shorttext" // sap
     |"raw" // oracle
-    |"binary" // mssql
+    |"binary" // mssql, ignite
     |"varbinary" // mssql, sap
     |"string"; // cockroachdb
 
@@ -137,7 +137,7 @@ export type SimpleColumnType =
     |"timestamptz" // postgres, cockroachdb
     |"timestamp with local time zone" // oracle
     |"smalldatetime" // mssql
-    |"date" // mysql, postgres, mssql, oracle, sqlite
+    |"date" // mysql, postgres, mssql, oracle, sqlite, ignite
     |"interval year to month" // oracle
     |"interval day to second" // oracle
     |"interval" // postgres, cockroachdb
@@ -153,7 +153,7 @@ export type SimpleColumnType =
     |"path" // postgres
     |"polygon" // postgres, mysql
     |"geography" // mssql
-    |"geometry" // mysql
+    |"geometry" // mysql, ignite
     |"linestring" // mysql
     |"multipoint" // mysql
     |"multilinestring" // mysql
@@ -181,7 +181,7 @@ export type SimpleColumnType =
     |"varbit"// postgres
     |"tsvector" // postgres
     |"tsquery" // postgres
-    |"uuid" // postgres, cockroachdb
+    |"uuid" // postgres, cockroachdb, ignite
     |"xml" // mssql, postgres
     |"json" // mysql, postgres, cockroachdb
     |"jsonb" // postgres, cockroachdb

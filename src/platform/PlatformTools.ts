@@ -1,12 +1,12 @@
-import * as path from "path";
-import * as fs from "fs";
-import dotenv from "dotenv";
 import chalk from "chalk";
-import {highlight, Theme} from "cli-highlight";
+import { highlight,Theme } from "cli-highlight";
+import dotenv from "dotenv";
+import * as fs from "fs";
+import * as path from "path";
 
-export {ReadStream} from "fs";
-export {EventEmitter} from "events";
-export {Readable, Writable} from "stream";
+export { EventEmitter } from "events";
+export { ReadStream } from "fs";
+export { Readable,Writable } from "stream";
 
 /**
  * Platform-specific tools.
@@ -124,6 +124,12 @@ export class PlatformTools {
                  */
                 case "react-native-sqlite-storage":
                     return require("react-native-sqlite-storage");
+
+                /**
+                 * ignite
+                 */
+                case "ignite":
+                    return require("apache-ignite-client");
             }
 
         } catch (err) {

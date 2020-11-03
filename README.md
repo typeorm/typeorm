@@ -70,7 +70,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 * supports closure table pattern
 * schema declaration in models or separate configuration files
 * connection configuration in json / xml / yml / env formats
-* supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js
+* supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js / Ignite
 * supports MongoDB NoSQL database
 * works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms
 * TypeScript and JavaScript support
@@ -228,6 +228,10 @@ await timber.remove();
 
     Install only *one* of them, depending on which database you use.
 
+
+   - for **Apache Ignite**
+
+        `npm install apache-ignite-client --save`
 
 ##### TypeScript configuration
 
