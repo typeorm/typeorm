@@ -34,7 +34,8 @@ export class FindOptionsUtils {
                     possibleOptions.loadRelationIds instanceof Object ||
                     typeof possibleOptions.loadRelationIds === "boolean" ||
                     typeof possibleOptions.loadEagerRelations === "boolean" ||
-                    typeof possibleOptions.withDeleted === "boolean"
+                    typeof possibleOptions.withDeleted === "boolean" ||
+                    typeof possibleOptions.transaction === "boolean"
                 );
     }
 
@@ -83,6 +84,10 @@ export class FindOptionsUtils {
         // if options are not set then simply return query builder. This is made for simplicity of usage.
         if (!options || (!this.isFindOneOptions(options) && !this.isFindManyOptions(options)))
             return qb;
+
+        if (options.transaction === true) {
+            qb.expressionMap.useTransaction = true;
+        }
 
         if (!qb.expressionMap.mainAlias || !qb.expressionMap.mainAlias.hasMetadata)
             return qb;

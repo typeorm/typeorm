@@ -33,7 +33,7 @@ export class User {
   @Column()
   name: string;
 
-  @OneToOne(type => Profile)
+  @OneToOne(() => Profile)
   @JoinColumn()
   profile: Profile;
 }
@@ -121,7 +121,7 @@ export class Profile {
   @Column()
   photo: string;
 
-  @OneToOne(type => User, user => user.profile) // 将另一面指定为第二个参数
+  @OneToOne(() => User, user => user.profile) // 将另一面指定为第二个参数
   user: User;
 }
 ```
@@ -138,7 +138,7 @@ export class User {
   @Column()
   name: string;
 
-  @OneToOne(type => Profile, profile => profile.user) // 指定另一面作为第二个参数
+  @OneToOne(() => Profile, profile => profile.user) // 指定另一面作为第二个参数
   @JoinColumn()
   profile: Profile;
 }
