@@ -7,7 +7,6 @@ import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
  */
 export function ObjectIdColumn(options?: ColumnOptions): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;
         options.primary = true;

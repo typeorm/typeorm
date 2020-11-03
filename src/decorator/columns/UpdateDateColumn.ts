@@ -7,7 +7,6 @@ import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
  */
 export function UpdateDateColumn(options?: ColumnOptions): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-
         getMetadataArgsStorage().columns.push({
             target: object.constructor,
             propertyName: propertyName,
