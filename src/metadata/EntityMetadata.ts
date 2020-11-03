@@ -487,6 +487,13 @@ export class EntityMetadata {
      */
     propertiesMap: ObjectLiteral;
 
+    /**
+     * A factory function that will be used to map a raw TypeORM object into the entity,
+     * instead of trying to use public setters. Useful for some object-oriented patterns.
+     * @see https://github.com/typeorm/typeorm/issues/6993
+     */
+    domainEntityMapper?: Function;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -509,6 +516,7 @@ export class EntityMetadata {
         this.tableType = this.tableMetadataArgs.type;
         this.expression = this.tableMetadataArgs.expression;
         this.withoutRowid = this.tableMetadataArgs.withoutRowid;
+        this.domainEntityMapper = this.tableMetadataArgs.domainEntityMapper;
     }
 
     // -------------------------------------------------------------------------
@@ -807,6 +815,7 @@ export class EntityMetadata {
         this.tablePath = this.buildTablePath();
         this.schemaPath = this.buildSchemaPath();
         this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
+        this.domainEntityMapper = this.tableMetadataArgs.domainEntityMapper;
 
         this.isJunction = this.tableMetadataArgs.type === "closure-junction" || this.tableMetadataArgs.type === "junction";
         this.isClosureJunction = this.tableMetadataArgs.type === "closure-junction";

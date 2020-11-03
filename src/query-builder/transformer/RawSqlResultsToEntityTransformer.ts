@@ -40,7 +40,11 @@ export class RawSqlResultsToEntityTransformer {
         const group = this.group(rawResults, alias);
         const entities: any[] = [];
         group.forEach(results => {
-            const entity = this.transformRawResultsGroup(results, alias);
+            let entity = this.transformRawResultsGroup(results, alias);
+
+            if (alias.metadata.domainEntityMapper)
+                entity = alias.metadata.domainEntityMapper(entity);
+
             if (entity !== undefined)
                 entities.push(entity);
         });
@@ -102,7 +106,8 @@ export class RawSqlResultsToEntityTransformer {
             if (discriminatorMetadata)
                 metadata = discriminatorMetadata;
         }
-        let entity: any = this.expressionMap.options.indexOf("create-pojo") !== -1 ? {} : metadata.create(this.queryRunner);
+        const createPojo = this.expressionMap.options.indexOf("create-pojo") === -1 && !alias.metadata.domainEntityMapper;
+        let entity = createPojo ? metadata.create(this.queryRunner) : {};
 
         // get value from columns selections and put them into newly created entity
         const hasColumns = this.transformColumns(rawResults, alias, entity, metadata);

@@ -28,7 +28,7 @@ export class DocumentToEntityTransformer {
     }
 
     transform(document: any, metadata: EntityMetadata) {
-        const entity: any = metadata.create();
+        const entity = metadata.domainEntityMapper ? {} : metadata.create();
         let hasData = false;
 
         // handle _id property the special way
@@ -182,7 +182,9 @@ export class DocumentToEntityTransformer {
             });
         });*/
 
-        return hasData ? entity : null;
+        if (!hasData) return null;
+        if (metadata.domainEntityMapper) return metadata.domainEntityMapper(entity);
+        return entity;
     }
 
 }

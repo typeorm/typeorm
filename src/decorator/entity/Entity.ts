@@ -31,7 +31,8 @@ export function Entity(nameOrOptions?: string|EntityOptions, maybeOptions?: Enti
             database: options.database ? options.database : undefined,
             schema: options.schema ? options.schema : undefined,
             synchronize: options.synchronize,
-            withoutRowid: options.withoutRowid
+            withoutRowid: options.withoutRowid,
+            domainEntityMapper: options.domainEntityMapper
         } as TableMetadataArgs);
     };
 }

@@ -29,4 +29,11 @@ export interface EmbeddedMetadataArgs {
      */
     type: ((type?: any) => Function);
 
+    /**
+     * A factory function that will be used to map a raw TypeORM object into the entity,
+     * instead of trying to use public setters. Useful for some object-oriented patterns.
+     * @see https://github.com/typeorm/typeorm/issues/6993
+     */
+    domainEntityMapper?: Function;
+
 }

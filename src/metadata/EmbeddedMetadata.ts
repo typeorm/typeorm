@@ -35,6 +35,13 @@ export class EmbeddedMetadata {
     type: Function;
 
     /**
+     * A factory function that will be used to map a raw TypeORM object into the entity,
+     * instead of trying to use public setters. Useful for some object-oriented patterns.
+     * @see https://github.com/typeorm/typeorm/issues/6993
+     */
+    domainEntityMapper?: Function;
+
+    /**
      * Property name on which this embedded is attached.
      */
     propertyName: string;
@@ -180,6 +187,7 @@ export class EmbeddedMetadata {
         this.propertyName = options.args.propertyName;
         this.customPrefix = options.args.prefix;
         this.isArray = options.args.isArray;
+        this.domainEntityMapper = options.args.domainEntityMapper;
     }
 
     // ---------------------------------------------------------------------

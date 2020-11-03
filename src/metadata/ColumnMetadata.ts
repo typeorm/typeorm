@@ -651,9 +651,10 @@ export class ColumnMetadata {
                 const embeddedMetadata = embeddedMetadatas.shift();
                 if (embeddedMetadata) {
                     if (!map[embeddedMetadata.propertyName])
-                        map[embeddedMetadata.propertyName] = embeddedMetadata.create();
+                        map[embeddedMetadata.propertyName] = embeddedMetadata.domainEntityMapper ? {} : embeddedMetadata.create();
 
                     extractEmbeddedColumnValue(embeddedMetadatas, map[embeddedMetadata.propertyName]);
+                    if (embeddedMetadata.domainEntityMapper) return embeddedMetadata.domainEntityMapper(map);
                     return map;
                 }
                 map[this.propertyName] = value;

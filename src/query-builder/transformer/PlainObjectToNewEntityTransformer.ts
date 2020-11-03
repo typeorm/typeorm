@@ -16,6 +16,7 @@ export class PlainObjectToNewEntityTransformer {
         // console.log("groupAndTransform object:", object);
         this.groupAndTransform(newEntity, object, metadata, getLazyRelationsPromiseValue);
         // console.log("result:", newEntity);
+        if (metadata.domainEntityMapper) return metadata.domainEntityMapper(newEntity);
         return newEntity;
     }
 
@@ -27,10 +28,12 @@ export class PlainObjectToNewEntityTransformer {
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
      */
-    private groupAndTransform(entity: ObjectLiteral, object: ObjectLiteral, metadata: EntityMetadata, getLazyRelationsPromiseValue: boolean = false): void {
+    private groupAndTransform(entityTarget: ObjectLiteral, object: ObjectLiteral, metadata: EntityMetadata, getLazyRelationsPromiseValue: boolean = false): void {
 
         // console.log("groupAndTransform entity:", entity);
         // console.log("groupAndTransform object:", object);
+
+        const entity = metadata.domainEntityMapper ? {} : entityTarget;
 
         // copy regular column properties from the given object
         metadata.nonVirtualColumns.forEach(column => {
@@ -43,7 +46,7 @@ export class PlainObjectToNewEntityTransformer {
         if (metadata.relations.length) {
             metadata.relations.forEach(relation => {
 
-                let entityRelatedValue = relation.getEntityValue(entity);
+                let entityRelatedValue = relation.getEntityValue(entityTarget);
                 const objectRelatedValue = relation.getEntityValue(object, getLazyRelationsPromiseValue);
                 if (objectRelatedValue === undefined)
                     return;
