@@ -16,6 +16,7 @@
     "./browser/driver/postgres/PostgresDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/oracle/OracleDriver.ts": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/sap/SapDriver.ts": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/ignite/IgniteDriver.ts": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/mysql/MysqlDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/sqlserver/SqlServerDriver.ts": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/mongodb/MongoDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
@@ -74,6 +75,7 @@
     "@types/yargs": "^15.0.4",
     "@typescript-eslint/eslint-plugin": "^4.1.0",
     "@typescript-eslint/parser": "^4.1.0",
+    "apache-ignite-client": "^1.0.0",
     "better-sqlite3": "^7.1.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
@@ -110,6 +112,7 @@
     "sql.js": "^1.3.2",
     "sqlite3": "^5.0.0",
     "ts-node": "^9.0.0",
+    "ts-node-dev": "^1.0.0",
     "typeorm-aurora-data-api-driver": "^1.4.0",
     "typescript": "~3.6.0"
   },

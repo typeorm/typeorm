@@ -1,22 +1,23 @@
-import {MissingDriverError} from "../error/MissingDriverError";
-import {CockroachDriver} from "./cockroachdb/CockroachDriver";
-import {MongoDriver} from "./mongodb/MongoDriver";
-import {SqlServerDriver} from "./sqlserver/SqlServerDriver";
-import {OracleDriver} from "./oracle/OracleDriver";
-import {SqliteDriver} from "./sqlite/SqliteDriver";
-import {CordovaDriver} from "./cordova/CordovaDriver";
-import {ReactNativeDriver} from "./react-native/ReactNativeDriver";
-import {NativescriptDriver} from "./nativescript/NativescriptDriver";
-import {SqljsDriver} from "./sqljs/SqljsDriver";
-import {MysqlDriver} from "./mysql/MysqlDriver";
-import {PostgresDriver} from "./postgres/PostgresDriver";
-import {ExpoDriver} from "./expo/ExpoDriver";
-import {AuroraDataApiDriver} from "./aurora-data-api/AuroraDataApiDriver";
-import {AuroraDataApiPostgresDriver} from "./aurora-data-api-pg/AuroraDataApiPostgresDriver";
-import {Driver} from "./Driver";
-import {Connection} from "../connection/Connection";
-import {SapDriver} from "./sap/SapDriver";
-import {BetterSqlite3Driver} from "./better-sqlite3/BetterSqlite3Driver";
+import { Connection } from "../connection/Connection";
+import { MissingDriverError } from "../error/MissingDriverError";
+import { AuroraDataApiPostgresDriver } from "./aurora-data-api-pg/AuroraDataApiPostgresDriver";
+import { AuroraDataApiDriver } from "./aurora-data-api/AuroraDataApiDriver";
+import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver";
+import { CockroachDriver } from "./cockroachdb/CockroachDriver";
+import { CordovaDriver } from "./cordova/CordovaDriver";
+import { Driver } from "./Driver";
+import { ExpoDriver } from "./expo/ExpoDriver";
+import { IgniteDriver } from "./ignite/IgniteDriver";
+import { MongoDriver } from "./mongodb/MongoDriver";
+import { MysqlDriver } from "./mysql/MysqlDriver";
+import { NativescriptDriver } from "./nativescript/NativescriptDriver";
+import { OracleDriver } from "./oracle/OracleDriver";
+import { PostgresDriver } from "./postgres/PostgresDriver";
+import { ReactNativeDriver } from "./react-native/ReactNativeDriver";
+import { SapDriver } from "./sap/SapDriver";
+import { SqliteDriver } from "./sqlite/SqliteDriver";
+import { SqljsDriver } from "./sqljs/SqljsDriver";
+import { SqlServerDriver } from "./sqlserver/SqlServerDriver";
 
 /**
  * Helps to create drivers.
@@ -63,6 +64,8 @@ export class DriverFactory {
                 return new AuroraDataApiDriver(connection);
             case "aurora-data-api-pg":
                 return new AuroraDataApiPostgresDriver(connection);
+            case "ignite":
+                return new IgniteDriver(connection);
             default:
                 throw new MissingDriverError(type);
         }

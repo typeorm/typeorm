@@ -123,5 +123,13 @@
       "maxRetries": 3
     },
     "logging": false
+  },
+  {
+    "skip": true,
+    "name": "ignite",
+    "type": "ignite",
+    "endpoint": "typeorm-ignite:10800",
+    "database": "test",
+    "logging": false
   }
 ]

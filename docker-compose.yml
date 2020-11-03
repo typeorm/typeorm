@@ -114,5 +114,15 @@ services:
   #   container_name: "typeorm-redis"
   #   ports:
   #     - "6379:6379"
+
+  ignite:
+    image: apacheignite/ignite
+    container_name: "typeorm-ignite"
+    environment:
+      - OPTION_LIBS=ignite-rest-http,ignite-indexing
+      - IGNITE_QUIET=false
+    ports:
+      - '10800:10800'
+      - '8080:8080'
 #volumes:
 #  volume-hana-xe:
