@@ -7,7 +7,7 @@ const options: IgniteConnectionOptions = {
   type: "ignite",
   endpoint: "127.0.0.1:10800",
   database: "test",
-  synchronize: false,
+  synchronize: true,
   logging: true,
   entities: [__dirname + "/entity/*"],
 };
@@ -30,7 +30,7 @@ createConnection(options).then(
     const posts = await postRepository.find();
     console.log("posts to be loaded: ", posts);
 
-    const gt50 = await postRepository.find({ where: { likesCount: MoreThan(50) } })
+    const gt50 = await postRepository.find({ where: { likesCount: MoreThan(50) } });
     console.log("posts greater than 50: posts", gt50);
 
     const ordered = await postRepository.createQueryBuilder().orderBy("\"likesCount\"", "DESC").getMany();

@@ -11,4 +11,8 @@ export interface IgniteConnectionOptions extends BaseConnectionOptions {
    * ignite cacheName
    */
   readonly database: string;
+
+  readonly username?: string;
+
+  readonly password?: string
 }
