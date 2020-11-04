@@ -82,6 +82,27 @@ export class IgniteDriver implements Driver {
     metadataValue: "varchar",
   };
 
+  protected static mappedIgniteTypes: Record<string, string> = {
+    "java.lang.Boolean": "bool",
+    "java.lang.String": "varchar",
+    "java.lang.Long": "bigint",
+    "java.math.BigDecimal": "decimal",
+    "java.lang.Double": "double",
+    "java.lang.Integer": "int",
+    "java.lang.Float": "real",
+    "java.lang.Short": "smallint",
+    "java.lang.Byte": "tinyint",
+    "java.sql.Date": "date",
+    "java.sql.Time": "time",
+    "java.sql.Timestamp": "timestamp",
+    "byte[]": "binary",
+    "java.util.UUID": "uuid",
+  };
+
+  getSqlType(javaType: string): string {
+    return IgniteDriver.mappedIgniteTypes[javaType];
+  }
+
   connection: Connection;
 
   options: IgniteConnectionOptions;

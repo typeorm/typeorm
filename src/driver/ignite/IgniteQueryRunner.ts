@@ -12,7 +12,7 @@ import { View } from "../../schema-builder/view/View";
 import { Broadcaster } from "../../subscriber/Broadcaster";
 import { Query } from "../Query";
 import { IgniteDriver } from "./IgniteDriver";
-import { IgniteTable, IgniteTableColumn, IgniteTableIndex } from "./types";
+import { IgniteTable,IgniteTableColumn,IgniteTableIndex } from "./types";
 
 export class IgniteQueryRunner extends BaseQueryRunner implements QueryRunner {
     driver: IgniteDriver;
@@ -164,14 +164,17 @@ export class IgniteQueryRunner extends BaseQueryRunner implements QueryRunner {
             dbTables.map(async (dbTable) => {
                 const tableColumnOptions: TableColumnOptions[] = dbColumns
                     .filter((dbColumn) => !dbColumn.COLUMN_NAME.startsWith("_"))
-                    .map((dbColumn) => ({
-                        name: dbColumn.COLUMN_NAME,
-                        type: (dbColumn.TYPE || "").toLowerCase(),
-                        default: dbColumn.DEFAULT_VALUE,
-                        isNullable: dbColumn.NULLABLE,
-                        isPrimary: dbColumn.PK,
-                        precision: dbColumn.PRECISION,
-                    }));
+                    .map(dbColumn => {
+                        const type = this.driver.getSqlType(dbColumn.TYPE);
+                        return {
+                            name: dbColumn.COLUMN_NAME,
+                            type: type,
+                            default: dbColumn.DEFAULT_VALUE,
+                            isNullable: dbColumn.NULLABLE,
+                            isPrimary: dbColumn.PK,
+                            precision: dbColumn.PRECISION,
+                        };
+                });
 
                 const tableIndexOptions: TableIndexOptions[] = dbIndices
                     .filter((dbIndex) => !dbIndex.INDEX_NAME.startsWith("_"))
