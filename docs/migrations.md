@@ -56,7 +56,7 @@ This place is called "migrations".
 
 **Pre-requisites**: [Installing CLI](./using-cli.md#installing-cli)
 
-Before creating a new migration you need to setup your connection options properly:
+Before creating a new migration you need to setup your connection options properly [See configuration sources](./using-ormconfig.md):
 
 ```json
 {
