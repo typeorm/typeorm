@@ -1857,10 +1857,16 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += ` CHARACTER SET "${column.charset}"`;
         if (column.collation)
             c += ` COLLATE "${column.collation}"`;
-        if (!column.isNullable)
-            c += " NOT NULL";
-        if (column.isNullable)
-            c += " NULL";
+
+        const isMariaDb = this.driver.options.type === "mariadb";
+        // MariaDB does not support NULL/NOT NULL expressions for VIRTUAL columns
+        if (!(isMariaDb && column.asExpression && (column.generatedType || "VIRTUAL") === "VIRTUAL")) {
+            if (!column.isNullable)
+                c += " NOT NULL";
+            if (column.isNullable)
+                c += " NULL";
+        }
+
         if (column.isPrimary && !skipPrimary)
             c += " PRIMARY KEY";
         if (column.isGenerated && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
