@@ -57,4 +57,9 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
      * Include notification messages from Postgres server in client logs
      */
     readonly logNotifications?: boolean;
+
+    /**
+     * Should skip normalize for the table column generation
+     */
+    readonly skipTypeNormalize?: boolean
 }
