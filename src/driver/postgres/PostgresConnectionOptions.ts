@@ -59,7 +59,7 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
     readonly logNotifications?: boolean;
 
     /**
-     * Should skip normalize for the table column generation
+     * Should skip normalization for the table column generation
      */
     readonly skipTypeNormalize?: boolean
 }
