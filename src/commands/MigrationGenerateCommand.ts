@@ -96,6 +96,16 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     });
                 }
 
+                //oracle tablespace
+
+                if (connection.options.type === `oracle` && connection.options.extra && !!connection.options.extra.tablespace){
+                sqlInMemory.upQueries.forEach(upQuery => {
+                    upQuery.query = `${upQuery.query} TABLESPACE ${connection.options.extra.tablespace}`;
+                });
+                sqlInMemory.downQueries.forEach(downQuery => {
+                        downQuery.query = `${downQuery.query} TABLESPACE ${connection.options.extra.tablespace}`;
+                    });
+                }
                 // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
                 // we are using simple quoted string instead of template string syntax
                 if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver) {

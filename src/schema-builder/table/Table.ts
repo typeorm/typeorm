@@ -66,6 +66,10 @@ export class Table {
      */
     engine?: string;
 
+    /**
+     * Tablespace.
+     */
+    tablespace?: string;
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -96,6 +100,9 @@ export class Table {
                 this.justCreated = options.justCreated;
 
             this.engine = options.engine;
+
+            if (options.tablespace)
+                this.tablespace = options.tablespace;
         }
     }
 

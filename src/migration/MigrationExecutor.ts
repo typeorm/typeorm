@@ -346,6 +346,7 @@ export class MigrationExecutor {
             await queryRunner.createTable(new Table(
                 {
                     name: this.migrationsTable,
+                    tablespace: this.connection.options.extra.tablespace,
                     columns: [
                         {
                             name: "id",

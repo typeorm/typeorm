@@ -61,4 +61,6 @@ export interface TableOptions {
      */
     engine?: string;
 
+    tablespace?: string,
+
 }
