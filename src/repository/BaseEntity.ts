@@ -146,7 +146,7 @@ export class BaseEntity {
      * Note that it copies only properties that present in entity schema.
      */
     static create<T extends BaseEntity>(this: ObjectType<T>, entityLike: DeepPartial<T>): T;
-   /**
+    /**
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
      * Note that it copies only properties that present in entity schema.
      */
@@ -235,6 +235,23 @@ export class BaseEntity {
      */
     static insert<T extends BaseEntity>(this: ObjectType<T>, entity: QueryDeepPartialEntity<T>|QueryDeepPartialEntity<T>[], options?: SaveOptions): Promise<InsertResult> {
         return (this as any).getRepository().insert(entity, options);
+    }
+
+    /**
+     * Upserts a given entity into the database.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient UPSERT / INSERT ON CONFLICT / INSERT ON DUPLICATE KEY query.
+     * You can execute bulk inserts using this method.
+     */
+    static upsert<T extends BaseEntity>(
+        this: ObjectType<T>,
+        entity: QueryDeepPartialEntity<T>|(QueryDeepPartialEntity<T>[]),
+        overwrite: boolean|string[] = true,
+        values?: QueryDeepPartialEntity<T>,
+        conflict?: string|string[],
+        options?: SaveOptions
+    ): Promise<InsertResult> {
+        return (this as any).getRepository().upsert(entity, overwrite, values, conflict, options);
     }
 
     /**

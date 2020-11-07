@@ -41,6 +41,7 @@ export class AuroraDataApiDriver implements Driver {
         insertDefaultValue: true,
         insertIgnoreModifier: true,
         insertEmptyColumnsValuesList: true,
+        insertUpsert: "duplicate",
 
         limitClauseOnModify: true,
 
@@ -52,13 +53,6 @@ export class AuroraDataApiDriver implements Driver {
             if (limit && offset) return "LIMIT " + limit + " OFFSET " + offset;
             if (limit) return "LIMIT " + limit;
             if (offset) throw new OffsetWithoutLimitNotSupportedError();
-            return null;
-        },
-
-        insertOnConflictExpression(onConflict?: string, onIgnore?: string | boolean, onUpdate?: { columns?: string; conflict?: string; overwrite?: string }): string | null {
-            if (!onUpdate) return null;
-            if (onUpdate.columns) return "ON DUPLICATE KEY UPDATE " + onUpdate.columns;
-            if (onUpdate.overwrite) return "ON DUPLICATE KEY UPDATE " + onUpdate.overwrite;
             return null;
         }
     };

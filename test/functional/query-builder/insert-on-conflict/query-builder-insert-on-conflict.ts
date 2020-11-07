@@ -18,7 +18,7 @@ describe("query builder > insertion > on conflict", () => {
         const post1 = new Post();
         post1.id = "post#1";
         post1.title = "About post";
-        post1.date = new Date('06 Aug 2020 00:12:00 GMT');
+        post1.date = new Date("06 Aug 2020 00:12:00 GMT");
 
         await connection.createQueryBuilder()
             .insert()
@@ -29,33 +29,34 @@ describe("query builder > insertion > on conflict", () => {
         const post2 = new Post();
         post2.id = "post#1";
         post2.title = "Again post";
-        post2.date = new Date('06 Aug 2020 00:12:00 GMT');
+        post2.date = new Date("06 Aug 2020 00:12:00 GMT");
 
         await connection.createQueryBuilder()
             .insert()
             .into(Post)
             .values(post2)
-            .onConflict(`("id") DO NOTHING`)
+            .orIgnore()
+            .onConflict(["id"])
             .execute();
 
         await connection.manager.findOne(Post, "post#1").should.eventually.be.eql({
             id: "post#1",
             title: "About post",
-            date: new Date('06 Aug 2020 00:12:00 GMT')
+            date: new Date("06 Aug 2020 00:12:00 GMT")
         });
 
         await connection.createQueryBuilder()
             .insert()
             .into(Post)
             .values(post2)
-            .onConflict(`("id") DO UPDATE SET "title" = :title`)
-            .setParameter("title", post2.title)
+            .orUpdate(false, {title: post2.title})
+            .onConflict(["id"])
             .execute();
 
         await connection.manager.findOne(Post, "post#1").should.eventually.be.eql({
             id: "post#1",
             title: "Again post",
-            date: new Date('06 Aug 2020 00:12:00 GMT')
+            date: new Date("06 Aug 2020 00:12:00 GMT")
         });
     })));
 
@@ -64,7 +65,7 @@ describe("query builder > insertion > on conflict", () => {
         const post1 = new Post();
         post1.id = "post#1";
         post1.title = "About post";
-        post1.date = new Date('06 Aug 2020 00:12:00 GMT');
+        post1.date = new Date("06 Aug 2020 00:12:00 GMT");
 
         await connection.createQueryBuilder()
             .insert()
@@ -75,19 +76,20 @@ describe("query builder > insertion > on conflict", () => {
         const post2 = new Post();
         post2.id = "post#1";
         post2.title = "Again post";
-        post2.date = new Date('06 Aug 2020 00:12:00 GMT');
+        post2.date = new Date("06 Aug 2020 00:12:00 GMT");
 
         await connection.createQueryBuilder()
             .insert()
             .into(Post)
             .values(post2)
-            .orIgnore('date')
+            .orIgnore()
+            .onConflict(["date"])
             .execute();
 
         await connection.manager.findOne(Post, "post#1").should.eventually.be.eql({
             id: "post#1",
             title: "About post",
-            date: new Date('06 Aug 2020 00:12:00 GMT')
+            date: new Date("06 Aug 2020 00:12:00 GMT")
         });
     })));
 
@@ -96,7 +98,7 @@ describe("query builder > insertion > on conflict", () => {
         const post1 = new Post();
         post1.id = "post#1";
         post1.title = "About post";
-        post1.date = new Date('06 Aug 2020 00:12:00 GMT');
+        post1.date = new Date("06 Aug 2020 00:12:00 GMT");
 
         await connection.createQueryBuilder()
             .insert()
@@ -107,24 +109,21 @@ describe("query builder > insertion > on conflict", () => {
         const post2 = new Post();
         post2.id = "post#1";
         post2.title = "Again post";
-        post2.date = new Date('06 Aug 2020 00:12:00 GMT');
+        post2.date = new Date("06 Aug 2020 00:12:00 GMT");
 
         await connection.createQueryBuilder()
             .insert()
             .into(Post)
             .values(post2)
-            .orUpdate({
-                conflict_target: ['date'],
-                overwrite: ['title']
-            })
+            .orUpdate(["title"])
+            .onConflict(["date"])
             .setParameter("title", post2.title)
             .execute();
 
         await connection.manager.findOne(Post, "post#1").should.eventually.be.eql({
             id: "post#1",
             title: "Again post",
-            date: new Date('06 Aug 2020 00:12:00 GMT')
+            date: new Date("06 Aug 2020 00:12:00 GMT")
         });
     })));
-
 });

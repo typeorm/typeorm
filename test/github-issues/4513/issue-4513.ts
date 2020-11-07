@@ -36,41 +36,10 @@ describe("github issues > #4513 CockroachDB support for onConflict", () => {
       .insert()
       .into(User)
       .values(user2)
-      .onConflict(`("name", "email") DO NOTHING`)
+      .orIgnore(true, `("name", "email")`)
       .execute();
 
     await connection.manager.find(User).should.eventually.have.lengthOf(2);
-  })));
-
-  it("should update on conflict with do update", () => Promise.all(connections.map(async connection => {
-    const user1 = new User();
-    user1.name = "example";
-    user1.email = "example@example.com";
-    user1.age = 30;
-
-    await connection.createQueryBuilder()
-      .insert()
-      .into(User)
-      .values(user1)
-      .execute();
-
-    const user2 = new User();
-    user2.name = "example";
-    user2.email = "example@example.com";
-    user2.age = 42;
-
-    await connection.createQueryBuilder()
-      .insert()
-      .into(User)
-      .values(user2)
-      .onConflict(`("name", "email") DO UPDATE SET age = EXCLUDED.age`)
-      .execute();
-
-    await connection.manager.findOne(User, { name: "example", email: "example@example.com" }).should.eventually.be.eql({
-      name: "example",
-      email: "example@example.com",
-      age: 42,
-    });
   })));
 
   it("should not update on conflict with do nothing", () => Promise.all(connections.map(async connection => {
@@ -94,7 +63,7 @@ describe("github issues > #4513 CockroachDB support for onConflict", () => {
       .insert()
       .into(User)
       .values(user2)
-      .onConflict(`("name", "email") DO NOTHING`)
+      .orIgnore(true, `("name", "email")`)
       .execute();
 
     await connection.manager.findOne(User, { name: "example", email: "example@example.com" }).should.eventually.be.eql({
@@ -125,10 +94,7 @@ describe("github issues > #4513 CockroachDB support for onConflict", () => {
       .insert()
       .into(User)
       .values(user2)
-      .orUpdate({
-        conflict_target: ["name", "email"],
-        overwrite: ["age"],
-      })
+      .orUpdate(["age"], undefined, `("name", "email")`)
       .execute();
 
     await connection.manager.findOne(User, { name: "example", email: "example@example.com" }).should.eventually.be.eql({

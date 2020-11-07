@@ -88,19 +88,22 @@ export class QueryExpressionMap {
     extraReturningColumns: ColumnMetadata[] = [];
 
     /**
+     * Optional or ignore statement used in insertion query in databases.
+     */
+    orIgnore: boolean = false;
+
+    /**
+     * Optional or update statement used in insertion query in databases.
+     */
+    orUpdate: {
+        overwrite?: boolean|string[];
+        values?: ObjectLiteral;
+    };
+
+    /**
      * Optional on conflict statement used in insertion query in postgres.
      */
-    onConflict: string = "";
-
-    /**
-     * Optional on ignore statement used in insertion query in databases.
-     */
-    onIgnore: string|boolean = false;
-
-    /**
-     * Optional on update statement used in insertion query in databases.
-     */
-    onUpdate: { columns?: string, conflict?: string, overwrite?: string };
+    onConflictCondition: string|string[];
 
     /**
      * JOIN queries.
@@ -420,9 +423,8 @@ export class QueryExpressionMap {
         map.mainAlias = this.mainAlias;
         map.valuesSet = this.valuesSet;
         map.returning = this.returning;
-        map.onConflict = this.onConflict;
-        map.onIgnore = this.onIgnore;
-        map.onUpdate = this.onUpdate;
+        map.orIgnore = this.orIgnore;
+        map.orUpdate = this.orUpdate;
         map.joinAttributes = this.joinAttributes.map(join => new JoinAttribute(this.connection, this, join));
         map.relationIdAttributes = this.relationIdAttributes.map(relationId => new RelationIdAttribute(this, relationId));
         map.relationCountAttributes = this.relationCountAttributes.map(relationCount => new RelationCountAttribute(this, relationCount));

@@ -135,10 +135,32 @@ await repository.insert({
 });
 
 
-await manager.insert(User, [{
+await repository.insert([{
     firstName: "Foo",
     lastName: "Bar"
 }, {
+    firstName: "Rizz",
+    lastName: "Rak"
+}]);
+```
+
+* `upsert` - Inserts a new entity or updates an existing entity, or array of entities.
+
+```typescript
+await repository.upsert({
+    id: 1,
+    firstName: "Timber",
+    lastName: "Timber"
+});
+// executes INSERT with ON CONFLICT ... DO UPDATE (Postgres)
+// executes INSERT with ON DUPLICATE KEY UPDATE (MySQL)
+
+await repository.upsert([{
+    id: 1,
+    firstName: "Foo",
+    lastName: "Bar"
+}, {
+    id: 2,
     firstName: "Rizz",
     lastName: "Rak"
 }]);

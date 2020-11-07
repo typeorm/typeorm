@@ -44,6 +44,7 @@ export class CockroachDriver implements Driver {
         uniqueConstraints: true,
 
         insertDefaultValue: true,
+        insertUpsert: "conflict",
 
         returningClause: "returning",
 
@@ -57,16 +58,6 @@ export class CockroachDriver implements Driver {
             if (limit && offset) return "LIMIT " + limit + " OFFSET " + offset;
             if (limit) return "LIMIT " + limit;
             if (offset) return "OFFSET " + offset;
-            return null;
-        },
-
-        insertOnConflictExpression(onConflict?: string, onIgnore?: string | boolean, onUpdate?: { columns?: string; conflict?: string; overwrite?: string }): string | null {
-            if (onIgnore) return "ON CONFLICT DO NOTHING";
-            if (onConflict) return `ON CONFLICT ${onConflict}`;
-            if (onUpdate) {
-                if (onUpdate.columns) return `ON CONFLICT ${onUpdate.conflict} DO UPDATE SET ${onUpdate.columns}`;
-                if (onUpdate.overwrite) return `ON CONFLICT ${onUpdate.conflict} DO UPDATE SET ${onUpdate.overwrite}`;
-            }
             return null;
         }
     };

@@ -232,6 +232,21 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Upserts a given entity into the database.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient UPSERT / INSERT ON CONFLICT / INSERT ON DUPLICATE KEY query.
+     * You can execute bulk inserts using this method.
+     */
+    upsert(
+        entity: QueryDeepPartialEntity<Entity>|(QueryDeepPartialEntity<Entity>[]),
+        overwrite: boolean|string[] = true,
+        values?: QueryDeepPartialEntity<Entity>,
+        conflict?: string|string[]
+    ): Promise<InsertResult> {
+        return this.manager.upsert(this.metadata.target as any, entity, overwrite, values, conflict);
+    }
+
+    /**
      * Updates entity partially. Entity can be found by a given conditions.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.

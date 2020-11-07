@@ -45,6 +45,7 @@ export class PostgresDriver implements Driver {
         uniqueConstraints: true,
 
         insertDefaultValue: true,
+        insertUpsert: "conflict",
 
         distinctOnClause: true,
 
@@ -76,16 +77,6 @@ export class PostgresDriver implements Driver {
             if (lockMode === "pessimistic_write_or_fail") return "FOR UPDATE" + lockTablesClause + " NOWAIT";
             if (lockMode === "for_no_key_update") return "FOR NO KEY UPDATE" + lockTablesClause;
             throw new LockNotSupportedOnGivenDriverError();
-        },
-
-        insertOnConflictExpression(onConflict?: string, onIgnore?: string | boolean, onUpdate?: { columns?: string; conflict?: string; overwrite?: string }): string | null {
-            if (onIgnore) return "ON CONFLICT DO NOTHING";
-            if (onConflict) return `ON CONFLICT ${onConflict}`;
-            if (onUpdate) {
-                if (onUpdate.columns) return `ON CONFLICT ${onUpdate.conflict} DO UPDATE SET ${onUpdate.columns}`;
-                if (onUpdate.overwrite) return `ON CONFLICT ${onUpdate.conflict} DO UPDATE SET ${onUpdate.overwrite}`;
-            }
-            return null;
         }
     };
 
