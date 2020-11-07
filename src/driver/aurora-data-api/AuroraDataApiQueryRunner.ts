@@ -84,7 +84,8 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Starts transaction on the current connection.
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        if (this.isTransactionActive)
+
+       if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
         const beforeBroadcastResult = new BroadcasterResult();
@@ -710,7 +711,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      */
     async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
         for (const {oldColumn, newColumn} of changedColumns) {
-            await this.changeColumn(tableOrName, oldColumn, newColumn)
+            await this.changeColumn(tableOrName, oldColumn, newColumn);
         }
     }
 

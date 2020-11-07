@@ -98,7 +98,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
                 //oracle tablespace
 
-                if (connection.options.type === `oracle` && connection.options.extra && !!connection.options.extra.tablespace){
+                if (connection.options.type === `oracle` && !!connection.options.extra && !!connection.options.extra.tablespace){
                 sqlInMemory.upQueries.forEach(upQuery => {
                     upQuery.query = `${upQuery.query} TABLESPACE ${connection.options.extra.tablespace}`;
                 });
@@ -169,7 +169,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
     protected static getTemplate(name: string, timestamp: number, upSqls: string[], downSqls: string[]): string {
         const migrationName = `${camelCase(name, true)}${timestamp}`;
 
-        return `import {MigrationInterface, QueryRunner} from "typeorm";
+let rawSQL =  `import {MigrationInterface, QueryRunner} from "typeorm";
 
 export class ${migrationName} implements MigrationInterface {
     name = '${migrationName}'
@@ -186,6 +186,8 @@ ${downSqls.join(`
 
 }
 `;
+if (process.env.TYPEORMDEBUG === "true") rawSQL = rawSQL.replace(`from "typeorm";`, `from "../src/index";`);
+return rawSQL;
     }
 
     /**

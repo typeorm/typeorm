@@ -1888,7 +1888,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     protected escapeComment(comment?: string) {
         if (comment === undefined || comment.length === 0) {
-            return 'NULL';
+            return "NULL";
         }
 
         comment = comment
