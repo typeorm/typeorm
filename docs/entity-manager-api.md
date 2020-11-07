@@ -49,7 +49,7 @@ const users = await manager.createQueryBuilder()
  }
 ```
 
-* `getId` - Gets given entity's primary column property value. 
+* `getId` - Gets given entity's primary column property value.
 If the entity has composite primary keys then the returned value will be an object with names and values of primary columns.
 
 ```typescript
@@ -123,17 +123,39 @@ await manager.remove([
 * `insert` - Inserts a new entity, or array of entities.
 
 ```typescript
-await manager.insert(User, { 
-    firstName: "Timber", 
-    lastName: "Timber" 
+await manager.insert(User, {
+    firstName: "Timber",
+    lastName: "Timber"
 });
 
-await manager.insert(User, [{ 
-    firstName: "Foo", 
-    lastName: "Bar" 
-}, { 
-    firstName: "Rizz", 
-    lastName: "Rak" 
+await manager.insert(User, [{
+    firstName: "Foo",
+    lastName: "Bar"
+}, {
+    firstName: "Rizz",
+    lastName: "Rak"
+}]);
+```
+
+* `upsert` - Inserts a new entity or updates an existing entity, or array of entities.
+
+```typescript
+await manager.upsert(User, {
+    id: 1,
+    firstName: "Timber",
+    lastName: "Timber"
+});
+// executes INSERT with ON CONFLICT ... DO UPDATE (Postgres)
+// executes INSERT with ON DUPLICATE KEY UPDATE (MySQL)
+
+await manager.upsert(User, [{
+    id: 1,
+    firstName: "Foo",
+    lastName: "Bar"
+}, {
+    id: 2,
+    firstName: "Rizz",
+    lastName: "Rak"
 }]);
 ```
 
@@ -241,7 +263,7 @@ const userRepository = manager.getMongoRepository(User);
 const myUserRepository = manager.getCustomRepository(UserRepository);
 ```
 
-* `release` - Releases query runner of an entity manager. 
+* `release` - Releases query runner of an entity manager.
 Used only when query runner was created and managed manually.
 
 ```typescript

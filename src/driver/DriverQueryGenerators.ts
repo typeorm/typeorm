@@ -16,9 +16,4 @@ export interface DriverQueryGenerators {
      * Generates the WITH (...LOCK) expression
      */
     selectWithLockExpression?(lockMode?: string): string;
-
-    /**
-     * Generates the ON DUPLICATE KEY ... or ON CONFLICT ... expression
-     */
-    insertOnConflictExpression?(onConflict?: string, onIgnore?: string|boolean, onUpdate?: { columns?: string, conflict?: string, overwrite?: string }): string | null;
 }

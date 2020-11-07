@@ -44,6 +44,10 @@ export interface DriverConfig {
      * Otherwise, INSERT DEFAULT VALUES is used.
      */
     insertEmptyColumnsValuesList?: true;
+    /**
+     * Whether the driver supports an ON CONFLICT OR ON DUPLICATE KEY UPDATE clause.
+     */
+    insertUpsert?: "conflict" | "duplicate";
 
     /**
      * Whether the driver supports the SELECT DISTINCT ON ... clause.

@@ -1,9 +1,7 @@
-import {CockroachDriver} from "../../driver/cockroachdb/CockroachDriver";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityTarget} from "../../common/EntityTarget";
 import {QueryDeepPartialEntity} from "../QueryPartialEntity";
 import {SqlServerDriver} from "../../driver/sqlserver/SqlServerDriver";
-import {PostgresDriver} from "../../driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../../driver/mysql/MysqlDriver";
 import {InsertResult} from "../result/InsertResult";
 import {InsertValuesMissingError} from "../../error/InsertValuesMissingError";
@@ -16,6 +14,8 @@ import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../../driver/aurora-data-api/AuroraDataApiDriver";
 import {QueryRunner} from "../..";
 import {AbstractPersistQueryBuilder} from "./AbstractPersistQueryBuilder";
+import {UpdateValuesMissingError} from "../../error/UpdateValuesMissingError";
+import {ConflictExpressionMissingError} from "../../error/ConflictExpressionMissingError";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -76,38 +76,47 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
     /**
      * Adds additional ON CONFLICT statement supported in postgres and cockroach.
      */
-    onConflict(statement: string): this {
-        this.expressionMap.onConflict = statement;
+    onConflict(statement: string): this;
+
+    /**
+     * Adds additional ON CONFLICT statement supported in postgres and cockroach.
+     */
+    onConflict(columns: string[]): this;
+
+    /**
+     * Adds additional ON CONFLICT statement supported in postgres and cockroach.
+     */
+    onConflict(statementOrColumns: string|string[]): this {
+        this.expressionMap.onConflictCondition = statementOrColumns;
         return this;
     }
 
     /**
      * Adds additional ignore statement supported in databases.
      */
-    orIgnore(statement: string | boolean = true): this {
-        this.expressionMap.onIgnore = statement;
+    orIgnore(ignore: boolean = true, conflict?: string|string[]): this {
+        this.expressionMap.orIgnore = ignore;
+
+        if (ignore && conflict)
+            this.expressionMap.onConflictCondition = conflict;
+
         return this;
     }
 
     /**
      * Adds additional update statement supported in databases.
      */
-    orUpdate(statement?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] }): this {
-      this.expressionMap.onUpdate = {};
-      if (statement && Array.isArray(statement.conflict_target))
-          this.expressionMap.onUpdate.conflict = ` ( ${statement.conflict_target.map((columnName) => this.escape(columnName)).join(", ")} ) `;
-      if (statement && typeof statement.conflict_target === "string")
-          this.expressionMap.onUpdate.conflict = ` ON CONSTRAINT ${this.escape(statement.conflict_target)} `;
-      if (statement && Array.isArray(statement.columns))
-          this.expressionMap.onUpdate.columns = statement.columns.map(column => `${this.escape(column)} = :${column}`).join(", ");
-      if (statement && Array.isArray(statement.overwrite)) {
-        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
-          this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = VALUES(${column})`).join(", ");
-        } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
-          this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${this.escape(column)} = EXCLUDED.${this.escape(column)}`).join(", ");
-        }
-      }
-      return this;
+    orUpdate(
+        overwrite: boolean|string[]|undefined = true,
+        values?: ObjectLiteral,
+        conflict?: string|string[]
+    ): this {
+        this.expressionMap.orUpdate = { overwrite, values };
+
+        if ((overwrite || values) && conflict)
+            this.expressionMap.onConflictCondition = conflict;
+
+        return this;
     }
 
 
@@ -121,12 +130,15 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
     protected createInsertExpression() {
         const tableName = this.getTableName(this.getMainTableName());
         const oracleMultiRowInsert = this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1;
-        const valuesExpression = this.createValuesExpression(); // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
-        const columnsExpression = this.createColumnNamesExpression();
+        const columnsOrKeys: (string | ColumnMetadata)[] = this.getInsertedColumnsOrKeys();
+        const columnsExpression = this.createColumnNamesExpression(columnsOrKeys);
+
+        // its important to get values before returning expression to maintain native parameter ordering
+        const valuesExpression = this.createValuesExpression(columnsOrKeys);
 
         const query = ["INSERT"];
 
-        if (this.connection.driver.config.insertIgnoreModifier && this.expressionMap.onIgnore) query.push("IGNORE");
+        if (this.connection.driver.config.insertIgnoreModifier && this.expressionMap.orIgnore) query.push("IGNORE");
 
         query.push("INTO", tableName);
 
@@ -155,9 +167,24 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
             }
         }
 
-        const conflictGenerator = this.connection.driver.generators.insertOnConflictExpression;
-        const conflictExpression = conflictGenerator ? conflictGenerator(this.expressionMap.onConflict, this.expressionMap.onIgnore, this.expressionMap.onUpdate) : undefined;
-        if (conflictExpression) query.push(conflictExpression);
+        const orUpdateColumnValuesExpression = this.createOrUpdateColumnValuesExpression(columnsOrKeys);
+
+        // add ON CONFLICT / ON DUPLICATE KEY expression
+        if (this.expressionMap.orIgnore) {
+            if (this.connection.driver.config.insertUpsert === "conflict") {
+                query.push("ON CONFLICT");
+                // A specific conflict expression can optionally be provided for DO NOTHING e.g. ignore some key, error on other
+                if (this.expressionMap.onConflictCondition) query.push(this.createOnConflictExpression());
+                query.push("DO NOTHING");
+            }
+        } else if (this.expressionMap.orUpdate && orUpdateColumnValuesExpression) {
+            if (this.connection.driver.config.insertUpsert === "conflict") {
+                const conflictExpression = this.createOnConflictExpression();
+                query.push("ON CONFLICT", conflictExpression, "DO UPDATE SET", orUpdateColumnValuesExpression);
+            } else if (this.connection.driver.config.insertUpsert === "duplicate") {
+                query.push("ON DUPLICATE KEY UPDATE", orUpdateColumnValuesExpression);
+            }
+        }
 
         // add RETURNING expression
         if (this.connection.driver.config.returningClause === "returning") {
@@ -224,9 +251,8 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
     /**
      * Creates a columns string where values must be inserted to for INSERT INTO expression.
      */
-    protected createColumnNamesExpression(): string {
-        const columns: (string | ColumnMetadata)[] = this.getInsertedColumnsOrKeys();
-        return columns.map(column => {
+    protected createColumnNamesExpression(columnsOrKeys: (string | ColumnMetadata)[]): string {
+        return columnsOrKeys.map(column => {
             if (column instanceof ColumnMetadata) column = column.databaseName;
             return this.escape(column);
         }).join(", ");
@@ -235,9 +261,8 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
     /**
      * Creates list of values needs to be inserted in the VALUES expression.
      */
-    protected createValuesExpression(): string {
+    protected createValuesExpression(columnsOrKeys: (string | ColumnMetadata)[]): string {
         const valueSets = this.getValueSets();
-        const columnsOrKeys: (string | ColumnMetadata)[] = this.getInsertedColumnsOrKeys();
 
         let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
         const valueSetExpressions = valueSets.map((valueSet, valueSetIndex) => {
@@ -275,6 +300,103 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
             return valueSetExpressions.join(" UNION ALL ");
         } else {
             return valueSetExpressions.join(", ");
+        }
+    }
+
+    /**
+     * Creates list of columns and their values that are SET in the OR UPDATE expression.
+     */
+    protected createOrUpdateColumnValuesExpression(insertColumnsOrKeys: (string | ColumnMetadata)[]) {
+        if (!this.expressionMap.orUpdate || !this.connection.driver.config.insertUpsert) return "";
+
+        const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
+
+        // Convert overwrite parameter to columns
+        let overwriteColumns: (string | ColumnMetadata)[];
+        if (this.expressionMap.orUpdate.overwrite === true) {
+            overwriteColumns = insertColumnsOrKeys;
+        } else if (Array.isArray(this.expressionMap.orUpdate.overwrite)) {
+            if (metadata) {
+                overwriteColumns = [];
+                this.expressionMap.orUpdate.overwrite.forEach(columnName => {
+                    overwriteColumns.push(...metadata.findColumnsWithPropertyPath(columnName));
+                });
+            } else {
+                overwriteColumns = this.expressionMap.orUpdate.overwrite;
+            }
+        } else {
+            overwriteColumns = [];
+        }
+
+        const columnValuesExpressions: string[] = [];
+
+        // Map column values to assignment expressions
+        let valuesSet = this.expressionMap.orUpdate.values;
+        if (valuesSet) {
+            let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
+
+            const updatedColumns: (string | ColumnMetadata)[] =
+                !metadata ? Object.keys(valuesSet) : metadata.extractColumnsInEntity(valuesSet)
+                    .filter(column => column.isUpdate);
+
+            overwriteColumns = overwriteColumns.filter(column => !updatedColumns.includes(column));
+
+            columnValuesExpressions.push(...updatedColumns.map(columnOrKey => {
+                const column = columnOrKey instanceof ColumnMetadata ? columnOrKey : undefined;
+                const columnName = column ? column.databaseName : columnOrKey as string;
+                const value = column ? column.getEntityValue(valuesSet!) : valuesSet![columnOrKey as string];
+
+                const paramName = `upd_${columnName}`; // TODO: Improve naming
+                const createParamExpression = (value: any) => {
+                    this.expressionMap.nativeParameters[paramName] = value;
+                    return this.connection.driver.createParameter(paramName, parametersCount++);
+                };
+
+                const expression = this.computePersistValueExpression(column, value, createParamExpression);
+                return `${this.escape(columnName)} = ${expression}`;
+            }));
+        }
+
+        // Map overwrite columns to assignment expressions
+        columnValuesExpressions.push(...overwriteColumns.map(columnOrKey => {
+            const column = columnOrKey instanceof ColumnMetadata ? columnOrKey : undefined;
+            const columnName = column ? column.databaseName : columnOrKey as string;
+
+            let value: string;
+            if (this.connection.driver.config.insertUpsert === "conflict") {
+                value = `EXCLUDED.${columnName}`;
+            } else if (this.connection.driver.config.insertUpsert === "duplicate") {
+                value = `VALUES(${columnName})`;
+            }
+            return `${this.escape(columnName)} = ${value!}`;
+        }).filter(expression => expression != null));
+
+        if (columnValuesExpressions.length === 0)
+            throw new UpdateValuesMissingError();
+
+        return columnValuesExpressions.join(", ");
+    }
+
+    /**
+     * Creates ON CONFLICT expression
+     */
+    protected createOnConflictExpression(): string {
+        if (typeof this.expressionMap.onConflictCondition === "string") {
+            return this.expressionMap.onConflictCondition;
+        } else if (Array.isArray(this.expressionMap.onConflictCondition)) {
+            const columnsOrKeys: (string | ColumnMetadata)[] = [];
+            this.expressionMap.onConflictCondition.forEach(columnName => {
+                if (this.expressionMap.mainAlias!.hasMetadata) {
+                    columnsOrKeys.push(...this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(columnName));
+                } else {
+                    columnsOrKeys.push(columnName);
+                }
+            });
+            return `(${this.createColumnNamesExpression(columnsOrKeys)})`;
+        } else if (this.expressionMap.mainAlias!.hasMetadata) {
+            return `(${this.createColumnNamesExpression(this.expressionMap.mainAlias!.metadata.primaryColumns)})`;
+        } else {
+            throw new ConflictExpressionMissingError();
         }
     }
 
