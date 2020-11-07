@@ -81,9 +81,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
      * Gets contents of the migration file.
      */
     protected static getTemplate(name: string, timestamp: number): string {
-        return `import {MigrationInterface, QueryRunner} from "../src/index";
 
-export class ${camelCase(name, true)}${timestamp} implements MigrationInterface {
+    let template =
+
+    `import {MigrationInterface, QueryRunner} from "typeorm";
+
+    export class ${camelCase(name, true)}${timestamp} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
     }
@@ -91,8 +94,14 @@ export class ${camelCase(name, true)}${timestamp} implements MigrationInterface 
     public async down(queryRunner: QueryRunner): Promise<void> {
     }
 
-}
-`;
+    }
+    `;
+
+    if (process.env.TYPEORMDEBUG === "true")
+
+    template = template.replace( `"typeorm";`, `"../src/index";`);
+
+    return template;
     }
 
 }
