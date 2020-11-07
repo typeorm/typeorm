@@ -470,6 +470,26 @@ export class EntityManager {
     }
 
     /**
+     * Upserts a given entity into the database.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient UPSERT / INSERT ON CONFLICT / INSERT ON DUPLICATE KEY query.
+     * You can execute bulk inserts using this method.
+     */
+    async upsert<Entity>(target: EntityTarget<Entity>, entity: QueryDeepPartialEntity<Entity>|(QueryDeepPartialEntity<Entity>[]), conflict?: {columns?: string[], constraint?: string}): Promise<InsertResult> {
+        // TODO: Oracle does not support multiple values. Need to create another nice solution.
+        if (this.connection.driver instanceof OracleDriver && Array.isArray(entity)) {
+            const results = await Promise.all(entity.map(entity => this.upsert(target, entity)));
+            return results.reduce((mergedResult, result) => Object.assign(mergedResult, result), {} as InsertResult);
+        }
+        return this.createQueryBuilder()
+            .insert()
+            .into(target)
+            .values(entity)
+            .orUpdate({overwrite: true, conflict: conflict})
+            .execute();
+    }
+
+    /**
      * Updates entity partially. Entity can be found by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.

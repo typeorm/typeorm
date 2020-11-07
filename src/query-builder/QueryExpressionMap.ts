@@ -90,7 +90,7 @@ export class QueryExpressionMap {
     /**
      * Optional on update statement used in insertion query in databases.
      */
-    onUpdate: { columns?: string, conflict?: string, overwrite?: string };
+    onUpdate: { columns?: string[], conflict?: { columns?: string[], constraint?: string }, overwrite?: string[] | boolean };
 
     /**
      * JOIN queries.

@@ -265,23 +265,19 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Adds additional update statement supported in databases.
      */
-    orUpdate(statement?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] }): this {
-      this.expressionMap.onUpdate = {};
-      if (statement && Array.isArray(statement.conflict_target))
-          this.expressionMap.onUpdate.conflict = ` ( ${statement.conflict_target.join(", ")} ) `;
-      if (statement && typeof statement.conflict_target === "string")
-          this.expressionMap.onUpdate.conflict = ` ON CONSTRAINT ${statement.conflict_target} `;
-      if (statement && Array.isArray(statement.columns))
-          this.expressionMap.onUpdate.columns = statement.columns.map(column => `${column} = :${column}`).join(", ");
-      if (statement && Array.isArray(statement.overwrite)) {
-        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
-          this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = VALUES(${column})`).join(", ");
-        } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
-          this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = EXCLUDED.${column}`).join(", ");
+    orUpdate(statement?: { columns?: string[], overwrite?: true | string[], conflict?: { columns?: string[], constraint?: string }, conflict_target?: string | string[] }): this {
+        // TODO: NEXT Remove conflict_target
+        if (statement) {
+            if (Array.isArray(statement.conflict_target)) statement.conflict = {columns: statement.conflict_target};
+            if (typeof statement.conflict_target === "string") statement.conflict = {constraint: statement.conflict_target};
         }
-      }
-      return this;
-  }
+        this.expressionMap.onUpdate = statement ? {
+            conflict: statement.conflict,
+            columns: statement.columns,
+            overwrite: statement.overwrite
+        } : {};
+        return this;
+    }
 
 
     // -------------------------------------------------------------------------
@@ -295,7 +291,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const tableName = this.getTableName(this.getMainTableName());
         const valuesExpression = this.createValuesExpression(); // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
         const returningExpression = (this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1) ? null : this.createReturningExpression(); // oracle doesnt support returning with multi-row insert
-        const columnsExpression = this.createColumnNamesExpression();
+        const columnNames = this.createColumnNamesArray();
+        const columnsExpression = columnNames.join(", ");
         let query = "INSERT ";
 
         if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
@@ -331,19 +328,28 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 query += ` DEFAULT VALUES`;
             }
         }
+
         if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
           query += `${this.expressionMap.onIgnore ? " ON CONFLICT DO NOTHING " : ""}`;
           query += `${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
-          if (this.expressionMap.onUpdate) {
-            const { overwrite, columns, conflict } = this.expressionMap.onUpdate;
-            query += `${columns ? " ON CONFLICT " + conflict + " DO UPDATE SET " + columns : ""}`;
-            query += `${overwrite ? " ON CONFLICT " + conflict + " DO UPDATE SET " + overwrite : ""}`;
-          }
-        } else if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
-            if (this.expressionMap.onUpdate) {
-              const { overwrite, columns } = this.expressionMap.onUpdate;
-              query += `${columns ? " ON DUPLICATE KEY UPDATE " + columns : ""}`;
-              query += `${overwrite ? " ON DUPLICATE KEY UPDATE " + overwrite : ""}`;
+        }
+
+        if (this.expressionMap.onUpdate) {
+            let { overwrite, columns, conflict } = this.expressionMap.onUpdate;
+            if (overwrite === true) overwrite = columns ? columnNames.filter(column => columns!.indexOf(column) === -1) : columnNames;
+
+            const updates = [];
+            if (columns) updates.push(...columns.map(column => `${column} = :${column}`));
+            if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
+                if (conflict && (conflict.columns || conflict.constraint)) {
+                    const conflictExpression = conflict.columns ? `(${conflict.columns.join(", ")})` : `ON CONSTRAINT ${conflict.constraint}`;
+                    if (overwrite) updates.push(...overwrite.map(column => `${column} = EXCLUDED.${column}`));
+                    if (updates.length) query += ` ON CONFLICT ${conflictExpression} DO UPDATE SET ${updates.join(", ")}`;
+                }
+                // TODO: Error if missing conflict?
+            } else if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
+                if (overwrite) updates.push(...overwrite.map(column => `${column} = VALUES(${column})`));
+                if (updates.length) query += ` ON DUPLICATE KEY UPDATE ${updates.join(", ")}`;
             }
         }
 
@@ -385,23 +391,23 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     }
 
     /**
-     * Creates a columns string where values must be inserted to for INSERT INTO expression.
+     * Creates an array of columns where values must be inserted to for INSERT INTO expression.
      */
-    protected createColumnNamesExpression(): string {
+    protected createColumnNamesArray(): string[] {
         const columns = this.getInsertedColumns();
         if (columns.length > 0)
-            return columns.map(column => this.escape(column.databaseName)).join(", ");
+            return columns.map(column => this.escape(column.databaseName));
 
         // in the case if there are no insert columns specified and table without metadata used
         // we get columns from the inserted value map, in the case if only one inserted map is specified
         if (!this.expressionMap.mainAlias!.hasMetadata && !this.expressionMap.insertColumns.length) {
             const valueSets = this.getValueSets();
             if (valueSets.length === 1)
-                return Object.keys(valueSets[0]).map(columnName => this.escape(columnName)).join(", ");
+                return Object.keys(valueSets[0]).map(columnName => this.escape(columnName));
         }
 
         // get a table name and all column database names
-        return this.expressionMap.insertColumns.map(columnName => this.escape(columnName)).join(", ");
+        return this.expressionMap.insertColumns.map(columnName => this.escape(columnName));
     }
 
     /**

@@ -123,18 +123,40 @@ await manager.remove([
 * `insert` - Inserts a new entity, or array of entities.
 
 ```typescript
-await manager.insert(User, { 
-    firstName: "Timber", 
-    lastName: "Timber" 
+await manager.insert(User, {
+    firstName: "Timber",
+    lastName: "Timber"
 });
 
-await manager.insert(User, [{ 
-    firstName: "Foo", 
-    lastName: "Bar" 
-}, { 
-    firstName: "Rizz", 
-    lastName: "Rak" 
+await manager.insert(User, [{
+    firstName: "Foo",
+    lastName: "Bar"
+}, {
+    firstName: "Rizz",
+    lastName: "Rak"
 }]);
+```
+
+* `upsert` - Inserts a new entity or updates an existing entity, or array of entities.
+
+```typescript
+await manager.upsert(User, {
+    id: 1,
+    firstName: "Timber",
+    lastName: "Timber"
+}, {columns: ['id']}); // Conflict columns not needed for MySQL
+// executes INSERT with ON CONFLICT ... DO UPDATE (Postgres)
+// executes INSERT with ON DUPLICATE KEY UPDATE (MySQL)
+
+await manager.upsert(User, [{
+    id: 1,
+    firstName: "Foo",
+    lastName: "Bar"
+}, {
+    id: 2,
+    firstName: "Rizz",
+    lastName: "Rak"
+}], {columns: ['id']});
 ```
 
 * `update` - Partially updates entity by a given update options or entity id.
