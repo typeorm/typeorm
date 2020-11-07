@@ -1404,7 +1404,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         sql += `)`;
-        if (!!table.tablespace) sql+= ` TABLESPACE ${table.tablespace}`;
+        if (!!table && !!table.tablespace) sql+= ` TABLESPACE ${table.tablespace}`;
         return new Query(sql);
     }
 

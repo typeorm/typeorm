@@ -343,32 +343,36 @@ export class MigrationExecutor {
         }
         const tableExist = await queryRunner.hasTable(this.migrationsTable); // todo: table name should be configurable
         if (!tableExist) {
+
+            const tableStub = {
+                name: this.migrationsTable,
+                columns: [
+                    {
+                        name: "id",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationId}),
+                        isGenerated: true,
+                        generationStrategy: "increment",
+                        isPrimary: true,
+                        isNullable: false
+                    },
+                    {
+                        name: "timestamp",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationTimestamp}),
+                        isPrimary: false,
+                        isNullable: false
+                    },
+                    {
+                        name: "name",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationName}),
+                        isNullable: false
+                    },
+                ]
+            }
+
+            if (!!this.connection.options && !!this.connection.options.extra && !!this.connection.options.extra.tablespace) tableStub.tablespace = this.connection.options.extra.tablespace
+
             await queryRunner.createTable(new Table(
-                {
-                    name: this.migrationsTable,
-                    tablespace: this.connection.options.extra.tablespace,
-                    columns: [
-                        {
-                            name: "id",
-                            type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationId}),
-                            isGenerated: true,
-                            generationStrategy: "increment",
-                            isPrimary: true,
-                            isNullable: false
-                        },
-                        {
-                            name: "timestamp",
-                            type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationTimestamp}),
-                            isPrimary: false,
-                            isNullable: false
-                        },
-                        {
-                            name: "name",
-                            type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationName}),
-                            isNullable: false
-                        },
-                    ]
-                },
+                tableStub
             ));
         }
     }
