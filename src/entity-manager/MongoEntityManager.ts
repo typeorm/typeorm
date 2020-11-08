@@ -630,6 +630,18 @@ export class MongoEntityManager extends EntityManager {
      * Ensures given id is an id for query.
      */
     protected convertMixedCriteria(metadata: EntityMetadata, idMap: any): ObjectLiteral {
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+
+        // check first if it's ObjectId compatible:
+        // string, number, Buffer, ObjectId or ObjectId-like
+        if (objectIdInstance.isValid(idMap)) {
+            return {
+                "_id": new objectIdInstance(idMap)
+            };
+        }
+
+        // if it's some other type of object build a query from the columns
+        // this check needs to be after the ObjectId check, because a valid ObjectId is also an Object instance
         if (idMap instanceof Object) {
             return metadata.columns.reduce((query, column) => {
                 const columnValue = column.getEntityValue(idMap);
@@ -639,10 +651,11 @@ export class MongoEntityManager extends EntityManager {
             }, {} as any);
         }
 
-        // means idMap is just object id
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        // last resort: try to convert it to an ObjectID anyway
+        // most likely it will fail, but we want to be backwards compatible and keep the same thrown Errors.
+        // it can still pass with null/undefined
         return {
-            "_id": (idMap instanceof objectIdInstance) ? idMap : new objectIdInstance(idMap)
+            "_id": new objectIdInstance(idMap)
         };
     }
 

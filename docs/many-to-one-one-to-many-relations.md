@@ -17,7 +17,7 @@ export class Photo {
     @Column()
     url: string;
     
-    @ManyToOne(type => User, user => user.photos)
+    @ManyToOne(() => User, user => user.photos)
     user: User;
     
 }
@@ -36,7 +36,7 @@ export class User {
     @Column()
     name: string;
     
-    @OneToMany(type => Photo, photo => photo.user)
+    @OneToMany(() => Photo, photo => photo.user)
     photos: Photo[];
     
 }

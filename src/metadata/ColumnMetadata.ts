@@ -477,7 +477,7 @@ export class ColumnMetadata {
                 }
 
                 // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-                if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
+                if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint" && value !== null)
                     value = String(value);
 
                 map[useDatabaseName ? this.databaseName : this.propertyName] = value;
@@ -488,7 +488,7 @@ export class ColumnMetadata {
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
 
             // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-            if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
+            if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint" && value !== null)
                 value = String(value);
 
             return { [useDatabaseName ? this.databaseName : this.propertyName]: value };
@@ -662,7 +662,18 @@ export class ColumnMetadata {
             return extractEmbeddedColumnValue([...this.embeddedMetadata.embeddedMetadataTree], entity);
 
         } else {
-            entity[this.propertyName] = value;
+            // we write a deep object in this entity only if the column is virtual
+            // because if its not virtual it means the user defined a real column for this relation
+            // also we don't do it if column is inside a junction table
+            if (!this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName) {
+                if (!(this.propertyName in entity)) {
+                    entity[this.propertyName] = {};
+                }
+
+                entity[this.propertyName][this.referencedColumn.propertyName] = value;
+            } else {
+                entity[this.propertyName] = value;
+            }
         }
     }
 

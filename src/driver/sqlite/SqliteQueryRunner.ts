@@ -4,6 +4,7 @@ import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryR
 import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
 import {SqliteDriver} from "./SqliteDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
+import { ConnectionIsNotSetError } from '../../error/ConnectionIsNotSetError';
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -38,6 +39,10 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
 
         const connection = this.driver.connection;
         const options = connection.options as SqliteConnectionOptions;
+
+        if (!connection.isConnected){
+            throw new ConnectionIsNotSetError('sqlite')
+        }
 
         return new Promise<any[]>(async (ok, fail) => {
 

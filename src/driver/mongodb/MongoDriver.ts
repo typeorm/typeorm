@@ -17,6 +17,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {ObjectUtils} from "../../util/ObjectUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {DriverUtils} from "../DriverUtils";
 
 /**
  * Organizes communication with MongoDB.
@@ -135,7 +136,7 @@ export class MongoDriver implements Driver {
     /**
      * Valid mongo connection options
      * NOTE: Keep sync with MongoConnectionOptions
-     * Sync with http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html
+     * Sync with http://mongodb.github.io/node-mongodb-native/3.5/api/MongoClient.html
      */
     protected validOptionNames: string[] = [
         "poolSize",
@@ -196,7 +197,8 @@ export class MongoDriver implements Driver {
         "minSize",
         "monitorCommands",
         "useNewUrlParser",
-        "useUnifiedTopology"
+        "useUnifiedTopology",
+        "autoEncryption"
     ];
 
     // -------------------------------------------------------------------------
@@ -222,9 +224,11 @@ export class MongoDriver implements Driver {
      */
     connect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
+            const options = DriverUtils.buildDriverOptions(this.options);
+
             this.mongodb.MongoClient.connect(
-                this.buildConnectionUrl(),
-                this.buildConnectionOptions(),
+                this.buildConnectionUrl(options),
+                this.buildConnectionOptions(options),
                 (err: any, client: any) => {
                     if (err) return fail(err);
 
@@ -433,30 +437,27 @@ export class MongoDriver implements Driver {
     /**
      * Builds connection url that is passed to underlying driver to perform connection to the mongodb database.
      */
-    protected buildConnectionUrl(): string {
-        if (this.options.url)
-            return this.options.url;
-
-        const credentialsUrlPart = (this.options.username && this.options.password)
-            ? `${this.options.username}:${this.options.password}@`
+    protected buildConnectionUrl(options: { [key: string]: any }): string {
+        const credentialsUrlPart = (options.username && options.password)
+            ? `${options.username}:${options.password}@`
             : "";
 
-        return `mongodb://${credentialsUrlPart}${this.options.host || "127.0.0.1"}:${this.options.port || "27017"}/${this.options.database}`;
+        return `mongodb://${credentialsUrlPart}${options.host || "127.0.0.1"}:${options.port || "27017"}/${options.database || ""}`;
     }
 
     /**
      * Build connection options from MongoConnectionOptions
      */
-    protected buildConnectionOptions(): any {
+    protected buildConnectionOptions(options: { [key: string]: any }): any {
         const mongoOptions: any = {};
 
         for (let index = 0; index < this.validOptionNames.length; index++) {
             const optionName = this.validOptionNames[index];
 
-            if (this.options.extra && optionName in this.options.extra) {
-                mongoOptions[optionName] = this.options.extra[optionName];
-            } else if (optionName in this.options) {
-                mongoOptions[optionName] = (this.options as any)[optionName];
+            if (options.extra && optionName in options.extra) {
+                mongoOptions[optionName] = options.extra[optionName];
+            } else if (optionName in options) {
+                mongoOptions[optionName] = options[optionName];
             }
         }
 

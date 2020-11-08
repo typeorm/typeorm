@@ -8,6 +8,7 @@ import {Table} from "../../schema-builder/table/Table";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {View} from "../../schema-builder/view/View";
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult";
 import {Query} from "../Query";
 import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
 import {ReadStream} from "../../platform/PlatformTools";
@@ -70,8 +71,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        this.isTransactionActive = true;
-
         if (isolationLevel) {
             if (isolationLevel !== "READ UNCOMMITTED" && isolationLevel !== "SERIALIZABLE") {
                 throw new Error(`SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation`);
@@ -84,7 +83,17 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             }
         }
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
+        this.isTransactionActive = true;
+
         await this.query("BEGIN TRANSACTION");
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -95,8 +104,16 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         await this.query("COMMIT");
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -107,8 +124,17 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         await this.query("ROLLBACK");
+
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**

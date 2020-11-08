@@ -41,7 +41,7 @@ export class EntityPersistExecutor {
     execute(): Promise<void> {
 
         // check if entity we are going to save is valid and is an object
-        if (!this.entity || !(this.entity instanceof Object))
+        if (!this.entity || typeof this.entity !== "object")
             return Promise.reject(new MustBeEntityError(this.mode, this.entity));
 
         // we MUST call "fake" resolve here to make sure all properties of lazily loaded relations are resolved

@@ -70,6 +70,10 @@ export class RawSqlResultsToEntityTransformer {
                     return keyValue.toString("hex");
                 }
 
+                if (typeof keyValue === "object") {
+                    return JSON.stringify(keyValue);
+                }
+
                 return keyValue;
             }).join("_"); // todo: check partial
 
@@ -93,7 +97,7 @@ export class RawSqlResultsToEntityTransformer {
         if (metadata.discriminatorColumn) {
             const discriminatorValues = rawResults.map(result => result[DriverUtils.buildColumnAlias(this.driver, alias.name, alias.metadata.discriminatorColumn!.databaseName)]);
             const discriminatorMetadata = metadata.childEntityMetadatas.find(childEntityMetadata => {
-                return !!discriminatorValues.find(value => value === childEntityMetadata.discriminatorValue);
+                return typeof discriminatorValues.find(value => value === childEntityMetadata.discriminatorValue) !== 'undefined';
             });
             if (discriminatorMetadata)
                 metadata = discriminatorMetadata;
@@ -233,7 +237,7 @@ export class RawSqlResultsToEntityTransformer {
                 const idMap = columns.reduce((idMap, column) => {
                     let value = result[column.databaseName];
                     if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-                        if (column.referencedColumn) // if column is a relation
+                        if (column.isVirtual && column.referencedColumn && column.referencedColumn.propertyName !== column.propertyName) // if column is a relation
                             value = column.referencedColumn.createValueMap(value);
 
                         return OrmUtils.mergeDeep(idMap, column.createValueMap(value));
@@ -253,7 +257,7 @@ export class RawSqlResultsToEntityTransformer {
                     }
                 }
                 return idMap;
-            }).filter(result => result);
+            }).filter(result => result !== undefined);
 
             const properties = rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyPath.split(".");
             const mapToProperty = (properties: string[], map: ObjectLiteral, value: any): any => {

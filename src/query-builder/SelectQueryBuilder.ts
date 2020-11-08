@@ -37,6 +37,7 @@ import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
+import {EntityNotFoundError} from "../error/EntityNotFoundError";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -51,7 +52,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createSelectExpression();
+        let sql = this.createComment();
+        sql += this.createSelectExpression();
         sql += this.createJoinExpression();
         sql += this.createWhereExpression();
         sql += this.createGroupByExpression();
@@ -1105,6 +1107,19 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Gets the first entity returned by execution of generated query builder sql or rejects the returned promise on error.
+     */
+    async getOneOrFail(): Promise<Entity> {
+        const entity = await this.getOne();
+
+        if (!entity) {
+            throw new EntityNotFoundError(this.expressionMap.mainAlias!.target, this);
+        }
+
+        return entity;
+    }
+
+    /**
      * Gets entities returned by execution of generated query builder sql.
      */
     async getMany(): Promise<Entity[]> {
@@ -1774,43 +1789,74 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         });
     }
 
-    protected async executeCountQuery(queryRunner: QueryRunner): Promise<number> {
-
+    private computeCountExpression() {
         const mainAlias = this.expressionMap.mainAlias!.name; // todo: will this work with "fromTableName"?
         const metadata = this.expressionMap.mainAlias!.metadata;
 
+        const primaryColumns = metadata.primaryColumns;
         const distinctAlias = this.escape(mainAlias);
-        let countSql: string = "";
-        if (metadata.hasMultiplePrimaryKeys) {
-            if (this.connection.driver instanceof AbstractSqliteDriver) {
-                countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                    const propertyName = this.escape(primaryColumn.databaseName);
-                    return `${distinctAlias}.${propertyName}`;
-                }).join(" || ") + ")) as \"cnt\"";
 
-            } else if (this.connection.driver instanceof CockroachDriver) {
-                countSql = `COUNT(DISTINCT(CONCAT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                    const propertyName = this.escape(primaryColumn.databaseName);
-                    return `${distinctAlias}.${propertyName}::text`;
-                }).join(", ") + "))) as \"cnt\"";
-            } else if (this.connection.driver instanceof OracleDriver) {
-                countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                    const propertyName = this.escape(primaryColumn.databaseName);
-                    return `${distinctAlias}.${propertyName}`;
-                }).join(" || ") + ")) as \"cnt\"";
-            } else {
-                countSql = `COUNT(DISTINCT(CONCAT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                    const propertyName = this.escape(primaryColumn.databaseName);
-                    return `${distinctAlias}.${propertyName}`;
-                }).join(", ") + "))) as \"cnt\"";
+        // If we aren't doing anything that will create a join, we can use a simpler `COUNT` instead
+        // so we prevent poor query patterns in the most likely cases
+        if (
+            this.expressionMap.joinAttributes.length === 0 &&
+            this.expressionMap.relationIdAttributes.length === 0 &&
+            this.expressionMap.relationCountAttributes.length === 0
+        ) {
+            return "COUNT(1)";
+        }
+
+        // For everything else, we'll need to do some hackery to get the correct count values.
+
+        if (this.connection.driver instanceof CockroachDriver || this.connection.driver instanceof PostgresDriver) {
+            // Postgres and CockroachDB can pass multiple parameters to the `DISTINCT` function
+            // https://www.postgresql.org/docs/9.5/sql-select.html#SQL-DISTINCT
+            return "COUNT(DISTINCT(" +
+                primaryColumns.map(c => `${distinctAlias}.${this.escape(c.databaseName)}`).join(", ") +
+                "))";
+        }
+
+        if (this.connection.driver instanceof MysqlDriver) {
+            // MySQL & MariaDB can pass multiple parameters to the `DISTINCT` language construct
+            // https://mariadb.com/kb/en/count-distinct/
+            return "COUNT(DISTINCT " +
+                primaryColumns.map(c => `${distinctAlias}.${this.escape(c.databaseName)}`).join(", ") +
+                ")";
+        }
+
+        if (this.connection.driver instanceof SqlServerDriver) {
+            // SQL Server has gotta be different from everyone else.  They don't support
+            // distinct counting multiple columns & they don't have the same operator
+            // characteristic for concatenating, so we gotta use the `CONCAT` function.
+            // However, If it's exactly 1 column we can omit the `CONCAT` for better performance.
+
+            const columnsExpression = primaryColumns.map(
+                primaryColumn => `${distinctAlias}.${this.escape(primaryColumn.databaseName)}`
+            ).join(", '|;|', ");
+
+            if (primaryColumns.length === 1) {
+
+                return `COUNT(DISTINCT(${columnsExpression}))`;
             }
 
-        } else {
-            countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
-                const propertyName = this.escape(primaryColumn.databaseName);
-                return `${distinctAlias}.${propertyName}`;
-            }).join(", ") + ")) as \"cnt\"";
+            return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`;
+
         }
+
+        // If all else fails, fall back to a `COUNT` and `DISTINCT` across all the primary columns concatenated.
+        // Per the SQL spec, this is the canonical string concatenation mechanism which is most
+        // likely to work across servers implementing the SQL standard.
+
+        // Please note, if there is only one primary column that the concatenation does not occur in this
+        // query and the query is a standard `COUNT DISTINCT` in that case.
+
+        return `COUNT(DISTINCT(` +
+            primaryColumns.map(c => `${distinctAlias}.${this.escape(c.databaseName)}`).join(" || '|;|' || ") +
+            "))";
+    }
+
+    protected async executeCountQuery(queryRunner: QueryRunner): Promise<number> {
+        const countSql = this.computeCountExpression();
 
         const results = await this.clone()
             .orderBy()
@@ -1819,7 +1865,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             .limit(undefined)
             .skip(undefined)
             .take(undefined)
-            .select(countSql)
+            .select(countSql, "cnt")
             .setOption("disable-global-order")
             .loadRawResults(queryRunner);
 

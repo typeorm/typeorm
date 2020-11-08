@@ -2,7 +2,6 @@ import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {DriverUtils} from "../DriverUtils";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
 import {DateUtils} from "../../util/DateUtils";
@@ -394,7 +393,7 @@ export class PostgresDriver implements Driver {
             return metadata.columns.filter(column => this.spatialTypes.indexOf(column.type) >= 0).length > 0;
         });
         const hasLtreeColumns = this.connection.entityMetadatas.some(metadata => {
-            return metadata.columns.filter(column => column.type === 'ltree').length > 0;
+            return metadata.columns.filter(column => column.type === "ltree").length > 0;
         });
         const hasExclusionConstraints = this.connection.entityMetadatas.some(metadata => {
             return metadata.exclusions.length > 0;
@@ -499,7 +498,7 @@ export class PostgresDriver implements Driver {
             return `(${value.join(",")})`;
 
         } else if (columnMetadata.type === "ltree") {
-            return value.split(".").filter(Boolean).join('.').replace(/[\s]+/g, "_");
+            return value.split(".").filter(Boolean).join(".").replace(/[\s]+/g, "_");
         } else if (
             (
                 columnMetadata.type === "enum"
@@ -735,7 +734,7 @@ export class PostgresDriver implements Driver {
         }
 
         if (typeof defaultValue === "number") {
-            return "" + defaultValue;
+            return `'${defaultValue}'`;
 
         } else if (typeof defaultValue === "boolean") {
             return defaultValue === true ? "true" : "false";
@@ -875,8 +874,8 @@ export class PostgresDriver implements Driver {
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
-                || tableColumn.scale !== columnMetadata.scale
-                // || tableColumn.comment !== columnMetadata.comment // todo
+                || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
+                || (tableColumn.comment || "") !== columnMetadata.comment
                 || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
@@ -971,11 +970,12 @@ export class PostgresDriver implements Driver {
      */
     protected async createPool(options: PostgresConnectionOptions, credentials: PostgresConnectionCredentialsOptions): Promise<any> {
 
-        credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+        credentials = Object.assign({}, credentials);
 
         // build connection options for the driver
         // See: https://github.com/brianc/node-postgres/tree/master/packages/pg-pool#create
         const connectionOptions = Object.assign({}, {
+            connectionString: credentials.url,
             host: credentials.host,
             user: credentials.username,
             password: credentials.password,

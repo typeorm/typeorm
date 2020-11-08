@@ -23,6 +23,7 @@ import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {VersionUtils} from "../../util/VersionUtils";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -109,6 +110,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         this.isTransactionActive = true;
         if (isolationLevel) {
             await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
@@ -116,6 +121,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         } else {
             await this.query("START TRANSACTION");
         }
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -126,8 +135,16 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         await this.query("COMMIT");
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -138,8 +155,16 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         await this.query("ROLLBACK");
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -637,7 +662,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name;
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true)) {
+            if (this.isColumnChanged(oldColumn, newColumn, true, true)) {
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`));
             }
@@ -1200,47 +1225,183 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             return [];
 
         const currentDatabase = await this.getCurrentDatabase();
-        const tablesCondition = tableNames.map(tableName => {
+
+        // The following SQL brought to you by:
+        //   A terrible understanding of https://dev.mysql.com/doc/refman/8.0/en/information-schema-optimization.html
+        //
+        // Short Version:
+        // INFORMATION_SCHEMA is a weird metadata virtual table and follows VERY FEW of the normal
+        // query optimization rules.  Depending on the columns you query against & the columns you're SELECTing
+        // there can be a drastically different query performance - this is because the tables map to
+        // data on the disk and some pieces of data require a scan of the data directory, the database files, etc
+
+        // With most of these, you'll want to do an `EXPLAIN` when making changes to make sure
+        // the changes you're making aren't changing the query performance profile negatively
+        // When you do the explain you'll want to look at the `Extra` field -
+        // It will look something like: "Using where; {FILE_OPENING}; Scanned {DB_NUM} databases"
+        // FILE_OPENING will commonly be OPEN_FRM_ONLY or OPEN_FULL_TABLE - you want to aim to NOT do
+        // an OPEN_FULL_TABLE unless necessary. DB_NUM may be a number or "all" - you really want to
+        // keep this to 0 or 1.  Ideally 0. "All" means you've scanned all databases - not good.
+        //
+        // For more info, see the above link to the MySQL docs.
+        //
+        // Something not noted in the docs is that complex `WHERE` clauses - such as `OR` expressions -
+        // will cause the query to not hit the optimizations & do full scans.  This is why
+        // a number of queries below do `UNION`s of single `WHERE` clauses.
+
+        // Avoid data directory scan: TABLE_SCHEMA
+        // Avoid database directory scan: TABLE_NAME
+        // Full columns: CARDINALITY & INDEX_TYPE - everything else is FRM only
+        const statsSubquerySql = tableNames.map(tableName => {
             let [database, name] = tableName.split(".");
             if (!name) {
                 name = database;
                 database = this.driver.database || currentDatabase;
             }
-            return `(\`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}')`;
-        }).join(" OR ");
-        const tablesSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE ` + tablesCondition;
+            return `
+                SELECT
+                    *
+                FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\`
+                WHERE
+                    \`TABLE_SCHEMA\` = '${database}'
+                    AND
+                    \`TABLE_NAME\` = '${name}'
+            `;
+        }).join(" UNION ");
 
-        const columnsSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE ` + tablesCondition;
-
-        const primaryKeySql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` WHERE \`CONSTRAINT_NAME\` = 'PRIMARY' AND (${tablesCondition})`;
-
-        const collationsSql = `SELECT \`SCHEMA_NAME\`, \`DEFAULT_CHARACTER_SET_NAME\` as \`CHARSET\`, \`DEFAULT_COLLATION_NAME\` AS \`COLLATION\` FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\``;
-
-        const indicesCondition = tableNames.map(tableName => {
+        // Avoid data directory scan: TABLE_SCHEMA
+        // Avoid database directory scan: TABLE_NAME
+        // All columns will hit the full table.
+        const kcuSubquerySql = tableNames.map(tableName => {
             let [database, name] = tableName.split(".");
             if (!name) {
                 name = database;
                 database = this.driver.database || currentDatabase;
             }
-            return `(\`s\`.\`TABLE_SCHEMA\` = '${database}' AND \`s\`.\`TABLE_NAME\` = '${name}')`;
-        }).join(" OR ");
-        const indicesSql = `SELECT \`s\`.* FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\` \`s\` ` +
-            `LEFT JOIN \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` \`rc\` ON \`s\`.\`INDEX_NAME\` = \`rc\`.\`CONSTRAINT_NAME\` AND \`s\`.\`TABLE_SCHEMA\` = \`rc\`.\`CONSTRAINT_SCHEMA\`` +
-            `WHERE (${indicesCondition}) AND \`s\`.\`INDEX_NAME\` != 'PRIMARY' AND \`rc\`.\`CONSTRAINT_NAME\` IS NULL`;
+            return `
+                SELECT
+                    *
+                FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` \`kcu\`
+                WHERE
+                    \`kcu\`.\`TABLE_SCHEMA\` = '${database}'
+                    AND
+                    \`kcu\`.\`TABLE_NAME\` = '${name}'
+            `;
+        }).join(" UNION ");
 
-        const foreignKeysCondition = tableNames.map(tableName => {
+        // Avoid data directory scan: CONSTRAINT_SCHEMA
+        // Avoid database directory scan: TABLE_NAME
+        // All columns will hit the full table.
+        const rcSubquerySql = tableNames.map(tableName => {
             let [database, name] = tableName.split(".");
             if (!name) {
                 name = database;
                 database = this.driver.database || currentDatabase;
             }
-            return `(\`kcu\`.\`TABLE_SCHEMA\` = '${database}' AND \`kcu\`.\`TABLE_NAME\` = '${name}')`;
-        }).join(" OR ");
-        const foreignKeysSql = `SELECT \`kcu\`.\`TABLE_SCHEMA\`, \`kcu\`.\`TABLE_NAME\`, \`kcu\`.\`CONSTRAINT_NAME\`, \`kcu\`.\`COLUMN_NAME\`, \`kcu\`.\`REFERENCED_TABLE_SCHEMA\`, ` +
-            `\`kcu\`.\`REFERENCED_TABLE_NAME\`, \`kcu\`.\`REFERENCED_COLUMN_NAME\`, \`rc\`.\`DELETE_RULE\` \`ON_DELETE\`, \`rc\`.\`UPDATE_RULE\` \`ON_UPDATE\` ` +
-            `FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` \`kcu\` ` +
-            `INNER JOIN \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` \`rc\` ON \`rc\`.\`constraint_name\` = \`kcu\`.\`constraint_name\` ` +
-            `WHERE ` + foreignKeysCondition;
+            return `
+                SELECT
+                    *
+                FROM \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\`
+                WHERE
+                    \`CONSTRAINT_SCHEMA\` = '${database}'
+                    AND
+                    \`TABLE_NAME\` = '${name}'
+            `;
+        }).join(" UNION ");
+
+        // Avoid data directory scan: TABLE_SCHEMA
+        // Avoid database directory scan: TABLE_NAME
+        // We only use `TABLE_SCHEMA` and `TABLE_NAME` which is `SKIP_OPEN_TABLE`
+        const tablesSql = tableNames.map(tableName => {
+            let [database, name] = tableName.split(".");
+            if (!name) {
+                name = database;
+                database = this.driver.database || currentDatabase;
+            }
+            return `
+                SELECT
+                    \`TABLE_SCHEMA\`,
+                    \`TABLE_NAME\`
+                FROM
+                    \`INFORMATION_SCHEMA\`.\`TABLES\`
+                WHERE
+                    \`TABLE_SCHEMA\` = '${database}'
+                    AND
+                    \`TABLE_NAME\` = '${name}'
+                `;
+        }).join(" UNION ");
+
+        // Avoid data directory scan: TABLE_SCHEMA
+        // Avoid database directory scan: TABLE_NAME
+        // OPEN_FRM_ONLY applies to all columns
+        const columnsSql = tableNames.map(tableName => {
+            let [database, name] = tableName.split(".");
+            if (!name) {
+                name = database;
+                database = this.driver.database || currentDatabase;
+            }
+            return `
+                SELECT
+                    *
+                FROM
+                    \`INFORMATION_SCHEMA\`.\`COLUMNS\`
+                WHERE
+                    \`TABLE_SCHEMA\` = '${database}'
+                    AND
+                    \`TABLE_NAME\` = '${name}'
+                `;
+        }).join(" UNION ");
+
+        // No Optimizations are available for COLLATIONS
+        const collationsSql = `
+            SELECT
+                \`SCHEMA_NAME\`,
+                \`DEFAULT_CHARACTER_SET_NAME\` as \`CHARSET\`,
+                \`DEFAULT_COLLATION_NAME\` AS \`COLLATION\`
+            FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\`
+            `;
+
+        // Key Column Usage but only for PKs
+        const primaryKeySql = `SELECT * FROM (${kcuSubquerySql}) \`kcu\` WHERE \`CONSTRAINT_NAME\` = 'PRIMARY'`;
+
+        // Combine stats & referential constraints
+        const indicesSql = `
+            SELECT
+                \`s\`.*
+            FROM (${statsSubquerySql}) \`s\`
+            LEFT JOIN (${rcSubquerySql}) \`rc\`
+                ON
+                    \`s\`.\`INDEX_NAME\` = \`rc\`.\`CONSTRAINT_NAME\`
+                    AND
+                    \`s\`.\`TABLE_SCHEMA\` = \`rc\`.\`CONSTRAINT_SCHEMA\`
+            WHERE
+                \`s\`.\`INDEX_NAME\` != 'PRIMARY'
+                AND
+                \`rc\`.\`CONSTRAINT_NAME\` IS NULL
+            `;
+
+        // Combine Key Column Usage & Referential Constraints
+        const foreignKeysSql = `
+            SELECT
+                \`kcu\`.\`TABLE_SCHEMA\`,
+                \`kcu\`.\`TABLE_NAME\`,
+                \`kcu\`.\`CONSTRAINT_NAME\`,
+                \`kcu\`.\`COLUMN_NAME\`,
+                \`kcu\`.\`REFERENCED_TABLE_SCHEMA\`,
+                \`kcu\`.\`REFERENCED_TABLE_NAME\`,
+                \`kcu\`.\`REFERENCED_COLUMN_NAME\`,
+                \`rc\`.\`DELETE_RULE\` \`ON_DELETE\`,
+                \`rc\`.\`UPDATE_RULE\` \`ON_UPDATE\`
+            FROM (${kcuSubquerySql}) \`kcu\`
+            INNER JOIN (${rcSubquerySql}) \`rc\`
+                ON
+                    \`rc\`.\`CONSTRAINT_SCHEMA\` = \`kcu\`.\`CONSTRAINT_SCHEMA\`
+                    AND
+                    \`rc\`.\`TABLE_NAME\` = \`kcu\`.\`TABLE_NAME\`
+                    AND
+                    \`rc\`.\`CONSTRAINT_NAME\` = \`kcu\`.\`CONSTRAINT_NAME\`
+            `;
+
         const [dbTables, dbColumns, dbPrimaryKeys, dbCollations, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
@@ -1347,7 +1508,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     if (tableColumn.isGenerated)
                         tableColumn.generationStrategy = "increment";
 
-                    tableColumn.comment = dbColumn["COLUMN_COMMENT"];
+                    tableColumn.comment = (typeof dbColumn["COLUMN_COMMENT"] === "string" && dbColumn["COLUMN_COMMENT"].length === 0) ? undefined : dbColumn["COLUMN_COMMENT"];
                     if (dbColumn["CHARACTER_SET_NAME"])
                         tableColumn.charset = dbColumn["CHARACTER_SET_NAME"] === defaultCharset ? undefined : dbColumn["CHARACTER_SET_NAME"];
                     if (dbColumn["COLLATION_NAME"])
@@ -1648,6 +1809,22 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Escapes a given comment so it's safe to include in a query.
+     */
+    protected escapeComment(comment?: string) {
+        if (comment === undefined || comment.length === 0) {
+            return `''`;
+        }
+
+        comment = comment
+            .replace("\\", "\\\\") // MySQL allows escaping characters via backslashes
+            .replace("'", "''")
+            .replace("\0", ""); // Null bytes aren't allowed in comments
+
+        return `'${comment}'`;
+    }
+
+    /**
      * Escapes given table or view path.
      */
     protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
@@ -1688,8 +1865,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += " PRIMARY KEY";
         if (column.isGenerated && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
-        if (column.comment)
-            c += ` COMMENT '${column.comment.replace("'", "''")}'`;
+        if (column.comment !== undefined && column.comment.length > 0)
+            c += ` COMMENT ${this.escapeComment(column.comment)}`;
         if (column.default !== undefined && column.default !== null)
             c += ` DEFAULT ${column.default}`;
         if (column.onUpdate)

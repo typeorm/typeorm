@@ -12,5 +12,4 @@ export class Post {
         nullable: true
     })
     jsonField: any;
-
 }

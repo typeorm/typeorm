@@ -37,7 +37,7 @@ export class EntityCreateCommand implements yargs.CommandModule {
         try {
             const fileContent = EntityCreateCommand.getTemplate(args.name as any);
             const filename = args.name + ".ts";
-            let directory = args.dir as string;
+            let directory = args.dir as string | undefined;
 
             // if directory is not set then try to open tsconfig and find default path there
             if (!directory) {
@@ -51,7 +51,10 @@ export class EntityCreateCommand implements yargs.CommandModule {
                 } catch (err) { }
             }
 
-            const path = (directory.startsWith("/") ? "" : process.cwd() + "/") + (directory ? (directory + "/") : "") + filename;
+            if (directory && !directory.startsWith("/")) {
+                directory = process.cwd() + "/" + directory;
+            }
+            const path = (directory ? (directory + "/") : "") + filename;
             const fileExists = await CommandUtils.fileExists(path);
             if (fileExists) {
                 throw `File ${chalk.blue(path)} already exists`;
