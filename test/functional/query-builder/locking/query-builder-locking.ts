@@ -4,6 +4,7 @@ import {SapDriver} from "../../../../src/driver/sap/SapDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {PostWithVersion} from "./entity/PostWithVersion";
+import {Post} from './entity/Post';
 import {expect} from "chai";
 import {PostWithoutVersionAndUpdateDate} from "./entity/PostWithoutVersionAndUpdateDate";
 import {PostWithUpdateDate} from "./entity/PostWithUpdateDate";
@@ -352,4 +353,116 @@ describe("query builder > locking", () => {
         return;
     })));
 
+    it("should only specify locked tables in FOR UPDATE OF clause if argument is given", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof PostgresDriver))
+            return;
+
+        const sql = connection.createQueryBuilder(Post, "post")
+            .innerJoin("post.author", "user")
+            .setLock('pessimistic_write', undefined, ["user"])
+            .getSql();
+
+        expect(sql).to.match(/FOR UPDATE OF user$/);
+
+        const sql2 = connection.createQueryBuilder(Post, "post")
+            .innerJoin("post.author", "user")
+            .setLock('pessimistic_write', undefined, ["post","user"])
+            .getSql();
+
+        expect(sql2).to.match(/FOR UPDATE OF post, user$/);
+    })));
+
+    it("should not allow empty array for lockTables", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof PostgresDriver))
+            return;
+
+        return connection.manager.transaction(entityManager => {
+            return Promise.all([
+                entityManager.createQueryBuilder(Post, "post")
+                    .innerJoin("post.author", "user")
+                    .setLock('pessimistic_write', undefined, [])
+                    .getOne().should.be.rejectedWith('lockTables cannot be an empty array'),
+            ]);
+        });
+    })));
+
+    it("should throw error when specifying a table that is not part of the query", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof PostgresDriver))
+            return;
+
+        return connection.manager.transaction(entityManager => {
+            return Promise.all([
+                entityManager.createQueryBuilder(Post, "post")
+                    .innerJoin("post.author", "user")
+                    .setLock('pessimistic_write', undefined, ["img"])
+                    .getOne().should.be.rejectedWith('relation "img" in FOR UPDATE clause not found in FROM clause'),
+            ]);
+        });
+    })));
+
+    it("should allow on a left join", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof PostgresDriver))
+            return;
+
+        return connection.manager.transaction(entityManager => {
+
+            return Promise.all([
+                entityManager.createQueryBuilder(Post, "post")
+                    .leftJoin("post.author", "user")
+                    .setLock('pessimistic_write', undefined, ["post"])
+                    .getOne(),
+                entityManager.createQueryBuilder(Post, "post")
+                    .leftJoin("post.author", "user")
+                    .setLock('pessimistic_write')
+                    .getOne().should.be.rejectedWith('FOR UPDATE cannot be applied to the nullable side of an outer join'),
+            ]);
+        });
+    })));
+
+    it("should allow using lockTables on all types of locking", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof PostgresDriver))
+            return;
+
+        return connection.manager.transaction(entityManager => {
+
+            return Promise.all([
+                entityManager.createQueryBuilder(Post, "post")
+                    .leftJoin("post.author", "user")
+                    .setLock('pessimistic_read', undefined, ["post"])
+                    .getOne(),
+                entityManager.createQueryBuilder(Post, "post")
+                    .leftJoin("post.author", "user")
+                    .setLock('pessimistic_write', undefined, ["post"])
+                    .getOne(),
+                entityManager.createQueryBuilder(Post, "post")
+                    .leftJoin("post.author", "user")
+                    .setLock('pessimistic_partial_write', undefined, ["post"])
+                    .getOne(),
+                entityManager.createQueryBuilder(Post, "post")
+                    .leftJoin("post.author", "user")
+                    .setLock('pessimistic_write_or_fail', undefined, ["post"])
+                    .getOne(),
+                entityManager.createQueryBuilder(Post, "post")
+                    .leftJoin("post.author", "user")
+                    .setLock('for_no_key_update', undefined, ["post"])
+                    .getOne(),
+            ]);
+        });
+    })));
+
+    it("should allow locking a relation of a relation", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof PostgresDriver))
+            return;
+
+        return connection.manager.transaction(entityManager => {
+
+            return Promise.all([
+                entityManager.createQueryBuilder(Post, "post")
+                    .innerJoin("post.categories", "cat")
+                    .innerJoin("cat.images", "img")
+                    .setLock('pessimistic_write', undefined, ["img"])
+                    .getOne()
+            ]);
+        });
+    })));
 });

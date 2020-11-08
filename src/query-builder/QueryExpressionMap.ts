@@ -158,6 +158,11 @@ export class QueryExpressionMap {
     lockVersion?: number|Date;
 
     /**
+     * Tables to be specified in the "FOR UPDATE OF" clause, referred by their alias
+     */
+    lockTables?: string[];
+
+    /**
      * Indicates if soft-deleted rows should be included in entity result.
      * By default the soft-deleted rows are not included.
      */
@@ -416,6 +421,7 @@ export class QueryExpressionMap {
         map.take = this.take;
         map.lockMode = this.lockMode;
         map.lockVersion = this.lockVersion;
+        map.lockTables = this.lockTables;
         map.withDeleted = this.withDeleted;
         map.parameters = Object.assign({}, this.parameters);
         map.disableEscaping = this.disableEscaping;

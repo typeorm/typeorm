@@ -674,7 +674,7 @@ export abstract class QueryBuilder<Entity> {
         }
 
         if (!conditionsArray.length) {
-            return " ";
+            return "";
         } else if (conditionsArray.length === 1) {
             return ` WHERE ${conditionsArray[0]}`;
         } else {
