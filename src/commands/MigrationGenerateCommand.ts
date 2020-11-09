@@ -102,9 +102,9 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 sqlInMemory.upQueries.forEach(upQuery => {
                     upQuery.query = `${upQuery.query} TABLESPACE ${connection.options.extra.tablespace}`;
                 });
-                sqlInMemory.downQueries.forEach(downQuery => {
-                        downQuery.query = `${downQuery.query} TABLESPACE ${connection.options.extra.tablespace}`;
-                    });
+                // sqlInMemory.downQueries.forEach(downQuery => {
+                //         downQuery.query = `${downQuery.query} TABLESPACE ${connection.options.extra.tablespace}`;
+                //     });
                 }
                 // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
                 // we are using simple quoted string instead of template string syntax
