@@ -181,11 +181,11 @@ export class IgniteDriver implements Driver {
   }
 
   async afterConnect() {
-    const { database } = this.options;
+    const { schema } = this.options;
     const { CacheConfiguration } = this.IgniteClient;
 
-    const cacheConfig = new CacheConfiguration().setSqlSchema(database);
-    const cache = await this.getOrCreateCache(this.options.database, cacheConfig);
+    const cacheConfig = new CacheConfiguration().setSqlSchema(schema);
+    const cache = await this.getOrCreateCache(this.options.schema, cacheConfig);
     this.cache = cache;
   }
 

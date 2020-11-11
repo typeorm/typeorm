@@ -619,7 +619,7 @@ export class IgniteQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     async clearDatabase() {
-        return this.driver.client.destroyCache(this.driver.options.database);
+        return this.driver.client.destroyCache(this.driver.options.schema);
     }
 
     protected async loadViews(): Promise<View[]> {

@@ -8,9 +8,9 @@ export interface IgniteConnectionOptions extends BaseConnectionOptions {
    */
   readonly endpoint: string | string[];
   /**
-   * ignite cacheName
+   * ignite schema name
    */
-  readonly database: string;
+  readonly schema: string;
 
   readonly username?: string;
 

@@ -1,12 +1,12 @@
 import "reflect-metadata";
 import { IgniteConnectionOptions } from "../../src/driver/ignite/IgniteConnectionOptions";
-import { createConnection, MoreThan } from "../../src/index";
+import { createConnection,MoreThan } from "../../src/index";
 import { Post } from "./entity/Post";
 
 const options: IgniteConnectionOptions = {
   type: "ignite",
   endpoint: "127.0.0.1:10800",
-  database: "test",
+  schema: "test",
   synchronize: true,
   logging: true,
   entities: [__dirname + "/entity/*"],
