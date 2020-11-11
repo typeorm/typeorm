@@ -78,7 +78,7 @@ describe("entity subscriber transaction flow", () => {
             const queryRunner = await connection.createQueryRunner();
 
             if (connection.driver instanceof AuroraDataApiPostgresDriver || connection.driver instanceof AuroraDataApiDriver) {
-                const startTransactionFn = sinon.spy(connection.driver.client.startTransaction);
+                const startTransactionFn = sinon.spy(queryRunner.startTransaction);
                 await queryRunner.startTransaction();
 
                 expect(beforeTransactionStart.calledBefore(startTransactionFn)).to.be.true;
@@ -130,7 +130,7 @@ describe("entity subscriber transaction flow", () => {
             await queryRunner.startTransaction();
 
             if (connection.driver instanceof AuroraDataApiPostgresDriver || connection.driver instanceof AuroraDataApiDriver) {
-                const commitTransactionFn = sinon.spy(connection.driver.client.commitTransaction);
+                const commitTransactionFn = sinon.spy(queryRunner.commitTransaction);
                 await queryRunner.commitTransaction();
 
                 expect(beforeTransactionCommit.calledBefore(commitTransactionFn)).to.be.true;
@@ -176,7 +176,7 @@ describe("entity subscriber transaction flow", () => {
             await queryRunner.startTransaction();
 
             if (connection.driver instanceof AuroraDataApiPostgresDriver || connection.driver instanceof AuroraDataApiDriver) {
-                const rollbackTransactionFn = sinon.spy(connection.driver.client.rollbackTransaction);
+                const rollbackTransactionFn = sinon.spy(queryRunner.rollbackTransaction);
                 await queryRunner.rollbackTransaction();
 
                 expect(beforeTransactionRollback.calledBefore(rollbackTransactionFn)).to.be.true;
