@@ -9,6 +9,9 @@ import {EntityManager} from "../entity-manager/EntityManager";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
+import {DeleteResult} from "../query-builder/result/DeleteResult";
+import {InsertResult} from "../query-builder/result/InsertResult";
+import {UpdateResult} from "../query-builder/result/UpdateResult";
 
 export abstract class BaseQueryRunner {
 
@@ -92,6 +95,27 @@ export abstract class BaseQueryRunner {
      * Executes a given SQL query.
      */
     abstract query(query: string, parameters?: any[]): Promise<any>;
+
+    /**
+     * Executes a given SQL DELETE query and returns raw database results and additional information.
+     */
+    processDeleteQueryResult(raw: any, result: DeleteResult): void {
+        result.raw = raw;
+    }
+
+    /**
+     * Executes a given SQL INSERT query and returns raw database results and additional information.
+     */
+    processInsertQueryResult(raw: any, result: InsertResult): void {
+        result.raw = raw;
+    }
+
+    /**
+     * Executes a given SQL UPDATE query and returns raw database results and additional information.
+     */
+    processUpdateQueryResult(raw: any, result: UpdateResult): void {
+        result.raw = raw;
+    }
 
     // -------------------------------------------------------------------------
     // Protected Abstract Methods

@@ -23,6 +23,8 @@ import {IsolationLevel} from "../types/IsolationLevel";
 import {PostgresDriver} from "./PostgresDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import {DeleteResult} from "../../query-builder/result/DeleteResult";
+import {UpdateResult} from "../../query-builder/result/UpdateResult";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -227,6 +229,23 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             this.driver.connection.logger.logQueryError(err, query, parameters, this);
             throw new QueryFailedError(query, parameters, err);
         }
+    }
+
+    /**
+     * Executes a given SQL DELETE query and returns raw database results and additional information.
+     */
+    processDeleteQueryResult(raw: any, result: DeleteResult): void {
+        result.raw = raw[0] ? raw[0] : null;
+        // don't return 0 because it could confuse. null means that we did not receive this value
+        result.affected = typeof raw[1] === "number" ? raw[1] : null;
+    }
+
+    /**
+     * Executes a given SQL UPDATE query and returns raw database results and additional information.
+     */
+    processUpdateQueryResult(raw: any, result: UpdateResult): void {
+        result.raw = raw[0];
+        result.affected = raw[1];
     }
 
     /**

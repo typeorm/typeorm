@@ -1,6 +1,6 @@
 import {CockroachDriver} from "../../driver/cockroachdb/CockroachDriver";
 import {SapDriver} from "../../driver/sap/SapDriver";
-import { ColumnMetadata } from "../../metadata/ColumnMetadata";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {SqlServerDriver} from "../../driver/sqlserver/SqlServerDriver";
@@ -13,7 +13,6 @@ import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../../error/UpdateValuesMissingError";
 import {QueryDeepPartialEntity} from "../QueryPartialEntity";
 import {AuroraDataApiDriver} from "../../driver/aurora-data-api/AuroraDataApiDriver";
-import {BetterSqlite3Driver} from "../../driver/better-sqlite3/BetterSqlite3Driver";
 import {ModificationQueryBuilder} from "./ModificationQueryBuilder";
 
 /**
@@ -202,19 +201,7 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
             statements.filter(sql => sql != null).join(";\n\n"),
             parameters,
         );
-
-        if (this.connection.driver instanceof PostgresDriver) {
-            updateResult.raw = result[0];
-            updateResult.affected = result[1];
-        } else if (this.connection.driver instanceof MysqlDriver) {
-            updateResult.raw = result;
-            updateResult.affected = result.affectedRows;
-        } else if (this.connection.driver instanceof BetterSqlite3Driver) { // only works for better-sqlite3
-            updateResult.raw = result;
-            updateResult.affected = result.changes;
-        } else {
-            updateResult.raw = result;
-        }
+        queryRunner.processUpdateQueryResult(result, updateResult);
 
         // if we are updating entities and entity updation is enabled we must update some of entity columns (like version, update date, etc.)
         if (this.expressionMap.updateEntity === true &&

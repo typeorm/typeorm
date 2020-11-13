@@ -21,6 +21,7 @@ import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import {DeleteResult} from "../../query-builder/result/DeleteResult";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -158,6 +159,14 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         }
 
         return result;
+    }
+
+    /**
+     * Executes a given SQL DELETE query and returns raw database results and additional information.
+     */
+    processDeleteQueryResult(raw: any, result: DeleteResult): void {
+        result.raw = raw;
+        result.affected = raw.affectedRows;
     }
 
     /**
