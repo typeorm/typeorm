@@ -13,6 +13,9 @@ import {Broadcaster} from "../subscriber/Broadcaster";
 import {TableCheck} from "../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {TableExclusion} from "../schema-builder/table/TableExclusion";
+import {DeleteResult} from "../query-builder/result/DeleteResult";
+import {InsertResult} from "../query-builder/result/InsertResult";
+import {UpdateResult} from "../query-builder/result/UpdateResult";
 
 /**
  * Runs queries on a single database connection.
@@ -101,6 +104,21 @@ export interface QueryRunner {
      * Executes a given SQL query and returns raw database results.
      */
     query(query: string, parameters?: any[]): Promise<any>;
+
+    /**
+     * Executes a given SQL DELETE query and returns raw database results and additional information.
+     */
+    processDeleteQueryResult(raw: any, result: DeleteResult): void;
+
+    /**
+     * Executes a given SQL INSERT query and returns raw database results and additional information.
+     */
+    processInsertQueryResult(raw: any, result: InsertResult): void;
+
+    /**
+     * Executes a given SQL UPDATE query and returns raw database results and additional information.
+     */
+    processUpdateQueryResult(raw: any, result: UpdateResult): void;
 
     /**
      * Returns raw data stream.

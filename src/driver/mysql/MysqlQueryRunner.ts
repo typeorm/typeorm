@@ -24,6 +24,9 @@ import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {VersionUtils} from "../../util/VersionUtils";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import {DeleteResult} from "../../query-builder/result/DeleteResult";
+import {InsertResult} from "../../query-builder/result/InsertResult";
+import {UpdateResult} from "../../query-builder/result/UpdateResult";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -200,6 +203,31 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 fail(err);
             }
         });
+    }
+
+    /**
+     * Executes a given SQL DELETE query and returns raw database results and additional information.
+     */
+    processDeleteQueryResult(raw: any, result: DeleteResult): void {
+        result.raw = raw;
+        result.affected = raw.affectedRows;
+    }
+
+    /**
+     * Executes a given SQL INSERT query and returns raw database results and additional information.
+     */
+    processInsertQueryResult(raw: any, result: InsertResult): void {
+        result.raw = raw;
+        result.affected = raw.affectedRows;
+        result.rowId = raw.insertId;
+    }
+
+    /**
+     * Executes a given SQL UPDATE query and returns raw database results and additional information.
+     */
+    processUpdateQueryResult(raw: any, result: UpdateResult): void {
+        result.raw = raw;
+        result.affected = raw.affectedRows;
     }
 
     /**

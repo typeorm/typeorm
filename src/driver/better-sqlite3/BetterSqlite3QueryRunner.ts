@@ -3,6 +3,8 @@ import { QueryFailedError } from "../../error/QueryFailedError";
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import { Broadcaster } from "../../subscriber/Broadcaster";
 import { BetterSqlite3Driver } from "./BetterSqlite3Driver";
+import { DeleteResult } from "../../query-builder/result/DeleteResult";
+import { UpdateResult } from "../../query-builder/result/UpdateResult";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -102,5 +104,21 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             connection.logger.logQueryError(err, query, parameters, this);
             throw new QueryFailedError(query, parameters, err);
         }
+    }
+
+    /**
+     * Executes a given SQL DELETE query and returns raw database results and additional information.
+     */
+    processDeleteQueryResult(raw: any, result: DeleteResult): void {
+        result.raw = raw;
+        result.affected = raw.changes;
+    }
+
+    /**
+     * Executes a given SQL UPDATE query and returns raw database results and additional information.
+     */
+    processUpdateQueryResult(raw: any, result: UpdateResult): void {
+        result.raw = raw;
+        result.affected = raw.changes;
     }
 }

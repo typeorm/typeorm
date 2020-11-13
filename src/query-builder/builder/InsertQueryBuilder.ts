@@ -517,12 +517,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
 
         // execute query
         const [insertSql, parameters] = this.getQueryAndParameters();
-        const insertResult = new InsertResult();
+
         const statements = [declareSql, insertSql, selectOutputSql];
-        insertResult.raw = await queryRunner.query(
+        const insertResult = new InsertResult();
+        const result = await queryRunner.query(
             statements.filter(sql => sql != null).join(";\n\n"),
             parameters,
         );
+        queryRunner.processInsertQueryResult(result, insertResult);
 
         // load returning results and set them to the entity if entity updation is enabled
         if (this.expressionMap.updateEntity === true && this.expressionMap.mainAlias!.hasMetadata) {

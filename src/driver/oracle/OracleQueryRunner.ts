@@ -22,6 +22,7 @@ import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import {DeleteResult} from "../../query-builder/result/DeleteResult";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -215,6 +216,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 fail(err);
             }
         });
+    }
+
+    /**
+     * Executes a given SQL DELETE query and returns raw database results and additional information.
+     */
+    processDeleteQueryResult(raw: any, result: DeleteResult): void {
+        result.raw = raw;
+        result.affected = raw;
     }
 
     /**

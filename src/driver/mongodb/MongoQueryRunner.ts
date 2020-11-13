@@ -46,6 +46,9 @@ import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {Broadcaster} from "../../subscriber/Broadcaster";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import {DeleteResult} from "../../query-builder/result/DeleteResult";
+import {InsertResult} from "../../query-builder/result/InsertResult";
+import {UpdateResult} from "../../query-builder/result/UpdateResult";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -417,6 +420,27 @@ export class MongoQueryRunner implements QueryRunner {
      * Executes a given SQL query.
      */
     query(query: string, parameters?: any[]): Promise<any> {
+        throw new Error(`Executing SQL query is not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Executes a given SQL DELETE query and returns raw database results and additional information.
+     */
+    processDeleteQueryResult(raw: any, result: DeleteResult): void {
+        throw new Error(`Executing SQL query is not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Executes a given SQL INSERT query and returns raw database results and additional information.
+     */
+    processInsertQueryResult(raw: any, result: InsertResult): void {
+        throw new Error(`Executing SQL query is not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Executes a given SQL UPDATE query and returns raw database results and additional information.
+     */
+    processUpdateQueryResult(raw: any, result: UpdateResult): void {
         throw new Error(`Executing SQL query is not supported by MongoDB driver.`);
     }
 

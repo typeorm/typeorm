@@ -24,6 +24,7 @@ import {MssqlParameter} from "./MssqlParameter";
 import {SqlServerDriver} from "./SqlServerDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import {DeleteResult} from "../../query-builder/result/DeleteResult";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -272,6 +273,15 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         // if (this.isTransactionActive)
         this.queryResponsibilityChain.push(promise);
         return promise;
+    }
+
+    /**
+     * Executes a given SQL DELETE query and returns raw database results and additional information.
+     */
+    processDeleteQueryResult(raw: any, result: DeleteResult): void {
+        result.raw = raw[0] ? raw[0] : null;
+        // don't return 0 because it could confuse. null means that we did not receive this value
+        result.affected = typeof raw[1] === "number" ? raw[1] : null;
     }
 
     /**
