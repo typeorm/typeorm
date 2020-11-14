@@ -1293,6 +1293,7 @@ There are several extensions that simplify working with TypeORM and integrating 
 * [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 * Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
 * Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
+* ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
 
 ## Contributing
 
