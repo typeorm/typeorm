@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
-import {QueryBuilder} from "../../../../src/query-builder/QueryBuilder";
+import {QueryBuilder} from "../../../../src/query-builder/builder/QueryBuilder";
 import {User} from "./model/User";
 import questionSchema from "./model-schema/QuestionSchema";
 import {Question} from "./model/Question";

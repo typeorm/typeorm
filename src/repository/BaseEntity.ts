@@ -7,7 +7,7 @@ import {RemoveOptions} from "./RemoveOptions";
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {Connection} from "../connection/Connection";
 import {ObjectType} from "../common/ObjectType";
-import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {SelectQueryBuilder} from "../query-builder/builder/SelectQueryBuilder";
 import {InsertResult} from "../query-builder/result/InsertResult";
 import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {DeleteResult} from "../query-builder/result/DeleteResult";

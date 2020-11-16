@@ -1,6 +1,6 @@
 import {QueryBuilder} from "./QueryBuilder";
-import {RelationUpdater} from "./RelationUpdater";
-import {RelationRemover} from "./RelationRemover";
+import {RelationUpdater} from "../RelationUpdater";
+import {RelationRemover} from "../RelationRemover";
 
 /**
  * Allows to work with entity relations and perform specific operations with those relations.

@@ -1,5 +1,5 @@
 import {SapDriver} from "../driver/sap/SapDriver";
-import {QueryBuilder} from "./QueryBuilder";
+import {QueryBuilder} from "./builder/QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {OracleDriver} from "../driver/oracle/OracleDriver";

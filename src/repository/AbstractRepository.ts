@@ -7,7 +7,7 @@ import {ObjectType} from "../common/ObjectType";
 import {CustomRepositoryDoesNotHaveEntityError} from "../error/CustomRepositoryDoesNotHaveEntityError";
 import {getMetadataArgsStorage} from "../index";
 import {CustomRepositoryNotFoundError} from "../error/CustomRepositoryNotFoundError";
-import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {SelectQueryBuilder} from "../query-builder/builder/SelectQueryBuilder";
 
 /**
  * Provides abstract class for custom repositories that do not inherit from original orm Repository.

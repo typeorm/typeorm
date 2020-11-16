@@ -9,7 +9,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SelectQuery} from "./SelectQuery";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {QueryBuilder} from "./QueryBuilder";
+import {QueryBuilder} from "./builder/QueryBuilder";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 
 /**

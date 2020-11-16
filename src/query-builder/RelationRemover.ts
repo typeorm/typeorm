@@ -1,4 +1,4 @@
-import {QueryBuilder} from "./QueryBuilder";
+import {QueryBuilder} from "./builder/QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 
