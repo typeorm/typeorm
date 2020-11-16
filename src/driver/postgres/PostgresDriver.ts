@@ -940,6 +940,13 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Returns true if driver parameters are indexed
+     */
+    hasIndexedParameters(): boolean {
+        return true;
+    }
+
+    /**
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {

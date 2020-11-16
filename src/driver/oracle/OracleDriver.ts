@@ -659,6 +659,13 @@ export class OracleDriver implements Driver {
     }
 
     /**
+     * Returns true if driver parameters are indexed
+     */
+    hasIndexedParameters(): boolean {
+        return false; // TODO: Indexed but still requires strict order?
+    }
+
+    /**
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
