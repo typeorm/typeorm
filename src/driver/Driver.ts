@@ -200,6 +200,11 @@ export interface Driver {
     isFullTextColumnTypeSupported(): boolean;
 
     /**
+     * Returns true if driver parameters are indexed
+     */
+    hasIndexedParameters(): boolean;
+
+    /**
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string;

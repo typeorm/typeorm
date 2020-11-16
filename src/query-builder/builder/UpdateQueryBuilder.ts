@@ -9,7 +9,6 @@ import {UpdateResult} from "../result/UpdateResult";
 import {ReturningResultsEntityUpdator} from "../ReturningResultsEntityUpdator";
 import {MysqlDriver} from "../../driver/mysql/MysqlDriver";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
-import {AbstractSqliteDriver} from "../../driver/sqlite-abstract/AbstractSqliteDriver";
 import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../../error/UpdateValuesMissingError";
 import {QueryDeepPartialEntity} from "../QueryPartialEntity";
@@ -63,12 +62,8 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
         const updateColumnAndValues: string[] = [];
         const updatedColumns: ColumnMetadata[] = [];
         const newParameters: ObjectLiteral = {};
-        let parametersCount =   this.connection.driver instanceof MysqlDriver ||
-                                this.connection.driver instanceof AuroraDataApiDriver ||
-                                this.connection.driver instanceof OracleDriver ||
-                                this.connection.driver instanceof AbstractSqliteDriver ||
-                                this.connection.driver instanceof SapDriver
-            ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
+        let parametersCount = this.connection.driver.hasIndexedParameters()
+            ? Object.keys(this.expressionMap.nativeParameters).length : 0;
         if (metadata) {
             metadata.extractColumnsInEntity(valuesSet).forEach(column => {
                 if (!column.isUpdate) { return; }
@@ -94,11 +89,7 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
                         value = this.connection.driver.parametrizeValue(column, value);
                     }
 
-                    if (this.connection.driver instanceof MysqlDriver ||
-                        this.connection.driver instanceof AuroraDataApiDriver ||
-                        this.connection.driver instanceof OracleDriver ||
-                        this.connection.driver instanceof AbstractSqliteDriver ||
-                        this.connection.driver instanceof SapDriver) {
+                    if (!this.connection.driver.hasIndexedParameters()) {
                         newParameters[paramName] = value;
                     } else {
                         this.expressionMap.nativeParameters[paramName] = value;
@@ -148,11 +139,7 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
                     // if (value instanceof Array)
                     //     value = new ArrayParameter(value);
 
-                    if (this.connection.driver instanceof MysqlDriver ||
-                        this.connection.driver instanceof AuroraDataApiDriver ||
-                        this.connection.driver instanceof OracleDriver ||
-                        this.connection.driver instanceof AbstractSqliteDriver ||
-                        this.connection.driver instanceof SapDriver) {
+                    if (!this.connection.driver.hasIndexedParameters()) {
                         newParameters[key] = value;
                     } else {
                         this.expressionMap.nativeParameters[key] = value;
@@ -169,11 +156,7 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
 
         // we re-write parameters this way because we want our "UPDATE ... SET" parameters to be first in the list of "nativeParameters"
         // because some drivers like mysql depend on order of parameters
-        if (this.connection.driver instanceof MysqlDriver ||
-            this.connection.driver instanceof AuroraDataApiDriver ||
-            this.connection.driver instanceof OracleDriver ||
-            this.connection.driver instanceof AbstractSqliteDriver ||
-            this.connection.driver instanceof SapDriver) {
+        if (!this.connection.driver.hasIndexedParameters()) {
             this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
         }
 
