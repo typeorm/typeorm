@@ -1,13 +1,12 @@
-/**
- *
- */
+import { EntityMetadata } from "../metadata/EntityMetadata";
+
 export class EntityColumnNotFound extends Error {
     name = "EntityColumnNotFound";
 
-    constructor(propertyPath: string) {
+    constructor(metadata: EntityMetadata, propertyPath: string) {
         super();
         Object.setPrototypeOf(this, EntityColumnNotFound.prototype);
-        this.message = `No entity column "${propertyPath}" was found.`;
+        this.message = `Column "${propertyPath}" not found in entity "${metadata.name}".`;
     }
 
 }

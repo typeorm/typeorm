@@ -5,7 +5,6 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {SqlServerDriver} from "../../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../driver/postgres/PostgresDriver";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {UpdateResult} from "../result/UpdateResult";
 import {ReturningResultsEntityUpdator} from "../ReturningResultsEntityUpdator";
 import {MysqlDriver} from "../../driver/mysql/MysqlDriver";
@@ -13,7 +12,6 @@ import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import {AbstractSqliteDriver} from "../../driver/sqlite-abstract/AbstractSqliteDriver";
 import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../../error/UpdateValuesMissingError";
-import {EntityColumnNotFound} from "../../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "../QueryPartialEntity";
 import {AuroraDataApiDriver} from "../../driver/aurora-data-api/AuroraDataApiDriver";
 import {BetterSqlite3Driver} from "../../driver/better-sqlite3/BetterSqlite3Driver";
@@ -72,75 +70,62 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
                                 this.connection.driver instanceof SapDriver
             ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
         if (metadata) {
-            EntityMetadata.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
-                // todo: make this and other query builder to work with properly with tables without metadata
-                const columns = metadata.findColumnsWithPropertyPath(propertyPath);
+            metadata.extractColumnsInEntity(valuesSet).forEach(column => {
+                if (!column.isUpdate) { return; }
 
-                if (columns.length <= 0) {
-                    throw new EntityColumnNotFound(propertyPath);
+                updatedColumns.push(column);
+
+                const paramName = "upd_" + column.databaseName;
+
+                let value = column.getEntityValue(valuesSet);
+                if (column.referencedColumn && value instanceof Object) {
+                    value = column.referencedColumn.getEntityValue(value);
+                } else if (!(value instanceof Function)) {
+                    value = this.connection.driver.preparePersistentValue(value, column);
                 }
 
-                columns.forEach(column => {
-                    if (!column.isUpdate) { return; }
-                    updatedColumns.push(column);
-
-                    const paramName = "upd_" + column.databaseName;
-
-                    //
-                    let value = column.getEntityValue(valuesSet);
-                    if (column.referencedColumn && value instanceof Object) {
-                        value = column.referencedColumn.getEntityValue(value);
-                    }
-                    else if (!(value instanceof Function)) {
-                        value = this.connection.driver.preparePersistentValue(value, column);
+                // todo: duplication zone
+                if (value instanceof Function) { // support for SQL expressions in update query
+                    updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
+                } else if (this.connection.driver instanceof SapDriver && value === null) {
+                    updateColumnAndValues.push(this.escape(column.databaseName) + " = NULL");
+                } else {
+                    if (this.connection.driver instanceof SqlServerDriver) {
+                        value = this.connection.driver.parametrizeValue(column, value);
                     }
 
-                    // todo: duplication zone
-                    if (value instanceof Function) { // support for SQL expressions in update query
-                        updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
-                    } else if (this.connection.driver instanceof SapDriver && value === null) {
-                        updateColumnAndValues.push(this.escape(column.databaseName) + " = NULL");
+                    if (this.connection.driver instanceof MysqlDriver ||
+                        this.connection.driver instanceof AuroraDataApiDriver ||
+                        this.connection.driver instanceof OracleDriver ||
+                        this.connection.driver instanceof AbstractSqliteDriver ||
+                        this.connection.driver instanceof SapDriver) {
+                        newParameters[paramName] = value;
                     } else {
-                        if (this.connection.driver instanceof SqlServerDriver) {
-                            value = this.connection.driver.parametrizeValue(column, value);
-
-                        // } else if (value instanceof Array) {
-                        //     value = new ArrayParameter(value);
-                        }
-
-                        if (this.connection.driver instanceof MysqlDriver ||
-                            this.connection.driver instanceof AuroraDataApiDriver ||
-                            this.connection.driver instanceof OracleDriver ||
-                            this.connection.driver instanceof AbstractSqliteDriver ||
-                            this.connection.driver instanceof SapDriver) {
-                            newParameters[paramName] = value;
-                        } else {
-                            this.expressionMap.nativeParameters[paramName] = value;
-                        }
-
-                        let expression = null;
-                        if ((this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                            const useLegacy = this.connection.driver.options.legacySpatialSupport;
-                            const geomFromText = useLegacy ? "GeomFromText" : "ST_GeomFromText";
-                            if (column.srid != null) {
-                                expression = `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount++)}, ${column.srid})`;
-                            } else {
-                                expression = `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount++)})`;
-                            }
-                        } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                            if (column.srid != null) {
-                              expression = `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount++)}), ${column.srid})::${column.type}`;
-                            } else {
-                              expression = `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount++)})::${column.type}`;
-                            }
-                        } else if (this.connection.driver instanceof SqlServerDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                            expression = column.type + "::STGeomFromText(" + this.connection.driver.createParameter(paramName, parametersCount++) + ", " + (column.srid || "0") + ")";
-                        } else {
-                            expression = this.connection.driver.createParameter(paramName, parametersCount++);
-                        }
-                        updateColumnAndValues.push(this.escape(column.databaseName) + " = " + expression);
+                        this.expressionMap.nativeParameters[paramName] = value;
                     }
-                });
+
+                    let expression = null;
+                    if ((this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                        const useLegacy = this.connection.driver.options.legacySpatialSupport;
+                        const geomFromText = useLegacy ? "GeomFromText" : "ST_GeomFromText";
+                        if (column.srid != null) {
+                            expression = `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount++)}, ${column.srid})`;
+                        } else {
+                            expression = `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount++)})`;
+                        }
+                    } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                        if (column.srid != null) {
+                            expression = `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount++)}), ${column.srid})::${column.type}`;
+                        } else {
+                            expression = `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount++)})::${column.type}`;
+                        }
+                    } else if (this.connection.driver instanceof SqlServerDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                        expression = column.type + "::STGeomFromText(" + this.connection.driver.createParameter(paramName, parametersCount++) + ", " + (column.srid || "0") + ")";
+                    } else {
+                        expression = this.connection.driver.createParameter(paramName, parametersCount++);
+                    }
+                    updateColumnAndValues.push(this.escape(column.databaseName) + " = " + expression);
+                }
             });
 
             if (metadata.versionColumn && !updatedColumns.includes(metadata.versionColumn))
