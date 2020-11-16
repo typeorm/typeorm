@@ -12,7 +12,6 @@ import {EntityTarget} from "../../common/EntityTarget";
 import {Alias} from "../Alias";
 import {Brackets} from "../Brackets";
 import {QueryDeepPartialEntity} from "../QueryPartialEntity";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {SqljsDriver} from "../../driver/sqljs/SqljsDriver";
 import {PostgresDriver} from "../../driver/postgres/PostgresDriver";
@@ -22,7 +21,6 @@ import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {EntitySchema} from "../../index";
 import {FindOperator} from "../../find-options/FindOperator";
 import {In} from "../../find-options/operator/In";
-import {EntityColumnNotFound} from "../../error/EntityColumnNotFound";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 
 // todo: completely cover query builder with tests
@@ -895,49 +893,40 @@ export abstract class QueryBuilder<Entity, Result = any> {
 
             if (this.expressionMap.mainAlias!.hasMetadata) {
                 andConditions = wheres.map((where, whereIndex) => {
-                    const propertyPaths = EntityMetadata.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
+                    const columns = this.expressionMap.mainAlias!.metadata.extractColumnsInEntity(where);
 
-                    return propertyPaths.map((propertyPath, propertyIndex) => {
-                        const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);
+                    return columns.map((column, columnIndex) => {
+                        const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${column.propertyPath}` : column.propertyPath;
+                        let parameterValue = column.getEntityValue(where, true);
+                        const parameterName = "where_" + whereIndex + "_" + columnIndex;
+                        const parameterBaseCount = Object.keys(this.expressionMap.nativeParameters).filter(x => x.startsWith(parameterName)).length;
 
-                        if (!columns.length) {
-                            throw new EntityColumnNotFound(propertyPath);
-                        }
+                        if (parameterValue === null) {
+                            return `${aliasPath} IS NULL`;
 
-                        return columns.map((column, columnIndex) => {
-
-                            const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
-                            let parameterValue = column.getEntityValue(where, true);
-                            const parameterName = "where_" + whereIndex + "_" + propertyIndex + "_" + columnIndex;
-                            const parameterBaseCount = Object.keys(this.expressionMap.nativeParameters).filter(x => x.startsWith(parameterName)).length;
-
-                            if (parameterValue === null) {
-                                return `${aliasPath} IS NULL`;
-
-                            } else if (parameterValue instanceof FindOperator) {
-                                let parameters: any[] = [];
-                                if (parameterValue.useParameter) {
-                                    if (parameterValue.objectLiteralParameters) {
-                                        this.setParameters(parameterValue.objectLiteralParameters);
-                                    } else {
-                                        const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
-                                        realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
-                                            this.expressionMap.nativeParameters[parameterName + (parameterBaseCount + realParameterValueIndex)] = realParameterValue;
-                                            parameterIndex++;
-                                            parameters.push(this.connection.driver.createParameter(parameterName + (parameterBaseCount + realParameterValueIndex), parameterIndex - 1));
-                                        });
-                                    }
+                        } else if (parameterValue instanceof FindOperator) {
+                            let parameters: any[] = [];
+                            if (parameterValue.useParameter) {
+                                if (parameterValue.objectLiteralParameters) {
+                                    this.setParameters(parameterValue.objectLiteralParameters);
+                                } else {
+                                    const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
+                                    realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
+                                        this.expressionMap.nativeParameters[parameterName + (parameterBaseCount + realParameterValueIndex)] = realParameterValue;
+                                        parameterIndex++;
+                                        parameters.push(this.connection.driver.createParameter(parameterName + (parameterBaseCount + realParameterValueIndex), parameterIndex - 1));
+                                    });
                                 }
-
-                                return this.computeFindOperatorExpression(parameterValue, aliasPath, parameters);
-                            } else {
-                                this.expressionMap.nativeParameters[parameterName] = parameterValue;
-                                parameterIndex++;
-                                const parameter = this.connection.driver.createParameter(parameterName, parameterIndex - 1);
-                                return `${aliasPath} = ${parameter}`;
                             }
 
-                        }).filter(expression => !!expression).join(" AND ");
+                            return this.computeFindOperatorExpression(parameterValue, aliasPath, parameters);
+                        } else {
+                            this.expressionMap.nativeParameters[parameterName] = parameterValue;
+                            parameterIndex++;
+                            const parameter = this.connection.driver.createParameter(parameterName, parameterIndex - 1);
+                            return `${aliasPath} = ${parameter}`;
+                        }
+
                     }).filter(expression => !!expression).join(" AND ");
                 });
 

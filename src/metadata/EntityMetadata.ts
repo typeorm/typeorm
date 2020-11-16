@@ -27,6 +27,7 @@ import {TableType} from "./types/TableTypes";
 import {TreeType} from "./types/TreeTypes";
 import {UniqueMetadata} from "./UniqueMetadata";
 import {ClosureTreeOptions} from "./types/ClosureTreeOptions";
+import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 
 /**
  * Contains all entity metadata.
@@ -699,6 +700,35 @@ export class EntityMetadata {
         return this.allEmbeddeds.find(embedded => embedded.propertyPath === propertyPath);
     }
 
+    extractColumnsInEntity(entity: ObjectLiteral): ColumnMetadata[] {
+        const extractColumns = (metadata: EntityMetadata | EmbeddedMetadata, entity: ObjectLiteral, prefix: string) => {
+            return Object.keys(entity).reduce((columns, key) => {
+                const embedded = metadata.embeddeds.find(embedded => embedded.propertyName === key);
+                if (embedded) {
+                    const parentPath = prefix ? prefix + "." + key : key;
+                    columns.push(...extractColumns(embedded, entity[embedded.propertyName], parentPath));
+                    return columns;
+                }
+
+                const relation = metadata.relations.find(relation => relation.propertyName === key);
+                if (relation) {
+                    columns.push(...relation.joinColumns);
+                    return columns;
+                }
+
+                const metadataColumns = (metadata instanceof EmbeddedMetadata ? metadata.columns : metadata.ownColumns);
+                const column = metadataColumns.find(column => column.propertyName === key);
+                if (!column)
+                    throw new EntityColumnNotFound(this, prefix ? prefix + "." + key : key);
+
+                columns.push(column);
+                return columns;
+            }, [] as ColumnMetadata[]);
+        };
+
+        return extractColumns(this, entity, "");
+    }
+
     /**
      * Iterates through entity and finds and extracts all values from relations in the entity.
      * If relation value is an array its being flattened.
@@ -726,27 +756,6 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
     // Public Static Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Creates a property paths for a given entity.
-     */
-    static createPropertyPath(metadata: EntityMetadata, entity: ObjectLiteral, prefix: string = "") {
-        const paths: string[] = [];
-        Object.keys(entity).forEach(key => {
-
-            // check for function is needed in the cases when createPropertyPath used on values containg a function as a value
-            // example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
-            const parentPath = prefix ? prefix + "." + key : key;
-            if (metadata.hasEmbeddedWithPropertyPath(parentPath)) {
-                const subPaths = this.createPropertyPath(metadata, entity[key], parentPath);
-                paths.push(...subPaths);
-            } else {
-                const path = prefix ? prefix + "." + key : key;
-                paths.push(path);
-            }
-        });
-        return paths;
-    }
 
     /**
      * Finds difference between two entity id maps.
