@@ -7,7 +7,7 @@ import {SaveOptions} from "./SaveOptions";
 import {RemoveOptions} from "./RemoveOptions";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {SelectQueryBuilder} from "../query-builder/builder/SelectQueryBuilder";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {InsertResult} from "../query-builder/result/InsertResult";

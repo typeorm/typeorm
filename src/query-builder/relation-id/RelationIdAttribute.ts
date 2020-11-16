@@ -2,7 +2,7 @@ import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {QueryBuilderUtils} from "../QueryBuilderUtils";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {QueryExpressionMap} from "../QueryExpressionMap";
-import {SelectQueryBuilder} from "../SelectQueryBuilder";
+import {SelectQueryBuilder} from "../builder/SelectQueryBuilder";
 import {ObjectUtils} from "../../util/ObjectUtils";
 
 /**

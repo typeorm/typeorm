@@ -1,6 +1,6 @@
 import {FindManyOptions} from "./FindManyOptions";
 import {FindOneOptions} from "./FindOneOptions";
-import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {SelectQueryBuilder} from "../query-builder/builder/SelectQueryBuilder";
 import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {shorten} from "../util/StringUtils";

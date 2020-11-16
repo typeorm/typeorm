@@ -1,5 +1,5 @@
 import {Repository} from "./Repository";
-import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {SelectQueryBuilder} from "../query-builder/builder/SelectQueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 

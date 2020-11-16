@@ -15,7 +15,7 @@ import {MongoRepository} from "./repository/MongoRepository";
 import {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
-import {SelectQueryBuilder} from "./query-builder/SelectQueryBuilder";
+import {SelectQueryBuilder} from "./query-builder/builder/SelectQueryBuilder";
 import {EntityTarget} from "./common/EntityTarget";
 
 // -------------------------------------------------------------------------
@@ -129,12 +129,12 @@ export {Connection} from "./connection/Connection";
 export {ConnectionManager} from "./connection/ConnectionManager";
 export {ConnectionOptions} from "./connection/ConnectionOptions";
 export {Driver} from "./driver/Driver";
-export {QueryBuilder} from "./query-builder/QueryBuilder";
-export {SelectQueryBuilder} from "./query-builder/SelectQueryBuilder";
-export {DeleteQueryBuilder} from "./query-builder/DeleteQueryBuilder";
-export {InsertQueryBuilder} from "./query-builder/InsertQueryBuilder";
-export {UpdateQueryBuilder} from "./query-builder/UpdateQueryBuilder";
-export {RelationQueryBuilder} from "./query-builder/RelationQueryBuilder";
+export {QueryBuilder} from "./query-builder/builder/QueryBuilder";
+export {SelectQueryBuilder} from "./query-builder/builder/SelectQueryBuilder";
+export {DeleteQueryBuilder} from "./query-builder/builder/DeleteQueryBuilder";
+export {InsertQueryBuilder} from "./query-builder/builder/InsertQueryBuilder";
+export {UpdateQueryBuilder} from "./query-builder/builder/UpdateQueryBuilder";
+export {RelationQueryBuilder} from "./query-builder/builder/RelationQueryBuilder";
 export {Brackets} from "./query-builder/Brackets";
 export {WhereExpression} from "./query-builder/WhereExpression";
 export {InsertResult} from "./query-builder/result/InsertResult";

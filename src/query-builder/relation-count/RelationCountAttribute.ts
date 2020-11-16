@@ -2,7 +2,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {QueryBuilderUtils} from "../QueryBuilderUtils";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {QueryExpressionMap} from "../QueryExpressionMap";
-import {SelectQueryBuilder} from "../SelectQueryBuilder";
+import {SelectQueryBuilder} from "../builder/SelectQueryBuilder";
 import {ObjectUtils} from "../../util/ObjectUtils";
 
 export class RelationCountAttribute {
