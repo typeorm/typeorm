@@ -1,13 +1,13 @@
-import {TableColumn} from "./TableColumn";
-import {TableIndex} from "./TableIndex";
-import {TableForeignKey} from "./TableForeignKey";
-import {Driver} from "../../driver/Driver";
-import {TableOptions} from "../options/TableOptions";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {TableUtils} from "../util/TableUtils";
-import {TableUnique} from "./TableUnique";
-import {TableCheck} from "./TableCheck";
-import {TableExclusion} from "./TableExclusion";
+import { Driver } from "../../driver/Driver";
+import { EntityMetadata } from "../../metadata/EntityMetadata";
+import { TableOptions } from "../options/TableOptions";
+import { TableUtils } from "../util/TableUtils";
+import { TableCheck } from "./TableCheck";
+import { TableColumn } from "./TableColumn";
+import { TableExclusion } from "./TableExclusion";
+import { TableForeignKey } from "./TableForeignKey";
+import { TableIndex } from "./TableIndex";
+import { TableUnique } from "./TableUnique";
 
 /**
  * Table in the database represented in this class.
@@ -311,6 +311,8 @@ export class Table {
             indices: entityMetadata.indices
                 .filter(index => index.synchronize === true)
                 .map(index => TableIndex.create(index)),
+            foreignKeys: entityMetadata.foreignKeys
+                .map(foreignKey => TableForeignKey.create(foreignKey)),
             uniques: entityMetadata.uniques.map(unique => TableUnique.create(unique)),
             checks: entityMetadata.checks.map(check => TableCheck.create(check)),
             exclusions: entityMetadata.exclusions.map(exclusion => TableExclusion.create(exclusion)),
