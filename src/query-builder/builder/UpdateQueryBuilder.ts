@@ -1,5 +1,4 @@
 import {CockroachDriver} from "../../driver/cockroachdb/CockroachDriver";
-import {SapDriver} from "../../driver/sap/SapDriver";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunner} from "../../query-runner/QueryRunner";
@@ -7,12 +6,10 @@ import {SqlServerDriver} from "../../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../driver/postgres/PostgresDriver";
 import {UpdateResult} from "../result/UpdateResult";
 import {ReturningResultsEntityUpdator} from "../ReturningResultsEntityUpdator";
-import {MysqlDriver} from "../../driver/mysql/MysqlDriver";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../../error/UpdateValuesMissingError";
 import {QueryDeepPartialEntity} from "../QueryPartialEntity";
-import {AuroraDataApiDriver} from "../../driver/aurora-data-api/AuroraDataApiDriver";
 import {ModificationQueryBuilder} from "./ModificationQueryBuilder";
 
 /**
@@ -37,6 +34,60 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
     // -------------------------------------------------------------------------
 
     /**
+     * Creates list of columns and their values that are SET in the UPDATE expression.
+     */
+    protected createColumnValuesExpression(): string {
+        const valuesSet = this.getValueSet();
+        const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
+
+        const newParameters: ObjectLiteral = {};
+        let parametersCount = this.connection.driver.hasIndexedParameters()
+            ? Object.keys(this.expressionMap.nativeParameters).length : 0;
+
+        const updatedColumns: (string | ColumnMetadata)[] =
+            !metadata ? Object.keys(valuesSet) : metadata.extractColumnsInEntity(valuesSet)
+                .filter(column => column.isUpdate);
+
+        const columnValuesExpressions = updatedColumns.map(columnOrKey => {
+            const column = columnOrKey instanceof ColumnMetadata ? columnOrKey : undefined;
+            const columnName = column ? column.databaseName : columnOrKey as string;
+            const value = column ? column.getEntityValue(valuesSet) : valuesSet[columnOrKey as string];
+
+            const paramName = `upd_${columnName}`; // TODO: Improve naming
+            const createParamExpression = (value: any) => {
+                if (!this.connection.driver.hasIndexedParameters()) {
+                    newParameters[paramName] = value;
+                } else {
+                    this.expressionMap.nativeParameters[paramName] = value;
+                }
+                return this.connection.driver.createParameter(paramName, parametersCount++);
+            };
+
+            const expression = this.createColumnValuePersistExpression(column, value, createParamExpression);
+            return `${this.escape(columnName)} = ${expression}`;
+        });
+
+        if (metadata) {
+            if (metadata.versionColumn && !updatedColumns.includes(metadata.versionColumn as any))
+                columnValuesExpressions.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
+            if (metadata.updateDateColumn && !updatedColumns.includes(metadata.updateDateColumn))
+                columnValuesExpressions.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
+        }
+
+        if (columnValuesExpressions.length <= 0) {
+            throw new UpdateValuesMissingError();
+        }
+
+        // we re-write parameters this way because we want our "UPDATE ... SET" parameters to be first in the list of "nativeParameters"
+        // because some drivers like mysql depend on order of parameters
+        if (!this.connection.driver.hasIndexedParameters()) {
+            this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
+        }
+
+        return columnValuesExpressions.join(", ");
+    }
+
+    /**
      * Gets array of values need to be inserted into the target table.
      */
     protected getValueSet(): ObjectLiteral {
@@ -54,122 +105,18 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
      * Creates UPDATE expression used to perform query.
      */
     protected createModificationExpression() {
-        const valuesSet = this.getValueSet();
-        const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
-
-        // prepare columns and values to be updated
-        const updateColumnAndValues: string[] = [];
-        const updatedColumns: ColumnMetadata[] = [];
-        const newParameters: ObjectLiteral = {};
-        let parametersCount = this.connection.driver.hasIndexedParameters()
-            ? Object.keys(this.expressionMap.nativeParameters).length : 0;
-        if (metadata) {
-            metadata.extractColumnsInEntity(valuesSet).forEach(column => {
-                if (!column.isUpdate) { return; }
-
-                updatedColumns.push(column);
-
-                const paramName = "upd_" + column.databaseName;
-
-                let value = column.getEntityValue(valuesSet);
-                if (column.referencedColumn && value instanceof Object) {
-                    value = column.referencedColumn.getEntityValue(value);
-                } else if (!(value instanceof Function)) {
-                    value = this.connection.driver.preparePersistentValue(value, column);
-                }
-
-                // todo: duplication zone
-                if (value instanceof Function) { // support for SQL expressions in update query
-                    updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
-                } else if (this.connection.driver instanceof SapDriver && value === null) {
-                    updateColumnAndValues.push(this.escape(column.databaseName) + " = NULL");
-                } else {
-                    if (this.connection.driver instanceof SqlServerDriver) {
-                        value = this.connection.driver.parametrizeValue(column, value);
-                    }
-
-                    if (!this.connection.driver.hasIndexedParameters()) {
-                        newParameters[paramName] = value;
-                    } else {
-                        this.expressionMap.nativeParameters[paramName] = value;
-                    }
-
-                    let expression = null;
-                    if ((this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                        const useLegacy = this.connection.driver.options.legacySpatialSupport;
-                        const geomFromText = useLegacy ? "GeomFromText" : "ST_GeomFromText";
-                        if (column.srid != null) {
-                            expression = `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount++)}, ${column.srid})`;
-                        } else {
-                            expression = `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount++)})`;
-                        }
-                    } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                        if (column.srid != null) {
-                            expression = `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount++)}), ${column.srid})::${column.type}`;
-                        } else {
-                            expression = `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount++)})::${column.type}`;
-                        }
-                    } else if (this.connection.driver instanceof SqlServerDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                        expression = column.type + "::STGeomFromText(" + this.connection.driver.createParameter(paramName, parametersCount++) + ", " + (column.srid || "0") + ")";
-                    } else {
-                        expression = this.connection.driver.createParameter(paramName, parametersCount++);
-                    }
-                    updateColumnAndValues.push(this.escape(column.databaseName) + " = " + expression);
-                }
-            });
-
-            if (metadata.versionColumn && !updatedColumns.includes(metadata.versionColumn))
-                updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
-            if (metadata.updateDateColumn && !updatedColumns.includes(metadata.updateDateColumn))
-                updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
-
-        } else {
-            Object.keys(valuesSet).map(key => {
-                let value = valuesSet[key];
-
-                // todo: duplication zone
-                if (value instanceof Function) { // support for SQL expressions in update query
-                    updateColumnAndValues.push(this.escape(key) + " = " + value());
-                } else if (this.connection.driver instanceof SapDriver && value === null) {
-                    updateColumnAndValues.push(this.escape(key) + " = NULL");
-                } else {
-
-                    // we need to store array values in a special class to make sure parameter replacement will work correctly
-                    // if (value instanceof Array)
-                    //     value = new ArrayParameter(value);
-
-                    if (!this.connection.driver.hasIndexedParameters()) {
-                        newParameters[key] = value;
-                    } else {
-                        this.expressionMap.nativeParameters[key] = value;
-                    }
-
-                    updateColumnAndValues.push(this.escape(key) + " = " + this.connection.driver.createParameter(key, parametersCount++));
-                }
-            });
-        }
-
-        if (updateColumnAndValues.length <= 0) {
-            throw new UpdateValuesMissingError();
-        }
-
-        // we re-write parameters this way because we want our "UPDATE ... SET" parameters to be first in the list of "nativeParameters"
-        // because some drivers like mysql depend on order of parameters
-        if (!this.connection.driver.hasIndexedParameters()) {
-            this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
-        }
-
-        // get a table name and all column database names
+        const tableName = this.getTableName(this.getMainTableName());
+        const valuesExpression = this.createColumnValuesExpression();
         const whereExpression = this.createWhereExpression();
         const returningExpression = this.createReturningExpression();
 
         // generate and return sql update query
         if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${returningExpression}`;
+            return `UPDATE ${tableName} SET ${valuesExpression}${whereExpression} RETURNING ${returningExpression}`;
         } else if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")} OUTPUT ${returningExpression}${whereExpression}`;
+            return `UPDATE ${tableName} SET ${valuesExpression} OUTPUT ${returningExpression}${whereExpression}`;
         } else {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
+            return `UPDATE ${tableName} SET ${valuesExpression}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
         }
     }
 

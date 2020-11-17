@@ -1,5 +1,4 @@
 import {CockroachDriver} from "../../driver/cockroachdb/CockroachDriver";
-import {SapDriver} from "../../driver/sap/SapDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityTarget} from "../../common/EntityTarget";
@@ -7,7 +6,6 @@ import {QueryDeepPartialEntity} from "../QueryPartialEntity";
 import {SqlServerDriver} from "../../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../../driver/mysql/MysqlDriver";
-import {RandomGenerator} from "../../util/RandomGenerator";
 import {InsertResult} from "../result/InsertResult";
 import {ReturningStatementNotSupportedError} from "../../error/ReturningStatementNotSupportedError";
 import {InsertValuesMissingError} from "../../error/InsertValuesMissingError";
@@ -264,53 +262,56 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
     }
 
     /**
-     * Gets list of columns where values must be inserted to.
+     * Gets list of columns or raw object keys where values must be inserted to.
      */
-    protected getInsertedColumns(): ColumnMetadata[] {
-        if (!this.expressionMap.mainAlias!.hasMetadata)
-            return [];
+    protected getInsertedColumnsOrKeys(): string[] | ColumnMetadata[] {
+        if (this.expressionMap.mainAlias!.hasMetadata) {
+            // Entity metadata is available, filter insertable columns
+            return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
+                // if user specified list of columns he wants to insert to, then we filter only them
+                if (this.expressionMap.insertColumns.length > 0)
+                    return this.expressionMap.insertColumns.includes(column.propertyPath);
 
-        return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
+                // skip columns the user doesn't want included by default
+                if (!column.isInsert) { return false; }
 
-            // if user specified list of columns he wants to insert to, then we filter only them
-            if (this.expressionMap.insertColumns.length > 0)
-                return this.expressionMap.insertColumns.includes(column.propertyPath);
+                // if user did not specified such list then return all columns except auto-increment one
+                // for Oracle we return auto-increment column as well because Oracle does not support DEFAULT VALUES expression
+                if (column.isGenerated && column.generationStrategy === "increment"
+                    && !(this.connection.driver instanceof OracleDriver)
+                    && !(this.connection.driver instanceof AbstractSqliteDriver)
+                    && !(this.connection.driver instanceof MysqlDriver)
+                    && !(this.connection.driver instanceof AuroraDataApiDriver)
+                    && !(this.connection.driver instanceof SqlServerDriver && this.isOverridingAutoIncrementBehavior(column)))
+                    return false;
 
-            // skip columns the user doesn't want included by default
-            if (!column.isInsert) { return false; }
+                return true;
+            });
+        } else if (this.expressionMap.insertColumns.length > 0) {
+            // No entity metadata available but columns provided, treat them as raw columns (and object keys)
+            return this.expressionMap.insertColumns;
+        } else {
+            // No entity metadata and no specific columns provided, treat every object key as a raw column
+            const valueSets = this.getValueSets();
 
-            // if user did not specified such list then return all columns except auto-increment one
-            // for Oracle we return auto-increment column as well because Oracle does not support DEFAULT VALUES expression
-            if (column.isGenerated && column.generationStrategy === "increment"
-                && !(this.connection.driver instanceof OracleDriver)
-                && !(this.connection.driver instanceof AbstractSqliteDriver)
-                && !(this.connection.driver instanceof MysqlDriver)
-                && !(this.connection.driver instanceof AuroraDataApiDriver)
-                && !(this.connection.driver instanceof SqlServerDriver && this.isOverridingAutoIncrementBehavior(column)))
-                return false;
-
-            return true;
-        });
+            // Put all object keys in an array then extract unique values
+            const allObjectKeys: string[] = [];
+            valueSets.forEach(valueSet => {
+                allObjectKeys.push(...Object.keys(valueSet));
+            });
+            return [...new Set(allObjectKeys)];
+        }
     }
 
     /**
      * Creates a columns string where values must be inserted to for INSERT INTO expression.
      */
     protected createColumnNamesExpression(): string {
-        const columns = this.getInsertedColumns();
-        if (columns.length > 0)
-            return columns.map(column => this.escape(column.databaseName)).join(", ");
-
-        // in the case if there are no insert columns specified and table without metadata used
-        // we get columns from the inserted value map, in the case if only one inserted map is specified
-        if (!this.expressionMap.mainAlias!.hasMetadata && !this.expressionMap.insertColumns.length) {
-            const valueSets = this.getValueSets();
-            if (valueSets.length === 1)
-                return Object.keys(valueSets[0]).map(columnName => this.escape(columnName)).join(", ");
-        }
-
-        // get a table name and all column database names
-        return this.expressionMap.insertColumns.map(columnName => this.escape(columnName)).join(", ");
+        const columns: (string | ColumnMetadata)[] = this.getInsertedColumnsOrKeys();
+        return columns.map(column => {
+            if (column instanceof ColumnMetadata) column = column.databaseName;
+            return this.escape(column);
+        }).join(", ");
     }
 
     /**
@@ -318,132 +319,29 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
      */
     protected createValuesExpression(): string {
         const valueSets = this.getValueSets();
-        const columns = this.getInsertedColumns();
+        const columnsOrKeys: (string | ColumnMetadata)[] = this.getInsertedColumnsOrKeys();
 
         let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
         const valueSetExpressions = valueSets.map((valueSet, valueSetIndex) => {
-            let columnExpressions: string[];
-            // if column metadatas are given then apply all necessary operations with values
-            if (columns.length > 0) {
-                columnExpressions = columns.map((column, columnIndex) => {
-                    const paramName = "i" + valueSetIndex + "_" + column.databaseName;
+            const columnExpressions = columnsOrKeys.map(columnOrKey => {
+                const column = columnOrKey instanceof ColumnMetadata ? columnOrKey : undefined;
+                const columnName = column ? column.databaseName : columnOrKey as string;
+                const value = column ? column.getEntityValue(valueSet) : valueSet[columnOrKey as string];
 
-                    // extract real value from the entity
-                    let value = column.getEntityValue(valueSet);
-
-                    if (!(value instanceof Function)) {
-                        // make sure our value is normalized by a driver
-                        value = this.connection.driver.preparePersistentValue(value, column);
+                const createParamExpression = (value: any, specialName?: string) => {
+                    let paramName = `i${valueSetIndex}_${columnName}`; // TODO: Improve naming
+                    if (specialName === "uuid") {
+                        paramName = ReturningResultsEntityUpdator.generateUUIDParameterName(columnName, valueSetIndex);
+                    } else if (specialName === "discriminator") {
+                        paramName = `discriminator_value_${parametersCount}`; // TODO: Not used anywhere else, is special name needed?
                     }
 
-                    // newly inserted entities always have a version equal to 1 (first version)
-                    // also, user-specified version must be empty
-                    if (column.isVersion && value === undefined) {
-                        return "1";
+                    this.expressionMap.nativeParameters[paramName] = value;
+                    return this.connection.driver.createParameter(paramName, parametersCount++);
+                };
 
-                        // } else if (column.isNestedSetLeft) {
-                        //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
-                        //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
-                        //     const subQuery = `(SELECT c.max + 1 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
-                        //     expression += subQuery;
-                        //
-                        // } else if (column.isNestedSetRight) {
-                        //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
-                        //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
-                        //     const subQuery = `(SELECT c.max + 2 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
-                        //     expression += subQuery;
-
-                    } else if (column.isDiscriminator) {
-                        this.expressionMap.nativeParameters["discriminator_value_" + parametersCount] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
-                        return this.connection.driver.createParameter("discriminator_value_" + parametersCount, parametersCount++);
-
-                        // for create and update dates we insert current date
-                        // no, we don't do it because this constant is already in "default" value of the column
-                        // with extended timestamp functionality, like CURRENT_TIMESTAMP(6) for example
-                        // } else if (column.isCreateDate || column.isUpdateDate) {
-                        //     return "CURRENT_TIMESTAMP";
-
-                        // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
-                    } else if (column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.isUUIDGenerationSupported() && value === undefined) {
-
-                        const paramName = "uuid_" + column.databaseName + valueSetIndex;
-                        value = RandomGenerator.uuid4();
-                        this.expressionMap.nativeParameters[paramName] = value;
-                        return this.connection.driver.createParameter(paramName, parametersCount++);
-
-                        // if value for this column was not provided then insert default value
-                    } else if (value === undefined) {
-                        if ((this.connection.driver instanceof OracleDriver && valueSets.length > 1) || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
-                            if (column.default !== undefined && column.default !== null) { // try to use default defined in the column
-                                return this.connection.driver.normalizeDefault(column);
-                            } else {
-                                return "NULL"; // otherwise simply use NULL and pray if column is nullable
-                            }
-                        } else {
-                            return "DEFAULT";
-                        }
-
-                        // support for SQL expressions in queries
-                    } else if (value instanceof Function) {
-                        // wrap in String() for compatibility, null should be mapped to "null" but Array.join() doesn't do this
-                        return String(value());
-
-                        // just any other regular value
-                    } else {
-                        if (this.connection.driver instanceof SqlServerDriver)
-                            value = this.connection.driver.parametrizeValue(column, value);
-
-                        // we need to store array values in a special class to make sure parameter replacement will work correctly
-                        // if (value instanceof Array)
-                        //     value = new ArrayParameter(value);
-
-                        this.expressionMap.nativeParameters[paramName] = value;
-                        if ((this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                            const useLegacy = this.connection.driver.options.legacySpatialSupport;
-                            const geomFromText = useLegacy ? "GeomFromText" : "ST_GeomFromText";
-                            if (column.srid != null) {
-                                return `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount++)}, ${column.srid})`;
-                            } else {
-                                return `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount++)})`;
-                            }
-                        } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                            if (column.srid != null) {
-                                return `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount++)}), ${column.srid})::${column.type}`;
-                            } else {
-                                return `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount++)})::${column.type}`;
-                            }
-                        } else if (this.connection.driver instanceof SqlServerDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                            return column.type + "::STGeomFromText(" + this.connection.driver.createParameter(paramName, parametersCount++) + ", " + (column.srid || "0") + ")";
-                        } else {
-                            return this.connection.driver.createParameter(paramName, parametersCount++);
-                        }
-                    }
-                });
-            } else {
-                const columns = Object.keys(valueSet);
-                columnExpressions = columns.map((columnName, columnIndex) => {
-                    const paramName = "i" + valueSetIndex + "_" + columnName;
-                    const value = valueSet[columnName];
-
-                    // support for SQL expressions in queries
-                    if (value instanceof Function) {
-                        return value();
-
-                        // if value for this column was not provided then insert default value
-                    } else if (value === undefined) {
-                        if (this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) {
-                            return "NULL";
-                        } else {
-                            return "DEFAULT";
-                        }
-
-                        // just any other regular value
-                    } else {
-                        this.expressionMap.nativeParameters[paramName] = value;
-                        return this.connection.driver.createParameter(paramName, parametersCount++);
-                    }
-                });
-            }
+                return this.createColumnValuePersistExpression(column, value, createParamExpression);
+            });
 
             // Filter out if no values are specified
             if (columnExpressions.length === 0) return null;
@@ -454,6 +352,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
                 return `(${columnExpressions.join(", ")})`;
             }
         }).filter(expression => expression !== null);
+
         if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
             return valueSetExpressions.join(" UNION ALL ");
         } else {

@@ -102,8 +102,11 @@ export class ReturningResultsEntityUpdator {
                     if (generatedColumn.generationStrategy === "uuid") {
                         // uuid can be defined by user in a model, that's why first we get it
                         let uuid = generatedColumn.getEntityValue(entity);
-                        if (!uuid) // if it was not defined by a user then InsertQueryBuilder generates it by its own, get this generated uuid value
-                            uuid = this.expressionMap.nativeParameters["uuid_" + generatedColumn.databaseName + entityIndex];
+                        // if it was not defined by a user then InsertQueryBuilder generates it by its own, get this generated uuid value
+                        if (!uuid) {
+                            const paramName = ReturningResultsEntityUpdator.generateUUIDParameterName(generatedColumn.databaseName, entityIndex);
+                            uuid = this.expressionMap.nativeParameters[paramName];
+                        }
 
                         OrmUtils.mergeDeep(generatedMap, generatedColumn.createValueMap(uuid));
                     }
@@ -186,4 +189,14 @@ export class ReturningResultsEntityUpdator {
         });
     }
 
+    // -------------------------------------------------------------------------
+    // Public Static Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Name of parameter where ORM generated UUID is stored for extraction
+     */
+    static generateUUIDParameterName(columnName: string, entityIndex: number) {
+        return `uuid_${columnName}${entityIndex}`; // TODO: Improve naming
+    }
 }
