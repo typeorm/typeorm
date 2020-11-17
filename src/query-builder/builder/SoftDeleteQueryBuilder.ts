@@ -1,9 +1,5 @@
-import {CockroachDriver} from "../../driver/cockroachdb/CockroachDriver";
 import {EntityTarget} from "../../common/EntityTarget";
-import {SqlServerDriver} from "../../driver/sqlserver/SqlServerDriver";
-import {PostgresDriver} from "../../driver/postgres/PostgresDriver";
 import {MissingDeleteDateColumnError} from "../../error/MissingDeleteDateColumnError";
-import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../../error/UpdateValuesMissingError";
 import {EntitySchema} from "../../entity-schema/EntitySchema";
 import {UpdateQueryBuilder } from "./UpdateQueryBuilder";
@@ -33,49 +29,35 @@ export class SoftDeleteQueryBuilder<Entity> extends UpdateQueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates UPDATE expression used to perform query.
+     * Creates list of columns and their values that are SET in the UPDATE expression.
      */
-    protected createModificationExpression() {
-        const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
-        if (!metadata)
+    protected createColumnValuesExpression(): string {
+        if (!this.expressionMap.mainAlias!.hasMetadata)
             throw new Error(`Cannot get entity metadata for the given alias "${this.expressionMap.mainAlias}"`);
-        if (!metadata.deleteDateColumn) {
+
+        const metadata = this.expressionMap.mainAlias!.metadata;
+        if (!metadata.deleteDateColumn)
             throw new MissingDeleteDateColumnError(metadata);
+
+        const columnValuesExpressions: string[] = [];
+
+        if (this.expressionMap.queryType === "soft-delete") {
+            columnValuesExpressions.push(this.escape(metadata.deleteDateColumn.databaseName) + " = CURRENT_TIMESTAMP");
+        } else if (this.expressionMap.queryType === "restore") {
+            columnValuesExpressions.push(this.escape(metadata.deleteDateColumn.databaseName) + " = NULL");
+        } else {
+            throw new Error(`The queryType must be "soft-delete" or "restore"`);
         }
 
-        // prepare columns and values to be updated
-        const updateColumnAndValues: string[] = [];
-
-        switch (this.expressionMap.queryType) {
-            case "soft-delete":
-                updateColumnAndValues.push(this.escape(metadata.deleteDateColumn.databaseName) + " = CURRENT_TIMESTAMP");
-                break;
-            case "restore":
-                updateColumnAndValues.push(this.escape(metadata.deleteDateColumn.databaseName) + " = NULL");
-                break;
-            default:
-                throw new Error(`The queryType must be "soft-delete" or "restore"`);
-        }
         if (metadata.versionColumn)
-            updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
+            columnValuesExpressions.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
         if (metadata.updateDateColumn)
-            updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
+            columnValuesExpressions.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
 
-        if (updateColumnAndValues.length <= 0) {
+        if (columnValuesExpressions.length <= 0) {
             throw new UpdateValuesMissingError();
         }
 
-        // get a table name and all column database names
-        const whereExpression = this.createWhereExpression();
-        const returningExpression = this.createReturningExpression();
-
-        // generate and return sql update query
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${returningExpression}`;
-        } else if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")} OUTPUT ${returningExpression}${whereExpression}`;
-        } else {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
-        }
+        return columnValuesExpressions.join(", ");
     }
 }

@@ -22,6 +22,10 @@ import {EntitySchema} from "../../index";
 import {FindOperator} from "../../find-options/FindOperator";
 import {In} from "../../find-options/operator/In";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import {RandomGenerator} from "../../util/RandomGenerator";
+import {AbstractSqliteDriver} from "../../driver/sqlite-abstract/AbstractSqliteDriver";
+import {SapDriver} from "../../driver/sap/SapDriver";
+import {MysqlDriver} from "../../driver/mysql/MysqlDriver";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -864,6 +868,97 @@ export abstract class QueryBuilder<Entity, Result = any> {
         return whereStrings.length > 1
             ? "(" + whereStrings.map(whereString => "(" + whereString + ")").join(" OR ") + ")"
             : whereStrings[0];
+    }
+
+    /**
+     * Creates expression for persisting a column value in INSERT/UPDATE queries.
+     */
+    protected createColumnValuePersistExpression(column: ColumnMetadata | undefined, value: any, createParamExpression: (value: any, specialName?: string) => string) {
+        if (column && !(value instanceof Function))
+            value = this.connection.driver.preparePersistentValue(value, column);
+
+        // Special conditions for INSERT only
+        if (this.expressionMap.queryType === "insert") {
+            if (column && column.isDiscriminator) {
+                return createParamExpression(this.expressionMap.mainAlias!.metadata.discriminatorValue, "discriminator");
+            }
+            // for create and update dates we insert current date
+            // no, we don't do it because this constant is already in "default" value of the column
+            // with extended timestamp functionality, like CURRENT_TIMESTAMP(6) for example
+            // } else if (column.isCreateDate || column.isUpdateDate) {
+            //     return "CURRENT_TIMESTAMP";
+
+            // } else if (column.isNestedSetLeft) {
+            //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
+            //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
+            //     const subQuery = `(SELECT c.max + 1 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
+            //     expression += subQuery;
+            // } else if (column.isNestedSetRight) {
+            //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
+            //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
+            //     const subQuery = `(SELECT c.max + 2 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
+            //     expression += subQuery;
+            // }
+
+            if (value === undefined) {
+                if (column && column.isVersion) {
+                    // Newly inserted entities are always version 1 (first version) unless user specified
+                    return "1";
+                } else if (column && column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.isUUIDGenerationSupported()) {
+                    // Generate uuid if database does not support generation and user didn't provide a value
+                    return createParamExpression(RandomGenerator.uuid4(), "uuid");
+                }
+
+                // If value for this column was not provided then insert default value
+                // unfortunately sqlite does not support DEFAULT expression in INSERT queries
+                if ((this.connection.driver instanceof OracleDriver && Array.isArray(this.expressionMap.valuesSet) && this.expressionMap.valuesSet.length > 1)
+                    || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) {
+                    if (column && column.default !== undefined && column.default !== null) { // try to use default defined in the column
+                        return this.connection.driver.normalizeDefault(column);
+                    } else {
+                        return "NULL"; // otherwise simply use NULL and pray if column is nullable
+                    }
+                } else {
+                    return "DEFAULT";
+                }
+            }
+        }
+
+        // INSERT or UPDATE
+        if (value instanceof Function) {
+            // Raw SQL expression
+            return String(value());
+        } else if (this.connection.driver instanceof SapDriver && value === null) {
+            // SAP HANA doesn't support null parameters TODO: Move to driver?
+            return "NULL";
+        } else {
+            if (column && this.connection.driver instanceof SqlServerDriver)
+                value = this.connection.driver.parametrizeValue(column, value);
+
+            const paramExpression = createParamExpression(value);
+
+            if (column && this.connection.driver.spatialTypes.includes(column.type)) {
+                if (this.connection.driver instanceof MysqlDriver) {
+                    const useLegacy = this.connection.driver.options.legacySpatialSupport;
+                    const geomFromText = useLegacy ? "GeomFromText" : "ST_GeomFromText";
+                    if (column.srid != null) {
+                        return `${geomFromText}(${paramExpression}, ${column.srid})`;
+                    } else {
+                        return `${geomFromText}(${paramExpression})`;
+                    }
+                } else if (this.connection.driver instanceof PostgresDriver) {
+                    if (column.srid != null) {
+                        return `ST_SetSRID(ST_GeomFromGeoJSON(${paramExpression}), ${column.srid})::${column.type}`;
+                    } else {
+                        return `ST_GeomFromGeoJSON(${paramExpression})::${column.type}`;
+                    }
+                } else if (this.connection.driver instanceof SqlServerDriver) {
+                    return `${column.type}::STGeomFromText(${paramExpression}, ${(column.srid || "0")})`;
+                }
+            }
+
+            return paramExpression;
+        }
     }
 
     /**
