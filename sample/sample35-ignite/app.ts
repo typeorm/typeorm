@@ -36,6 +36,10 @@ createConnection(options).then(
     const ordered = await postRepository.createQueryBuilder().orderBy("\"likesCount\"", "DESC").getMany();
     console.log("posts order by likedCount DESC: ", ordered);
 
+    post.text = "Hello update";
+    const {id, ...newPost} = post;
+    const updated = await postRepository.update(id, newPost);
+    console.log(updated);
   },
   (error) => console.log("Cannot connect: ", error.stack ? error.stack : error)
 );

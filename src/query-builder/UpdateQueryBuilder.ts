@@ -1,30 +1,31 @@
-import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
-import {SapDriver} from "../driver/sap/SapDriver";
+import { ObjectLiteral } from "../common/ObjectLiteral";
+import { Connection } from "../connection/Connection";
+import { AuroraDataApiDriver } from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { BetterSqlite3Driver } from "../driver/better-sqlite3/BetterSqlite3Driver";
+import { CockroachDriver } from "../driver/cockroachdb/CockroachDriver";
+import { IgniteDriver } from "../driver/ignite/IgniteDriver";
+import { MysqlDriver } from "../driver/mysql/MysqlDriver";
+import { OracleDriver } from "../driver/oracle/OracleDriver";
+import { PostgresDriver } from "../driver/postgres/PostgresDriver";
+import { SapDriver } from "../driver/sap/SapDriver";
+import { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver";
+import { SqljsDriver } from "../driver/sqljs/SqljsDriver";
+import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver";
+import { EntityColumnNotFound } from "../error/EntityColumnNotFound";
+import { LimitOnUpdateNotSupportedError } from "../error/LimitOnUpdateNotSupportedError";
+import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError";
+import { UpdateValuesMissingError } from "../error/UpdateValuesMissingError";
+import { OrderByCondition } from "../find-options/OrderByCondition";
 import { ColumnMetadata } from "../metadata/ColumnMetadata";
-import {QueryBuilder} from "./QueryBuilder";
-import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Connection} from "../connection/Connection";
-import {QueryRunner} from "../query-runner/QueryRunner";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {WhereExpression} from "./WhereExpression";
-import {Brackets} from "./Brackets";
-import {EntityMetadata} from "../metadata/EntityMetadata";
-import {UpdateResult} from "./result/UpdateResult";
-import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
-import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
-import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {BroadcasterResult} from "../subscriber/BroadcasterResult";
-import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
-import {OrderByCondition} from "../find-options/OrderByCondition";
-import {LimitOnUpdateNotSupportedError} from "../error/LimitOnUpdateNotSupportedError";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
-import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
-import {QueryDeepPartialEntity} from "./QueryPartialEntity";
-import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver";
+import { EntityMetadata } from "../metadata/EntityMetadata";
+import { QueryRunner } from "../query-runner/QueryRunner";
+import { BroadcasterResult } from "../subscriber/BroadcasterResult";
+import { Brackets } from "./Brackets";
+import { QueryBuilder } from "./QueryBuilder";
+import { QueryDeepPartialEntity } from "./QueryPartialEntity";
+import { UpdateResult } from "./result/UpdateResult";
+import { ReturningResultsEntityUpdator } from "./ReturningResultsEntityUpdator";
+import { WhereExpression } from "./WhereExpression";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -398,6 +399,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                                 this.connection.driver instanceof AuroraDataApiDriver ||
                                 this.connection.driver instanceof OracleDriver ||
                                 this.connection.driver instanceof AbstractSqliteDriver ||
+                                this.connection.driver instanceof IgniteDriver ||
                                 this.connection.driver instanceof SapDriver
             ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
         if (metadata) {
@@ -441,6 +443,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                             this.connection.driver instanceof AuroraDataApiDriver ||
                             this.connection.driver instanceof OracleDriver ||
                             this.connection.driver instanceof AbstractSqliteDriver ||
+                            this.connection.driver instanceof IgniteDriver ||
                             this.connection.driver instanceof SapDriver) {
                             newParameters[paramName] = value;
                         } else {
@@ -497,6 +500,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         this.connection.driver instanceof AuroraDataApiDriver ||
                         this.connection.driver instanceof OracleDriver ||
                         this.connection.driver instanceof AbstractSqliteDriver ||
+                        this.connection.driver instanceof IgniteDriver ||
                         this.connection.driver instanceof SapDriver) {
                         newParameters[key] = value;
                     } else {
@@ -519,6 +523,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             this.connection.driver instanceof AuroraDataApiDriver ||
             this.connection.driver instanceof OracleDriver ||
             this.connection.driver instanceof AbstractSqliteDriver ||
+            this.connection.driver instanceof IgniteDriver ||
             this.connection.driver instanceof SapDriver) {
             this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
         }
