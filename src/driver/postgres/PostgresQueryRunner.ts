@@ -2093,6 +2093,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         }
         const result = await this.query(`SELECT "udt_schema", "udt_name" ` +
             `FROM "information_schema"."columns" WHERE "table_schema" = '${schema}' AND "table_name" = '${name}' AND "column_name"='${column.name}'`);
+        
+        if (result[0] === undefined) {
+            throw new Error(`udt_schema and udt_name not found; Do you have a duplicate enum name?`);   
+        }
+        
         return {
             enumTypeSchema: result[0]["udt_schema"],
             enumTypeName: result[0]["udt_name"]
