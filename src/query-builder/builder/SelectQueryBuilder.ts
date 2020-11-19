@@ -33,7 +33,6 @@ import {QueryResultCacheOptions} from "../../cache/QueryResultCacheOptions";
 import {OffsetWithoutLimitNotSupportedError} from "../../error/OffsetWithoutLimitNotSupportedError";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import {SelectQueryBuilderOption} from "../SelectQueryBuilderOption";
-import {ObjectUtils} from "../../util/ObjectUtils";
 import {DriverUtils} from "../../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../../driver/aurora-data-api/AuroraDataApiDriver";
 import {CockroachDriver} from "../../driver/cockroachdb/CockroachDriver";
@@ -1908,7 +1907,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
      * Merges into expression map given expression map properties.
      */
     protected mergeExpressionMap(expressionMap: Partial<QueryExpressionMap>): this {
-        ObjectUtils.assign(this.expressionMap, expressionMap);
+        Object.assign(this.expressionMap, expressionMap);
         return this;
     }
 

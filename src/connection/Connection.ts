@@ -35,11 +35,11 @@ import {RelationIdLoader} from "../query-builder/RelationIdLoader";
 import {EntitySchema} from "../";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {ObjectUtils} from "../util/ObjectUtils";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {DriverUtils} from "../driver/DriverUtils";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
+import {Mutable} from "../util/TypeUtils";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -185,7 +185,7 @@ export class Connection {
             await this.queryResultCache.connect();
 
         // set connected status for the current connection
-        ObjectUtils.assign(this, { isConnected: true });
+        (this as Mutable<Connection>).isConnected = true;
 
         try {
 
@@ -231,7 +231,7 @@ export class Connection {
         if (this.queryResultCache)
             await this.queryResultCache.disconnect();
 
-        ObjectUtils.assign(this, { isConnected: false });
+        (this as Mutable<Connection>).isConnected = false;
     }
 
     /**
@@ -510,16 +510,13 @@ export class Connection {
         const entityMetadataValidator = new EntityMetadataValidator();
 
         // create subscribers instances if they are not disallowed from high-level (for example they can disallowed from migrations run process)
-        const subscribers = connectionMetadataBuilder.buildSubscribers(this.options.subscribers || []);
-        ObjectUtils.assign(this, { subscribers: subscribers });
+        (this as Mutable<Connection>).subscribers = connectionMetadataBuilder.buildSubscribers(this.options.subscribers || []);
 
         // build entity metadatas
-        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas(this.options.entities || []);
-        ObjectUtils.assign(this, { entityMetadatas: entityMetadatas });
+        (this as Mutable<Connection>).entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas(this.options.entities || []);
 
         // create migration instances
-        const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
-        ObjectUtils.assign(this, { migrations: migrations });
+        (this as Mutable<Connection>).migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
 
         this.driver.database = this.getDatabaseName();
 

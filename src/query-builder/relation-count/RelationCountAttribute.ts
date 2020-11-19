@@ -3,7 +3,6 @@ import {QueryBuilderUtils} from "../QueryBuilderUtils";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {QueryExpressionMap} from "../QueryExpressionMap";
 import {SelectQueryBuilder} from "../builder/SelectQueryBuilder";
-import {ObjectUtils} from "../../util/ObjectUtils";
 
 export class RelationCountAttribute {
 
@@ -33,7 +32,7 @@ export class RelationCountAttribute {
 
     constructor(private expressionMap: QueryExpressionMap,
                 relationCountAttribute?: Partial<RelationCountAttribute>) {
-        ObjectUtils.assign(this, relationCountAttribute || {});
+        Object.assign(this, relationCountAttribute || {});
     }
 
     // -------------------------------------------------------------------------

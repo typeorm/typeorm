@@ -14,10 +14,11 @@ import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ConnectionOptions} from "../../connection/ConnectionOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {ObjectUtils} from "../../util/ObjectUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {DriverUtils} from "../DriverUtils";
+import {Mutable} from "../../util/TypeUtils";
+import {QueryRunner} from "../..";
 
 /**
  * Organizes communication with MongoDB.
@@ -233,7 +234,7 @@ export class MongoDriver implements Driver {
                     if (err) return fail(err);
 
                     this.queryRunner = new MongoQueryRunner(this.connection, client);
-                    ObjectUtils.assign(this.queryRunner, { manager: this.connection.manager });
+                    (this.queryRunner as Mutable<QueryRunner>).manager = this.connection.manager;
                     ok();
                 });
         });

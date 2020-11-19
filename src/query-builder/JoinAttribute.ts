@@ -4,7 +4,6 @@ import {RelationMetadata} from "../metadata/RelationMetadata";
 import {QueryBuilderUtils} from "./QueryBuilderUtils";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {Alias} from "./Alias";
-import {ObjectUtils} from "../util/ObjectUtils";
 
 /**
  * Stores all join attributes which will be used to build a JOIN query.
@@ -52,7 +51,7 @@ export class JoinAttribute {
     constructor(private connection: Connection,
                 private queryExpressionMap: QueryExpressionMap,
                 joinAttribute?: JoinAttribute) {
-        ObjectUtils.assign(this, joinAttribute || {});
+        Object.assign(this, joinAttribute || {});
     }
 
     // -------------------------------------------------------------------------
