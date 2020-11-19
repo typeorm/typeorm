@@ -1,6 +1,6 @@
 import { ColumnOptions, getMetadataArgsStorage } from "../../";
 import {
-    ColumnType, SpatialColumnType
+    ColumnType, SimpleColumnType, SpatialColumnType
 } from "../../driver/types/ColumnTypes";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
@@ -19,13 +19,19 @@ export function Virtual(): PropertyDecorator;
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Virtual(type: ColumnType): PropertyDecorator;
+export function Virtual(type: VirtualOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Virtual(type: SpatialColumnType, options?: SpatialColumnOptions): PropertyDecorator;
+export function Virtual(type: SimpleColumnType): PropertyDecorator;
+
+/**
+ * Column decorator is used to mark a specific class property as a table column.
+ * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ */
+export function Virtual(type: SpatialColumnType, options?: VirtualOptions & SpatialColumnOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.

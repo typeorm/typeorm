@@ -163,6 +163,11 @@ export class ColumnMetadata {
     enumName?: string;
 
     /**
+     * Computed column expression.
+     */
+    computedExpression?: string;
+
+    /**
      * Generated column expression. Supports only in MySQL.
      */
     asExpression?: string;

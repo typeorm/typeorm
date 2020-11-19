@@ -1761,7 +1761,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         return allColumns.map(column => {
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath || select.mapToProperty === column.propertyPath);
-            let selectionPath = selection && selection.mapToProperty === column.propertyPath ? selection.selection : this.escape(aliasName) + "." + this.escape(column.databaseName);
+            let selectionPath: string = this.escape(aliasName) + "." + this.escape(column.databaseName);
+            if (column.isComputed) {
+                selectionPath = selection ? selection.selection : column.computedExpression;
+            }
             if (this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                 if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
                     const useLegacy = this.connection.driver.options.legacySpatialSupport;
