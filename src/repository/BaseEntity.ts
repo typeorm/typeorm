@@ -12,7 +12,6 @@ import {InsertResult} from "../query-builder/result/InsertResult";
 import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {ObjectID} from "../driver/mongodb/typings";
-import {ObjectUtils} from "../util/ObjectUtils";
 import {QueryDeepPartialEntity} from "../query-builder/QueryPartialEntity";
 
 /**
@@ -78,7 +77,7 @@ export class BaseEntity {
         const base: any = this.constructor;
         const newestEntity: BaseEntity = await base.getRepository().findOneOrFail(base.getId(this));
 
-        ObjectUtils.assign(this, newestEntity);
+        Object.assign(this, newestEntity);
     }
 
     // -------------------------------------------------------------------------

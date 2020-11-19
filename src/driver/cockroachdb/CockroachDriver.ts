@@ -220,7 +220,7 @@ export class CockroachDriver implements Driver {
         // load postgres package
         this.loadDependencies();
 
-        // ObjectUtils.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
+        // Object.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
         // if (!this.options.host)

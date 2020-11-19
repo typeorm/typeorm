@@ -34,7 +34,7 @@ import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {FindConditions} from "../find-options/FindConditions";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
-import {ObjectUtils} from "../util/ObjectUtils";
+import {Mutable} from "../util/TypeUtils";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -79,8 +79,7 @@ export class EntityManager {
         this.connection = connection;
         if (queryRunner) {
             this.queryRunner = queryRunner;
-            // dynamic: this.queryRunner = manager;
-            ObjectUtils.assign(this.queryRunner, { manager: this });
+            (this.queryRunner as Mutable<QueryRunner>).manager = this;
         }
     }
 

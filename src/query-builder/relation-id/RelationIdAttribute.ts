@@ -3,7 +3,6 @@ import {QueryBuilderUtils} from "../QueryBuilderUtils";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {QueryExpressionMap} from "../QueryExpressionMap";
 import {SelectQueryBuilder} from "../builder/SelectQueryBuilder";
-import {ObjectUtils} from "../../util/ObjectUtils";
 
 /**
  * Stores all join relation id attributes which will be used to build a JOIN query.
@@ -45,7 +44,7 @@ export class RelationIdAttribute {
 
     constructor(private queryExpressionMap: QueryExpressionMap,
                         relationIdAttribute?: Partial<RelationIdAttribute>) {
-        ObjectUtils.assign(this, relationIdAttribute || {});
+        Object.assign(this, relationIdAttribute || {});
     }
 
     // -------------------------------------------------------------------------

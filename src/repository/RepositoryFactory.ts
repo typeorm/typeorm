@@ -5,6 +5,7 @@ import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoRepository} from "./MongoRepository";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {EntityManager} from "../entity-manager/EntityManager";
+import {Mutable} from "../util/TypeUtils";
 
 /**
  * Factory used to create different types of repositories.
@@ -19,35 +20,19 @@ export class RepositoryFactory {
      * Creates a repository.
      */
     create(manager: EntityManager, metadata: EntityMetadata, queryRunner?: QueryRunner): Repository<any> {
-
+        let repository: Repository<any>;
         if (metadata.treeType) {
-            // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-            // however we need these properties for internal work of the class
-            const repository = new TreeRepository<any>();
-            Object.assign(repository, {
-                manager: manager,
-                metadata: metadata,
-                queryRunner: queryRunner,
-            });
-            return repository;
-
+            repository = new TreeRepository<any>();
+        } else if (manager.connection.driver instanceof MongoDriver) {
+            repository = new MongoRepository();
         } else {
-            // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-            // however we need these properties for internal work of the class
-            let repository: Repository<any>;
-            if (manager.connection.driver instanceof MongoDriver) {
-                repository = new MongoRepository();
-            } else {
-                repository = new Repository<any>();
-            }
-            Object.assign(repository, {
-                manager: manager,
-                metadata: metadata,
-                queryRunner: queryRunner,
-            });
-
-            return repository;
+            repository = new Repository<any>();
         }
+        (repository as Mutable<Repository<any>>).manager = manager;
+        (repository as Mutable<Repository<any>>).metadata = metadata;
+        (repository as Mutable<Repository<any>>).queryRunner = queryRunner;
+
+        return repository;
     }
 
 }
