@@ -696,10 +696,10 @@ export abstract class QueryBuilder<Entity, Result = any> {
      * Creates "WHERE" expression.
      */
     protected createWhereExpression() {
-        const conditionsArray = [];
+        const conditions: string[] = [];
 
-        const whereExpression = this.createWhereExpressionString();
-        whereExpression.trim() && conditionsArray.push(this.createWhereExpressionString());
+        const whereExpression = this.createWhereExpressionString().trim();
+        if (whereExpression) conditions.push(whereExpression);
 
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata;
@@ -710,7 +710,7 @@ export abstract class QueryBuilder<Entity, Result = any> {
                     : metadata.deleteDateColumn.propertyName;
 
                 const condition = `${this.replacePropertyNames(column)} IS NULL`;
-                conditionsArray.push(condition);
+                conditions.push(condition);
             }
 
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
@@ -719,21 +719,21 @@ export abstract class QueryBuilder<Entity, Result = any> {
                     : metadata.discriminatorColumn.databaseName;
 
                 const condition = `${this.replacePropertyNames(column)} IN (:...discriminatorColumnValues)`;
-                conditionsArray.push(condition);
+                conditions.push(condition);
             }
         }
 
         if (this.expressionMap.extraAppendedAndWhereCondition) {
             const condition = this.replacePropertyNames(this.expressionMap.extraAppendedAndWhereCondition);
-            conditionsArray.push(condition);
+            conditions.push(condition);
         }
 
-        if (!conditionsArray.length) {
+        if (conditions.length === 0) {
             return "";
-        } else if (conditionsArray.length === 1) {
-            return `WHERE ${conditionsArray[0]}`;
+        } else if (conditions.length === 1) {
+            return `WHERE ${conditions[0]}`;
         } else {
-            return `WHERE ${conditionsArray.map(where => `(${where})`).join(" AND ")}`;
+            return `WHERE ${conditions.map(where => `(${where})`).join(" AND ")}`;
         }
     }
 
