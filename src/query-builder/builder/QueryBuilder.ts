@@ -25,7 +25,6 @@ import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import {RandomGenerator} from "../../util/RandomGenerator";
 import {AbstractSqliteDriver} from "../../driver/sqlite-abstract/AbstractSqliteDriver";
 import {SapDriver} from "../../driver/sap/SapDriver";
-import {MysqlDriver} from "../../driver/mysql/MysqlDriver";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -958,25 +957,9 @@ export abstract class QueryBuilder<Entity, Result = any> {
 
             const paramExpression = createParamExpression(value);
 
-            if (column && this.connection.driver.spatialTypes.includes(column.type)) {
-                if (this.connection.driver instanceof MysqlDriver) {
-                    const useLegacy = this.connection.driver.options.legacySpatialSupport;
-                    const geomFromText = useLegacy ? "GeomFromText" : "ST_GeomFromText";
-                    if (column.srid != null) {
-                        return `${geomFromText}(${paramExpression}, ${column.srid})`;
-                    } else {
-                        return `${geomFromText}(${paramExpression})`;
-                    }
-                } else if (this.connection.driver instanceof PostgresDriver) {
-                    if (column.srid != null) {
-                        return `ST_SetSRID(ST_GeomFromGeoJSON(${paramExpression}), ${column.srid})::${column.type}`;
-                    } else {
-                        return `ST_GeomFromGeoJSON(${paramExpression})::${column.type}`;
-                    }
-                } else if (this.connection.driver instanceof SqlServerDriver) {
-                    return `${column.type}::STGeomFromText(${paramExpression}, ${(column.srid || "0")})`;
-                }
-            }
+            // Wrap special columns (spatial types, etc)
+            if (column && this.connection.driver.wrapPersistExpression)
+                return this.connection.driver.wrapPersistExpression(paramExpression, column);
 
             return paramExpression;
         }

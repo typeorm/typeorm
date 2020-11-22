@@ -125,6 +125,16 @@ export interface Driver {
     buildTableName(tableName: string, schema?: string, database?: string): string;
 
     /**
+     * Wraps given value in any additional expressions required based on its column type and metadata.
+     */
+    wrapPersistExpression?(value: string, column: ColumnMetadata): string;
+
+    /**
+     * Wraps given selection in any additional expressions required based on its column type and metadata.
+     */
+    wrapSelectExpression?(selection: string, column: ColumnMetadata): string;
+
+    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, column: ColumnMetadata): any;
