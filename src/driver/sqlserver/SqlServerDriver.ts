@@ -687,16 +687,13 @@ export class SqlServerDriver implements Driver {
         return "@" + index;
     }
 
-    // -------------------------------------------------------------------------
-    // Public Methods
-    // -------------------------------------------------------------------------
-
     /**
+     * Wraps the given value in a driver specific special object with additional type information.
+     *
      * Sql server's parameters needs to be wrapped into special object with type information about this value.
      * This method wraps given value into MssqlParameter based on its column definition.
      */
-    parametrizeValue(column: ColumnMetadata, value: any) {
-
+    parametrizeValue(column: ColumnMetadata, value: any): any {
         // if its already MssqlParameter then simply return it
         if (value instanceof MssqlParameter)
             return value;
@@ -704,13 +701,10 @@ export class SqlServerDriver implements Driver {
         const normalizedType = this.normalizeType({ type: column.type });
         if (column.length) {
             return new MssqlParameter(value, normalizedType as any, column.length as any);
-
         } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
             return new MssqlParameter(value, normalizedType as any, column.precision, column.scale);
-
         } else if (column.precision !== null && column.precision !== undefined) {
             return new MssqlParameter(value, normalizedType as any, column.precision);
-
         } else if (column.scale !== null && column.scale !== undefined) {
             return new MssqlParameter(value, normalizedType as any, column.scale);
         }
@@ -718,9 +712,15 @@ export class SqlServerDriver implements Driver {
         return new MssqlParameter(value, normalizedType as any);
     }
 
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
     /**
      * Sql server's parameters needs to be wrapped into special object with type information about this value.
      * This method wraps all values of the given object into MssqlParameter based on their column definitions in the given table.
+     *
+     * TODO: Remove Unused
      */
     parametrizeMap(tablePath: string, map: ObjectLiteral): ObjectLiteral {
 

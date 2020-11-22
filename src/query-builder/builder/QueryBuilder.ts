@@ -944,22 +944,21 @@ export abstract class QueryBuilder<Entity, Result = any> {
             }
         }
 
-        // INSERT or UPDATE
-        if (value instanceof Function) {
-            // Raw SQL expression
+        // Raw SQL expression, no further processing
+        if (value instanceof Function)
             return String(value());
-        } else {
-            if (column && this.connection.driver instanceof SqlServerDriver)
-                value = this.connection.driver.parametrizeValue(column, value);
 
-            const paramExpression = createParamExpression(value);
+        // Some drivers require additional type information for parameters
+        if (column && this.connection.driver.parametrizeValue)
+            value = this.connection.driver.parametrizeValue(column, value);
 
-            // Wrap special columns (spatial types, etc)
-            if (column && this.connection.driver.wrapPersistExpression)
-                return this.connection.driver.wrapPersistExpression(paramExpression, column);
+        const paramExpression = createParamExpression(value);
 
-            return paramExpression;
-        }
+        // Wrap special columns (spatial types, etc)
+        if (column && this.connection.driver.wrapPersistExpression)
+            return this.connection.driver.wrapPersistExpression(paramExpression, column);
+
+        return paramExpression;
     }
 
     /**
