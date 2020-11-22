@@ -948,9 +948,6 @@ export abstract class QueryBuilder<Entity, Result = any> {
         if (value instanceof Function) {
             // Raw SQL expression
             return String(value());
-        } else if (this.connection.driver instanceof SapDriver && value === null) {
-            // SAP HANA doesn't support null parameters TODO: Move to driver?
-            return "NULL";
         } else {
             if (column && this.connection.driver instanceof SqlServerDriver)
                 value = this.connection.driver.parametrizeValue(column, value);

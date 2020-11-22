@@ -349,7 +349,11 @@ export class SapDriver implements Driver {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
-        if (value === null || value === undefined)
+        // NULL parameters aren't supported so return as raw SQL
+        if (value === null)
+            return () => "NULL";
+
+        if (value === undefined)
             return value;
 
         if (columnMetadata.type === Boolean) {
