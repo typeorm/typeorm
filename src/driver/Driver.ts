@@ -219,4 +219,9 @@ export interface Driver {
      */
     createParameter(parameterName: string, index: number): string;
 
+    /**
+     * Wraps the given value in a driver specific special object with additional type information.
+     */
+    parametrizeValue?(column: ColumnMetadata, value: any): any; // TODO: (value, column) to match preparePersistentValue
+
 }
