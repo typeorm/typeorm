@@ -441,6 +441,36 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Wraps given value in any additional expressions required based on its column type and metadata.
+     */
+    wrapPersistExpression(value: string, column: ColumnMetadata): string {
+        if (this.spatialTypes.includes(column.type)) {
+            if (column.srid != null) {
+                return `ST_SetSRID(ST_GeomFromGeoJSON(${value}), ${column.srid})::${column.type}`;
+            } else {
+                return `ST_GeomFromGeoJSON(${value})::${column.type}`;
+            }
+        } else {
+            return value;
+        }
+    }
+
+    /**
+     * Wraps given selection in any additional expressions required based on its column type and metadata.
+     */
+    wrapSelectExpression(selection: string, column: ColumnMetadata): string {
+        if (this.spatialTypes.includes(column.type)) {
+            if (column.precision) {
+                return `ST_AsGeoJSON(${selection}, ${column.precision})::json`;
+            } else {
+                return `ST_AsGeoJSON(${selection})::json`;
+            }
+        } else {
+            return selection;
+        }
+    }
+
+    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {

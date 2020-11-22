@@ -435,6 +435,34 @@ export class MysqlDriver implements Driver {
     }
 
     /**
+     * Wraps given value in any additional expressions required based on its column type and metadata.
+     */
+    wrapPersistExpression(value: string, column: ColumnMetadata): string {
+        if (this.spatialTypes.includes(column.type)) {
+            const geomFromText = this.options.legacySpatialSupport ? "GeomFromText" : "ST_GeomFromText";
+            if (column.srid != null) {
+                return `${geomFromText}(${value}, ${column.srid})`;
+            } else {
+                return `${geomFromText}(${value})`;
+            }
+        } else {
+            return value;
+        }
+    }
+
+    /**
+     * Wraps given selection in any additional expressions required based on its column type and metadata.
+     */
+    wrapSelectExpression(selection: string, column: ColumnMetadata): string {
+        if (this.spatialTypes.includes(column.type)) {
+            const asText = this.options.legacySpatialSupport ? "AsText" : "ST_AsText";
+            return `${asText}(${selection})`;
+        } else {
+            return selection;
+        }
+    }
+
+    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {

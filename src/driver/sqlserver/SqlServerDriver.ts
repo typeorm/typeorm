@@ -365,6 +365,28 @@ export class SqlServerDriver implements Driver {
     }
 
     /**
+     * Wraps given value in any additional expressions required based on its column type and metadata.
+     */
+    wrapPersistExpression(value: string, column: ColumnMetadata): string {
+        if (this.spatialTypes.includes(column.type)) {
+            return `${column.type}::STGeomFromText(${value}, ${(column.srid || "0")})`;
+        } else {
+            return value;
+        }
+    }
+
+    /**
+     * Wraps given selection in any additional expressions required based on its column type and metadata.
+     */
+    wrapSelectExpression(selection: string, column: ColumnMetadata): string {
+        if (this.spatialTypes.includes(column.type)) {
+            return `${selection}.ToString()`;
+        } else {
+            return selection;
+        }
+    }
+
+    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {

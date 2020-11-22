@@ -1578,23 +1578,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
         return allColumns.map(column => {
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
             let selectionPath = this.escape(aliasName) + "." + this.escape(column.databaseName);
-            if (this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
-                    const useLegacy = this.connection.driver.options.legacySpatialSupport;
-                    const asText = useLegacy ? "AsText" : "ST_AsText";
-                    selectionPath = `${asText}(${selectionPath})`;
-                }
 
-                if (this.connection.driver instanceof PostgresDriver)
-                    // cast to JSON to trigger parsing in the driver
-                    if (column.precision) {
-                        selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`;
-                    } else {
-                        selectionPath = `ST_AsGeoJSON(${selectionPath})::json`;
-                    }
-                if (this.connection.driver instanceof SqlServerDriver)
-                    selectionPath = `${selectionPath}.ToString()`;
-            }
+            // Wrap special columns (spatial types, etc)
+            if (this.connection.driver.wrapSelectExpression)
+                selectionPath = this.connection.driver.wrapSelectExpression(selectionPath, column);
+
             return {
                 selection: selectionPath,
                 aliasName: selection && selection.aliasName ? selection.aliasName : DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column.databaseName),
