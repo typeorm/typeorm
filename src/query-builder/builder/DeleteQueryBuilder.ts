@@ -40,13 +40,22 @@ export class DeleteQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
         const whereExpression = this.createWhereExpression();
         const returningExpression = this.createReturningExpression();
 
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof CockroachDriver)) {
-            return `DELETE FROM ${tableName}${whereExpression} RETURNING ${returningExpression}`;
-        } else if (returningExpression !== "" && this.connection.driver instanceof SqlServerDriver) {
-            return `DELETE FROM ${tableName} OUTPUT ${returningExpression}${whereExpression}`;
-        } else {
-            return `DELETE FROM ${tableName}${whereExpression}`;
+        const query = ["DELETE FROM", tableName];
+
+        // add OUTPUT expression
+        if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
+            query.push("OUTPUT", returningExpression);
         }
+
+        // add WHERE expression
+        if (whereExpression) query.push(whereExpression);
+
+        // add RETURNING expression
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof CockroachDriver)) {
+            query.push("RETURNING", returningExpression);
+        }
+
+        return query.join(" ");
     }
 
     /**

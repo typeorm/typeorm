@@ -31,9 +31,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createComment();
-        sql += this.createInsertExpression();
-        return sql.trim();
+        return [this.createComment(), this.createInsertExpression()].filter(q => q).join(" ");
     }
 
     /**
@@ -187,65 +185,63 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
      */
     protected createInsertExpression() {
         const tableName = this.getTableName(this.getMainTableName());
+        const oracleMultiRowInsert = this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1;
         const valuesExpression = this.createValuesExpression(); // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
-        const returningExpression = (this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1) ? null : this.createReturningExpression(); // oracle doesnt support returning with multi-row insert
+        const returningExpression = this.createReturningExpression();
         const columnsExpression = this.createColumnNamesExpression();
-        let query = "INSERT ";
+
+        const query = ["INSERT"];
 
         if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
-          query += `${this.expressionMap.onIgnore ? " IGNORE " : ""}`;
+          if (this.expressionMap.onIgnore) query.push("IGNORE");
         }
 
-        query += `INTO ${tableName}`;
+        query.push("INTO", tableName);
 
         // add columns expression
         if (columnsExpression) {
-            query += `(${columnsExpression})`;
+            query.push(`(${columnsExpression})`);
         } else {
             if (!valuesExpression && (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)) // special syntax for mysql DEFAULT VALUES insertion
-                query += "()";
+                query.push("()");
         }
 
         // add OUTPUT expression
         if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
-            query += ` OUTPUT ${returningExpression}`;
+            query.push("OUTPUT", returningExpression);
         }
 
         // add VALUES expression
         if (valuesExpression) {
-            if (this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1) {
-                query += ` ${valuesExpression}`;
-            } else {
-                query += ` VALUES ${valuesExpression}`;
-            }
+            if (!(oracleMultiRowInsert)) query.push("VALUES");
+            query.push(valuesExpression);
         } else {
             if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) { // special syntax for mysql DEFAULT VALUES insertion
-                query += " VALUES ()";
+                query.push("VALUES ()");
             } else {
-                query += " DEFAULT VALUES";
+                query.push("DEFAULT VALUES");
             }
         }
         if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
-          query += `${this.expressionMap.onIgnore ? " ON CONFLICT DO NOTHING " : ""}`;
-          query += `${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
+          if (this.expressionMap.onIgnore) query.push("ON CONFLICT DO NOTHING");
+          if (this.expressionMap.onConflict) query.push("ON CONFLICT " + this.expressionMap.onConflict);
           if (this.expressionMap.onUpdate) {
             const { overwrite, columns, conflict } = this.expressionMap.onUpdate;
-            query += `${columns ? " ON CONFLICT " + conflict + " DO UPDATE SET " + columns : ""}`;
-            query += `${overwrite ? " ON CONFLICT " + conflict + " DO UPDATE SET " + overwrite : ""}`;
+            if (columns) query.push("ON CONFLICT", conflict!, "DO UPDATE SET", columns);
+            if (overwrite) query.push("ON CONFLICT", conflict!, " DO UPDATE SET", overwrite);
           }
         } else if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
             if (this.expressionMap.onUpdate) {
               const { overwrite, columns } = this.expressionMap.onUpdate;
-              query += `${columns ? " ON DUPLICATE KEY UPDATE " + columns : ""}`;
-              query += `${overwrite ? " ON DUPLICATE KEY UPDATE " + overwrite : ""}`;
+              if (columns) query.push("ON DUPLICATE KEY UPDATE", columns);
+              if (overwrite) query.push("ON DUPLICATE KEY UPDATE", overwrite);
             }
         }
 
         // add RETURNING expression
         if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
-            query += ` RETURNING ${returningExpression}`;
+            query.push("RETURNING", returningExpression);
         }
-
 
         // Inserting a specific value for an auto-increment primary key in mssql requires enabling IDENTITY_INSERT
         // IDENTITY_INSERT can only be enabled for tables where there is an IDENTITY column and only if there is a value to be inserted (i.e. supplying DEFAULT is prohibited if IDENTITY_INSERT is enabled)
@@ -255,10 +251,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
                 .filter((column) => this.expressionMap.insertColumns.length > 0 ? this.expressionMap.insertColumns.indexOf(column.propertyPath) !== -1 : column.isInsert)
                 .some((column) => this.isOverridingAutoIncrementBehavior(column))
         ) {
-            query = `SET IDENTITY_INSERT ${tableName} ON; ${query}; SET IDENTITY_INSERT ${tableName} OFF`;
+            return `SET IDENTITY_INSERT ${tableName} ON; ${query.join(" ")}; SET IDENTITY_INSERT ${tableName} OFF`;
         }
 
-        return query;
+        return query.join(" ");
     }
 
     /**
