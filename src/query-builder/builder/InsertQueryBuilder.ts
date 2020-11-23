@@ -320,93 +320,75 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
         const valueSets = this.getValueSets();
         const columns = this.getInsertedColumns();
 
-        // if column metadatas are given then apply all necessary operations with values
-        if (columns.length > 0) {
-            let expression = "";
-            let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
-            valueSets.forEach((valueSet, valueSetIndex) => {
-                columns.forEach((column, columnIndex) => {
-                    if (columnIndex === 0) {
-                        if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
-                            expression += " SELECT ";
-                        } else {
-                            expression += "(";
-                        }
-                    }
+        let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
+        const valueSetExpressions = valueSets.map((valueSet, valueSetIndex) => {
+            let columnExpressions: string[];
+            // if column metadatas are given then apply all necessary operations with values
+            if (columns.length > 0) {
+                columnExpressions = columns.map((column, columnIndex) => {
                     const paramName = "i" + valueSetIndex + "_" + column.databaseName;
 
                     // extract real value from the entity
                     let value = column.getEntityValue(valueSet);
 
-                    // if column is relational and value is an object then get real referenced column value from this object
-                    // for example column value is { question: { id: 1 } }, value will be equal to { id: 1 }
-                    // and we extract "1" from this object
-                    /*if (column.referencedColumn && value instanceof Object && !(value instanceof Function)) { // todo: check if we still need it since getEntityValue already has similar code
-                        value = column.referencedColumn.getEntityValue(value);
-                    }*/
-
-
                     if (!(value instanceof Function)) {
-                      // make sure our value is normalized by a driver
-                      value = this.connection.driver.preparePersistentValue(value, column);
+                        // make sure our value is normalized by a driver
+                        value = this.connection.driver.preparePersistentValue(value, column);
                     }
 
                     // newly inserted entities always have a version equal to 1 (first version)
                     // also, user-specified version must be empty
                     if (column.isVersion && value === undefined) {
-                        expression += "1";
+                        return "1";
 
-                    // } else if (column.isNestedSetLeft) {
-                    //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
-                    //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
-                    //     const subQuery = `(SELECT c.max + 1 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
-                    //     expression += subQuery;
-                    //
-                    // } else if (column.isNestedSetRight) {
-                    //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
-                    //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
-                    //     const subQuery = `(SELECT c.max + 2 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
-                    //     expression += subQuery;
+                        // } else if (column.isNestedSetLeft) {
+                        //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
+                        //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
+                        //     const subQuery = `(SELECT c.max + 1 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
+                        //     expression += subQuery;
+                        //
+                        // } else if (column.isNestedSetRight) {
+                        //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
+                        //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
+                        //     const subQuery = `(SELECT c.max + 2 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
+                        //     expression += subQuery;
 
                     } else if (column.isDiscriminator) {
                         this.expressionMap.nativeParameters["discriminator_value_" + parametersCount] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
-                        expression += this.connection.driver.createParameter("discriminator_value_" + parametersCount, parametersCount);
-                        parametersCount++;
-                        // return "1";
+                        return this.connection.driver.createParameter("discriminator_value_" + parametersCount, parametersCount++);
 
-                    // for create and update dates we insert current date
-                    // no, we don't do it because this constant is already in "default" value of the column
-                    // with extended timestamp functionality, like CURRENT_TIMESTAMP(6) for example
-                    // } else if (column.isCreateDate || column.isUpdateDate) {
-                    //     return "CURRENT_TIMESTAMP";
+                        // for create and update dates we insert current date
+                        // no, we don't do it because this constant is already in "default" value of the column
+                        // with extended timestamp functionality, like CURRENT_TIMESTAMP(6) for example
+                        // } else if (column.isCreateDate || column.isUpdateDate) {
+                        //     return "CURRENT_TIMESTAMP";
 
-                    // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
+                        // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
                     } else if (column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.isUUIDGenerationSupported() && value === undefined) {
 
                         const paramName = "uuid_" + column.databaseName + valueSetIndex;
                         value = RandomGenerator.uuid4();
                         this.expressionMap.nativeParameters[paramName] = value;
-                        expression += this.connection.driver.createParameter(paramName, parametersCount);
-                        parametersCount++;
+                        return this.connection.driver.createParameter(paramName, parametersCount++);
 
-                    // if value for this column was not provided then insert default value
+                        // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
                         if ((this.connection.driver instanceof OracleDriver && valueSets.length > 1) || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
                             if (column.default !== undefined && column.default !== null) { // try to use default defined in the column
-                                expression += this.connection.driver.normalizeDefault(column);
+                                return this.connection.driver.normalizeDefault(column);
                             } else {
-                                expression += "NULL"; // otherwise simply use NULL and pray if column is nullable
+                                return "NULL"; // otherwise simply use NULL and pray if column is nullable
                             }
-
                         } else {
-                            expression += "DEFAULT";
+                            return "DEFAULT";
                         }
 
-                    // support for SQL expressions in queries
+                        // support for SQL expressions in queries
                     } else if (value instanceof Function) {
-                        expression += value();
+                        // wrap in String() for compatibility, null should be mapped to "null" but Array.join() doesn't do this
+                        return String(value());
 
-                    // just any other regular value
+                        // just any other regular value
                     } else {
                         if (this.connection.driver instanceof SqlServerDriver)
                             value = this.connection.driver.parametrizeValue(column, value);
@@ -420,96 +402,62 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
                             const useLegacy = this.connection.driver.options.legacySpatialSupport;
                             const geomFromText = useLegacy ? "GeomFromText" : "ST_GeomFromText";
                             if (column.srid != null) {
-                                expression += `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount)}, ${column.srid})`;
+                                return `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount++)}, ${column.srid})`;
                             } else {
-                                expression += `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount)})`;
+                                return `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount++)})`;
                             }
                         } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             if (column.srid != null) {
-                              expression += `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)}), ${column.srid})::${column.type}`;
+                                return `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount++)}), ${column.srid})::${column.type}`;
                             } else {
-                              expression += `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)})::${column.type}`;
+                                return `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount++)})::${column.type}`;
                             }
                         } else if (this.connection.driver instanceof SqlServerDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                            expression += column.type + "::STGeomFromText(" + this.connection.driver.createParameter(paramName, parametersCount) + ", " + (column.srid || "0") + ")";
+                            return column.type + "::STGeomFromText(" + this.connection.driver.createParameter(paramName, parametersCount++) + ", " + (column.srid || "0") + ")";
                         } else {
-                            expression += this.connection.driver.createParameter(paramName, parametersCount);
+                            return this.connection.driver.createParameter(paramName, parametersCount++);
                         }
-                        parametersCount++;
-                    }
-
-                    if (columnIndex === columns.length - 1) {
-                        if (valueSetIndex === valueSets.length - 1) {
-                            if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
-                                expression += " FROM DUAL ";
-                            } else {
-                                expression += ")";
-                            }
-                        } else {
-                            if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
-                                expression += " FROM DUAL UNION ALL ";
-                            } else {
-                                expression += "), ";
-                            }
-                        }
-                    } else {
-                        expression += ", ";
                     }
                 });
-            });
-            if (expression === "()")
-                return "";
-
-            return expression;
-        } else { // for tables without metadata
-            // get values needs to be inserted
-            let expression = "";
-            let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
-
-            valueSets.forEach((valueSet, insertionIndex) => {
+            } else {
                 const columns = Object.keys(valueSet);
-                columns.forEach((columnName, columnIndex) => {
-                    if (columnIndex === 0) {
-                        expression += "(";
-                    }
-                    const paramName = "i" + insertionIndex + "_" + columnName;
+                columnExpressions = columns.map((columnName, columnIndex) => {
+                    const paramName = "i" + valueSetIndex + "_" + columnName;
                     const value = valueSet[columnName];
 
                     // support for SQL expressions in queries
                     if (value instanceof Function) {
-                        expression += value();
+                        return value();
 
-                    // if value for this column was not provided then insert default value
+                        // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
                         if (this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) {
-                            expression += "NULL";
-
+                            return "NULL";
                         } else {
-                            expression += "DEFAULT";
+                            return "DEFAULT";
                         }
 
-                    // just any other regular value
+                        // just any other regular value
                     } else {
                         this.expressionMap.nativeParameters[paramName] = value;
-                        expression += this.connection.driver.createParameter(paramName, parametersCount);
-                        parametersCount++;
-                    }
-
-                    if (columnIndex === Object.keys(valueSet).length - 1) {
-                        if (insertionIndex === valueSets.length - 1) {
-                            expression += ")";
-                        } else {
-                            expression += "), ";
-                        }
-                    }
-                    else {
-                        expression += ", ";
+                        return this.connection.driver.createParameter(paramName, parametersCount++);
                     }
                 });
-            });
-            if (expression === "()")
-                return "";
-            return expression;
+            }
+
+            // Filter out if no values are specified
+            if (columnExpressions.length === 0) return null;
+
+            if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
+                return `SELECT ${columnExpressions.join(", ")} FROM DUAL`;
+            } else {
+                return `(${columnExpressions.join(", ")})`;
+            }
+        }).filter(expression => expression !== null);
+        if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
+            return valueSetExpressions.join(" UNION ALL ");
+        } else {
+            return valueSetExpressions.join(", ");
         }
     }
 
