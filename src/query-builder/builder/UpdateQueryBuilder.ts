@@ -11,6 +11,7 @@ import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../../error/UpdateValuesMissingError";
 import {QueryDeepPartialEntity} from "../QueryPartialEntity";
 import {ModificationQueryBuilder} from "./ModificationQueryBuilder";
+import {MissingDeleteDateColumnError} from "../../error/MissingDeleteDateColumnError";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -29,6 +30,16 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
         return this;
     }
 
+    /**
+     * Sets whether soft delete
+     *
+     * TODO: rename to softDelete?
+     */
+    setSoftDelete(action: "delete" | "restore" = "delete"): this {
+        this.expressionMap.softDeleteAction = action;
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -39,6 +50,15 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
     protected createColumnValuesExpression(): string {
         const valuesSet = this.getValueSet();
         const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
+
+        // Soft delete/restore only works with valid metadata and delete date column
+        if (this.expressionMap.softDeleteAction) {
+            if (!metadata)
+                throw new Error(`Cannot get entity metadata for the given alias "${this.expressionMap.mainAlias}" to perform soft-delete/restore`);
+
+            if (!metadata.deleteDateColumn)
+                throw new MissingDeleteDateColumnError(metadata);
+        }
 
         const newParameters: ObjectLiteral = {};
         let parametersCount = this.connection.driver.hasIndexedParameters()
@@ -68,6 +88,11 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
         });
 
         if (metadata) {
+            if (this.expressionMap.softDeleteAction === "delete")
+                columnValuesExpressions.push(this.escape(metadata.deleteDateColumn!.databaseName) + " = CURRENT_TIMESTAMP");
+            else if (this.expressionMap.softDeleteAction === "restore")
+                columnValuesExpressions.push(this.escape(metadata.deleteDateColumn!.databaseName) + " = NULL");
+
             if (metadata.versionColumn && !updatedColumns.includes(metadata.versionColumn as any))
                 columnValuesExpressions.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
             if (metadata.updateDateColumn && !updatedColumns.includes(metadata.updateDateColumn))
@@ -93,6 +118,10 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
     protected getValueSet(): ObjectLiteral {
         if (this.expressionMap.valuesSet instanceof Object)
             return this.expressionMap.valuesSet;
+
+        // Value set isn't required if soft delete/restore is being performed
+        if (this.expressionMap.softDeleteAction)
+            return {};
 
         throw new UpdateValuesMissingError();
     }
