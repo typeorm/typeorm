@@ -5,7 +5,7 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {SqlServerDriver} from "../../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../driver/postgres/PostgresDriver";
 import {UpdateResult} from "../result/UpdateResult";
-import {ReturningResultsEntityUpdator} from "../ReturningResultsEntityUpdator";
+import {ReturningResultsEntityUpdater} from "../ReturningResultsEntityUpdater";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../../error/UpdateValuesMissingError";
@@ -136,11 +136,11 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
         let selectOutputSql: string | null = null;
 
         // if update entity mode is enabled we may need extra columns for the returning statement
-        const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(queryRunner, this.expressionMap);
+        const returningResultsEntityUpdater = new ReturningResultsEntityUpdater(queryRunner, this.expressionMap);
         if (this.expressionMap.updateEntity === true &&
             this.expressionMap.mainAlias!.hasMetadata &&
             this.expressionMap.whereEntities.length > 0) {
-            this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getUpdationReturningColumns();
+            this.expressionMap.extraReturningColumns = returningResultsEntityUpdater.getUpdationReturningColumns();
 
             if (this.expressionMap.extraReturningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
                 declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", this.expressionMap.extraReturningColumns);
@@ -162,7 +162,7 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
         if (this.expressionMap.updateEntity === true &&
             this.expressionMap.mainAlias!.hasMetadata &&
             this.expressionMap.whereEntities.length > 0) {
-            await returningResultsEntityUpdator.update(updateResult, this.expressionMap.whereEntities);
+            await returningResultsEntityUpdater.update(updateResult, this.expressionMap.whereEntities);
         }
 
         return updateResult;
