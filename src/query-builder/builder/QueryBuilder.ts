@@ -683,16 +683,14 @@ export abstract class QueryBuilder<Entity, Result = any> {
     }
 
     protected createComment(): string {
-        if (!this.expressionMap.comment) {
-            return "";
-        }
+        if (!this.expressionMap.comment) return "";
 
         // ANSI SQL 2003 support C style comments - comments that start with `/*` and end with `*/`
         // In some dialects query nesting is available - but not all.  Because of this, we'll need
         // to scrub "ending" characters from the SQL but otherwise we can leave everything else
         // as-is and it should be valid.
 
-        return `/* ${this.expressionMap.comment.replace("*/", "")} */ `;
+        return `/* ${this.expressionMap.comment.replace("*/", "")} */`;
     }
 
     /**
@@ -734,9 +732,9 @@ export abstract class QueryBuilder<Entity, Result = any> {
         if (!conditionsArray.length) {
             return "";
         } else if (conditionsArray.length === 1) {
-            return ` WHERE ${conditionsArray[0]}`;
+            return `WHERE ${conditionsArray[0]}`;
         } else {
-            return ` WHERE ${conditionsArray.map(where => "(" + where + ")").join(" AND ")}`;
+            return `WHERE ${conditionsArray.map(where => `(${where})`).join(" AND ")}`;
         }
     }
 
@@ -746,6 +744,11 @@ export abstract class QueryBuilder<Entity, Result = any> {
     protected createReturningExpression(): string {
         const columns = this.getReturningColumns();
         const driver = this.connection.driver;
+
+        // Oracle doesn't support returning on multi-row insert
+        if (driver instanceof OracleDriver && Array.isArray(this.expressionMap.valuesSet) && this.expressionMap.valuesSet.length > 0) {
+            return "";
+        }
 
         // also add columns we must auto-return to perform entity updation
         // if user gave his own returning
@@ -858,15 +861,14 @@ export abstract class QueryBuilder<Entity, Result = any> {
             metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
                 const parameterName = "id_" + index + "_" + secondIndex;
                 // whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
-                whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + " = " + this.connection.driver.createParameter(parameterName, parameterIndex));
+                whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + " = " + this.connection.driver.createParameter(parameterName, parameterIndex++));
                 this.expressionMap.nativeParameters[parameterName] = primaryColumn.getEntityValue(id, true);
-                parameterIndex++;
             });
             return whereSubStrings.join(" AND ");
         });
 
         return whereStrings.length > 1
-            ? "(" + whereStrings.map(whereString => "(" + whereString + ")").join(" OR ") + ")"
+            ? `(${whereStrings.map(whereString => `(${whereString})`).join(" OR ")})`
             : whereStrings[0];
     }
 
@@ -874,9 +876,9 @@ export abstract class QueryBuilder<Entity, Result = any> {
      * Creates "ORDER BY" part of SQL query.
      */
     protected createOrderByExpression() {
-        const orderBys = this.expressionMap.orderBys;
+        const orderBys = this.expressionMap.allOrderBys;
         if (Object.keys(orderBys).length > 0)
-            return " ORDER BY " + Object.keys(orderBys)
+            return "ORDER BY " + Object.keys(orderBys)
                 .map(columnName => {
                     if (typeof orderBys[columnName] === "string") {
                         return this.replacePropertyNames(columnName) + " " + orderBys[columnName];

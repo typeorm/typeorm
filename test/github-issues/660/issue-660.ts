@@ -36,10 +36,10 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
         }
 
         if (connection.driver instanceof SqlServerDriver) {
-            expect(sql).to.equal("INSERT INTO user(name) OUTPUT inserted.* VALUES (@0)");
+            expect(sql).to.equal("INSERT INTO user (name) OUTPUT inserted.* VALUES (@0)");
 
         } else if (connection.driver instanceof PostgresDriver) {
-            expect(sql).to.equal("INSERT INTO user(name) VALUES ($1) RETURNING *");
+            expect(sql).to.equal("INSERT INTO user (name) VALUES ($1) RETURNING *");
         }
     })));
 

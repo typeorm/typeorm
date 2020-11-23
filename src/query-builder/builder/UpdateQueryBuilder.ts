@@ -110,14 +110,22 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
         const whereExpression = this.createWhereExpression();
         const returningExpression = this.createReturningExpression();
 
-        // generate and return sql update query
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
-            return `UPDATE ${tableName} SET ${valuesExpression}${whereExpression} RETURNING ${returningExpression}`;
-        } else if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
-            return `UPDATE ${tableName} SET ${valuesExpression} OUTPUT ${returningExpression}${whereExpression}`;
-        } else {
-            return `UPDATE ${tableName} SET ${valuesExpression}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
+        const query = ["UPDATE", tableName, "SET", valuesExpression];
+
+        // add OUTPUT expression
+        if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
+            query.push("OUTPUT", returningExpression);
         }
+
+        // add WHERE expression
+        if (whereExpression) query.push(whereExpression);
+
+        // add RETURNING expression
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
+            query.push("RETURNING", returningExpression);
+        }
+
+        return query.join(" ");
     }
 
     /**

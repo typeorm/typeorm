@@ -32,11 +32,11 @@ export abstract class ModificationQueryBuilder<Entity, Result> extends QueryBuil
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createComment();
-        sql += this.createModificationExpression();
-        sql += this.createOrderByExpression();
-        sql += this.createLimitExpression();
-        return sql.trim();
+        return [this.createComment(),
+            this.createModificationExpression(),
+            this.createOrderByExpression(),
+            this.createLimitExpression()]
+            .filter(q => q).join(" ");
     }
 
     // -------------------------------------------------------------------------
@@ -279,7 +279,7 @@ export abstract class ModificationQueryBuilder<Entity, Result> extends QueryBuil
 
         if (limit) {
             if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
-                return " LIMIT " + limit;
+                return "LIMIT " + limit;
             } else {
                 throw new LimitOnUpdateNotSupportedError();
             }
