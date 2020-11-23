@@ -27,6 +27,16 @@ export class QueryExpressionMap {
     queryEntity: boolean = false;
 
     /**
+     * Indicates if QueryBuilder should select counts and not raw results.
+     */
+    queryCount: boolean = false;
+
+    /**
+     * Indicates if QueryBuilder should return a raw data stream.
+     */
+    rawStream: boolean = false;
+
+    /**
      * Main alias is a main selection object selected by QueryBuilder.
      */
     mainAlias?: Alias;
@@ -201,7 +211,7 @@ export class QueryExpressionMap {
     /**
      * If QueryBuilder was created in a subquery mode then its parent QueryBuilder (who created subquery) will be stored here.
      */
-    parentQueryBuilder: QueryBuilder<any>;
+    parentQueryBuilder: QueryBuilder<any, any>;
 
     /**
      * Indicates if property names are prefixed with alias names during property replacement.

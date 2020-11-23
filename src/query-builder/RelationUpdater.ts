@@ -15,7 +15,7 @@ export class RelationUpdater {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected queryBuilder: QueryBuilder<any>,
+    constructor(protected queryBuilder: QueryBuilder<any, any>,
                 protected expressionMap: QueryExpressionMap) {
     }
 

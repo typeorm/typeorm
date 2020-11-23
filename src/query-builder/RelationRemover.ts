@@ -13,7 +13,7 @@ export class RelationRemover {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected queryBuilder: QueryBuilder<any>,
+    constructor(protected queryBuilder: QueryBuilder<any, any>,
                 protected expressionMap: QueryExpressionMap) {
     }
 
