@@ -1,7 +1,6 @@
-import {ColumnOptions, getMetadataArgsStorage} from "../../";
+import {Column, ColumnOptions} from "../../";
 import {PrimaryGeneratedColumnNumericOptions} from "../options/PrimaryGeneratedColumnNumericOptions";
 import {PrimaryGeneratedColumnUUIDOptions} from "../options/PrimaryGeneratedColumnUUIDOptions";
-import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
@@ -35,53 +34,30 @@ export function PrimaryGeneratedColumn(strategy: "rowid", options?: PrimaryGener
  */
 export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|"rowid"|PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions,
                                        maybeOptions?: PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions): PropertyDecorator {
-
     // normalize parameters
-    const options: ColumnOptions = {};
-    let strategy: "increment"|"uuid"|"rowid";
-    if (strategyOrOptions) {
-        if (typeof strategyOrOptions === "string")
-            strategy = strategyOrOptions as "increment"|"uuid"|"rowid";
-
-        if (strategyOrOptions instanceof Object) {
-            strategy = "increment";
-            Object.assign(options, strategyOrOptions);
-        }
+    let options: ColumnOptions;
+    let strategy: "increment"|"uuid"|"rowid" = "increment";
+    if (typeof strategyOrOptions === "string") {
+        strategy = strategyOrOptions as "increment"|"uuid"|"rowid";
+        options = {...maybeOptions};
     } else {
-        strategy = "increment";
+        options = {...strategyOrOptions};
     }
-    if (maybeOptions instanceof Object)
-        Object.assign(options, maybeOptions);
 
-    return function (object: Object, propertyName: string) {
-
-        // if column type is not explicitly set then determine it based on generation strategy
-        if (!options.type) {
-            if (strategy === "increment") {
-                options.type = Number;
-            } else if (strategy === "uuid") {
-                options.type = "uuid";
-            } else if (strategy === "rowid") {
-                options.type = "int";
-            }
+    // if column type is not explicitly set then determine it based on generation strategy
+    if (!options.type) {
+        if (strategy === "increment") {
+            options.type = Number;
+        } else if (strategy === "uuid") {
+            options.type = "uuid";
+        } else if (strategy === "rowid") {
+            options.type = "int";
         }
+    }
 
-        // explicitly set a primary and generated to column options
-        options.primary = true;
+    // explicitly set a primary and generated to column options
+    options.primary = true;
+    options.generated = strategy;
 
-        // register column metadata args
-        getMetadataArgsStorage().columns.push({
-            target: object.constructor,
-            propertyName: propertyName,
-            mode: "regular",
-            options: options
-        });
-
-        // register generated metadata args
-        getMetadataArgsStorage().generations.push({
-            target: object.constructor,
-            propertyName: propertyName,
-            strategy: strategy
-        } as GeneratedMetadataArgs);
-    };
+    return Column(options);
 }

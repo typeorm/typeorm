@@ -11,7 +11,7 @@ export function ViewColumn(options?: ViewColumnOptions): PropertyDecorator {
             target: object.constructor,
             propertyName: propertyName,
             mode: "regular",
-            options: options || {}
+            options: {...options}
         } as ColumnMetadataArgs);
     };
 }

@@ -11,7 +11,7 @@ export function DeleteDateColumn(options?: ColumnOptions): PropertyDecorator {
             target: object.constructor,
             propertyName: propertyName,
             mode: "deleteDate",
-            options: options || {}
+            options: {...options}
         } as ColumnMetadataArgs);
     };
 }

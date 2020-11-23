@@ -8,12 +8,11 @@ import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
  */
 export function VersionColumn(options?: ColumnOptions): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-
         getMetadataArgsStorage().columns.push({
             target: object.constructor,
             propertyName: propertyName,
             mode: "version",
-            options: options || {}
+            options: {...options}
         } as ColumnMetadataArgs);
     };
 }

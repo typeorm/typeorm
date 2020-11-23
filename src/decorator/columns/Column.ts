@@ -19,6 +19,7 @@ import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
 import {ColumnHstoreOptions} from "../options/ColumnHstoreOptions";
 import {ColumnWithWidthOptions} from "../options/ColumnWithWidthOptions";
 import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
+import {PrimaryColumnCannotBeNullableError} from "../../error/PrimaryColumnCannotBeNullableError";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
@@ -102,12 +103,10 @@ export function Column(type: (type?: any) => Function, options?: ColumnEmbeddedO
  */
 export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(ColumnOptions&ColumnEmbeddedOptions), options?: (ColumnOptions&ColumnEmbeddedOptions)): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-
         // normalize parameters
         let type: ColumnType|undefined;
         if (typeof typeOrOptions === "string" || typeOrOptions instanceof Function) {
             type = <ColumnType> typeOrOptions;
-
         } else if (typeOrOptions) {
             options = <ColumnOptions> typeOrOptions;
             type = typeOrOptions.type;
@@ -126,6 +125,10 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
         // specify HSTORE type if column is HSTORE
         if (options.type === "hstore" && !options.hstoreType)
             options.hstoreType = reflectMetadataType === Object ? "object" : "string";
+
+        // check if column is not nullable, because we cannot allow a primary key to be nullable
+        if (options.primary && options.nullable)
+            throw new PrimaryColumnCannotBeNullableError(object, propertyName);
 
         if (typeOrOptions instanceof Function) { // register an embedded
             getMetadataArgsStorage().embeddeds.push({
