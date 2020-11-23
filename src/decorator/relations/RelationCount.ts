@@ -8,7 +8,6 @@ import {RelationCountMetadataArgs} from "../../metadata-args/RelationCountMetada
  */
 export function RelationCount<T>(relation: string|((object: T) => any), alias?: string, queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-
         getMetadataArgsStorage().relationCounts.push({
             target: object.constructor,
             propertyName: propertyName,

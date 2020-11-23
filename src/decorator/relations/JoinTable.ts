@@ -26,7 +26,7 @@ export function JoinTable(options: JoinTableMultipleColumnsOptions): PropertyDec
  */
 export function JoinTable(options?: JoinTableOptions|JoinTableMultipleColumnsOptions): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-        options = options || {} as JoinTableOptions|JoinTableMultipleColumnsOptions;
+        options = options || {};
         getMetadataArgsStorage().joinTables.push({
             target: object.constructor,
             propertyName: propertyName,
