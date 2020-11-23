@@ -13,13 +13,13 @@ import {AuroraDataApiDriver} from "../../driver/aurora-data-api/AuroraDataApiDri
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export abstract class ModificationQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
+export abstract class ModificationQueryBuilder<Entity, Result> extends QueryBuilder<Entity, Result> implements WhereExpression {
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOrQueryBuilder: Connection|QueryBuilder<any>, queryRunner?: QueryRunner) {
+    constructor(connectionOrQueryBuilder: Connection|QueryBuilder<any, any>, queryRunner?: QueryRunner) {
         super(connectionOrQueryBuilder as any, queryRunner);
         this.expressionMap.aliasNamePrefixingEnabled = false;
     }

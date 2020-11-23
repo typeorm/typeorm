@@ -1,13 +1,15 @@
 import {QueryBuilder} from "./QueryBuilder";
 import {RelationUpdater} from "../RelationUpdater";
 import {RelationRemover} from "../RelationRemover";
+import { QueryRunner } from "../..";
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult";
 
 /**
  * Allows to work with entity relations and perform specific operations with those relations.
  *
  * todo: add transactions everywhere
  */
-export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
+export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity, any> {
 
     // -------------------------------------------------------------------------
     // Public Implemented Methods
@@ -164,4 +166,13 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this.connection.relationLoader.load(this.expressionMap.relationMetadata, of);
     }
 
+    // -------------------------------------------------------------------------
+    // Protected Implemented Methods
+    // -------------------------------------------------------------------------
+
+    protected executeBeforeQueryBroadcast?(queryRunner: QueryRunner, broadcastResult: BroadcasterResult): void;
+    protected executeAfterQueryBroadcast?(queryRunner: QueryRunner, broadcastResult: BroadcasterResult, result: any): void;
+    protected executeInsideTransaction(queryRunner: QueryRunner): Promise<any> {
+        throw new Error("Should not occur in RelationQueryBuilder");
+    }
 }
