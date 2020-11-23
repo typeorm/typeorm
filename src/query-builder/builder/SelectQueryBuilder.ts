@@ -1405,25 +1405,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
     }
 
     /**
-     * Creates "ORDER BY" part of SQL query.
-     */
-    protected createOrderByExpression() {
-        const orderBys = this.expressionMap.allOrderBys;
-        if (Object.keys(orderBys).length > 0)
-            return " ORDER BY " + Object.keys(orderBys)
-                    .map(columnName => {
-                        if (typeof orderBys[columnName] === "string") {
-                            return this.replacePropertyNames(columnName) + " " + orderBys[columnName];
-                        } else {
-                            return this.replacePropertyNames(columnName) + " " + (orderBys[columnName] as any).order + " " + (orderBys[columnName] as any).nulls;
-                        }
-                    })
-                    .join(", ");
-
-        return "";
-    }
-
-    /**
      * Creates "LIMIT" and "OFFSET" parts of SQL query.
      */
     protected createLimitOffsetExpression(): string {
