@@ -10,7 +10,7 @@ import {InsertResult} from "../result/InsertResult";
 import {ReturningStatementNotSupportedError} from "../../error/ReturningStatementNotSupportedError";
 import {InsertValuesMissingError} from "../../error/InsertValuesMissingError";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {ReturningResultsEntityUpdator} from "../ReturningResultsEntityUpdator";
+import {ReturningResultsEntityUpdater} from "../ReturningResultsEntityUpdater";
 import {AbstractSqliteDriver} from "../../driver/sqlite-abstract/AbstractSqliteDriver";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import {EntitySchema} from "../../entity-schema/EntitySchema";
@@ -327,7 +327,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
                 const createParamExpression = (value: any, specialName?: string) => {
                     let paramName = `i${valueSetIndex}_${columnName}`; // TODO: Improve naming
                     if (specialName === "uuid") {
-                        paramName = ReturningResultsEntityUpdator.generateUUIDParameterName(columnName, valueSetIndex);
+                        paramName = ReturningResultsEntityUpdater.generateUUIDParameterName(columnName, valueSetIndex);
                     } else if (specialName === "discriminator") {
                         paramName = `discriminator_value_${parametersCount}`; // TODO: Not used anywhere else, is special name needed?
                     }
@@ -399,10 +399,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
         let selectOutputSql: string | null = null;
 
         // if update entity mode is enabled we may need extra columns for the returning statement
-        const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(queryRunner, this.expressionMap);
+        const returningResultsEntityUpdater = new ReturningResultsEntityUpdater(queryRunner, this.expressionMap);
         if (this.expressionMap.updateEntity === true && this.expressionMap.mainAlias!.hasMetadata) {
             if (!(valueSets.length > 1 && this.connection.driver instanceof OracleDriver)) {
-                this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getInsertionReturningColumns();
+                this.expressionMap.extraReturningColumns = returningResultsEntityUpdater.getInsertionReturningColumns();
             }
             if (this.expressionMap.extraReturningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
                 declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", this.expressionMap.extraReturningColumns);
@@ -423,7 +423,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
 
         // load returning results and set them to the entity if entity updation is enabled
         if (this.expressionMap.updateEntity === true && this.expressionMap.mainAlias!.hasMetadata) {
-            await returningResultsEntityUpdator.insert(insertResult, valueSets);
+            await returningResultsEntityUpdater.insert(insertResult, valueSets);
         }
 
         return insertResult;

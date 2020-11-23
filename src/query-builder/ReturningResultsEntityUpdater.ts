@@ -10,7 +10,7 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 /**
  * Updates entity with returning results in the entity insert and update operations.
  */
-export class ReturningResultsEntityUpdator {
+export class ReturningResultsEntityUpdater {
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -104,7 +104,7 @@ export class ReturningResultsEntityUpdator {
                         let uuid = generatedColumn.getEntityValue(entity);
                         // if it was not defined by a user then InsertQueryBuilder generates it by its own, get this generated uuid value
                         if (!uuid) {
-                            const paramName = ReturningResultsEntityUpdator.generateUUIDParameterName(generatedColumn.databaseName, entityIndex);
+                            const paramName = ReturningResultsEntityUpdater.generateUUIDParameterName(generatedColumn.databaseName, entityIndex);
                             uuid = this.expressionMap.nativeParameters[paramName];
                         }
 
