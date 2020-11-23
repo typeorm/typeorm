@@ -49,7 +49,7 @@ export class QueryExpressionMap {
     /**
      * Represents query type. QueryBuilder is able to build SELECT, UPDATE and DELETE queries.
      */
-    queryType: "select"|"update"|"delete"|"insert"|"relation"|"soft-delete"|"restore" = "select";
+    queryType: "select"|"update"|"delete"|"insert"|"relation" = "select";
 
     /**
      * Data needs to be SELECT-ed.
@@ -291,6 +291,11 @@ export class QueryExpressionMap {
      */
     comment?: string;
 
+    /**
+     * Whether to perform a soft-delete or restore during an update query.
+     */
+    softDeleteAction?: "delete" | "restore";
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -451,6 +456,7 @@ export class QueryExpressionMap {
         map.useTransaction = this.useTransaction;
         map.nativeParameters = Object.assign({}, this.nativeParameters);
         map.comment = this.comment;
+        map.softDeleteAction = this.softDeleteAction;
         return map;
     }
 

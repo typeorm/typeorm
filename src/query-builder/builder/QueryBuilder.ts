@@ -243,25 +243,25 @@ export abstract class QueryBuilder<Entity, Result = any> {
     }
 
     softDelete(): SoftDeleteQueryBuilder<any> {
-        this.expressionMap.queryType = "soft-delete";
+        this.expressionMap.queryType = "update";
 
         // loading it dynamically because of circular issue
         const SoftDeleteQueryBuilderCls = require("./SoftDeleteQueryBuilder").SoftDeleteQueryBuilder;
         if (this instanceof SoftDeleteQueryBuilderCls)
             return this as any;
 
-        return new SoftDeleteQueryBuilderCls(this);
+        return new SoftDeleteQueryBuilderCls(this).setSoftDelete("delete");
     }
 
     restore(): SoftDeleteQueryBuilder<any> {
-        this.expressionMap.queryType = "restore";
+        this.expressionMap.queryType = "update";
 
         // loading it dynamically because of circular issue
         const SoftDeleteQueryBuilderCls = require("./SoftDeleteQueryBuilder").SoftDeleteQueryBuilder;
         if (this instanceof SoftDeleteQueryBuilderCls)
             return this as any;
 
-        return new SoftDeleteQueryBuilderCls(this);
+        return new SoftDeleteQueryBuilderCls(this).setSoftDelete("restore");
     }
 
     /**
@@ -763,7 +763,7 @@ export abstract class QueryBuilder<Entity, Result = any> {
             let columnsExpression = columns.map(column => {
                 const name = this.escape(column.databaseName);
                 if (driver instanceof SqlServerDriver) {
-                    if (this.expressionMap.queryType === "insert" || this.expressionMap.queryType === "update" || this.expressionMap.queryType === "soft-delete" || this.expressionMap.queryType === "restore") {
+                    if (this.expressionMap.queryType === "insert" || this.expressionMap.queryType === "update") {
                         return "INSERTED." + name;
                     } else {
                         return this.escape(this.getMainTableName()) + "." + name;
