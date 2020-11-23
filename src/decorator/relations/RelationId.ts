@@ -8,7 +8,6 @@ import {RelationIdMetadataArgs} from "../../metadata-args/RelationIdMetadataArgs
  */
 export function RelationId<T>(relation: string|((object: T) => any), alias?: string, queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-
         getMetadataArgsStorage().relationIds.push({
             target: object.constructor,
             propertyName: propertyName,
