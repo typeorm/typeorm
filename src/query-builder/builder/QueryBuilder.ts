@@ -871,6 +871,25 @@ export abstract class QueryBuilder<Entity, Result = any> {
     }
 
     /**
+     * Creates "ORDER BY" part of SQL query.
+     */
+    protected createOrderByExpression() {
+        const orderBys = this.expressionMap.orderBys;
+        if (Object.keys(orderBys).length > 0)
+            return " ORDER BY " + Object.keys(orderBys)
+                .map(columnName => {
+                    if (typeof orderBys[columnName] === "string") {
+                        return this.replacePropertyNames(columnName) + " " + orderBys[columnName];
+                    } else {
+                        return this.replacePropertyNames(columnName) + " " + (orderBys[columnName] as any).order + " " + (orderBys[columnName] as any).nulls;
+                    }
+                })
+                .join(", ");
+
+        return "";
+    }
+
+    /**
      * Creates expression for persisting a column value in INSERT/UPDATE queries.
      */
     protected createColumnValuePersistExpression(column: ColumnMetadata | undefined, value: any, createParamExpression: (value: any, specialName?: string) => string) {
