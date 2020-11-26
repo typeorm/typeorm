@@ -72,6 +72,7 @@ export class RelationJoinColumnBuilder {
             onDelete: relation.onDelete,
             onUpdate: relation.onUpdate,
             deferrable: relation.deferrable,
+            createInDb: relation.createForeignKeyConstraints,
         });
 
         // Oracle does not allow both primary and unique constraints on the same column
