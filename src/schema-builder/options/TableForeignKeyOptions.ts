@@ -38,10 +38,15 @@ export interface TableForeignKeyOptions {
      * referenced stuff is being updated.
      */
     onUpdate?: string;
-    
+
     /**
-     * Set this foreign key constraint as "DEFERRABLE" e.g. check constraints at start 
+     * Set this foreign key constraint as "DEFERRABLE" e.g. check constraints at start
      * or at the end of a transaction
      */
     deferrable?: string;
+
+    /**
+     * Whether to use this foreign key in DB schema builder.
+     */
+    createInDb?: boolean;
 }

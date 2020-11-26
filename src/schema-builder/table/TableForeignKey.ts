@@ -48,6 +48,11 @@ export class TableForeignKey {
      */
     deferrable?: string;
 
+    /**
+     * Whether to use this foreign key in DB schema builder.
+     */
+    createInDb?: boolean;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -60,6 +65,7 @@ export class TableForeignKey {
         this.onDelete = options.onDelete;
         this.onUpdate = options.onUpdate;
         this.deferrable = options.deferrable;
+        this.createInDb = options.createInDb;
     }
 
     // -------------------------------------------------------------------------
@@ -78,6 +84,7 @@ export class TableForeignKey {
             onDelete: this.onDelete,
             onUpdate: this.onUpdate,
             deferrable: this.deferrable,
+            createInDb: this.createInDb,
         });
     }
 
@@ -97,6 +104,7 @@ export class TableForeignKey {
             onDelete: metadata.onDelete,
             onUpdate: metadata.onUpdate,
             deferrable: metadata.deferrable,
+            createInDb: metadata.createInDb,
         });
     }
 
