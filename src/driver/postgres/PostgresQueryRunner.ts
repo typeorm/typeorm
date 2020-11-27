@@ -2051,11 +2051,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             tableName = table.name.split(".")[1];
         }
 
+        let seqName = `${tableName}_${columnName}_seq`;
+        if (seqName.length > this.connection.driver.maxAliasLength!) // note doesn't yet handle corner cases where .length differs from number of UTF-8 bytes
+            seqName=`${tableName.substring(0,29)}_${columnName.substring(0,Math.max(29,63-tableName.length-5))}_seq`;
+        
         if (schema && schema !== currentSchema && !skipSchema) {
-            return disableEscape ? `${schema}.${tableName}_${columnName}_seq` : `"${schema}"."${tableName}_${columnName}_seq"`;
-
+            return disableEscape ? `${schema}.${seqName}` : `"${schema}"."${seqName}"`;
         } else {
-            return disableEscape ? `${tableName}_${columnName}_seq` : `"${tableName}_${columnName}_seq"`;
+            return disableEscape ? `${seqName}` : `"${seqName}"`;
         }
     }
 
