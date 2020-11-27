@@ -1,12 +1,12 @@
-import {getMetadataArgsStorage, ObjectType, RelationOptions} from "../../";
+import {getMetadataArgsStorage, IndexOptions, ObjectType, RelationOptions, ManyToOneOptions} from "../../";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
-
+import {Index} from '../Index';
 /**
  * Many-to-one relation allows to create type of relation when Entity1 can have single instance of Entity2, but
  * Entity2 can have a multiple instances of Entity1. Entity1 is an owner of the relationship, and storages Entity2 id
  * on its own side.
  */
-export function ManyToOne<T>(typeFunctionOrTarget: string|((type?: any) => ObjectType<T>), options?: RelationOptions): PropertyDecorator;
+export function ManyToOne<T>(typeFunctionOrTarget: string|((type?: any) => ObjectType<T>), options?: ManyToOneOptions): PropertyDecorator;
 
 /**
  * Many-to-one relation allows to create type of relation when Entity1 can have single instance of Entity2, but
@@ -15,7 +15,7 @@ export function ManyToOne<T>(typeFunctionOrTarget: string|((type?: any) => Objec
  */
 export function ManyToOne<T>(typeFunctionOrTarget: string|((type?: any) => ObjectType<T>),
                              inverseSide?: string|((object: T) => any),
-                             options?: RelationOptions): PropertyDecorator;
+                             options?: ManyToOneOptions): PropertyDecorator;
 
 /**
  * Many-to-one relation allows to create type of relation when Entity1 can have single instance of Entity2, but
@@ -24,7 +24,7 @@ export function ManyToOne<T>(typeFunctionOrTarget: string|((type?: any) => Objec
  */
 export function ManyToOne<T>(typeFunctionOrTarget: string|((type?: any) => ObjectType<T>),
                              inverseSideOrOptions?: string|((object: T) => any)|RelationOptions,
-                             options?: RelationOptions): PropertyDecorator {
+                             options?: ManyToOneOptions): PropertyDecorator {
 
     // normalize parameters
     let inverseSideProperty: string|((object: T) => any);
@@ -55,5 +55,16 @@ export function ManyToOne<T>(typeFunctionOrTarget: string|((type?: any) => Objec
             inverseSideProperty: inverseSideProperty,
             options: options
         } as RelationMetadataArgs);
+
+        if (options && options.index) {
+            const normalizedOptions: IndexOptions & { name?: string } = typeof options.index === 'object' ? options.index : {};
+            const { name, ...indexOptions } = normalizedOptions;
+
+            if (name) {
+                Index(name, indexOptions)(object, propertyName);
+            } else {
+                Index(indexOptions)(object, propertyName);
+            }
+        }
     };
 }

@@ -49,6 +49,7 @@ export * from "./decorator/options/ColumnOptions";
 export * from "./decorator/options/IndexOptions";
 export * from "./decorator/options/JoinColumnOptions";
 export * from "./decorator/options/JoinTableOptions";
+export * from "./decorator/options/ManyToOneOptions";
 export * from "./decorator/options/RelationOptions";
 export * from "./decorator/options/EntityOptions";
 export * from "./decorator/options/ValueTransformer";
