@@ -1,6 +1,8 @@
 /**
  * Arguments for IndexMetadata class.
  */
+import {IndexFieldsMap} from "./types/IndexFieldsMap";
+
 export interface IndexMetadataArgs {
 
     /**
@@ -16,7 +18,7 @@ export interface IndexMetadataArgs {
     /**
      * Columns combination to be used as index.
      */
-    columns?: ((object?: any) => (any[]|{ [key: string]: number }))|string[];
+    columns?: IndexFieldsMap | string[];
 
     /**
      * Indicates if index must be unique or not.
@@ -34,7 +36,7 @@ export interface IndexMetadataArgs {
      * Works only in MySQL.
      */
     fulltext?: boolean;
-    
+
     /**
      * Fulltext parser.
      * Works only in MySQL.

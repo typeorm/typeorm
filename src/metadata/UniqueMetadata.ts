@@ -3,6 +3,7 @@ import {EntityMetadata} from "./EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {UniqueMetadataArgs} from "../metadata-args/UniqueMetadataArgs";
+import {IndexFieldsMap} from "../metadata-args/types/IndexFieldsMap";
 
 /**
  * Unique metadata contains all information about table's unique constraints.
@@ -41,7 +42,7 @@ export class UniqueMetadata {
     /**
      * User specified column names.
      */
-    givenColumnNames?: ((object?: any) => (any[]|{ [key: string]: number }))|string[];
+    givenColumnNames?: IndexFieldsMap|string[];
 
     /**
      * Final unique constraint name.

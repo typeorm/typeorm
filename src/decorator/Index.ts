@@ -1,5 +1,6 @@
 import {getMetadataArgsStorage, IndexOptions} from "../";
 import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
+import {IndexFieldsMap} from "../metadata-args/types/IndexFieldsMap";
 
 /**
  * Creates a database index.
@@ -13,66 +14,49 @@ export function Index(options?: IndexOptions): ClassDecorator & PropertyDecorato
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
  */
-export function Index(name: string, options?: IndexOptions): ClassDecorator & PropertyDecorator;
+export function Index(name: string, options?: IndexOptions | { synchronize: false }): ClassDecorator & PropertyDecorator;
+
+/**
+ * Creates a database index.
+ * Can be used on entity.
+ * Can create indices with composite columns when used on entity.
+ */
+export function Index(fields: string[] | IndexFieldsMap, options?: IndexOptions): ClassDecorator;
+
+/**
+ * Creates a database index.
+ * Can be used on entity.
+ * Can create indices with composite columns when used on entity.
+ */
+export function Index(name: string, fields: string[] | IndexFieldsMap, options?: IndexOptions): ClassDecorator;
 
 /**
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
  */
-export function Index(name: string, options: { synchronize: false }): ClassDecorator & PropertyDecorator;
-
-/**
- * Creates a database index.
- * Can be used on entity property or on entity.
- * Can create indices with composite columns when used on entity.
- */
-export function Index(name: string, fields: string[], options?: IndexOptions): ClassDecorator & PropertyDecorator;
-
-/**
- * Creates a database index.
- * Can be used on entity property or on entity.
- * Can create indices with composite columns when used on entity.
- */
-export function Index(fields: string[], options?: IndexOptions): ClassDecorator & PropertyDecorator;
-
-/**
- * Creates a database index.
- * Can be used on entity property or on entity.
- * Can create indices with composite columns when used on entity.
- */
-export function Index(fields: (object?: any) => (any[]|{ [key: string]: number }), options?: IndexOptions): ClassDecorator & PropertyDecorator;
-
-/**
- * Creates a database index.
- * Can be used on entity property or on entity.
- * Can create indices with composite columns when used on entity.
- */
-export function Index(name: string, fields: (object?: any) => (any[]|{ [key: string]: number }), options?: IndexOptions): ClassDecorator & PropertyDecorator;
-
-/**
- * Creates a database index.
- * Can be used on entity property or on entity.
- * Can create indices with composite columns when used on entity.
- */
-export function Index(nameOrFieldsOrOptions?: string|string[]|((object: any) => (any[]|{ [key: string]: number }))|IndexOptions,
-                      maybeFieldsOrOptions?: ((object?: any) => (any[]|{ [key: string]: number }))|IndexOptions|string[]|{ synchronize: false },
-                      maybeOptions?: IndexOptions): ClassDecorator & PropertyDecorator {
-
-    // normalize parameters
+export function Index(
+    nameOrFieldsOrOptions?: string | string[]|IndexFieldsMap | IndexOptions,
+    maybeFieldsOrOptions?: string[]|IndexFieldsMap | IndexOptions|{ synchronize: false },
+    maybeOptions?: IndexOptions
+): ClassDecorator & PropertyDecorator {
     const name = typeof nameOrFieldsOrOptions === "string" ? nameOrFieldsOrOptions : undefined;
-    const fields = typeof nameOrFieldsOrOptions === "string" ? <((object?: any) => (any[]|{ [key: string]: number }))|string[]> maybeFieldsOrOptions : nameOrFieldsOrOptions as string[];
-    let options = (typeof nameOrFieldsOrOptions === "object" && !Array.isArray(nameOrFieldsOrOptions)) ? nameOrFieldsOrOptions as IndexOptions : maybeOptions;
-    if (!options)
-        options = (typeof maybeFieldsOrOptions === "object" && !Array.isArray(maybeFieldsOrOptions)) ? maybeFieldsOrOptions as IndexOptions : maybeOptions;
+    const fields = <IndexFieldsMap|string[]>(typeof nameOrFieldsOrOptions === "string" ? maybeFieldsOrOptions : nameOrFieldsOrOptions);
+    let options: IndexOptions & { synchronize?: false } | undefined;
+    if (typeof nameOrFieldsOrOptions === "object" && !Array.isArray(nameOrFieldsOrOptions)) {
+        options = nameOrFieldsOrOptions;
+    } else if (typeof maybeFieldsOrOptions === "object" && !Array.isArray(maybeFieldsOrOptions)) {
+        options = maybeFieldsOrOptions;
+    } else {
+        options = maybeOptions;
+    }
 
     return function (clsOrObject: Function|Object, propertyName?: string | symbol) {
-
         getMetadataArgsStorage().indices.push({
             target: propertyName ? clsOrObject.constructor : clsOrObject as Function,
             name: name,
             columns: propertyName ? [propertyName] : fields,
-            synchronize: options && (options as { synchronize: false }).synchronize === false ? false : true,
+            synchronize: options && options.synchronize === false ? false : true,
             where: options ? options.where : undefined,
             unique: options && options.unique ? true : false,
             spatial: options && options.spatial ? true : false,

@@ -1,55 +1,37 @@
-import { getMetadataArgsStorage } from "../index";
-import { UniqueMetadataArgs } from "../metadata-args/UniqueMetadataArgs";
+import {getMetadataArgsStorage} from "../index";
+import {UniqueMetadataArgs} from "../metadata-args/UniqueMetadataArgs";
+import {IndexFieldsMap} from "../metadata-args/types/IndexFieldsMap";
 
 /**
- * Composite unique constraint must be set on entity classes and must specify entity's fields to be unique.
+ * Composite unique constraint must be set on entity property or on entity and must specify entity's fields to be unique.
  */
-export function Unique(name: string, fields: string[]): ClassDecorator & PropertyDecorator;
+export function Unique(name?: string): ClassDecorator & PropertyDecorator;
 
 /**
- * Composite unique constraint must be set on entity classes and must specify entity's fields to be unique.
+ * Composite unique constraint must be set on entity and must specify entity's fields to be unique.
  */
-export function Unique(fields: string[]): ClassDecorator & PropertyDecorator;
+export function Unique(fields: string[] | IndexFieldsMap): ClassDecorator;
 
 /**
- * Composite unique constraint must be set on entity classes and must specify entity's fields to be unique.
+ * Composite unique constraint must be set on entity and must specify entity's fields to be unique.
  */
-export function Unique(fields: (object?: any) => (any[] | { [key: string]: number })): ClassDecorator & PropertyDecorator;
+export function Unique(name: string, fields: string[] | IndexFieldsMap): ClassDecorator;
 
 /**
- * Composite unique constraint must be set on entity classes and must specify entity's fields to be unique.
+ * Composite unique constraint must be set on entity property or on entity and must specify entity's fields to be unique.
  */
-export function Unique(name: string, fields: (object?: any) => (any[] | { [key: string]: number })): ClassDecorator & PropertyDecorator;
-
-/**
- * Composite unique constraint must be set on entity classes and must specify entity's fields to be unique.
- */
-export function Unique(nameOrFields?: string | string[] | ((object: any) => (any[] | { [key: string]: number })),
-    maybeFields?: ((object?: any) => (any[] | { [key: string]: number })) | string[]): ClassDecorator & PropertyDecorator {
+export function Unique(
+    nameOrFields?: string | string[] | IndexFieldsMap,
+    maybeFields?: string[] | IndexFieldsMap
+): ClassDecorator & PropertyDecorator {
     const name = typeof nameOrFields === "string" ? nameOrFields : undefined;
-    const fields = typeof nameOrFields === "string" ? <((object?: any) => (any[] | { [key: string]: number })) | string[]>maybeFields : nameOrFields as string[];
+    const fields = <IndexFieldsMap | string[]>(typeof nameOrFields === "string" ? maybeFields : nameOrFields);
 
-    return function (clsOrObject: Function | Object, propertyName?: string | symbol) {
-
-        let columns = fields;
-
-        if (propertyName !== undefined) {
-            switch (typeof (propertyName)) {
-                case "string":
-                    columns = [propertyName];
-                    break;
-
-                case "symbol":
-                    columns = [propertyName.toString()];
-                    break;
-            }
-        }
-
-        const args: UniqueMetadataArgs = {
+    return function (clsOrObject: Function|Object, propertyName?: string | symbol) {
+        getMetadataArgsStorage().uniques.push({
             target: propertyName ? clsOrObject.constructor : clsOrObject as Function,
             name: name,
-            columns,
-        };
-        getMetadataArgsStorage().uniques.push(args);
+            columns: propertyName ? [propertyName] : fields
+        } as UniqueMetadataArgs);
     };
 }
