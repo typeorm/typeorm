@@ -22,7 +22,7 @@ export class ClosureSubjectExecutor {
     /**
      * Removes all children of the given subject's entity.
 
-    async deleteChildrenOf(subject: Subject) {
+     async deleteChildrenOf(subject: Subject) {
         // const relationValue = subject.metadata.treeParentRelation.getEntityValue(subject.databaseEntity);
         // console.log("relationValue: ", relationValue);
         // this.queryRunner.manager
@@ -76,7 +76,8 @@ export class ClosureSubjectExecutor {
                 return this.queryRunner.connection.driver.createParameter("child_entity_" + column.databaseName, firstQueryParameters.length - 1);
             });
             const whereCondition = subject.metadata.primaryColumns.map(column => {
-                const columnName = escape(column.databaseName + "_descendant");
+                // const whereCondition = subject.metadata.closureJunctionTable.descendantColumns.map(column => {
+                const columnName = escape(subject.metadata.treeOptions && subject.metadata.treeOptions.descendantColumnName ? subject.metadata.treeOptions.descendantColumnName(column) : column.databaseName + "_descendant");
                 const parentId = column.getEntityValue(parent);
                 if (!parentId)
                     throw new CannotAttachTreeChildrenEntityError(subject.metadata.name);
