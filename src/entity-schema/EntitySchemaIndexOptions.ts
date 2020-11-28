@@ -1,3 +1,5 @@
+import {IndexFieldsMap} from "../metadata-args/types/IndexFieldsMap";
+
 export interface EntitySchemaIndexOptions {
 
     /**
@@ -8,7 +10,7 @@ export interface EntitySchemaIndexOptions {
     /**
      * Index column names.
      */
-    columns?: ((object?: any) => (any[]|{ [key: string]: number }))|string[];
+    columns?: IndexFieldsMap|string[];
 
     /**
      * Indicates if index must sync with database index.
@@ -38,7 +40,7 @@ export interface EntitySchemaIndexOptions {
      * Works only in MySQL.
      */
     fulltext?: boolean;
-    
+
     /**
      * Fulltext parser.
      * Works only in MySQL.
