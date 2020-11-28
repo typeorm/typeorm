@@ -1208,7 +1208,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
     }
 
     /**
-     * Creates "SELECT FROM" part of SQL query.
+     * Creates "SELECT [DISTINCT] ... FROM ..." part of SQL query.
      */
     protected createSelectExpression() {
         if (!this.expressionMap.mainAlias)
@@ -1250,6 +1250,38 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
         if (allSelects.length === 0)
             allSelects.push({ selection: "*" });
 
+        const select = this.createSelectDistinctExpression();
+        const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
+        const from = this.createSelectFromExpression();
+
+        return select + " " + selection + " " + from;
+    }
+
+    /**
+     * Creates "SELECT [DISTINCT]" part of SQL query.
+     */
+    protected createSelectDistinctExpression(): string {
+        const {selectDistinct, selectDistinctOn} = this.expressionMap;
+        const {driver} = this.connection;
+
+        let select = "SELECT";
+        if (driver instanceof PostgresDriver && selectDistinctOn.length > 0) {
+            const selectDistinctOnMap = selectDistinctOn.map(
+              (on) => this.replacePropertyNames(on)
+            ).join(", ");
+
+            select = `SELECT DISTINCT ON (${selectDistinctOnMap})`;
+        } else if (selectDistinct) {
+            select = "SELECT DISTINCT";
+        }
+
+        return select;
+    }
+
+    /**
+     * Creates "FROM ..." part of SQL query.
+     */
+    protected createSelectFromExpression(): string {
         let lock: string = "";
         if (this.connection.driver instanceof SqlServerDriver) {
             switch (this.expressionMap.lockMode) {
@@ -1275,32 +1307,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
                 return this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
             });
 
-        const select = this.createSelectDistinctExpression();
-        const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
-
-        return select + selection + " FROM " + froms.join(", ") + lock;
+        return "FROM " + froms.join(", ") + lock;
     }
 
-    /**
-     * Creates select | select distinct part of SQL query.
-     */
-    protected createSelectDistinctExpression(): string {
-        const {selectDistinct, selectDistinctOn} = this.expressionMap;
-        const {driver} = this.connection;
-
-        let select = "SELECT ";
-        if (driver instanceof PostgresDriver && selectDistinctOn.length > 0) {
-            const selectDistinctOnMap = selectDistinctOn.map(
-              (on) => this.replacePropertyNames(on)
-            ).join(", ");
-
-            select = `SELECT DISTINCT ON (${selectDistinctOnMap}) `;
-        } else if (selectDistinct) {
-            select = "SELECT DISTINCT ";
-        }
-
-        return select;
-    }
 
     /**
      * Creates "JOIN" part of SQL query.
