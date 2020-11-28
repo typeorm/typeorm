@@ -7,10 +7,9 @@ import {Tree} from "../../../../src/decorator/tree/Tree";
 
 @Entity()
 @Tree("closure-table", {
-    closureTableName:"category_closure",
-    ancestorColumnName: "ancestor_id",
-    descendantColumnName:"descendant_id",
-    levelColumnName:"level",
+    closureTableName: "category_xyz_closure",
+    ancestorColumnName: (column) => "ancestor_xyz_" + column.propertyName,
+    descendantColumnName: (column) => "descendant_xyz_" + column.propertyName,
 })
 export class Category {
 
@@ -23,10 +22,9 @@ export class Category {
     @TreeParent()
     parentCategory: Category;
 
-    @TreeChildren({ cascade: true })
+    @TreeChildren({cascade: true})
     childCategories: Category[];
 
     // @TreeLevelColumn()
     // level: number;
-
 }
