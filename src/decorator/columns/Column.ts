@@ -18,8 +18,10 @@ import {EmbeddedMetadataArgs} from "../../metadata-args/EmbeddedMetadataArgs";
 import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
 import {ColumnHstoreOptions} from "../options/ColumnHstoreOptions";
 import {ColumnWithWidthOptions} from "../options/ColumnWithWidthOptions";
-import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
 import {PrimaryColumnCannotBeNullableError} from "../../error/PrimaryColumnCannotBeNullableError";
+import {Unique} from "../Unique";
+import {Generated} from "../Generated";
+
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
@@ -138,16 +140,14 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
                 prefix: options.prefix !== undefined ? options.prefix : undefined,
                 type: typeOrOptions as (type?: any) => Function
             } as EmbeddedMetadataArgs);
-
         } else { // register a regular column
-
             // if we still don't have a type then we need to give error to user that type is required
             if (!options.type)
                 throw new ColumnTypeUndefinedError(object, propertyName);
 
             // create unique
             if (options.unique === true)
-                getMetadataArgsStorage().uniques.push({ target: object.constructor, columns: [propertyName] });
+                Unique()(object, propertyName);
 
             getMetadataArgsStorage().columns.push({
                 target: object.constructor,
@@ -156,13 +156,8 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
                 options: options
             } as ColumnMetadataArgs);
 
-            if (options.generated) {
-                getMetadataArgsStorage().generations.push({
-                    target: object.constructor,
-                    propertyName: propertyName,
-                    strategy: typeof options.generated === "string" ? options.generated : "increment"
-                } as GeneratedMetadataArgs);
-            }
+            if (options.generated)
+                Generated(typeof options.generated === "string" ? options.generated : "increment")(object, propertyName);
         }
     };
 }
