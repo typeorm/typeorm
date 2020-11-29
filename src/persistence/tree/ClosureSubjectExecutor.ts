@@ -75,7 +75,6 @@ export class ClosureSubjectExecutor {
                 firstQueryParameters.push(childEntityIdValues[index]);
                 return this.queryRunner.connection.driver.createParameter("child_entity_" + column.databaseName, firstQueryParameters.length - 1);
             });
-            // const whereCondition = subject.metadata.primaryColumns.map(column => {
             const whereCondition = subject.metadata.closureJunctionTable.descendantColumns.map(column => {
                 const columnName = escape(column.databaseName);
                 const parentId = column.referencedColumn!.getEntityValue(parent);
