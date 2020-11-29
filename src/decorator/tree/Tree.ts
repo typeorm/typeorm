@@ -11,13 +11,11 @@ import {ClosureTreeOptions} from "../../metadata/types/ClosureTreeOptions";
  */
 export function Tree(type: TreeType, options?: ClosureTreeOptions): ClassDecorator {
     return function (target: Function) {
-        let args: TreeMetadataArgs = {
+
+        getMetadataArgsStorage().trees.push({
             target: target,
-            type: type
-        };
-        if (type === "closure-table") {
-            args.options = options;
-        }
-        getMetadataArgsStorage().trees.push(args);
+            type: type,
+            options: type === "closure-table" ? options : undefined
+        } as TreeMetadataArgs);
     };
 }
