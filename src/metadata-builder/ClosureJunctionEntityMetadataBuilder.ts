@@ -64,7 +64,7 @@ export class ClosureJunctionEntityMetadataBuilder {
                 args: {
                     target: "",
                     mode: "virtual",
-                    propertyName: parentClosureEntityMetadata.treeOptions && parentClosureEntityMetadata.treeOptions.descendantColumnName ? parentClosureEntityMetadata.treeOptions.descendantColumnName(primaryColumn) : primaryColumn.propertyName + "_ancestor", // todo: naming strategy primaryColumn.propertyName + "_descendant",
+                    propertyName: parentClosureEntityMetadata.treeOptions && parentClosureEntityMetadata.treeOptions.descendantColumnName ? parentClosureEntityMetadata.treeOptions.descendantColumnName(primaryColumn) : primaryColumn.propertyName + "_descendant", // todo: naming strategy primaryColumn.propertyName + "_descendant",
                     options: {
                         primary: true,
                         length: primaryColumn.length,
