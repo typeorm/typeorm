@@ -13,14 +13,14 @@ import {SpatialColumnOptions} from "../options/SpatialColumnOptions";
 import {ColumnWithLengthOptions} from "../options/ColumnWithLengthOptions";
 import {ColumnNumericOptions} from "../options/ColumnNumericOptions";
 import {ColumnEnumOptions} from "../options/ColumnEnumOptions";
-import {ColumnEmbeddedOptions} from "../options/ColumnEmbeddedOptions";
-import {EmbeddedMetadataArgs} from "../../metadata-args/EmbeddedMetadataArgs";
+import {EmbeddedOptions} from "../options/EmbeddedOptions";
 import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
 import {ColumnHstoreOptions} from "../options/ColumnHstoreOptions";
 import {ColumnWithWidthOptions} from "../options/ColumnWithWidthOptions";
 import {PrimaryColumnCannotBeNullableError} from "../../error/PrimaryColumnCannotBeNullableError";
 import {Unique} from "../Unique";
 import {Generated} from "../Generated";
+import {Embedded} from "../Embedded";
 
 
 /**
@@ -96,14 +96,16 @@ export function Column(type: "hstore", options?: ColumnCommonOptions & ColumnHst
  * Property in entity can be marked as Embedded, and on persist all columns from the embedded are mapped to the
  * single table of the entity where Embedded is used. And on hydration all columns which supposed to be in the
  * embedded will be mapped to it from the single table.
+ *
+ * TODO: Remove and replace with Embedded
  */
-export function Column(type: (type?: any) => Function, options?: ColumnEmbeddedOptions): PropertyDecorator;
+export function Column(type: (type?: any) => Function, options?: EmbeddedOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(ColumnOptions&ColumnEmbeddedOptions), options?: (ColumnOptions&ColumnEmbeddedOptions)): PropertyDecorator {
+export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(ColumnOptions&EmbeddedOptions), options?: (ColumnOptions&EmbeddedOptions)): PropertyDecorator {
     return function (object: Object, propertyName: string) {
         // normalize parameters
         let type: ColumnType|undefined;
@@ -133,13 +135,7 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
             throw new PrimaryColumnCannotBeNullableError(object, propertyName);
 
         if (typeOrOptions instanceof Function) { // register an embedded
-            getMetadataArgsStorage().embeddeds.push({
-                target: object.constructor,
-                propertyName: propertyName,
-                isArray: reflectMetadataType === Array || options.array === true,
-                prefix: options.prefix !== undefined ? options.prefix : undefined,
-                type: typeOrOptions as (type?: any) => Function
-            } as EmbeddedMetadataArgs);
+            Embedded(typeOrOptions as ((type?: any) => Function), options)(object, propertyName);
         } else { // register a regular column
             // if we still don't have a type then we need to give error to user that type is required
             if (!options.type)
