@@ -33,7 +33,9 @@ export class PlainObjectToNewEntityTransformer {
         // console.log("groupAndTransform object:", object);
 
         // copy regular column properties from the given object
-        metadata.nonVirtualColumns.forEach(column => {
+        metadata.columns.forEach(column => {
+            if (column.isInternal) return;
+
             const objectColumnValue = column.getEntityValue(object);
             if (objectColumnValue !== undefined)
                 column.setEntityValue(entity, objectColumnValue);

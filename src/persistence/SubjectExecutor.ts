@@ -727,8 +727,8 @@ export class SubjectExecutor {
                 if (subject.metadata.childEntityMetadatas.length > 0 && subject.metadata.childEntityMetadatas.map(metadata => metadata.target).indexOf(column.target) !== -1)
                     return;
 
-                // entities does not have virtual columns
-                if (column.isVirtual)
+                // entities does not have internal columns
+                if (column.isInternal)
                     return;
 
                 // update nullable columns
@@ -742,7 +742,7 @@ export class SubjectExecutor {
                 if (subject.updatedRelationMaps.length > 0) {
                     subject.updatedRelationMaps.forEach(updatedRelationMap => {
                         updatedRelationMap.relation.joinColumns.forEach(column => {
-                            if (column.isVirtual === true)
+                            if (column.isInternal === true)
                                 return;
 
                             column.setEntityValue(subject.entity!, updatedRelationMap.value instanceof Object ? column.referencedColumn!.getEntityValue(updatedRelationMap.value) : updatedRelationMap.value);

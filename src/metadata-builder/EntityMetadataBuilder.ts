@@ -390,7 +390,7 @@ export class EntityMetadataBuilder {
                     entityMetadata: entityMetadata,
                     args: {
                         target: entityMetadata.target,
-                        mode: "virtual",
+                        mode: "internal",
                         propertyName: discriminatorColumnName,
                         options: entityInheritance.column || {
                             name: discriminatorColumnName,
@@ -399,7 +399,7 @@ export class EntityMetadataBuilder {
                         }
                     }
                 });
-                discriminatorColumn.isVirtual = true;
+                discriminatorColumn.isInternal = true;
                 discriminatorColumn.isDiscriminator = true;
                 entityMetadata.ownColumns.push(discriminatorColumn);
             } else {
@@ -426,7 +426,7 @@ export class EntityMetadataBuilder {
                 materializedPath: true,
                 args: {
                     target: entityMetadata.target,
-                    mode: "virtual",
+                    mode: "internal",
                     propertyName: "mpath",
                     options: /*tree.column || */ {
                         name: namingStrategy.materializedPathColumnName,
@@ -445,7 +445,7 @@ export class EntityMetadataBuilder {
                 nestedSetLeft: true,
                 args: {
                     target: entityMetadata.target,
-                    mode: "virtual",
+                    mode: "internal",
                     propertyName: left,
                     options: /*tree.column || */ {
                         name: left,
@@ -461,7 +461,7 @@ export class EntityMetadataBuilder {
                 nestedSetRight: true,
                 args: {
                     target: entityMetadata.target,
-                    mode: "virtual",
+                    mode: "internal",
                     propertyName: right,
                     options: /*tree.column || */ {
                         name: right,
@@ -633,7 +633,6 @@ export class EntityMetadataBuilder {
         entityMetadata.indices = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
         entityMetadata.uniques = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.uniquesFromTree), entityMetadata.ownUniques);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
-        entityMetadata.nonVirtualColumns = entityMetadata.columns.filter(column => !column.isVirtual);
         entityMetadata.ancestorColumns = entityMetadata.columns.filter(column => column.closureType === "ancestor");
         entityMetadata.descendantColumns = entityMetadata.columns.filter(column => column.closureType === "descendant");
         entityMetadata.hasMultiplePrimaryKeys = entityMetadata.primaryColumns.length > 1;

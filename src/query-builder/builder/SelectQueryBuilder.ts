@@ -1576,7 +1576,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
         }));
 
         // if user used partial selection and did not select some primary columns which are required to be selected
-        // we select those primary columns and mark them as "virtual". Later virtual column values will be removed from final entity
+        // we select those primary columns and mark them as "internal". Later internal column values will be removed from final entity
         // to make entity contain exactly what user selected
         if (columns.length === 0) // however not in the case when nothing (even partial) was selected from this target (for example joins without selection)
             return [];
@@ -1596,7 +1596,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
                 selection: selectionPath,
                 aliasName: selection && selection.aliasName ? selection.aliasName : DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column.databaseName),
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
-                virtual: selection ? selection.virtual === true : (hasMainAlias ? false : true),
+                internal: selection ? selection.internal === true : (hasMainAlias ? false : true),
             };
         });
     }

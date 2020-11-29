@@ -221,9 +221,9 @@ export class ColumnMetadata {
     givenDatabaseName?: string;
 
     /**
-     * Indicates if column is virtual. Virtual columns are not mapped to the entity.
+     * Indicates if column is an internal column. Internal columns are not mapped to the entity.
      */
-    isVirtual: boolean = false;
+    isInternal: boolean = false;
 
     /**
      * Indicates if column is discriminator. Discriminator columns are not mapped to the entity.
@@ -392,7 +392,7 @@ export class ColumnMetadata {
         if (options.args.options.array)
             this.isArray = options.args.options.array;
         if (options.args.mode) {
-            this.isVirtual = options.args.mode === "virtual";
+            this.isInternal = options.args.mode === "internal";
             this.isTreeLevel = options.args.mode === "treeLevel";
             this.isCreateDate = options.args.mode === "createDate";
             this.isUpdateDate = options.args.mode === "updateDate";
@@ -579,10 +579,10 @@ export class ColumnMetadata {
             }
         }
 
-        // we write a deep object in this entity only if the column is virtual
-        // because if its not virtual it means the user defined a real column for this relation
+        // we write a deep object in this entity only if the column is internal
+        // because if its not internal it means the user defined a real column for this relation
         // also we don't do it if column is inside a junction table
-        if (!this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName) {
+        if (!this.entityMetadata.isJunction && this.isInternal && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName) {
             if (!(this.propertyName in entity)) {
                 entity[this.propertyName] = {};
             }
@@ -613,10 +613,10 @@ export class ColumnMetadata {
 
         path += this.propertyName;
 
-        // we add reference column to property path only if this column is virtual
-        // because if its not virtual it means user defined a real column for this relation
+        // we add reference column to property path only if this column is internal
+        // because if its not internal it means user defined a real column for this relation
         // also we don't do it if column is inside a junction table
-        if (!this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
+        if (!this.entityMetadata.isJunction && this.isInternal && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
             path += "." + this.referencedColumn.propertyName;
 
         return path;
@@ -629,10 +629,10 @@ export class ColumnMetadata {
 
         path += this.databaseName;
 
-        // we add reference column to property path only if this column is virtual
-        // because if its not virtual it means user defined a real column for this relation
+        // we add reference column to property path only if this column is internal
+        // because if its not internal it means user defined a real column for this relation
         // also we don't do it if column is inside a junction table
-        if (!this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.databaseName !== this.databaseName)
+        if (!this.entityMetadata.isJunction && this.isInternal && this.referencedColumn && this.referencedColumn.databaseName !== this.databaseName)
             path += "." + this.referencedColumn.databaseName;
 
         return path;

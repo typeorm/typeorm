@@ -97,7 +97,7 @@ export class RawSqlResultsToEntityTransformer {
         if (metadata.discriminatorColumn) {
             const discriminatorValues = rawResults.map(result => result[DriverUtils.buildColumnAlias(this.driver, alias.name, alias.metadata.discriminatorColumn!.databaseName)]);
             const discriminatorMetadata = metadata.childEntityMetadatas.find(childEntityMetadata => {
-                return typeof discriminatorValues.find(value => value === childEntityMetadata.discriminatorValue) !== 'undefined';
+                return typeof discriminatorValues.find(value => value === childEntityMetadata.discriminatorValue) !== "undefined";
             });
             if (discriminatorMetadata)
                 metadata = discriminatorMetadata;
@@ -118,8 +118,8 @@ export class RawSqlResultsToEntityTransformer {
         // if we don't have any selected column we should not return entity,
         // except for the case when entity only contain a primary column as a relation to another entity
         // in this case its absolutely possible our entity to not have any columns except a single relation
-        const hasOnlyVirtualPrimaryColumns = metadata.primaryColumns.filter(column => column.isVirtual === false).length === 0; // todo: create metadata.hasOnlyVirtualPrimaryColumns
-        if (hasOnlyVirtualPrimaryColumns && (hasRelations || hasRelationIds || hasRelationCounts))
+        const hasOnlyInternalPrimaryColumns = metadata.primaryColumns.every(column => column.isInternal); // todo: create metadata.hasOnlyInternalPrimaryColumns
+        if (hasOnlyInternalPrimaryColumns && (hasRelations || hasRelationIds || hasRelationCounts))
             return entity;
 
         return undefined;
@@ -135,7 +135,7 @@ export class RawSqlResultsToEntityTransformer {
                 return;
 
             const value = rawResults[0][DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName)];
-            if (value === undefined || column.isVirtual)
+            if (value === undefined || column.isInternal)
                 return;
 
             // if user does not selected the whole entity or he used partial selection and does not select this particular column
@@ -237,7 +237,7 @@ export class RawSqlResultsToEntityTransformer {
                 const idMap = columns.reduce((idMap, column) => {
                     let value = result[column.databaseName];
                     if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-                        if (column.isVirtual && column.referencedColumn && column.referencedColumn.propertyName !== column.propertyName) // if column is a relation
+                        if (column.isInternal && column.referencedColumn && column.referencedColumn.propertyName !== column.propertyName) // if column is a relation
                             value = column.referencedColumn.createValueMap(value);
 
                         return OrmUtils.mergeDeep(idMap, column.createValueMap(value));
@@ -362,13 +362,5 @@ export class RawSqlResultsToEntityTransformer {
             return data;
         }, {} as ObjectLiteral);
     }
-
-    /*private removeVirtualColumns(entity: ObjectLiteral, alias: Alias) {
-        const virtualColumns = this.expressionMap.selects
-            .filter(select => select.virtual)
-            .map(select => select.selection.replace(alias.name + ".", ""));
-
-        virtualColumns.forEach(virtualColumn => delete entity[virtualColumn]);
-    }*/
 
 }
