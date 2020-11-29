@@ -66,7 +66,7 @@ export class JunctionEntityMetadataBuilder {
                 referencedColumn: referencedColumn,
                 args: {
                     target: "",
-                    mode: "virtual",
+                    mode: "internal",
                     propertyName: columnName,
                     options: {
                         name: columnName,
@@ -105,7 +105,7 @@ export class JunctionEntityMetadataBuilder {
                 referencedColumn: inverseReferencedColumn,
                 args: {
                     target: "",
-                    mode: "virtual",
+                    mode: "internal",
                     propertyName: columnName,
                     options: {
                         length: !inverseReferencedColumn.length

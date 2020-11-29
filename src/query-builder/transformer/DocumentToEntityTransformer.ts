@@ -72,7 +72,7 @@ export class DocumentToEntityTransformer {
             if (valueInObject !== undefined &&
                 valueInObject !== null &&
                 column.propertyName &&
-                !column.isVirtual) {
+                !column.isInternal) {
                 // const value = this.driver.prepareHydratedValue(valueInObject, column);
 
                 entity[column.propertyName] = valueInObject;

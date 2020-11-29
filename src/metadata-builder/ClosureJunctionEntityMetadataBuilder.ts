@@ -47,7 +47,7 @@ export class ClosureJunctionEntityMetadataBuilder {
                 referencedColumn: primaryColumn,
                 args: {
                     target: "",
-                    mode: "virtual",
+                    mode: "internal",
                     propertyName: parentClosureEntityMetadata.treeOptions && parentClosureEntityMetadata.treeOptions.ancestorColumnName ? parentClosureEntityMetadata.treeOptions.ancestorColumnName(primaryColumn) : primaryColumn.propertyName + "_ancestor",
                     options: {
                         primary: true,
@@ -63,7 +63,7 @@ export class ClosureJunctionEntityMetadataBuilder {
                 referencedColumn: primaryColumn,
                 args: {
                     target: "",
-                    mode: "virtual",
+                    mode: "internal",
                     propertyName: parentClosureEntityMetadata.treeOptions && parentClosureEntityMetadata.treeOptions.descendantColumnName ? parentClosureEntityMetadata.treeOptions.descendantColumnName(primaryColumn) : primaryColumn.propertyName + "_descendant",
                     options: {
                         primary: true,
@@ -100,7 +100,7 @@ export class ClosureJunctionEntityMetadataBuilder {
                 entityMetadata: entityMetadata,
                 args: {
                     target: "",
-                    mode: "virtual",
+                    mode: "internal",
                     propertyName: "level",
                     options: {
                         type: this.connection.driver.mappedDataTypes.treeLevel,

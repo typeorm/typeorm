@@ -143,7 +143,7 @@ export class RelationJoinColumnBuilder {
                     embeddedMetadata: relation.embeddedMetadata,
                     args: {
                         target: "",
-                        mode: "virtual",
+                        mode: "internal",
                         propertyName: relation.propertyName,
                         options: {
                             name: joinColumnName,

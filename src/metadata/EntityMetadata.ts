@@ -83,7 +83,7 @@ export class EntityMetadata {
     /**
      * Target class to which this entity metadata is bind.
      * Note, that when using table inheritance patterns target can be different rather then table's target.
-     * For virtual tables which lack of real entity (like junction tables) target is equal to their table name.
+     * For internal tables which lack of real entity (like junction tables) target is equal to their table name.
      */
     target: Function|string;
 
@@ -239,11 +239,6 @@ export class EntityMetadata {
      * Descendant columns used only in closure junction tables.
      */
     descendantColumns: ColumnMetadata[] = [];
-
-    /**
-     * All columns except for virtual columns.
-     */
-    nonVirtualColumns: ColumnMetadata[] = [];
 
     /**
      * In the case if this entity metadata is junction table's entity metadata,

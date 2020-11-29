@@ -39,7 +39,7 @@ export class SubjectChangedColumnsComputer {
         subject.metadata.columns.forEach(column => {
 
             // ignore special columns
-            if (column.isVirtual ||
+            if (column.isInternal ||
                 column.isDiscriminator // ||
                 // column.isUpdateDate ||
                 // column.isVersion ||
