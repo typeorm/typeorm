@@ -1,12 +1,8 @@
+import {EmbeddedOptions} from "./EmbeddedOptions";
+
 /**
  * Column options specific to embedded column.
+ *
+ * TODO: Remove
  */
-export interface ColumnEmbeddedOptions {
-
-    /**
-     * Embedded column prefix.
-     * If set to empty string or false, then prefix is not set at all.
-     */
-    prefix?: string | boolean;
-
-}
+export type ColumnEmbeddedOptions = EmbeddedOptions;
