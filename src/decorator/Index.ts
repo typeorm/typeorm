@@ -1,6 +1,6 @@
 import {getMetadataArgsStorage, IndexOptions} from "../";
 import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
-import {IndexFieldsMap} from "../metadata-args/types/IndexFieldsMap";
+import {IndexFields, IndexFieldsFn} from "../metadata-args/types/IndexFields";
 
 /**
  * Creates a database index.
@@ -21,14 +21,14 @@ export function Index(name: string, options?: IndexOptions | { synchronize: fals
  * Can be used on entity.
  * Can create indices with composite columns when used on entity.
  */
-export function Index(fields: string[] | IndexFieldsMap, options?: IndexOptions): ClassDecorator;
+export function Index(fields: IndexFields | IndexFieldsFn, options?: IndexOptions): ClassDecorator;
 
 /**
  * Creates a database index.
  * Can be used on entity.
  * Can create indices with composite columns when used on entity.
  */
-export function Index(name: string, fields: string[] | IndexFieldsMap, options?: IndexOptions): ClassDecorator;
+export function Index(name: string, fields: IndexFields | IndexFieldsFn, options?: IndexOptions): ClassDecorator;
 
 /**
  * Creates a database index.
@@ -36,12 +36,12 @@ export function Index(name: string, fields: string[] | IndexFieldsMap, options?:
  * Can create indices with composite columns when used on entity.
  */
 export function Index(
-    nameOrFieldsOrOptions?: string | string[]|IndexFieldsMap | IndexOptions,
-    maybeFieldsOrOptions?: string[]|IndexFieldsMap | IndexOptions|{ synchronize: false },
+    nameOrFieldsOrOptions?: string | IndexFields|IndexFieldsFn | IndexOptions,
+    maybeFieldsOrOptions?: IndexFields|IndexFieldsFn | IndexOptions|{ synchronize: false },
     maybeOptions?: IndexOptions
 ): ClassDecorator & PropertyDecorator {
     const name = typeof nameOrFieldsOrOptions === "string" ? nameOrFieldsOrOptions : undefined;
-    const fields = <IndexFieldsMap|string[]>(typeof nameOrFieldsOrOptions === "string" ? maybeFieldsOrOptions : nameOrFieldsOrOptions);
+    const fields = <IndexFields|IndexFieldsFn>(typeof nameOrFieldsOrOptions === "string" ? maybeFieldsOrOptions : nameOrFieldsOrOptions);
     let options: IndexOptions & { synchronize?: false } | undefined;
     if (typeof nameOrFieldsOrOptions === "object" && !Array.isArray(nameOrFieldsOrOptions)) {
         options = nameOrFieldsOrOptions;

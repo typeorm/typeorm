@@ -1,4 +1,4 @@
-import {IndexFieldsMap} from "../metadata-args/types/IndexFieldsMap";
+import {IndexFields, IndexFieldsFn} from "../metadata-args/types/IndexFields";
 
 export interface EntitySchemaIndexOptions {
 
@@ -10,7 +10,7 @@ export interface EntitySchemaIndexOptions {
     /**
      * Index column names.
      */
-    columns?: IndexFieldsMap|string[];
+    columns?: IndexFields | IndexFieldsFn;
 
     /**
      * Indicates if index must sync with database index.
