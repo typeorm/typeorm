@@ -1,7 +1,7 @@
 /**
  * Arguments for IndexMetadata class.
  */
-import {IndexFieldsMap} from "./types/IndexFieldsMap";
+import {IndexFields, IndexFieldsFn} from "./types/IndexFields";
 
 export interface IndexMetadataArgs {
 
@@ -18,7 +18,7 @@ export interface IndexMetadataArgs {
     /**
      * Columns combination to be used as index.
      */
-    columns?: IndexFieldsMap | string[];
+    columns?: IndexFields | IndexFieldsFn;
 
     /**
      * Indicates if index must be unique or not.

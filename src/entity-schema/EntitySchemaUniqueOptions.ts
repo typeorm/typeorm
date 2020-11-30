@@ -1,4 +1,4 @@
-import {IndexFieldsMap} from "../metadata-args/types/IndexFieldsMap";
+import {IndexFields, IndexFieldsFn} from "../metadata-args/types/IndexFields";
 
 export interface EntitySchemaUniqueOptions {
 
@@ -10,6 +10,6 @@ export interface EntitySchemaUniqueOptions {
     /**
      * Unique column names.
      */
-    columns?: IndexFieldsMap|string[];
+    columns?: IndexFields | IndexFieldsFn;
 
 }

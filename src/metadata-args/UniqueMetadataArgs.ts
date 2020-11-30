@@ -1,4 +1,4 @@
-import {IndexFieldsMap} from "./types/IndexFieldsMap";
+import {IndexFields, IndexFieldsFn} from "./types/IndexFields";
 
 /**
  * Arguments for UniqueMetadata class.
@@ -18,5 +18,5 @@ export interface UniqueMetadataArgs {
     /**
      * Columns combination to be unique.
      */
-    columns?: IndexFieldsMap|string[];
+    columns?: IndexFields | IndexFieldsFn;
 }
