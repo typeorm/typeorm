@@ -10,13 +10,13 @@ import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../../error/UpdateValuesMissingError";
 import {QueryDeepPartialEntity} from "../QueryPartialEntity";
-import {ModificationQueryBuilder} from "./ModificationQueryBuilder";
+import {AbstractModifyQueryBuilder} from "./AbstractModifyQueryBuilder";
 import {MissingDeleteDateColumnError} from "../../error/MissingDeleteDateColumnError";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity, UpdateResult> {
+export class UpdateQueryBuilder<Entity> extends AbstractModifyQueryBuilder<Entity, UpdateResult> {
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -68,6 +68,14 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
             !metadata ? Object.keys(valuesSet) : metadata.extractColumnsInEntity(valuesSet)
                 .filter(column => column.isUpdate);
 
+        // Extra columns that must be updated
+        if (metadata) {
+            if (metadata.versionColumn && !updatedColumns.includes(metadata.versionColumn)) updatedColumns.push(metadata.versionColumn);
+            if (metadata.updateDateColumn && !updatedColumns.includes(metadata.updateDateColumn)) updatedColumns.push(metadata.updateDateColumn);
+            if (this.expressionMap.softDeleteAction)
+                if (metadata.deleteDateColumn && !updatedColumns.includes(metadata.deleteDateColumn)) updatedColumns.push(metadata.deleteDateColumn);
+        }
+
         const columnValuesExpressions = updatedColumns.map(columnOrKey => {
             const column = columnOrKey instanceof ColumnMetadata ? columnOrKey : undefined;
             const columnName = column ? column.databaseName : columnOrKey as string;
@@ -83,21 +91,9 @@ export class UpdateQueryBuilder<Entity> extends ModificationQueryBuilder<Entity,
                 return this.connection.driver.createParameter(paramName, parametersCount++);
             };
 
-            const expression = this.createColumnValuePersistExpression(column, value, createParamExpression);
+            const expression = this.computePersistValueExpression(column, value, createParamExpression);
             return `${this.escape(columnName)} = ${expression}`;
         });
-
-        if (metadata) {
-            if (this.expressionMap.softDeleteAction === "delete")
-                columnValuesExpressions.push(this.escape(metadata.deleteDateColumn!.databaseName) + " = CURRENT_TIMESTAMP");
-            else if (this.expressionMap.softDeleteAction === "restore")
-                columnValuesExpressions.push(this.escape(metadata.deleteDateColumn!.databaseName) + " = NULL");
-
-            if (metadata.versionColumn && !updatedColumns.includes(metadata.versionColumn as any))
-                columnValuesExpressions.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
-            if (metadata.updateDateColumn && !updatedColumns.includes(metadata.updateDateColumn))
-                columnValuesExpressions.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
-        }
 
         if (columnValuesExpressions.length <= 0) {
             throw new UpdateValuesMissingError();
