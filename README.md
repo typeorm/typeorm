@@ -1305,7 +1305,7 @@ This project exists thanks to all the people who contribute:
 
 ## Sponsors
 
-Open source is hard and time-consuming. If you want to invest into TypeORM's future you can become a sponsor and make our core team to spend more time on TypeORM's improvements and new features. [Become a sponsor](https://opencollective.com/typeorm)
+Open source is hard and time-consuming. If you want to invest into TypeORM's future you can become a sponsor and allow our core team to spend more time on TypeORM's improvements and new features. [Become a sponsor](https://opencollective.com/typeorm)
 
 <a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/sponsor.svg?width=890"></a>
 
