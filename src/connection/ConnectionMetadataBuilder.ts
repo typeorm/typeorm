@@ -49,21 +49,15 @@ export class ConnectionMetadataBuilder {
     /**
      * Builds entity metadatas for the given classes or directories.
      */
-    buildEntityMetadatas(entities: (Function|EntitySchema<any>|string)[]): EntityMetadata[] {
+    buildEntityMetadatas(entities: (Function|EntitySchema|string)[]): EntityMetadata[] {
         // todo: instead we need to merge multiple metadata args storages
-
         const [entityClassesOrSchemas, entityDirectories] = OrmUtils.splitClassesAndStrings(entities || []);
-        const entityClasses: Function[] = entityClassesOrSchemas.filter(entityClass => (entityClass instanceof EntitySchema) === false) as any;
-        const entitySchemas: EntitySchema<any>[] = entityClassesOrSchemas.filter(entityClass => entityClass instanceof EntitySchema) as any;
+        const allEntityClassesOrSchemas = [...entityClassesOrSchemas, ...importClassesFromDirectories(this.connection.logger, entityDirectories)];
 
-        const allEntityClasses = [...entityClasses, ...importClassesFromDirectories(this.connection.logger, entityDirectories)];
-        allEntityClasses.forEach(entityClass => { // if we have entity schemas loaded from directories
-            if (entityClass instanceof EntitySchema) {
-                entitySchemas.push(entityClass);
-                allEntityClasses.slice(allEntityClasses.indexOf(entityClass), 1);
-            }
-        });
-        const decoratorEntityMetadatas = new EntityMetadataBuilder(this.connection, getMetadataArgsStorage()).build(allEntityClasses);
+        const entityClasses: Function[] = allEntityClassesOrSchemas.filter(entityClass => !(entityClass instanceof EntitySchema)) as any;
+        const entitySchemas: EntitySchema[] = allEntityClassesOrSchemas.filter(entityClass => entityClass instanceof EntitySchema) as any;
+
+        const decoratorEntityMetadatas = new EntityMetadataBuilder(this.connection, getMetadataArgsStorage()).build(entityClasses);
 
         const metadataArgsStorageFromSchema = new EntitySchemaTransformer().transform(entitySchemas);
         const schemaEntityMetadatas = new EntityMetadataBuilder(this.connection, metadataArgsStorageFromSchema).build();
