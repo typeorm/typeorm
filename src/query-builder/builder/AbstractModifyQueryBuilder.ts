@@ -4,16 +4,18 @@ import {Connection} from "../../connection/Connection";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {WhereExpression} from "../WhereExpression";
 import {Brackets} from "../Brackets";
-import {ReturningStatementNotSupportedError} from "../../error/ReturningStatementNotSupportedError";
 import {MysqlDriver} from "../../driver/mysql/MysqlDriver";
 import {OrderByCondition} from "../../find-options/OrderByCondition";
 import {LimitOnUpdateNotSupportedError} from "../../error/LimitOnUpdateNotSupportedError";
 import {AuroraDataApiDriver} from "../../driver/aurora-data-api/AuroraDataApiDriver";
+import {AbstractPersistQueryBuilder} from "./AbstractPersistQueryBuilder";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
+ *
+ * Abstract query builder for common elements between UPDATE / DELETE
  */
-export abstract class ModificationQueryBuilder<Entity, Result> extends QueryBuilder<Entity, Result> implements WhereExpression {
+export abstract class AbstractModifyQueryBuilder<Entity, Result> extends AbstractPersistQueryBuilder<Entity, Result> implements WhereExpression {
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -114,59 +116,6 @@ export abstract class ModificationQueryBuilder<Entity, Result> extends QueryBuil
     orWhereInIds(ids: any|any[]): this {
         return this.orWhere(this.createWhereIdsExpression(ids));
     }
-    /**
-     * Optional returning/output clause.
-     * This will return given column values.
-     */
-    output(columns: string[]): this;
-
-    /**
-     * Optional returning/output clause.
-     * Returning is a SQL string containing returning statement.
-     */
-    output(output: string): this;
-
-    /**
-     * Optional returning/output clause.
-     */
-    output(output: string|string[]): this;
-
-    /**
-     * Optional returning/output clause.
-     */
-    output(output: string|string[]): this {
-        return this.returning(output);
-    }
-
-    /**
-     * Optional returning/output clause.
-     * This will return given column values.
-     */
-    returning(columns: string[]): this;
-
-    /**
-     * Optional returning/output clause.
-     * Returning is a SQL string containing returning statement.
-     */
-    returning(returning: string): this;
-
-    /**
-     * Optional returning/output clause.
-     */
-    returning(returning: string|string[]): this;
-
-    /**
-     * Optional returning/output clause.
-     */
-    returning(returning: string|string[]): this {
-
-        // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported())
-            throw new ReturningStatementNotSupportedError();
-
-        this.expressionMap.returning = returning;
-        return this;
-    }
 
     /**
      * Sets ORDER BY condition in the query builder.
@@ -254,16 +203,6 @@ export abstract class ModificationQueryBuilder<Entity, Result> extends QueryBuil
         });
 
         this.expressionMap.whereEntities = entities;
-        return this;
-    }
-
-    /**
-     * Indicates if entity must be updated after update operation.
-     * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
-     * Enabled by default.
-     */
-    updateEntity(enabled: boolean): this {
-        this.expressionMap.updateEntity = enabled;
         return this;
     }
 

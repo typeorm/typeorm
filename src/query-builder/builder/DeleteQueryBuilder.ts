@@ -6,12 +6,12 @@ import {PostgresDriver} from "../../driver/postgres/PostgresDriver";
 import {DeleteResult} from "../result/DeleteResult";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import {EntitySchema} from "../../index";
-import {ModificationQueryBuilder} from "./ModificationQueryBuilder";
+import {AbstractModifyQueryBuilder} from "./AbstractModifyQueryBuilder";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class DeleteQueryBuilder<Entity> extends ModificationQueryBuilder<Entity, DeleteResult> {
+export class DeleteQueryBuilder<Entity> extends AbstractModifyQueryBuilder<Entity, DeleteResult> {
 
     // -------------------------------------------------------------------------
     // Public Methods

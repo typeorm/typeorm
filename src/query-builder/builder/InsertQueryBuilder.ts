@@ -1,5 +1,4 @@
 import {CockroachDriver} from "../../driver/cockroachdb/CockroachDriver";
-import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityTarget} from "../../common/EntityTarget";
 import {QueryDeepPartialEntity} from "../QueryPartialEntity";
@@ -7,7 +6,6 @@ import {SqlServerDriver} from "../../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../../driver/mysql/MysqlDriver";
 import {InsertResult} from "../result/InsertResult";
-import {ReturningStatementNotSupportedError} from "../../error/ReturningStatementNotSupportedError";
 import {InsertValuesMissingError} from "../../error/InsertValuesMissingError";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ReturningResultsEntityUpdater} from "../ReturningResultsEntityUpdater";
@@ -17,11 +15,12 @@ import {EntitySchema} from "../../entity-schema/EntitySchema";
 import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../../driver/aurora-data-api/AuroraDataApiDriver";
 import {QueryRunner} from "../..";
+import {AbstractPersistQueryBuilder} from "./AbstractPersistQueryBuilder";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResult> {
+export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Entity, InsertResult> {
 
     // -------------------------------------------------------------------------
     // Public Implemented Methods
@@ -71,70 +70,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
      */
     values(values: QueryDeepPartialEntity<Entity>|QueryDeepPartialEntity<Entity>[]): this {
         this.expressionMap.valuesSet = values;
-        return this;
-    }
-
-    /**
-     * Optional returning/output clause.
-     * This will return given column values.
-     */
-    output(columns: string[]): this;
-
-    /**
-     * Optional returning/output clause.
-     * Returning is a SQL string containing returning statement.
-     */
-    output(output: string): this;
-
-    /**
-     * Optional returning/output clause.
-     */
-    output(output: string|string[]): this;
-
-    /**
-     * Optional returning/output clause.
-     */
-    output(output: string|string[]): this {
-        return this.returning(output);
-    }
-
-    /**
-     * Optional returning/output clause.
-     * This will return given column values.
-     */
-    returning(columns: string[]): this;
-
-    /**
-     * Optional returning/output clause.
-     * Returning is a SQL string containing returning statement.
-     */
-    returning(returning: string): this;
-
-    /**
-     * Optional returning/output clause.
-     */
-    returning(returning: string|string[]): this;
-
-    /**
-     * Optional returning/output clause.
-     */
-    returning(returning: string|string[]): this {
-
-        // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported())
-            throw new ReturningStatementNotSupportedError();
-
-        this.expressionMap.returning = returning;
-        return this;
-    }
-
-    /**
-     * Indicates if entity must be updated after insertion operations.
-     * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
-     * Enabled by default.
-     */
-    updateEntity(enabled: boolean): this {
-        this.expressionMap.updateEntity = enabled;
         return this;
     }
 
@@ -336,7 +271,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity, InsertResul
                     return this.connection.driver.createParameter(paramName, parametersCount++);
                 };
 
-                return this.createColumnValuePersistExpression(column, value, createParamExpression);
+                return this.computePersistValueExpression(column, value, createParamExpression);
             });
 
             // Filter out if no values are specified
