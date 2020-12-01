@@ -74,6 +74,13 @@ userRepository.find({
 });
 ```
 
+* `withDeleted` - include entities which have been soft deleted with `softDelete` or `softRemove`, e.g. have their `@DeleteDateColumn` column set. By default, soft deleted entities are not included.
+
+```typescript
+userRepository.find({
+    withDeleted: true
+});
+
 `find` methods which return multiple entities (`find`, `findAndCount`, `findByIds`) also accept following options:
 
 * `skip` - offset (paginated) from where entities should be taken.
