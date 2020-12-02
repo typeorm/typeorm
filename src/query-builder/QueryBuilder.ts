@@ -85,6 +85,7 @@ export abstract class QueryBuilder<Entity> {
      * QueryBuilder can be initialized from given Connection and QueryRunner objects or from given other QueryBuilder.
      */
     constructor(connectionOrQueryBuilder: Connection|QueryBuilder<any>, queryRunner?: QueryRunner) {
+
         if (connectionOrQueryBuilder instanceof QueryBuilder) {
             this.connection = connectionOrQueryBuilder.connection;
             this.queryRunner = connectionOrQueryBuilder.queryRunner;
