@@ -24,7 +24,7 @@ import {createConnection} from "typeorm";
 const connection = await createConnection();
 ```
 
-Supported ormconfig file formats are: `.json`, `.js`, `.env`, `.yml` and `.xml`.
+Supported ormconfig file formats are: `.json`, `.js`, `.ts`, `.env`, `.yml` and `.xml`.
 
 ## Using `ormconfig.json`
 
