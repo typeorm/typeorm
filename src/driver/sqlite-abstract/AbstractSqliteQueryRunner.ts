@@ -1120,7 +1120,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapePath(table.name)}" (${columns}) ${index.where ? "WHERE " + index.where : ""}`);
+        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapePath(table.name)} (${columns}) ${index.where ? "WHERE " + index.where : ""}`);
     }
 
     /**
