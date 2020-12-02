@@ -8,7 +8,7 @@ import {createConnections} from "../../src/index";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
 import {QueryResultCache} from "../../src/cache/QueryResultCache";
 import {Logger} from "../../src/logger/Logger";
-import path from 'path';
+import path from "path";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -183,7 +183,7 @@ function getOrmFilepath(): string {
  * Loads test connection options from ormconfig.json file.
  */
 export function getTypeOrmConfig(): TestingConnectionOptions[] {
-    return require(getOrmFilepath())
+    return require(getOrmFilepath());
 }
 
 /**

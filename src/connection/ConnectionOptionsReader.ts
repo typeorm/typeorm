@@ -4,7 +4,7 @@ import {PlatformTools} from "../platform/PlatformTools";
 import {ConnectionOptionsEnvReader} from "./options-reader/ConnectionOptionsEnvReader";
 import {ConnectionOptionsYmlReader} from "./options-reader/ConnectionOptionsYmlReader";
 import {ConnectionOptionsXmlReader} from "./options-reader/ConnectionOptionsXmlReader";
-import { isAbsolute } from '../util/PathUtils';
+import { isAbsolute } from "../util/PathUtils";
 
 /**
  * Reads connection options from the ormconfig.
@@ -183,7 +183,7 @@ export class ConnectionOptionsReader {
                     });
                 }
             }
-            options.baseDirectory = this.baseDirectory
+            options.baseDirectory = this.baseDirectory;
         });
 
         return connectionOptions;
