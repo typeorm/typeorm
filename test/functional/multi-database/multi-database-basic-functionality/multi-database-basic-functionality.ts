@@ -59,7 +59,6 @@ describe("multi-database > basic-functionality", () => {
 
         let connections: Connection[];
         const tempPath = path.resolve(__dirname, '../../../../../../temp');
-        let expectedMainPath: string
         const attachAnswerPath = path.join(tempPath, 'filename-sqlite.db')
         const attachAnswerHandle = filepathToName('filename-sqlite.db')
         const attachCategoryPath = path.join(tempPath, './subdir/relative-subdir-sqlite.db')
@@ -70,7 +69,6 @@ describe("multi-database > basic-functionality", () => {
                 enabledDrivers: ["sqlite", "better-sqlite3"],
                 name: "sqlite",
             });
-            expectedMainPath = path.join(tempPath, (connections[0].options.database as string).match(/^.*[\\|\/](?<filename>[^\\|\/]+)$/)!.groups!['filename'])
         });
         beforeEach(() => reloadTestingDatabases(connections));
         after(async () => {
@@ -81,6 +79,8 @@ describe("multi-database > basic-functionality", () => {
         // it("should correctly attach database files when specified")
 
         it("should correctly attach and create database files", () => Promise.all(connections.map(async connection => {
+
+            const expectedMainPath = path.join(tempPath, (connections[0].options.database as string).match(/^.*[\\|\/](?<filename>[^\\|\/]+)$/)!.groups!['filename'])
 
             expect(fs.existsSync(expectedMainPath)).to.be.true
             expect(fs.existsSync(attachAnswerPath)).to.be.true
