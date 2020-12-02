@@ -286,7 +286,7 @@ module.exports = {
 
 SQLite [allows multiple database files](https://sqlite.org/lang_attach.html) per connection. You can configure this via [entity metadata](decorator-reference.md).
 
-You can configure as many attached databases as you like but
+You can configure as many attached databases as you like but SQLite has a compile-time limit (default 10).
 
 ```typescript
 @Entity({
