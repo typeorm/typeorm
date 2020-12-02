@@ -786,16 +786,15 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const loadTable = async (tablePath: string, tableOrIndex: 'table' | 'index') => {
             const [database, tableName] = this.splitTablePath(tablePath)
             const res = await this.query(`SELECT ${database ? `'${database}'` : null} as database, * FROM ${this.escapePath(`${database ? `${database}.` : ''}sqlite_master`)} WHERE "type" = '${tableOrIndex}' AND "${tableOrIndex === 'table' ? 'name' : 'tbl_name'}" IN ('${tableName}')`)
-            return res[0]
+            return res
         }
         const loadPragma = async (tablePath: string, pragma: string) => {
             const [database, tableName] = this.splitTablePath(tablePath)
             const res = await this.query(`PRAGMA ${database ? `"${database}".` : ''}${pragma}(${tableName})`)
             return res
         }
-
-        const dbTables: ObjectLiteral[] = (await Promise.all(tableNames.map(tableName => loadTable(tableName, 'table')))).filter(Boolean)
-        const dbIndicesDef: ObjectLiteral[] = (await Promise.all(tableNames.map(tableName => loadTable(tableName, 'index')))).filter(Boolean)
+        const dbTables: ObjectLiteral[] = (await Promise.all(tableNames.map(tableName => loadTable(tableName, 'table')))).reduce((acc, res) => ([...acc, ...res]), []).filter(Boolean)
+        const dbIndicesDef: ObjectLiteral[] = (await Promise.all(tableNames.map(tableName => loadTable(tableName, 'index')))).reduce((acc, res) => ([...acc, ...res]), []).filter(Boolean)
 
         // if tables were not found in the db, no need to proceed
         if (!dbTables || !dbTables.length)
