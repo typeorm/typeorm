@@ -1,3 +1,5 @@
+import * as util from "util";
+
 /**
  * Thrown when query execution has failed.
 */
@@ -9,7 +11,7 @@ export class QueryFailedError extends Error {
         this.message = driverError.toString()
             .replace(/^error: /, "")
             .replace(/^Error: /, "")
-            .replace(/^Request/, "");
+            .replace(/^Request/, "") + " " + query + " " + util.inspect(parameters, {depth: null});
         Object.assign(this, {
             ...driverError,
             name: "QueryFailedError",

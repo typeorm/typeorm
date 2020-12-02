@@ -7,7 +7,7 @@ import {Category} from "./entity/Category";
 import {Image} from "./entity/Image";
 
 describe("decorators > relation-id-decorator > many-to-many", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],

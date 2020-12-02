@@ -4,6 +4,10 @@ import {RelationIdLoadResult} from "./RelationIdLoadResult";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DriverUtils} from "../../driver/DriverUtils";
+import { Or } from "../../expression-builder/expression/logical/Or";
+import { And } from "../../expression-builder/expression/logical/And";
+import { Equal } from "../../expression-builder/expression/comparison/Equal";
+import { Col } from "../../expression-builder/expression/Column";
 
 export class RelationIdLoader {
 
@@ -37,7 +41,7 @@ export class RelationIdLoader {
                     const result: ObjectLiteral = {};
                     const duplicateParts: Array<string> = [];
                     relationIdAttr.relation.joinColumns.forEach(joinColumn => {
-                        result[joinColumn.databaseName] = this.connection.driver.prepareHydratedValue(rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.databaseName)], joinColumn.referencedColumn!);
+                        result[joinColumn.databaseName] = this.connection.driver.prepareOrmValue(rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.databaseName)], joinColumn.referencedColumn!);
                         const duplicatePart = `${joinColumn.databaseName}:${result[joinColumn.databaseName]}`;
                         if (duplicateParts.indexOf(duplicatePart) === -1) {
                             duplicateParts.push(duplicatePart);
@@ -45,7 +49,7 @@ export class RelationIdLoader {
                     });
 
                     relationIdAttr.relation.entityMetadata.primaryColumns.forEach(primaryColumn => {
-                        result[primaryColumn.databaseName] = this.connection.driver.prepareHydratedValue(rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, primaryColumn.databaseName)], primaryColumn);
+                        result[primaryColumn.databaseName] = this.connection.driver.prepareOrmValue(rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, primaryColumn.databaseName)], primaryColumn);
                         const duplicatePart = `${primaryColumn.databaseName}:${result[primaryColumn.databaseName]}`;
                         if (duplicateParts.indexOf(duplicatePart) === -1) {
                             duplicateParts.push(duplicatePart);
@@ -78,31 +82,21 @@ export class RelationIdLoader {
                 const tableAlias = relationIdAttr.alias || tableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
 
                 const duplicates: Array<string> = [];
-                const parameters: ObjectLiteral = {};
-                const condition = rawEntities.map((rawEntity, index) => {
+                const condition = Or(...rawEntities.map(rawEntity => {
                     const duplicateParts: Array<string> = [];
-                    const parameterParts: ObjectLiteral = {};
-                    const queryPart = joinColumns.map(joinColumn => {
-                        const parameterName = joinColumn.databaseName + index;
-                        const parameterValue = rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
-                        const duplicatePart = `${tableAlias}:${joinColumn.propertyPath}:${parameterValue}`;
-                        if (duplicateParts.indexOf(duplicatePart) !== -1) {
-                            return "";
-                        }
+                    const queryPart = And(...joinColumns.map(joinColumn => {
+                        const value = rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
+                        const duplicatePart = `${tableAlias}:${joinColumn.propertyPath}:${value}`;
+                        if (duplicateParts.indexOf(duplicatePart) !== -1) return undefined;
                         duplicateParts.push(duplicatePart);
-                        parameterParts[parameterName] = parameterValue;
-                        return tableAlias + "." + joinColumn.propertyPath + " = :" + parameterName;
-                    }).filter(v => v).join(" AND ");
+                        return Equal(Col(tableAlias, joinColumn.propertyPath), value);
+                    }).filter(v => v));
                     duplicateParts.sort();
                     const duplicate = duplicateParts.join("::");
-                    if (duplicates.indexOf(duplicate) !== -1) {
-                        return "";
-                    }
+                    if (duplicates.indexOf(duplicate) !== -1) return undefined;
                     duplicates.push(duplicate);
-                    Object.assign(parameters, parameterParts);
                     return queryPart;
-                }).filter(v => v).map(condition => "(" + condition + ")")
-                    .join(" OR ");
+                }).filter(v => v));
 
                 // ensure we won't perform redundant queries for joined data which was not found in selection
                 // example: if post.category was not found in db then no need to execute query for category.imageIds
@@ -122,8 +116,7 @@ export class RelationIdLoader {
                 });
 
                 qb.from(table, tableAlias)
-                    .where("(" + condition + ")") // need brackets because if we have additional condition and no brackets, it looks like (a = 1) OR (a = 2) AND b = 1, that is incorrect
-                    .setParameters(parameters);
+                    .where(condition);
 
                 // apply condition (custom query builder factory)
                 if (relationIdAttr.queryBuilderFactory)
@@ -132,10 +125,10 @@ export class RelationIdLoader {
                 const results = await qb.getRawMany();
                 results.forEach(result => {
                     joinColumns.forEach(column => {
-                        result[column.databaseName] = this.connection.driver.prepareHydratedValue(result[column.databaseName], column.referencedColumn!);
+                        result[column.databaseName] = this.connection.driver.prepareOrmValue(result[column.databaseName], column.referencedColumn!);
                     });
                     relation.inverseRelation!.entityMetadata.primaryColumns.forEach(column => {
-                        result[column.databaseName] = this.connection.driver.prepareHydratedValue(result[column.databaseName], column);
+                        result[column.databaseName] = this.connection.driver.prepareOrmValue(result[column.databaseName], column);
                     });
                 });
 
@@ -160,67 +153,47 @@ export class RelationIdLoader {
                 const junctionTableName = relation.isOwning ? relation.junctionEntityMetadata!.tableName : relation.inverseRelation!.junctionEntityMetadata!.tableName;
 
 
-                const mappedColumns = rawEntities.map(rawEntity => {
-                    return joinColumns.reduce((map, joinColumn) => {
-                        map[joinColumn.propertyPath] = rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
-                        return map;
-                    }, {} as ObjectLiteral);
-                });
-
                 // ensure we won't perform redundant queries for joined data which was not found in selection
                 // example: if post.category was not found in db then no need to execute query for category.imageIds
-                if (mappedColumns.length === 0)
+                if (rawEntities.length === 0)
                     return { relationIdAttribute: relationIdAttr, results: [] };
 
-                const parameters: ObjectLiteral = {};
                 const duplicates: Array<string> = [];
-                const joinColumnConditions = mappedColumns.map((mappedColumn, index) => {
+                const joinColumnConditions = rawEntities.map(rawEntity => {
                     const duplicateParts: Array<string> = [];
-                    const parameterParts: ObjectLiteral = {};
-                    const queryPart = Object.keys(mappedColumn).map(key => {
-                        const parameterName = key + index;
-                        const parameterValue = mappedColumn[key];
-                        const duplicatePart = `${junctionAlias}:${key}:${parameterValue}`;
-                        if (duplicateParts.indexOf(duplicatePart) !== -1) {
-                            return "";
-                        }
+                    const queryPart = And(...joinColumns.map(joinColumn => {
+                        const value = rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
+                        const duplicatePart = `${junctionAlias}:${joinColumn}:${value}`;
+                        if (duplicateParts.indexOf(duplicatePart) !== -1) return undefined;
                         duplicateParts.push(duplicatePart);
-                        parameterParts[parameterName] = parameterValue;
-                        return junctionAlias + "." + key + " = :" + parameterName;
-                    }).filter(s => s).join(" AND ");
+                        return Equal(Col(junctionAlias, joinColumn.propertyPath), value);
+                    }).filter(s => s));
                     duplicateParts.sort();
                     const duplicate = duplicateParts.join("::");
-                    if (duplicates.indexOf(duplicate) !== -1) {
-                        return "";
-                    }
+                    if (duplicates.indexOf(duplicate) !== -1) return undefined;
                     duplicates.push(duplicate);
-                    Object.assign(parameters, parameterParts);
                     return queryPart;
                 }).filter(s => s);
 
-                const inverseJoinColumnCondition = inverseJoinColumns.map(joinColumn => {
-                    return junctionAlias + "." + joinColumn.propertyPath + " = " + inverseSideTableAlias + "." + joinColumn.referencedColumn!.propertyPath;
-                }).join(" AND ");
+                const inverseJoinColumnCondition = And(...inverseJoinColumns.map(joinColumn =>
+                    Equal(Col(junctionAlias, joinColumn.propertyPath), Col(inverseSideTableAlias, joinColumn.referencedColumn!.propertyPath))));
 
-                const condition = joinColumnConditions.map(condition => {
-                    return "(" + condition + " AND " + inverseJoinColumnCondition + ")";
-                }).join(" OR ");
+                const condition = And(inverseJoinColumnCondition, Or(...joinColumnConditions));
 
                 const qb = this.connection.createQueryBuilder(this.queryRunner);
 
                 inverseJoinColumns.forEach(joinColumn => {
                     qb.addSelect(junctionAlias + "." + joinColumn.propertyPath, joinColumn.databaseName)
-                    .addOrderBy(junctionAlias + "." + joinColumn.propertyPath);
+                        .addOrderBy(junctionAlias + "." + joinColumn.propertyPath);
                 });
 
                 joinColumns.forEach(joinColumn => {
                     qb.addSelect(junctionAlias + "." + joinColumn.propertyPath, joinColumn.databaseName)
-                    .addOrderBy(junctionAlias + "." + joinColumn.propertyPath);
+                        .addOrderBy(junctionAlias + "." + joinColumn.propertyPath);
                 });
 
                 qb.from(inverseSideTableName, inverseSideTableAlias)
-                    .innerJoin(junctionTableName, junctionAlias, condition)
-                    .setParameters(parameters);
+                    .innerJoin(junctionTableName, junctionAlias, condition);
 
                 // apply condition (custom query builder factory)
                 if (relationIdAttr.queryBuilderFactory)
@@ -229,7 +202,7 @@ export class RelationIdLoader {
                 const results = await qb.getRawMany();
                 results.forEach(result => {
                     [...joinColumns, ...inverseJoinColumns].forEach(column => {
-                        result[column.databaseName] = this.connection.driver.prepareHydratedValue(result[column.databaseName], column.referencedColumn!);
+                        result[column.databaseName] = this.connection.driver.prepareOrmValue(result[column.databaseName], column.referencedColumn!);
                     });
                 });
 

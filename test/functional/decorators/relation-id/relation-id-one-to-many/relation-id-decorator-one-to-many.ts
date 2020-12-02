@@ -102,6 +102,8 @@ describe("decorators > relation-id > one-to-many", () => {
             .orderBy("category.id")
             .getMany();
 
+
+
         expect(loadedCategories![0].removedPostIds).to.not.be.eql([]);
         expect(loadedCategories![0].removedPostIds.length).to.be.equal(1);
         expect(loadedCategories![0].removedPostIds[0]).to.be.equal(2);

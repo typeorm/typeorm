@@ -33,7 +33,7 @@ export function JoinColumn(optionsOrOptionsArray?: JoinColumnOptions|JoinColumnO
         options.forEach(options => {
             getMetadataArgsStorage().joinColumns.push({
                 target: object.constructor,
-                propertyName: propertyName,
+                relationName: propertyName,
                 name: options.name,
                 referencedColumnName: options.referencedColumnName
             } as JoinColumnMetadataArgs);

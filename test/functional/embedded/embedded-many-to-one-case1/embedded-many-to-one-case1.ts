@@ -88,6 +88,9 @@ describe("embedded > embedded-many-to-one-case1", () => {
                     }
                 }
             ));
+
+            console.log(connection.driver.constructor.name);
+
             expect(loadedPosts[1].should.be.eql(
                 {
                     id: 2,

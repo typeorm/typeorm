@@ -84,12 +84,16 @@ export class RawSqlResultsToEntityTransformer {
         let metadata = alias.metadata;
 
         if (metadata.discriminatorColumn) {
-            const discriminatorValues = rawResults.map(result => result[DriverUtils.buildColumnAlias(this.driver, alias.name, alias.metadata.discriminatorColumn!.databaseName)]);
-            const discriminatorMetadata = metadata.childEntityMetadatas.find(childEntityMetadata =>
-                discriminatorValues.includes(childEntityMetadata.discriminatorValue));
-            if (discriminatorMetadata)
-                metadata = discriminatorMetadata;
+            const discriminatorSelect = this.expressionMap.selects.find(select => select.column === metadata.discriminatorColumn);
+            if (discriminatorSelect) {
+                const discriminatorValues = rawResults.map(result => result[discriminatorSelect.alias!]);
+                const discriminatorMetadata = metadata.childEntityMetadatas.find(childEntityMetadata =>
+                    discriminatorValues.includes(childEntityMetadata.discriminatorValue));
+                if (discriminatorMetadata)
+                    metadata = discriminatorMetadata;
+            }
         }
+
         let entity: any = this.expressionMap.options.indexOf("create-pojo") !== -1 ? {} : metadata.create(this.queryRunner);
 
         // get value from columns selections and put them into newly created entity
@@ -115,27 +119,33 @@ export class RawSqlResultsToEntityTransformer {
 
     // get value from columns selections and put them into object
     protected transformColumns(rawResults: any[], alias: Alias, entity: ObjectLiteral, metadata: EntityMetadata): boolean {
-        let hasData = false;
-        metadata.columns.forEach(column => {
+        return this.expressionMap.selects
+            .filter(select => {
+                // Only include selects for this alias that can be mapped to a column
+                if (select.target !== alias || select.column === undefined) return false;
 
-            // if table inheritance is used make sure this column is not child's column
-            if (metadata.childEntityMetadatas.some(metadata => metadata.target === column.target))
-                return;
+                // Don't include child entity columns in parents
+                if (metadata.childEntityMetadatas.some(metadata => metadata.target === select.column!.target)) return false;
 
-            const value = rawResults[0][DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName)];
-            if (value === undefined || column.isInternal)
-                return;
+                // Don't include sibling columns
+                if (!metadata.columns.includes(select.column!)) return false;
 
-            // if user does not selected the whole entity or he used partial selection and does not select this particular column
-            // then we don't add this column and its value into the entity
-            if (!this.expressionMap.selects.some(select => select.selection === alias.name || select.selection === alias.name + "." + column.propertyPath))
-                return;
+                // Exclude internal selects (when primary columns were force selected) and internal columns
+                if (select.internal || select.column!.isInternal) return false;
 
-            column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
-            if (value !== null) // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
-                hasData = true;
-        });
-        return hasData;
+                return true;
+            }).reduce((hasData, select) => {
+                const resultFieldName = select.alias ? select.alias : select.column!.databaseName;
+
+                // Array of results is of "duplicated" rows caused by joining a one-to-many/many-to-many
+                // Values for the current alias will be the same in all rows, so just use row 0
+                const value = rawResults[0][resultFieldName];
+                if (value === undefined) return hasData;
+
+                select.column!.setEntityValue(entity, this.driver.prepareOrmValue(value, select.column!));
+
+                return value !== null || hasData;
+            }, false);
     }
 
     /**
@@ -322,9 +332,9 @@ export class RawSqlResultsToEntityTransformer {
         return columns.reduce((valueMap, column) => {
             rawSqlResults.forEach(rawSqlResult => {
                 if (relation.isManyToOne || relation.isOneToOneOwner) {
-                    valueMap[column.databaseName] = this.driver.prepareHydratedValue(rawSqlResult[DriverUtils.buildColumnAlias(this.driver, parentAlias, column.databaseName)], column);
+                    valueMap[column.databaseName] = this.driver.prepareOrmValue(rawSqlResult[DriverUtils.buildColumnAlias(this.driver, parentAlias, column.databaseName)], column);
                 } else {
-                    valueMap[column.databaseName] =  this.driver.prepareHydratedValue(rawSqlResult[DriverUtils.buildColumnAlias(this.driver, parentAlias, column.referencedColumn!.databaseName)], column);
+                    valueMap[column.databaseName] =  this.driver.prepareOrmValue(rawSqlResult[DriverUtils.buildColumnAlias(this.driver, parentAlias, column.referencedColumn!.databaseName)], column);
                 }
             });
             return valueMap;

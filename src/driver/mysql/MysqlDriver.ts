@@ -23,6 +23,8 @@ import { DriverConfig } from "../DriverConfig";
 import { DriverQueryGenerators } from "../DriverQueryGenerators";
 import { OffsetWithoutLimitNotSupportedError } from "../../error/OffsetWithoutLimitNotSupportedError";
 import { LockNotSupportedOnGivenDriverError } from "../../error/LockNotSupportedOnGivenDriverError";
+import {ExpressionBuilder} from "../../expression-builder/Expression";
+import {Fn} from "../../expression-builder/expression/Function";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -478,19 +480,18 @@ export class MysqlDriver implements Driver {
     /**
      * Wraps given selection in any additional expressions required based on its column type and metadata.
      */
-    wrapSelectExpression(selection: string, column: ColumnMetadata): string {
+    wrapSelectExpression(expression: ExpressionBuilder, column: ColumnMetadata): ExpressionBuilder {
         if (this.spatialTypes.includes(column.type)) {
-            const asText = this.options.legacySpatialSupport ? "AsText" : "ST_AsText";
-            return `${asText}(${selection})`;
+            return Fn(this.options.legacySpatialSupport ? "AsText" : "ST_AsText", [expression]);
         } else {
-            return selection;
+            return expression;
         }
     }
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+    prepareSqlValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
@@ -531,7 +532,7 @@ export class MysqlDriver implements Driver {
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
-    prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+    prepareOrmValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
@@ -871,7 +872,7 @@ export class MysqlDriver implements Driver {
     /**
      * Creates an escaped parameter.
      */
-    createParameter(parameterName: string, index: number): string {
+    createParameter(index: number): string {
         return "?";
     }
 

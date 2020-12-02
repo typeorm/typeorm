@@ -72,6 +72,15 @@ export interface DriverConfig {
     concatOperator?: true;
 
     /**
+     * Whether the driver uses COUNT(DISTINCT ...) as a modifier rather than a function.
+     */
+    countDistinctModifier?: true;
+    /**
+     * Whether the driver permits multiple columns in COUNT(DISTINCT()) without concatenation.
+     */
+    countDistinctMultiple?: true;
+
+    /**
      * Whether the driver supports native UUID generation.
      */
     uuidGeneration?: true;

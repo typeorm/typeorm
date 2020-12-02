@@ -45,7 +45,7 @@ export class UpdateQueryBuilder<Entity> extends AbstractModifyQueryBuilder<Entit
      * Creates list of columns and their values that are SET in the UPDATE expression.
      */
     protected createColumnValuesExpression(): string {
-        const valuesSet = this.getValueSet();
+        const valueSet = this.getValueSet();
         const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
 
         // Soft delete/restore only works with valid metadata and delete date column
@@ -57,12 +57,8 @@ export class UpdateQueryBuilder<Entity> extends AbstractModifyQueryBuilder<Entit
                 throw new MissingDeleteDateColumnError(metadata);
         }
 
-        const newParameters: ObjectLiteral = {};
-        let parametersCount = this.connection.driver.hasIndexedParameters()
-            ? Object.keys(this.expressionMap.nativeParameters).length : 0;
-
         const updatedColumns: (string | ColumnMetadata)[] =
-            !metadata ? Object.keys(valuesSet) : metadata.extractColumnsInEntity(valuesSet)
+            !metadata ? Object.keys(valueSet) : metadata.extractColumnsInEntity(valueSet)
                 .filter(column => column.isUpdate);
 
         // Extra columns that must be updated
@@ -75,31 +71,16 @@ export class UpdateQueryBuilder<Entity> extends AbstractModifyQueryBuilder<Entit
 
         const columnValuesExpressions = updatedColumns.map(columnOrKey => {
             const column = columnOrKey instanceof ColumnMetadata ? columnOrKey : undefined;
+            const value = column ? column.getEntityValue(valueSet) : valueSet[columnOrKey as string];
+
+            const expression = this.computePersistValueExpression(columnOrKey, value);
+
             const columnName = column ? column.databaseName : columnOrKey as string;
-            const value = column ? column.getEntityValue(valuesSet) : valuesSet[columnOrKey as string];
-
-            const paramName = `upd_${columnName}`; // TODO: Improve naming
-            const createParamExpression = (value: any) => {
-                if (!this.connection.driver.hasIndexedParameters()) {
-                    newParameters[paramName] = value;
-                } else {
-                    this.expressionMap.nativeParameters[paramName] = value;
-                }
-                return this.connection.driver.createParameter(paramName, parametersCount++);
-            };
-
-            const expression = this.computePersistValueExpression(column, value, createParamExpression);
             return `${this.escape(columnName)} = ${expression}`;
         });
 
         if (columnValuesExpressions.length <= 0) {
             throw new UpdateValuesMissingError();
-        }
-
-        // we re-write parameters this way because we want our "UPDATE ... SET" parameters to be first in the list of "nativeParameters"
-        // because some drivers like mysql depend on order of parameters
-        if (!this.connection.driver.hasIndexedParameters()) {
-            this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
         }
 
         return columnValuesExpressions.join(", ");

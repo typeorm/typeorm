@@ -158,7 +158,7 @@ export class MetadataArgsStorage {
     filterJoinColumns(target: Function|string, propertyName: string): JoinColumnMetadataArgs[] {
         // todo: implement parent-entity overrides?
         return this.joinColumns.filter(joinColumn => {
-            return joinColumn.target === target && joinColumn.propertyName === propertyName;
+            return joinColumn.target === target && joinColumn.relationName === propertyName;
         });
     }
 

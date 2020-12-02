@@ -135,12 +135,12 @@ describe("query builder > sub-query", () => {
         const userQb = await connection.getRepository(User)
             .createQueryBuilder("usr")
             .select("usr.name")
-            .where("usr.registered = :registered", { registered: true });
+            .where("usr.registered = :registered");
 
         const posts = await connection.getRepository(Post)
             .createQueryBuilder("post")
             .where("post.title IN (" + userQb.getQuery() + ")")
-            .setParameters(userQb.getParameters())
+            .setParameters({ registered: true })
             .orderBy("post.id")
             .getMany();
 
@@ -156,13 +156,13 @@ describe("query builder > sub-query", () => {
         const userQb = await connection.getRepository(User)
             .createQueryBuilder("usr")
             .select("usr.name", "name")
-            .where("usr.registered = :registered", { registered: true });
+            .where("usr.registered = :registered");
 
         const posts = await connection
             .createQueryBuilder()
             .select(`${connection.driver.escape("usr")}.${connection.driver.escape("name")}`, "name")
             .from("(" + userQb.getQuery() + ")", "usr")
-            .setParameters(userQb.getParameters())
+            .setParameters({ registered: true })
             .getRawMany();
 
         posts.should.be.eql([

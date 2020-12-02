@@ -99,7 +99,7 @@ describe("query builder > select", () => {
             .disableEscaping()
             .getSql();
 
-        expect(sql).to.equal("SELECT post.title AS post_title, COUNT(*) as cnt FROM post post");
+        expect(sql).to.equal("SELECT COUNT(*) as cnt, post.title AS post_title FROM post post");
     })));
 
     it("should not create alias for selection, which is not entity mapped column", () => Promise.all(connections.map(async connection => {

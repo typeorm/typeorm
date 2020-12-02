@@ -23,6 +23,8 @@ import {ReplicationMode} from "../types/ReplicationMode";
 import { DriverConfig } from "../DriverConfig";
 import { DriverQueryGenerators } from "../DriverQueryGenerators";
 import { LockNotSupportedOnGivenDriverError } from "../../error/LockNotSupportedOnGivenDriverError";
+import {Cast} from "../../expression-builder/expression/misc/Cast";
+import {Expression} from "../../expression-builder/Expression";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -415,9 +417,9 @@ export class SqlServerDriver implements Driver {
     /**
      * Wraps given selection in any additional expressions required based on its column type and metadata.
      */
-    wrapSelectExpression(selection: string, column: ColumnMetadata): string {
+    wrapSelectExpression(selection: Expression, column: ColumnMetadata): Expression {
         if (this.spatialTypes.includes(column.type)) {
-            return `${selection}.ToString()`;
+            return Cast(selection, "nvarchar(4000)");
         } else {
             return selection;
         }
@@ -426,7 +428,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+    prepareSqlValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
@@ -468,7 +470,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
-    prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+    prepareOrmValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
@@ -648,7 +650,7 @@ export class SqlServerDriver implements Driver {
         return Object.keys(insertResult).reduce((map, key) => {
             const column = metadata.findColumnWithDatabaseName(key);
             if (column) {
-                OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column)));
+                OrmUtils.mergeDeep(map, column.createValueMap(this.prepareOrmValue(insertResult[key], column)));
             }
             return map;
         }, {} as ObjectLiteral);
@@ -697,7 +699,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Creates an escaped parameter.
      */
-    createParameter(parameterName: string, index: number): string {
+    createParameter(index: number): string {
         return "@" + index;
     }
 
@@ -729,32 +731,6 @@ export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Sql server's parameters needs to be wrapped into special object with type information about this value.
-     * This method wraps all values of the given object into MssqlParameter based on their column definitions in the given table.
-     *
-     * TODO: Remove Unused
-     */
-    parametrizeMap(tablePath: string, map: ObjectLiteral): ObjectLiteral {
-
-        // find metadata for the given table
-        if (!this.connection.hasMetadata(tablePath)) // if no metadata found then we can't proceed because we don't have columns and their types
-            return map;
-        const metadata = this.connection.getMetadata(tablePath);
-
-        return Object.keys(map).reduce((newMap, key) => {
-            const value = map[key];
-
-            // find column metadata
-            const column = metadata.findColumnWithDatabaseName(key);
-            if (!column) // if we didn't find a column then we can't proceed because we don't have a column type
-                return value;
-
-            newMap[key] = this.parametrizeValue(column, value);
-            return newMap;
-        }, {} as ObjectLiteral);
-    }
 
     buildTableVariableDeclaration(identifier: string, columns: ColumnMetadata[]): string {
         const outputColumns = columns.map(column => {

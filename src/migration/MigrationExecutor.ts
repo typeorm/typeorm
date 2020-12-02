@@ -445,13 +445,17 @@ export class MigrationExecutor {
      * Inserts new executed migration's data into migrations table.
      */
     protected async insertExecutedMigration(queryRunner: QueryRunner, migration: Migration): Promise<void> {
-        const values: ObjectLiteral = {};
+        let values: { timestamp: any, name: any };
         if (this.connection.driver instanceof SqlServerDriver) {
-            values["timestamp"] = new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any);
-            values["name"] = new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any);
+            values = {
+                timestamp: new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any),
+                name: new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any)
+            };
         } else {
-            values["timestamp"] = migration.timestamp;
-            values["name"] = migration.name;
+            values = {
+                timestamp: migration.timestamp,
+                name: migration.name
+            };
         }
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
@@ -469,14 +473,17 @@ export class MigrationExecutor {
      * Delete previously executed migration's data from the migrations table.
      */
     protected async deleteExecutedMigration(queryRunner: QueryRunner, migration: Migration): Promise<void> {
-
-        const conditions: ObjectLiteral = {};
+        let conditions: { timestamp: any, name: any };
         if (this.connection.driver instanceof SqlServerDriver) {
-            conditions["timestamp"] = new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any);
-            conditions["name"] = new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any);
+            conditions = {
+                timestamp: new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any),
+                name: new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any)
+            };
         } else {
-            conditions["timestamp"] = migration.timestamp;
-            conditions["name"] = migration.name;
+            conditions = {
+                timestamp: migration.timestamp,
+                name: migration.name
+            };
         }
 
         if (this.connection.driver instanceof MongoDriver) {
@@ -486,9 +493,10 @@ export class MigrationExecutor {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.delete()
                 .from(this.migrationsTable)
-                .where(`${qb.escape("timestamp")} = :timestamp`)
-                .andWhere(`${qb.escape("name")} = :name`)
-                .setParameters(conditions)
+                .where({
+                    timestamp: migration.timestamp,
+                    name: migration.name
+                })
                 .execute();
         }
 

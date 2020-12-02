@@ -83,7 +83,7 @@ describe("query builder > soft-delete", () => {
                 }
             })
             .execute();
-        
+
         const loadedPhoto1 = await connection.getRepository(Photo).findOne({ url: "1.jpg" });
         expect(loadedPhoto1).to.be.undefined;
 

@@ -1,6 +1,10 @@
 import {QueryBuilder} from "./builder/QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryExpressionMap} from "./QueryExpressionMap";
+import { Or } from "../expression-builder/expression/logical/Or";
+import { And } from "../expression-builder/expression/logical/And";
+import { Equal } from "../expression-builder/expression/comparison/Equal";
+import { Col } from "../expression-builder/expression/Column";
 
 /**
  * Allows to work with entity relations and perform specific operations with those relations.
@@ -34,40 +38,26 @@ export class RelationRemover {
 
             // DELETE FROM post WHERE post.categoryId = of AND post.id = id
             const ofs = Array.isArray(this.expressionMap.of) ? this.expressionMap.of : [this.expressionMap.of];
+            if (ofs.length === 0) return;
             const values = Array.isArray(value) ? value : [value];
 
-            const updateSet: ObjectLiteral = {};
-            relation.inverseRelation!.joinColumns.forEach(column => {
+            const updateSet = relation.inverseRelation!.joinColumns.reduce((updateSet, column) => {
                 updateSet[column.propertyName] = null;
-            });
+                return updateSet;
+            }, {} as ObjectLiteral);
 
-            const parameters: ObjectLiteral = {};
-            const conditions: string[] = [];
-            ofs.forEach((of, ofIndex) => {
-                conditions.push(...values.map((value, valueIndex) => {
-                    return [
-                        ...relation.inverseRelation!.joinColumns.map((column, columnIndex) => {
-                            const parameterName = "joinColumn_" + ofIndex + "_" + valueIndex + "_" + columnIndex;
-                            parameters[parameterName] = of instanceof Object ? column.referencedColumn!.getEntityValue(of) : of;
-                            return `${column.propertyPath} = :${parameterName}`;
-                        }),
-                        ...relation.inverseRelation!.entityMetadata.primaryColumns.map((column, columnIndex) => {
-                            const parameterName = "primaryColumn_" + valueIndex + "_" + valueIndex + "_" + columnIndex;
-                            parameters[parameterName] = value instanceof Object ? column.getEntityValue(value) : value;
-                            return `${column.propertyPath} = :${parameterName}`;
-                        })
-                    ].join(" AND ");
-                }));
-            });
-            const condition = conditions.map(str => "(" + str + ")").join(" OR ");
-            if (!condition) return;
+            const condition =
+                Or(...ofs.map(of =>
+                    And(
+                        ...relation.inverseRelation!.joinColumns.map(column => Equal(Col(column.propertyPath), of instanceof Object ? column.referencedColumn!.getEntityValue(of) : of)),
+                        Or(...values.map(value =>
+                            And(...relation.inverseRelation!.entityMetadata.primaryColumns.map(column => Equal(Col(column.propertyPath), value instanceof Object ? column.getEntityValue(value) : value))))))));
 
             await this.queryBuilder
                 .createQueryBuilder()
                 .update(relation.inverseEntityMetadata.target)
                 .set(updateSet)
                 .where(condition)
-                .setParameters(parameters)
                 .execute();
 
         } else { // many to many
@@ -78,32 +68,17 @@ export class RelationRemover {
             const firstColumnValues = relation.isManyToManyOwner ? ofs : values;
             const secondColumnValues = relation.isManyToManyOwner ? values : ofs;
 
-            const parameters: ObjectLiteral = {};
-            const conditions: string[] = [];
-            firstColumnValues.forEach((firstColumnVal, firstColumnValIndex) => {
-                conditions.push(...secondColumnValues.map((secondColumnVal, secondColumnValIndex) => {
-                    return [
-                        ...junctionMetadata.ownerColumns.map((column, columnIndex) => {
-                            const parameterName = "firstValue_" + firstColumnValIndex + "_" + secondColumnValIndex + "_" + columnIndex;
-                            parameters[parameterName] = firstColumnVal instanceof Object ? column.referencedColumn!.getEntityValue(firstColumnVal) : firstColumnVal;
-                            return `${column.databaseName} = :${parameterName}`;
-                        }),
-                        ...junctionMetadata.inverseColumns.map((column, columnIndex) => {
-                            const parameterName = "secondValue_" + firstColumnValIndex + "_" + secondColumnValIndex + "_" + columnIndex;
-                            parameters[parameterName] = secondColumnVal instanceof Object ? column.referencedColumn!.getEntityValue(secondColumnVal) : secondColumnVal;
-                            return `${column.databaseName} = :${parameterName}`;
-                        })
-                    ].join(" AND ");
-                }));
-            });
-            const condition = conditions.map(str => "(" + str + ")").join(" OR ");
+            const condition = Or(...firstColumnValues.map(firstColumnVal =>
+                And(
+                    ...junctionMetadata.ownerColumns.map(column => Equal(Col(column.databaseName), firstColumnVal instanceof Object ? column.referencedColumn!.getEntityValue(firstColumnVal) : firstColumnVal)),
+                    Or(...secondColumnValues.map(secondColumnVal =>
+                        And(...junctionMetadata.inverseColumns.map(column => Equal(Col(column.databaseName), secondColumnVal instanceof Object ? column.referencedColumn!.getEntityValue(secondColumnVal) : secondColumnVal))))))));
 
             await this.queryBuilder
                 .createQueryBuilder()
                 .delete()
                 .from(junctionMetadata.tableName)
                 .where(condition)
-                .setParameters(parameters)
                 .execute();
         }
     }

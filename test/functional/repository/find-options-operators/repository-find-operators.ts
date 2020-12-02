@@ -13,11 +13,10 @@ import {
     Like,
     MoreThan,
     MoreThanOrEqual,
-    Not
+    Not, Raw
 } from "../../../../src";
 import {Post} from "./entity/Post";
 import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
-import {Raw} from "../../../../src/find-options/operator/Raw";
 import {PersonAR} from "./entity/PersonAR";
 import {expect} from "chai";
 
@@ -587,7 +586,7 @@ describe("repository > find options > operators", () => {
             post.likes = index;
 
             return post;
-        }
+        };
 
         // insert some fake data
         await connection.manager.save([
@@ -602,7 +601,7 @@ describe("repository > find options > operators", () => {
         // check operator
         const result1 = await connection.getRepository(Post).find({
             likes: Raw((columnAlias) => {
-                return `(${columnAlias} = :value1) OR (${columnAlias} = :value2)`
+                return `(${columnAlias} = :value1) OR (${columnAlias} = :value2)`;
             }, { value1: 2, value2: 3 }),
         });
         result1.should.be.eql([
@@ -613,7 +612,7 @@ describe("repository > find options > operators", () => {
         // check operator
         const result2 = await connection.getRepository(Post).find({
             likes: Raw((columnAlias) => {
-                return `(${columnAlias} IN (1, 4, 5, 6)) AND (${columnAlias} < :maxValue)`
+                return `(${columnAlias} IN (1, 4, 5, 6)) AND (${columnAlias} < :maxValue)`;
             }, { maxValue: 6 }),
         });
         result2.should.be.eql([

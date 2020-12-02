@@ -331,7 +331,7 @@ describe("basic-lazy-relations", () => {
             const category = new Category();
             category.name = "category of great post";
             await manager.save(category);
-    
+
             const post = new Post();
             post.title = "post with great category";
             post.text = "post with great category and great text";
@@ -349,7 +349,7 @@ describe("basic-lazy-relations", () => {
             const category = new Category();
             category.name = "category of great post";
             await manager.save(category);
-    
+
             const post = new Post();
             post.title = "post with great category";
             post.text = "post with great category and great text";

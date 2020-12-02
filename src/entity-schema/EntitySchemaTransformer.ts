@@ -147,7 +147,7 @@ export class EntitySchemaTransformer {
                         if (typeof relationSchema.joinColumn === "boolean") {
                             const joinColumn: JoinColumnMetadataArgs = {
                                 target: options.target || options.name,
-                                propertyName: relationName
+                                relationName: relationName
                             };
                             metadataArgsStorage.joinColumns.push(joinColumn);
                         } else {
@@ -156,7 +156,7 @@ export class EntitySchemaTransformer {
                             for (const joinColumnOption of joinColumnsOptions) {
                                 const joinColumn: JoinColumnMetadataArgs = {
                                     target: options.target || options.name,
-                                    propertyName: relationName,
+                                    relationName: relationName,
                                     name: joinColumnOption.name,
                                     referencedColumnName: joinColumnOption.referencedColumnName
                                 };

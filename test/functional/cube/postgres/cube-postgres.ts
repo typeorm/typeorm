@@ -137,6 +137,10 @@ describe("cube-postgres", () => {
                 post3.mainColor = color3;
                 await connection.manager.save([post1, post2, post3]);
 
+                console.log(await connection.manager
+                    .createQueryBuilder(Post, "post")
+                    .orderBy("\"mainColor\" <-> '(0, 255, 0)'", "DESC").getQueryAndParameters());
+
                 const posts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("\"mainColor\" <-> '(0, 255, 0)'", "DESC")

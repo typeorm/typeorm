@@ -1,5 +1,10 @@
 import {Connection, ObjectLiteral, QueryRunner} from "../";
 import {RelationMetadata} from "../metadata/RelationMetadata";
+import { And } from "../expression-builder/expression/logical/And";
+import { Equal } from "../expression-builder/expression/comparison/Equal";
+import { Col } from "../expression-builder/expression/Column";
+import { In } from "../expression-builder/expression/comparison/In";
+import { Or } from "../expression-builder/expression/logical/Or";
 
 /**
  * Wraps entities and creates getters/setters for their relations
@@ -49,11 +54,10 @@ export class RelationLoader {
         const entities = Array.isArray(entityOrEntities) ? entityOrEntities : [entityOrEntities];
         const columns = relation.entityMetadata.primaryColumns;
         const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation!.joinColumns;
-        const conditions = joinColumns.map(joinColumn => {
-            return `${relation.entityMetadata.name}.${joinColumn.propertyName} = ${relation.propertyName}.${joinColumn.referencedColumn!.propertyName}`;
-        }).join(" AND ");
-
         const joinAliasName = relation.entityMetadata.name;
+        const conditions = And(...joinColumns.map(joinColumn =>
+            Equal(Col(joinAliasName, joinColumn.propertyPath), Col(relation.propertyName, joinColumn.referencedColumn!.propertyName))));
+
         const qb = this.connection
             .createQueryBuilder(queryRunner)
             .select(relation.propertyName) // category
@@ -61,18 +65,12 @@ export class RelationLoader {
             .innerJoin(relation.entityMetadata.target as Function, joinAliasName, conditions);
 
         if (columns.length === 1) {
-            qb.where(`${joinAliasName}.${columns[0].propertyPath} IN (:...${joinAliasName + "_" + columns[0].propertyName})`);
-            qb.setParameter(joinAliasName + "_" + columns[0].propertyName, entities.map(entity => columns[0].getEntityValue(entity)));
-
+            qb.where(In(Col(joinAliasName, columns[0].propertyPath), entities.map(entity => columns[0].getEntityValue(entity))));
         } else {
-            const condition = entities.map((entity, entityIndex) => {
-                return columns.map((column, columnIndex) => {
-                    const paramName = joinAliasName + "_entity_" + entityIndex + "_" + columnIndex;
-                    qb.setParameter(paramName, column.getEntityValue(entity));
-                    return joinAliasName + "." + column.propertyPath + " = :" + paramName;
-                }).join(" AND ");
-            }).map(condition => "(" + condition + ")").join(" OR ");
-            qb.where(condition);
+            qb.where(
+                Or(...entities.map(entity =>
+                    And(...columns.map(column =>
+                        Equal(Col(joinAliasName, column.propertyPath), column.getEntityValue(entity)))))));
         }
 
         return qb.getMany();
@@ -96,18 +94,12 @@ export class RelationLoader {
             .from(relation.inverseRelation!.entityMetadata.target, aliasName);
 
         if (columns.length === 1) {
-            qb.where(`${aliasName}.${columns[0].propertyPath} IN (:...${aliasName + "_" + columns[0].propertyName})`);
-            qb.setParameter(aliasName + "_" + columns[0].propertyName, entities.map(entity => columns[0].referencedColumn!.getEntityValue(entity)));
-
+            qb.where(In(Col(aliasName, columns[0].propertyPath), entities.map(entity => columns[0].referencedColumn!.getEntityValue(entity))));
         } else {
-            const condition = entities.map((entity, entityIndex) => {
-                return columns.map((column, columnIndex) => {
-                    const paramName = aliasName + "_entity_" + entityIndex + "_" + columnIndex;
-                    qb.setParameter(paramName, column.referencedColumn!.getEntityValue(entity));
-                    return aliasName + "." + column.propertyPath + " = :" + paramName;
-                }).join(" AND ");
-            }).map(condition => "(" + condition + ")").join(" OR ");
-            qb.where(condition);
+            qb.where(
+                Or(...entities.map(entity =>
+                    And(...columns.map(column =>
+                        Equal(Col(aliasName, column.propertyPath), column.referencedColumn!.getEntityValue(entity)))))));
         }
         return qb.getMany();
         // return relation.isOneToMany ? qb.getMany() : qb.getOne(); todo: fix all usages
@@ -126,23 +118,17 @@ export class RelationLoader {
         const entities = Array.isArray(entityOrEntities) ? entityOrEntities : [entityOrEntities];
         const mainAlias = relation.propertyName;
         const joinAlias = relation.junctionEntityMetadata!.tableName;
-        const joinColumnConditions = relation.joinColumns.map(joinColumn => {
-            return `${joinAlias}.${joinColumn.propertyName} IN (:...${joinColumn.propertyName})`;
-        });
-        const inverseJoinColumnConditions = relation.inverseJoinColumns.map(inverseJoinColumn => {
-            return `${joinAlias}.${inverseJoinColumn.propertyName}=${mainAlias}.${inverseJoinColumn.referencedColumn!.propertyName}`;
-        });
-        const parameters = relation.joinColumns.reduce((parameters, joinColumn) => {
-            parameters[joinColumn.propertyName] = entities.map(entity => joinColumn.referencedColumn!.getEntityValue(entity));
-            return parameters;
-        }, {} as ObjectLiteral);
+        const joinColumnConditions = And(...relation.joinColumns.map(joinColumn =>
+            In(Col(joinAlias, joinColumn.propertyPath), entities.map(entity => joinColumn.referencedColumn!.getEntityValue(entity)))));
+
+        const inverseJoinColumnConditions = And(...relation.inverseJoinColumns.map(inverseJoinColumn =>
+            Equal(Col(joinAlias, inverseJoinColumn.propertyPath), Col(mainAlias, inverseJoinColumn.referencedColumn!.propertyPath))));
 
         return this.connection
             .createQueryBuilder(queryRunner)
             .select(mainAlias)
             .from(relation.type, mainAlias)
-            .innerJoin(joinAlias, joinAlias, [...joinColumnConditions, ...inverseJoinColumnConditions].join(" AND "))
-            .setParameters(parameters)
+            .innerJoin(joinAlias, joinAlias, And(joinColumnConditions, inverseJoinColumnConditions))
             .getMany();
     }
 
@@ -159,23 +145,18 @@ export class RelationLoader {
         const entities = Array.isArray(entityOrEntities) ? entityOrEntities : [entityOrEntities];
         const mainAlias = relation.propertyName;
         const joinAlias = relation.junctionEntityMetadata!.tableName;
-        const joinColumnConditions = relation.inverseRelation!.joinColumns.map(joinColumn => {
-            return `${joinAlias}.${joinColumn.propertyName} = ${mainAlias}.${joinColumn.referencedColumn!.propertyName}`;
-        });
-        const inverseJoinColumnConditions = relation.inverseRelation!.inverseJoinColumns.map(inverseJoinColumn => {
-            return `${joinAlias}.${inverseJoinColumn.propertyName} IN (:...${inverseJoinColumn.propertyName})`;
-        });
-        const parameters = relation.inverseRelation!.inverseJoinColumns.reduce((parameters, joinColumn) => {
-            parameters[joinColumn.propertyName] = entities.map(entity => joinColumn.referencedColumn!.getEntityValue(entity));
-            return parameters;
-        }, {} as ObjectLiteral);
+
+        const joinColumnConditions = And(...relation.inverseRelation!.joinColumns.map(joinColumn =>
+            Equal(Col(joinAlias, joinColumn.propertyPath), Col(mainAlias, joinColumn.referencedColumn!.propertyPath))));
+
+        const inverseJoinColumnConditions = And(...relation.inverseRelation!.inverseJoinColumns.map(inverseJoinColumn =>
+            In(Col(joinAlias, inverseJoinColumn.propertyPath), entities.map(entity => inverseJoinColumn.referencedColumn!.getEntityValue(entity)))));
 
         return this.connection
             .createQueryBuilder(queryRunner)
             .select(mainAlias)
             .from(relation.type, mainAlias)
-            .innerJoin(joinAlias, joinAlias, [...joinColumnConditions, ...inverseJoinColumnConditions].join(" AND "))
-            .setParameters(parameters)
+            .innerJoin(joinAlias, joinAlias, And(joinColumnConditions, inverseJoinColumnConditions))
             .getMany();
     }
 

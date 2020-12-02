@@ -9,6 +9,9 @@ import {QueryRunner} from "../query-runner/QueryRunner";
 import {Table} from "../schema-builder/table/Table";
 import {QueryResultCache} from "./QueryResultCache";
 import {QueryResultCacheOptions} from "./QueryResultCacheOptions";
+import { Equal } from "../expression-builder/expression/comparison/Equal";
+import { Col } from "../expression-builder/expression/Column";
+import { Fn } from "../expression-builder/expression/Function";
 
 /**
  * Caches query result into current database, into separate table called "query-result-cache".
@@ -119,20 +122,18 @@ export class DbQueryResultCache implements QueryResultCache {
 
         if (options.identifier) {
             return qb
-                .where(`${qb.escape("cache")}.${qb.escape("identifier")} = :identifier`)
-                .setParameters({ identifier: this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(options.identifier, "nvarchar") : options.identifier })
+                .where(Equal(Col("cache", "identifier"), options.identifier))
                 .getRawOne();
 
         } else if (options.query) {
             if (this.connection.driver instanceof OracleDriver) {
                 return qb
-                    .where(`dbms_lob.compare(${qb.escape("cache")}.${qb.escape("query")}, :query) = 0`, { query: options.query })
+                    .where(Equal(Fn("dbms_log.compare", [Col("cache", "query"), options.query]), 0))
                     .getRawOne();
             }
 
             return qb
-                .where(`${qb.escape("cache")}.${qb.escape("query")} = :query`)
-                .setParameters({ query: this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(options.query, "nvarchar") : options.query })
+                .where(Equal(Col("cache", "query"), options.query))
                 .getRawOne();
         }
 

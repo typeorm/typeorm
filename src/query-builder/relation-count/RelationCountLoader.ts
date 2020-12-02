@@ -3,6 +3,10 @@ import {Connection} from "../../connection/Connection";
 import {RelationCountAttribute} from "./RelationCountAttribute";
 import {RelationCountLoadResult} from "./RelationCountLoadResult";
 import {QueryRunner} from "../../query-runner/QueryRunner";
+import { In } from "../../expression-builder/expression/comparison/In";
+import { Col } from "../../expression-builder/expression/Column";
+import { And } from "../../expression-builder/expression/logical/And";
+import { Equal } from "../../expression-builder/expression/comparison/Equal";
 
 export class RelationCountLoader {
 
@@ -57,9 +61,8 @@ export class RelationCountLoader {
                 qb.select(inverseSideTableAlias + "." + inverseSidePropertyName, "parentId")
                     .addSelect("COUNT(*)", "cnt")
                     .from(inverseSideTable, inverseSideTableAlias)
-                    .where(inverseSideTableAlias + "." + inverseSidePropertyName + " IN (:...ids)")
-                    .addGroupBy(inverseSideTableAlias + "." + inverseSidePropertyName)
-                    .setParameter("ids", referenceColumnValues);
+                    .where(In(Col(inverseSideTableAlias, inverseSidePropertyName), referenceColumnValues))
+                    .addGroupBy(Col(inverseSideTableAlias, inverseSidePropertyName));
 
                 // apply condition (custom query builder factory)
                 if (relationCountAttr.queryBuilderFactory)
@@ -108,16 +111,16 @@ export class RelationCountLoader {
                 const inverseSideTableName = relationCountAttr.joinInverseSideMetadata.tableName;
                 const inverseSideTableAlias = relationCountAttr.alias || inverseSideTableName;
                 const junctionTableName = relationCountAttr.relation.junctionEntityMetadata!.tableName;
-                
-                const condition = junctionAlias + "." + firstJunctionColumn.propertyName + " IN (" + referenceColumnValues.map(vals => isNaN(vals) ? "'" + vals + "'" : vals) + ")" +
-                    " AND " + junctionAlias + "." + secondJunctionColumn.propertyName + " = " + inverseSideTableAlias + "." + inverseJoinColumnName;
+
+                const condition = And(In(Col(junctionAlias, firstJunctionColumn.propertyName), referenceColumnValues),
+                    Equal(Col(junctionAlias, secondJunctionColumn.propertyName), Col(inverseSideTableAlias, inverseJoinColumnName)));
 
                 const qb = this.connection.createQueryBuilder(this.queryRunner);
                 qb.select(junctionAlias + "." + firstJunctionColumn.propertyName, "parentId")
                     .addSelect("COUNT(" + qb.escape(inverseSideTableAlias) + "." + qb.escape(inverseJoinColumnName) + ")", "cnt")
                     .from(inverseSideTableName, inverseSideTableAlias)
                     .innerJoin(junctionTableName, junctionAlias, condition)
-                    .addGroupBy(junctionAlias + "." + firstJunctionColumn.propertyName);
+                    .addGroupBy(Col(junctionAlias, firstJunctionColumn.propertyName));
 
                 // apply condition (custom query builder factory)
                 if (relationCountAttr.queryBuilderFactory)

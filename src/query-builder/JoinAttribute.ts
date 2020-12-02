@@ -4,6 +4,7 @@ import {RelationMetadata} from "../metadata/RelationMetadata";
 import {QueryBuilderUtils} from "./QueryBuilderUtils";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {Alias} from "./Alias";
+import { Expression } from "../expression-builder/Expression";
 
 /**
  * Stores all join attributes which will be used to build a JOIN query.
@@ -32,7 +33,7 @@ export class JoinAttribute {
     /**
      * Extra condition applied to "ON" section of join.
      */
-    condition?: string;
+    condition?: Expression;
 
     /**
      * Property + alias of the object where to joined data should be mapped.
@@ -81,7 +82,7 @@ export class JoinAttribute {
                     if (select.selection === this.alias.name)
                         return true;
 
-                    if (this.metadata && !!this.metadata.columns.find(column => select.selection === this.alias.name + "." + column.propertyPath))
+                    if (this.metadata && this.metadata.columns.some(column => select.selection === this.alias.name + "." + column.propertyPath))
                         return true;
                 }
 

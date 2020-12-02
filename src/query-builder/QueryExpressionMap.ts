@@ -9,8 +9,8 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SelectQuery} from "./SelectQuery";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {QueryBuilder} from "./builder/QueryBuilder";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
+import { Expression, ExpressionBuilder } from "../expression-builder/Expression";
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -44,7 +44,7 @@ export class QueryExpressionMap {
     /**
      * All aliases (including main alias) used in the query.
      */
-    aliases: Alias[] = [];
+    aliases: Record<string, Alias> = {};
 
     /**
      * Represents query type. QueryBuilder is able to build SELECT, UPDATE and DELETE queries.
@@ -64,7 +64,7 @@ export class QueryExpressionMap {
     /**
      * SELECT DISTINCT ON query (postgres).
      */
-    selectDistinctOn: string[] = [];
+    selectDistinctOn: ExpressionBuilder[] = [];
 
     /**
      * FROM-s to be selected.
@@ -123,12 +123,12 @@ export class QueryExpressionMap {
     /**
      * WHERE queries.
      */
-    wheres: { type: "simple"|"and"|"or", condition: string }[] = [];
+    where?: Expression;
 
     /**
      * HAVING queries.
      */
-    havings: { type: "simple"|"and"|"or", condition: string }[] = [];
+    having?: Expression;
 
     /**
      * ORDER BY queries.
@@ -138,7 +138,7 @@ export class QueryExpressionMap {
     /**
      * GROUP BY queries.
      */
-    groupBys: string[] = [];
+    groupBys: ExpressionBuilder[] = [];
 
     /**
      * LIMIT query.
@@ -201,20 +201,9 @@ export class QueryExpressionMap {
     enableRelationIdValues: boolean = false;
 
     /**
-     * Extra where condition appended to the end of original where conditions with AND keyword.
-     * Original condition will be wrapped into brackets.
-     */
-    extraAppendedAndWhereCondition: string = "";
-
-    /**
      * Indicates if query builder creates a subquery.
      */
     subQuery: boolean = false;
-
-    /**
-     * If QueryBuilder was created in a subquery mode then its parent QueryBuilder (who created subquery) will be stored here.
-     */
-    parentQueryBuilder: QueryBuilder<any, any>;
 
     /**
      * Indicates if property names are prefixed with alias names during property replacement.
@@ -287,7 +276,7 @@ export class QueryExpressionMap {
      * Extra parameters.
      * Used in InsertQueryBuilder to avoid default parameters mechanizm and execute high performance insertions.
      */
-    nativeParameters: ObjectLiteral = {};
+    nativeParameters: any[] = [];
 
     /**
      * Query Comment to include extra information for debugging or other purposes.
@@ -298,6 +287,11 @@ export class QueryExpressionMap {
      * Whether to perform a soft-delete or restore during an update query.
      */
     softDeleteAction?: "delete" | "restore";
+
+    /**
+     * Generated UUIDs during insertion
+     */
+    generatedUuids: string[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -348,7 +342,7 @@ export class QueryExpressionMap {
     /**
      * Creates a new alias and adds it to the current expression map.
      */
-    createAlias(options: { type: "from"|"select"|"join"|"other", name?: string, target?: Function|string, tablePath?: string, subQuery?: string, metadata?: EntityMetadata }): Alias {
+    createAlias(options: { type: "from"|"select"|"join"|"other", name?: string, target?: Function|string, tablePath?: string, subQuery?: ExpressionBuilder, metadata?: EntityMetadata }): Alias {
 
         let aliasName = options.name;
         if (!aliasName && options.tablePath)
@@ -371,7 +365,10 @@ export class QueryExpressionMap {
         if (options.subQuery)
             alias.subQuery = options.subQuery;
 
-        this.aliases.push(alias);
+        if (this.aliases[aliasName!] !== undefined)
+            throw new Error(`Duplicate alias with name "${aliasName}" defined`);
+
+        this.aliases[aliasName!] = alias;
         return alias;
     }
 
@@ -380,17 +377,11 @@ export class QueryExpressionMap {
      * If alias was not found it throw an exception.
      */
     findAliasByName(aliasName: string): Alias {
-        const alias = this.aliases.find(alias => alias.name === aliasName);
+        const alias = this.aliases[aliasName];
         if (!alias)
             throw new Error(`"${aliasName}" alias was not found. Maybe you forgot to join it?`);
 
         return alias;
-    }
-
-    findColumnByAliasExpression(aliasExpression: string): ColumnMetadata|undefined {
-        const [aliasName, propertyPath] = aliasExpression.split(".");
-        const alias = this.findAliasByName(aliasName);
-        return alias.metadata.findColumnWithPropertyName(propertyPath);
     }
 
     /**
@@ -419,7 +410,7 @@ export class QueryExpressionMap {
         map.selects = this.selects.map(select => select);
         map.selectDistinct = this.selectDistinct;
         map.selectDistinctOn = this.selectDistinctOn;
-        this.aliases.forEach(alias => map.aliases.push(new Alias(alias)));
+        map.aliases = Object.assign({}, this.aliases);
         map.mainAlias = this.mainAlias;
         map.valuesSet = this.valuesSet;
         map.returning = this.returning;
@@ -428,8 +419,8 @@ export class QueryExpressionMap {
         map.joinAttributes = this.joinAttributes.map(join => new JoinAttribute(this.connection, this, join));
         map.relationIdAttributes = this.relationIdAttributes.map(relationId => new RelationIdAttribute(this, relationId));
         map.relationCountAttributes = this.relationCountAttributes.map(relationCount => new RelationCountAttribute(this, relationCount));
-        map.wheres = this.wheres.map(where => ({ ...where }));
-        map.havings = this.havings.map(having => ({ ...having }));
+        map.where = this.where;
+        map.having = this.having;
         map.orderBys = Object.assign({}, this.orderBys);
         map.groupBys = this.groupBys.map(groupBy => groupBy);
         map.limit = this.limit;
@@ -443,7 +434,6 @@ export class QueryExpressionMap {
         map.parameters = Object.assign({}, this.parameters);
         map.disableEscaping = this.disableEscaping;
         map.enableRelationIdValues = this.enableRelationIdValues;
-        map.extraAppendedAndWhereCondition = this.extraAppendedAndWhereCondition;
         map.subQuery = this.subQuery;
         map.aliasNamePrefixingEnabled = this.aliasNamePrefixingEnabled;
         map.cache = this.cache;
@@ -456,7 +446,7 @@ export class QueryExpressionMap {
         map.updateEntity = this.updateEntity;
         map.callListeners = this.callListeners;
         map.useTransaction = this.useTransaction;
-        map.nativeParameters = Object.assign({}, this.nativeParameters);
+        map.nativeParameters = this.nativeParameters.map(parameter => parameter);
         map.comment = this.comment;
         map.softDeleteAction = this.softDeleteAction;
         return map;

@@ -38,11 +38,12 @@ describe("github issues > #929 sub-queries should set their own parameters on ex
             .subQuery()
             .from(TestEntity, "innerTestEntity")
             .select(["innerTestEntity.id"])
-            .where("innerTestEntity.id = :innerId", { innerId: 1 });
+            .where("innerTestEntity.id = :innerId");
 
         const results = await queryBuilder
             .select("testEntity")
             .where(`testEntity.id IN ${subQuery.getQuery()}`)
+            .setParameters({ innerId: 1 })
             .getMany();
 
         expect(results.length).to.be.equal(1);

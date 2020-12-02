@@ -103,10 +103,7 @@ export class ReturningResultsEntityUpdater {
                         // uuid can be defined by user in a model, that's why first we get it
                         let uuid = generatedColumn.getEntityValue(entity);
                         // if it was not defined by a user then InsertQueryBuilder generates it by its own, get this generated uuid value
-                        if (!uuid) {
-                            const paramName = ReturningResultsEntityUpdater.generateUUIDParameterName(generatedColumn.databaseName, entityIndex);
-                            uuid = this.expressionMap.nativeParameters[paramName];
-                        }
+                        if (!uuid) uuid = this.expressionMap.generatedUuids[entityIndex];
 
                         OrmUtils.mergeDeep(generatedMap, generatedColumn.createValueMap(uuid));
                     }
@@ -171,12 +168,12 @@ export class ReturningResultsEntityUpdater {
 
         // filter out the columns of which we need database inserted values to update our entity
         return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
-            return  column.default !== undefined ||
-                    (needToCheckGenerated && column.isGenerated)  ||
-                    column.isCreateDate ||
-                    column.isUpdateDate ||
-                    column.isDeleteDate ||
-                    column.isVersion;
+            return column.default !== undefined ||
+                (needToCheckGenerated && column.isGenerated)  ||
+                column.isCreateDate ||
+                column.isUpdateDate ||
+                column.isDeleteDate ||
+                column.isVersion;
         });
     }
 
@@ -187,16 +184,5 @@ export class ReturningResultsEntityUpdater {
         return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
             return column.isUpdateDate || column.isVersion;
         });
-    }
-
-    // -------------------------------------------------------------------------
-    // Public Static Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Name of parameter where ORM generated UUID is stored for extraction
-     */
-    static generateUUIDParameterName(columnName: string, entityIndex: number) {
-        return `uuid_${columnName}${entityIndex}`; // TODO: Improve naming
     }
 }

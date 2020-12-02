@@ -183,7 +183,7 @@ export class FindOptionsUtils {
                 qb.setLock(options.lock.mode, options.lock.version);
             } else if (options.lock.mode === "pessimistic_read" || options.lock.mode === "pessimistic_write" || options.lock.mode === "dirty_read" || options.lock.mode === "pessimistic_partial_write" || options.lock.mode === "pessimistic_write_or_fail") {
                 const tableNames = options.lock.tables ? options.lock.tables.map((table) => {
-                    const tableAlias = qb.expressionMap.aliases.find((alias) => {
+                    const tableAlias = Object.values(qb.expressionMap.aliases).find((alias) => {
                         return alias.metadata.tableNameWithoutPrefix === table;
                     });
                     if (!tableAlias) {

@@ -266,7 +266,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+    prepareSqlValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
@@ -302,7 +302,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Prepares given value to a value to be hydrated, based on its column type or metadata.
      */
-    prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+    prepareOrmValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
@@ -607,7 +607,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Creates an escaped parameter.
      */
-    createParameter(parameterName: string, index: number): string {
+    createParameter(index: number): string {
         // return "$" + (index + 1);
         return "?";
         // return "$" + parameterName;

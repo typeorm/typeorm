@@ -22,6 +22,9 @@ import {ReplicationMode} from "../types/ReplicationMode";
 import { DriverConfig } from "../DriverConfig";
 import { DriverQueryGenerators } from "../DriverQueryGenerators";
 import { LockNotSupportedOnGivenDriverError } from "../../error/LockNotSupportedOnGivenDriverError";
+import {Expression} from "../../expression-builder/Expression";
+import {Fn} from "../../expression-builder/expression/Function";
+import {Cast} from "../../expression-builder/expression/misc/Cast";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -499,12 +502,12 @@ export class PostgresDriver implements Driver {
     /**
      * Wraps given selection in any additional expressions required based on its column type and metadata.
      */
-    wrapSelectExpression(selection: string, column: ColumnMetadata): string {
+    wrapSelectExpression(selection: Expression, column: ColumnMetadata): Expression {
         if (this.spatialTypes.includes(column.type)) {
             if (column.precision) {
-                return `ST_AsGeoJSON(${selection}, ${column.precision})::json`;
+                return Cast(Fn("ST_AsGeoJSON", [selection, column.precision]), "json");
             } else {
-                return `ST_AsGeoJSON(${selection})::json`;
+                return Cast(Fn("ST_AsGeoJSON", [selection]), "json");
             }
         } else {
             return selection;
@@ -514,7 +517,7 @@ export class PostgresDriver implements Driver {
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+    prepareSqlValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
@@ -588,7 +591,7 @@ export class PostgresDriver implements Driver {
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
-    prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+    prepareOrmValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
@@ -1007,7 +1010,7 @@ export class PostgresDriver implements Driver {
     /**
      * Creates an escaped parameter.
      */
-    createParameter(parameterName: string, index: number): string {
+    createParameter(index: number): string {
         return "$" + (index + 1);
     }
 

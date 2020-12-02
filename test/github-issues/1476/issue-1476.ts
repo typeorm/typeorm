@@ -20,7 +20,7 @@ describe("github issues > #1476 subqueries", () => {
     it("should", () => Promise.all(connections.map(async connection => {
         const planRepo = connection.getRepository(Plan);
         const itemRepo = connection.getRepository(Item);
-        
+
         const plan1 = new Plan();
         plan1.planId = 1;
         plan1.planName = "Test";

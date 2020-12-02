@@ -367,7 +367,7 @@ export class SubjectExecutor {
                     subject.metadata.columns.forEach(column => {
                         const value = column.getEntityValue(subject.generatedMap!);
                         if (value !== undefined && value !== null) {
-                            const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                            const preparedValue = this.queryRunner.connection.driver.prepareOrmValue(value, column);
                             column.setEntityValue(subject.generatedMap!, preparedValue);
                         }
                     });
@@ -433,7 +433,7 @@ export class SubjectExecutor {
                     subject.metadata.columns.forEach(column => {
                         const value = column.getEntityValue(updateGeneratedMap!);
                         if (value !== undefined && value !== null) {
-                            const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                            const preparedValue = this.queryRunner.connection.driver.prepareOrmValue(value, column);
                             column.setEntityValue(updateGeneratedMap!, preparedValue);
                         }
                     });
@@ -558,7 +558,7 @@ export class SubjectExecutor {
                     subject.metadata.columns.forEach(column => {
                         const value = column.getEntityValue(subject.generatedMap!);
                         if (value !== undefined && value !== null) {
-                            const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                            const preparedValue = this.queryRunner.connection.driver.prepareOrmValue(value, column);
                             column.setEntityValue(subject.generatedMap!, preparedValue);
                         }
                     });
@@ -638,7 +638,7 @@ export class SubjectExecutor {
                     subject.metadata.columns.forEach(column => {
                         const value = column.getEntityValue(subject.generatedMap!);
                         if (value !== undefined && value !== null) {
-                            const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                            const preparedValue = this.queryRunner.connection.driver.prepareOrmValue(value, column);
                             column.setEntityValue(subject.generatedMap!, preparedValue);
                         }
                     });

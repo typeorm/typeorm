@@ -1,4 +1,5 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {ExpressionBuilder} from "../expression-builder/Expression";
 
 /**
  */
@@ -17,7 +18,7 @@ export class Alias {
     /**
      * If this alias is for sub query.
      */
-    subQuery?: string;
+    subQuery?: ExpressionBuilder;
 
     constructor(alias?: Alias) {
         Object.assign(this, alias || {});

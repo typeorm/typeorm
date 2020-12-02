@@ -7,6 +7,9 @@ import {Brackets} from "../Brackets";
 import {OrderByCondition} from "../../find-options/OrderByCondition";
 import {LimitOnUpdateNotSupportedError} from "../../error/LimitOnUpdateNotSupportedError";
 import {AbstractPersistQueryBuilder} from "./AbstractPersistQueryBuilder";
+import {And} from "../../expression-builder/expression/logical/And";
+import { Or } from "../../expression-builder/expression/logical/Or";
+import { ExpressionBuilder } from "../../expression-builder/Expression";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -49,13 +52,11 @@ export abstract class AbstractModifyQueryBuilder<Entity, Result> extends Abstrac
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
-    where(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
-        const condition = this.computeWhereParameter(where);
-        if (condition)
-            this.expressionMap.wheres = [{ type: "simple", condition: condition }];
-        if (parameters)
-            this.setParameters(parameters);
+    where(where: string | ExpressionBuilder | ((qb: this) => string) | Brackets | ObjectLiteral | ObjectLiteral[], parameters?: ObjectLiteral): this {
+        this.expressionMap.where = undefined;
+        const condition = this.computeWhereExpression(where);
+        if (condition) this.expressionMap.where = condition;
+        if (parameters) this.setParameters(parameters);
         return this;
     }
 
@@ -63,8 +64,12 @@ export abstract class AbstractModifyQueryBuilder<Entity, Result> extends Abstrac
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(where: string|((qb: this) => string)|Brackets, parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
+    andWhere(where: string | ExpressionBuilder | ((qb: this) => string) | Brackets | ObjectLiteral | ObjectLiteral[], parameters?: ObjectLiteral): this {
+        const condition = this.computeWhereExpression(where);
+        if (condition === undefined) throw new Error(""); // TODO: Critical
+        if (this.expressionMap.where !== undefined) this.expressionMap.where = And(this.expressionMap.where, condition);
+        else this.expressionMap.where = condition;
+
         if (parameters) this.setParameters(parameters);
         return this;
     }
@@ -73,8 +78,12 @@ export abstract class AbstractModifyQueryBuilder<Entity, Result> extends Abstrac
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    orWhere(where: string|((qb: this) => string)|Brackets, parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "or", condition: this.computeWhereParameter(where) });
+    orWhere(where: string | ExpressionBuilder | ((qb: this) => string) | Brackets | ObjectLiteral | ObjectLiteral[], parameters?: ObjectLiteral): this {
+        const condition = this.computeWhereExpression(where);
+        if (condition === undefined) throw new Error(""); // TODO: Critical
+        if (this.expressionMap.where !== undefined) this.expressionMap.where = Or(this.expressionMap.where, condition);
+        else this.expressionMap.where = condition;
+
         if (parameters) this.setParameters(parameters);
         return this;
     }
@@ -88,7 +97,7 @@ export abstract class AbstractModifyQueryBuilder<Entity, Result> extends Abstrac
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     whereInIds(ids: any|any[]): this {
-        return this.where(this.createWhereIdsExpression(ids));
+        return this.where(this.computeWhereIdsExpression(ids));
     }
 
     /**
@@ -100,7 +109,7 @@ export abstract class AbstractModifyQueryBuilder<Entity, Result> extends Abstrac
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     andWhereInIds(ids: any|any[]): this {
-        return this.andWhere(this.createWhereIdsExpression(ids));
+        return this.andWhere(this.computeWhereIdsExpression(ids));
     }
 
     /**
@@ -112,7 +121,7 @@ export abstract class AbstractModifyQueryBuilder<Entity, Result> extends Abstrac
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     orWhereInIds(ids: any|any[]): this {
-        return this.orWhere(this.createWhereIdsExpression(ids));
+        return this.orWhere(this.computeWhereIdsExpression(ids));
     }
 
     /**
@@ -189,16 +198,16 @@ export abstract class AbstractModifyQueryBuilder<Entity, Result> extends Abstrac
         if (!this.expressionMap.mainAlias!.hasMetadata)
             throw new Error(`.whereEntity method can only be used on queries which update real entity table.`);
 
-        this.expressionMap.wheres = [];
+        this.expressionMap.where = undefined;
         const entities: Entity[] = Array.isArray(entity) ? entity : [entity];
-        entities.forEach(entity => {
-
-            const entityIdMap = this.expressionMap.mainAlias!.metadata.getEntityIdMap(entity);
-            if (!entityIdMap)
-                throw new Error(`Provided entity does not have ids set, cannot perform operation.`);
-
-            this.orWhereInIds(entityIdMap);
+        const entityIds = entities.map(entity => {
+            return this.expressionMap.mainAlias!.metadata.getEntityIdMap(entity);
         });
+
+        if (entityIds.some(id => id === undefined))
+            throw new Error(`Provided entity does not have ids set, cannot perform operation.`);
+
+        this.whereInIds(entityIds);
 
         this.expressionMap.whereEntities = entities;
         return this;

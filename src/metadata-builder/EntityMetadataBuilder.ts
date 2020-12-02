@@ -211,6 +211,8 @@ export class EntityMetadataBuilder {
         // update entity metadata depend properties
         entityMetadatas
             .forEach(entityMetadata => {
+                entityMetadata.propertiesMap = entityMetadata.createPropertiesMap();
+                entityMetadata.replacementsMap = entityMetadata.createReplacementsMap();
                 entityMetadata.relationsWithJoinColumns = entityMetadata.relations.filter(relation => relation.isWithJoinColumn);
                 entityMetadata.hasNonNullableRelations = entityMetadata.relationsWithJoinColumns.some(relation => !relation.isNullable || relation.isPrimary);
             });
@@ -648,6 +650,7 @@ export class EntityMetadataBuilder {
         entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.isObjectId);
         entityMetadata.foreignKeys.forEach(foreignKey => foreignKey.build(this.connection.namingStrategy));
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap();
+        entityMetadata.replacementsMap = entityMetadata.createReplacementsMap();
         entityMetadata.relationIds.forEach(relationId => relationId.build());
         entityMetadata.relationCounts.forEach(relationCount => relationCount.build());
         entityMetadata.embeddeds.forEach(embedded => {

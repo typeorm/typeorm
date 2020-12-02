@@ -20,7 +20,7 @@ describe("embedded > embedded-with-special-columns", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should insert, load, update and remove entities with embeddeds when embeds contains special columns (e.g. CreateDateColumn, UpdateDateColumn, DeleteDateColumn, VersionColumn", () => Promise.all(connections.map(async connection => {
+    it("should insert, load, update and remove entities with embeddeds when embeds contains special columns (e.g. CreateDateColumn, UpdateDateColumn, DeleteDateColumn, VersionColumn)", () => Promise.all(connections.map(async connection => {
 
         const post1 = new Post();
         post1.id = 1;

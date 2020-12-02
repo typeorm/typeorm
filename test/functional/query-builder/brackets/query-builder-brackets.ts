@@ -6,7 +6,7 @@ import {User} from "./entity/User";
 import {Brackets} from "../../../../src/query-builder/Brackets";
 
 describe("query builder > brackets", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],

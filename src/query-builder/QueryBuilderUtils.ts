@@ -4,6 +4,16 @@
 export class QueryBuilderUtils {
 
     /**
+     * Separates alias name and column/property name/path
+     */
+    static splitAliasProperty(str: any): [string, string] | null {
+        const index = str.indexOf(".");
+        if (index < 0) return null;
+
+        return [str.substr(0, index), str.substr(index + 1)];
+    }
+
+    /**
      * Checks if given value is a string representation of alias property,
      * e.g. "post.category" or "post.id".
      */

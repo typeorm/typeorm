@@ -16,6 +16,7 @@ import {QueryRunner} from "../..";
 import {AbstractPersistQueryBuilder} from "./AbstractPersistQueryBuilder";
 import {UpdateValuesMissingError} from "../../error/UpdateValuesMissingError";
 import {ConflictExpressionMissingError} from "../../error/ConflictExpressionMissingError";
+import {RandomGenerator} from "../../util/RandomGenerator";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -264,26 +265,18 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
     protected createValuesExpression(columnsOrKeys: (string | ColumnMetadata)[]): string {
         const valueSets = this.getValueSets();
 
-        let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
         const valueSetExpressions = valueSets.map((valueSet, valueSetIndex) => {
             const columnExpressions = columnsOrKeys.map(columnOrKey => {
                 const column = columnOrKey instanceof ColumnMetadata ? columnOrKey : undefined;
-                const columnName = column ? column.databaseName : columnOrKey as string;
-                const value = column ? column.getEntityValue(valueSet) : valueSet[columnOrKey as string];
+                let value = column ? column.getEntityValue(valueSet) : valueSet[columnOrKey as string];
 
-                const createParamExpression = (value: any, specialName?: string) => {
-                    let paramName = `i${valueSetIndex}_${columnName}`; // TODO: Improve naming
-                    if (specialName === "uuid") {
-                        paramName = ReturningResultsEntityUpdater.generateUUIDParameterName(columnName, valueSetIndex);
-                    } else if (specialName === "discriminator") {
-                        paramName = `discriminator_value_${parametersCount}`; // TODO: Not used anywhere else, is special name needed?
-                    }
+                // Store UUID for returning generated map
+                if (value === undefined && column && column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.config.uuidGeneration) {
+                    value = RandomGenerator.uuid4();
+                    this.expressionMap.generatedUuids[valueSetIndex] = value;
+                }
 
-                    this.expressionMap.nativeParameters[paramName] = value;
-                    return this.connection.driver.createParameter(paramName, parametersCount++);
-                };
-
-                return this.computePersistValueExpression(column, value, createParamExpression);
+                return this.computePersistValueExpression(columnOrKey, value);
             });
 
             // Filter out if no values are specified
@@ -333,8 +326,6 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
         // Map column values to assignment expressions
         let valuesSet = this.expressionMap.orUpdate.values;
         if (valuesSet) {
-            let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
-
             const updatedColumns: (string | ColumnMetadata)[] =
                 !metadata ? Object.keys(valuesSet) : metadata.extractColumnsInEntity(valuesSet)
                     .filter(column => column.isUpdate);
@@ -343,16 +334,11 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
 
             columnValuesExpressions.push(...updatedColumns.map(columnOrKey => {
                 const column = columnOrKey instanceof ColumnMetadata ? columnOrKey : undefined;
-                const columnName = column ? column.databaseName : columnOrKey as string;
                 const value = column ? column.getEntityValue(valuesSet!) : valuesSet![columnOrKey as string];
 
-                const paramName = `upd_${columnName}`; // TODO: Improve naming
-                const createParamExpression = (value: any) => {
-                    this.expressionMap.nativeParameters[paramName] = value;
-                    return this.connection.driver.createParameter(paramName, parametersCount++);
-                };
+                const expression = this.computePersistValueExpression(columnOrKey, value);
 
-                const expression = this.computePersistValueExpression(column, value, createParamExpression);
+                const columnName = column ? column.databaseName : columnOrKey as string;
                 return `${this.escape(columnName)} = ${expression}`;
             }));
         }
@@ -362,13 +348,13 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
             const column = columnOrKey instanceof ColumnMetadata ? columnOrKey : undefined;
             const columnName = column ? column.databaseName : columnOrKey as string;
 
-            let value: string;
+            let value: string | undefined = undefined;
             if (this.connection.driver.config.insertUpsert === "conflict") {
                 value = `EXCLUDED.${columnName}`;
             } else if (this.connection.driver.config.insertUpsert === "duplicate") {
                 value = `VALUES(${columnName})`;
             }
-            return `${this.escape(columnName)} = ${value!}`;
+            return `${this.escape(columnName)} = ${value}`;
         }).filter(expression => expression != null));
 
         if (columnValuesExpressions.length === 0)

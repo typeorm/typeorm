@@ -380,7 +380,7 @@ export class OracleDriver implements Driver {
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+    prepareSqlValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
@@ -414,7 +414,7 @@ export class OracleDriver implements Driver {
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
-    prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+    prepareOrmValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
@@ -609,7 +609,7 @@ export class OracleDriver implements Driver {
         return Object.keys(insertResult).reduce((map, key) => {
             const column = metadata.findColumnWithDatabaseName(key);
             if (column) {
-                OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column)));
+                OrmUtils.mergeDeep(map, column.createValueMap(this.prepareOrmValue(insertResult[key], column)));
             }
             return map;
         }, {} as ObjectLiteral);
@@ -670,7 +670,7 @@ export class OracleDriver implements Driver {
     /**
      * Creates an escaped parameter.
      */
-    createParameter(parameterName: string, index: number): string {
+    createParameter(index: number): string {
         return ":" + (index + 1);
     }
 

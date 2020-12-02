@@ -485,6 +485,17 @@ export class EntityMetadata {
      */
     propertiesMap: ObjectLiteral;
 
+    /**
+     * Map of:
+     * Least to Most Relevant:
+     * - Relation Property Path to first join column key
+     * - Relation Property Path + Column Path
+     * - Column Database Name
+     * - Column Property Name
+     * - Column Property Path
+     */
+    replacementsMap: ObjectLiteral;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -832,7 +843,6 @@ export class EntityMetadata {
         this.primaryColumns = this.columns.filter(column => column.isPrimary);
         this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
         this.hasUUIDGeneratedColumns = this.columns.filter(column => column.isGenerated || column.generationStrategy === "uuid").length > 0;
-        this.propertiesMap = this.createPropertiesMap();
         if (this.childEntityMetadatas)
             this.childEntityMetadatas.forEach(entityMetadata => entityMetadata.registerColumn(column));
     }
@@ -850,5 +860,38 @@ export class EntityMetadata {
         this.columns.forEach(column => OrmUtils.mergeDeep(map, column.createValueMap(column.propertyPath)));
         this.relations.forEach(relation => OrmUtils.mergeDeep(map, relation.createValueMap(relation.propertyPath)));
         return map;
+    }
+
+    /**
+     * Creates
+     */
+    createReplacementsMap(): ObjectLiteral {
+        const replacements: ObjectLiteral = {};
+
+        for (const relation of this.relations) {
+            if (relation.joinColumns.length > 0)
+                replacements[relation.propertyPath] = relation.joinColumns[0].databaseName;
+        }
+
+        for (const relation of this.relations) {
+            for (const joinColumn of [...relation.joinColumns, ...relation.inverseJoinColumns]) {
+                const propertyKey = `${relation.propertyPath}.${joinColumn.referencedColumn!.propertyPath}`;
+                replacements[propertyKey] = joinColumn.databaseName;
+            }
+        }
+
+        for (const column of this.columns) {
+            replacements[column.databaseName] = column.databaseName;
+        }
+
+        for (const column of this.columns) {
+            replacements[column.propertyName] = column.databaseName;
+        }
+
+        for (const column of this.columns) {
+            replacements[column.propertyPath] = column.databaseName;
+        }
+
+        return replacements;
     }
 }

@@ -9,9 +9,9 @@ export interface JoinColumnMetadataArgs {
     target: Function|string;
 
     /**
-     * Class's property name to which this column is applied.
+     * Class's relation property name to which this column is applied.
      */
-    propertyName: string;
+    relationName: string;
 
     /**
      * Name of the column.

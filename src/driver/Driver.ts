@@ -13,6 +13,7 @@ import {DriverConfig} from "./DriverConfig";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {Repository} from "../repository/Repository";
 import {DriverQueryGenerators} from "./DriverQueryGenerators";
+import {Expression} from "../expression-builder/Expression";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -154,17 +155,17 @@ export interface Driver {
     /**
      * Wraps given selection in any additional expressions required based on its column type and metadata.
      */
-    wrapSelectExpression?(selection: string, column: ColumnMetadata): string;
+    wrapSelectExpression?(selection: Expression, column: ColumnMetadata): Expression;
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    preparePersistentValue(value: any, column: ColumnMetadata): any;
+    prepareSqlValue(value: any, column: ColumnMetadata): any;
 
     /**
      * Prepares given value to a value to be persisted, based on its column type.
      */
-    prepareHydratedValue(value: any, column: ColumnMetadata): any;
+    prepareOrmValue(value: any, column: ColumnMetadata): any;
 
     /**
      * Transforms type of the given column to a database column type.
@@ -224,7 +225,7 @@ export interface Driver {
     /**
      * Creates an escaped parameter.
      */
-    createParameter(parameterName: string, index: number): string;
+    createParameter(index: number): string;
 
     /**
      * Wraps the given value in a driver specific special object with additional type information.
