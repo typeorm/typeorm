@@ -35,4 +35,5 @@ describe("github issues > #798 sqlite: 'database' path in ormconfig.json is not 
         assert.strictEqual(connection.isConnected, true);
     });
 
+
 });

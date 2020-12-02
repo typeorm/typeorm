@@ -120,9 +120,10 @@ export class SqliteDriver extends AbstractSqliteDriver {
     protected async createDatabaseConnection() {
 
         await this.createDatabaseDirectory(this.getMainDatabasePath());
+        const mainDbPathAbs = path.join(this.options.baseDirectory!, this.options.database)
 
         const databaseConnection: any = await new Promise((ok, fail) => {
-            const connection = new this.sqlite.Database(this.options.database, (err: any) => {
+            const connection = new this.sqlite.Database(mainDbPathAbs, (err: any) => {
                 if (err) return fail(err);
                 ok(connection);
             });
@@ -190,6 +191,6 @@ export class SqliteDriver extends AbstractSqliteDriver {
 
     protected getMainDatabasePath(): string {
         const optionsDb = this.options.database
-        return path.dirname(isAbsolute(optionsDb) ? optionsDb : path.join(process.cwd(), optionsDb))
+        return path.dirname(isAbsolute(optionsDb) ? optionsDb : path.join(this.options.baseDirectory!, optionsDb))
     }
 }

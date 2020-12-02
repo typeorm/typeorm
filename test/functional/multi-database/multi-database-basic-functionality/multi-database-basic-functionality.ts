@@ -17,7 +17,7 @@ import fs from 'fs';
 
 const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
 
-describe.only("multi-database > basic-functionality", () => {
+describe("multi-database > basic-functionality", () => {
 
     describe("filepathToName()", () => {
         for (const platform of [`darwin`, `win32`]) {
