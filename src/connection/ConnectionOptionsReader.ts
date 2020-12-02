@@ -145,6 +145,9 @@ export class ConnectionOptionsReader {
             connectionOptions = [connectionOptions];
 
         connectionOptions.forEach(options => {
+
+            options.baseDirectory = this.baseDirectory;
+
             if (options.entities) {
                 const entities = (options.entities as any[]).map(entity => {
                     if (typeof entity === "string" && entity.substr(0, 1) !== "/")
@@ -176,14 +179,13 @@ export class ConnectionOptionsReader {
             // make database path file in sqlite relative to package.json
             if (options.type === "sqlite" || options.type === "better-sqlite3") {
                 if (typeof options.database === "string" &&
-                    isAbsolute(options.database) &&
+                    !isAbsolute(options.database) &&
                     options.database !== ":memory:") {
                     Object.assign(options, {
                         database: this.baseDirectory + "/" + options.database
                     });
                 }
             }
-            options.baseDirectory = this.baseDirectory;
         });
 
         return connectionOptions;
