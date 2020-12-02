@@ -804,7 +804,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
 
-            // const tablePath = this.escapePath(`${dbTable["database"]}.${dbTable["name"]}`);
             const tablePath = `${dbTable["database"] ? `${dbTable["database"]}.` : ''}${dbTable["name"]}`;
             const table = new Table({name: tablePath});
             const sql = dbTable["sql"];
@@ -989,7 +988,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, skipPrimary)).join(", ");
         let sql = `CREATE TABLE ${this.escapePath(table.name)} (${columnDefinitions}`;
-        // let sql = `CREATE TABLE ${this.escape table.name} (${columnDefinitions}`;
 
         // need for `addColumn()` method, because it recreates table.
         table.columns
@@ -1160,11 +1158,11 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             downQueries.push(this.createIndexSql(oldTable, index));
         });
 
-        // change table name into 'temporary_table'
         const [databaseNew, tableNameNew] = this.splitTablePath(newTable.name)
         // @ts-ignore // unused var
         const [databaseOld, tableNameOld] = this.splitTablePath(oldTable.name)
-        // // newTable.name = "temporary_" + newTable.name;
+
+        // change table name into 'temporary_table'
         newTable.name = `${databaseNew ? `${databaseNew}.` : ''}temporary_${tableNameNew}`
 
         // create new table
