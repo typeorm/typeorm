@@ -96,7 +96,7 @@ Also, they provide a less explicit way of saving new objects into the database.
 
 ### Cascade Options
 
-The `cascade` option can be set as a `boolean` or an array of cascade options `("insert", "update")[]`.
+The `cascade` option can be set as a `boolean` or an array of cascade options `("insert" | "update" | "remove" | "soft-remove" | "recover")[]`.
 
 It will default to `false`, meaning no cascades. Setting `cascade: true` will enable full cascades. You can also specify options by providing an array.
 
