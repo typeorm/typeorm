@@ -987,6 +987,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             throw new Error(`Sqlite does not support AUTOINCREMENT on composite primary key`);
 
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, skipPrimary)).join(", ");
+        const [database] = this.splitTablePath(table.name)
         let sql = `CREATE TABLE ${this.escapePath(table.name)} (${columnDefinitions}`;
 
         // need for `addColumn()` method, because it recreates table.
@@ -1020,14 +1021,23 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             sql += `, ${checksSql}`;
         }
 
-        if (table.foreignKeys.length > 0 && createForeignKeys && !this.driver.hasAttachedDatabases()) {
-            const foreignKeysSql = table.foreignKeys.map(fk => {
+        if (table.foreignKeys.length > 0 && createForeignKeys) {
+            const foreignKeysSql = table.foreignKeys.filter(fk => {
+                const [referencedDatabase] = this.splitTablePath(fk.referencedTableName)
+                if (referencedDatabase !== database) {
+                    return false
+                }
+                return true
+            })
+            .map(fk => {
+                // @ts-ignore // ignore var
+                const [referencedDatabase, referencedTable] = this.splitTablePath(fk.referencedTableName)
                 const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
                 if (!fk.name)
                     fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
 
-                let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(fk.referencedTableName)} (${referencedColumnNames})`;
+                let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES "${referencedTable}" (${referencedColumnNames})`;
                 if (fk.onDelete)
                     constraint += ` ON DELETE ${fk.onDelete}`;
                 if (fk.onUpdate)

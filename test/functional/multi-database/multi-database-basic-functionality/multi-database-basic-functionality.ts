@@ -9,6 +9,7 @@ import {
 import { Answer } from "./entity/Answer";
 import { Category } from "./entity/Category";
 import { Post } from "./entity/Post";
+import { User } from "./entity/User";
 import { filepathToName } from '../../../../src/util/PathUtils';
 import rimraf from "rimraf";
 import path from 'path';
@@ -16,7 +17,7 @@ import fs from 'fs';
 
 const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
 
-describe("multi-database > basic-functionality", () => {
+describe.only("multi-database > basic-functionality", () => {
 
     describe("filepathToName()", () => {
         for (const platform of [`darwin`, `win32`]) {
@@ -62,10 +63,11 @@ describe("multi-database > basic-functionality", () => {
         const attachAnswerPath = path.join(tempPath, 'filename-sqlite.db')
         const attachAnswerHandle = filepathToName('filename-sqlite.db')
         const attachCategoryPath = path.join(tempPath, './subdir/relative-subdir-sqlite.db')
+        const attachCategoryHandle = filepathToName('./subdir/relative-subdir-sqlite.db')
 
         before(async () => {
             connections = await createTestingConnections({
-                entities: [Answer, Category, Post],
+                entities: [Answer, Category, Post, User],
                 enabledDrivers: ["sqlite", "better-sqlite3"],
                 name: "sqlite",
             });
@@ -75,8 +77,6 @@ describe("multi-database > basic-functionality", () => {
             await closeTestingConnections(connections);
             return new Promise(resolve => rimraf(`${tempPath}/**/*.db`, {}, () => resolve()));
         });
-
-        // it("should correctly attach database files when specified")
 
         it("should correctly attach and create database files", () => Promise.all(connections.map(async connection => {
 
@@ -91,7 +91,6 @@ describe("multi-database > basic-functionality", () => {
 
             const queryRunner = connection.createQueryRunner();
 
-            // const tablePathAnswer = `${attachAnswerHandle}.answer`;
             const tablePathAnswer = `${attachAnswerHandle}.answer`;
             const table = await queryRunner.getTable(tablePathAnswer);
             await queryRunner.release();
@@ -114,22 +113,39 @@ describe("multi-database > basic-functionality", () => {
 
             const queryRunner = connection.createQueryRunner();
 
-            const tablePathPost = `post`;
-            const table = await queryRunner.getTable(tablePathPost);
+            const tablePathUser = `user`;
+            const table = await queryRunner.getTable(tablePathUser);
             await queryRunner.release();
 
-            const post = new Post();
-            post.name = "Post #1";
-            await connection.getRepository(Post).save(post);
+            const user = new User();
+            user.name = "User #1";
+            await connection.getRepository(User).save(user);
 
-            const sql = connection.createQueryBuilder(Post, "post")
-                .where("post.id = :id", {id: 1})
+            const sql = connection.createQueryBuilder(User, "user")
+                .where("user.id = :id", {id: 1})
                 .getSql();
 
-            sql.should.be.equal(`SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "post" "post" WHERE "post"."id" = ?`);
+            sql.should.be.equal(`SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "user" "user" WHERE "user"."id" = ?`);
 
-            table!.name.should.be.equal(tablePathPost);
+            table!.name.should.be.equal(tablePathUser);
         })));
 
+        it("should create foreign keys for relations within the same database", () => Promise.all(connections.map(async connection => {
+
+            const queryRunner = connection.createQueryRunner();
+            const tablePathCategory = `${attachCategoryHandle}.category`;
+            const tablePathPost = `${attachCategoryHandle}.post`;
+            const tableCategory = (await queryRunner.getTable(tablePathCategory))!;
+            const tablePost = (await queryRunner.getTable(tablePathPost))!;
+            await queryRunner.release();
+
+            queryRunner.release();
+
+            expect(tableCategory.foreignKeys.length).to.eq(1);
+            expect(tableCategory.foreignKeys[0].columnNames.length).to.eq(1);  // before the fix this was 2, one for each schema
+            expect(tableCategory.foreignKeys[0].columnNames[0]).to.eq("postId");
+
+            expect(tablePost.foreignKeys.length).to.eq(0);
+        })));
     });
 });
