@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+import crypto from "crypto";
 
 const WINDOWS_PATH_REGEXP = /^([a-zA-Z]:.*)$/;
 const UNC_WINDOWS_PATH_REGEXP = /^\\\\(\.\\)?(.*)$/;
@@ -20,13 +20,13 @@ export function toPortablePath(filepath: string): string {
  * be equivalent to enable portability
  */
 export function filepathToName(filepath: string): string {
-  const uniq = toPortablePath(filepath).toLowerCase()
-  return crypto.createHash('md5').update(uniq).digest("hex")
+  const uniq = toPortablePath(filepath).toLowerCase();
+  return crypto.createHash("md5").update(uniq).digest("hex");
 }
 
 /**
  * Cross platform isAbsolute
  */
 export function isAbsolute(filepath: string): boolean {
-  return !!filepath.match(/^(?:[a-z]:|[\\]|[\/])/i)
+  return !!filepath.match(/^(?:[a-z]:|[\\]|[\/])/i);
 }

@@ -26,7 +26,7 @@ import {RelationMetadata} from "./RelationMetadata";
 import {TableType} from "./types/TableTypes";
 import {TreeType} from "./types/TreeTypes";
 import {UniqueMetadata} from "./UniqueMetadata";
-import {SqliteDriver} from '../driver/sqlite/SqliteDriver';
+import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 
 /**
  * Contains all entity metadata.
@@ -864,7 +864,7 @@ export class EntityMetadata {
 
         if (this.connection.driver instanceof SqliteDriver) {
             // @todo - perhaps use this driver callback in all cases?
-            tablePath = this.connection.driver.buildTableName(this.tableName, undefined, this.database)
+            tablePath = this.connection.driver.buildTableName(this.tableName, undefined, this.database);
         }
 
         return tablePath;
