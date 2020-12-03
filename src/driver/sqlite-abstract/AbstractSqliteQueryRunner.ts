@@ -1127,7 +1127,7 @@ console.log(`:>> whatwhatwhat`);
         console.log(`index :>> `, index)
         // @ts-ignore // ignore var
         const [database, tableName] = this.splitTablePath(table.name)
-        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${tableName}" (${columns}) ${index.where ? "WHERE " + index.where : ""}`);
+        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX IF NOT EXISTS ${this.escapePath(index.name!)} ON "${tableName}" (${columns}) ${index.where ? "WHERE " + index.where : ""}`);
     }
 
     /**
@@ -1135,7 +1135,7 @@ console.log(`:>> whatwhatwhat`);
      */
     protected dropIndexSql(indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        return new Query(`DROP INDEX "${indexName}"`);
+        return new Query(`DROP INDEX ${this.escapePath(indexName!)}`);
     }
 
     /**
