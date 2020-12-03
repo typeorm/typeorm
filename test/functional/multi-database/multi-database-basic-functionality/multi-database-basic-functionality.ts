@@ -68,7 +68,7 @@ describe("multi-database > basic-functionality", () => {
         before(async () => {
             connections = await createTestingConnections({
                 entities: [Answer, Category, Post, User],
-                enabledDrivers: ["sqlite", "better-sqlite3"],
+                enabledDrivers: ["sqlite"],
                 name: "sqlite",
             });
         });
