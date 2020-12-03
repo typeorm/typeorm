@@ -1,4 +1,6 @@
-import crypto from "crypto";
+// import crypto from "crypto";
+
+import { hash } from './StringUtils';
 
 const WINDOWS_PATH_REGEXP = /^([a-zA-Z]:.*)$/;
 const UNC_WINDOWS_PATH_REGEXP = /^\\\\(\.\\)?(.*)$/;
@@ -21,7 +23,7 @@ export function toPortablePath(filepath: string): string {
  */
 export function filepathToName(filepath: string): string {
   const uniq = toPortablePath(filepath).toLowerCase();
-  return crypto.createHash("md5").update(uniq).digest("hex");
+  return hash(uniq, {length: 63});
 }
 
 /**
