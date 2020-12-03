@@ -131,7 +131,7 @@ export function hash(input: string, options: IHashOptions = {}): string {
 ```
  */
 export function escapePath(pathStr: string, disableEscape: boolean = false, delimiter = '"'): string {
-    return pathStr.replace(/^\.+|\.+$/g, '').split(".").map(i => {
+    return pathStr.replace(/^\.+|\.+$/g, "").split(".").map(i => {
         return disableEscape ? i : `${delimiter}${i}${delimiter}`;
     }).join(".");
 }
