@@ -118,7 +118,10 @@ export class SqliteDriver extends AbstractSqliteDriver {
      * Creates connection with the database.
      */
     protected async createDatabaseConnection() {
-        await this.createDatabaseDirectory(this.getMainDatabasePath());
+        // not to create database directory if is in memory
+        if (this.options.database !== ":memory:")
+            await this.createDatabaseDirectory(this.getMainDatabasePath());
+
         const databaseConnection: any = await new Promise((ok, fail) => {
             const connection = new this.sqlite.Database(this.options.database, (err: any) => {
                 if (err) return fail(err);

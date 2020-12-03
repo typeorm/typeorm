@@ -27,6 +27,7 @@ import {TableType} from "./types/TableTypes";
 import {TreeType} from "./types/TreeTypes";
 import {UniqueMetadata} from "./UniqueMetadata";
 import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
+import { BetterSqlite3Driver } from '../driver/better-sqlite3/BetterSqlite3Driver';
 
 /**
  * Contains all entity metadata.
@@ -862,8 +863,8 @@ export class EntityMetadata {
             }
         }
 
-        if (this.connection.driver instanceof SqliteDriver) {
-            // @todo - perhaps use this driver callback in all cases?
+        // This check together with a driver's buildTableName define if db database.tablename format is supported
+        if (this.connection.driver instanceof SqliteDriver || this.connection.driver instanceof BetterSqlite3Driver) {
             tablePath = this.connection.driver.buildTableName(this.tableName, undefined, this.database);
         }
 

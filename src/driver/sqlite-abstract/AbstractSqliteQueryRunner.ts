@@ -776,6 +776,19 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         });
     }
 
+    protected async loadTableRecords(tablePath: string, tableOrIndex: 'table' | 'index') {
+        const [database, tableName] = this.splitTablePath(tablePath)
+        const res = await this.query(`SELECT ${database ? `'${database}'` : null} as database, * FROM ${this.escapePath(`sqlite_master`)} WHERE "type" = '${tableOrIndex}' AND "${tableOrIndex === 'table' ? 'name' : 'tbl_name'}" IN ('${tableName}')`)
+        return res
+    }
+    protected async loadPragmaRecords(tablePath: string, pragma: string) {
+        // @ts-ignore // ignore var
+        const [database, tableName] = this.splitTablePath(tablePath)
+        const res = await this.query(`PRAGMA ${pragma}("${tableName}")`)
+        return res
+    }
+
+
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
      */
@@ -785,22 +798,13 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (!tableNames || !tableNames.length)
             return [];
 
-        const loadTable = async (tablePath: string, tableOrIndex: 'table' | 'index') => {
-            const [database, tableName] = this.splitTablePath(tablePath)
-            const res = await this.query(`SELECT ${database ? `'${database}'` : null} as database, * FROM ${this.escapePath(`${database ? `${database}.` : ''}sqlite_master`)} WHERE "type" = '${tableOrIndex}' AND "${tableOrIndex === 'table' ? 'name' : 'tbl_name'}" IN ('${tableName}')`)
-            return res
-        }
-        const loadPragma = async (tablePath: string, pragma: string) => {
-            const [database, tableName] = this.splitTablePath(tablePath)
-            const res = await this.query(`PRAGMA ${database ? `"${database}".` : ''}${pragma}("${tableName}")`)
-            return res
-        }
-        const dbTables: ObjectLiteral[] = (await Promise.all(tableNames.map(tableName => loadTable(tableName, 'table')))).reduce((acc, res) => ([...acc, ...res]), []).filter(Boolean)
-        const dbIndicesDef: ObjectLiteral[] = (await Promise.all(tableNames.map(tableName => loadTable(tableName, 'index')))).reduce((acc, res) => ([...acc, ...res]), []).filter(Boolean)
+        const dbTables: ObjectLiteral[] = (await Promise.all(tableNames.map(tableName => this.loadTableRecords(tableName, 'table')))).reduce((acc, res) => ([...acc, ...res]), []).filter(Boolean)
+        const dbIndicesDef: ObjectLiteral[] = (await Promise.all(tableNames.map(tableName => this.loadTableRecords(tableName, 'index')))).reduce((acc, res) => ([...acc, ...res]), []).filter(Boolean)
 
         // if tables were not found in the db, no need to proceed
         if (!dbTables || !dbTables.length)
             return [];
+
 
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
@@ -811,9 +815,9 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
             // load columns and indices
             const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
-                loadPragma(tablePath, `table_info`),
-                loadPragma(tablePath, `index_list`),
-                loadPragma(tablePath, `foreign_key_list`),
+                this.loadPragmaRecords(tablePath, `table_info`),
+                this.loadPragmaRecords(tablePath, `index_list`),
+                this.loadPragmaRecords(tablePath, `foreign_key_list`),
             ]);
 
             // find column name with auto increment
