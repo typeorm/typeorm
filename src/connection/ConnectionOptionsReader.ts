@@ -176,7 +176,7 @@ export class ConnectionOptionsReader {
                 Object.assign(connectionOptions, { migrations: migrations });
             }
 
-            // make database path file in sqlite relative to package.json
+            // make database path file absolute in sqlite
             if (options.type === "sqlite" || options.type === "better-sqlite3") {
                 if (typeof options.database === "string" &&
                     !isAbsolute(options.database) &&
