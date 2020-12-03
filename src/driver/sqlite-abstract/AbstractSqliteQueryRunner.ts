@@ -1222,7 +1222,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * tablePath e.g. "myDB.myTable", "myTable"
      */
     protected splitTablePath(tablePath: string): [string | undefined, string] {
-        return ((tablePath.indexOf('.') !== -1) ? tablePath.split('.') : [undefined, tablePath]) as [string | undefined, string]
+        let dotIndex = tablePath.indexOf(".");
+        return (dotIndex >= 0) ? [tablePath.substr(0, dotIndex), tablePath.substr(dotIndex + 1)] : [undefined, tablePath];
     }
 
     /**

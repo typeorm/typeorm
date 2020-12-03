@@ -92,22 +92,22 @@ export class SqliteDriver extends AbstractSqliteDriver {
      */
     buildTableName(tableName: string, _schema?: string, database?: string): string {
 
-        if (!database) return tableName
-        if (this.attachedDatabases[database]) return `${this.attachedDatabases[database].attachHandle}.${tableName}`
+        if (!database) return tableName;
+        if (this.attachedDatabases[database]) return `${this.attachedDatabases[database].attachHandle}.${tableName}`;
 
-        if (database === this.options.database) return tableName
+        if (database === this.options.database) return tableName;
 
         // we use the decorated name as supplied when deriving attach handle (ideally without non-portable absolute path)
-        const identifierHash = filepathToName(database)
+        const identifierHash = filepathToName(database);
         // decorated name will be assumed relative to main database file when non absolute. Paths supplied as absolute won't be portable
-        const absFilepath = isAbsolute(database) ? database : path.join(this.getMainDatabasePath(), database)
+        const absFilepath = isAbsolute(database) ? database : path.join(this.getMainDatabasePath(), database);
 
         this.attachedDatabases[database] = {
             attachFilepath: absFilepath,
             attachHandle: identifierHash,
-        }
+        };
 
-        return `${identifierHash}.${tableName}`
+        return `${identifierHash}.${tableName}`;
     }
 
     // -------------------------------------------------------------------------
@@ -183,13 +183,13 @@ export class SqliteDriver extends AbstractSqliteDriver {
 
         // @todo - possibly check number of databases (but unqueriable at runtime sadly) - https://www.sqlite.org/limits.html#max_attached
         for await (const {attachHandle, attachFilepath} of Object.values(this.attachedDatabases)) {
-            await this.createDatabaseDirectory(attachFilepath)
-            await this.connection.query(`ATTACH "${attachFilepath}" AS "${attachHandle}"`)
+            await this.createDatabaseDirectory(attachFilepath);
+            await this.connection.query(`ATTACH "${attachFilepath}" AS "${attachHandle}"`);
         }
     }
 
     protected getMainDatabasePath(): string {
-        const optionsDb = this.options.database
-        return path.dirname(isAbsolute(optionsDb) ? optionsDb : path.join(this.options.baseDirectory!, optionsDb))
+        const optionsDb = this.options.database;
+        return path.dirname(isAbsolute(optionsDb) ? optionsDb : path.join(this.options.baseDirectory!, optionsDb));
     }
 }
