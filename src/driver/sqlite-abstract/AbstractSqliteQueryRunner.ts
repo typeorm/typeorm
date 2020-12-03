@@ -19,6 +19,7 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import { escapePath } from '../../util/StringUtils';
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -242,6 +243,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
                     index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
+                console.log(`:>> inhere`);
+
                 upQueries.push(this.createIndexSql(table, index));
                 downQueries.push(this.dropIndexSql(index));
             });
@@ -316,8 +319,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         newTable.name = newTableName;
 
         // rename table
-        const up = new Query(`ALTER TABLE ${this.escapePath(oldTable.name)}" RENAME TO ${this.escapePath(newTableName)}`);
-        const down = new Query(`ALTER TABLE ${this.escapePath(newTableName)}" RENAME TO ${this.escapePath(oldTable.name)}`);
+        const up = new Query(`ALTER TABLE ${this.escapePath(oldTable.name)} RENAME TO ${this.escapePath(newTableName)}`);
+        const down = new Query(`ALTER TABLE ${this.escapePath(newTableName)} RENAME TO ${this.escapePath(oldTable.name)}`);
         await this.executeQueries(up, down);
 
         // rename old table;
@@ -957,11 +960,12 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                     const indexColumns = indexInfos
                         .sort((indexInfo1, indexInfo2) => parseInt(indexInfo1["seqno"]) - parseInt(indexInfo2["seqno"]))
                         .map(indexInfo => indexInfo["name"]);
-
+                    const dbIndexPath = `${dbTable["database"] ? `${dbTable["database"]}.` : ''}${dbIndex!["name"]}`;
+console.log(`dbIndexPath :>> `, dbIndexPath)
                     const isUnique = dbIndex!["unique"] === "1" || dbIndex!["unique"] === 1;
                     return new TableIndex(<TableIndexOptions>{
                         table: table,
-                        name: dbIndex!["name"],
+                        name: dbIndexPath,
                         columnNames: indexColumns,
                         isUnique: isUnique,
                         where: condition ? condition[1] : undefined
@@ -969,6 +973,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 });
             const indices = await Promise.all(indicesPromises);
             table.indices = indices.filter(index => !!index) as TableIndex[];
+console.log(`:>> whatwhatwhat`);
 
             return table;
         }));
@@ -1119,7 +1124,10 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapePath(table.name)} (${columns}) ${index.where ? "WHERE " + index.where : ""}`);
+        console.log(`index :>> `, index)
+        // @ts-ignore // ignore var
+        const [database, tableName] = this.splitTablePath(table.name)
+        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${tableName}" (${columns}) ${index.where ? "WHERE " + index.where : ""}`);
     }
 
     /**
@@ -1167,12 +1175,13 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             downQueries.push(this.createIndexSql(oldTable, index));
         });
 
-        const [databaseNew, tableNameNew] = this.splitTablePath(newTable.name)
-        // @ts-ignore // unused var
-        const [databaseOld, tableNameOld] = this.splitTablePath(oldTable.name)
-
         // change table name into 'temporary_table'
-        newTable.name = `${databaseNew ? `${databaseNew}.` : ''}temporary_${tableNameNew}`
+        newTable.name = this.buildTemporaryTablePath(newTable.name)
+
+        // @ts-ignore // ignore var
+        const [_databaseOld, tableNameOld] = this.splitTablePath(oldTable.name)
+        // @ts-ignore // ignore var
+        const [_databaseNew, tableNameNew] = this.splitTablePath(newTable.name)
 
         // create new table
         upQueries.push(this.createTableSql(newTable, true));
@@ -1194,7 +1203,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             }
 
             upQueries.push(new Query(`INSERT INTO ${this.escapePath(newTable.name)}(${newColumnNames}) SELECT ${oldColumnNames} FROM ${this.escapePath(oldTable.name)}`));
-            downQueries.push(new Query(`INSERT INTO "${this.escapePath(oldTable.name)}"(${oldColumnNames}) SELECT ${newColumnNames} FROM ${this.escapePath(newTable.name)}`));
+            downQueries.push(new Query(`INSERT INTO ${this.escapePath(oldTable.name)}(${oldColumnNames}) SELECT ${newColumnNames} FROM ${this.escapePath(newTable.name)}`));
         }
         // drop old table
         upQueries.push(this.dropTableSql(oldTable));
@@ -1202,7 +1211,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         // rename old table
         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable.name)} RENAME TO ${this.escapePath(tableNameOld)}`));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(oldTable.name)} RENAME TO ${this.escapePath(tableNameOld)}`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(oldTable.name)} RENAME TO ${this.escapePath(tableNameNew)}`));
         newTable.name = oldTable.name;
 
         // recreate table indices
@@ -1226,11 +1235,16 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         return (dotIndex >= 0) ? [tablePath.substr(0, dotIndex), tablePath.substr(dotIndex + 1)] : [undefined, tablePath];
     }
 
+    protected buildTemporaryTablePath(tablePath: string): string {
+        const [database, tableName] = this.splitTablePath(tablePath)
+        return `${database ? `${database}.` : ''}temporary_${tableName}`
+    }
+
     /**
      * Escapes given table or view path. Tolerates leading/trailing dots
      */
     protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
         const tableName = target instanceof Table || target instanceof View ? target.name : target;
-        return tableName.replace(/^\.+|\.+$/g, '').split(".").map(i => disableEscape ? i : `"${i}"`).join(".");
+        return escapePath(tableName, disableEscape);
     }
 }
