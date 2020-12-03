@@ -243,7 +243,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
                     index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
-                console.log(`:>> inhere`);
 
                 upQueries.push(this.createIndexSql(table, index));
                 downQueries.push(this.dropIndexSql(index));
@@ -793,7 +792,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         }
         const loadPragma = async (tablePath: string, pragma: string) => {
             const [database, tableName] = this.splitTablePath(tablePath)
-            const res = await this.query(`PRAGMA ${database ? `"${database}".` : ''}${pragma}(${tableName})`)
+            const res = await this.query(`PRAGMA ${database ? `"${database}".` : ''}${pragma}("${tableName}")`)
             return res
         }
         const dbTables: ObjectLiteral[] = (await Promise.all(tableNames.map(tableName => loadTable(tableName, 'table')))).reduce((acc, res) => ([...acc, ...res]), []).filter(Boolean)
@@ -961,7 +960,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                         .sort((indexInfo1, indexInfo2) => parseInt(indexInfo1["seqno"]) - parseInt(indexInfo2["seqno"]))
                         .map(indexInfo => indexInfo["name"]);
                     const dbIndexPath = `${dbTable["database"] ? `${dbTable["database"]}.` : ''}${dbIndex!["name"]}`;
-console.log(`dbIndexPath :>> `, dbIndexPath)
                     const isUnique = dbIndex!["unique"] === "1" || dbIndex!["unique"] === 1;
                     return new TableIndex(<TableIndexOptions>{
                         table: table,
@@ -973,7 +971,6 @@ console.log(`dbIndexPath :>> `, dbIndexPath)
                 });
             const indices = await Promise.all(indicesPromises);
             table.indices = indices.filter(index => !!index) as TableIndex[];
-console.log(`:>> whatwhatwhat`);
 
             return table;
         }));
@@ -1124,7 +1121,6 @@ console.log(`:>> whatwhatwhat`);
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        console.log(`index :>> `, index)
         // @ts-ignore // ignore var
         const [database, tableName] = this.splitTablePath(table.name)
         return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX IF NOT EXISTS ${this.escapePath(index.name!)} ON "${tableName}" (${columns}) ${index.where ? "WHERE " + index.where : ""}`);

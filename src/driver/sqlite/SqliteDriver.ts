@@ -118,9 +118,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
      * Creates connection with the database.
      */
     protected async createDatabaseConnection() {
-
         await this.createDatabaseDirectory(this.getMainDatabasePath());
-
         const databaseConnection: any = await new Promise((ok, fail) => {
             const connection = new this.sqlite.Database(this.options.database, (err: any) => {
                 if (err) return fail(err);
@@ -170,7 +168,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
      * Auto creates database directory if it does not exist.
      */
     protected async createDatabaseDirectory(dbPath: string): Promise<void> {
-        await mkdirp(path.dirname(dbPath));
+        await mkdirp(dbPath);
     }
 
     /**
@@ -183,7 +181,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
 
         // @todo - possibly check number of databases (but unqueriable at runtime sadly) - https://www.sqlite.org/limits.html#max_attached
         for await (const {attachHandle, attachFilepath} of Object.values(this.attachedDatabases)) {
-            await this.createDatabaseDirectory(attachFilepath);
+            await this.createDatabaseDirectory(path.dirname(attachFilepath));
             await this.connection.query(`ATTACH "${attachFilepath}" AS "${attachHandle}"`);
         }
     }
