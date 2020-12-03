@@ -27,7 +27,7 @@ import {TableType} from "./types/TableTypes";
 import {TreeType} from "./types/TreeTypes";
 import {UniqueMetadata} from "./UniqueMetadata";
 import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
-import { BetterSqlite3Driver } from '../driver/better-sqlite3/BetterSqlite3Driver';
+import { BetterSqlite3Driver } from "../driver/better-sqlite3/BetterSqlite3Driver";
 
 /**
  * Contains all entity metadata.
