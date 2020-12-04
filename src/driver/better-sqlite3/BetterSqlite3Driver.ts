@@ -9,6 +9,8 @@ import { BetterSqlite3ConnectionOptions } from "./BetterSqlite3ConnectionOptions
 import { BetterSqlite3QueryRunner } from "./BetterSqlite3QueryRunner";
 import { ReplicationMode } from "../types/ReplicationMode";
 import { filepathToName, isAbsolute } from '../../util/PathUtils';
+import { PlatformTools } from '../../platform/PlatformTools';
+import { DriverPackageNotInstalledError } from '../../error/DriverPackageNotInstalledError';
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -115,7 +117,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     protected async createDatabaseConnection() {
         // not to create database directory if is in memory
         if (this.options.database !== ":memory:")
-            await this.createDatabaseDirectory(this.options.database);
+            await this.createDatabaseDirectory(path.dirname(this.options.database));
 
         const {
             database,
@@ -144,6 +146,18 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         }
 
         return databaseConnection;
+    }
+
+    /**
+     * If driver dependency is not given explicitly, then try to load it via "require".
+     */
+    protected loadDependencies(): void {
+        try {
+            this.sqlite = PlatformTools.load("better-sqlite3");
+
+        } catch (e) {
+            throw new DriverPackageNotInstalledError("SQLite", "better-sqlite3");
+        }
     }
 
     /**
