@@ -21,5 +21,4 @@ describe("table-inheritance > single-table > database-option-inherited", () => {
         })
 
     })));
-
 });
