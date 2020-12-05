@@ -227,7 +227,7 @@ export class Gulpfile {
             "packageMoveCompiledFiles",
             [
                 "browserClearPackageDirectory",
-                "packageClearPackageDirectory",
+                // "packageClearPackageDirectory",
                 "packageReplaceReferences",
                 "packagePreparePackageFile",
                 "packageCopyReadme",
