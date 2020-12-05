@@ -143,7 +143,7 @@
     "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
     "compile": "rimraf ./build && tsc",
     "watch": "./node_modules/.bin/tsc -w",
-    "pack": "npm run package",
+    "prepack": "npm run package",
     "package": "gulp package",
     "lint": "eslint -c ./.eslintrc.js src/**/*.ts test/**/*.ts sample/**/*.ts",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 2"
