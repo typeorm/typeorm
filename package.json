@@ -151,6 +151,12 @@
   "bin": {
     "typeorm": "./cli.js"
   },
+  "publishConfig": {
+    "access": "public",
+    "main": "build/package/index.js",
+    "types": "build/package/index.d.ts",
+    "bin": "build/package/cli.js"
+  },
   "funding": "https://opencollective.com/typeorm",
   "collective": {
     "type": "opencollective",
