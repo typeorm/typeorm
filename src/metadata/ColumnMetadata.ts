@@ -122,6 +122,12 @@ export class ColumnMetadata {
     default?: any;
 
     /**
+     * Saves the default value (if one was given in this ColumnOptions) to the db in case none was given
+     * regardless of the database's default value
+     */
+    explicitDefault? : boolean = false;
+    
+    /**
      * ON UPDATE trigger. Works only for MySQL.
      */
     onUpdate?: string;
@@ -344,6 +350,8 @@ export class ColumnMetadata {
             this.isPrimary = options.args.options.primary;
         if (options.args.options.default === null) // to make sure default: null is the same as nullable: true
             this.isNullable = true;
+        if (options.args.options.explicitDefault)
+            this.explicitDefault = options.args.options.explicitDefault;
         if (options.args.options.nullable !== undefined)
             this.isNullable = options.args.options.nullable;
         if (options.args.options.select !== undefined)

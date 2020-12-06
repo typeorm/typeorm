@@ -70,6 +70,12 @@ export interface ColumnOptions extends ColumnCommonOptions {
     default?: any;
 
     /**
+     * Saves the default value (if one was given in this ColumnOptions) to the db in case none was given
+     * regardless of the database's default value
+     */
+    explicitDefault? : boolean;
+
+    /**
      * ON UPDATE trigger. Works only for MySQL.
      */
     onUpdate?: string;
