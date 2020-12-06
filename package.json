@@ -152,7 +152,6 @@
   "publishConfig": {
     "access": "public",
     "main": "build/package/index.js",
-    "types": "build/package/index.d.ts",
     "bin": "build/package/cli.js"
   },
   "funding": "https://opencollective.com/typeorm",
@@ -161,7 +160,7 @@
     "url": "https://opencollective.com/typeorm",
     "logo": "https://opencollective.com/opencollective/logo.txt"
   },
-  "types": "./index.d.ts",
+  "types": "build/package/index.d.ts",
   "nyc": {
     "all": true,
     "cache": false,
