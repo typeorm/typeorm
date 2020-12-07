@@ -12,7 +12,7 @@ const options: IgniteConnectionOptions = {
   entities: [__dirname + "/entity/*"],
 };
 
-const ramdom = () => Math.round(Math.random() * 100);
+const random = () => Math.round(Math.random() * 100);
 
 createConnection(options).then(
   async (connection) => {
@@ -22,7 +22,7 @@ createConnection(options).then(
     // post.id = uuid.v4();
     post.text = "Hello how are you?";
     post.title = "hello";
-    post.likesCount = ramdom();
+    post.likesCount = random();
 
     const saved = await postRepository.save(post);
     console.log(saved);
