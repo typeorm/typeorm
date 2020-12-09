@@ -11,6 +11,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {NoConnectionOptionError} from "../error/NoConnectionOptionError";
 import {InitializedRelationError} from "../error/InitializedRelationError";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {BaseEntity} from "../repository/BaseEntity";
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -69,7 +70,7 @@ export class EntityMetadataValidator {
                 return metadata !== entityMetadata
                     && (metadata.inheritancePattern === "STI" || metadata.tableType === "entity-child")
                     && metadata.discriminatorValue === entityMetadata.discriminatorValue
-                    && metadata.inheritanceTree.some(parent => entityMetadata.inheritanceTree.indexOf(parent) !== -1);
+                    && metadata.inheritanceTree.some(parent => entityMetadata.inheritanceTree.filter(item => item !== BaseEntity.BaseEntity).includes(parent));
             });
             if (sameDiscriminatorValueEntityMetadata)
                 throw new Error(`Entities ${entityMetadata.name} and ${sameDiscriminatorValueEntityMetadata.name} have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.`);
