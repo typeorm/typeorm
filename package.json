@@ -1,8 +1,8 @@
 {
-  "name": "typeorm",
-  "private": true,
-  "version": "0.2.29",
-  "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
+  "name": "@nicolaswoitchik/typeorm",
+  "private": false,
+  "version": "0.2.311",
+  "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB, DB2 databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
   "author": {
@@ -32,12 +32,11 @@
     "./browser/platform/PlatformTools.js": "./browser/platform/BrowserPlatformTools.js",
     "./index.js": "./browser/index.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/typeorm/typeorm.git"
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   },
   "bugs": {
-    "url": "https://github.com/typeorm/typeorm/issues"
+    "url": "https://github.com/NicolasWoitchik/typeorm/issues"
   },
   "tags": [
     "orm",
@@ -54,7 +53,9 @@
     "sql-server",
     "sql-server-orm",
     "oracle",
-    "oracle-orm"
+    "oracle-orm",
+    "db2",
+    "db2-orm"
   ],
   "devDependencies": {
     "@types/app-root-path": "^1.2.4",
@@ -151,12 +152,6 @@
   },
   "bin": {
     "typeorm": "./cli.js"
-  },
-  "funding": "https://opencollective.com/typeorm",
-  "collective": {
-    "type": "opencollective",
-    "url": "https://opencollective.com/typeorm",
-    "logo": "https://opencollective.com/opencollective/logo.txt"
   },
   "nyc": {
     "all": true,
