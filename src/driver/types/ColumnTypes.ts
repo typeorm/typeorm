@@ -212,4 +212,5 @@ export type ColumnType =
     | BooleanConstructor
     | DateConstructor
     | NumberConstructor
+    | ObjectConstructor
     | StringConstructor;

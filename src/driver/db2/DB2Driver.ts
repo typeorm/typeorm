@@ -433,24 +433,26 @@ export class DB2Driver implements Driver {
             column.type === "integer" ||
             column.type === "smallint"
         ) {
-            return "number";
+            return "integer";
         } else if (
             column.type === "real" ||
             column.type === "double precision"
         ) {
             return "float";
         } else if (column.type === String || column.type === "varchar") {
-            return "varchar2";
+            return "varchar";
         } else if (column.type === Date) {
             return "timestamp";
         } else if ((column.type as any) === Buffer) {
             return "blob";
         } else if (column.type === "uuid") {
-            return "varchar2";
+            return "varchar";
         } else if (column.type === "simple-array") {
             return "clob";
         } else if (column.type === "simple-json") {
             return "clob";
+        } else if (column.type === Object) {
+            return "blob";
         } else {
             return (column.type as string) || "";
         }
@@ -493,8 +495,6 @@ export class DB2Driver implements Driver {
         switch (column.type) {
             case String:
             case "varchar":
-            case "varchar2":
-            case "nvarchar2":
                 return "255";
             case "raw":
                 return "2000";
@@ -553,8 +553,9 @@ export class DB2Driver implements Driver {
      */
     obtainMasterConnection(): Promise<any> {
         return new Promise<any>((ok, fail) => {
-            this.master.getConnection(
-                (err: any, connection: any, release: Function) => {
+            this.master.open(
+                this.options.connectString,
+                (err: any, connection: any) => {
                     if (err) return fail(err);
                     ok(connection);
                 }
@@ -573,10 +574,13 @@ export class DB2Driver implements Driver {
         return new Promise<any>((ok, fail) => {
             const random = Math.floor(Math.random() * this.slaves.length);
 
-            this.slaves[random].getConnection((err: any, connection: any) => {
-                if (err) return fail(err);
-                ok(connection);
-            });
+            this.slaves[random].open(
+                this.options.connectString,
+                (err: any, connection: any) => {
+                    if (err) return fail(err);
+                    ok(connection);
+                }
+            );
         });
     }
 
@@ -722,28 +726,26 @@ export class DB2Driver implements Driver {
         const connectionOptions = Object.assign(
             {},
             {
-                user: credentials.username,
-                password: credentials.password,
                 connectString: credentials.connectString
                     ? credentials.connectString
-                    : credentials.host +
-                      ":" +
-                      credentials.port +
-                      "/" +
-                      credentials.sid,
+                    : `DATABASE=${credentials.database};HOSTNAME=${credentials.host};PORT=${credentials.port};PROTOCOL=TCPIP;UID=${credentials.username};PWD=${credentials.password};Security=SSL`,
             },
             options.extra || {}
         );
 
-        const pool = new this.db2.Pool(connectionOptions);
+        const pool = new this.db2.Pool(connectionOptions.connectionsString);
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
         return new Promise<void>((ok, fail) => {
-            pool.open(connectionOptions, (err: any, pool: any) => {
-                if (err) return fail(err);
-                ok(pool);
-            });
+            const opened = pool.init(5, connectionOptions.connectionsString);
+            if (!opened) return fail("Failed to open pool");
+
+            ok(pool);
+            // pool.open(connectionOptions, (err: any, pool: any) => {
+            //     if (err) return fail(err);
+            //     ok(pool);
+            // });
         });
     }
 

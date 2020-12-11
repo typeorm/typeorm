@@ -354,19 +354,31 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new table schema.
      */
-    async createSchema(schemas: string, ifNotExist?: boolean): Promise<void> {
-        throw new Error(
-            `Schema create queries are not supported by Oracle driver.`
-        );
+    async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
+        const up = ifNotExist
+            ? `CREATE SCHEMA IF NOT EXISTS "${schema}"`
+            : `CREATE SCHEMA "${schema}"`;
+        const down = `DROP SCHEMA "${schema}" CASCADE`;
+        await this.executeQueries(new Query(up), new Query(down));
     }
 
     /**
      * Drops table schema.
      */
-    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
-        throw new Error(
-            `Schema drop queries are not supported by Oracle driver.`
-        );
+    async dropSchema(
+        schemaPath: string,
+        ifExist?: boolean,
+        isCascade?: boolean
+    ): Promise<void> {
+        const schema =
+            schemaPath.indexOf(".") === -1
+                ? schemaPath
+                : schemaPath.split(".")[0];
+        const up = ifExist
+            ? `DROP SCHEMA IF EXISTS "${schema}" ${isCascade ? "CASCADE" : ""}`
+            : `DROP SCHEMA "${schema}" ${isCascade ? "CASCADE" : ""}`;
+        const down = `CREATE SCHEMA "${schema}"`;
+        await this.executeQueries(new Query(up), new Query(down));
     }
 
     /**
@@ -813,7 +825,7 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length
         ) {
-            // Oracle does not support changing of IDENTITY column, so we must drop column and recreate it again.
+            // DB2 does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
             await this.dropColumn(table, oldColumn);
             await this.addColumn(table, newColumn);
@@ -2115,7 +2127,7 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
                             (dbFk) => dbFk["REFERENCED_COLUMN_NAME"]
                         ),
                         onDelete: dbForeignKey["ON_DELETE"],
-                        onUpdate: "NO ACTION", // Oracle does not have onUpdate option in FK's, but we need it for proper synchronization
+                        onUpdate: "NO ACTION", // DB2 does not have onUpdate option in FK's, but we need it for proper synchronization
                     });
                 }
             );
@@ -2217,7 +2229,7 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
                         .join(", ");
                     let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES "${fk.referencedTableName}" (${referencedColumnNames})`;
                     if (fk.onDelete && fk.onDelete !== "NO ACTION")
-                        // Oracle does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
+                        // DB2 does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
                         constraint += ` ON DELETE ${fk.onDelete}`;
 
                     return constraint;
@@ -2446,7 +2458,7 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
         let sql =
             `ALTER TABLE "${table.name}" ADD CONSTRAINT "${foreignKey.name}" FOREIGN KEY (${columnNames}) ` +
             `REFERENCES "${foreignKey.referencedTableName}" (${referencedColumnNames})`;
-        // Oracle does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
+        // DB2 does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
         if (foreignKey.onDelete && foreignKey.onDelete !== "NO ACTION")
             sql += ` ON DELETE ${foreignKey.onDelete}`;
 
