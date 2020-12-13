@@ -101,6 +101,7 @@
     "mysql2": "^2.1.0",
     "oracledb": "^5.0.0",
     "pg": "^8.3.0",
+    "pg-query-stream": "^4.0.0",
     "redis": "^3.0.2",
     "remap-istanbul": "^0.13.0",
     "rimraf": "^3.0.2",
