@@ -8,7 +8,7 @@ import { Category } from "./entity/Category";
 import { Post } from "./entity/Post";
 import { User } from "./entity/User";
 
-describe.only("multi-database > migration", () => {
+describe("multi-database > migration", () => {
     let connectionOptions: ConnectionOptions[];
     let createFileStub: sinon.SinonStub;
     let getConnectionOptionsStub: sinon.SinonStub;
