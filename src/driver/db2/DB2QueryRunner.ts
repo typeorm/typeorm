@@ -22,6 +22,7 @@ import { IsolationLevel } from "../types/IsolationLevel";
 import { TableExclusion } from "../../schema-builder/table/TableExclusion";
 import { ReplicationMode } from "../types/ReplicationMode";
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult";
+import { Database } from "ibm_db";
 
 /**
  * Runs queries on a single DB2 database connection.
@@ -65,7 +66,7 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates/uses database connection from the connection pool to perform further operations.
      * Returns obtained database connection.
      */
-    connect(): Promise<any> {
+    connect(): Promise<Database> {
         if (this.databaseConnection)
             return Promise.resolve(this.databaseConnection);
 
@@ -202,40 +203,43 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
                 this.driver.connection.logger.logQuery(query, parameters, this);
                 const queryStartTime = +new Date();
 
-                const handler = (err: any, result: any) => {
-                    // log slow queries if maxQueryExecution time is set
-                    const maxQueryExecutionTime = this.driver.connection.options
-                        .maxQueryExecutionTime;
-                    const queryEndTime = +new Date();
-                    const queryExecutionTime = queryEndTime - queryStartTime;
-                    if (
-                        maxQueryExecutionTime &&
-                        queryExecutionTime > maxQueryExecutionTime
-                    )
-                        this.driver.connection.logger.logQuerySlow(
-                            queryExecutionTime,
-                            query,
-                            parameters,
-                            this
-                        );
-
-                    if (err) {
-                        this.driver.connection.logger.logQueryError(
-                            err,
-                            query,
-                            parameters,
-                            this
-                        );
-                        return fail(
-                            new QueryFailedError(query, parameters, err)
-                        );
-                    }
-                    // TODO: find better solution. Must return result instead of properties
-                    ok(result);
-                };
-
                 const databaseConnection = await this.connect();
-                databaseConnection.query(query, parameters || {}, handler);
+                databaseConnection.query(
+                    query,
+                    parameters || [],
+                    (err: any, result: any) => {
+                        // log slow queries if maxQueryExecution time is set
+                        const maxQueryExecutionTime = this.driver.connection
+                            .options.maxQueryExecutionTime;
+                        const queryEndTime = +new Date();
+                        const queryExecutionTime =
+                            queryEndTime - queryStartTime;
+                        if (
+                            maxQueryExecutionTime &&
+                            queryExecutionTime > maxQueryExecutionTime
+                        )
+                            this.driver.connection.logger.logQuerySlow(
+                                queryExecutionTime,
+                                query,
+                                parameters,
+                                this
+                            );
+
+                        if (err) {
+                            this.driver.connection.logger.logQueryError(
+                                err,
+                                query,
+                                parameters,
+                                this
+                            );
+                            return fail(
+                                new QueryFailedError(query, parameters, err)
+                            );
+                        }
+                        // TODO: find better solution. Must return result instead of properties
+                        ok(result);
+                    }
+                );
             } catch (err) {
                 fail(err);
             }
@@ -259,7 +263,7 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
                 this.driver.connection.logger.logQuery(query, parameters, this);
                 const stream = databaseConnection.queryStream(
                     query,
-                    parameters
+                    parameters || []
                 );
                 if (onEnd) stream.on("end", onEnd);
                 if (onError) stream.on("error", onError);

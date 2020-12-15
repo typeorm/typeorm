@@ -93,6 +93,7 @@ export class DB2Driver implements Driver {
         "char",
         "varbinary",
         "blob",
+        "json",
         "binary",
         "dbclob",
         "date",
@@ -553,8 +554,24 @@ export class DB2Driver implements Driver {
      */
     obtainMasterConnection(): Promise<any> {
         return new Promise<any>((ok, fail) => {
+            const credentials = Object.assign(
+                {},
+                this.options,
+                DriverUtils.buildDriverOptions(this.options)
+            ); // todo: do it better way
+
+            // build connection options for the driver
+            const connectionOptions = Object.assign(
+                {},
+                {
+                    connectString: credentials.connectString
+                        ? credentials.connectString
+                        : `DATABASE=${credentials.database};HOSTNAME=${credentials.host};PORT=${credentials.port};PROTOCOL=TCPIP;UID=${credentials.username};PWD=${credentials.password};Security=SSL`,
+                },
+                this.options.extra || {}
+            );
             this.master.open(
-                this.options.connectString,
+                connectionOptions.connectString,
                 (err: any, connection: any) => {
                     if (err) return fail(err);
                     ok(connection);
@@ -573,9 +590,24 @@ export class DB2Driver implements Driver {
 
         return new Promise<any>((ok, fail) => {
             const random = Math.floor(Math.random() * this.slaves.length);
+            const credentials = Object.assign(
+                {},
+                this.options,
+                DriverUtils.buildDriverOptions(this.options)
+            ); // todo: do it better way
 
+            // build connection options for the driver
+            const connectionOptions = Object.assign(
+                {},
+                {
+                    connectString: credentials.connectString
+                        ? credentials.connectString
+                        : `DATABASE=${credentials.database};HOSTNAME=${credentials.host};PORT=${credentials.port};PROTOCOL=TCPIP;UID=${credentials.username};PWD=${credentials.password};Security=SSL`,
+                },
+                this.options.extra || {}
+            );
             this.slaves[random].open(
-                this.options.connectString,
+                connectionOptions.connectString,
                 (err: any, connection: any) => {
                     if (err) return fail(err);
                     ok(connection);
@@ -661,7 +693,8 @@ export class DB2Driver implements Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return ":" + (index + 1);
+        return "?";
+        // return ":" + (index + 1);
     }
 
     // /**
@@ -704,6 +737,9 @@ export class DB2Driver implements Driver {
     protected loadDependencies(): void {
         try {
             this.db2 = PlatformTools.load("ibm_db");
+            if (this.options.debug) {
+                this.db2.debug(this.options.debug);
+            }
         } catch (e) {
             throw new DriverPackageNotInstalledError("DB2", "ibm_db");
         }

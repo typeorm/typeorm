@@ -7,6 +7,7 @@ import { DB2ConnectionCredentialsOptions } from "./DB2ConnectionCredentialsOptio
 export interface DB2ConnectionOptions
     extends BaseConnectionOptions,
         DB2ConnectionCredentialsOptions {
+    readonly debug: boolean;
     /**
      * Database type.
      */
