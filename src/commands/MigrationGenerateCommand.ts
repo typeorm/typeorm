@@ -7,8 +7,6 @@ import * as yargs from "yargs";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import chalk from "chalk";
 import { format } from "@sqltools/formatter/lib/sqlFormatter";
-import { SqliteDriver } from "../driver/sqlite/SqliteDriver";
-import { BetterSqlite3Driver } from "../driver/better-sqlite3/BetterSqlite3Driver";
 
 /**
  * Generates a new migration file with sql needs to be executed to update schema.
@@ -120,10 +118,6 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             }
 
             if (upSqls.length) {
-                if (connection.driver instanceof SqliteDriver || connection.driver instanceof BetterSqlite3Driver) {
-                    upSqls.unshift(...Object.values(connection.driver.attachedDatabases).map(({attachFilepath, attachHandle}) => `        ATTACH "${attachFilepath}" AS "${attachHandle}"`));
-                }
-
                 if (args.name) {
                     const fileContent = MigrationGenerateCommand.getTemplate(args.name as any, timestamp, upSqls, downSqls.reverse());
                     const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
