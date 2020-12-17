@@ -1261,9 +1261,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
             throw error;
 
-        } finally {
-            if (queryRunner !== this.queryRunner) // means we created our own query runner
-                await queryRunner.release();
         }
     }
 
