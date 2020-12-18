@@ -1,5 +1,5 @@
 {
-  "name": "@nicolaswoitchik/typeorm",
+  "name": "typeorm-db2",
   "private": false,
   "version": "0.2.320",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB, DB2 databases.",
@@ -31,9 +31,6 @@
     "./browser/connection/options-reader/ConnectionOptionsYmlReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
     "./browser/platform/PlatformTools.js": "./browser/platform/BrowserPlatformTools.js",
     "./index.js": "./browser/index.js"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
   },
   "bugs": {
     "url": "https://github.com/NicolasWoitchik/typeorm/issues"
