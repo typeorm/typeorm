@@ -1,0 +1,22 @@
+name: Push File
+
+on: push
+
+jobs:
+  copy-file:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Pushes db2 package
+      uses: nicolaswoitchik/typeorm-db2@v0.0.1
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+      with:
+        source_file: 'dist/package/'
+        destination_repo: 'nicolas/typeorm'
+        destination_folder: '/'
+        user_email: 'nicolas@woitchik.com.br'
+        user_name: 'nicolaswoitchik'
+        commit_message: 'Deploy'
