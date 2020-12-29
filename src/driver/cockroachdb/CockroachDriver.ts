@@ -490,7 +490,11 @@ export class CockroachDriver implements Driver {
             return defaultValue === true ? "true" : "false";
 
         } else if (typeof defaultValue === "function") {
-            return defaultValue();
+            const value = defaultValue();
+            if (value === "CURRENT_TIMESTAMP") {
+                return "current_timestamp()";
+            }
+            return value;
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'${arrayCast}`;
@@ -614,17 +618,43 @@ export class CockroachDriver implements Driver {
             // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
             // console.log("==========================================");
 
-            return tableColumn.name !== columnMetadata.databaseName
-                || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadata.length
-                || tableColumn.precision !== columnMetadata.precision
-                || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
-                || (tableColumn.comment || "") !== columnMetadata.comment
-                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
-                || tableColumn.isPrimary !== columnMetadata.isPrimary
-                || tableColumn.isNullable !== columnMetadata.isNullable
-                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || tableColumn.isGenerated !== columnMetadata.isGenerated;
+            // Pulled out individual conditions for easier debugging.
+
+            const nameCond = tableColumn.name !== columnMetadata.databaseName;
+            const typeCond = tableColumn.type !== this.normalizeType(columnMetadata);
+            const lengthCond = tableColumn.length !== columnMetadata.length;
+
+            // Intentionally using '!=' instead of '!==' so that undefined and null compare as equal.
+            const precisionCond = tableColumn.precision != columnMetadata.precision;
+            // console.log(`precisionCond = ${precisionCond}`);
+
+            const scaleCond = (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale);
+            const commentCond = (tableColumn.comment || "") !== columnMetadata.comment;
+
+             // we included check for generated here, because generated columns already can have default values
+            const defaultCond = (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default);
+            // console.log(`tableColumn.default = ${tableColumn.default}`);
+            // console.log(`this.normalizeDefault(columnMetadata) = ${this.normalizeDefault(columnMetadata)}`);
+            // console.log(`defaultCond = ${defaultCond}`);
+
+            const isPrimaryCond = tableColumn.isPrimary !== columnMetadata.isPrimary;
+            const isNullableCond = tableColumn.isNullable !== columnMetadata.isNullable;
+            const isUniqueCond = tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata);
+            const isGeneratedCond = tableColumn.isGenerated !== columnMetadata.isGenerated;
+
+            const value = nameCond
+                || typeCond
+                || lengthCond
+                || precisionCond
+                || scaleCond
+                || commentCond
+                || defaultCond
+                || isPrimaryCond
+                || isNullableCond
+                || isUniqueCond
+                || isGeneratedCond;
+            // console.log(`findChangedColumns() returning ${value}`);
+            return value;
         });
     }
 

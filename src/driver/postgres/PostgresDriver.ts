@@ -740,7 +740,11 @@ export class PostgresDriver implements Driver {
             return defaultValue === true ? "true" : "false";
 
         } else if (typeof defaultValue === "function") {
-            return defaultValue();
+            const value = defaultValue();
+            if (value === "CURRENT_TIMESTAMP") {
+                return "now()";
+            }
+            return value;
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'${arrayCast}`;
@@ -870,20 +874,57 @@ export class PostgresDriver implements Driver {
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            return tableColumn.name !== columnMetadata.databaseName
-                || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadata.length
-                || tableColumn.precision !== columnMetadata.precision
-                || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
-                || (tableColumn.comment || "") !== columnMetadata.comment
-                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
-                || tableColumn.isPrimary !== columnMetadata.isPrimary
-                || tableColumn.isNullable !== columnMetadata.isNullable
-                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + ""))) // enums in postgres are always strings
-                || tableColumn.isGenerated !== columnMetadata.isGenerated
-                || (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase()
-                || tableColumn.srid !== columnMetadata.srid;
+            // console.log(`findChangedColumns() : tableColumn.name = ${tableColumn.name}`);
+            // console.log(`findChangedColumns() : tableColumn.default = ${tableColumn.default}`);
+            // console.log(`findChangedColumns() : this.normalizeDefault(columnMetadata) = ${this.normalizeDefault(columnMetadata)}`);
+
+            // Pulled out individual conditions for easier debugging.
+
+            const nameCond = tableColumn.name !== columnMetadata.databaseName;
+            const typeCond = tableColumn.type !== this.normalizeType(columnMetadata);
+            const lengthCond = tableColumn.length !== columnMetadata.length;
+
+            // Intentionally using '!=' instead of '!==' so that undefined and null compare as equal.
+            const precisionCond = tableColumn.precision != columnMetadata.precision;
+            // console.log(`tableColumn.precision = ${tableColumn.precision}`);
+            // console.log(`columnMetadata.precision = ${columnMetadata.precision}`);
+            // console.log(`precisionCond = ${precisionCond}`);
+
+            const scaleCond = (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale);
+            const commentCond = (tableColumn.comment || "") !== columnMetadata.comment;
+
+             // we included check for generated here, because generated columns already can have default values
+            const defaultCond = (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default);
+            // console.log(`tableColumn.default = ${tableColumn.default}`);
+            // console.log(`this.normalizeDefault(columnMetadata) = ${this.normalizeDefault(columnMetadata)}`);
+            // console.log(`defaultCond = ${defaultCond}`);
+
+            const isPrimaryCond = tableColumn.isPrimary !== columnMetadata.isPrimary;
+            const isNullableCond = tableColumn.isNullable !== columnMetadata.isNullable;
+            const isUniqueCond = tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata);
+            const enumCond = (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + ""))); // enums in postgres are always strings
+            const isGeneratedCond = tableColumn.isGenerated !== columnMetadata.isGenerated;
+            const spatialFeatureTypeCond = (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase();
+            const sridCond = tableColumn.srid !== columnMetadata.srid;
+
+            const value = nameCond
+                || typeCond
+                || lengthCond
+                || precisionCond
+                || scaleCond
+                || commentCond
+                || defaultCond
+                || isPrimaryCond
+                || isNullableCond
+                || isUniqueCond
+                || enumCond
+                || isGeneratedCond
+                || spatialFeatureTypeCond
+                || sridCond;
+
+            // console.log(`findChangedColumns() : returning ${value}`);
+            // console.log("\n");
+            return value;
         });
     }
 

@@ -597,7 +597,11 @@ export class MysqlDriver implements Driver {
             return defaultValue === true ? "1" : "0";
 
         } else if (typeof defaultValue === "function") {
-            return defaultValue();
+            const value = defaultValue();
+            if (value === "CURRENT_TIMESTAMP" && this.options.type === "mariadb") {
+                return "CURRENT_TIMESTAMP()";
+            }
+            return value;
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;
@@ -766,24 +770,58 @@ export class MysqlDriver implements Driver {
                 columnMetadataLength = this.getColumnLength(columnMetadata);
             }
 
-            return tableColumn.name !== columnMetadata.databaseName
-                || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadataLength
-                || tableColumn.width !== columnMetadata.width
-                || (columnMetadata.precision !== undefined && tableColumn.precision !== columnMetadata.precision)
-                || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
-                || tableColumn.zerofill !== columnMetadata.zerofill
-                || tableColumn.unsigned !== columnMetadata.unsigned
-                || tableColumn.asExpression !== columnMetadata.asExpression
-                || tableColumn.generatedType !== columnMetadata.generatedType
-                || (tableColumn.comment || "") !== columnMetadata.comment
-                || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
-                || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
-                || tableColumn.onUpdate !== columnMetadata.onUpdate
-                || tableColumn.isPrimary !== columnMetadata.isPrimary
-                || tableColumn.isNullable !== columnMetadata.isNullable
-                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
+            // Pulled out individual conditions for easier debugging.
+
+            const nameCond = tableColumn.name !== columnMetadata.databaseName;
+            const typeCond = tableColumn.type !== this.normalizeType(columnMetadata);
+            // console.log(`typeCond = ${typeCond}`);
+
+            const lengthCond = tableColumn.length !== columnMetadataLength;
+            const widthCond = tableColumn.width !== columnMetadata.width;
+
+            // Intentionally using '!=' instead of '!==' so that undefined and null compare as equal.
+            const precisionCond = (columnMetadata.precision !== undefined && tableColumn.precision != columnMetadata.precision);
+            // console.log(`precisionCond = ${precisionCond}`);
+
+            const scaleCond = (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale);
+            const zerofillCond = tableColumn.zerofill !== columnMetadata.zerofill;
+            const unsignedCond = tableColumn.unsigned !== columnMetadata.unsigned;
+            const asExpressionCond = tableColumn.asExpression !== columnMetadata.asExpression;
+            const generatedTypeCond = tableColumn.generatedType !== columnMetadata.generatedType;
+            const commentCond = (tableColumn.comment || "") !== columnMetadata.comment;
+
+            const defaultCond = !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default);
+            // console.log(`this.normalizeDefault(columnMetadata) = ${this.normalizeDefault(columnMetadata)}`);
+            // console.log(`tableColumn.default = ${tableColumn.default}`);
+            // console.log(`defaultCond = ${defaultCond}`);
+
+            const enumCond = (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
+            const onUpdateCond = tableColumn.onUpdate !== columnMetadata.onUpdate;
+            const isPrimaryCond = tableColumn.isPrimary !== columnMetadata.isPrimary;
+            const isNullableCond = tableColumn.isNullable !== columnMetadata.isNullable;
+            const isUniqueCond = tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata);
+            const isGeneratedCond = (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
+
+            const value = nameCond
+                || typeCond
+                || lengthCond
+                || widthCond
+                || precisionCond
+                || scaleCond
+                || zerofillCond
+                || unsignedCond
+                || asExpressionCond
+                || generatedTypeCond
+                || commentCond
+                || defaultCond
+                || enumCond
+                || onUpdateCond
+                || isPrimaryCond
+                || isNullableCond
+                || isUniqueCond
+                || isGeneratedCond;
+            // console.log(`findChangedColumns() returning ${value}`);
+            return value;
         });
     }
 
