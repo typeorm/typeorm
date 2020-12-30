@@ -1686,14 +1686,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     throw new LockNotSupportedOnGivenDriverError();
                 }
             case "pessimistic_partial_write":
-                if (driver instanceof PostgresDriver) {
+                if (driver instanceof PostgresDriver || driver instanceof MysqlDriver) {
                     return " FOR UPDATE SKIP LOCKED";
 
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
                 }
             case "pessimistic_write_or_fail":
-                if (driver instanceof PostgresDriver) {
+                if (driver instanceof PostgresDriver || driver instanceof MysqlDriver) {
                     return " FOR UPDATE NOWAIT";
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
