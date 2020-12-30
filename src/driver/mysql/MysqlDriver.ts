@@ -582,6 +582,9 @@ export class MysqlDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string {
         const defaultValue = columnMetadata.default;
 
+        // console.log(`normalizeDefault() : columnMetadata.propertyName = ${columnMetadata.propertyName}`);
+        // console.log(`normalizeDefault() : defaultValue = ${defaultValue}`);
+
         if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
             return `'${defaultValue}'`;
         }

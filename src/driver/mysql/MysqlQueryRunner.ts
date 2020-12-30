@@ -1488,6 +1488,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.default = `'${dbColumn["COLUMN_DEFAULT"]}'`;
                     }
 
+                    // console.log(`loadTables() : tableColumn.name = ${tableColumn.name}`);
+                    // console.log(`loadTables() : dbColumn["COLUMN_DEFAULT"] = ${dbColumn["COLUMN_DEFAULT"]}`);
+                    // console.log(`loadTables() : tableColumn.default = ${tableColumn.default}`);
+
                     if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
                         // New versions of MariaDB return expressions in lowercase.  We need to set it in
                         // uppercase so the comparison in MysqlDriver#compareExtraValues does not fail.

@@ -1623,6 +1623,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         }
                     }
 
+                    // console.log(`loadTables() : tableColumn.name = ${tableColumn.name}`);
+                    // console.log(`loadTables() : dbColumn["column_default"] = ${dbColumn["column_default"]}`);
+                    // console.log(`loadTables() : tableColumn.default = ${tableColumn.default}`);
+
                     tableColumn.comment = dbColumn["description"] == null ? undefined : dbColumn["description"];
                     if (dbColumn["character_set_name"])
                         tableColumn.charset = dbColumn["character_set_name"];

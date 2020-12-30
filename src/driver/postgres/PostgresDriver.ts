@@ -721,6 +721,9 @@ export class PostgresDriver implements Driver {
         const defaultValue = columnMetadata.default;
         const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
 
+        // console.log(`normalizeDefault() : columnMetadata.propertyName = ${columnMetadata.propertyName}`);
+        // console.log(`normalizeDefault() : defaultValue = ${defaultValue}`);
+
         if (
             (
                 columnMetadata.type === "enum"

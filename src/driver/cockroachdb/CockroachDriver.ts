@@ -483,6 +483,9 @@ export class CockroachDriver implements Driver {
         const defaultValue = columnMetadata.default;
         const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
 
+        // console.log(`normalizeDefault() : columnMetadata.propertyName = ${columnMetadata.propertyName}`);
+        // console.log(`normalizeDefault() : defaultValue = ${defaultValue}`);
+
         if (typeof defaultValue === "number") {
             return `(${defaultValue})`;
 
