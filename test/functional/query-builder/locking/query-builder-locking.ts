@@ -99,7 +99,7 @@ describe("query builder > locking", () => {
         return;
     })));
 
-    it.only("should throw error if pessimistic_partial_write lock used without transaction", () => Promise.all(connections.map(async connection => {
+    it("should throw error if pessimistic_partial_write lock used without transaction", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver) {
             return connection.createQueryBuilder(PostWithVersion, "post")
                 .setLock("pessimistic_partial_write")
@@ -109,7 +109,7 @@ describe("query builder > locking", () => {
         return;
     })));    
 
-    it.only("should not throw error if pessimistic_partial_write lock used with transaction", () => Promise.all(connections.map(async connection => {
+    it("should not throw error if pessimistic_partial_write lock used with transaction", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver) {
             return connection.manager.transaction(entityManager => {
                 return Promise.all([entityManager.createQueryBuilder(PostWithVersion, "post")
@@ -121,7 +121,7 @@ describe("query builder > locking", () => {
         return;
     })));
     
-    it.only("should throw error if pessimistic_write_or_fail lock used without transaction", () => Promise.all(connections.map(async connection => {
+    it("should throw error if pessimistic_write_or_fail lock used without transaction", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver) {
             return connection.createQueryBuilder(PostWithVersion, "post")
                 .setLock("pessimistic_write_or_fail")
@@ -131,7 +131,7 @@ describe("query builder > locking", () => {
         return;
     })));    
 
-    it.only("should not throw error if pessimistic_write_or_fail lock used with transaction", () => Promise.all(connections.map(async connection => {
+    it("should not throw error if pessimistic_write_or_fail lock used with transaction", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver) {
             return connection.manager.transaction(entityManager => {
                 return Promise.all([entityManager.createQueryBuilder(PostWithVersion, "post")
@@ -231,7 +231,7 @@ describe("query builder > locking", () => {
 
     })));
 
-    it.only("should not attach pessimistic_partial_write lock statement on query if locking is not used", () => Promise.all(connections.map(async connection => {
+    it("should not attach pessimistic_partial_write lock statement on query if locking is not used", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver) {
             const sql = connection.createQueryBuilder(PostWithVersion, "post")
                 .where("post.id = :id", { id: 1 })
@@ -242,7 +242,7 @@ describe("query builder > locking", () => {
         return;
     })));    
 
-    it.only("should attach pessimistic_partial_write lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
+    it("should attach pessimistic_partial_write lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver) {
             const sql = connection.createQueryBuilder(PostWithVersion, "post")
                 .setLock("pessimistic_partial_write")
@@ -255,7 +255,7 @@ describe("query builder > locking", () => {
 
     })));    
 
-    it.only("should not attach pessimistic_write_or_fail lock statement on query if locking is not used", () => Promise.all(connections.map(async connection => {
+    it("should not attach pessimistic_write_or_fail lock statement on query if locking is not used", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver) {
             const sql = connection.createQueryBuilder(PostWithVersion, "post")
                 .where("post.id = :id", { id: 1 })
@@ -266,7 +266,7 @@ describe("query builder > locking", () => {
         return;
     })));    
 
-    it.only("should attach pessimistic_write_or_fail lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
+    it("should attach pessimistic_write_or_fail lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver) {
             const sql = connection.createQueryBuilder(PostWithVersion, "post")
                 .setLock("pessimistic_write_or_fail")
