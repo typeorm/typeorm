@@ -1,5 +1,5 @@
 export default [{
   type: "sqlite",
   name: "file",
-  database: "test-js"
+  database: "test-js-esm"
 }];

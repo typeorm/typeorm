@@ -548,7 +548,7 @@ Steps to run this project:
                 break;
             case "postgres":
             case "cockroachdb":
-                packageJson.dependencies["pg"] = "^7.3.0";
+                packageJson.dependencies["pg"] = "^8.4.0";
                 break;
             case "sqlite":
                 packageJson.dependencies["sqlite3"] = "^4.0.3";

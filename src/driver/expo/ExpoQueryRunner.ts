@@ -5,6 +5,7 @@ import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStar
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {ExpoDriver} from "./ExpoDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
+import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 
 // Needed to satisfy the Typescript compiler
 interface IResultSet {
@@ -29,7 +30,7 @@ interface ITransaction {
  * Runs queries on a single sqlite database connection.
  */
 export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
-    
+
     /**
      * Database driver used by connection.
      */
@@ -39,7 +40,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
      * Database transaction object
      */
     private transaction?: ITransaction;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -55,9 +56,9 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
      * Starts transaction. Within Expo, all database operations happen in a
      * transaction context, so issuing a `BEGIN TRANSACTION` command is
      * redundant and will result in the following error:
-     * 
+     *
      * `Error: Error code 1: cannot start a transaction within a transaction`
-     * 
+     *
      * Instead, we keep track of a `Transaction` object in `this.transaction`
      * and continue using the same object until we wish to commit the
      * transaction.
@@ -66,7 +67,15 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         if (this.isTransactionActive && typeof this.transaction !== "undefined")
             throw new TransactionAlreadyStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         this.isTransactionActive = true;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -81,8 +90,16 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         if (!this.isTransactionActive && typeof this.transaction === "undefined")
             throw new TransactionNotStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         this.isTransactionActive = false;
         this.transaction = undefined;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -96,8 +113,16 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         if (!this.isTransactionActive && typeof this.transaction === "undefined")
             throw new TransactionNotStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         this.isTransactionActive = false;
         this.transaction = undefined;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -125,7 +150,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                     if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
                         this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
                     }
-    
+
                     // return id of inserted row, if query was insert statement.
                     if (query.substr(0, 11) === "INSERT INTO") {
                         ok(result.insertId);

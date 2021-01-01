@@ -13,7 +13,7 @@ TypeORM was tested on Node.js version 4 and above.
 
 ## Browser
 
-You can use [sql.js](https://github.com/kripken/sql.js) in the browser.
+You can use [sql.js](https://sql.js.org) in the browser.
 
 **Webpack configuration**
     

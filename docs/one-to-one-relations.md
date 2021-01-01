@@ -35,7 +35,7 @@ export class User {
     @Column()
     name: string;
     
-    @OneToOne(type => Profile)
+    @OneToOne(() => Profile)
     @JoinColumn()
     profile: Profile;
     
@@ -125,7 +125,7 @@ export class Profile {
     @Column()
     photo: string;
     
-    @OneToOne(type => User, user => user.profile) // specify inverse side as a second parameter
+    @OneToOne(() => User, user => user.profile) // specify inverse side as a second parameter
     user: User;
     
 }
@@ -144,7 +144,7 @@ export class User {
     @Column()
     name: string;
     
-    @OneToOne(type => Profile, profile => profile.user) // specify inverse side as a second parameter
+    @OneToOne(() => Profile, profile => profile.user) // specify inverse side as a second parameter
     @JoinColumn()
     profile: Profile;
     

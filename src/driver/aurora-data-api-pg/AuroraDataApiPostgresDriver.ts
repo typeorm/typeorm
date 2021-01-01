@@ -28,8 +28,6 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
      */
     DataApiDriver: any;
 
-    client: any;
-
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
@@ -56,16 +54,6 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
 
         // load data-api package
         this.loadDependencies();
-
-        this.client = new this.DataApiDriver(
-            this.options.region,
-            this.options.secretArn,
-            this.options.resourceArn,
-            this.options.database,
-            (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
-            this.options.serviceConfigOptions,
-            this.options.formatOptions,
-        );
     }
 
     // -------------------------------------------------------------------------
@@ -90,7 +78,19 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new AuroraDataApiPostgresQueryRunner(this, mode);
+        return new AuroraDataApiPostgresQueryRunner(
+            this,
+            new this.DataApiDriver(
+                this.options.region,
+                this.options.secretArn,
+                this.options.resourceArn,
+                this.options.database,
+                (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
+                this.options.serviceConfigOptions,
+                this.options.formatOptions,
+            ),
+            mode
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -110,7 +110,7 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
      * Executes given query.
      */
     protected executeQuery(connection: any, query: string) {
-        return this.client.query(query);
+        return this.connection.query(query);
     }
 
     /**

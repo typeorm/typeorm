@@ -271,6 +271,11 @@ export class QueryExpressionMap {
      */
     nativeParameters: ObjectLiteral = {};
 
+    /**
+     * Query Comment to include extra information for debugging or other purposes.
+     */
+    comment?: string;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -429,6 +434,7 @@ export class QueryExpressionMap {
         map.callListeners = this.callListeners;
         map.useTransaction = this.useTransaction;
         map.nativeParameters = Object.assign({}, this.nativeParameters);
+        map.comment = this.comment;
         return map;
     }
 

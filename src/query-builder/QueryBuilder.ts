@@ -15,9 +15,10 @@ import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {EntitySchema} from "../";
 import {FindOperator} from "../find-options/FindOperator";
 import {In} from "../find-options/operator/In";
@@ -447,6 +448,16 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
+     * Includes a Query comment in the query builder.  This is helpful for debugging purposes,
+     * such as finding a specific query in the database server's logs, or for categorization using
+     * an APM product.
+     */
+    comment(comment: string): this {
+        this.expressionMap.comment = comment;
+        return this;
+    }
+
+    /**
      * Disables escaping.
      */
     disableEscaping(): this {
@@ -576,24 +587,37 @@ export abstract class QueryBuilder<Entity> {
 
             const replacements: { [key: string]: string } = {};
 
-            for (const column of alias.metadata.columns) {
-                if (!(column.propertyPath in replacements))
-                    replacements[column.propertyPath] = column.databaseName;
-                if (!(column.propertyName in replacements))
-                    replacements[column.propertyName] = column.databaseName;
-                if (!(column.databaseName in replacements))
-                    replacements[column.databaseName] = column.databaseName;
+            // Insert & overwrite the replacements from least to most relevant in our replacements object.
+            // To do this we iterate and overwrite in the order of relevance.
+            // Least to Most Relevant:
+            // * Relation Property Path to first join column key
+            // * Relation Property Path + Column Path
+            // * Column Database Name
+            // * Column Propety Name
+            // * Column Property Path
+
+            for (const relation of alias.metadata.relations) {
+                if (relation.joinColumns.length > 0)
+                    replacements[relation.propertyPath] = relation.joinColumns[0].databaseName;
             }
 
             for (const relation of alias.metadata.relations) {
                 for (const joinColumn of [...relation.joinColumns, ...relation.inverseJoinColumns]) {
-                    const key = `${relation.propertyPath}.${joinColumn.referencedColumn!.propertyPath}`;
-                    if (!(key in replacements))
-                        replacements[key] = joinColumn.databaseName;
+                    const propertyKey = `${relation.propertyPath}.${joinColumn.referencedColumn!.propertyPath}`;
+                    replacements[propertyKey] = joinColumn.databaseName;
                 }
+            }
 
-                if (relation.joinColumns.length > 0 && !(relation.propertyPath in replacements))
-                    replacements[relation.propertyPath] = relation.joinColumns[0].databaseName;
+            for (const column of alias.metadata.columns) {
+                replacements[column.databaseName] = column.databaseName;
+            }
+
+            for (const column of alias.metadata.columns) {
+                replacements[column.propertyName] = column.databaseName;
+            }
+
+            for (const column of alias.metadata.columns) {
+                replacements[column.propertyPath] = column.databaseName;
             }
 
             const replacementKeys = Object.keys(replacements);
@@ -611,6 +635,19 @@ export abstract class QueryBuilder<Entity> {
         }
 
         return statement;
+    }
+
+    protected createComment(): string {
+        if (!this.expressionMap.comment) {
+            return "";
+        }
+
+        // ANSI SQL 2003 support C style comments - comments that start with `/*` and end with `*/`
+        // In some dialects query nesting is available - but not all.  Because of this, we'll need
+        // to scrub "ending" characters from the SQL but otherwise we can leave everything else
+        // as-is and it should be valid.
+
+        return `/* ${this.expressionMap.comment.replace("*/", "")} */ `;
     }
 
     /**
@@ -892,6 +929,8 @@ export abstract class QueryBuilder<Entity> {
      * Gets SQL needs to be inserted into final query.
      */
     protected computeFindOperatorExpression(operator: FindOperator<any>, aliasPath: string, parameters: any[]): string {
+        const { driver } = this.connection;
+
         switch (operator.type) {
             case "not":
                 if (operator.child) {
@@ -910,14 +949,18 @@ export abstract class QueryBuilder<Entity> {
             case "equal":
                 return `${aliasPath} = ${parameters[0]}`;
             case "ilike":
-                return `${aliasPath} ILIKE ${parameters[0]}`;
+                if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
+                    return `${aliasPath} ILIKE ${parameters[0]}`;
+                }
+
+                return `UPPER(${aliasPath}) LIKE UPPER(${parameters[0]})`;
             case "like":
                 return `${aliasPath} LIKE ${parameters[0]}`;
             case "between":
                 return `${aliasPath} BETWEEN ${parameters[0]} AND ${parameters[1]}`;
             case "in":
-                if ((this.connection.driver instanceof OracleDriver || this.connection.driver instanceof MysqlDriver) && parameters.length === 0) {
-                    return `${aliasPath} IN (null)`;
+                if (parameters.length === 0) {
+                    return "0=1";
                 }
                 return `${aliasPath} IN (${parameters.join(", ")})`;
             case "any":
