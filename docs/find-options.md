@@ -80,6 +80,7 @@ userRepository.find({
 userRepository.find({
     withDeleted: true
 });
+```
 
 `find` methods which return multiple entities (`find`, `findAndCount`, `findByIds`) also accept following options:
 
