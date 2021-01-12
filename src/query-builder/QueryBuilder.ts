@@ -608,8 +608,9 @@ export abstract class QueryBuilder<Entity> {
      */
     protected replacePropertyNames(statement: string) {
         if (this.connection.options.type === "react-native") {
-            return this.replacePropertyNamesReactNativeFallback(statement)
+            return this.replacePropertyNamesReactNativeFallback(statement);
         }
+
         // Escape special characters in regular expressions
         // Per https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
         const escapeRegExp = (s: String) => s.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
