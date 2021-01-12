@@ -587,37 +587,24 @@ export abstract class QueryBuilder<Entity> {
 
             const replacements: { [key: string]: string } = {};
 
-            // Insert & overwrite the replacements from least to most relevant in our replacements object.
-            // To do this we iterate and overwrite in the order of relevance.
-            // Least to Most Relevant:
-            // * Relation Property Path to first join column key
-            // * Relation Property Path + Column Path
-            // * Column Database Name
-            // * Column Propety Name
-            // * Column Property Path
-
-            for (const relation of alias.metadata.relations) {
-                if (relation.joinColumns.length > 0)
-                    replacements[relation.propertyPath] = relation.joinColumns[0].databaseName;
+            for (const column of alias.metadata.columns) {
+                if (!(column.propertyPath in replacements))
+                    replacements[column.propertyPath] = column.databaseName;
+                if (!(column.propertyName in replacements))
+                    replacements[column.propertyName] = column.databaseName;
+                if (!(column.databaseName in replacements))
+                    replacements[column.databaseName] = column.databaseName;
             }
 
             for (const relation of alias.metadata.relations) {
                 for (const joinColumn of [...relation.joinColumns, ...relation.inverseJoinColumns]) {
-                    const propertyKey = `${relation.propertyPath}.${joinColumn.referencedColumn!.propertyPath}`;
-                    replacements[propertyKey] = joinColumn.databaseName;
+                    const key = `${relation.propertyPath}.${joinColumn.referencedColumn!.propertyPath}`;
+                    if (!(key in replacements))
+                        replacements[key] = joinColumn.databaseName;
                 }
-            }
 
-            for (const column of alias.metadata.columns) {
-                replacements[column.databaseName] = column.databaseName;
-            }
-
-            for (const column of alias.metadata.columns) {
-                replacements[column.propertyName] = column.databaseName;
-            }
-
-            for (const column of alias.metadata.columns) {
-                replacements[column.propertyPath] = column.databaseName;
+                if (relation.joinColumns.length > 0 && !(relation.propertyPath in replacements))
+                    replacements[relation.propertyPath] = relation.joinColumns[0].databaseName;
             }
 
             const replacementKeys = Object.keys(replacements);
@@ -628,8 +615,8 @@ export abstract class QueryBuilder<Entity> {
                     `${escapeRegExp(replaceAliasNamePrefix)}(${replacementKeys.map(escapeRegExp).join("|")})` +
                     `(?=[ =\)\,]|.{0}$)`,
                     "gm"
-                ), (_, p) =>
-                    `${replacementAliasNamePrefix}${this.escape(replacements[p])}`
+                    ), (_, p) =>
+                        `${replacementAliasNamePrefix}${this.escape(replacements[p])}`
                 );
             }
         }
