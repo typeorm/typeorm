@@ -573,9 +573,43 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
+     * Old (less performant) implementation of replacePropertyNames,
+     * which doesn't use lookbehind because React Native doesn't support it.
+     *
+     * @see https://github.com/typeorm/typeorm/issues/7026
+     */
+    protected replacePropertyNamesReactNativeFallback(statement: string) {
+        this.expressionMap.aliases.forEach(alias => {
+            if (!alias.hasMetadata) return;
+            const replaceAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? alias.name + "\\." : "";
+            const replacementAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? this.escape(alias.name) + "." : "";
+            alias.metadata.columns.forEach(column => {
+                const expression = "([ =\(]|^.{0})" + replaceAliasNamePrefix + column.propertyPath + "([ =\)\,]|.{0}$)";
+                statement = statement.replace(new RegExp(expression, "gm"), "$1" + replacementAliasNamePrefix + this.escape(column.databaseName) + "$2");
+                const expression2 = "([ =\(]|^.{0})" + replaceAliasNamePrefix + column.propertyName + "([ =\)\,]|.{0}$)";
+                statement = statement.replace(new RegExp(expression2, "gm"), "$1" + replacementAliasNamePrefix + this.escape(column.databaseName) + "$2");
+            });
+            alias.metadata.relations.forEach(relation => {
+                [...relation.joinColumns, ...relation.inverseJoinColumns].forEach(joinColumn => {
+                    const expression = "([ =\(]|^.{0})" + replaceAliasNamePrefix + relation.propertyPath + "\\." + joinColumn.referencedColumn!.propertyPath + "([ =\)\,]|.{0}$)";
+                    statement = statement.replace(new RegExp(expression, "gm"), "$1" + replacementAliasNamePrefix + this.escape(joinColumn.databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
+                });
+                if (relation.joinColumns.length > 0) {
+                    const expression = "([ =\(]|^.{0})" + replaceAliasNamePrefix + relation.propertyPath + "([ =\)\,]|.{0}$)";
+                    statement = statement.replace(new RegExp(expression, "gm"), "$1" + replacementAliasNamePrefix + this.escape(relation.joinColumns[0].databaseName) + "$2"); // todo: fix relation.joinColumns[0], what if multiple columns
+                }
+            });
+        });
+        return statement;
+    }
+
+    /**
      * Replaces all entity's propertyName to name in the given statement.
      */
     protected replacePropertyNames(statement: string) {
+        if (this.connection.options.type === "react-native") {
+            return this.replacePropertyNamesReactNativeFallback(statement)
+        }
         // Escape special characters in regular expressions
         // Per https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
         const escapeRegExp = (s: String) => s.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
@@ -587,24 +621,37 @@ export abstract class QueryBuilder<Entity> {
 
             const replacements: { [key: string]: string } = {};
 
-            for (const column of alias.metadata.columns) {
-                if (!(column.propertyPath in replacements))
-                    replacements[column.propertyPath] = column.databaseName;
-                if (!(column.propertyName in replacements))
-                    replacements[column.propertyName] = column.databaseName;
-                if (!(column.databaseName in replacements))
-                    replacements[column.databaseName] = column.databaseName;
+            // Insert & overwrite the replacements from least to most relevant in our replacements object.
+            // To do this we iterate and overwrite in the order of relevance.
+            // Least to Most Relevant:
+            // * Relation Property Path to first join column key
+            // * Relation Property Path + Column Path
+            // * Column Database Name
+            // * Column Propety Name
+            // * Column Property Path
+
+            for (const relation of alias.metadata.relations) {
+                if (relation.joinColumns.length > 0)
+                    replacements[relation.propertyPath] = relation.joinColumns[0].databaseName;
             }
 
             for (const relation of alias.metadata.relations) {
                 for (const joinColumn of [...relation.joinColumns, ...relation.inverseJoinColumns]) {
-                    const key = `${relation.propertyPath}.${joinColumn.referencedColumn!.propertyPath}`;
-                    if (!(key in replacements))
-                        replacements[key] = joinColumn.databaseName;
+                    const propertyKey = `${relation.propertyPath}.${joinColumn.referencedColumn!.propertyPath}`;
+                    replacements[propertyKey] = joinColumn.databaseName;
                 }
+            }
 
-                if (relation.joinColumns.length > 0 && !(relation.propertyPath in replacements))
-                    replacements[relation.propertyPath] = relation.joinColumns[0].databaseName;
+            for (const column of alias.metadata.columns) {
+                replacements[column.databaseName] = column.databaseName;
+            }
+
+            for (const column of alias.metadata.columns) {
+                replacements[column.propertyName] = column.databaseName;
+            }
+
+            for (const column of alias.metadata.columns) {
+                replacements[column.propertyPath] = column.databaseName;
             }
 
             const replacementKeys = Object.keys(replacements);
