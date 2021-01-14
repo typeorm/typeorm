@@ -138,7 +138,7 @@ export class JunctionEntityMetadataBuilder {
         entityMetadata.ownColumns.forEach(column => column.relationMetadata = relation);
 
         // create junction table foreign keys
-        entityMetadata.foreignKeys = [
+        entityMetadata.foreignKeys = relation.createForeignKeyConstraints ? [
             new ForeignKeyMetadata({
                 entityMetadata: entityMetadata,
                 referencedEntityMetadata: relation.entityMetadata,
@@ -153,7 +153,7 @@ export class JunctionEntityMetadataBuilder {
                 referencedColumns: inverseReferencedColumns,
                 onDelete: relation.onDelete || "CASCADE"
             }),
-        ];
+        ] : [];
 
         // create junction table indices
         entityMetadata.ownIndices = [

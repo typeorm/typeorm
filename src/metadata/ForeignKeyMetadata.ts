@@ -69,11 +69,6 @@ export class ForeignKeyMetadata {
      */
     referencedColumnNames: string[] = [];
 
-    /**
-     * Whether to use this foreign key in DB schema builder, defaults to true.
-     */
-    createInDb?: boolean;
-
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -87,7 +82,6 @@ export class ForeignKeyMetadata {
         onDelete?: OnDeleteType,
         onUpdate?: OnUpdateType,
         deferrable?: DeferrableType,
-        createInDb?: boolean,
     }) {
         this.entityMetadata = options.entityMetadata;
         this.referencedEntityMetadata = options.referencedEntityMetadata;
@@ -96,7 +90,6 @@ export class ForeignKeyMetadata {
         this.onDelete = options.onDelete || "NO ACTION";
         this.onUpdate = options.onUpdate || "NO ACTION";
         this.deferrable = options.deferrable;
-        this.createInDb = options.createInDb === false ? false : true;
         if (options.namingStrategy)
             this.build(options.namingStrategy);
     }

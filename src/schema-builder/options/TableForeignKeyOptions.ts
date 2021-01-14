@@ -44,9 +44,4 @@ export interface TableForeignKeyOptions {
      * or at the end of a transaction
      */
     deferrable?: string;
-
-    /**
-     * Whether to use this foreign key in DB schema builder.
-     */
-    createInDb?: boolean;
 }

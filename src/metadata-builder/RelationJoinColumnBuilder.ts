@@ -59,8 +59,8 @@ export class RelationJoinColumnBuilder {
       uniqueConstraint: UniqueMetadata|undefined,
     } {
         const referencedColumns = this.collectReferencedColumns(joinColumns, relation);
-        if (!referencedColumns.length)
-            return { foreignKey: undefined, uniqueConstraint: undefined }; // this case is possible only for one-to-one non owning side
+        if (!referencedColumns.length || !relation.createForeignKeyConstraints)
+            return { foreignKey: undefined, uniqueConstraint: undefined }; // this case is possible for one-to-one non owning side and relations with createForeignKeyConstraints = false
 
         const columns = this.collectColumns(joinColumns, relation, referencedColumns);
         const foreignKey = new ForeignKeyMetadata({
@@ -72,7 +72,6 @@ export class RelationJoinColumnBuilder {
             onDelete: relation.onDelete,
             onUpdate: relation.onUpdate,
             deferrable: relation.deferrable,
-            createInDb: relation.createForeignKeyConstraints,
         });
 
         // Oracle does not allow both primary and unique constraints on the same column
