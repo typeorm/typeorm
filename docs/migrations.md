@@ -212,7 +212,8 @@ Example:
 ```ts
 import {MigrationInterface, QueryRunner, Table, TableIndex, TableColumn, TableForeignKey } from "typeorm";
 
-export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
+
+export class TestQuestionAnswer1610926293858 implements MigrationInterface {
 
     async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.createTable(new Table({
@@ -269,10 +270,10 @@ export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
     }
 
     async down(queryRunner: QueryRunner): Promise<void> {
-        const table = await queryRunner.getTable("question");
+        const table = await queryRunner.getTable("answer");
         const foreignKey = table.foreignKeys.find(fk => fk.columnNames.indexOf("questionId") !== -1);
-        await queryRunner.dropForeignKey("question", foreignKey);
-        await queryRunner.dropColumn("question", "questionId");
+        await queryRunner.dropForeignKey("answer", foreignKey);
+        await queryRunner.dropColumn("answer", "questionId");
         await queryRunner.dropTable("answer");
         await queryRunner.dropIndex("question", "IDX_QUESTION_NAME");
         await queryRunner.dropTable("question");
