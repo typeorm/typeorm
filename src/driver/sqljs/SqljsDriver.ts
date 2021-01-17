@@ -10,6 +10,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {SqljsEntityManager} from "./SqljsEntityManager";
 
 // This is needed to satisfy the typescript compiler.
 interface Window {
@@ -71,10 +72,18 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new SqljsQueryRunner(this);
+        if (!this.queryRunner) this.queryRunner = new SqljsQueryRunner(this);
 
         return this.queryRunner;
+    }
+
+    /**
+     * Creates an entity manager.
+     */
+    createEntityManager(queryRunner?: SqljsQueryRunner): SqljsEntityManager {
+        // loading it dynamically because of circular issue
+        const SqljsEntityManagerCls = require("./SqljsEntityManager").SqljsEntityManager;
+        return new SqljsEntityManagerCls(this.connection, queryRunner);
     }
 
     /**

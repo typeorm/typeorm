@@ -76,11 +76,6 @@ export class CockroachDriver implements Driver {
     isReplicated: boolean = false;
 
     /**
-     * Indicates if tree tables are supported by this driver.
-     */
-    treeSupport = true;
-
-    /**
      * Gets list of supported column data types by a driver.
      *
      * @see https://www.cockroachlabs.com/docs/stable/data-types.html
@@ -418,11 +413,19 @@ export class CockroachDriver implements Driver {
     }
 
     /**
-     * Build full table name with schema name and table name.
+     * Build full table path with schema name and table name.
      * E.g. "mySchema"."myTable"
      */
     buildTableName(tableName: string, schema?: string): string {
-        return schema ? `${schema}.${tableName}` : tableName;
+        return tableName;
+    }
+
+    /**
+     * Build full schema path with database name and schema name.
+     * E.g. "myDB"."mySchema"
+     */
+    buildSchemaPath(schema?: string): string | undefined {
+        return schema;
     }
 
     /**

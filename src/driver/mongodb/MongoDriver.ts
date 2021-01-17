@@ -18,7 +18,8 @@ import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {DriverUtils} from "../DriverUtils";
 import {Mutable} from "../../util/TypeUtils";
-import {QueryRunner} from "../..";
+import {MongoEntityManager} from "./MongoEntityManager";
+import {QueryRunner} from "../../query-runner/QueryRunner";
 
 /**
  * Organizes communication with MongoDB.
@@ -58,11 +59,6 @@ export class MongoDriver implements Driver {
      * Indicates if replication is enabled.
      */
     isReplicated: boolean = false;
-
-    /**
-     * Indicates if tree tables are supported by this driver.
-     */
-    treeSupport = false;
 
     /**
      * Mongodb does not need to have column types because they are not used in schema sync.
@@ -234,7 +230,7 @@ export class MongoDriver implements Driver {
                     if (err) return fail(err);
 
                     this.queryRunner = new MongoQueryRunner(this.connection, client);
-                    (this.queryRunner as Mutable<QueryRunner>).manager = this.connection.manager;
+                    (this.queryRunner as Mutable<MongoQueryRunner>).manager = this.connection.manager as MongoEntityManager;
                     ok();
                 });
         });
@@ -270,6 +266,15 @@ export class MongoDriver implements Driver {
      */
     createQueryRunner(mode: ReplicationMode) {
         return this.queryRunner!;
+    }
+
+    /**
+     * Creates an entity manager.
+     */
+    createEntityManager(queryRunner?: QueryRunner): MongoEntityManager {
+        // loading it dynamically because of circular issue
+        const MongoEntityManagerCls = require("./MongoEntityManager").MongoEntityManager;
+        return new MongoEntityManagerCls(this.connection, queryRunner);
     }
 
     /**
@@ -446,8 +451,8 @@ export class MongoDriver implements Driver {
      * Builds connection url that is passed to underlying driver to perform connection to the mongodb database.
      */
     protected buildConnectionUrl(options: { [key: string]: any }): string {
-         const schemaUrlPart = options.type.toLowerCase();
-         const credentialsUrlPart = (options.username && options.password)
+        const schemaUrlPart = options.type.toLowerCase();
+        const credentialsUrlPart = (options.username && options.password)
             ? `${options.username}:${options.password}@`
             : "";
 
@@ -461,7 +466,7 @@ export class MongoDriver implements Driver {
                 : `:${options.port || "27017"}`;
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}`;
         }
-            
+
         return connectionString;
     }
 

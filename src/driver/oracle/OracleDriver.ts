@@ -70,11 +70,6 @@ export class OracleDriver implements Driver {
     isReplicated: boolean = false;
 
     /**
-     * Indicates if tree tables are supported by this driver.
-     */
-    treeSupport = true;
-
-    /**
      * Gets list of supported column data types by a driver.
      *
      * @see https://www.techonthenet.com/oracle/datatypes.php
@@ -351,7 +346,7 @@ export class OracleDriver implements Driver {
      * Oracle does not support table schemas. One user can have only one schema.
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
-        return tableName;
+        return database ? `${database}.${tableName}` : tableName;
     }
 
     /**

@@ -6,7 +6,7 @@ import {SubjectChangedColumnsComputer} from "./SubjectChangedColumnsComputer";
 import {SubjectWithoutIdentifierError} from "../error/SubjectWithoutIdentifierError";
 import {SubjectRemovedAndUpdatedError} from "../error/SubjectRemovedAndUpdatedError";
 import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
-import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
+import {MongoEntityManager} from "../driver/mongodb/MongoEntityManager";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SaveOptions} from "../repository/SaveOptions";

@@ -17,11 +17,9 @@ import {MigrationExecutor} from "../migration/MigrationExecutor";
 import {Migration} from "../migration/Migration";
 import {MongoRepository} from "../repository/MongoRepository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
-import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 import {EntityMetadataValidator} from "../metadata-builder/EntityMetadataValidator";
 import {ConnectionOptions} from "./ConnectionOptions";
 import {QueryRunnerProviderAlreadyReleasedError} from "../error/QueryRunnerProviderAlreadyReleasedError";
-import {EntityManagerFactory} from "../entity-manager/EntityManagerFactory";
 import {DriverFactory} from "../driver/DriverFactory";
 import {ConnectionMetadataBuilder} from "./ConnectionMetadataBuilder";
 import {QueryRunner} from "../query-runner/QueryRunner";
@@ -29,7 +27,6 @@ import {SelectQueryBuilder} from "../query-builder/builder/SelectQueryBuilder";
 import {LoggerFactory} from "../logger/LoggerFactory";
 import {QueryResultCacheFactory} from "../cache/QueryResultCacheFactory";
 import {QueryResultCache} from "../cache/QueryResultCache";
-import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
 import {RelationLoader} from "../query-builder/RelationLoader";
 import {RelationIdLoader} from "../query-builder/RelationIdLoader";
 import {EntitySchema} from "../";
@@ -40,6 +37,8 @@ import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver
 import {DriverUtils} from "../driver/DriverUtils";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
 import {Mutable} from "../util/TypeUtils";
+import {MongoEntityManager} from "../driver/mongodb/MongoEntityManager";
+import {SqljsEntityManager} from "../driver/sqljs/SqljsEntityManager";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -472,7 +471,7 @@ export class Connection {
      * Creates an Entity Manager for the current connection with the help of the EntityManagerFactory.
      */
     createEntityManager(queryRunner?: QueryRunner): EntityManager {
-        return new EntityManagerFactory().create(this, queryRunner);
+        return this.driver.createEntityManager ? this.driver.createEntityManager(queryRunner) : new EntityManager(this, queryRunner);
     }
 
     // -------------------------------------------------------------------------
