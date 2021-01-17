@@ -40,7 +40,7 @@ import {
 } from "./typings";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
-import {MongoEntityManager} from "../../entity-manager/MongoEntityManager";
+import {MongoEntityManager} from "./MongoEntityManager";
 import {SqlInMemory} from "../SqlInMemory";
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {Broadcaster} from "../../subscriber/Broadcaster";

@@ -21,11 +21,9 @@ import {AbstractRepository} from "../repository/AbstractRepository";
 import {CustomRepositoryCannotInheritRepositoryError} from "../error/CustomRepositoryCannotInheritRepositoryError";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/builder/SelectQueryBuilder";
-import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {RepositoryNotFoundError} from "../error/RepositoryNotFoundError";
 import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
-import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupportedError";
 import {QueryDeepPartialEntity} from "../query-builder/QueryPartialEntity";
 import {EntityPersistExecutor} from "../persistence/EntityPersistExecutor";
 import {ObjectID} from "../driver/mongodb/typings";
@@ -114,9 +112,6 @@ export class EntityManager {
         if (!runInTransaction) {
             throw new Error(`Transaction method requires callback in second paramter if isolation level is supplied.`);
         }
-
-        if (this.connection.driver instanceof MongoDriver)
-            throw new Error(`Transactions aren't supported by MongoDB.`);
 
         if (this.queryRunner && this.queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
@@ -942,11 +937,6 @@ export class EntityManager {
      * When single database connection is not used, repository is being obtained from the connection.
      */
     getTreeRepository<Entity>(target: EntityTarget<Entity>): TreeRepository<Entity> {
-
-        // tree tables aren't supported by some drivers (mongodb)
-        if (this.connection.driver.treeSupport === false)
-            throw new TreeRepositoryNotSupportedError(this.connection.driver);
-
         // check if repository is real tree repository
         const repository = this.getRepository(target);
         if (!(repository instanceof TreeRepository))

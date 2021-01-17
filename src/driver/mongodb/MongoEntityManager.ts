@@ -1,6 +1,6 @@
-import { Connection } from "../connection/Connection";
-import { EntityManager } from "./EntityManager";
-import { EntityTarget } from "../common/EntityTarget";
+import { Connection } from "../../connection/Connection";
+import { EntityManager } from "../../entity-manager/EntityManager";
+import { EntityTarget } from "../../common/EntityTarget";
 import {
     AggregationCursor,
     BulkWriteOpResultObject,
@@ -36,23 +36,24 @@ import {
     ReplaceOneOptions,
     UnorderedBulkOperation,
     UpdateWriteOpResult
-} from "../driver/mongodb/typings";
-import { ObjectLiteral } from "../common/ObjectLiteral";
-import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner";
-import { MongoDriver } from "../driver/mongodb/MongoDriver";
-import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer";
-import { FindManyOptions } from "../find-options/FindManyOptions";
-import { FindOptionsUtils } from "../find-options/FindOptionsUtils";
-import { FindOneOptions } from "../find-options/FindOneOptions";
-import { PlatformTools } from "../platform/PlatformTools";
-import { DeepPartial } from "../common/DeepPartial";
-import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity";
-import { InsertResult } from "../query-builder/result/InsertResult";
-import { UpdateResult } from "../query-builder/result/UpdateResult";
-import { DeleteResult } from "../query-builder/result/DeleteResult";
-import { EntityMetadata } from "../metadata/EntityMetadata";
-import { FindConditions } from "../index";
-import { BroadcasterResult } from "../subscriber/BroadcasterResult";
+} from "./typings";
+import { ObjectLiteral } from "../../common/ObjectLiteral";
+import { MongoQueryRunner } from "../../driver/mongodb/MongoQueryRunner";
+import { MongoDriver } from "./MongoDriver";
+import { DocumentToEntityTransformer } from "../../query-builder/transformer/DocumentToEntityTransformer";
+import { FindManyOptions } from "../../find-options/FindManyOptions";
+import { FindOptionsUtils } from "../../find-options/FindOptionsUtils";
+import { FindOneOptions } from "../../find-options/FindOneOptions";
+import { PlatformTools } from "../../platform/PlatformTools";
+import { DeepPartial } from "../../common/DeepPartial";
+import { QueryDeepPartialEntity } from "../../query-builder/QueryPartialEntity";
+import { InsertResult } from "../../query-builder/result/InsertResult";
+import { UpdateResult } from "../../query-builder/result/UpdateResult";
+import { DeleteResult } from "../../query-builder/result/DeleteResult";
+import { EntityMetadata } from "../../metadata/EntityMetadata";
+import { FindConditions } from "../../index";
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult";
+import {IsolationLevel} from "../types/IsolationLevel";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -75,8 +76,31 @@ export class MongoEntityManager extends EntityManager {
     }
 
     // -------------------------------------------------------------------------
+
+    // Overridden Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Gets query runner used to execute queries.
+     */
+    get queryRunner(): MongoQueryRunner {
+        return (this.connection.driver as unknown as MongoDriver).queryRunner!;
+    }
+
+    // -------------------------------------------------------------------------
     // Overridden Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Wraps given function execution (and all operations made there) in a transaction.
+     * All database operations must be executed using provided entity manager.
+     */
+    async transaction<T>(
+        isolationOrRunInTransaction: IsolationLevel | ((entityManager: EntityManager) => Promise<T>),
+        runInTransactionParam?: (entityManager: EntityManager) => Promise<T>
+    ): Promise<T> {
+        throw new Error(`Transactions aren't supported by MongoDB.`);
+    }
 
     /**
      * Finds entities that match given find options or conditions.

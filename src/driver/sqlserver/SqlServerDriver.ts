@@ -71,11 +71,6 @@ export class SqlServerDriver implements Driver {
     isReplicated: boolean = false;
 
     /**
-     * Indicates if tree tables are supported by this driver.
-     */
-    treeSupport = true;
-
-    /**
      * Gets list of supported column data types by a driver.
      *
      * @see https://docs.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql
@@ -350,18 +345,18 @@ export class SqlServerDriver implements Driver {
      * E.g. "myDB"."mySchema"."myTable"
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
-        let fullName = tableName;
-        if (schema)
-            fullName = schema + "." + tableName;
-        if (database) {
-            if (!schema) {
-                fullName = database + ".." + tableName;
-            } else {
-                fullName = database + "." + fullName;
-            }
-        }
+        if (database && schema) return `${database}.${schema}.${tableName}`;
+        if (database && !schema) return `${database}..${tableName}`;
+        if (!database && schema) return `${schema}.${tableName}`;
+        return tableName;
+    }
 
-        return fullName;
+    /**
+     * Build full schema path with database name and schema name.
+     * E.g. "myDB"."mySchema"
+     */
+    buildSchemaPath(schema?: string, database?: string): string | undefined {
+        return database && schema ? `${database}.${schema}` : schema;
     }
 
     /**

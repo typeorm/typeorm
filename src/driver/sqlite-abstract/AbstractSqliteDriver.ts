@@ -64,11 +64,6 @@ export abstract class AbstractSqliteDriver implements Driver {
     sqlite: any;
 
     /**
-     * Indicates if tree tables are supported by this driver.
-     */
-    treeSupport = true;
-
-    /**
      * Gets list of supported column data types by a driver.
      *
      * @see https://www.tutorialspoint.com/sqlite/sqlite_data_types.htm

@@ -2,11 +2,7 @@ import {QueryRunner, SelectQueryBuilder} from "..";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {SapDriver} from "../driver/sap/SapDriver";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
@@ -797,7 +793,7 @@ export class EntityMetadata {
             this.schema = (this.connection.options as PostgresConnectionOptions|SqlServerConnectionOptions).schema;
         }
         this.givenTableName = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.givenTableName : this.tableMetadataArgs.name;
-        this.synchronize = this.tableMetadataArgs.synchronize === false ? false : true;
+        this.synchronize = this.tableMetadataArgs.synchronize !== false;
         this.targetName = this.tableMetadataArgs.target instanceof Function ? (this.tableMetadataArgs.target as any).name : this.tableMetadataArgs.target;
         if (this.tableMetadataArgs.type === "closure-junction") {
             this.tableNameWithoutPrefix = namingStrategy.closureJunctionTableName(this.givenTableName!);
@@ -814,9 +810,9 @@ export class EntityMetadata {
         this.target = this.target ? this.target : this.tableName;
         this.name = this.targetName ? this.targetName : this.tableName;
         this.expression = this.tableMetadataArgs.expression;
-        this.withoutRowid = this.tableMetadataArgs.withoutRowid === true ? true : false;
-        this.tablePath = this.buildTablePath();
-        this.schemaPath = this.buildSchemaPath();
+        this.withoutRowid = this.tableMetadataArgs.withoutRowid === true;
+        this.tablePath = this.connection.driver.buildTableName(this.tableName, this.schema, this.database);
+        this.schemaPath = this.connection.driver.buildSchemaPath !== undefined ? this.connection.driver.buildSchemaPath(this.schema, this.database) : undefined;
         this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
 
         this.isJunction = this.tableMetadataArgs.type === "closure-junction" || this.tableMetadataArgs.type === "junction";
@@ -854,35 +850,4 @@ export class EntityMetadata {
         this.relations.forEach(relation => OrmUtils.mergeDeep(map, relation.createValueMap(relation.propertyPath)));
         return map;
     }
-
-    /**
-     * Builds table path using database name, schema name and table name.
-     */
-    protected buildTablePath(): string {
-        let tablePath = this.tableName;
-        if (this.schema && ((this.connection.driver instanceof OracleDriver) || (this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
-            tablePath = this.schema + "." + tablePath;
-        }
-
-        if (this.database && !(this.connection.driver instanceof PostgresDriver)) {
-            if (!this.schema && this.connection.driver instanceof SqlServerDriver) {
-                tablePath = this.database + ".." + tablePath;
-            } else {
-                tablePath = this.database + "." + tablePath;
-            }
-        }
-
-        return tablePath;
-    }
-
-    /**
-     * Builds table path using schema name and database name.
-     */
-    protected buildSchemaPath(): string|undefined {
-        if (!this.schema)
-            return undefined;
-
-        return this.database && !(this.connection.driver instanceof PostgresDriver) ? this.database + "." + this.schema : this.schema;
-    }
-
 }

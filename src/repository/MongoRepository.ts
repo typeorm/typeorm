@@ -33,7 +33,7 @@ import {
     UnorderedBulkOperation,
     UpdateWriteOpResult
 } from "../driver/mongodb/typings";
-import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
+import {MongoEntityManager} from "../driver/mongodb/MongoEntityManager";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/builder/SelectQueryBuilder";
 

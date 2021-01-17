@@ -70,11 +70,6 @@ export class MysqlDriver implements Driver {
     isReplicated: boolean = false;
 
     /**
-     * Indicates if tree tables are supported by this driver.
-     */
-    treeSupport = true;
-
-    /**
      * Gets list of supported column data types by a driver.
      *
      * @see https://www.tutorialspoint.com/mysql/mysql-data-types.htm
@@ -427,7 +422,7 @@ export class MysqlDriver implements Driver {
     }
 
     /**
-     * Build full table name with database name, schema name and table name.
+     * Build full table path with database name, schema name and table name.
      * E.g. "myDB"."mySchema"."myTable"
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
