@@ -3,7 +3,7 @@ import {Category} from "./entity/Category";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 
-describe.only("github issues > #7068", () => {
+describe("github issues > #7068", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
