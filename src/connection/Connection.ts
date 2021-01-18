@@ -15,7 +15,7 @@ import {EntityMetadataNotFoundError} from "../error/EntityMetadataNotFoundError"
 import {MigrationInterface} from "../migration/MigrationInterface";
 import {MigrationExecutor} from "../migration/MigrationExecutor";
 import {Migration} from "../migration/Migration";
-import {MongoRepository} from "../repository/MongoRepository";
+import {MongoRepository} from "../driver/mongodb/MongoRepository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {EntityMetadataValidator} from "../metadata-builder/EntityMetadataValidator";
 import {ConnectionOptions} from "./ConnectionOptions";

@@ -19,6 +19,7 @@ import {ReplicationMode} from "../types/ReplicationMode";
 import {DriverUtils} from "../DriverUtils";
 import {Mutable} from "../../util/TypeUtils";
 import {MongoEntityManager} from "./MongoEntityManager";
+import {MongoRepository} from "./MongoRepository";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 
 /**
@@ -275,6 +276,13 @@ export class MongoDriver implements Driver {
         // loading it dynamically because of circular issue
         const MongoEntityManagerCls = require("./MongoEntityManager").MongoEntityManager;
         return new MongoEntityManagerCls(this.connection, queryRunner);
+    }
+
+    /**
+     * Creates a repository.
+     */
+    createRepository(): MongoRepository<any> {
+        return new MongoRepository();
     }
 
     /**

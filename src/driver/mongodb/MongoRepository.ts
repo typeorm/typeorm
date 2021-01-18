@@ -1,7 +1,7 @@
-import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Repository} from "./Repository";
-import {FindManyOptions} from "../find-options/FindManyOptions";
-import {FindOneOptions} from "../find-options/FindOneOptions";
+import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {Repository} from "../../repository/Repository";
+import {FindManyOptions} from "../../find-options/FindManyOptions";
+import {FindOneOptions} from "../../find-options/FindOneOptions";
 import {
     AggregationCursor,
     BulkWriteOpResultObject,
@@ -32,10 +32,10 @@ import {
     ReplaceOneOptions,
     UnorderedBulkOperation,
     UpdateWriteOpResult
-} from "../driver/mongodb/typings";
-import {MongoEntityManager} from "../driver/mongodb/MongoEntityManager";
-import {QueryRunner} from "../query-runner/QueryRunner";
-import {SelectQueryBuilder} from "../query-builder/builder/SelectQueryBuilder";
+} from "./typings";
+import {MongoEntityManager} from "./MongoEntityManager";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {SelectQueryBuilder} from "../../query-builder/builder/SelectQueryBuilder";
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
