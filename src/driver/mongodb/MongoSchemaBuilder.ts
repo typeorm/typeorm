@@ -1,8 +1,8 @@
-import {Connection} from "../connection/Connection";
-import {SchemaBuilder} from "./SchemaBuilder";
-import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
-import {SqlInMemory} from "../driver/SqlInMemory";
-import {MongodbIndexOptions} from "../driver/mongodb/typings";
+import {Connection} from "../../connection/Connection";
+import {SchemaBuilder} from "../../schema-builder/SchemaBuilder";
+import {MongoQueryRunner} from "./MongoQueryRunner";
+import {SqlInMemory} from "../SqlInMemory";
+import {MongodbIndexOptions} from "./typings";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
