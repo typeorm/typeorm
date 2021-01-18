@@ -257,7 +257,9 @@ export class PostgresDriver implements Driver {
         this.connection = connection;
         this.options = connection.options as PostgresConnectionOptions;
         this.isReplicated = this.options.replication ? true : false;
-
+        if(this.options.useUTC) {
+            process.env.PGTZ = 'UTC';
+        }
         // load postgres package
         this.loadDependencies();
 
