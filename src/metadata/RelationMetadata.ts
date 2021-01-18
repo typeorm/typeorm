@@ -503,8 +503,15 @@ export class RelationMetadata {
      */
     registerForeignKeys(...foreignKeys: ForeignKeyMetadata[]) {
         this.foreignKeys.push(...foreignKeys);
-        this.joinColumns = this.foreignKeys[0] ? this.foreignKeys[0].columns : [];
-        this.inverseJoinColumns = this.foreignKeys[1] ? this.foreignKeys[1].columns : [];
+    }
+
+    /**
+     * Registers given join columns in the relation.
+     * This builder method should be used to register join column in the relation.
+     */
+    registerJoinColumns(joinColumns: ColumnMetadata[] = [], inverseJoinColumns: ColumnMetadata[] = []) {
+        this.joinColumns = joinColumns;
+        this.inverseJoinColumns = inverseJoinColumns;
         this.isOwning = this.isManyToOne || ((this.isManyToMany || this.isOneToOne) && this.joinColumns.length > 0);
         this.isOneToOneOwner = this.isOneToOne && this.isOwning;
         this.isOneToOneNotOwner = this.isOneToOne && !this.isOwning;
