@@ -10,6 +10,7 @@ import {TableColumn} from "../schema-builder/table/TableColumn";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ReplicationMode} from "./types/ReplicationMode";
 import {EntityManager} from "../entity-manager/EntityManager";
+import {Repository} from "../repository/Repository";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -105,6 +106,11 @@ export interface Driver {
      * Creates an entity manager.
      */
     createEntityManager?(queryRunner?: QueryRunner): EntityManager;
+
+    /**
+     * Creates a repository
+     */
+    createRepository?(): Repository<any>;
 
     /**
      * Replaces parameters in the given sql with special escaping character

@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Post} from "./entity/Post";
-import {MongoRepository} from "../../../../../src/repository/MongoRepository";
+import {MongoRepository} from "../../../../../src/driver/mongodb/MongoRepository";
 
 describe("mongodb > MongoRepository", () => {
 

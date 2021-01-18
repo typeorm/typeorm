@@ -1,8 +1,6 @@
 import {TreeRepository} from "./TreeRepository";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Repository} from "./Repository";
-import {MongoDriver} from "../driver/mongodb/MongoDriver";
-import {MongoRepository} from "./MongoRepository";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {Mutable} from "../util/TypeUtils";
@@ -20,11 +18,13 @@ export class RepositoryFactory {
      * Creates a repository.
      */
     create(manager: EntityManager, metadata: EntityMetadata, queryRunner?: QueryRunner): Repository<any> {
+
+
         let repository: Repository<any>;
-        if (metadata.treeType) {
+        if (manager.connection.driver.createRepository) {
+            repository = manager.connection.driver.createRepository();
+        } else if (metadata.treeType) {
             repository = new TreeRepository<any>();
-        } else if (manager.connection.driver instanceof MongoDriver) {
-            repository = new MongoRepository();
         } else {
             repository = new Repository<any>();
         }
