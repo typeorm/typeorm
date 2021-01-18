@@ -50,15 +50,15 @@ describe("github issues > #296 select additional computed columns", () => {
                 .innerJoin("post.user", "user")
                 .innerJoin("post.comments", "comments")
                 .select(["post.id", "post.title", "user.id", "user.name", "user.surname", "comments.id", "comments.comment"]) // We need select the id of each entity for a correct mapping. This is required
-                .addSelectAndMap("IF(LENGTH(post.title > 0), true, false)", "hasTitle", "post_hasTitle", "boolean")
-                .addSelectAndMap(`CONCAT(user.name, " ", user.surname)`, "fullName", "user_fullName")
-                .addSelectAndMap("IF(comments.userId = user.id, true, false)", "opComment", "comments_opComment", "boolean")
+                .addSelectAndMap("IF(LENGTH(post.title > 0), true, false)", "post.hasTitle", "hasTitle", "boolean")
+                .addSelectAndMap(`CONCAT(user.name, " ", user.surname)`, "user.fullName", "fullName")
+                .addSelectAndMap("IF(comments.userId = user.id, true, false)", "comments.opComment", "opComment", "boolean")
                 .getOne();
 
-            console.log("post expected", post);
             expect(post).not.to.be.undefined;
             expect(post!.hasTitle).not.to.be.undefined;
             expect(post!.user!.fullName).not.to.be.undefined;
+            expect(post!.comments.length).to.be.equal(2);
             post!.comments.forEach(comment => {
                 expect(comment.opComment).not.to.be.undefined;
             });

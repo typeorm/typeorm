@@ -156,7 +156,7 @@ export class RawSqlResultsToEntityTransformer {
 
         this.expressionMap.computedSelects.forEach(computedSelect => {
             if (computedSelect.aliasName && computedSelect.mapToProperty) {
-                const fields: any[] = computedSelect.mapToProperty.split("_");
+                const fields: any[] = computedSelect.mapToProperty.split(".");
                 let entityPart = entity;
 
                 if (fields[0] === alias.name) {
