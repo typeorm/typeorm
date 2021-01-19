@@ -19,6 +19,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {VersionUtils} from "../../util/VersionUtils";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -915,13 +916,10 @@ export class PostgresDriver implements Driver {
     /**
      * Returns true if postgres supports generated columns
      */
-    async isGeneratedColumnsSupported(mode: ReplicationMode): Promise<boolean> {
-        const runner = this.createQueryRunner(mode);
+    async isGeneratedColumnsSupported(runner: QueryRunner): Promise<boolean> {
         const results = await runner.query("SHOW server_version;", []);
-        await runner.release();
         const versionString = results[0]["server_version"] as string;
-        const version = parseFloat(versionString);
-        return version >= 12;
+        return VersionUtils.isGreaterOrEqual(versionString, '12.0');
     }
 
     /**

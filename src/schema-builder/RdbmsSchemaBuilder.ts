@@ -76,7 +76,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (this.viewEntityToSyncMetadatas.length > 0)
                 await this.createTypeormMetadataTable();
             if (this.connection.driver instanceof PostgresDriver) {
-                if (await this.connection.driver.isGeneratedColumnsSupported("master")) {
+                if (await this.connection.driver.isGeneratedColumnsSupported(this.queryRunner)) {
                     await this.createTypeormGeneratedMetadataTable();
                 }
             }
