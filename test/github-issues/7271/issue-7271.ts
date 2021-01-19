@@ -37,8 +37,9 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
     it("should execute full query with parameters as a clean sql", async () => {
         if (!connection) return;
 
+
         const qb = connection
-            .createQueryBuilder()
+            .createQueryFormatter()
             .setQuery(`
                 SELECT "users".*, "roles".*
                 FROM "users" 
@@ -52,6 +53,7 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
         expect(row).to.be.an('object').that.is.not.empty;
         expect(row).to.have.property('nick_name', 'Mike');
         expect(row).to.have.property('is_admin', true);
+
     });
 
 
@@ -59,7 +61,7 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
         if (!connection) return;
 
         const qb = connection
-            .createQueryBuilder()
+            .createQueryFormatter()
             .setQuery(`
                 SELECT user.nickName AS "nickName", role.isAdmin AS "isAdmin"
                 FROM &user
@@ -81,7 +83,7 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
         if (!connection) return;
 
         const qb = connection
-            .createQueryBuilder()
+            .createQueryFormatter()
             .setQuery(`
                 SELECT &user.nickName, &role.isAdmin
                 FROM &user
@@ -102,7 +104,7 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
         if (!connection) return;
 
         const qb = connection
-            .createQueryBuilder()
+            .createQueryFormatter()
             .setQuery(`
                 SELECT &user.*, &role.*
                 FROM &user
@@ -124,7 +126,7 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
         if (!connection) return;
 
         const qb = connection
-            .createQueryBuilder()
+            .createQueryFormatter()
             .setQuery(`
                 SELECT 
                     COUNT(user.roleId)::INTEGER as count,

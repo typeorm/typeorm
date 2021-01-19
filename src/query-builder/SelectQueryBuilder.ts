@@ -52,10 +52,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
-        if (this.expressionMap.primarySql) {
-            return this.createPrimarySql();
-        }
-
         let sql = this.createComment();
         sql += this.createSelectExpression();
         sql += this.createJoinExpression();
