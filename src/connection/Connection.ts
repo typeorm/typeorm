@@ -40,7 +40,7 @@ import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {DriverUtils} from "../driver/DriverUtils";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
-import { QueryFormatter } from "../query-builder/QueryFormatter";
+import {QueryFormatter} from "../query-builder/QueryFormatter";
 
 /**
  * Connection is a single database ORM connection to a specific database.
