@@ -11,7 +11,7 @@
 
 Many-to-many is a relation where A contains multiple instances of B, and B contain multiple instances of A.
 Let's take for example `Question` and `Category` entities.
-Question can have multiple categories, and each category can have multiple questions.
+A question can have multiple categories, and each category can have multiple questions.
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
@@ -82,7 +82,7 @@ This example will produce following tables:
 
 ## Saving many-to-many relations
 
-With [cascades](./relations.md#cascades) enabled you can save this relation with only one `save` call.
+With [cascades](./relations.md#cascades) enabled, you can save this relation with only one `save` call.
 
 ```typescript
 const category1 = new Category();
@@ -102,7 +102,7 @@ await connection.manager.save(question);
 
 ## Deleting many-to-many relations
 
-With [cascades](./relations.md#cascades) enabled you can delete this relation with only one `save` call.
+With [cascades](./relations.md#cascades) enabled, you can delete this relation with only one `save` call.
 
 To delete a many-to-many relationship between two records, remove it from the corresponding field and save the record.
 
@@ -118,7 +118,7 @@ This will only remove the record in the join table. The `question` and `category
 
 ## Soft Deleting a relationship with cascade
 
-This example show what the cascading soft deletes behaves
+This example shows how the cascading soft delete behaves:
 
 ```typescript
 const category1 = new Category();
@@ -134,7 +134,7 @@ const newQuestion =  await connection.manager.save(question);
 await connection.manager.softRemove(newQuestion);
 ```
 
-As you can see in this example we did not call save or softRemove for category1 and category2. But They will be automatically saved and soft-deleted when the cascade of relation options is set to true like this:
+In this example we did not call save or softRemove for category1 and category2, but they will be automatically saved and soft-deleted when the cascade of relation options is set to true like this:
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
@@ -157,7 +157,7 @@ export class Question {
 
 ## Loading many-to-many relations
 
-To load question with categories inside you must specify relation in `FindOptions`:
+To load questions with categories inside you must specify the relation in `FindOptions`:
 
 ```typescript
 const questionRepository = connection.getRepository(Question);
@@ -179,8 +179,8 @@ When using `FindOptions` you don't need to specify eager relations - they are al
 ## bi-directional relations
 
 Relations can be uni-directional and bi-directional.
-Uni-directional are relations with a relation decorator only on one side.
-Bi-directional are relations with decorators on both sides of a relation.
+Uni-directional relations are relations with a relation decorator only on one side.
+Bi-directional relations are relations with decorators on both sides of a relation.
 
 We just created a uni-directional relation. Let's make it bi-directional:
 
@@ -226,7 +226,7 @@ export class Question {
 }
 ```
 
-We just made our relation bi-directional. Note, the inverse relation does not have a `@JoinTable`.
+We just made our relation bi-directional. Note that the inverse relation does not have a `@JoinTable`.
 `@JoinTable` must be only on one side of the relation.
 
 Bi-directional relations allow you to join relations from both sides using `QueryBuilder`:
@@ -241,8 +241,8 @@ const categoriesWithQuestions = await connection
 
 ## many-to-many relations with custom properties
 
-In case you need to have additional properties to your many-to-many relationship you have to create a new entity yourself.
-For example if you would like entities `Post` and `Category` to have a many-to-many relationship with additional `order` column, you need to create entity `PostToCategory` with two `ManyToOne` relations pointing in both directions and custom columns in it:
+In case you need to have additional properties in your many-to-many relationship, you have to create a new entity yourself.
+For example, if you would like entities `Post` and `Category` to have a many-to-many relationship with an additional `order` column, then you need to create an entity `PostToCategory` with two `ManyToOne` relations pointing in both directions and with custom columns in it:
 
 ```typescript
 import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
