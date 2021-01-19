@@ -44,7 +44,7 @@ export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|"r
             strategy = strategyOrOptions as "increment"|"uuid"|"rowid";
 
         if (strategyOrOptions instanceof Object) {
-            strategy = "increment";
+            strategy = strategyOrOptions.type === "uuid" ? "uuid" : "increment";
             Object.assign(options, strategyOrOptions);
         }
     } else {
