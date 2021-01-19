@@ -144,7 +144,7 @@ Once you have a migration to run on production, you can run them using a CLI com
 typeorm migration:run
 ```
 
-**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files. The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files.
+**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files, unless you use the `o` flag (see more in [Generating migrations](#generating-migrations)). The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files.
 
 Example with `ts-node`:
 ```
@@ -194,8 +194,25 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 }
 ```
 
+Alternatively you can also output your migrations as Javascript files using the `o` (alias for `--outputJs`) flag. This is useful for Javascript only projects in which TypeScript additional packages are not installed. This command, will generate a new migration file `{TIMESTAMP}-PostRefactoring.js` with the following content:
+
+```javascript
+const { MigrationInterface, QueryRunner } = require("typeorm");
+
+module.exports = class PostRefactoringTIMESTAMP {
+
+    async up(queryRunner) {
+        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
+    }
+
+    async down(queryRunner) {
+        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
+    }
+}
+```
+
 See, you don't need to write the queries on your own.
-The rule of thumb for generating migrations is that you generate them after "each" change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
+The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag. 
 
 ## Connection option
 If you need to run/revert your migrations for another connection rather than the default, use the `-c` (alias for `--connection`) and pass the config name as an argument
