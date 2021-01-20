@@ -1336,7 +1336,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         this.expressionMap.joinAttributes.push(joinAttribute);
 
         if (joinAttribute.metadata) {
-
+           if (joinAttribute.metadata.deleteDateColumn && !this.expressionMap.withDeleted) {
+                const conditionDeleteColumn = `${aliasName}.${joinAttribute.metadata.deleteDateColumn.propertyName} IS NULL`;
+                joinAttribute.condition += joinAttribute.condition ? ` AND ${conditionDeleteColumn}`: `${conditionDeleteColumn}`;
+            }
             // todo: find and set metadata right there?
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
