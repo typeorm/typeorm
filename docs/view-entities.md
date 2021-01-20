@@ -21,7 +21,7 @@ You can create a view entity by defining a new class and mark it with `@ViewEnti
 ```typescript
 @ViewEntity({ 
     expression: `
-        SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
+        SELECT "post"."id" AS "id", "post"."name" AS "name", "category"."name" AS "categoryName"
         FROM "post" "post"
         LEFT JOIN "category" "category" ON "post"."categoryId" = "category"."id"
     `
