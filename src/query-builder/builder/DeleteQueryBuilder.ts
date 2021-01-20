@@ -1,8 +1,5 @@
-import {CockroachDriver} from "../../driver/cockroachdb/CockroachDriver";
 import {EntityTarget} from "../../common/EntityTarget";
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {SqlServerDriver} from "../../driver/sqlserver/SqlServerDriver";
-import {PostgresDriver} from "../../driver/postgres/PostgresDriver";
 import {DeleteResult} from "../result/DeleteResult";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import {EntitySchema} from "../../index";
@@ -38,21 +35,22 @@ export class DeleteQueryBuilder<Entity> extends AbstractModifyQueryBuilder<Entit
     protected createModificationExpression() {
         const tableName = this.getTableName(this.getMainTableName());
         const whereExpression = this.createWhereExpression();
-        const returningExpression = this.createReturningExpression();
 
         const query = ["DELETE FROM", tableName];
 
         // add OUTPUT expression
-        if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
-            query.push("OUTPUT", returningExpression);
+        if (this.connection.driver.config.returningClause === "output") {
+            const returningExpression = this.createReturningExpression();
+            if (returningExpression) query.push("OUTPUT", returningExpression);
         }
 
         // add WHERE expression
         if (whereExpression) query.push(whereExpression);
 
         // add RETURNING expression
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof CockroachDriver)) {
-            query.push("RETURNING", returningExpression);
+        if (this.connection.driver.config.returningClause === "returning") {
+            const returningExpression = this.createReturningExpression();
+            if (returningExpression) query.push("RETURNING", returningExpression);
         }
 
         return query.join(" ");

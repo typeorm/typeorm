@@ -5,6 +5,7 @@ import {Connection} from "../../connection/Connection";
 import {AuroraDataApiPostgresConnectionOptions} from "../aurora-data-api-pg/AuroraDataApiPostgresConnectionOptions";
 import {AuroraDataApiPostgresQueryRunner} from "../aurora-data-api-pg/AuroraDataApiPostgresQueryRunner";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { DriverConfig } from "../DriverConfig";
 
 abstract class PostgresWrapper extends PostgresDriver {
     options: any;
@@ -22,6 +23,26 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
      * Connection used by driver.
      */
     connection: Connection;
+
+    readonly config: DriverConfig = {
+        escapeCharacter: "`",
+        maxAliasLength: 63,
+
+        checkConstraints: true,
+        exclusionConstraints: true,
+        uniqueConstraints: true,
+
+        insertDefaultValue: true,
+
+        distinctOnClause: true,
+
+        returningClause: "returning",
+
+        ilikeOperator: true,
+        concatOperator: true,
+
+        uuidGeneration: true,
+    } as const;
 
     /**
      * Aurora Data API underlying library.

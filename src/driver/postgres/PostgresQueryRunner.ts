@@ -2095,7 +2095,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         }
 
         let seqName = `${tableName}_${columnName}_seq`;
-        if (seqName.length > this.connection.driver.maxAliasLength!) // note doesn't yet handle corner cases where .length differs from number of UTF-8 bytes
+        if (seqName.length > this.connection.driver.config.maxAliasLength!) // note doesn't yet handle corner cases where .length differs from number of UTF-8 bytes
             seqName=`${tableName.substring(0,29)}_${columnName.substring(0,Math.max(29,63-tableName.length-5))}_seq`;
 
         if (schema && schema !== currentSchema && !skipSchema) {

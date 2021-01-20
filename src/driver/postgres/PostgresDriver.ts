@@ -19,6 +19,9 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { DriverConfig } from "../DriverConfig";
+import { DriverQueryGenerators } from "../DriverQueryGenerators";
+import { LockNotSupportedOnGivenDriverError } from "../../error/LockNotSupportedOnGivenDriverError";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -28,6 +31,63 @@ export class PostgresDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
+
+    readonly config: DriverConfig = {
+        escapeCharacter: `"`,
+        /**
+         * Max length allowed by Postgres for aliases.
+         * @see https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
+         */
+        maxAliasLength: 63,
+
+        checkConstraints: true,
+        exclusionConstraints: true,
+        uniqueConstraints: true,
+
+        insertDefaultValue: true,
+
+        distinctOnClause: true,
+
+        returningClause: "returning",
+
+        ilikeOperator: true,
+        concatOperator: true,
+
+        uuidGeneration: true,
+    };
+
+    readonly generators: DriverQueryGenerators = {
+        limitOffsetExpression(offset?: number, limit?: number): string | null {
+            if (limit && offset) return "LIMIT " + limit + " OFFSET " + offset;
+            if (limit) return "LIMIT " + limit;
+            if (offset) return "OFFSET " + offset;
+            return null;
+        },
+
+        lockExpression(lockMode: string, lockTables?: string[]): string | null {
+            if (lockTables && lockTables.length < 1)
+                throw new Error("lockTables cannot be an empty array");
+
+            const lockTablesClause = lockTables ? " OF " + lockTables.join(", ") : "";
+
+            if (lockMode === "pessimistic_read") return "FOR SHARE" + lockTablesClause;
+            if (lockMode === "pessimistic_write") return "FOR UPDATE" + lockTablesClause;
+            if (lockMode === "pessimistic_partial_write") return "FOR UPDATE" + lockTablesClause + " SKIP LOCKED";
+            if (lockMode === "pessimistic_write_or_fail") return "FOR UPDATE" + lockTablesClause + " NOWAIT";
+            if (lockMode === "for_no_key_update") return "FOR NO KEY UPDATE" + lockTablesClause;
+            throw new LockNotSupportedOnGivenDriverError();
+        },
+
+        insertOnConflictExpression(onConflict?: string, onIgnore?: string | boolean, onUpdate?: { columns?: string; conflict?: string; overwrite?: string }): string | null {
+            if (onIgnore) return "ON CONFLICT DO NOTHING";
+            if (onConflict) return `ON CONFLICT ${onConflict}`;
+            if (onUpdate) {
+                if (onUpdate.columns) return `ON CONFLICT ${onUpdate.conflict} DO UPDATE SET ${onUpdate.columns}`;
+                if (onUpdate.overwrite) return `ON CONFLICT ${onUpdate.conflict} DO UPDATE SET ${onUpdate.overwrite}`;
+            }
+            return null;
+        }
+    };
 
     /**
      * Connection used by driver.
@@ -234,11 +294,6 @@ export class PostgresDriver implements Driver {
         "timestamp with time zone": { precision: 6 },
     };
 
-    /**
-     * Max length allowed by Postgres for aliases.
-     * @see https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
-     */
-    maxAliasLength = 63;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -945,27 +1000,6 @@ export class PostgresDriver implements Driver {
         return value.split(`'`).map((v, i) => {
             return i % 2 === 1 ? v : v.toLowerCase();
         }).join(`'`);
-    }
-
-    /**
-     * Returns true if driver supports RETURNING / OUTPUT statement.
-     */
-    isReturningSqlSupported(): boolean {
-        return true;
-    }
-
-    /**
-     * Returns true if driver supports uuid values generation on its own.
-     */
-    isUUIDGenerationSupported(): boolean {
-        return true;
-    }
-
-    /**
-     * Returns true if driver supports fulltext indices.
-     */
-    isFullTextColumnTypeSupported(): boolean {
-        return false;
     }
 
     get uuidGenerator(): string {

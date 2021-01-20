@@ -12,6 +12,9 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {SapConnectionOptions} from "./SapConnectionOptions";
 import {SapQueryRunner} from "./SapQueryRunner";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { DriverConfig } from "../DriverConfig";
+import { DriverQueryGenerators } from "../DriverQueryGenerators";
+import { OffsetWithoutLimitNotSupportedError } from "../../error/OffsetWithoutLimitNotSupportedError";
 
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -28,6 +31,32 @@ export class SapDriver implements Driver {
      * Connection used by driver.
      */
     connection: Connection;
+
+    readonly config: DriverConfig = {
+        escapeCharacter: `"`,
+
+        /**
+         * Max length allowed by SAP HANA for aliases (identifiers).
+         * @see https://help.sap.com/viewer/4fe29514fd584807ac9f2a04f6754767/2.0.03/en-US/20a760537519101497e3cfe07b348f3c.html
+         */
+        maxAliasLength: 128,
+
+        checkConstraints: true,
+        uniqueConstraints: true,
+
+        concatOperator: true,
+
+        fullTextIndexModifier: true,
+    };
+
+    readonly generators: DriverQueryGenerators = {
+        limitOffsetExpression(offset?: number, limit?: number): string | null {
+            if (limit && offset) return "LIMIT " + limit + " OFFSET " + offset;
+            if (limit) return "LIMIT " + limit;
+            if (offset) throw new OffsetWithoutLimitNotSupportedError();
+            return null;
+        },
+    };
 
     /**
      * Hana Pool instance.
@@ -178,12 +207,6 @@ export class SapDriver implements Driver {
         "varbinary": { length: 255 },
         "decimal": { precision: 18, scale: 0 },
     };
-
-    /**
-     * Max length allowed by SAP HANA for aliases (identifiers).
-     * @see https://help.sap.com/viewer/4fe29514fd584807ac9f2a04f6754767/2.0.03/en-US/20a760537519101497e3cfe07b348f3c.html
-     */
-    maxAliasLength = 128;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -619,27 +642,6 @@ export class SapDriver implements Driver {
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
         });
-    }
-
-    /**
-     * Returns true if driver supports RETURNING / OUTPUT statement.
-     */
-    isReturningSqlSupported(): boolean {
-        return false;
-    }
-
-    /**
-     * Returns true if driver supports uuid values generation on its own.
-     */
-    isUUIDGenerationSupported(): boolean {
-        return false;
-    }
-
-    /**
-     * Returns true if driver supports fulltext indices.
-     */
-    isFullTextColumnTypeSupported(): boolean {
-        return true;
     }
 
     /**

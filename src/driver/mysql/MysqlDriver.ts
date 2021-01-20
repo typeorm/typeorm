@@ -19,6 +19,10 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { DriverConfig } from "../DriverConfig";
+import { DriverQueryGenerators } from "../DriverQueryGenerators";
+import { OffsetWithoutLimitNotSupportedError } from "../../error/OffsetWithoutLimitNotSupportedError";
+import { LockNotSupportedOnGivenDriverError } from "../../error/LockNotSupportedOnGivenDriverError";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -28,6 +32,45 @@ export class MysqlDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
+
+    readonly config = {
+        escapeCharacter: "`",
+        maxAliasLength: 63,
+
+        multiDatabase: true,
+
+        insertDefaultValue: true,
+        insertIgnoreModifier: true,
+        insertEmptyColumnsValuesList: true,
+
+        limitClauseOnModify: true,
+
+        fullTextIndexModifier: true
+    } as DriverConfig;
+
+    readonly generators: DriverQueryGenerators = {
+        limitOffsetExpression(offset?: number, limit?: number): string | null {
+            if (limit && offset) return "LIMIT " + limit + " OFFSET " + offset;
+            if (limit) return "LIMIT " + limit;
+            if (offset) throw new OffsetWithoutLimitNotSupportedError();
+            return null;
+        },
+
+        lockExpression(lockMode: string): string | null {
+            if (lockMode === "pessimistic_read") return "LOCK IN SHARE MODE";
+            if (lockMode === "pessimistic_write") return "FOR UPDATE";
+            if (lockMode === "pessimistic_partial_write") return "FOR UPDATE SKIP LOCKED";
+            if (lockMode === "pessimistic_write_or_fail") return "FOR UPDATE NOWAIT";
+            throw new LockNotSupportedOnGivenDriverError();
+        },
+
+        insertOnConflictExpression(onConflict?: string, onIgnore?: string | boolean, onUpdate?: { columns?: string; conflict?: string; overwrite?: string }): string | null {
+            if (!onUpdate) return null;
+            if (onUpdate.columns) return "ON DUPLICATE KEY UPDATE " + onUpdate.columns;
+            if (onUpdate.overwrite) return "ON DUPLICATE KEY UPDATE " + onUpdate.overwrite;
+            return null;
+        }
+    };
 
     /**
      * Connection used by driver.
@@ -282,13 +325,6 @@ export class MysqlDriver implements Driver {
         "mediumint": { width: 9 },
         "bigint": { width: 20 }
     };
-
-
-    /**
-     * Max length allowed by MySQL for aliases.
-     * @see https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
-     */
-    maxAliasLength = 63;
 
     // -------------------------------------------------------------------------
     // Constructor

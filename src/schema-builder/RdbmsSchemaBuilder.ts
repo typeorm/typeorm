@@ -16,12 +16,10 @@ import {TableUtils} from "./util/TableUtils";
 import {TableColumnOptions} from "./options/TableColumnOptions";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {TableUnique} from "./table/TableUnique";
 import {TableCheck} from "./table/TableCheck";
 import {TableExclusion} from "./table/TableExclusion";
 import {View} from "./view/View";
-import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata";
 
 /**
@@ -274,7 +272,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         if (indexMetadata.isSpatial !== tableIndex.isSpatial)
                             return true;
 
-                        if (this.connection.driver.isFullTextColumnTypeSupported() && indexMetadata.isFulltext !== tableIndex.isFulltext)
+                        if (this.connection.driver.config.fullTextIndexModifier && indexMetadata.isFulltext !== tableIndex.isFulltext)
                             return true;
 
                         if (indexMetadata.columns.length !== tableIndex.columnNames.length)
@@ -295,9 +293,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     protected async dropOldChecks(): Promise<void> {
-        // Mysql does not support check constraints
-        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
-            return;
+        if (!this.connection.driver.config.checkConstraints) return;
 
         for (const metadata of this.entityToSyncMetadatas) {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
@@ -336,8 +332,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     protected async dropOldExclusions(): Promise<void> {
         // Only PostgreSQL supports exclusion constraints
-        if (!(this.connection.driver instanceof PostgresDriver))
-            return;
+        if (!this.connection.driver.config.exclusionConstraints) return;
 
         for (const metadata of this.entityToSyncMetadatas) {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
@@ -366,7 +361,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             // check if table does not exist yet
             const existTable = this.queryRunner.loadedTables.find(table => {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver|SapDriver>this.connection.driver).options.schema;
+                const schema = metadata.schema || (this.connection.driver as unknown as SqlServerDriver | PostgresDriver | SapDriver).options.schema;
                 const fullTableName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
 
                 return table.name === fullTableName;
@@ -388,7 +383,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             // check if view does not exist yet
             const existView = this.queryRunner.loadedViews.find(view => {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
+                const schema = metadata.schema || (this.connection.driver as unknown as SqlServerDriver | PostgresDriver).options.schema;
                 const fullViewName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
                 const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
                 const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
@@ -410,7 +405,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         for (const view of this.queryRunner.loadedViews) {
             const existViewMetadata = this.viewEntityToSyncMetadatas.find(metadata => {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
+                const schema = metadata.schema || (this.connection.driver as unknown as SqlServerDriver | PostgresDriver).options.schema;
                 const fullViewName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
                 const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
                 const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
@@ -527,7 +522,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // drop all composite uniques related to this column
             // Mysql does not support unique constraints.
-            if (!(this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)) {
+            if (this.connection.driver.config.uniqueConstraints) {
                 for (const changedColumn of changedColumns) {
                     await this.dropColumnCompositeUniques(metadata.tablePath, changedColumn.databaseName);
                 }
@@ -575,9 +570,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     protected async createNewChecks(): Promise<void> {
-        // Mysql does not support check constraints
-        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
-            return;
+        if (!this.connection.driver.config.checkConstraints) return;
 
         for (const metadata of this.entityToSyncMetadatas) {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
@@ -621,9 +614,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates exclusions which are missing in db yet.
      */
     protected async createNewExclusions(): Promise<void> {
-        // Only PostgreSQL supports exclusion constraints
-        if (!(this.connection.driver instanceof PostgresDriver))
-            return;
+        if (!this.connection.driver.config.exclusionConstraints) return;
 
         for (const metadata of this.entityToSyncMetadatas) {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);

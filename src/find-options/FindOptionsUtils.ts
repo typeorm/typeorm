@@ -236,7 +236,7 @@ export class FindOptionsUtils {
             // generate a relation alias
             let relationAlias: string = alias + "__" + relation;
             // shorten it if needed by the driver
-            if (qb.connection.driver.maxAliasLength && relationAlias.length > qb.connection.driver.maxAliasLength) {
+            if (qb.connection.driver.config.maxAliasLength && relationAlias.length > qb.connection.driver.config.maxAliasLength) {
                 relationAlias = shorten(relationAlias);
             }
 

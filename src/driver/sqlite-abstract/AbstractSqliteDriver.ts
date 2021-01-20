@@ -14,6 +14,8 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { DriverConfig } from "../DriverConfig";
+import { DriverQueryGenerators } from "../DriverQueryGenerators";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -23,6 +25,34 @@ export abstract class AbstractSqliteDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
+
+    readonly config: DriverConfig = {
+        escapeCharacter: `"`,
+
+        checkConstraints: true,
+        uniqueConstraints: true,
+
+        concatOperator: true,
+    };
+
+    readonly generators: DriverQueryGenerators = {
+        limitOffsetExpression(offset?: number, limit?: number): string | null {
+            if (limit && offset) return "LIMIT " + limit + " OFFSET " + offset;
+            if (limit) return "LIMIT " + limit;
+            if (offset) return "LIMIT -1 OFFSET " + offset;
+            return null;
+        },
+
+        insertOnConflictExpression(onConflict?: string, onIgnore?: string | boolean, onUpdate?: { columns?: string; conflict?: string; overwrite?: string }): string | null {
+            if (onIgnore) return "ON CONFLICT DO NOTHING";
+            if (onConflict) return `ON CONFLICT ${onConflict}`;
+            if (onUpdate) {
+                if (onUpdate.columns) return `ON CONFLICT ${onUpdate.conflict} DO UPDATE SET ${onUpdate.columns}`;
+                if (onUpdate.overwrite) return `ON CONFLICT ${onUpdate.conflict} DO UPDATE SET ${onUpdate.overwrite}`;
+            }
+            return null;
+        }
+    };
 
     /**
      * Connection used by driver.
@@ -187,12 +217,6 @@ export abstract class AbstractSqliteDriver implements Driver {
      * Used in the cases when length/precision/scale is not specified by user.
      */
     dataTypeDefaults: DataTypeDefaults;
-
-    /**
-     * No documentation specifying a maximum length for identifiers could be found
-     * for SQLite.
-     */
-    maxAliasLength?: number;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -579,27 +603,6 @@ export abstract class AbstractSqliteDriver implements Driver {
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
         });
-    }
-
-    /**
-     * Returns true if driver supports RETURNING / OUTPUT statement.
-     */
-    isReturningSqlSupported(): boolean {
-        return false;
-    }
-
-    /**
-     * Returns true if driver supports uuid values generation on its own.
-     */
-    isUUIDGenerationSupported(): boolean {
-        return false;
-    }
-
-    /**
-     * Returns true if driver supports fulltext indices.
-     */
-    isFullTextColumnTypeSupported(): boolean {
-        return false;
     }
 
     /**

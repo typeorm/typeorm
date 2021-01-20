@@ -30,10 +30,7 @@ import {QueryResultCache} from "../cache/QueryResultCache";
 import {RelationLoader} from "../query-builder/RelationLoader";
 import {RelationIdLoader} from "../query-builder/RelationIdLoader";
 import {EntitySchema} from "../";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
-import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {DriverUtils} from "../driver/DriverUtils";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
 import {Mutable} from "../util/TypeUtils";
@@ -260,13 +257,9 @@ export class Connection {
     async dropDatabase(): Promise<void> {
         const queryRunner = this.createQueryRunner();
         try {
-            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver || this.driver instanceof AuroraDataApiDriver) {
-                const databases: string[] = this.driver.database ? [this.driver.database] : [];
-                this.entityMetadatas.forEach(metadata => {
-                    if (metadata.database && databases.indexOf(metadata.database) === -1)
-                        databases.push(metadata.database);
-                });
-
+            if (this.driver.config.multiDatabase) {
+                const databases = [...new Set(this.entityMetadatas.map(metadata => metadata.database))];
+                if (this.driver.database) databases.unshift(this.driver.database);
                 for (const database of databases) {
                     await queryRunner.clearDatabase(database);
                 }

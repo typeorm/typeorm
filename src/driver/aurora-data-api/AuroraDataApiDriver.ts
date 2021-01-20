@@ -17,6 +17,9 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { DriverConfig } from "../DriverConfig";
+import { DriverQueryGenerators } from "../DriverQueryGenerators";
+import { OffsetWithoutLimitNotSupportedError } from "../../error/OffsetWithoutLimitNotSupportedError";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -28,6 +31,38 @@ export class AuroraDataApiDriver implements Driver {
     // -------------------------------------------------------------------------
 
     connection: Connection;
+
+    readonly config: DriverConfig = {
+        escapeCharacter: "`",
+        maxAliasLength: 63,
+
+        multiDatabase: true,
+
+        insertDefaultValue: true,
+        insertIgnoreModifier: true,
+        insertEmptyColumnsValuesList: true,
+
+        limitClauseOnModify: true,
+
+        fullTextIndexModifier: true
+    } as const;
+
+    readonly generators: DriverQueryGenerators = {
+        limitOffsetExpression(offset?: number, limit?: number): string | null {
+            if (limit && offset) return "LIMIT " + limit + " OFFSET " + offset;
+            if (limit) return "LIMIT " + limit;
+            if (offset) throw new OffsetWithoutLimitNotSupportedError();
+            return null;
+        },
+
+        insertOnConflictExpression(onConflict?: string, onIgnore?: string | boolean, onUpdate?: { columns?: string; conflict?: string; overwrite?: string }): string | null {
+            if (!onUpdate) return null;
+            if (onUpdate.columns) return "ON DUPLICATE KEY UPDATE " + onUpdate.columns;
+            if (onUpdate.overwrite) return "ON DUPLICATE KEY UPDATE " + onUpdate.overwrite;
+            return null;
+        }
+    };
+
     /**
      * Aurora Data API underlying library.
      */
@@ -275,13 +310,6 @@ export class AuroraDataApiDriver implements Driver {
         "mediumint": { width: 9 },
         "bigint": { width: 20 }
     };
-
-
-    /**
-     * Max length allowed by MySQL for aliases.
-     * @see https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
-     */
-    maxAliasLength = 63;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -751,27 +779,6 @@ export class AuroraDataApiDriver implements Driver {
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
         });
-    }
-
-    /**
-     * Returns true if driver supports RETURNING / OUTPUT statement.
-     */
-    isReturningSqlSupported(): boolean {
-        return false;
-    }
-
-    /**
-     * Returns true if driver supports uuid values generation on its own.
-     */
-    isUUIDGenerationSupported(): boolean {
-        return false;
-    }
-
-    /**
-     * Returns true if driver supports fulltext indices.
-     */
-    isFullTextColumnTypeSupported(): boolean {
-        return true;
     }
 
     /**

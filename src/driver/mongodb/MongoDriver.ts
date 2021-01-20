@@ -31,6 +31,10 @@ export class MongoDriver implements Driver {
     // Public Properties
     // -------------------------------------------------------------------------
 
+    readonly config = {};
+
+    readonly generators = {};
+
     /**
      * Underlying mongodb library.
      */
@@ -120,12 +124,6 @@ export class MongoDriver implements Driver {
      * Used in the cases when length/precision/scale is not specified by user.
      */
     dataTypeDefaults: DataTypeDefaults;
-
-    /**
-     * No documentation specifying a maximum length for identifiers could be found
-     * for MongoDB.
-     */
-    maxAliasLength?: number;
 
     // -------------------------------------------------------------------------
     // Protected Properties

@@ -20,6 +20,9 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { DriverConfig } from "../DriverConfig";
+import { DriverQueryGenerators } from "../DriverQueryGenerators";
+import { LockNotSupportedOnGivenDriverError } from "../../error/LockNotSupportedOnGivenDriverError";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -29,6 +32,51 @@ export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
+
+    readonly config: DriverConfig = {
+        escapeCharacter: `"`,
+
+        /**
+         * Max length allowed by MSSQL Server for aliases (identifiers).
+         * @see https://docs.microsoft.com/en-us/sql/sql-server/maximum-capacity-specifications-for-sql-server
+         */
+        maxAliasLength: 128,
+
+        multiDatabase: true,
+
+        checkConstraints: true,
+        uniqueConstraints: true,
+
+        insertDefaultValue: true,
+
+        returningClause: "output",
+
+        uuidGeneration: true,
+    };
+
+
+    readonly generators: DriverQueryGenerators = {
+        limitOffsetExpression(offset?: number, limit?: number): string | null {
+            if (limit && offset) return "OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
+            if (limit) return "OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY";
+            if (offset) return "OFFSET " + offset + " ROWS";
+            return null;
+        },
+
+        lockExpression(lockMode: string): string | null {
+            if (lockMode === "pessimistic_read") return ""; // Handled below
+            if (lockMode === "pessimistic_write") return ""; // Handled below
+            if (lockMode === "dirty_read") return ""; // Handled below
+            throw new LockNotSupportedOnGivenDriverError();
+        },
+
+        selectWithLockExpression(lockMode?: string): string {
+            if (lockMode === "pessimistic_read") return "WITH (HOLDLOCK, ROWLOCK)";
+            if (lockMode === "pessimistic_write") return "WITH (UPDLOCK, ROWLOCK)";
+            if (lockMode === "dirty_read") return "WITH (NOLOCK)";
+            throw new LockNotSupportedOnGivenDriverError();
+        }
+    };
 
     /**
      * Connection used by driver.
@@ -198,12 +246,6 @@ export class SqlServerDriver implements Driver {
         "datetime2": { precision: 7 },
         "datetimeoffset": { precision: 7 }
     };
-
-    /**
-     * Max length allowed by MSSQL Server for aliases (identifiers).
-     * @see https://docs.microsoft.com/en-us/sql/sql-server/maximum-capacity-specifications-for-sql-server
-     */
-    maxAliasLength = 128;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -643,29 +685,6 @@ export class SqlServerDriver implements Driver {
         return value.split(`'`).map((v, i) => {
             return i % 2 === 1 ? v : v.toLowerCase();
         }).join(`'`);
-    }
-    /**
-     * Returns true if driver supports RETURNING / OUTPUT statement.
-     */
-    isReturningSqlSupported(): boolean {
-        if (this.options.options && this.options.options.disableOutputReturning) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Returns true if driver supports uuid values generation on its own.
-     */
-    isUUIDGenerationSupported(): boolean {
-        return true;
-    }
-
-    /**
-     * Returns true if driver supports fulltext indices.
-     */
-    isFullTextColumnTypeSupported(): boolean {
-        return false;
     }
 
     /**
