@@ -1,50 +1,26 @@
+import { ObjectLiteral } from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
-import {QueryExpressionMap} from "./QueryExpressionMap";
 import {EntityTarget} from "../common/EntityTarget";
-import {SelectQueryBuilder} from "./SelectQueryBuilder";
+import { QueryFormatBuilder } from "./QueryFormatBuilder";
+
 
 /**
  * Allows to build full sql queries 
  */
-export class QueryFormatter extends SelectQueryBuilder<any> {
+export class QueryFormatter  {
 
-    /**
-     * Connection on which QueryFormatter was created.
-     */
-    readonly connection: Connection;
-
-    /**
-     * Contains all properties of the QueryFormatter that needs to be build a final query.
-     */
-    readonly expressionMap: QueryExpressionMap;
-
-
-     /**
-     * Full query
-     */
-    query: string;
-
+    readonly queryFormatBuilder: QueryFormatBuilder;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    /**
-     * QueryFormatter can be initialized from given Connection
-     */
     constructor(connection: Connection) {
-        super(connection);
+        this.queryFormatBuilder = new QueryFormatBuilder(connection);
+    }
 
-        this.connection = connection;
-        this.expressionMap = new QueryExpressionMap(this.connection);
-     }
-
-
-    /**
-     * Set full query
-     */
     setQuery(query: string): this {
-        this.query = query;
+        this.queryFormatBuilder.setQuery(query);
         return this;
     }
 
@@ -52,90 +28,52 @@ export class QueryFormatter extends SelectQueryBuilder<any> {
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
-        return this.createSql();
+        return this.queryFormatBuilder.getQuery();
     }
-   
-
+  
     addAlias(entityTarget: EntityTarget<any>, aliasName: string): this {
-        if (this.connection.hasMetadata(entityTarget)) {
-            const metadata = this.connection.getMetadata(entityTarget);
-
-            this.expressionMap.createAlias({
-                type: "other",
-                name: aliasName,
-                metadata: this.connection.getMetadata(entityTarget),
-                tablePath: metadata.tablePath,
-            });
-        }
-
+        this.queryFormatBuilder.addAlias(entityTarget, aliasName);
         return this;
     }
 
     setAliases(aliases: { [aliasName: string]: EntityTarget<any> }): this {
-        Object.keys(aliases).forEach((key) => this.addAlias(aliases[key], key));
+        this.queryFormatBuilder.setAliases(aliases);
         return this;
     }
 
-  
-
-    /**
-     * Escape RegExp
-     */
-
-    protected escapeRegExp(s: String) {
-        return s.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+    setParameter(key: string, value: any): this {
+        this.queryFormatBuilder.setParameter(key, value);
+        return this;
     }
 
-    /**
-     * Replaces all entity's aliases to name in the given statement.
-     */
-
-    protected replacePropertyAliases(statement: string) {
-        const replacements: { [key: string]: string } = {};
-
-        for (const alias of this.expressionMap.aliases) {
-            if (alias.tablePath && alias.type === "other") {
-                replacements[alias.name] =
-                    this.getTableName(alias.tablePath) +
-                    " " +
-                    this.escape(alias.name);
-                    
-                const columnAliases: string[] = [];
-
-                for (const column of alias.metadata.columns) {
-                    const columnAlias = 
-                        `${alias.name}.${column.propertyName}`  +
-                        " AS " +
-                        this.escape(column.propertyName);
-
-                    replacements[`${alias.name}.${column.propertyName}`] = columnAlias;
-                    columnAliases.push(columnAlias);
-                }
-        
-                replacements[`${alias.name}.*`] = columnAliases.join(", ");
-            }
-        }
-        
-        const replacementKeys = Object.keys(replacements);
-
-        statement = statement.replace(
-            new RegExp(
-               `(?<=[ =\(]|^)` + `\\&(${replacementKeys.map(this.escapeRegExp).join("|")})` + `(?=[ =\)\,]|$)`,
-                "gm"
-            ),
-            (_, p) => replacements[p]
-        );
-
-        return statement;
+    setParameters(parameters: ObjectLiteral): this {
+        this.queryFormatBuilder.setParameters(parameters);
+        return this;
     }
 
 
-    protected createSql(): string {
-        let sql = this.query;
-        sql = this.replacePropertyAliases(sql);
-        sql = this.replacePropertyNames(sql);
-        return sql;
+    printSql(): this { 
+        this.queryFormatBuilder.printSql();
+        return this;
     }
 
 
+    getSql(): string {
+        return this.queryFormatBuilder.getQueryAndParameters()[0];
+    }
+
+
+    getQueryAndParameters(): [string, any[]] {
+        return this.queryFormatBuilder.getQueryAndParameters();
+    }
+
+
+    getRawOne<T = any>(): Promise<T> {
+        return this.queryFormatBuilder.getRawOne<T>();
+    }
+
+
+    getRawMany<T = any>(): Promise<T[]> {
+        return this.queryFormatBuilder.getRawMany<T>();
+    }
 }
