@@ -20,6 +20,8 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {CockroachQueryRunner} from "./CockroachQueryRunner";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { DriverQueryGenerators } from "../DriverQueryGenerators";
+import { DriverConfig } from "../DriverConfig";
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -34,6 +36,40 @@ export class CockroachDriver implements Driver {
      * Connection used by driver.
      */
     connection: Connection;
+
+    readonly config: DriverConfig = {
+        escapeCharacter: `"`,
+
+        checkConstraints: true,
+        uniqueConstraints: true,
+
+        insertDefaultValue: true,
+
+        returningClause: "returning",
+
+        ilikeOperator: true,
+
+        uuidGeneration: true,
+    };
+
+    readonly generators: DriverQueryGenerators = {
+        limitOffsetExpression(offset?: number, limit?: number): string | null {
+            if (limit && offset) return "LIMIT " + limit + " OFFSET " + offset;
+            if (limit) return "LIMIT " + limit;
+            if (offset) return "OFFSET " + offset;
+            return null;
+        },
+
+        insertOnConflictExpression(onConflict?: string, onIgnore?: string | boolean, onUpdate?: { columns?: string; conflict?: string; overwrite?: string }): string | null {
+            if (onIgnore) return "ON CONFLICT DO NOTHING";
+            if (onConflict) return `ON CONFLICT ${onConflict}`;
+            if (onUpdate) {
+                if (onUpdate.columns) return `ON CONFLICT ${onUpdate.conflict} DO UPDATE SET ${onUpdate.columns}`;
+                if (onUpdate.overwrite) return `ON CONFLICT ${onUpdate.conflict} DO UPDATE SET ${onUpdate.overwrite}`;
+            }
+            return null;
+        }
+    };
 
     /**
      * Cockroach underlying library.
@@ -196,12 +232,6 @@ export class CockroachDriver implements Driver {
     dataTypeDefaults: DataTypeDefaults = {
         "char": { length: 1 },
     };
-
-    /**
-     * No documentation specifying a maximum length for identifiers could be found
-     * for CockroarchDb.
-     */
-    maxAliasLength?: number;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -635,26 +665,6 @@ export class CockroachDriver implements Driver {
         return value.split(`'`).map((v, i) => {
             return i % 2 === 1 ? v : v.toLowerCase();
         }).join(`'`);
-    }
-    /**
-     * Returns true if driver supports RETURNING / OUTPUT statement.
-     */
-    isReturningSqlSupported(): boolean {
-        return true;
-    }
-
-    /**
-     * Returns true if driver supports uuid values generation on its own.
-     */
-    isUUIDGenerationSupported(): boolean {
-        return true;
-    }
-
-    /**
-     * Returns true if driver supports fulltext indices.
-     */
-    isFullTextColumnTypeSupported(): boolean {
-        return false;
     }
 
     /**

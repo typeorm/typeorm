@@ -4,10 +4,8 @@ import {Connection} from "../../connection/Connection";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {WhereExpression} from "../WhereExpression";
 import {Brackets} from "../Brackets";
-import {MysqlDriver} from "../../driver/mysql/MysqlDriver";
 import {OrderByCondition} from "../../find-options/OrderByCondition";
 import {LimitOnUpdateNotSupportedError} from "../../error/LimitOnUpdateNotSupportedError";
-import {AuroraDataApiDriver} from "../../driver/aurora-data-api/AuroraDataApiDriver";
 import {AbstractPersistQueryBuilder} from "./AbstractPersistQueryBuilder";
 
 /**
@@ -213,18 +211,18 @@ export abstract class AbstractModifyQueryBuilder<Entity, Result> extends Abstrac
     /**
      * Creates "LIMIT" parts of SQL query.
      */
-    protected createLimitExpression(): string {
+    protected createLimitExpression(): string | null {
         let limit: number|undefined = this.expressionMap.limit;
 
         if (limit) {
-            if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
+            if (this.connection.driver.config.limitClauseOnModify) {
                 return "LIMIT " + limit;
             } else {
                 throw new LimitOnUpdateNotSupportedError();
             }
         }
 
-        return "";
+        return null;
     }
 
     protected abstract createModificationExpression(): string;

@@ -19,6 +19,8 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { DriverQueryGenerators } from "../DriverQueryGenerators";
+import { LockNotSupportedOnGivenDriverError } from "../../error/LockNotSupportedOnGivenDriverError";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -28,6 +30,46 @@ export class OracleDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
+
+    readonly config = {
+        escapeCharacter: `"`,
+
+        /**
+         * Max length allowed by Oracle for aliases.
+         * @see https://docs.oracle.com/database/121/SQLRF/sql_elements008.htm#SQLRF51129
+         * > The following list of rules applies to both quoted and nonquoted identifiers unless otherwise indicated
+         * > Names must be from 1 to 30 bytes long with these exceptions:
+         * > [...]
+         *
+         * Since Oracle 12.2 (with a compatible driver/client), the limit has been set to 128.
+         * @see https://docs.oracle.com/en/database/oracle/oracle-database/12.2/sqlrf/Database-Object-Names-and-Qualifiers.html
+         *
+         * > If COMPATIBLE is set to a value of 12.2 or higher, then names must be from 1 to 128 bytes long with these exceptions
+         */
+        maxAliasLength: 30,
+
+        checkConstraints: true,
+        uniqueConstraints: true,
+
+        insertDefaultValue: true,
+
+        returningClause: "returning"
+    } as const;
+
+    readonly generators: DriverQueryGenerators = {
+        limitOffsetExpression(offset?: number, limit?: number): string | null {
+            if (limit && offset) return " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
+            if (limit) return " FETCH NEXT " + limit + " ROWS ONLY";
+            if (offset) return " OFFSET " + offset + " ROWS";
+            return null;
+        },
+
+        lockExpression(lockMode: string): string | null {
+            if (lockMode === "pessimistic_read") return "FOR UPDATE";
+            if (lockMode === "pessimistic_write") return "FOR UPDATE";
+            throw new LockNotSupportedOnGivenDriverError();
+        }
+    };
 
     /**
      * Connection used by driver.
@@ -188,20 +230,6 @@ export class OracleDriver implements Driver {
         "timestamp with time zone": { precision: 6 },
         "timestamp with local time zone": { precision: 6 }
     };
-
-    /**
-     * Max length allowed by Oracle for aliases.
-     * @see https://docs.oracle.com/database/121/SQLRF/sql_elements008.htm#SQLRF51129
-     * > The following list of rules applies to both quoted and nonquoted identifiers unless otherwise indicated
-     * > Names must be from 1 to 30 bytes long with these exceptions:
-     * > [...]
-     *
-     * Since Oracle 12.2 (with a compatible driver/client), the limit has been set to 128.
-     * @see https://docs.oracle.com/en/database/oracle/oracle-database/12.2/sqlrf/Database-Object-Names-and-Qualifiers.html
-     *
-     * > If COMPATIBLE is set to a value of 12.2 or higher, then names must be from 1 to 128 bytes long with these exceptions
-     */
-    maxAliasLength = 30;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -630,27 +658,6 @@ export class OracleDriver implements Driver {
 
             return isColumnChanged
         });
-    }
-
-    /**
-     * Returns true if driver supports RETURNING / OUTPUT statement.
-     */
-    isReturningSqlSupported(): boolean {
-        return true;
-    }
-
-    /**
-     * Returns true if driver supports uuid values generation on its own.
-     */
-    isUUIDGenerationSupported(): boolean {
-        return false;
-    }
-
-    /**
-     * Returns true if driver supports fulltext indices.
-     */
-    isFullTextColumnTypeSupported(): boolean {
-        return false;
     }
 
     /**

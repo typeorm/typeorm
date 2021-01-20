@@ -802,7 +802,8 @@ export class EntityMetadata {
         } else {
             this.tableNameWithoutPrefix = namingStrategy.tableName(this.targetName, this.givenTableName);
 
-            if (this.connection.driver.maxAliasLength && this.connection.driver.maxAliasLength > 0 && this.tableNameWithoutPrefix.length > this.connection.driver.maxAliasLength) {
+            const maxAliasLength = this.connection.driver.config.maxAliasLength;
+            if (maxAliasLength && maxAliasLength > 0 && this.tableNameWithoutPrefix.length > maxAliasLength) {
                 this.tableNameWithoutPrefix = shorten(this.tableNameWithoutPrefix, { separator: "_", segmentLength: 3 });
             }
         }

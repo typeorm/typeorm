@@ -98,7 +98,7 @@ export class EntityMetadataValidator {
 
         // for mysql we are able to not define a default selected database, instead all entities can have their database
         // defined in their decorators. To make everything work either all entities must have database define and we
-        // can live without database set in the connection options, either database in the connection options must be set
+        // can live without database set in the connection options, or database in the connection options must be set
         if (driver instanceof MysqlDriver) {
             const metadatasWithDatabase = allEntityMetadatas.filter(metadata => metadata.database);
             if (metadatasWithDatabase.length === 0 && !driver.database)

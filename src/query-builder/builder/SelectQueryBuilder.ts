@@ -1,4 +1,3 @@
-import {SapDriver} from "../../driver/sap/SapDriver";
 import {RawSqlResultsToEntityTransformer} from "../transformer/RawSqlResultsToEntityTransformer";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {SqlServerDriver} from "../../driver/sqlserver/SqlServerDriver";
@@ -18,7 +17,6 @@ import {ReadStream} from "../../platform/PlatformTools";
 import {LockNotSupportedOnGivenDriverError} from "../../error/LockNotSupportedOnGivenDriverError";
 import {MysqlDriver} from "../../driver/mysql/MysqlDriver";
 import {PostgresDriver} from "../../driver/postgres/PostgresDriver";
-import {OracleDriver} from "../../driver/oracle/OracleDriver";
 import {SelectQuery} from "../SelectQuery";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
@@ -28,13 +26,10 @@ import {EntityTarget} from "../../common/EntityTarget";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {WhereExpression} from "../WhereExpression";
 import {Brackets} from "../Brackets";
-import {AbstractSqliteDriver} from "../../driver/sqlite-abstract/AbstractSqliteDriver";
 import {QueryResultCacheOptions} from "../../cache/QueryResultCacheOptions";
-import {OffsetWithoutLimitNotSupportedError} from "../../error/OffsetWithoutLimitNotSupportedError";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import {SelectQueryBuilderOption} from "../SelectQueryBuilderOption";
 import {DriverUtils} from "../../driver/DriverUtils";
-import {AuroraDataApiDriver} from "../../driver/aurora-data-api/AuroraDataApiDriver";
 import {CockroachDriver} from "../../driver/cockroachdb/CockroachDriver";
 import {EntityNotFoundError} from "../../error/EntityNotFoundError";
 
@@ -1262,10 +1257,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
      */
     protected createSelectDistinctExpression(): string {
         const {selectDistinct, selectDistinctOn} = this.expressionMap;
-        const {driver} = this.connection;
 
         let select = "SELECT";
-        if (driver instanceof PostgresDriver && selectDistinctOn.length > 0) {
+        if (this.connection.driver.config.distinctOnClause && selectDistinctOn.length > 0) {
             const selectDistinctOnMap = selectDistinctOn.map(
               (on) => this.replacePropertyNames(on)
             ).join(", ");
@@ -1282,21 +1276,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
      * Creates "FROM ..." part of SQL query.
      */
     protected createSelectFromExpression(): string {
-        let lock: string = "";
-        if (this.connection.driver instanceof SqlServerDriver) {
-            switch (this.expressionMap.lockMode) {
-                case "pessimistic_read":
-                    lock = " WITH (HOLDLOCK, ROWLOCK)";
-                    break;
-                case "pessimistic_write":
-                    lock = " WITH (UPDLOCK, ROWLOCK)";
-                    break;
-                case "dirty_read":
-                    lock = " WITH (NOLOCK)";
-                    break;
-            }
-        }
-
         // create a selection query
         const froms = this.expressionMap.aliases
             .filter(alias => alias.type === "from" && (alias.tablePath || alias.subQuery))
@@ -1306,6 +1285,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
 
                 return this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
             });
+
+        const withLockGenerator = this.connection.driver.generators.selectWithLockExpression;
+        const lock = withLockGenerator && this.expressionMap.lockMode !== undefined && this.expressionMap.lockMode !== "optimistic"
+            ? " " + withLockGenerator(this.expressionMap.lockMode) : "";
 
         return "FROM " + froms.join(", ") + lock;
     }
@@ -1416,7 +1399,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
     /**
      * Creates "LIMIT" and "OFFSET" parts of SQL query.
      */
-    protected createLimitOffsetExpression(): string {
+    protected createLimitOffsetExpression(): string | null {
         // in the case if nothing is joined in the query builder we don't need to make two requests to get paginated results
         // we can use regular limit / offset, that's why we add offset and limit construction here based on skip and take values
         let offset: number|undefined = this.expressionMap.offset,
@@ -1426,122 +1409,40 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
             limit = this.expressionMap.take;
         }
 
+        const limitOffsetGenerator = this.connection.driver.generators.limitOffsetExpression;
+        let expression: string | null = null;
+        if (limitOffsetGenerator) {
+            expression = limitOffsetGenerator(offset, limit);
+        } else {
+            if (limit && offset) expression = "LIMIT " + limit + " OFFSET " + offset;
+            else if (limit) expression = "LIMIT " + limit;
+            else if (offset) expression = "OFFSET " + offset;
+        }
+
         if (this.connection.driver instanceof SqlServerDriver) {
             // Due to a limitation in SQL Server's parser implementation it does not support using
             // OFFSET or FETCH NEXT without an ORDER BY clause being provided. In cases where the
             // user does not request one we insert a dummy ORDER BY that does nothing and should
             // have no effect on the query planner or on the order of the results returned.
             // https://dba.stackexchange.com/a/193799
-            let prefix = "";
-            if ((limit || offset) && Object.keys(this.expressionMap.allOrderBys).length <= 0) {
-                prefix = "ORDER BY (SELECT NULL) ";
+            if (expression && Object.keys(this.expressionMap.allOrderBys).length <= 0) {
+                expression = "ORDER BY (SELECT NULL) " + expression;
             }
-
-            if (limit && offset)
-                return prefix + "OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
-            if (limit)
-                return prefix + "OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY";
-            if (offset)
-                return prefix + "OFFSET " + offset + " ROWS";
-        } else if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver || this.connection.driver instanceof SapDriver) {
-            if (limit && offset)
-                return "LIMIT " + limit + " OFFSET " + offset;
-            if (limit)
-                return "LIMIT " + limit;
-            if (offset)
-                throw new OffsetWithoutLimitNotSupportedError();
-        } else if (this.connection.driver instanceof AbstractSqliteDriver) {
-            if (limit && offset)
-                return "LIMIT " + limit + " OFFSET " + offset;
-            if (limit)
-                return "LIMIT " + limit;
-            if (offset)
-                return "LIMIT -1 OFFSET " + offset;
-        } else if (this.connection.driver instanceof OracleDriver) {
-            if (limit && offset)
-                return "OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
-            if (limit)
-                return "FETCH NEXT " + limit + " ROWS ONLY";
-            if (offset)
-                return "OFFSET " + offset + " ROWS";
-        } else {
-            if (limit && offset)
-                return "LIMIT " + limit + " OFFSET " + offset;
-            if (limit)
-                return "LIMIT " + limit;
-            if (offset)
-                return "OFFSET " + offset;
         }
 
-        return "";
+        return expression;
     }
 
     /**
      * Creates "LOCK" part of SQL query.
      */
-    protected createLockExpression(): string {
-        const driver = this.connection.driver;
 
-        let lockTablesClause = "";
-
-        if (this.expressionMap.lockTables) {
-            if (!(driver instanceof PostgresDriver)) {
-                throw new Error("Lock tables not supported in selected driver");
-            }
-            if (this.expressionMap.lockTables.length < 1) {
-                throw new Error("lockTables cannot be an empty array");
-            }
-            lockTablesClause = " OF " + this.expressionMap.lockTables.join(", ");
-        }
-
-        switch (this.expressionMap.lockMode) {
-            case "pessimistic_read":
-                if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver) {
-                    return "LOCK IN SHARE MODE";
-                } else if (driver instanceof PostgresDriver) {
-                    return "FOR SHARE" + lockTablesClause;
-                } else if (driver instanceof OracleDriver) {
-                    return "FOR UPDATE";
-                } else if (driver instanceof SqlServerDriver) {
-                    return "";
-                } else {
-                    throw new LockNotSupportedOnGivenDriverError();
-                }
-            case "pessimistic_write":
-                if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver || driver instanceof OracleDriver) {
-                    return "FOR UPDATE";
-                } else if (driver instanceof PostgresDriver ) {
-                    return "FOR UPDATE" + lockTablesClause;
-                } else if (driver instanceof SqlServerDriver) {
-                    return "";
-                } else {
-                    throw new LockNotSupportedOnGivenDriverError();
-                }
-            case "pessimistic_partial_write":
-                if (driver instanceof PostgresDriver) {
-                    return "FOR UPDATE" + lockTablesClause + " SKIP LOCKED";
-                } else if (driver instanceof MysqlDriver) {
-                    return "FOR UPDATE SKIP LOCKED";
-                } else {
-                    throw new LockNotSupportedOnGivenDriverError();
-                }
-            case "pessimistic_write_or_fail":
-                if (driver instanceof PostgresDriver) {
-                    return "FOR UPDATE" + lockTablesClause + " NOWAIT";
-                } else if (driver instanceof MysqlDriver) {
-                    return "FOR UPDATE NOWAIT";
-                } else {
-                    throw new LockNotSupportedOnGivenDriverError();
-                }
-            case "for_no_key_update":
-                if (driver instanceof PostgresDriver) {
-                    return "FOR NO KEY UPDATE" + lockTablesClause;
-                } else {
-                    throw new LockNotSupportedOnGivenDriverError();
-                }
-            default:
-                return "";
-        }
+    protected createLockExpression(): string | null {
+        if (this.expressionMap.lockMode === undefined || this.expressionMap.lockMode === "optimistic") return null;
+        const generator = this.connection.driver.generators.lockExpression;
+        const expression = generator ? generator(this.expressionMap.lockMode, this.expressionMap.lockTables) : undefined;
+        if (expression === undefined) throw new LockNotSupportedOnGivenDriverError();
+        return expression;
     }
 
     /**

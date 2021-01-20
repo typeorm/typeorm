@@ -7,8 +7,6 @@ import {SqlServerDriver} from "../../driver/sqlserver/SqlServerDriver";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ReturningStatementNotSupportedError} from "../../error/ReturningStatementNotSupportedError";
 import {RandomGenerator} from "../../util/RandomGenerator";
-import {AbstractSqliteDriver} from "../../driver/sqlite-abstract/AbstractSqliteDriver";
-import {SapDriver} from "../../driver/sap/SapDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -68,7 +66,7 @@ export abstract class AbstractPersistQueryBuilder<Entity, Result> extends QueryB
     returning(returning: string|string[]): this {
 
         // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported())
+        if (!this.connection.driver.config.returningClause)
             throw new ReturningStatementNotSupportedError();
 
         this.expressionMap.returning = returning;
@@ -105,7 +103,7 @@ export abstract class AbstractPersistQueryBuilder<Entity, Result> extends QueryB
         // if user gave his own returning
         if (typeof this.expressionMap.returning !== "string" &&
             this.expressionMap.extraReturningColumns.length > 0 &&
-            driver.isReturningSqlSupported()) {
+            driver.config.returningClause) {
             columns.push(...this.expressionMap.extraReturningColumns.filter(column => {
                 return columns.indexOf(column) === -1;
             }));
@@ -198,7 +196,7 @@ export abstract class AbstractPersistQueryBuilder<Entity, Result> extends QueryB
                 if (column && column.isVersion) {
                     // Newly inserted entities are always version 1 (first version) unless user specified
                     return "1";
-                } else if (column && column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.isUUIDGenerationSupported()) {
+                } else if (column && column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.config.uuidGeneration) {
                     // Generate uuid if database does not support generation and user didn't provide a value
                     return createParamExpression(RandomGenerator.uuid4(), "uuid");
                 }
@@ -206,7 +204,7 @@ export abstract class AbstractPersistQueryBuilder<Entity, Result> extends QueryB
                 // If value for this column was not provided then insert default value
                 // unfortunately sqlite does not support DEFAULT expression in INSERT queries
                 if ((this.connection.driver instanceof OracleDriver && Array.isArray(this.expressionMap.valuesSet) && this.expressionMap.valuesSet.length > 1)
-                    || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) {
+                    || !this.connection.driver.config.insertDefaultValue) {
                     if (column && column.default !== undefined && column.default !== null) { // try to use default defined in the column
                         return this.connection.driver.normalizeDefault(column);
                     } else {

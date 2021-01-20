@@ -9,13 +9,20 @@ import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ReplicationMode} from "./types/ReplicationMode";
+import {DriverConfig} from "./DriverConfig";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {Repository} from "../repository/Repository";
+import {DriverQueryGenerators} from "./DriverQueryGenerators";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
  */
 export interface Driver {
+
+    /**
+     * Config flags with information about what the driver supports.
+     */
+    readonly config: DriverConfig;
 
     /**
      * Connection options.
@@ -72,9 +79,9 @@ export interface Driver {
     mappedDataTypes: MappedColumnTypes;
 
     /**
-     * Max length allowed by the DBMS for aliases (execution of queries).
+     * Query generators specific to the driver.
      */
-    maxAliasLength?: number;
+    readonly generators: DriverQueryGenerators;
 
     /**
      * Performs connection to the database.
@@ -208,21 +215,6 @@ export interface Driver {
      * and returns only changed.
      */
     findChangedColumns(tableColumns: TableColumn[], columnMetadatas: ColumnMetadata[]): ColumnMetadata[];
-
-    /**
-     * Returns true if driver supports RETURNING / OUTPUT statement.
-     */
-    isReturningSqlSupported(): boolean;
-
-    /**
-     * Returns true if driver supports uuid values generation on its own.
-     */
-    isUUIDGenerationSupported(): boolean;
-
-    /**
-     * Returns true if driver supports fulltext indices.
-     */
-    isFullTextColumnTypeSupported(): boolean;
 
     /**
      * Returns true if driver parameters are indexed

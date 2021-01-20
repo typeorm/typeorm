@@ -21,7 +21,6 @@ import {UniqueMetadata} from "../metadata/UniqueMetadata";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {CheckMetadata} from "../metadata/CheckMetadata";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {ExclusionMetadata} from "../metadata/ExclusionMetadata";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
@@ -134,8 +133,7 @@ export class EntityMetadataBuilder {
                         relation.registerJoinColumns(columns);
                     }
                     if (uniqueConstraint) {
-                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver
-                            || this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof SapDriver) {
+                        if (!this.connection.driver.config.uniqueConstraints || this.connection.driver instanceof SqlServerDriver) {
                             const index = new IndexMetadata({
                                 entityMetadata: uniqueConstraint.entityMetadata,
                                 columns: uniqueConstraint.columns,
@@ -505,7 +503,7 @@ export class EntityMetadataBuilder {
         });
 
         // Only PostgreSQL supports exclusion constraints.
-        if (this.connection.driver instanceof PostgresDriver) {
+        if (this.connection.driver.config.exclusionConstraints) {
             entityMetadata.exclusions = this.metadataArgsStorage.filterExclusions(entityMetadata.inheritanceTree).map(args => {
                 return new ExclusionMetadata({ entityMetadata, args });
             });

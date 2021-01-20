@@ -108,7 +108,7 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
         }
       }
       return this;
-  }
+    }
 
 
     // -------------------------------------------------------------------------
@@ -122,28 +122,25 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
         const tableName = this.getTableName(this.getMainTableName());
         const oracleMultiRowInsert = this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1;
         const valuesExpression = this.createValuesExpression(); // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
-        const returningExpression = this.createReturningExpression();
         const columnsExpression = this.createColumnNamesExpression();
 
         const query = ["INSERT"];
 
-        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
-          if (this.expressionMap.onIgnore) query.push("IGNORE");
-        }
+        if (this.connection.driver.config.insertIgnoreModifier && this.expressionMap.onIgnore) query.push("IGNORE");
 
         query.push("INTO", tableName);
 
         // add columns expression
         if (columnsExpression) {
             query.push(`(${columnsExpression})`);
-        } else {
-            if (!valuesExpression && (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)) // special syntax for mysql DEFAULT VALUES insertion
-                query.push("()");
+        } else if (!valuesExpression && this.connection.driver.config.insertEmptyColumnsValuesList) {
+            query.push("()");
         }
 
         // add OUTPUT expression
-        if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
-            query.push("OUTPUT", returningExpression);
+        if (this.connection.driver.config.returningClause === "output") {
+            const returningExpression = this.createReturningExpression();
+            if (returningExpression) query.push("OUTPUT", returningExpression);
         }
 
         // add VALUES expression
@@ -151,31 +148,21 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
             if (!(oracleMultiRowInsert)) query.push("VALUES");
             query.push(valuesExpression);
         } else {
-            if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) { // special syntax for mysql DEFAULT VALUES insertion
+            if (this.connection.driver.config.insertEmptyColumnsValuesList) {
                 query.push("VALUES ()");
             } else {
                 query.push("DEFAULT VALUES");
             }
         }
-        if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
-          if (this.expressionMap.onIgnore) query.push("ON CONFLICT DO NOTHING");
-          if (this.expressionMap.onConflict) query.push("ON CONFLICT " + this.expressionMap.onConflict);
-          if (this.expressionMap.onUpdate) {
-            const { overwrite, columns, conflict } = this.expressionMap.onUpdate;
-            if (columns) query.push("ON CONFLICT", conflict!, "DO UPDATE SET", columns);
-            if (overwrite) query.push("ON CONFLICT", conflict!, " DO UPDATE SET", overwrite);
-          }
-        } else if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
-            if (this.expressionMap.onUpdate) {
-              const { overwrite, columns } = this.expressionMap.onUpdate;
-              if (columns) query.push("ON DUPLICATE KEY UPDATE", columns);
-              if (overwrite) query.push("ON DUPLICATE KEY UPDATE", overwrite);
-            }
-        }
+
+        const conflictGenerator = this.connection.driver.generators.insertOnConflictExpression;
+        const conflictExpression = conflictGenerator ? conflictGenerator(this.expressionMap.onConflict, this.expressionMap.onIgnore, this.expressionMap.onUpdate) : undefined;
+        if (conflictExpression) query.push(conflictExpression);
 
         // add RETURNING expression
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
-            query.push("RETURNING", returningExpression);
+        if (this.connection.driver.config.returningClause === "returning") {
+            const returningExpression = this.createReturningExpression();
+            if (returningExpression) query.push("RETURNING", returningExpression);
         }
 
         // Inserting a specific value for an auto-increment primary key in mssql requires enabling IDENTITY_INSERT
