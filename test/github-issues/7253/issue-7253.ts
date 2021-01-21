@@ -44,6 +44,7 @@ describe("github issues > #7253 Allow migration files to be output in Javascript
             enabledDrivers
         });
         connectionOptionsReader = new ConnectionOptionsReader();
+        baseConnectionOptions = await connectionOptionsReader.get(connectionOptions[0].name as string);
 
         migrationGenerateCommand = new MigrationGenerateCommand();
         migrationCreateCommand = new MigrationCreateCommand();
@@ -58,7 +59,6 @@ describe("github issues > #7253 Allow migration files to be output in Javascript
     });
 
     beforeEach(async () => {
-        baseConnectionOptions = await connectionOptionsReader.get(connectionOptions[0].name as string);
         getConnectionOptionsStub = sinon.stub(ConnectionOptionsReader.prototype, "get").resolves({
             ...baseConnectionOptions,
             entities: [Post]
