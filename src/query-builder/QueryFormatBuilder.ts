@@ -4,6 +4,10 @@ import {SelectQueryBuilder} from "./SelectQueryBuilder";
 /**
  * Allows to build full sql queries 
  */
+export interface AliasesLiteral { 
+    [aliasName: string]: EntityTarget<any> 
+};
+
 export class QueryFormatBuilder extends SelectQueryBuilder<any> {
 
      /**
@@ -43,7 +47,7 @@ export class QueryFormatBuilder extends SelectQueryBuilder<any> {
         return this;
     }
 
-    setAliases(aliases: { [aliasName: string]: EntityTarget<any> }): this {
+    setAliases(aliases: AliasesLiteral): this {
         Object.keys(aliases).forEach((key) => this.addAlias(aliases[key], key));
         return this;
     }
@@ -103,6 +107,9 @@ export class QueryFormatBuilder extends SelectQueryBuilder<any> {
 
 
     protected createSql(): string {
+        if(!this.query) 
+            throw new Error(`The query cannot be empty`);
+
         let sql = this.query;
         sql = this.replacePropertyAliases(sql);
         sql = this.replacePropertyNames(sql);

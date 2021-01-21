@@ -1,13 +1,12 @@
-import { ObjectLiteral } from "../common/ObjectLiteral";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {EntityTarget} from "../common/EntityTarget";
-import { QueryFormatBuilder } from "./QueryFormatBuilder";
-
+import {AliasesLiteral, QueryFormatBuilder} from "./QueryFormatBuilder";
 
 /**
  * Allows to build full sql queries 
  */
-export class QueryFormatter  {
+export class QueryFormatter {
 
     readonly queryFormatBuilder: QueryFormatBuilder;
 
@@ -15,8 +14,20 @@ export class QueryFormatter  {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection) {
+    constructor(connection: Connection, query?: string,  parameters?: ObjectLiteral, aliases?: AliasesLiteral) {
         this.queryFormatBuilder = new QueryFormatBuilder(connection);
+
+        if(query) {
+            this.queryFormatBuilder.setQuery(query);
+        }
+
+        if(parameters) {
+            this.queryFormatBuilder.setParameters(parameters);
+        }
+
+        if(aliases) {
+            this.queryFormatBuilder.setAliases(aliases);
+        }        
     }
 
     setQuery(query: string): this {
@@ -68,12 +79,16 @@ export class QueryFormatter  {
     }
 
 
-    getRawOne<T = any>(): Promise<T> {
+    async getRawOne<T = any>(): Promise<T> {
         return this.queryFormatBuilder.getRawOne<T>();
     }
 
 
-    getRawMany<T = any>(): Promise<T[]> {
+    async getRawMany<T = any>(): Promise<T[]> {
         return this.queryFormatBuilder.getRawMany<T>();
+    }
+
+    async execute(): Promise<any> {
+        return this.queryFormatBuilder.execute();
     }
 }

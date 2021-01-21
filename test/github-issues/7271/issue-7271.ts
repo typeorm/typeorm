@@ -16,6 +16,7 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
             entities: [RoleEntity, UserEntity],
             schemaCreate: true,
             dropSchema: true,
+            enabledDrivers: ["postgres"],
         });
   
         if (!options)
@@ -149,4 +150,50 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
         expect(rows[0]['users']).to.have.members(["Bob", "Mike"]);
     });
 
+
+    it("should execute a pure insert query", async () => {
+        if (!connection) return;
+
+        const insertResults = await connection.createQueryFormatter(`
+            INSERT INTO "users" ( email, role_id, password_hash, nick_name )
+            VALUES ('666666@test.test', 1, '', 'Jane')
+            RETURNING *;
+        `).execute();
+
+        expect(insertResults).to.be.an('array').to.have.lengthOf(1);
+        expect(insertResults[0]).to.have.property('id', 6);
+        expect(insertResults[0]).to.have.property('created_at');
+    });
+
+
+    it("should execute an insert query with parameters", async () => {
+        if (!connection) return;
+
+        const insertResults = await connection.createQueryFormatter(`
+            INSERT INTO "users" ( email, role_id, password_hash, nick_name )
+            VALUES (:email, :roleId, :passwordHash, :nickName)
+            RETURNING *;
+        `, {
+            email: '666666@test.test',
+            roleId:1,
+            passwordHash: '',
+            nickName: 'Jane'
+        }).execute();
+        
+        expect(insertResults).to.be.an('array').to.have.lengthOf(1);
+        expect(insertResults[0]).to.have.property('id', 6);
+        expect(insertResults[0]).to.have.property('created_at');
+    });
+
+
+    it("should execute a pure query - exec functions", async () => {
+        if (!connection) return;
+
+        const results = await connection.createQueryFormatter(`
+            SELECT UPPER(CONCAT('Hello', ' ', 'World')) as "text";
+        `).execute();
+
+        expect(results).to.be.an('array').to.have.lengthOf(1);
+        expect(results[0]).to.have.property('text', 'HELLO WORLD');
+    });
 });
