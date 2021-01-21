@@ -32,7 +32,7 @@ import {QueryResultCache} from "../cache/QueryResultCache";
 import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
 import {RelationLoader} from "../query-builder/RelationLoader";
 import {RelationIdLoader} from "../query-builder/RelationIdLoader";
-import {EntitySchema, ObjectLiteral} from "../";
+import {EntitySchema} from "../";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ObjectUtils} from "../util/ObjectUtils";
@@ -41,7 +41,6 @@ import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver
 import {DriverUtils} from "../driver/DriverUtils";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
 import {QueryFormatter} from "../query-builder/QueryFormatter";
-import {AliasesLiteral} from "../query-builder/QueryFormatBuilder";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -440,11 +439,11 @@ export class Connection {
     }
 
 
-    createQueryFormatter(query?: string, parameters?: ObjectLiteral, aliases?: AliasesLiteral): QueryFormatter {
+    createQueryFormatter(query?: string): QueryFormatter {
         if (this instanceof MongoEntityManager)
             throw new Error(`Query Formatter is not supported by MongoDB.`);
 
-        return new QueryFormatter(this, query, parameters, aliases);
+        return new QueryFormatter(this, query);
     }
 
     /**

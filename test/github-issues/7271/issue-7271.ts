@@ -173,7 +173,7 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
             INSERT INTO "users" ( email, role_id, password_hash, nick_name )
             VALUES (:email, :roleId, :passwordHash, :nickName)
             RETURNING *;
-        `, {
+        `).setParameters({
             email: '666666@test.test',
             roleId:1,
             passwordHash: '',
