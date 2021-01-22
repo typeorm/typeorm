@@ -56,24 +56,14 @@ export class RawSqlResultsToEntityTransformer {
      */
     protected group(rawResults: any[], alias: Alias): Map<string, any[]> {
         const map = new Map();
-        const keys: string[] = [];
-        if (alias.metadata.tableType === "view") {
-            keys.push(...alias.metadata.columns.map(column => DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName)));
-        } else {
-            keys.push(...alias.metadata.primaryColumns.map(column => DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName)));
-        }
+
+        const columns = alias.metadata.tableType === "view" ? alias.metadata.columns : alias.metadata.primaryColumns;
+        const keys = columns.map(column => DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName));
         rawResults.forEach(rawResult => {
             const id = keys.map(key => {
                 const keyValue = rawResult[key];
-
-                if (Buffer.isBuffer(keyValue)) {
-                    return keyValue.toString("hex");
-                }
-
-                if (typeof keyValue === "object") {
-                    return JSON.stringify(keyValue);
-                }
-
+                if (Buffer.isBuffer(keyValue)) return keyValue.toString("hex");
+                if (typeof keyValue === "object") return JSON.stringify(keyValue);
                 return keyValue;
             }).join("_"); // todo: check partial
 
@@ -91,14 +81,12 @@ export class RawSqlResultsToEntityTransformer {
      * Transforms set of data results into single entity.
      */
     protected transformRawResultsGroup(rawResults: any[], alias: Alias): ObjectLiteral|undefined {
-        // let hasColumns = false; // , hasEmbeddedColumns = false, hasParentColumns = false, hasParentEmbeddedColumns = false;
         let metadata = alias.metadata;
 
         if (metadata.discriminatorColumn) {
             const discriminatorValues = rawResults.map(result => result[DriverUtils.buildColumnAlias(this.driver, alias.name, alias.metadata.discriminatorColumn!.databaseName)]);
-            const discriminatorMetadata = metadata.childEntityMetadatas.find(childEntityMetadata => {
-                return typeof discriminatorValues.find(value => value === childEntityMetadata.discriminatorValue) !== "undefined";
-            });
+            const discriminatorMetadata = metadata.childEntityMetadatas.find(childEntityMetadata =>
+                discriminatorValues.includes(childEntityMetadata.discriminatorValue));
             if (discriminatorMetadata)
                 metadata = discriminatorMetadata;
         }
@@ -131,7 +119,7 @@ export class RawSqlResultsToEntityTransformer {
         metadata.columns.forEach(column => {
 
             // if table inheritance is used make sure this column is not child's column
-            if (metadata.childEntityMetadatas.length > 0 && metadata.childEntityMetadatas.map(metadata => metadata.target).indexOf(column.target) !== -1)
+            if (metadata.childEntityMetadatas.some(metadata => metadata.target === column.target))
                 return;
 
             const value = rawResults[0][DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName)];
@@ -140,7 +128,7 @@ export class RawSqlResultsToEntityTransformer {
 
             // if user does not selected the whole entity or he used partial selection and does not select this particular column
             // then we don't add this column and its value into the entity
-            if (!this.expressionMap.selects.find(select => select.selection === alias.name || select.selection === alias.name + "." + column.propertyPath))
+            if (!this.expressionMap.selects.some(select => select.selection === alias.name || select.selection === alias.name + "." + column.propertyPath))
                 return;
 
             column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
@@ -172,7 +160,7 @@ export class RawSqlResultsToEntityTransformer {
 
             // this check need to avoid setting properties than not belong to entity when single table inheritance used. (todo: check if we still need it)
             // const metadata = metadata.childEntityMetadatas.find(childEntityMetadata => discriminatorValue === childEntityMetadata.discriminatorValue);
-            if (join.relation && !metadata.relations.find(relation => relation === join.relation))
+            if (join.relation && !metadata.relations.some(relation => relation === join.relation))
                 return;
 
             // some checks to make sure this join is for current alias
