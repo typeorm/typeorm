@@ -120,4 +120,17 @@ export class CustomQueryBuilder extends QueryBuilder<any> {
     }
 
 
+    /**
+     * Gets first raw result returned by execution of generated query builder sql.
+     */
+    async getRawOne<T = any>(): Promise<T> {
+        return (await this.getRawMany())[0];
+    }
+
+    /**
+     * Gets all raw results returned by execution of generated query builder sql.
+     */
+    async getRawMany<T = any>(): Promise<T[]> {
+        return this.execute();
+    }
 }
