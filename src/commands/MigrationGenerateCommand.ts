@@ -50,6 +50,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 type: "boolean",
                 default: false,
                 describe: "Generate a migration file on Javascript instead of Typescript",
+            })
+            .option("z", {
+                alias: "allowEmptyMigration",
+                type: "boolean",
+                default: false,
+                describe: "Zero exit status on no mibgration changes; no file will be generated"
             });
     }
 
@@ -138,7 +144,9 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 }
             } else {
                 console.log(chalk.yellow(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`));
-                process.exit(1);
+                if (!args.allowEmptyMigration) {
+                    process.exit(1);
+                }
             }
         } catch (err) {
             console.log(chalk.black.bgRed("Error during migration generation:"));
