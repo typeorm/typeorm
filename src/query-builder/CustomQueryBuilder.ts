@@ -1,14 +1,17 @@
 import {EntityTarget} from "../common/EntityTarget";
-import {SelectQueryBuilder} from "./SelectQueryBuilder";
+import {QueryBuilder} from "./QueryBuilder";
 
-/**
- * Allows to build full sql queries 
- */
+
 export interface AliasesLiteral { 
     [aliasName: string]: EntityTarget<any> 
 };
 
-export class QueryFormatBuilder extends SelectQueryBuilder<any> {
+
+/**
+ * Allows to build entire sql queries 
+ */
+
+export class CustomQueryBuilder extends QueryBuilder<any> {
 
      /**
      * Full query

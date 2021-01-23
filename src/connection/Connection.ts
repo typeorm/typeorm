@@ -32,7 +32,7 @@ import {QueryResultCache} from "../cache/QueryResultCache";
 import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
 import {RelationLoader} from "../query-builder/RelationLoader";
 import {RelationIdLoader} from "../query-builder/RelationIdLoader";
-import {EntitySchema} from "../";
+import {EntitySchema, ObjectLiteral} from "../";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ObjectUtils} from "../util/ObjectUtils";
@@ -40,7 +40,8 @@ import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {DriverUtils} from "../driver/DriverUtils";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
-import {QueryFormatter} from "../query-builder/QueryFormatter";
+import {CustomQuery} from "../query-builder/CustomQuery";
+import {AliasesLiteral} from "../query-builder/CustomQueryBuilder";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -439,11 +440,11 @@ export class Connection {
     }
 
 
-    createQueryFormatter(query?: string): QueryFormatter {
+    createCustomQuery(query?: string, parameters?: ObjectLiteral, aliases?: AliasesLiteral): CustomQuery {
         if (this instanceof MongoEntityManager)
             throw new Error(`Query Formatter is not supported by MongoDB.`);
 
-        return new QueryFormatter(this, query);
+        return new CustomQuery(this, query, parameters, aliases);
     }
 
     /**

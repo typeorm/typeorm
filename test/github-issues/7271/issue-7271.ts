@@ -35,12 +35,12 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
     after(() => closeTestingConnections([connection]));
 
 
-    it("should execute full query with parameters as a clean sql", async () => {
+    it("should execute entire query with parameters", async () => {
         if (!connection) return;
 
 
         const qb = connection
-            .createQueryFormatter()
+            .createCustomQuery()
             .setQuery(`
                 SELECT "users".*, "roles".*
                 FROM "users" 
@@ -58,11 +58,11 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
     });
 
 
-    it("should execute full query with table aliases", async () => {
+    it("should execute entire query with table aliases", async () => {
         if (!connection) return;
 
         const qb = connection
-            .createQueryFormatter()
+            .createCustomQuery()
             .setQuery(`
                 SELECT user.nickName AS "nickName", role.isAdmin AS "isAdmin"
                 FROM &user
@@ -80,11 +80,11 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
     });
 
 
-    it("should execute full query with column aliases (short aliases)", async () => {
+    it("should execute full query with column using aliases", async () => {
         if (!connection) return;
 
         const qb = connection
-            .createQueryFormatter()
+            .createCustomQuery()
             .setQuery(`
                 SELECT &user.nickName, &role.isAdmin
                 FROM &user
@@ -105,7 +105,7 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
         if (!connection) return;
 
         const qb = connection
-            .createQueryFormatter()
+            .createCustomQuery()
             .setQuery(`
                 SELECT &user.*, &role.*
                 FROM &user
@@ -127,7 +127,7 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
         if (!connection) return;
 
         const qb = connection
-            .createQueryFormatter()
+            .createCustomQuery()
             .setQuery(`
                 SELECT 
                     COUNT(user.roleId)::INTEGER as count,
@@ -143,10 +143,10 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
             .addAlias(UserEntity, 'user')
             .addAlias(UserEntity, 'sqUser')
 
-        const rows = await qb.getRawMany();
+        const rows = await qb.getRawMany<{count: number; users: UserEntity[]}>();
 
         expect(rows).to.be.an('array').to.have.lengthOf(2);
-        expect(rows[0]).to.have.property('count', 2);
+        expect(rows[0]['count']).to.equal(2);
         expect(rows[0]['users']).to.have.members(["Bob", "Mike"]);
     });
 
@@ -154,7 +154,7 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
     it("should execute a pure insert query", async () => {
         if (!connection) return;
 
-        const insertResults = await connection.createQueryFormatter(`
+        const insertResults = await connection.createCustomQuery(`
             INSERT INTO "users" ( email, role_id, password_hash, nick_name )
             VALUES ('666666@test.test', 1, '', 'Jane')
             RETURNING *;
@@ -169,11 +169,11 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
     it("should execute an insert query with parameters", async () => {
         if (!connection) return;
 
-        const insertResults = await connection.createQueryFormatter(`
+        const insertResults = await connection.createCustomQuery(`
             INSERT INTO "users" ( email, role_id, password_hash, nick_name )
             VALUES (:email, :roleId, :passwordHash, :nickName)
             RETURNING *;
-        `).setParameters({
+        `, {
             email: '666666@test.test',
             roleId:1,
             passwordHash: '',
@@ -189,7 +189,7 @@ describe("github issues > #7271 Full query formatting and aliases", () => {
     it("should execute a pure query - exec functions", async () => {
         if (!connection) return;
 
-        const results = await connection.createQueryFormatter(`
+        const results = await connection.createCustomQuery(`
             SELECT UPPER(CONCAT('Hello', ' ', 'World')) as "text";
         `).execute();
 
