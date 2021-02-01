@@ -55,7 +55,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 alias: "allowEmptyMigration",
                 type: "boolean",
                 default: false,
-                describe: "Zero exit status on no mibgration changes; no file will be generated"
+                describe: "Zero exit status on no migration changes; no file will be generated"
             });
     }
 
