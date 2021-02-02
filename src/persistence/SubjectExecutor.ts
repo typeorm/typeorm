@@ -437,7 +437,10 @@ export class SubjectExecutor {
                             column.setEntityValue(updateGeneratedMap!, preparedValue);
                         }
                     });
-                    Object.assign(subject.generatedMap?subject.generatedMap:{},updateGeneratedMap);
+                    if (!subject.generatedMap) {
+                        subject.generatedMap = {};
+                    }
+                    Object.assign(subject.generatedMap, updateGeneratedMap);
                 }
 
                 // experiments, remove probably, need to implement tree tables children removal
