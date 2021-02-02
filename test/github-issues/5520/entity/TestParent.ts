@@ -1,5 +1,5 @@
-import { Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from '../../../../src';
-import { TestChild } from './TestChild';
+import { Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "../../../../src";
+import { TestChild } from "./TestChild";
 
 @Entity()
 export class TestParent {
