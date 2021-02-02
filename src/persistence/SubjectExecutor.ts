@@ -1,37 +1,40 @@
-import { ObjectLiteral } from '../common/ObjectLiteral';
-import { MongoDriver } from '../driver/mongodb/MongoDriver';
-import { MongoQueryRunner } from '../driver/mongodb/MongoQueryRunner';
-import { OracleDriver } from '../driver/oracle/OracleDriver';
-import { SapDriver } from '../driver/sap/SapDriver';
-import { MongoEntityManager } from '../entity-manager/MongoEntityManager';
-import { SubjectRemovedAndUpdatedError } from '../error/SubjectRemovedAndUpdatedError';
-import { SubjectWithoutIdentifierError } from '../error/SubjectWithoutIdentifierError';
-import { QueryRunner } from '../query-runner/QueryRunner';
-import { RemoveOptions } from '../repository/RemoveOptions';
-import { SaveOptions } from '../repository/SaveOptions';
-import { BroadcasterResult } from '../subscriber/BroadcasterResult';
-import { OrmUtils } from '../util/OrmUtils';
-import { Subject } from './Subject';
-import { SubjectChangedColumnsComputer } from './SubjectChangedColumnsComputer';
-import { SubjectTopoligicalSorter } from './SubjectTopoligicalSorter';
-import { ClosureSubjectExecutor } from './tree/ClosureSubjectExecutor';
-import { MaterializedPathSubjectExecutor } from './tree/MaterializedPathSubjectExecutor';
-import { NestedSetSubjectExecutor } from './tree/NestedSetSubjectExecutor';
+import { ObjectLiteral } from "../common/ObjectLiteral";
+import { MongoDriver } from "../driver/mongodb/MongoDriver";
+import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner";
+import { OracleDriver } from "../driver/oracle/OracleDriver";
+import { SapDriver } from "../driver/sap/SapDriver";
+import { MongoEntityManager } from "../entity-manager/MongoEntityManager";
+import { SubjectRemovedAndUpdatedError } from "../error/SubjectRemovedAndUpdatedError";
+import { SubjectWithoutIdentifierError } from "../error/SubjectWithoutIdentifierError";
+import { QueryRunner } from "../query-runner/QueryRunner";
+import { RemoveOptions } from "../repository/RemoveOptions";
+import { SaveOptions } from "../repository/SaveOptions";
+import { BroadcasterResult } from "../subscriber/BroadcasterResult";
+import { OrmUtils } from "../util/OrmUtils";
+import { Subject } from "./Subject";
+import { SubjectChangedColumnsComputer } from "./SubjectChangedColumnsComputer";
+import { SubjectTopoligicalSorter } from "./SubjectTopoligicalSorter";
+import { ClosureSubjectExecutor } from "./tree/ClosureSubjectExecutor";
+import { MaterializedPathSubjectExecutor } from "./tree/MaterializedPathSubjectExecutor";
+import { NestedSetSubjectExecutor } from "./tree/NestedSetSubjectExecutor";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
  * with given persistence subjects.
  */
 export class SubjectExecutor {
-    // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
-
     /**
-     * Indicates if executor has any operations to execute (e.g. has insert / update / delete operations to be executed).
+     * All subjects that needs to be operated.
      */
-    hasExecutableOperations: boolean = false;
-
+    protected allSubjects: Subject[];
+    /**
+     * Subjects that must be inserted.
+     */
+    protected insertSubjects: Subject[] = [];
+    /**
+     * Persistence options.
+     */
+    protected options?: SaveOptions & RemoveOptions;
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
@@ -40,46 +43,35 @@ export class SubjectExecutor {
      * QueryRunner used to execute all queries with a given subjects.
      */
     protected queryRunner: QueryRunner;
-
     /**
-     * Persistence options.
+     * Subjects that must be recovered.
      */
-    protected options?: SaveOptions & RemoveOptions;
-
+    protected recoverSubjects: Subject[] = [];
     /**
-     * All subjects that needs to be operated.
+     * Subjects that must be removed.
      */
-    protected allSubjects: Subject[];
-
+    protected removeSubjects: Subject[] = [];
     /**
-     * Subjects that must be inserted.
+     * Subjects that must be soft-removed.
      */
-    protected insertSubjects: Subject[] = [];
-
+    protected softRemoveSubjects: Subject[] = [];
     /**
      * Subjects that must be updated.
      */
     protected updateSubjects: Subject[] = [];
 
-    /**
-     * Subjects that must be removed.
-     */
-    protected removeSubjects: Subject[] = [];
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
 
     /**
-     * Subjects that must be soft-removed.
+     * Indicates if executor has any operations to execute (e.g. has insert / update / delete operations to be executed).
      */
-    protected softRemoveSubjects: Subject[] = [];
-
-    /**
-     * Subjects that must be recovered.
-     */
-    protected recoverSubjects: Subject[] = [];
+    public hasExecutableOperations: boolean = false;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-
     constructor(
         queryRunner: QueryRunner,
         subjects: Subject[],
@@ -100,7 +92,7 @@ export class SubjectExecutor {
      * Executes all operations over given array of subjects.
      * Executes queries using given query runner.
      */
-    async execute(): Promise<void> {
+    public async execute(): Promise<void> {
         // console.time("SubjectExecutor.execute");
 
         // broadcast "before" events before we start insert / update / remove operations
@@ -189,106 +181,6 @@ export class SubjectExecutor {
         // console.timeEnd("SubjectExecutor.execute");
     }
 
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Validates all given subjects.
-     */
-    protected validate() {
-        this.allSubjects.forEach((subject) => {
-            if (subject.mustBeUpdated && subject.mustBeRemoved)
-                throw new SubjectRemovedAndUpdatedError(subject);
-        });
-    }
-
-    /**
-     * Performs entity re-computations - finds changed columns, re-builds insert/update/remove subjects.
-     */
-    protected recompute(): void {
-        new SubjectChangedColumnsComputer().compute(this.allSubjects);
-        this.insertSubjects = this.allSubjects.filter(
-            (subject) => subject.mustBeInserted
-        );
-        this.updateSubjects = this.allSubjects.filter(
-            (subject) => subject.mustBeUpdated
-        );
-        this.removeSubjects = this.allSubjects.filter(
-            (subject) => subject.mustBeRemoved
-        );
-        this.softRemoveSubjects = this.allSubjects.filter(
-            (subject) => subject.mustBeSoftRemoved
-        );
-        this.recoverSubjects = this.allSubjects.filter(
-            (subject) => subject.mustBeRecovered
-        );
-        this.hasExecutableOperations =
-            this.insertSubjects.length > 0 ||
-            this.updateSubjects.length > 0 ||
-            this.removeSubjects.length > 0 ||
-            this.softRemoveSubjects.length > 0 ||
-            this.recoverSubjects.length > 0;
-    }
-
-    /**
-     * Broadcasts "BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_REMOVE" events for all given subjects.
-     */
-    protected broadcastBeforeEventsForAll(): BroadcasterResult {
-        const result = new BroadcasterResult();
-        if (this.insertSubjects.length)
-            this.insertSubjects.forEach((subject) =>
-                this.queryRunner.broadcaster.broadcastBeforeInsertEvent(
-                    result,
-                    subject.metadata,
-                    subject.entity!
-                )
-            );
-        if (this.updateSubjects.length)
-            this.updateSubjects.forEach((subject) =>
-                this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(
-                    result,
-                    subject.metadata,
-                    subject.entity!,
-                    subject.databaseEntity,
-                    subject.diffColumns,
-                    subject.diffRelations
-                )
-            );
-        if (this.removeSubjects.length)
-            this.removeSubjects.forEach((subject) =>
-                this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(
-                    result,
-                    subject.metadata,
-                    subject.entity!,
-                    subject.databaseEntity
-                )
-            );
-        if (this.softRemoveSubjects.length)
-            this.softRemoveSubjects.forEach((subject) =>
-                this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(
-                    result,
-                    subject.metadata,
-                    subject.entity!,
-                    subject.databaseEntity,
-                    subject.diffColumns,
-                    subject.diffRelations
-                )
-            );
-        if (this.recoverSubjects.length)
-            this.recoverSubjects.forEach((subject) =>
-                this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(
-                    result,
-                    subject.metadata,
-                    subject.entity!,
-                    subject.databaseEntity,
-                    subject.diffColumns,
-                    subject.diffRelations
-                )
-            );
-        return result;
-    }
-
     /**
      * Broadcasts "AFTER_INSERT", "AFTER_UPDATE", "AFTER_REMOVE" events for all given subjects.
      * Returns void if there wasn't any listener or subscriber executed.
@@ -338,6 +230,64 @@ export class SubjectExecutor {
         if (this.recoverSubjects.length)
             this.recoverSubjects.forEach((subject) =>
                 this.queryRunner.broadcaster.broadcastAfterUpdateEvent(
+                    result,
+                    subject.metadata,
+                    subject.entity!,
+                    subject.databaseEntity,
+                    subject.diffColumns,
+                    subject.diffRelations
+                )
+            );
+        return result;
+    }
+
+    /**
+     * Broadcasts "BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_REMOVE" events for all given subjects.
+     */
+    protected broadcastBeforeEventsForAll(): BroadcasterResult {
+        const result = new BroadcasterResult();
+        if (this.insertSubjects.length)
+            this.insertSubjects.forEach((subject) =>
+                this.queryRunner.broadcaster.broadcastBeforeInsertEvent(
+                    result,
+                    subject.metadata,
+                    subject.entity!
+                )
+            );
+        if (this.updateSubjects.length)
+            this.updateSubjects.forEach((subject) =>
+                this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(
+                    result,
+                    subject.metadata,
+                    subject.entity!,
+                    subject.databaseEntity,
+                    subject.diffColumns,
+                    subject.diffRelations
+                )
+            );
+        if (this.removeSubjects.length)
+            this.removeSubjects.forEach((subject) =>
+                this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(
+                    result,
+                    subject.metadata,
+                    subject.entity!,
+                    subject.databaseEntity
+                )
+            );
+        if (this.softRemoveSubjects.length)
+            this.softRemoveSubjects.forEach((subject) =>
+                this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(
+                    result,
+                    subject.metadata,
+                    subject.entity!,
+                    subject.databaseEntity,
+                    subject.diffColumns,
+                    subject.diffRelations
+                )
+            );
+        if (this.recoverSubjects.length)
+            this.recoverSubjects.forEach((subject) =>
+                this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(
                     result,
                     subject.metadata,
                     subject.entity!,
@@ -524,11 +474,11 @@ export class SubjectExecutor {
     }
 
     /**
-     * Updates all given subjects in the database.
+     * Recovers all given subjects in the database.
      */
-    protected async executeUpdateOperations(): Promise<void> {
+    protected async executeRecoverOperations(): Promise<void> {
         await Promise.all(
-            this.updateSubjects.map(async (subject) => {
+            this.recoverSubjects.map(async (subject) => {
                 if (!subject.identifier)
                     throw new SubjectWithoutIdentifierError(subject);
 
@@ -565,6 +515,15 @@ export class SubjectExecutor {
                         ] = new Date();
                     }
 
+                    if (
+                        subject.metadata.deleteDateColumn &&
+                        subject.metadata.deleteDateColumn.propertyName
+                    ) {
+                        partialEntity[
+                            subject.metadata.deleteDateColumn.propertyName
+                        ] = null;
+                    }
+
                     const manager = this.queryRunner
                         .manager as MongoEntityManager;
 
@@ -574,16 +533,14 @@ export class SubjectExecutor {
                         partialEntity
                     );
                 } else {
-                    const updateMap: ObjectLiteral = subject.createValueSetAndPopChangeMap();
-
-                    // here we execute our updation query
-                    // we need to enable entity updation because we update a subject identifier
+                    // here we execute our restory query
+                    // we need to enable entity restory because we update a subject identifier
                     // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
                     // also, we disable listeners because we call them on our own in persistence layer
-                    const updateQueryBuilder = this.queryRunner.manager
+                    const softDeleteQueryBuilder = this.queryRunner.manager
                         .createQueryBuilder()
-                        .update(subject.metadata.target)
-                        .set(updateMap)
+                        .restore()
+                        .from(subject.metadata.target)
                         .updateEntity(
                             this.options && this.options.reload === false
                                 ? false
@@ -592,18 +549,18 @@ export class SubjectExecutor {
                         .callListeners(false);
 
                     if (subject.entity) {
-                        updateQueryBuilder.whereEntity(subject.identifier);
+                        softDeleteQueryBuilder.whereEntity(subject.identifier);
                     } else {
                         // in this case identifier is just conditions object to update by
-                        updateQueryBuilder.where(subject.identifier);
+                        softDeleteQueryBuilder.where(subject.identifier);
                     }
 
-                    const updateResult = await updateQueryBuilder.execute();
-                    let updateGeneratedMap = updateResult.generatedMaps[0];
-                    if (updateGeneratedMap) {
+                    const updateResult = await softDeleteQueryBuilder.execute();
+                    subject.generatedMap = updateResult.generatedMaps[0];
+                    if (subject.generatedMap) {
                         subject.metadata.columns.forEach((column) => {
                             const value = column.getEntityValue(
-                                updateGeneratedMap!
+                                subject.generatedMap!
                             );
                             if (value !== undefined && value !== null) {
                                 const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(
@@ -611,15 +568,11 @@ export class SubjectExecutor {
                                     column
                                 );
                                 column.setEntityValue(
-                                    updateGeneratedMap!,
+                                    subject.generatedMap!,
                                     preparedValue
                                 );
                             }
                         });
-                        if (!subject.generatedMap) {
-                            subject.generatedMap = {};
-                        }
-                        Object.assign(subject.generatedMap, updateGeneratedMap);
                     }
 
                     // experiments, remove probably, need to implement tree tables children removal
@@ -798,11 +751,11 @@ export class SubjectExecutor {
     }
 
     /**
-     * Recovers all given subjects in the database.
+     * Updates all given subjects in the database.
      */
-    protected async executeRecoverOperations(): Promise<void> {
+    protected async executeUpdateOperations(): Promise<void> {
         await Promise.all(
-            this.recoverSubjects.map(async (subject) => {
+            this.updateSubjects.map(async (subject) => {
                 if (!subject.identifier)
                     throw new SubjectWithoutIdentifierError(subject);
 
@@ -839,15 +792,6 @@ export class SubjectExecutor {
                         ] = new Date();
                     }
 
-                    if (
-                        subject.metadata.deleteDateColumn &&
-                        subject.metadata.deleteDateColumn.propertyName
-                    ) {
-                        partialEntity[
-                            subject.metadata.deleteDateColumn.propertyName
-                        ] = null;
-                    }
-
                     const manager = this.queryRunner
                         .manager as MongoEntityManager;
 
@@ -857,14 +801,16 @@ export class SubjectExecutor {
                         partialEntity
                     );
                 } else {
-                    // here we execute our restory query
-                    // we need to enable entity restory because we update a subject identifier
+                    const updateMap: ObjectLiteral = subject.createValueSetAndPopChangeMap();
+
+                    // here we execute our updation query
+                    // we need to enable entity updation because we update a subject identifier
                     // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
                     // also, we disable listeners because we call them on our own in persistence layer
-                    const softDeleteQueryBuilder = this.queryRunner.manager
+                    const updateQueryBuilder = this.queryRunner.manager
                         .createQueryBuilder()
-                        .restore()
-                        .from(subject.metadata.target)
+                        .update(subject.metadata.target)
+                        .set(updateMap)
                         .updateEntity(
                             this.options && this.options.reload === false
                                 ? false
@@ -873,18 +819,18 @@ export class SubjectExecutor {
                         .callListeners(false);
 
                     if (subject.entity) {
-                        softDeleteQueryBuilder.whereEntity(subject.identifier);
+                        updateQueryBuilder.whereEntity(subject.identifier);
                     } else {
                         // in this case identifier is just conditions object to update by
-                        softDeleteQueryBuilder.where(subject.identifier);
+                        updateQueryBuilder.where(subject.identifier);
                     }
 
-                    const updateResult = await softDeleteQueryBuilder.execute();
-                    subject.generatedMap = updateResult.generatedMaps[0];
-                    if (subject.generatedMap) {
+                    const updateResult = await updateQueryBuilder.execute();
+                    let updateGeneratedMap = updateResult.generatedMaps[0];
+                    if (updateGeneratedMap) {
                         subject.metadata.columns.forEach((column) => {
                             const value = column.getEntityValue(
-                                subject.generatedMap!
+                                updateGeneratedMap!
                             );
                             if (value !== undefined && value !== null) {
                                 const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(
@@ -892,11 +838,15 @@ export class SubjectExecutor {
                                     column
                                 );
                                 column.setEntityValue(
-                                    subject.generatedMap!,
+                                    updateGeneratedMap!,
                                     preparedValue
                                 );
                             }
                         });
+                        if (!subject.generatedMap) {
+                            subject.generatedMap = {};
+                        }
+                        Object.assign(subject.generatedMap, updateGeneratedMap);
                     }
 
                     // experiments, remove probably, need to implement tree tables children removal
@@ -916,67 +866,68 @@ export class SubjectExecutor {
     }
 
     /**
-     * Updates all special columns of the saving entities (create date, update date, version, etc.).
-     * Also updates nullable columns and columns with default values.
+     * Groups subjects by metadata names (by tables) to make bulk insertions and deletions possible.
+     * However there are some limitations with bulk insertions of data into tables with generated (increment) columns
+     * in some drivers. Some drivers like mysql and sqlite does not support returning multiple generated columns
+     * after insertion and can only return a single generated column value, that's why its not possible to do bulk insertion,
+     * because it breaks insertion result's generatedMap and leads to problems when this subject is used in other subjects saves.
+     * That's why we only support bulking in junction tables for those drivers.
+     *
+     * Other drivers like postgres and sql server support RETURNING / OUTPUT statement which allows to return generated
+     * id for each inserted row, that's why bulk insertion is not limited to junction tables in there.
      */
-    protected updateSpecialColumnsInPersistedEntities(): void {
-        // update inserted entity properties
-        if (this.insertSubjects.length)
-            this.updateSpecialColumnsInInsertedAndUpdatedEntities(
-                this.insertSubjects
-            );
+    protected groupBulkSubjects(
+        subjects: Subject[],
+        type: "insert" | "delete"
+    ): [{ [key: string]: Subject[] }, string[]] {
+        const group: { [key: string]: Subject[] } = {};
+        const keys: string[] = [];
+        const groupingAllowed =
+            type === "delete" ||
+            this.queryRunner.connection.driver.isReturningSqlSupported();
 
-        // update updated entity properties
-        if (this.updateSubjects.length)
-            this.updateSpecialColumnsInInsertedAndUpdatedEntities(
-                this.updateSubjects
-            );
-
-        // update soft-removed entity properties
-        if (this.updateSubjects.length)
-            this.updateSpecialColumnsInInsertedAndUpdatedEntities(
-                this.softRemoveSubjects
-            );
-
-        // update recovered entity properties
-        if (this.updateSubjects.length)
-            this.updateSpecialColumnsInInsertedAndUpdatedEntities(
-                this.recoverSubjects
-            );
-
-        // remove ids from the entities that were removed
-        if (this.removeSubjects.length) {
-            this.removeSubjects.forEach((subject) => {
-                if (!subject.entity) return;
-
-                subject.metadata.primaryColumns.forEach((primaryColumn) => {
-                    primaryColumn.setEntityValue(subject.entity!, undefined);
-                });
-            });
-        }
-
-        // other post-persist updations
-        this.allSubjects.forEach((subject) => {
-            if (!subject.entity) return;
-
-            subject.metadata.relationIds.forEach((relationId) => {
-                relationId.setValue(subject.entity!);
-            });
-
-            // mongo _id remove
-            if (this.queryRunner instanceof MongoQueryRunner) {
-                if (
-                    subject.metadata.objectIdColumn &&
-                    subject.metadata.objectIdColumn.databaseName &&
-                    subject.metadata.objectIdColumn.databaseName !==
-                        subject.metadata.objectIdColumn.propertyName
-                ) {
-                    delete subject.entity[
-                        subject.metadata.objectIdColumn.databaseName
-                    ];
-                }
+        subjects.forEach((subject, index) => {
+            const key =
+                groupingAllowed || subject.metadata.isJunction
+                    ? subject.metadata.name
+                    : subject.metadata.name + "_" + index;
+            if (!group[key]) {
+                group[key] = [subject];
+                keys.push(key);
+            } else {
+                group[key].push(subject);
             }
         });
+
+        return [group, keys];
+    }
+
+    /**
+     * Performs entity re-computations - finds changed columns, re-builds insert/update/remove subjects.
+     */
+    protected recompute(): void {
+        new SubjectChangedColumnsComputer().compute(this.allSubjects);
+        this.insertSubjects = this.allSubjects.filter(
+            (subject) => subject.mustBeInserted
+        );
+        this.updateSubjects = this.allSubjects.filter(
+            (subject) => subject.mustBeUpdated
+        );
+        this.removeSubjects = this.allSubjects.filter(
+            (subject) => subject.mustBeRemoved
+        );
+        this.softRemoveSubjects = this.allSubjects.filter(
+            (subject) => subject.mustBeSoftRemoved
+        );
+        this.recoverSubjects = this.allSubjects.filter(
+            (subject) => subject.mustBeRecovered
+        );
+        this.hasExecutableOperations =
+            this.insertSubjects.length > 0 ||
+            this.updateSubjects.length > 0 ||
+            this.removeSubjects.length > 0 ||
+            this.softRemoveSubjects.length > 0 ||
+            this.recoverSubjects.length > 0;
     }
 
     /**
@@ -1045,39 +996,80 @@ export class SubjectExecutor {
     }
 
     /**
-     * Groups subjects by metadata names (by tables) to make bulk insertions and deletions possible.
-     * However there are some limitations with bulk insertions of data into tables with generated (increment) columns
-     * in some drivers. Some drivers like mysql and sqlite does not support returning multiple generated columns
-     * after insertion and can only return a single generated column value, that's why its not possible to do bulk insertion,
-     * because it breaks insertion result's generatedMap and leads to problems when this subject is used in other subjects saves.
-     * That's why we only support bulking in junction tables for those drivers.
-     *
-     * Other drivers like postgres and sql server support RETURNING / OUTPUT statement which allows to return generated
-     * id for each inserted row, that's why bulk insertion is not limited to junction tables in there.
+     * Updates all special columns of the saving entities (create date, update date, version, etc.).
+     * Also updates nullable columns and columns with default values.
      */
-    protected groupBulkSubjects(
-        subjects: Subject[],
-        type: "insert" | "delete"
-    ): [{ [key: string]: Subject[] }, string[]] {
-        const group: { [key: string]: Subject[] } = {};
-        const keys: string[] = [];
-        const groupingAllowed =
-            type === "delete" ||
-            this.queryRunner.connection.driver.isReturningSqlSupported();
+    protected updateSpecialColumnsInPersistedEntities(): void {
+        // update inserted entity properties
+        if (this.insertSubjects.length)
+            this.updateSpecialColumnsInInsertedAndUpdatedEntities(
+                this.insertSubjects
+            );
 
-        subjects.forEach((subject, index) => {
-            const key =
-                groupingAllowed || subject.metadata.isJunction
-                    ? subject.metadata.name
-                    : subject.metadata.name + "_" + index;
-            if (!group[key]) {
-                group[key] = [subject];
-                keys.push(key);
-            } else {
-                group[key].push(subject);
+        // update updated entity properties
+        if (this.updateSubjects.length)
+            this.updateSpecialColumnsInInsertedAndUpdatedEntities(
+                this.updateSubjects
+            );
+
+        // update soft-removed entity properties
+        if (this.updateSubjects.length)
+            this.updateSpecialColumnsInInsertedAndUpdatedEntities(
+                this.softRemoveSubjects
+            );
+
+        // update recovered entity properties
+        if (this.updateSubjects.length)
+            this.updateSpecialColumnsInInsertedAndUpdatedEntities(
+                this.recoverSubjects
+            );
+
+        // remove ids from the entities that were removed
+        if (this.removeSubjects.length) {
+            this.removeSubjects.forEach((subject) => {
+                if (!subject.entity) return;
+
+                subject.metadata.primaryColumns.forEach((primaryColumn) => {
+                    primaryColumn.setEntityValue(subject.entity!, undefined);
+                });
+            });
+        }
+
+        // other post-persist updations
+        this.allSubjects.forEach((subject) => {
+            if (!subject.entity) return;
+
+            subject.metadata.relationIds.forEach((relationId) => {
+                relationId.setValue(subject.entity!);
+            });
+
+            // mongo _id remove
+            if (this.queryRunner instanceof MongoQueryRunner) {
+                if (
+                    subject.metadata.objectIdColumn &&
+                    subject.metadata.objectIdColumn.databaseName &&
+                    subject.metadata.objectIdColumn.databaseName !==
+                        subject.metadata.objectIdColumn.propertyName
+                ) {
+                    delete subject.entity[
+                        subject.metadata.objectIdColumn.databaseName
+                    ];
+                }
             }
         });
+    }
 
-        return [group, keys];
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Validates all given subjects.
+     */
+    protected validate() {
+        this.allSubjects.forEach((subject) => {
+            if (subject.mustBeUpdated && subject.mustBeRemoved)
+                throw new SubjectRemovedAndUpdatedError(subject);
+        });
     }
 }
