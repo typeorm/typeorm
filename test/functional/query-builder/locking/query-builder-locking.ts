@@ -18,6 +18,7 @@ import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver"
 import {AbstractSqliteDriver} from "../../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {OracleDriver} from "../../../../src/driver/oracle/OracleDriver";
 import {LockNotSupportedOnGivenDriverError} from "../../../../src/error/LockNotSupportedOnGivenDriverError";
+import { VersionUtils } from "../../../../src/util/VersionUtils";
 
 describe("query builder > locking", () => {
 
@@ -98,6 +99,108 @@ describe("query builder > locking", () => {
         }
         return;
     })));
+
+    it("should throw error if pessimistic_partial_write lock used without transaction", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof PostgresDriver) {
+            return connection.createQueryBuilder(PostWithVersion, "post")
+                .setLock("pessimistic_partial_write")
+                .where("post.id = :id", { id: 1 })
+                .getOne().should.be.rejectedWith(PessimisticLockTransactionRequiredError);
+        }
+
+        if (connection.driver instanceof MysqlDriver) {
+            let [{ version }] = await connection.query(
+                "SELECT VERSION() as version;"
+            );
+            version = version.toLowerCase();
+            if (version.includes('maria')) return; // not supported in mariadb
+            if (VersionUtils.isGreaterOrEqual(version, '8.0.0')) {
+                return connection.createQueryBuilder(PostWithVersion, "post")
+                .setLock("pessimistic_partial_write")
+                .where("post.id = :id", { id: 1 })
+                .getOne().should.be.rejectedWith(PessimisticLockTransactionRequiredError);                
+            }
+        }
+        return;
+    })));    
+
+    it("should not throw error if pessimistic_partial_write lock used with transaction", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof PostgresDriver) {  
+            return connection.manager.transaction(entityManager => {
+                return Promise.all([entityManager.createQueryBuilder(PostWithVersion, "post")
+                    .setLock("pessimistic_partial_write")
+                    .where("post.id = :id", { id: 1})
+                    .getOne().should.not.be.rejected]);
+            });
+        }
+
+        if (connection.driver instanceof MysqlDriver) {
+            let [{ version }] = await connection.query(
+                "SELECT VERSION() as version;"
+            );
+            version = version.toLowerCase();
+            if (version.includes('maria')) return; // not supported in mariadb
+            if (VersionUtils.isGreaterOrEqual(version, '8.0.0')) {
+                return connection.manager.transaction(entityManager => {
+                    return Promise.all([entityManager.createQueryBuilder(PostWithVersion, "post")
+                        .setLock("pessimistic_partial_write")
+                        .where("post.id = :id", { id: 1})
+                        .getOne().should.not.be.rejected]);
+                });
+            }
+        }        
+        return;
+    })));
+    
+    it("should throw error if pessimistic_write_or_fail lock used without transaction", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof PostgresDriver) {
+            return connection.createQueryBuilder(PostWithVersion, "post")
+                .setLock("pessimistic_write_or_fail")
+                .where("post.id = :id", { id: 1 })
+                .getOne().should.be.rejectedWith(PessimisticLockTransactionRequiredError);
+        }
+
+        if (connection.driver instanceof MysqlDriver) {
+            let [{ version }] = await connection.query(
+                "SELECT VERSION() as version;"
+            );
+            version = version.toLowerCase();
+            if ((version.includes('maria') && VersionUtils.isGreaterOrEqual(version, "10.3.0")) || !version.includes('maria') && VersionUtils.isGreaterOrEqual(version, '8.0.0')) {
+                return connection.createQueryBuilder(PostWithVersion, "post")
+                .setLock("pessimistic_write_or_fail")
+                .where("post.id = :id", { id: 1 })
+                .getOne().should.be.rejectedWith(PessimisticLockTransactionRequiredError);
+            }
+        }
+        return;        
+    })));    
+
+    it("should not throw error if pessimistic_write_or_fail lock used with transaction", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof PostgresDriver) {
+            return connection.manager.transaction(entityManager => {
+                return Promise.all([entityManager.createQueryBuilder(PostWithVersion, "post")
+                    .setLock("pessimistic_write_or_fail")
+                    .where("post.id = :id", { id: 1})
+                    .getOne().should.not.be.rejected]);
+            });
+        }
+
+        if (connection.driver instanceof MysqlDriver) {
+            let [{ version }] = await connection.query(
+                "SELECT VERSION() as version;"
+            );
+            version = version.toLowerCase();
+            if ((version.includes('maria') && VersionUtils.isGreaterOrEqual(version, "10.3.0")) || !version.includes('maria') && VersionUtils.isGreaterOrEqual(version, '8.0.0')) {
+                return connection.manager.transaction(entityManager => {
+                    return Promise.all([entityManager.createQueryBuilder(PostWithVersion, "post")
+                        .setLock("pessimistic_write_or_fail")
+                        .where("post.id = :id", { id: 1})
+                        .getOne().should.not.be.rejected]);
+                });
+            }
+        }        
+        return;
+    })));    
 
     it("should attach pessimistic read lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof AbstractSqliteDriver || connection.driver instanceof CockroachDriver || connection.driver instanceof SapDriver)
@@ -186,6 +289,54 @@ describe("query builder > locking", () => {
         return;
 
     })));
+
+    it("should not attach pessimistic_partial_write lock statement on query if locking is not used", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver) {
+            const sql = connection.createQueryBuilder(PostWithVersion, "post")
+                .where("post.id = :id", { id: 1 })
+                .getSql();
+
+                expect(sql.indexOf("FOR UPDATE SKIP LOCKED") === -1).to.be.true;
+            }
+        return;
+    })));    
+
+    it("should attach pessimistic_partial_write lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver) {
+            const sql = connection.createQueryBuilder(PostWithVersion, "post")
+                .setLock("pessimistic_partial_write")
+                .where("post.id = :id", { id: 1 })
+                .getSql();
+
+            expect(sql.indexOf("FOR UPDATE SKIP LOCKED") !== -1).to.be.true;
+        }
+        return;
+
+    })));    
+
+    it("should not attach pessimistic_write_or_fail lock statement on query if locking is not used", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver) {
+            const sql = connection.createQueryBuilder(PostWithVersion, "post")
+                .where("post.id = :id", { id: 1 })
+                .getSql();
+
+                expect(sql.indexOf("FOR UPDATE NOWAIT") === -1).to.be.true;
+            }
+        return;
+    })));    
+
+    it("should attach pessimistic_write_or_fail lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver) {
+            const sql = connection.createQueryBuilder(PostWithVersion, "post")
+                .setLock("pessimistic_write_or_fail")
+                .where("post.id = :id", { id: 1 })
+                .getSql();
+
+            expect(sql.indexOf("FOR UPDATE NOWAIT") !== -1).to.be.true;
+        }
+        return;
+
+    })));     
 
     it("should throw error if optimistic lock used with getMany method", () => Promise.all(connections.map(async connection => {
 

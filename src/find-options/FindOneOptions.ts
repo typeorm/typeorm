@@ -1,3 +1,4 @@
+import {EntityFieldsNames} from "../common/EntityFieldsNames";
 import {JoinOptions} from "./JoinOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {FindConditions} from "./FindConditions";
@@ -30,7 +31,7 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Order, in which entities should be ordered.
      */
-    order?: { [P in keyof Entity]?: "ASC"|"DESC"|1|-1 };
+    order?: { [P in EntityFieldsNames<Entity>]?: "ASC"|"DESC"|1|-1 };
 
     /**
      * Enables or disables query result caching.

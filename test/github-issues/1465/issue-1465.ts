@@ -5,7 +5,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Account} from "./entity/Account";
 import {AccountActivationToken} from "./entity/AccountActivationToken";
 
-describe("save child and parent entity", () => {
+describe("github issues > #1465 save child and parent entity", () => {
 
     let connections: Connection[] = [];
     before(async () => connections = await createTestingConnections({

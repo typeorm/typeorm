@@ -64,4 +64,9 @@ export interface RelationOptions {
      */
     persistence?: boolean;
 
+    /**
+     * When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
+     */
+    orphanedRowAction?: "nullify" | "delete";
+
 }

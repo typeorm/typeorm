@@ -10,7 +10,7 @@ import {IsolationLevel} from "../../driver/types/IsolationLevel";
  * as a first parameter into the wrapped method.
  *
  * If you want to control at what position in your method parameters entity manager should be injected,
- * then use @TransactionEntityManager() decorator.
+ * then use @TransactionManager() decorator.
  *
  * If you want to use repositories instead of bare entity manager,
  * then use @TransactionRepository() decorator.
@@ -43,7 +43,7 @@ export function Transaction(connectionOrOptions?: string | TransactionOptions): 
             const transactionCallback = (entityManager: EntityManager) => {
                 let argsWithInjectedTransactionManagerAndRepositories: any[];
 
-                // filter all @TransactionEntityManager() and @TransactionRepository() decorator usages for this method
+                // filter all @TransactionManager() and @TransactionRepository() decorator usages for this method
                 const transactionEntityManagerMetadatas = getMetadataArgsStorage()
                     .filterTransactionEntityManagers(target.constructor, methodName)
                     .reverse();
@@ -51,7 +51,7 @@ export function Transaction(connectionOrOptions?: string | TransactionOptions): 
                     .filterTransactionRepository(target.constructor, methodName)
                     .reverse();
 
-                // if there are @TransactionEntityManager() decorator usages the inject them
+                // if there are @TransactionManager() decorator usages the inject them
                 if (transactionEntityManagerMetadatas.length > 0) {
                     argsWithInjectedTransactionManagerAndRepositories = [...args];
                     // replace method params with injection of transactionEntityManager

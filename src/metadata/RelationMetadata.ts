@@ -110,6 +110,11 @@ export class RelationMetadata {
     persistenceEnabled: boolean = true;
 
     /**
+     * When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
+     */
+    orphanedRowAction?: "nullify" | "delete";
+
+    /**
      * If set to true then related objects are allowed to be inserted to the database.
      */
     isCascadeInsert: boolean = false;
@@ -298,6 +303,7 @@ export class RelationMetadata {
         this.deferrable = args.options.deferrable;
         this.isEager = args.options.eager || false;
         this.persistenceEnabled = args.options.persistence === false ? false : true;
+        this.orphanedRowAction = args.options.orphanedRowAction || "nullify";
         this.isTreeParent = args.isTreeParent || false;
         this.isTreeChildren = args.isTreeChildren || false;
         this.type = args.type instanceof Function ? (args.type as () => any)() : args.type;

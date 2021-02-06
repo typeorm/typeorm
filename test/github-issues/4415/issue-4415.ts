@@ -44,7 +44,7 @@ describe("github issues > #4415 allow beautify generated migrations", () => {
         await reloadTestingDatabases(connections);
         await closeTestingConnections(connections);
 
-        connectionOptions = await setupTestingConnections({
+        connectionOptions = setupTestingConnections({
             entities: [Username, Post],
             enabledDrivers
         });

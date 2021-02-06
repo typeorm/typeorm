@@ -1417,12 +1417,28 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
         }).join(" OR ");
         const tablesSql = `SELECT * FROM "information_schema"."tables" WHERE ` + tablesCondition;
+        
+        /**
+         * Uses standard SQL information_schema.columns table and postgres-specific 
+         * pg_catalog.pg_attribute table to get column information.
+         * @see https://stackoverflow.com/a/19541865
+         */
         const columnsSql = `
-            SELECT
-                *,
-                pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) as description,
-                ('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype" AS "regtype"
-            FROM "information_schema"."columns"
+            SELECT columns.*,
+              pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) AS description,
+              ('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype" AS "regtype",
+              pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type"
+              FROM "information_schema"."columns"
+              LEFT JOIN "pg_catalog"."pg_attribute" AS "col_attr"
+              ON "col_attr"."attname" = "columns"."column_name"
+              AND "col_attr"."attrelid" = (
+                SELECT
+                  "cls"."oid" FROM "pg_catalog"."pg_class" AS "cls"
+                  LEFT JOIN "pg_catalog"."pg_namespace" AS "ns"
+                  ON "ns"."oid" = "cls"."relnamespace"
+                WHERE "cls"."relname" = "columns"."table_name"
+                AND "ns"."nspname" = "columns"."table_schema"
+              )
             WHERE
             ` + tablesCondition;
 
@@ -1595,9 +1611,17 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     }
 
                     // check only columns that have length property
-                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1 && dbColumn["character_maximum_length"]) {
-                        const length = dbColumn["character_maximum_length"].toString();
+                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
+                      let length;
+                      if (tableColumn.isArray) {
+                        const match = /\((\d+)\)/.exec(dbColumn["format_type"]);
+                        length = match ? match[1] : undefined;
+                      } else if (dbColumn["character_maximum_length"]) {
+                        length = dbColumn["character_maximum_length"].toString();
+                      }
+                      if (length) {
                         tableColumn.length = !this.isDefaultColumnLength(table, tableColumn, length) ? length : "";
+                      }
                     }
                     tableColumn.isNullable = dbColumn["is_nullable"] === "YES";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
@@ -2051,11 +2075,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             tableName = table.name.split(".")[1];
         }
 
+        let seqName = `${tableName}_${columnName}_seq`;
+        if (seqName.length > this.connection.driver.maxAliasLength!) // note doesn't yet handle corner cases where .length differs from number of UTF-8 bytes
+            seqName=`${tableName.substring(0,29)}_${columnName.substring(0,Math.max(29,63-tableName.length-5))}_seq`;
+        
         if (schema && schema !== currentSchema && !skipSchema) {
-            return disableEscape ? `${schema}.${tableName}_${columnName}_seq` : `"${schema}"."${tableName}_${columnName}_seq"`;
-
+            return disableEscape ? `${schema}.${seqName}` : `"${schema}"."${seqName}"`;
         } else {
-            return disableEscape ? `${tableName}_${columnName}_seq` : `"${tableName}_${columnName}_seq"`;
+            return disableEscape ? `${seqName}` : `"${seqName}"`;
         }
     }
 

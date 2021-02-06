@@ -624,12 +624,13 @@ export abstract class QueryBuilder<Entity> {
 
             if (replacementKeys.length) {
                 statement = statement.replace(new RegExp(
-                    `(?<=[ =\(]|^.{0})` +
+                    // Avoid a lookbehind here since it's not well supported
+                    `([ =\(]|^.{0})` +
                     `${escapeRegExp(replaceAliasNamePrefix)}(${replacementKeys.map(escapeRegExp).join("|")})` +
                     `(?=[ =\)\,]|.{0}$)`,
                     "gm"
-                ), (_, p) =>
-                    `${replacementAliasNamePrefix}${this.escape(replacements[p])}`
+                ), (_, pre, p) =>
+                    `${pre}${replacementAliasNamePrefix}${this.escape(replacements[p])}`
                 );
             }
         }
