@@ -10,7 +10,6 @@ describe("github issues > #6950 postgres: Inappropiate migration generated for `
     describe("null default", () => {
         let connections: Connection[];
         before(async () => connections = await createTestingConnections({
-            enabledDrivers: ["mysql"],
             schemaCreate: false,
             dropSchema: true,
             entities: [Post1],
@@ -37,7 +36,6 @@ describe("github issues > #6950 postgres: Inappropiate migration generated for `
     describe("null default and nullable", () => {
         let connections: Connection[];
         before(async () => connections = await createTestingConnections({
-            enabledDrivers: ["mysql"],
             schemaCreate: false,
             dropSchema: true,
             entities: [Post2],
