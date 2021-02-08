@@ -56,17 +56,17 @@ export class UserController {
     @Get("/users")
     getAll(): Promise<User[]> {
 		// can be used once createConnection is called and is resolved
-		const connection: Connection = getConnection();
+        const connection: Connection = getConnection();
 
-		const queryRunner: QueryRunner = connection.createQueryRunner();
+        const queryRunner: QueryRunner = connection.createQueryRunner();
 
-		await queryRunner.connect(); // performs connection
+        await queryRunner.connect(); // performs connection
 
         const users = await queryRunner.manager.find(User);
-
-		await queryRunner.release(); // release connection
+        
+        await queryRunner.release(); // release connection
 		
-		return users;
+        return users;
     }
 
 }
