@@ -55,7 +55,7 @@ export class UserController {
 
     @Get("/users")
     getAll(): Promise<User[]> {
-		// can be used once createConnection is called and is resolved
+        // can be used once createConnection is called and is resolved
         const connection: Connection = getConnection();
 
         const queryRunner: QueryRunner = connection.createQueryRunner();
