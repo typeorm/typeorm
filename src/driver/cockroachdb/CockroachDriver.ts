@@ -479,7 +479,7 @@ export class CockroachDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
         const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
 
@@ -495,10 +495,7 @@ export class CockroachDriver implements Driver {
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'${arrayCast}`;
 
-        } else if (defaultValue === null) {
-            return `null`;
-
-        } else if (typeof defaultValue === "object") {
+        } else if (typeof defaultValue === "object" && defaultValue !== null) {
             return `'${JSON.stringify(defaultValue)}'`;
 
         } else {

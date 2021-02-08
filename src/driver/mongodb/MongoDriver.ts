@@ -322,7 +322,7 @@ export class MongoDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 
@@ -442,8 +442,8 @@ export class MongoDriver implements Driver {
          const credentialsUrlPart = (options.username && options.password)
             ? `${options.username}:${options.password}@`
             : "";
-        const portUrlPart = (schemaUrlPart === "mongodb+srv") 
-            ? "" 
+        const portUrlPart = (schemaUrlPart === "mongodb+srv")
+            ? ""
             : `:${options.port || "27017"}`;
 
         return `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}`;

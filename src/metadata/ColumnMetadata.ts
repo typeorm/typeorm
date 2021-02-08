@@ -114,7 +114,7 @@ export class ColumnMetadata {
      * Column comment.
      * This feature is not supported by all databases.
      */
-    comment: string = "";
+    comment?: string;
 
     /**
      * Default database value.

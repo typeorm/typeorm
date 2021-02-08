@@ -1812,7 +1812,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Escapes a given comment so it's safe to include in a query.
      */
     protected escapeComment(comment?: string) {
-        if (comment === undefined || comment.length === 0) {
+        if (!comment || comment.length === 0) {
             return `''`;
         }
 
@@ -1865,7 +1865,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += " PRIMARY KEY";
         if (column.isGenerated && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
-        if (column.comment !== undefined && column.comment.length > 0)
+        if (column.comment && column.comment.length > 0)
             c += ` COMMENT ${this.escapeComment(column.comment)}`;
         if (column.default !== undefined && column.default !== null)
             c += ` DEFAULT ${column.default}`;

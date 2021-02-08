@@ -1,7 +1,6 @@
-import { Category } from "../../../functional/migrations/generate-command/entity";
-import { Entity, BaseEntity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "../../../../src";
+import {BaseEntity, Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
 
-@Entity("post_test", { schema: "public" })
+@Entity("post_test_2")
 export class Post extends BaseEntity {
 
     @PrimaryGeneratedColumn()
@@ -21,9 +20,5 @@ export class Post extends BaseEntity {
         type: 'text'
     })
     comments: string | null;
-
-    @ManyToMany(type => Category)
-    @JoinTable()
-    categories: Category[];
 
 }

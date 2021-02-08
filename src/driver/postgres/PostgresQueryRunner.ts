@@ -1417,9 +1417,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
         }).join(" OR ");
         const tablesSql = `SELECT * FROM "information_schema"."tables" WHERE ` + tablesCondition;
-        
+
         /**
-         * Uses standard SQL information_schema.columns table and postgres-specific 
+         * Uses standard SQL information_schema.columns table and postgres-specific
          * pg_catalog.pg_attribute table to get column information.
          * @see https://stackoverflow.com/a/19541865
          */
@@ -1647,7 +1647,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         }
                     }
 
-                    tableColumn.comment = dbColumn["description"] == null ? undefined : dbColumn["description"];
+                    tableColumn.comment = dbColumn["description"] ? dbColumn["description"] : undefined;
                     if (dbColumn["character_set_name"])
                         tableColumn.charset = dbColumn["character_set_name"];
                     if (dbColumn["collation_name"])
@@ -2078,7 +2078,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         let seqName = `${tableName}_${columnName}_seq`;
         if (seqName.length > this.connection.driver.maxAliasLength!) // note doesn't yet handle corner cases where .length differs from number of UTF-8 bytes
             seqName=`${tableName.substring(0,29)}_${columnName.substring(0,Math.max(29,63-tableName.length-5))}_seq`;
-        
+
         if (schema && schema !== currentSchema && !skipSchema) {
             return disableEscape ? `${schema}.${seqName}` : `"${schema}"."${seqName}"`;
         } else {
@@ -2130,7 +2130,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Escapes a given comment so it's safe to include in a query.
      */
     protected escapeComment(comment?: string) {
-        if (comment === undefined || comment.length === 0) {
+        if (!comment || comment.length === 0) {
             return "NULL";
         }
 

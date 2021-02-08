@@ -448,7 +448,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
 
         if (typeof defaultValue === "number") {
@@ -462,6 +462,9 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;
+
+        } else if (defaultValue === null) {
+            return undefined;
 
         } else {
             return defaultValue;

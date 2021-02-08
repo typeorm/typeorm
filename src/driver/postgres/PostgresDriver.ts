@@ -747,10 +747,7 @@ export class PostgresDriver implements Driver {
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'${arrayCast}`;
 
-        } else if (defaultValue === null) {
-            return `null`;
-
-        } else if (typeof defaultValue === "object") {
+        } else if (typeof defaultValue === "object" && defaultValue !== null) {
             return `'${JSON.stringify(defaultValue)}'`;
 
         } else {
@@ -871,6 +868,24 @@ export class PostgresDriver implements Driver {
             const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
+
+            // console.log("table:", columnMetadata.entityMetadata.tableName);
+            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
+            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            // console.log("length:", tableColumn.length, columnMetadata.length);
+            // console.log("width:", tableColumn.width, columnMetadata.width);
+            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
+            // console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            // console.log("default:", tableColumn.default, columnMetadata.default);
+            // console.log("enum:", tableColumn.enum, columnMetadata.enum);
+            // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
+            // console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
+            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
+            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
+            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
+            // console.log("==========================================");
 
             return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
