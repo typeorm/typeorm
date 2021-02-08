@@ -1765,8 +1765,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 if (this.connection.driver instanceof PostgresDriver)
                     // cast to JSON to trigger parsing in the driver
-                    selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision || 9})::json`;
-
+                    if (column.precision) {
+                        selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`;
+                    } else {
+                        selectionPath = `ST_AsGeoJSON(${selectionPath})::json`;
+                    }
                 if (this.connection.driver instanceof SqlServerDriver)
                     selectionPath = `${selectionPath}.ToString()`;
             }
