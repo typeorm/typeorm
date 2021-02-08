@@ -1859,8 +1859,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += ` COLLATE "${column.collation}"`;
 
         const isMariaDb = this.driver.options.type === "mariadb";
-        // MariaDB does not support NULL/NOT NULL expressions for VIRTUAL columns
-        if (!(isMariaDb && column.asExpression && (column.generatedType || "VIRTUAL") === "VIRTUAL")) {
+        if (isMariaDb && column.asExpression && (column.generatedType || "VIRTUAL") === "VIRTUAL") {
+            // do nothing - MariaDB does not support NULL/NOT NULL expressions for VIRTUAL columns
+        } else {   
             if (!column.isNullable)
                 c += " NOT NULL";
             if (column.isNullable)
