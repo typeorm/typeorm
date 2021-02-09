@@ -438,11 +438,15 @@ export class MongoDriver implements Driver {
      * Builds connection url that is passed to underlying driver to perform connection to the mongodb database.
      */
     protected buildConnectionUrl(options: { [key: string]: any }): string {
-        const credentialsUrlPart = (options.username && options.password)
+         const schemaUrlPart = options.type.toLowerCase();
+         const credentialsUrlPart = (options.username && options.password)
             ? `${options.username}:${options.password}@`
             : "";
+        const portUrlPart = (schemaUrlPart === "mongodb+srv") 
+            ? "" 
+            : `:${options.port || "27017"}`;
 
-        return `mongodb://${credentialsUrlPart}${options.host || "127.0.0.1"}:${options.port || "27017"}/${options.database || ""}`;
+        return `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}`;
     }
 
     /**

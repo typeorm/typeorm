@@ -1256,9 +1256,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
             throw error;
 
-        } finally {
-            if (queryRunner !== this.queryRunner) // means we created our own query runner
-                await queryRunner.release();
         }
     }
 
@@ -1334,7 +1331,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         this.expressionMap.joinAttributes.push(joinAttribute);
 
         if (joinAttribute.metadata) {
-
+           if (joinAttribute.metadata.deleteDateColumn && !this.expressionMap.withDeleted) {
+                const conditionDeleteColumn = `${aliasName}.${joinAttribute.metadata.deleteDateColumn.propertyName} IS NULL`;
+                joinAttribute.condition += joinAttribute.condition ? ` AND ${conditionDeleteColumn}`: `${conditionDeleteColumn}`;
+            }
             // todo: find and set metadata right there?
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
@@ -1479,11 +1479,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         //     .leftJoinAndSelect("category.post", "post");
 
         const joins = this.expressionMap.joinAttributes.map(joinAttr => {
-
             const relation = joinAttr.relation;
             const destinationTableName = joinAttr.tablePath;
             const destinationTableAlias = joinAttr.alias.name;
-            const appendedCondition = joinAttr.condition ? " AND (" + joinAttr.condition + ")" : "";
+            let appendedCondition = joinAttr.condition ? " AND (" + joinAttr.condition + ")" : "";
             const parentAlias = joinAttr.parentAlias;
 
             // if join was build without relation (e.g. without "post.category") then it means that we have direct
@@ -1509,6 +1508,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
                 const condition = relation.inverseRelation!.joinColumns.map(joinColumn => {
+                    if (relation.inverseEntityMetadata.tableType === "entity-child" && relation.inverseEntityMetadata.discriminatorColumn) {
+                        appendedCondition += " AND " + destinationTableAlias + "." + relation.inverseEntityMetadata.discriminatorColumn.databaseName + "='" + relation.inverseEntityMetadata.discriminatorValue + "'";
+                    }
+
                     return destinationTableAlias + "." + relation.inverseRelation!.propertyPath + "." + joinColumn.referencedColumn!.propertyPath + "=" +
                         parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
                 }).join(" AND ");
@@ -1704,12 +1707,19 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (driver instanceof PostgresDriver) {
                     return " FOR UPDATE" + lockTablesClause + " SKIP LOCKED";
 
+                } else if (driver instanceof MysqlDriver) {
+                    return " FOR UPDATE SKIP LOCKED";
+
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
                 }
             case "pessimistic_write_or_fail":
                 if (driver instanceof PostgresDriver) {
                     return " FOR UPDATE" + lockTablesClause + " NOWAIT";
+
+                } else if (driver instanceof MysqlDriver) {
+                    return " FOR UPDATE NOWAIT";
+
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
                 }
@@ -1777,8 +1787,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 if (this.connection.driver instanceof PostgresDriver)
                     // cast to JSON to trigger parsing in the driver
-                    selectionPath = `ST_AsGeoJSON(${selectionPath})::json`;
-
+                    if (column.precision) {
+                        selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`;
+                    } else {
+                        selectionPath = `ST_AsGeoJSON(${selectionPath})::json`;
+                    }
                 if (this.connection.driver instanceof SqlServerDriver)
                     selectionPath = `${selectionPath}.ToString()`;
             }
@@ -2019,9 +2032,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const selectString = Object.keys(orderBys)
             .map(orderCriteria => {
                 if (orderCriteria.indexOf(".") !== -1) {
-                    const [aliasName, propertyPath] = orderCriteria.split(".");
+                    const criteriaParts = orderCriteria.split(".");
+                    const aliasName = criteriaParts[0];
+                    const propertyPath = criteriaParts.slice(1).join(".");
                     const alias = this.expressionMap.findAliasByName(aliasName);
-                    const column = alias.metadata.findColumnWithPropertyName(propertyPath);
+                    const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
                     return this.escape(parentAlias) + "." + this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName));
                 } else {
                     if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria))
@@ -2035,9 +2050,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const orderByObject: OrderByCondition = {};
         Object.keys(orderBys).forEach(orderCriteria => {
             if (orderCriteria.indexOf(".") !== -1) {
-                const [aliasName, propertyPath] = orderCriteria.split(".");
+                const criteriaParts = orderCriteria.split(".");
+                const aliasName = criteriaParts[0];
+                const propertyPath = criteriaParts.slice(1).join(".");
                 const alias = this.expressionMap.findAliasByName(aliasName);
-                const column = alias.metadata.findColumnWithPropertyName(propertyPath);
+                const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
                 orderByObject[this.escape(parentAlias) + "." + this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName))] = orderBys[orderCriteria];
             } else {
                 if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria)) {

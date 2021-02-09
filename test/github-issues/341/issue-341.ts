@@ -5,7 +5,7 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {expect} from "chai";
 
-describe("github issues > OneToOne relation with referencedColumnName does not work", () => {
+describe("github issues > #341 OneToOne relation with referencedColumnName does not work", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

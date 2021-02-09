@@ -37,6 +37,8 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
 
     driver: AuroraDataApiDriver;
 
+    protected client: any
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
@@ -50,10 +52,11 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AuroraDataApiDriver) {
+    constructor(driver: AuroraDataApiDriver, client: any) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
+        this.client = client;
         this.broadcaster = new Broadcaster(this);
     }
 
@@ -92,7 +95,8 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
 
         this.isTransactionActive = true;
-        await this.driver.client.startTransaction();
+        await this.client.startTransaction();
+
 
         const afterBroadcastResult = new BroadcasterResult();
         this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
@@ -111,7 +115,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
         if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
 
-        await this.driver.client.commitTransaction();
+        await this.client.commitTransaction();
         this.isTransactionActive = false;
 
         const afterBroadcastResult = new BroadcasterResult();
@@ -131,7 +135,8 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
         if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
 
-        await this.driver.client.rollbackTransaction();
+        await this.client.rollbackTransaction();
+
         this.isTransactionActive = false;
 
         const afterBroadcastResult = new BroadcasterResult();
@@ -146,7 +151,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const result = await this.driver.client.query(query, parameters);
+        const result = await this.client.query(query, parameters);
 
         if (result.records) {
             return result.records;

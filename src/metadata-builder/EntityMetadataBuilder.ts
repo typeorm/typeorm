@@ -125,10 +125,13 @@ export class EntityMetadataBuilder {
                 // create entity's relations join columns (for many-to-one and one-to-one owner)
                 entityMetadata.relations.filter(relation => relation.isOneToOne || relation.isManyToOne).forEach(relation => {
                     const joinColumns = this.metadataArgsStorage.filterJoinColumns(relation.target, relation.propertyName);
-                    const { foreignKey, uniqueConstraint } = this.relationJoinColumnBuilder.build(joinColumns, relation); // create a foreign key based on its metadata args
+                    const { foreignKey, columns, uniqueConstraint } = this.relationJoinColumnBuilder.build(joinColumns, relation); // create a foreign key based on its metadata args
                     if (foreignKey) {
                         relation.registerForeignKeys(foreignKey); // push it to the relation and thus register there a join column
                         entityMetadata.foreignKeys.push(foreignKey);
+                    }
+                    if (columns) {
+                        relation.registerJoinColumns(columns);
                     }
                     if (uniqueConstraint) {
                         if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver
@@ -193,6 +196,10 @@ export class EntityMetadataBuilder {
                     // here we create a junction entity metadata for a new junction table of many-to-many relation
                     const junctionEntityMetadata = this.junctionEntityMetadataBuilder.build(relation, joinTable);
                     relation.registerForeignKeys(...junctionEntityMetadata.foreignKeys);
+                    relation.registerJoinColumns(
+                        junctionEntityMetadata.ownIndices[0].columns,
+                        junctionEntityMetadata.ownIndices[1].columns
+                    );
                     relation.registerJunctionEntityMetadata(junctionEntityMetadata);
 
                     // compute new entity metadata properties and push it to entity metadatas pool

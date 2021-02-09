@@ -25,6 +25,7 @@ There are several options you can specify for relations:
 * `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` - specifies how foreign key should behave when referenced object is deleted
 * `primary: boolean` - Indicates whether this relation's column will be a primary column or not.
 * `nullable: boolean` - Indicates whether this relation's column is nullable or not. By default it is nullable.
+* `orphanedRowAction: "nullify" | "delete"` - When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
 
 ## Cascades
 
@@ -96,7 +97,7 @@ Also, they provide a less explicit way of saving new objects into the database.
 
 ### Cascade Options
 
-The `cascade` option can be set as a `boolean` or an array of cascade options `("insert", "update")[]`.
+The `cascade` option can be set as a `boolean` or an array of cascade options `("insert" | "update" | "remove" | "soft-remove" | "recover")[]`.
 
 It will default to `false`, meaning no cascades. Setting `cascade: true` will enable full cascades. You can also specify options by providing an array.
 

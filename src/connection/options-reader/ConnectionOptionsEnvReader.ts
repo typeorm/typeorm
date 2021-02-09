@@ -75,7 +75,7 @@ export class ConnectionOptionsEnvReader {
             return true;
         if (caching === "false" || caching === "FALSE" || caching === "0")
             return false;
-        if (caching === "redis" || caching === "database")
+        if (caching === "redis" || caching === "ioredis" || caching === "database")
             return {
                 type: caching,
                 options: PlatformTools.getEnvVariable("TYPEORM_CACHE_OPTIONS") ? JSON.parse(PlatformTools.getEnvVariable("TYPEORM_CACHE_OPTIONS")) : undefined,

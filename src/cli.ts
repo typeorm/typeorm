@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import "reflect-metadata";
-import * as yargs from "yargs";
+import yargs from "yargs";
 import {SchemaSyncCommand} from "./commands/SchemaSyncCommand";
 import {SchemaDropCommand} from "./commands/SchemaDropCommand";
 import {QueryCommand} from "./commands/QueryCommand";

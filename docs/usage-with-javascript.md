@@ -58,7 +58,9 @@ typeorm.createConnection({
 ##### entity/Category.js
 
 ```typescript
-module.exports = {
+var EntitySchema = require("typeorm").EntitySchema;
+
+module.exports = new EntitySchema({
     name: "Category", // Will use table name `category` as default behaviour.
     tableName: "categories", // Optional: Provide `tableName` property to override the default behaviour for table name. 
     columns: {
@@ -68,16 +70,18 @@ module.exports = {
             generated: true
         },
         name: {
-            type: "string"
+            type: "varchar"
         }
     }
-};
+});
 ```
 
 ##### entity/Post.js
 
 ```typescript
-module.exports = {
+var EntitySchema = require("typeorm").EntitySchema;
+
+module.exports = new EntitySchema({
     name: "Post", // Will use table name `post` as default behaviour.
     tableName: "posts", // Optional: Provide `tableName` property to override the default behaviour for table name. 
     columns: {
@@ -87,7 +91,7 @@ module.exports = {
             generated: true
         },
         title: {
-            type: "string"
+            type: "varchar"
         },
         text: {
             type: "text"
@@ -101,7 +105,7 @@ module.exports = {
             cascade: true
         }
     }
-};
+});
 ```
 
 You can checkout this example [typeorm/javascript-example](https://github.com/typeorm/javascript-example) to learn more.

@@ -216,6 +216,9 @@ export class OracleDriver implements Driver {
         this.connection = connection;
         this.options = connection.options as OracleConnectionOptions;
 
+        if (this.options.useUTC === true) {
+            process.env.ORA_SDTZ = 'UTC';
+        }
         // load oracle package
         this.loadDependencies();
 
