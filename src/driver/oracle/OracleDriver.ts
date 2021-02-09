@@ -615,23 +615,23 @@ export class OracleDriver implements Driver {
                 || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
 
             // DEBUG SECTION
-            if (isColumnChanged) {
-                console.log("table:", columnMetadata.entityMetadata.tableName);
-                console.log("name:", tableColumn.name, columnMetadata.databaseName);
-                console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-                console.log("length:", tableColumn.length, columnMetadata.length);
-                console.log("precision:", tableColumn.precision, columnMetadata.precision);
-                console.log("scale:", tableColumn.scale, columnMetadata.scale);
-                console.log("comment:", tableColumn.comment, columnMetadata.comment);
-                console.log("default:", tableColumn.default, this.normalizeDefault(columnMetadata));
-                console.log("enum:", tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
-                console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
-                console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-                console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-                console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-                console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-                console.log("==========================================");
-            }
+            // if (isColumnChanged) {
+            //     console.log("table:", columnMetadata.entityMetadata.tableName);
+            //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
+            //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            //     console.log("length:", tableColumn.length, columnMetadata.length);
+            //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
+            //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
+            //     console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            //     console.log("default:", tableColumn.default, this.normalizeDefault(columnMetadata));
+            //     console.log("enum:", tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
+            //     console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
+            //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
+            //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
+            //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            //     console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            //     console.log("==========================================");
+            // }
 
             return isColumnChanged
         });
