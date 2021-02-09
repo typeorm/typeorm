@@ -17,7 +17,7 @@ export class Post extends BaseEntity {
     @Column({
         nullable: true,
         default: null,
-        type: 'text'
+        type: 'varchar'
     })
     comments: string | null;
 
