@@ -11,7 +11,7 @@ import { MigrationCreateCommand } from "../../../src/commands/MigrationCreateCom
 import { Post } from "./entity/Post";
 import { resultsTemplates } from "./templates/result-templates-create";
 
-describe("Migration create command", () => {
+describe("commands - migration create", () => {
     let connectionOptions: ConnectionOptions[];
     let createFileStub: sinon.SinonStub;
     let timerStub: sinon.SinonFakeTimers;
