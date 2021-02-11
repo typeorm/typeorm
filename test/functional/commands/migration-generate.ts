@@ -47,8 +47,6 @@ describe("commands - migration generate", () => {
             enabledDrivers
         });
         connectionOptionsReader = new ConnectionOptionsReader();
-        baseConnectionOptions = await connectionOptionsReader.get(connectionOptions[0].name as string);
-
         migrationGenerateCommand = new MigrationGenerateCommand();
         createFileStub = sinon.stub(CommandUtils, "createFile");
 
@@ -60,48 +58,57 @@ describe("commands - migration generate", () => {
         createFileStub.restore();
     });
 
-    beforeEach(async () => {
-        getConnectionOptionsStub = sinon.stub(ConnectionOptionsReader.prototype, "get").resolves({
-            ...baseConnectionOptions,
-            entities: [Post]
-        });
-    });
-
     afterEach(async () => {
         getConnectionOptionsStub.restore();
     });
 
     it("writes regular migration file when no option is passed", async () => {
-        createFileStub.resetHistory();
+        for (const connectionOption of connectionOptions) {
+            createFileStub.resetHistory();
 
-        await migrationGenerateCommand.handler(testHandlerArgs({
-            "connection": connectionOptions[0].name
-        }));
+            baseConnectionOptions = await connectionOptionsReader.get(connectionOption.name as string);
+            getConnectionOptionsStub = sinon.stub(ConnectionOptionsReader.prototype, "get").resolves({
+                ...baseConnectionOptions,
+                entities: [Post]
+            });
 
-        // compare against control test strings in results-templates.ts
-        sinon.assert.calledWith(
-            createFileStub,
-            sinon.match(/test-directory.*test-migration.ts/),
-            sinon.match(resultsTemplates.control)
-        );
+            await migrationGenerateCommand.handler(testHandlerArgs({
+                "connection": connectionOption.name
+            }));
 
-        getConnectionOptionsStub.restore();
+            // compare against control test strings in results-templates.ts
+            sinon.assert.calledWith(
+                createFileStub,
+                sinon.match(/test-directory.*test-migration.ts/),
+                sinon.match(resultsTemplates.control)
+            );
+
+            getConnectionOptionsStub.restore();
+        }
     });
 
     it("writes Javascript printed file when option is passed", async () => {
-        createFileStub.resetHistory();
+        for (const connectionOption of connectionOptions) {
+            createFileStub.resetHistory();
 
-        await migrationGenerateCommand.handler(testHandlerArgs({
-            "connection": connectionOptions[0].name,
-            "outputJs": true
-        }));
-        
-        // compare against "pretty" test strings in results-templates.ts
-        sinon.assert.calledWith(
-            createFileStub,
-            sinon.match(/test-directory.*test-migration.js/),
-            sinon.match(resultsTemplates.javascript)
-        );
-        getConnectionOptionsStub.restore();
+            baseConnectionOptions = await connectionOptionsReader.get(connectionOption.name as string);
+            getConnectionOptionsStub = sinon.stub(ConnectionOptionsReader.prototype, "get").resolves({
+                ...baseConnectionOptions,
+                entities: [Post]
+            });
+
+            await migrationGenerateCommand.handler(testHandlerArgs({
+                "connection": connectionOption.name,
+                "outputJs": true
+            }));
+            
+            // compare against "pretty" test strings in results-templates.ts
+            sinon.assert.calledWith(
+                createFileStub,
+                sinon.match(/test-directory.*test-migration.js/),
+                sinon.match(resultsTemplates.javascript)
+            );
+            getConnectionOptionsStub.restore();
+        }
     });
 });

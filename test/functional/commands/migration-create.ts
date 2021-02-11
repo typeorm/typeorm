@@ -21,7 +21,14 @@ describe("commands - migration create", () => {
     let baseConnectionOptions: ConnectionOptions;
 
     const enabledDrivers = [
+        "postgres",
+        "mssql",
         "mysql",
+        "mariadb",
+        "sqlite",
+        "better-sqlite3",
+        "oracle",
+        "cockroachdb"
     ] as DatabaseType[];
 
     // simulate args: `npm run typeorm migration:run -- -n test-migration -d test-directory`
@@ -47,8 +54,6 @@ describe("commands - migration create", () => {
             enabledDrivers
         });
         connectionOptionsReader = new ConnectionOptionsReader();
-        baseConnectionOptions = await connectionOptionsReader.get(connectionOptions[0].name as string);
-
         migrationCreateCommand = new MigrationCreateCommand();
         createFileStub = sinon.stub(CommandUtils, "createFile");
 
@@ -60,49 +65,58 @@ describe("commands - migration create", () => {
         createFileStub.restore();
     });
 
-    beforeEach(async () => {
-        getConnectionOptionsStub = sinon.stub(ConnectionOptionsReader.prototype, "get").resolves({
-            ...baseConnectionOptions,
-            entities: [Post]
-        });
-    });
-
     afterEach(async () => {
         getConnectionOptionsStub.restore();
     });
 
-    it("writes regular empty migration file when no option is passed", async () => {
-        createFileStub.resetHistory();
+    it("should write regular empty migration file when no option is passed", async () => {
+        for (const connectionOption of connectionOptions) {
+            createFileStub.resetHistory();
 
-        await migrationCreateCommand.handler(testHandlerArgs({
-            "connection": connectionOptions[0].name
-        }));
+            baseConnectionOptions = await connectionOptionsReader.get(connectionOption.name as string);
+            getConnectionOptionsStub = sinon.stub(ConnectionOptionsReader.prototype, "get").resolves({
+                ...baseConnectionOptions,
+                entities: [Post]
+            });
 
-        // compare against control test strings in results-templates.ts
-        sinon.assert.calledWith(
-            createFileStub,
-            sinon.match(/test-directory.*test-migration.ts/),
-            sinon.match(resultsTemplates.control)
-        );
+            await migrationCreateCommand.handler(testHandlerArgs({
+                "connection": connectionOption.name
+            }));
 
-        getConnectionOptionsStub.restore();
+            // compare against control test strings in results-templates.ts
+            sinon.assert.calledWith(
+                createFileStub,
+                sinon.match(/test-directory.*test-migration.ts/),
+                sinon.match(resultsTemplates.control)
+            );
+
+            getConnectionOptionsStub.restore();
+        }
     });
 
-    it("writes Javascript empty migration file when option is passed", async () => {
-        createFileStub.resetHistory();
+    it("should write Javascript empty migration file when option is passed", async () => {
+        for (const connectionOption of connectionOptions) {
+            createFileStub.resetHistory();
 
-        await migrationCreateCommand.handler(testHandlerArgs({
-            "connection": connectionOptions[0].name,
-            "outputJs": true
-        }));
+            baseConnectionOptions = await connectionOptionsReader.get(connectionOption.name as string);
+            getConnectionOptionsStub = sinon.stub(ConnectionOptionsReader.prototype, "get").resolves({
+                ...baseConnectionOptions,
+                entities: [Post]
+            });
 
-        // compare against control test strings in results-templates.ts
-        sinon.assert.calledWith(
-            createFileStub,
-            sinon.match(/test-directory.*test-migration.js/),
-            sinon.match(resultsTemplates.javascript)
-        );
+            await migrationCreateCommand.handler(testHandlerArgs({
+                "connection": connectionOption.name,
+                "outputJs": true
+            }));
 
-        getConnectionOptionsStub.restore();
+            // compare against control test strings in results-templates.ts
+            sinon.assert.calledWith(
+                createFileStub,
+                sinon.match(/test-directory.*test-migration.js/),
+                sinon.match(resultsTemplates.javascript)
+            );
+
+            getConnectionOptionsStub.restore();
+        }
     });
 });
