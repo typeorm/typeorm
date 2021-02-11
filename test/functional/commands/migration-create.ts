@@ -1,12 +1,17 @@
 import sinon from "sinon";
 import { ConnectionOptions, ConnectionOptionsReader, DatabaseType } from "../../../src";
-import { setupTestingConnections, createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { 
+    setupTestingConnections, 
+    createTestingConnections, 
+    closeTestingConnections, 
+    reloadTestingDatabases 
+} from "../../utils/test-utils";
 import { CommandUtils } from "../../../src/commands/CommandUtils";
 import { MigrationCreateCommand } from "../../../src/commands/MigrationCreateCommand";
 import { Post } from "./entity/Post";
 import { resultsTemplates } from "./templates/result-templates-create";
 
-describe("github issues > #7253 Allow migration files to be output in Javascript", () => {
+describe("Migration create command", () => {
     let connectionOptions: ConnectionOptions[];
     let createFileStub: sinon.SinonStub;
     let timerStub: sinon.SinonFakeTimers;
@@ -77,7 +82,7 @@ describe("github issues > #7253 Allow migration files to be output in Javascript
         sinon.assert.calledWith(
             createFileStub,
             sinon.match(/test-directory.*test-migration.ts/),
-            sinon.match(resultsTemplates.create.control)
+            sinon.match(resultsTemplates.control)
         );
 
         getConnectionOptionsStub.restore();
@@ -95,7 +100,7 @@ describe("github issues > #7253 Allow migration files to be output in Javascript
         sinon.assert.calledWith(
             createFileStub,
             sinon.match(/test-directory.*test-migration.js/),
-            sinon.match(resultsTemplates.create.javascript)
+            sinon.match(resultsTemplates.javascript)
         );
 
         getConnectionOptionsStub.restore();
