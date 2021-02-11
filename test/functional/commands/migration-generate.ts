@@ -58,10 +58,6 @@ describe("commands - migration generate", () => {
         createFileStub.restore();
     });
 
-    afterEach(async () => {
-        getConnectionOptionsStub.restore();
-    });
-
     it("writes regular migration file when no option is passed", async () => {
         for (const connectionOption of connectionOptions) {
             createFileStub.resetHistory();
