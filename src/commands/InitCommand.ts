@@ -38,6 +38,7 @@ export class InitCommand implements yargs.CommandModule {
             .option("pm", {
                 alias: "manager",
                 choices: ["npm", "yarn"],
+                default: "npm",
                 describe: "Install packages, expected values are npm or yarn."
             });
     }
@@ -98,7 +99,7 @@ export class InitCommand implements yargs.CommandModule {
         return new Promise<string>((ok, fail) => {
             exec(command, (error: any, stdout: any, stderr: any) => {
                 if (stdout) return ok(stdout);
-                if (stderr) return ok(stderr);
+                if (stderr) return fail(stderr);
                 if (error) return fail(error);
                 ok("");
             });
