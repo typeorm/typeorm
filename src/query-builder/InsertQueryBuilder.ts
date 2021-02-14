@@ -427,7 +427,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         // if column metadatas are given then apply all necessary operations with values
         if (columns.length > 0) {
             let expression = "";
-            let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
+            let paramNum = 0;
             valueSets.forEach((valueSet, valueSetIndex) => {
                 columns.forEach((column, columnIndex) => {
                     if (columnIndex === 0) {
@@ -473,9 +473,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     //     expression += subQuery;
 
                     } else if (column.isDiscriminator) {
-                        this.expressionMap.nativeParameters["discriminator_value_" + parametersCount] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
-                        expression += this.connection.driver.createParameter("discriminator_value_" + parametersCount, parametersCount);
-                        parametersCount++;
+                        this.expressionMap.nativeParameters["discriminator_value_" + paramNum] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
+                        expression += this.connection.driver.createParameter("discriminator_value_" + paramNum, paramNum);
+                        paramNum++;
                         // return "1";
 
                     // for create and update dates we insert current date
@@ -490,8 +490,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         const paramName = "uuid_" + column.databaseName + valueSetIndex;
                         value = RandomGenerator.uuid4();
                         this.expressionMap.nativeParameters[paramName] = value;
-                        expression += this.connection.driver.createParameter(paramName, parametersCount);
-                        parametersCount++;
+                        expression += this.connection.driver.createParameter(paramName, paramNum);
+                        paramNum++;
 
                     // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
@@ -524,22 +524,22 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                             const useLegacy = this.connection.driver.options.legacySpatialSupport;
                             const geomFromText = useLegacy ? "GeomFromText" : "ST_GeomFromText";
                             if (column.srid != null) {
-                                expression += `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount)}, ${column.srid})`;
+                                expression += `${geomFromText}(${this.connection.driver.createParameter(paramName, paramNum)}, ${column.srid})`;
                             } else {
-                                expression += `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount)})`;
+                                expression += `${geomFromText}(${this.connection.driver.createParameter(paramName, paramNum)})`;
                             }
                         } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             if (column.srid != null) {
-                              expression += `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)}), ${column.srid})::${column.type}`;
+                              expression += `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, paramNum)}), ${column.srid})::${column.type}`;
                             } else {
-                              expression += `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)})::${column.type}`;
+                              expression += `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, paramNum)})::${column.type}`;
                             }
                         } else if (this.connection.driver instanceof SqlServerDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                            expression += column.type + "::STGeomFromText(" + this.connection.driver.createParameter(paramName, parametersCount) + ", " + (column.srid || "0") + ")";
+                            expression += column.type + "::STGeomFromText(" + this.connection.driver.createParameter(paramName, paramNum) + ", " + (column.srid || "0") + ")";
                         } else {
-                            expression += this.connection.driver.createParameter(paramName, parametersCount);
+                            expression += this.connection.driver.createParameter(paramName, paramNum);
                         }
-                        parametersCount++;
+                        paramNum++;
                     }
 
                     if (columnIndex === columns.length - 1) {
@@ -568,7 +568,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         } else { // for tables without metadata
             // get values needs to be inserted
             let expression = "";
-            let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
+            let paramNum = 0;
 
             valueSets.forEach((valueSet, insertionIndex) => {
                 const columns = Object.keys(valueSet);
@@ -595,8 +595,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     // just any other regular value
                     } else {
                         this.expressionMap.nativeParameters[paramName] = value;
-                        expression += this.connection.driver.createParameter(paramName, parametersCount);
-                        parametersCount++;
+                        expression += this.connection.driver.createParameter(paramName, paramNum);
+                        paramNum++;
                     }
 
                     if (columnIndex === Object.keys(valueSet).length - 1) {
