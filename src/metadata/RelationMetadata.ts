@@ -531,7 +531,7 @@ export class RelationMetadata {
         // we do not want to register inverse relationship
         // to the inverse entity because it is going to override
         // it's relationship information
-        if (this.inverseRelation && this.isManyToManyOwner == false){
+        if (this.inverseRelation && this.isManyToManyOwner === false){
             this.inverseRelation.junctionEntityMetadata = junctionEntityMetadata;
             this.joinTableName = junctionEntityMetadata.tableName;
         }
