@@ -527,12 +527,14 @@ export class RelationMetadata {
     registerJunctionEntityMetadata(junctionEntityMetadata: EntityMetadata) {
         this.junctionEntityMetadata = junctionEntityMetadata;
         this.joinTableName = junctionEntityMetadata.tableName;
-        // incase of many to many relationship
-        // we do not want to register inverse relationship
-        // to the inverse entity because it is going to override
-        // it's relationship information
-        if (this.inverseRelation && this.isManyToManyOwner === false){
-            this.inverseRelation.junctionEntityMetadata = junctionEntityMetadata;
+        if (this.inverseRelation){
+            // incase of many to many relationship
+            // we do not want to register inverse relationship
+            // to the inverse entity because it is going to override
+            // it's relationship information
+            if(this.isManyToMany === false || this.inverseRelation.junctionEntityMetadata === undefined){
+                this.inverseRelation.junctionEntityMetadata = junctionEntityMetadata;
+            }
             this.joinTableName = junctionEntityMetadata.tableName;
         }
     }
