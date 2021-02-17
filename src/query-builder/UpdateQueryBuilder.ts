@@ -110,6 +110,10 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 updateResult.raw = result;
                 updateResult.affected = result.affectedRows;
             }
+            else if (this.connection.driver instanceof AuroraDataApiDriver) {
+                updateResult.raw = result;
+                updateResult.affected = result.numberOfRecordsUpdated;
+            }
             else if (this.connection.driver instanceof BetterSqlite3Driver) { // only works for better-sqlite3
                 updateResult.raw = result;
                 updateResult.affected = result.changes;
