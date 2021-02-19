@@ -1,13 +1,13 @@
 {
-  "name": "typeorm",
+  "name": "beamsorrasak-typeorm",
   "private": true,
   "version": "0.2.31",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
   "author": {
-    "name": "Umed Khudoiberdiev",
-    "email": "pleerock.me@gmail.com"
+    "name": "Sorrasak Phonklad",
+    "email": "sorrasak.developer@gmail.com"
   },
   "main": "./index.js",
   "browser": {
