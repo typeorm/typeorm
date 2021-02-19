@@ -21,6 +21,11 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * Database host.
      */
     readonly host?: string;
+    
+    /**
+     * Database host replica set.
+     */
+    readonly hostReplicaSet?: string;
 
     /**
      * Database host port.
