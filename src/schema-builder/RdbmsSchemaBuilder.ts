@@ -170,7 +170,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.createNewChecks();
         await this.createNewExclusions();
         await this.createCompositeUniqueConstraints();
-        await this.createForeignKeys();
         await this.createViews();
     }
 

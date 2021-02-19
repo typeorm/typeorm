@@ -312,6 +312,8 @@ export class Table {
                 .filter(index => index.synchronize === true)
                 .map(index => TableIndex.create(index)),
             uniques: entityMetadata.uniques.map(unique => TableUnique.create(unique)),
+            foreignKeys: entityMetadata.foreignKeys
+                .map(foreignKey => TableForeignKey.create(foreignKey)),
             checks: entityMetadata.checks.map(check => TableCheck.create(check)),
             exclusions: entityMetadata.exclusions.map(exclusion => TableExclusion.create(exclusion)),
         };
