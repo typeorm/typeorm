@@ -224,7 +224,7 @@ export class MongoDriver implements Driver {
      */
     connect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            const options = DriverUtils.buildDriverOptions(this.options);
+            const options = DriverUtils.buildMongoDBDriverOptions(this.options);
 
             this.mongodb.MongoClient.connect(
                 this.buildConnectionUrl(options),
