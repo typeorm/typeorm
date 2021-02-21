@@ -538,6 +538,8 @@ export class Connection {
             case "mssql":
             case "oracle":
                 return DriverUtils.buildDriverOptions(options.replication ? options.replication.master : options).database;
+            case "mongodb":
+                return DriverUtils.buildMongoDBDriverOptions(options).database;
             default:
                 return DriverUtils.buildDriverOptions(options).database;
     }

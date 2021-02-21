@@ -224,7 +224,7 @@ export class MongoDriver implements Driver {
      */
     connect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            const options = DriverUtils.buildDriverOptions(this.options);
+            const options = DriverUtils.buildMongoDBDriverOptions(this.options);
 
             this.mongodb.MongoClient.connect(
                 this.buildConnectionUrl(options),
@@ -442,11 +442,19 @@ export class MongoDriver implements Driver {
          const credentialsUrlPart = (options.username && options.password)
             ? `${options.username}:${options.password}@`
             : "";
-        const portUrlPart = (schemaUrlPart === "mongodb+srv")
-            ? ""
-            : `:${options.port || "27017"}`;
 
-        return `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}`;
+        let connectionString = undefined;
+
+        if(options.replicaSet) {
+            connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.hostReplicaSet}/${options.database || ""}`;
+        } else {
+            const portUrlPart = (schemaUrlPart === "mongodb+srv")
+                ? ""
+                : `:${options.port || "27017"}`;
+            connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}`;
+        }
+            
+        return connectionString;
     }
 
     /**
