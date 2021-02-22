@@ -727,12 +727,14 @@ export class PostgresDriver implements Driver {
             (
                 columnMetadata.type === "enum"
                 || columnMetadata.type === "simple-enum"
+                || columnMetadata.isArray
             ) && defaultValue !== undefined
         ) {
-            if (columnMetadata.isArray && Array.isArray(defaultValue)) {
-                return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
+            const invokedDefaultValue = typeof defaultValue === "function" ? defaultValue() : defaultValue;
+            if (columnMetadata.isArray && Array.isArray(invokedDefaultValue)) {
+                return `'{${invokedDefaultValue.map((val: string) => `${val}`).join(",")}}'`;
             }
-            return `'${defaultValue}'`;
+            return `'${invokedDefaultValue}'`;
         }
 
         if (typeof defaultValue === "number") {
