@@ -19,21 +19,9 @@ export class User {
     @Column({ type: "varchar", array: true, nullable: false, default: ["a", "b", "c"] })
     filledArrayDefault: string[];
 
-    @Column({ type: "varchar", array: true, nullable: false, default: () => [] })
-    emptyArrayDefaultFunc: string[];
-
-    @Column({ type: "varchar", array: true, nullable: false, default: () => ["a", "b", "c"] })
-    filledArrayDefaultFunc: string[];
-
     @Column({ type: "varchar", array: true, nullable: false, default: "{}" })
     emptyArrayDefaultString: string[];
 
     @Column({ type: "varchar", array: true, nullable: false, default: "{a,b,c}" })
     filledArrayDefaultString: string[];
-
-    @Column({ type: "varchar", array: true, nullable: false, default: () => "{}" })
-    emptyArrayDefaultStringFunc: string[];
-
-    @Column({ type: "varchar", array: true, nullable: false, default: () => "{a,b,c}" })
-    filledArrayDefaultStringFunc: string[];
 }
