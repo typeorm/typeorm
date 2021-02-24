@@ -534,6 +534,10 @@ export class AuroraDataApiDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
 
+        if (defaultValue === null) {
+            return undefined
+        }
+
         if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
             return `'${defaultValue}'`;
         }

@@ -719,18 +719,22 @@ export class PostgresDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
-        if (columnMetadata.isArray && Array.isArray(defaultValue)) {
+
+        if (defaultValue === null) {
+            return undefined;
+
+        } else if (columnMetadata.isArray && Array.isArray(defaultValue)) {
             return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
-        }
 
-        if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum")
-            && defaultValue !== undefined) {
-            return `'${defaultValue}'`;
-        }
-
-        if (typeof defaultValue === "number") {
+        } else if (
+            (columnMetadata.type === "enum"
+            || columnMetadata.type === "simple-enum"
+            || typeof defaultValue === "number"
+            || typeof defaultValue === "string")
+            && defaultValue !== undefined
+        ) {
             return `'${defaultValue}'`;
 
         } else if (typeof defaultValue === "boolean") {
@@ -739,10 +743,7 @@ export class PostgresDriver implements Driver {
         } else if (typeof defaultValue === "function") {
             return defaultValue();
 
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else if (typeof defaultValue === "object" && defaultValue !== null) {
+        } else if (typeof defaultValue === "object") {
             return `'${JSON.stringify(defaultValue)}'`;
 
         } else {

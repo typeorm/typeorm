@@ -582,15 +582,20 @@ export class MysqlDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
 
-        if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
+        if (defaultValue === null) {
+            return undefined
+
+        } else if (
+            (columnMetadata.type === "enum"
+            || columnMetadata.type === "simple-enum"
+            || typeof defaultValue === "string")
+            && defaultValue !== undefined) {
             return `'${defaultValue}'`;
-        }
 
-        if ((columnMetadata.type === "set") && defaultValue !== undefined) {
+        } else if ((columnMetadata.type === "set") && defaultValue !== undefined) {
             return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
-        }
 
-        if (typeof defaultValue === "number") {
+        } else if (typeof defaultValue === "number") {
             return `'${defaultValue.toFixed(columnMetadata.scale)}'`;
 
         } else if (typeof defaultValue === "boolean") {
@@ -598,12 +603,6 @@ export class MysqlDriver implements Driver {
 
         } else if (typeof defaultValue === "function") {
             return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else if (defaultValue === null) {
-            return undefined;
 
         } else {
             return defaultValue;
