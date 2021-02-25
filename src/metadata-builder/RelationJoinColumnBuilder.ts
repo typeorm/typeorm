@@ -159,8 +159,9 @@ export class RelationJoinColumnBuilder {
                             zerofill: referencedColumn.zerofill,
                             unsigned: referencedColumn.unsigned,
                             comment: referencedColumn.comment,
+                            enum: referencedColumn.enum,
                             primary: relation.isPrimary,
-                            nullable: relation.isNullable
+                            nullable: relation.isNullable,
                         }
                     }
                 });

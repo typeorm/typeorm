@@ -1861,7 +1861,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const isMariaDb = this.driver.options.type === "mariadb";
         if (isMariaDb && column.asExpression && (column.generatedType || "VIRTUAL") === "VIRTUAL") {
             // do nothing - MariaDB does not support NULL/NOT NULL expressions for VIRTUAL columns
-        } else {   
+        } else {
             if (!column.isNullable)
                 c += " NOT NULL";
             if (column.isNullable)
