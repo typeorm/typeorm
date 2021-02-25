@@ -62,7 +62,7 @@ import { BroadcasterResult } from "../subscriber/BroadcasterResult";
  */
 export class MongoEntityManager extends EntityManager {
 
-    private mongoQueryRunner: MongoQueryRunner
+    private mongoQueryRunner: MongoQueryRunner;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -70,8 +70,8 @@ export class MongoEntityManager extends EntityManager {
 
     constructor(connection: Connection) {
         super(connection);
-        this.mongoQueryRunner = (connection.driver as MongoDriver).queryRunner!
-        Object.assign(this, { queryRunner: this.mongoQueryRunner })
+        this.mongoQueryRunner = (connection.driver as MongoDriver).queryRunner!;
+        Object.assign(this, { queryRunner: this.mongoQueryRunner });
     }
 
     // -------------------------------------------------------------------------
