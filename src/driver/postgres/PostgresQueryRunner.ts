@@ -757,17 +757,17 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             ) {
                 const enumName = this.buildEnumName(table, newColumn);
                 const arraySuffix = newColumn.isArray ? "[]" : "";
-                const oldEnumName = this.buildEnumName(table, newColumn, true, false, true);
-                const oldEnumNameWithoutSchema = this.buildEnumName(table, newColumn, false, false, true);
-                const enumTypeBeforeColumnChange = await this.getEnumTypeName(table, oldColumn);
+                const oldEnumName = this.buildEnumName(table, oldColumn, true, false, false);
+                // const oldEnumNameWithoutSchema = this.buildEnumName(table, oldColumn, false, false, true);
+                // const enumTypeBeforeColumnChange = await this.getEnumTypeName(table, oldColumn);
 
                 // rename old ENUM
-                upQueries.push(new Query(`ALTER TYPE "${enumTypeBeforeColumnChange.enumTypeSchema}"."${enumTypeBeforeColumnChange.enumTypeName}" RENAME TO ${oldEnumNameWithoutSchema}`));
-                downQueries.push(new Query(`ALTER TYPE ${oldEnumName} RENAME TO  "${enumTypeBeforeColumnChange.enumTypeName}"`));
+                // upQueries.push(new Query(`ALTER TYPE "${enumTypeBeforeColumnChange.enumTypeSchema}"."${enumTypeBeforeColumnChange.enumTypeName}" RENAME TO ${oldEnumNameWithoutSchema}`));
+                // downQueries.push(new Query(`ALTER TYPE ${oldEnumName} RENAME TO  "${enumTypeBeforeColumnChange.enumTypeName}"`));
 
                 // create new ENUM
-                upQueries.push(this.createEnumTypeSql(table, newColumn));
-                downQueries.push(this.dropEnumTypeSql(table, oldColumn));
+                upQueries.push(this.createEnumTypeSql(table, newColumn, enumName));
+                downQueries.push(this.dropEnumTypeSql(table, newColumn, enumName));
 
                 // if column have default value, we must drop it to avoid issues with type casting
                 if (newColumn.default !== null && newColumn.default !== undefined) {
@@ -790,7 +790,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
 
                 // remove old ENUM
-                upQueries.push(this.dropEnumTypeSql(table, newColumn, oldEnumName));
+                upQueries.push(this.dropEnumTypeSql(table, oldColumn, oldEnumName));
                 downQueries.push(this.createEnumTypeSql(table, oldColumn, oldEnumName));
             }
 
