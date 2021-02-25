@@ -9,7 +9,7 @@ describe("github issues > #7283 Generating Migration on ManyToOne/OneToMany + Pr
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         migrations: [],
-        enabledDrivers: ["mysql", "mariadb"],
+        enabledDrivers: ["mysql", "mariadb", "postgres"],
         schemaCreate: false,
         dropSchema: true,
         entities: [AccessEvent, Employee],

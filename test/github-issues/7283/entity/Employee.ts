@@ -8,7 +8,7 @@ enum Providers {
 
 @Entity()
 export class Employee extends BaseEntity {
-    @PrimaryColumn({ type: 'enum', enum: Providers })
+    @PrimaryColumn({ type: 'enum', enum: Providers, enumName: "providerEnum" })
     provider!: Providers
 
     @OneToMany(() => AccessEvent, (accessEvent) => accessEvent.employee)

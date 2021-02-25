@@ -84,6 +84,7 @@ export class JunctionEntityMetadataBuilder {
                         zerofill: referencedColumn.zerofill,
                         unsigned: referencedColumn.zerofill ? true : referencedColumn.unsigned,
                         enum: referencedColumn.enum,
+                        enumName: referencedColumn.enumName,
                         nullable: false,
                         primary: true,
                     }
@@ -123,6 +124,7 @@ export class JunctionEntityMetadataBuilder {
                         zerofill: inverseReferencedColumn.zerofill,
                         unsigned: inverseReferencedColumn.zerofill ? true : inverseReferencedColumn.unsigned,
                         enum: inverseReferencedColumn.enum,
+                        enumName: inverseReferencedColumn.enumName,
                         name: columnName,
                         nullable: false,
                         primary: true,

@@ -160,6 +160,7 @@ export class RelationJoinColumnBuilder {
                             unsigned: referencedColumn.unsigned,
                             comment: referencedColumn.comment,
                             enum: referencedColumn.enum,
+                            enumName: referencedColumn.enumName,
                             primary: relation.isPrimary,
                             nullable: relation.isNullable,
                         }
