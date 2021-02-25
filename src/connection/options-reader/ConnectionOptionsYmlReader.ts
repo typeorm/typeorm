@@ -18,7 +18,7 @@ export class ConnectionOptionsYmlReader {
         const contentsBuffer = PlatformTools.readFileSync(path);
         const contents = contentsBuffer.toString();
 
-        const config: undefined | string | {[key: string]: any} = ymlParser.safeLoad(contents);
+        const config: undefined | string | {[key: string]: any} = ymlParser.loadAll(contents);
 
         if (typeof config !== 'object') {
             return [];
