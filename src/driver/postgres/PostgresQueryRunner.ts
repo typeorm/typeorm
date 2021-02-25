@@ -2118,9 +2118,19 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         }
         const result = await this.query(`SELECT "udt_schema", "udt_name" ` +
             `FROM "information_schema"."columns" WHERE "table_schema" = '${schema}' AND "table_name" = '${name}' AND "column_name"='${column.name}'`);
+
+        // docs: https://www.postgresql.org/docs/current/xtypes.html
+        // When you define a new base type, PostgreSQL automatically provides support for arrays of that type.
+        // The array type typically has the same name as the base type with the underscore character (_) prepended.
+        // ----
+        // so, we must remove this underscore character from enum type name
+        let udtName = result[0]["udt_name"]
+        if (udtName.indexOf("_") === 0) {
+            udtName = udtName.substr(1, udtName.length)
+        }
         return {
             enumTypeSchema: result[0]["udt_schema"],
-            enumTypeName: result[0]["udt_name"]
+            enumTypeName: udtName
         };
     }
 
