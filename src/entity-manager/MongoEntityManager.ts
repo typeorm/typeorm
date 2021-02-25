@@ -63,7 +63,7 @@ import { BroadcasterResult } from "../subscriber/BroadcasterResult";
 export class MongoEntityManager extends EntityManager {
 
     get mongoQueryRunner(): MongoQueryRunner {
-        return (this.connection.driver as MongoDriver).queryRunner as MongoQueryRunner
+        return (this.connection.driver as MongoDriver).queryRunner as MongoQueryRunner;
     }
 
     // -------------------------------------------------------------------------
