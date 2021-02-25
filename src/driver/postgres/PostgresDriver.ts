@@ -875,6 +875,7 @@ export class PostgresDriver implements Driver {
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                || tableColumn.enumName !== columnMetadata.enumName
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + ""))) // enums in postgres are always strings
                 || tableColumn.isGenerated !== columnMetadata.isGenerated
                 || (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase()
@@ -889,6 +890,7 @@ export class PostgresDriver implements Driver {
             //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
             //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
             //     console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            //     console.log("enumName:", tableColumn.enumName, columnMetadata.enumName);
             //     console.log("enum:", tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
             //     console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
             //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);

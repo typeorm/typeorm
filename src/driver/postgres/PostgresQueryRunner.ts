@@ -753,7 +753,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             if (
                 (newColumn.type === "enum" || newColumn.type === "simple-enum")
                 && (oldColumn.type === "enum" || oldColumn.type === "simple-enum")
-                && !OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!)
+                && (!OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!) || newColumn.enumName !== oldColumn.enumName)
             ) {
                 const enumName = this.buildEnumName(table, newColumn);
                 const arraySuffix = newColumn.isArray ? "[]" : "";
@@ -1567,11 +1567,17 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     }
 
                     if (tableColumn.type.indexOf("enum") !== -1) {
+                        // check if `enumName` is specified by user
+                        const { enumTypeName } = await this.getEnumTypeName(table, tableColumn)
+                        const builtEnumName = this.buildEnumName(table, tableColumn, false, true)
+                        if (builtEnumName !== enumTypeName)
+                            tableColumn.enumName = enumTypeName
+
                         tableColumn.type = "enum";
                         const sql = `SELECT "e"."enumlabel" AS "value" FROM "pg_enum" "e" ` +
                         `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
                         `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-                        `WHERE "n"."nspname" = '${dbTable["table_schema"]}' AND "t"."typname" = '${this.buildEnumName(table, tableColumn.name, false, true)}'`;
+                        `WHERE "n"."nspname" = '${dbTable["table_schema"]}' AND "t"."typname" = '${this.buildEnumName(table, tableColumn, false, true)}'`;
                         const results: ObjectLiteral[] = await this.query(sql);
                         tableColumn.enum = results.map(result => result["value"]);
                     }
@@ -2089,20 +2095,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Builds ENUM type name from given table and column.
      */
-    protected buildEnumName(table: Table, columnOrName: TableColumn|string, withSchema: boolean = true, disableEscape?: boolean, toOld?: boolean): string {
-        /**
-         * If enumName is specified in column options then use it instead
-         */
-        if (columnOrName instanceof TableColumn && columnOrName.enumName) {
-            let enumName = columnOrName.enumName;
-            if (toOld)
-                enumName = enumName + "_old";
-            return disableEscape ? enumName : `"${enumName}"`;
-        }
-        const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
+    protected buildEnumName(table: Table, column: TableColumn, withSchema: boolean = true, disableEscape?: boolean, toOld?: boolean): string {
         const schema = table.name.indexOf(".") === -1 ? this.driver.options.schema : table.name.split(".")[0];
         const tableName = table.name.indexOf(".") === -1 ? table.name : table.name.split(".")[1];
-        let enumName = schema && withSchema ? `${schema}.${tableName}_${columnName.toLowerCase()}_enum` : `${tableName}_${columnName.toLowerCase()}_enum`;
+        let enumName = column.enumName ? column.enumName : `${tableName}_${column.name.toLowerCase()}_enum`;
+        if (schema && withSchema)
+            enumName = `${schema}.${enumName}`
         if (toOld)
             enumName = enumName + "_old";
         return enumName.split(".").map(i => {
