@@ -112,7 +112,7 @@
     "sqlite3": "^5.0.0",
     "ts-node": "^9.0.0",
     "typeorm-aurora-data-api-driver": "^1.4.0",
-    "typescript": "~3.6.0"
+    "typescript": "^4.2.2"
   },
   "dependencies": {
     "@sqltools/formatter": "1.2.2",
@@ -127,7 +127,7 @@
     "mkdirp": "^1.0.4",
     "reflect-metadata": "^0.1.13",
     "sha.js": "^2.4.11",
-    "tslib": "^1.13.0",
+    "tslib": "^2.1.0",
     "xml2js": "^0.4.23",
     "yargonaut": "^1.1.2",
     "yargs": "^16.0.3"

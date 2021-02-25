@@ -306,7 +306,7 @@ export class PostgresDriver implements Driver {
 
         if (extensionsMetadata.hasExtensions) {
             await Promise.all([this.master, ...this.slaves].map(pool => {
-                return new Promise((ok, fail) => {
+                return new Promise<void>((ok, fail) => {
                     pool.connect(async (err: any, connection: any, release: Function) => {
                         await this.enableExtensions(extensionsMetadata, connection);
                         if (err) return fail(err);
