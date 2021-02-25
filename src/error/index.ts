@@ -8,7 +8,6 @@ export * from "./CannotCreateEntityIdMapError";
 export * from "./MetadataAlreadyExistsError";
 export * from "./CannotDetermineEntityError";
 export * from "./UpdateValuesMissingError";
-export * from "./TreeRepositoryNotSupportedError";
 export * from "./CustomRepositoryNotFoundError";
 export * from "./TransactionNotStartedError";
 export * from "./TransactionAlreadyStartedError";
