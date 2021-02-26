@@ -32,9 +32,6 @@ describe("github issues > #5478 Setting enumName doesn't change how migrations g
         let changedColumn = table!.findColumnByName("userType")!;
         expect(changedColumn.enumName).to.equal("UserTypeEnum");
 
-        const sql = queryRunner.getMemorySql()
-        console.log(sql);
-
         // revert changes
         await queryRunner.executeMemoryDownSql()
 

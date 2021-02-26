@@ -755,19 +755,30 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 && (oldColumn.type === "enum" || oldColumn.type === "simple-enum")
                 && (!OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!) || newColumn.enumName !== oldColumn.enumName)
             ) {
-                const enumName = this.buildEnumName(table, newColumn);
                 const arraySuffix = newColumn.isArray ? "[]" : "";
-                const oldEnumName = this.buildEnumName(table, oldColumn, true, false, false);
-                // const oldEnumNameWithoutSchema = this.buildEnumName(table, oldColumn, false, false, true);
-                // const enumTypeBeforeColumnChange = await this.getEnumTypeName(table, oldColumn);
+
+                // "public"."new_enum"
+                const newEnumName = this.buildEnumName(table, newColumn);
+
+                // "public"."old_enum"
+                const oldEnumName = this.buildEnumName(table, oldColumn);
+
+                // "old_enum"
+                const oldEnumNameWithoutSchema = this.buildEnumName(table, oldColumn, false);
+
+                //"public"."old_enum_old"
+                const oldEnumNameWithSchema_old = this.buildEnumName(table, oldColumn, true, false, true);
+
+                //"old_enum_old"
+                const oldEnumNameWithoutSchema_old = this.buildEnumName(table, oldColumn, false, false, true);
 
                 // rename old ENUM
-                // upQueries.push(new Query(`ALTER TYPE "${enumTypeBeforeColumnChange.enumTypeSchema}"."${enumTypeBeforeColumnChange.enumTypeName}" RENAME TO ${oldEnumNameWithoutSchema}`));
-                // downQueries.push(new Query(`ALTER TYPE ${oldEnumName} RENAME TO  "${enumTypeBeforeColumnChange.enumTypeName}"`));
+                upQueries.push(new Query(`ALTER TYPE ${oldEnumName} RENAME TO ${oldEnumNameWithoutSchema_old}`));
+                downQueries.push(new Query(`ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`));
 
                 // create new ENUM
-                upQueries.push(this.createEnumTypeSql(table, newColumn, enumName));
-                downQueries.push(this.dropEnumTypeSql(table, newColumn, enumName));
+                upQueries.push(this.createEnumTypeSql(table, newColumn, newEnumName));
+                downQueries.push(this.dropEnumTypeSql(table, newColumn, newEnumName));
 
                 // if column have default value, we must drop it to avoid issues with type casting
                 if (newColumn.default !== null && newColumn.default !== undefined) {
@@ -776,8 +787,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
 
                 // build column types
-                const upType = `${enumName}${arraySuffix} USING "${newColumn.name}"::"text"::${enumName}${arraySuffix}`;
-                const downType = `${oldEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumName}${arraySuffix}`;
+                const upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`;
+                const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`;
 
                 // update column to use new type
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`));
@@ -790,8 +801,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
 
                 // remove old ENUM
-                upQueries.push(this.dropEnumTypeSql(table, oldColumn, oldEnumName));
-                downQueries.push(this.createEnumTypeSql(table, oldColumn, oldEnumName));
+                upQueries.push(this.dropEnumTypeSql(table, oldColumn, oldEnumNameWithSchema_old));
+                downQueries.push(this.createEnumTypeSql(table, oldColumn, oldEnumNameWithSchema_old));
             }
 
             if (oldColumn.isNullable !== newColumn.isNullable) {
