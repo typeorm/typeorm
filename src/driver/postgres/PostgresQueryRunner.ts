@@ -636,7 +636,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if (oldColumn.type !== newColumn.type || oldColumn.length !== newColumn.length) {
+        if (oldColumn.type !== newColumn.type || oldColumn.length !== newColumn.length || newColumn.isArray !== oldColumn.isArray) {
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn);
             await this.addColumn(table, newColumn);

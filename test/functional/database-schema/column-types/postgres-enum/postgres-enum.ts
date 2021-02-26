@@ -174,6 +174,29 @@ describe("database schema > column types > postgres-enum", () => {
         await queryRunner.release();
     })));
 
+    it("should change ENUM array column in to non-array and revert change", () => Promise.all(connections.map(async connection => {
+
+        const queryRunner = connection.createQueryRunner();
+        let table = await queryRunner.getTable("post");
+        let enumColumn = table!.findColumnByName("enumArray")!;
+        let changedColumn = enumColumn.clone();
+        changedColumn.isArray = false;
+
+        await queryRunner.changeColumn(table!, enumColumn, changedColumn);
+
+        table = await queryRunner.getTable("post");
+        changedColumn = table!.findColumnByName("enumArray")!;
+        changedColumn.isArray.should.be.false;
+
+        await queryRunner.executeMemoryDownSql();
+
+        table = await queryRunner.getTable("post");
+        enumColumn = table!.findColumnByName("enumArray")!;
+        enumColumn.isArray.should.be.true;
+
+        await queryRunner.release();
+    })));
+
     it("should change ENUM value and revert change", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();

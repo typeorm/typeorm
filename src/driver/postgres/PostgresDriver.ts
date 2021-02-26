@@ -868,6 +868,7 @@ export class PostgresDriver implements Driver {
             const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
+                || tableColumn.isArray !== columnMetadata.isArray
                 || tableColumn.precision !== columnMetadata.precision
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
                 || tableColumn.comment !== columnMetadata.comment
@@ -887,6 +888,7 @@ export class PostgresDriver implements Driver {
             //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
             //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
             //     console.log("length:", tableColumn.length, columnMetadata.length);
+            //     console.log("isArray:", tableColumn.isArray, columnMetadata.isArray);
             //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
             //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
             //     console.log("comment:", tableColumn.comment, columnMetadata.comment);
