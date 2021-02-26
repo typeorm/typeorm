@@ -108,7 +108,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const replacedTableName = tableName.replace(".", "_");
         const key = `${replacedTableName}_${expression}`;
         const name = "CHK_" + RandomGenerator.sha1(key).substr(0, 26);
-        return isEnum ? `${name}_ENUM` : name
+        return isEnum ? `${name}_ENUM` : name;
     }
 
     exclusionConstraintName(tableOrName: Table|string, expression: string): string {
