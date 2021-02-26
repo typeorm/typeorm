@@ -602,20 +602,38 @@ export class SqlServerDriver implements Driver {
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            return  tableColumn.name !== columnMetadata.databaseName
+            const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
-                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNessesary(this.normalizeDefault(columnMetadata)) !== this.lowerDefaultValueIfNessesary(tableColumn.default)) // we included check for generated here, because generated columns already can have default values
+                || tableColumn.isGenerated !== columnMetadata.isGenerated
+                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== this.lowerDefaultValueIfNecessary(tableColumn.default)) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
-                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || tableColumn.isGenerated !== columnMetadata.isGenerated;
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata);
+
+            // DEBUG SECTION
+            // if (isColumnChanged) {
+            //     console.log("table:", columnMetadata.entityMetadata.tableName);
+            //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
+            //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            //     console.log("length:", tableColumn.length, columnMetadata.length);
+            //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
+            //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
+            //     console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            //     console.log("isGenerated 2:", !tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== this.lowerDefaultValueIfNecessary(tableColumn.default));
+            //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
+            //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
+            //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            //     console.log("==========================================");
+            // }
+
+            return isColumnChanged
         });
     }
-    private lowerDefaultValueIfNessesary(value: string | undefined) {
+    private lowerDefaultValueIfNecessary(value: string | undefined) {
         // SqlServer saves function calls in default value as lowercase https://github.com/typeorm/typeorm/issues/2733
         if (!value) {
             return value;
