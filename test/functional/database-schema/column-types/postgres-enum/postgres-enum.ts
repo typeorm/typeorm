@@ -218,6 +218,68 @@ describe("database schema > column types > postgres-enum", () => {
         await queryRunner.release();
     })));
 
+    it("should change `enumName` and revert change", () => Promise.all(connections.map(async connection => {
+        const queryRunner = connection.createQueryRunner();
+
+        // add `enumName`
+        let table = await queryRunner.getTable("post");
+        const column = table!.findColumnByName("enum")!;
+        const newColumn = column.clone();
+        newColumn.enumName = "PostTypeEnum"
+
+        // change column
+        await queryRunner.changeColumn(table!, column, newColumn)
+
+        // check if `enumName` changed
+        table = await queryRunner.getTable("post");
+        let changedColumn = table!.findColumnByName("enum")!;
+        expect(changedColumn.enumName).to.equal("PostTypeEnum");
+
+        // revert changes
+        await queryRunner.executeMemoryDownSql()
+
+        // check if `enumName` reverted
+        table = await queryRunner.getTable("post");
+        changedColumn = table!.findColumnByName("enum")!;
+        expect(changedColumn.enumName).to.undefined;
+
+        await queryRunner.release();
+    })));
+
+    it("should not create new type if same `enumName` is used more than once", () => Promise.all(connections.map(async connection => {
+        const queryRunner = connection.createQueryRunner();
+
+        const table = new Table({
+            name: "my_table",
+            columns: [
+                {
+                    name: "enum1",
+                    type: "enum",
+                    enum: ["Apple", "Banana", "Cherry"],
+                    enumName: "Fruits"
+                },
+                {
+                    name: "enum2",
+                    type: "enum",
+                    enum: ["Apple", "Banana", "Cherry"],
+                    enumName: "Fruits"
+                },
+                {
+                    name: "enum3",
+                    type: "enum",
+                    enumName: "Fruits"
+                },
+            ]
+        });
+
+        await queryRunner.createTable(table)
+
+        // revert changes
+        await queryRunner.executeMemoryDownSql()
+
+        await queryRunner.release();
+    })));
+
     it("should change both ENUM value and ENUM name and revert change", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();

@@ -349,17 +349,20 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const downQueries: Query[] = [];
 
         // if table have column with ENUM type, we must create this type in postgres.
-        await Promise.all(table.columns
-            .filter(column => column.type === "enum" || column.type === "simple-enum")
-            .map(async column => {
-                const hasEnum = await this.hasEnumType(table, column);
-                // TODO: Should also check if values of existing type matches expected ones
-                if (!hasEnum) {
-                    upQueries.push(this.createEnumTypeSql(table, column));
-                    downQueries.push(this.dropEnumTypeSql(table, column));
-                }
-                return Promise.resolve();
-            }));
+        const enumColumns = table.columns.filter(column => column.type === "enum" || column.type === "simple-enum")
+        const createdEnumTypes: string[] = []
+        for (const column of enumColumns) {
+            // TODO: Should also check if values of existing type matches expected ones
+            const hasEnum = await this.hasEnumType(table, column);
+            const enumName = this.buildEnumName(table, column)
+
+            // if enum with the same "enumName" is defined more then once, me must prevent double creation
+            if (!hasEnum && createdEnumTypes.indexOf(enumName) === -1) {
+                createdEnumTypes.push(enumName)
+                upQueries.push(this.createEnumTypeSql(table, column, enumName));
+                downQueries.push(this.dropEnumTypeSql(table, column, enumName));
+            }
+        }
 
         upQueries.push(this.createTableSql(table, createForeignKeys));
         downQueries.push(this.dropTableSql(table));
@@ -1955,8 +1958,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds create ENUM type sql.
      */
     protected createEnumTypeSql(table: Table, column: TableColumn, enumName?: string): Query {
-        if (!enumName)
-            enumName = this.buildEnumName(table, column);
+        if (!enumName) enumName = this.buildEnumName(table, column);
         const enumValues = column.enum!.map(value => `'${value.replace("'", "''")}'`).join(", ");
         return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`);
     }
@@ -1965,8 +1967,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds create ENUM type sql.
      */
     protected dropEnumTypeSql(table: Table, column: TableColumn, enumName?: string): Query {
-        if (!enumName)
-            enumName = this.buildEnumName(table, column);
+        if (!enumName) enumName = this.buildEnumName(table, column);
         return new Query(`DROP TYPE ${enumName}`);
     }
 
