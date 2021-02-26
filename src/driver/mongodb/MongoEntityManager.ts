@@ -73,19 +73,17 @@ export class MongoEntityManager extends EntityManager {
 
     constructor(connection: Connection) {
         super(connection);
+        this.queryRunner = this.mongoQueryRunner;
     }
 
     // -------------------------------------------------------------------------
-
     // Overridden Properties
     // -------------------------------------------------------------------------
 
     /**
      * Gets query runner used to execute queries.
      */
-    get queryRunner(): MongoQueryRunner {
-        return (this.connection.driver as unknown as MongoDriver).queryRunner!;
-    }
+    readonly queryRunner: MongoQueryRunner;
 
     // -------------------------------------------------------------------------
     // Overridden Methods
