@@ -5,7 +5,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 import {FruitEnum} from "./enum/FruitEnum";
 
-describe.only("database schema > column types > sqlite", () => {
+describe("database schema > column types > sqlite", () => {
 
     let connections: Connection[];
     before(async () => {
