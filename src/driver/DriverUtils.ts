@@ -189,7 +189,7 @@ export class DriverUtils {
 
         // Loop to set every options in connectionUrl to object
         for (const [key, value] of Object.entries(optionsObject)) {
-            connectionUrl[key] = value
+            connectionUrl[key] = value;
         }
 
         return connectionUrl;
