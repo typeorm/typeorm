@@ -703,30 +703,20 @@ export class EntityMetadata {
     }
 
     extractColumnsInEntity(entity: ObjectLiteral): ColumnMetadata[] {
-        const extractColumns = (metadata: EntityMetadata | EmbeddedMetadata, entity: ObjectLiteral, prefix: string) => {
-            return Object.keys(entity).reduce((columns, key) => {
+        const extractColumns = (metadata: EntityMetadata | EmbeddedMetadata, entity: ObjectLiteral, prefix: string): ColumnMetadata[] =>
+            Object.keys(entity).flatMap(key => {
                 const embedded = metadata.embeddeds.find(embedded => embedded.propertyName === key);
-                if (embedded) {
-                    const parentPath = prefix ? prefix + "." + key : key;
-                    columns.push(...extractColumns(embedded, entity[embedded.propertyName], parentPath));
-                    return columns;
-                }
+                if (embedded) return extractColumns(embedded, entity[embedded.propertyName], prefix ? prefix + "." + key : key);
 
                 const relation = metadata.relations.find(relation => relation.propertyName === key);
-                if (relation) {
-                    columns.push(...relation.joinColumns);
-                    return columns;
-                }
+                if (relation) return relation.joinColumns;
 
                 const metadataColumns = (metadata instanceof EmbeddedMetadata ? metadata.columns : metadata.ownColumns);
                 const column = metadataColumns.find(column => column.propertyName === key);
-                if (!column)
-                    throw new EntityColumnNotFound(this, prefix ? prefix + "." + key : key);
+                if (column) return column;
 
-                columns.push(column);
-                return columns;
-            }, [] as ColumnMetadata[]);
-        };
+                throw new EntityColumnNotFound(this, prefix ? prefix + "." + key : key);
+            });
 
         return extractColumns(this, entity, "");
     }

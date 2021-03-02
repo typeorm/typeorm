@@ -89,7 +89,7 @@ export class RelationIdLoader {
                         const duplicatePart = `${tableAlias}:${joinColumn.propertyPath}:${value}`;
                         if (duplicateParts.indexOf(duplicatePart) !== -1) return undefined;
                         duplicateParts.push(duplicatePart);
-                        return Equal(Col(tableAlias, joinColumn.propertyPath), value);
+                        return Equal(Col(tableAlias, joinColumn), value);
                     }).filter(v => v));
                     duplicateParts.sort();
                     const duplicate = duplicateParts.join("::");
@@ -166,7 +166,7 @@ export class RelationIdLoader {
                         const duplicatePart = `${junctionAlias}:${joinColumn}:${value}`;
                         if (duplicateParts.indexOf(duplicatePart) !== -1) return undefined;
                         duplicateParts.push(duplicatePart);
-                        return Equal(Col(junctionAlias, joinColumn.propertyPath), value);
+                        return Equal(Col(junctionAlias, joinColumn), value);
                     }).filter(s => s));
                     duplicateParts.sort();
                     const duplicate = duplicateParts.join("::");
@@ -176,7 +176,7 @@ export class RelationIdLoader {
                 }).filter(s => s);
 
                 const inverseJoinColumnCondition = And(...inverseJoinColumns.map(joinColumn =>
-                    Equal(Col(junctionAlias, joinColumn.propertyPath), Col(inverseSideTableAlias, joinColumn.referencedColumn!.propertyPath))));
+                    Equal(Col(junctionAlias, joinColumn), Col(inverseSideTableAlias, joinColumn.referencedColumn!))));
 
                 const condition = And(inverseJoinColumnCondition, Or(...joinColumnConditions));
 

@@ -86,10 +86,10 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         if (this.metadata.treeType === "closure-table") {
 
             const joinCondition = And(...this.metadata.closureJunctionTable.descendantColumns
-                .map(column => Equal(Col(closureTableAlias, column.propertyPath), Col(alias, column.referencedColumn!.propertyPath))));
+                .map(column => Equal(Col(closureTableAlias, column), Col(alias, column.referencedColumn!))));
 
             const whereCondition = And(...this.metadata.closureJunctionTable.ancestorColumns.map(column =>
-                Equal(Col(closureTableAlias, column.propertyPath), column.referencedColumn!.getEntityValue(entity))));
+                Equal(Col(closureTableAlias, column), column.referencedColumn!.getEntityValue(entity))));
 
             return this
                 .createQueryBuilder(alias)
@@ -99,13 +99,13 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         } else if (this.metadata.treeType === "nested-set") {
 
             const joinCondition = Between(
-                Col(alias, this.metadata.nestedSetLeftColumn!.propertyPath),
-                Col("joined", this.metadata.nestedSetLeftColumn!.propertyPath),
-                Col("joined", this.metadata.nestedSetRightColumn!.propertyPath)
+                Col(alias, this.metadata.nestedSetLeftColumn!),
+                Col("joined", this.metadata.nestedSetLeftColumn!),
+                Col("joined", this.metadata.nestedSetRightColumn!)
             );
 
             const whereCondition = And(...this.metadata.treeParentRelation!.joinColumns.map(joinColumn =>
-                Equal(Col("joined", joinColumn.referencedColumn!.propertyPath), joinColumn.referencedColumn!.getEntityValue(entity))));
+                Equal(Col("joined", joinColumn.referencedColumn!), joinColumn.referencedColumn!.getEntityValue(entity))));
 
             return this
                 .createQueryBuilder(alias)
@@ -115,7 +115,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         } else if (this.metadata.treeType === "materialized-path") {
 
             const whereCondition = Like(
-                Col(alias, this.metadata.materializedPathColumn!.propertyPath),
+                Col(alias, this.metadata.materializedPathColumn!),
                 Concat(
                     SubQuery(qb =>
                         qb.select(`${this.metadata.targetName}.${this.metadata.materializedPathColumn!.propertyPath}`, "path")
@@ -173,10 +173,10 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     createAncestorsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): SelectQueryBuilder<Entity> {
         if (this.metadata.treeType === "closure-table") {
             const joinCondition = And(...this.metadata.closureJunctionTable.ancestorColumns.map(column =>
-                Equal(Col(closureTableAlias, column.propertyPath), Col(alias, column.referencedColumn!.propertyPath))));
+                Equal(Col(closureTableAlias, column), Col(alias, column.referencedColumn!))));
 
             const whereCondition = And(...this.metadata.closureJunctionTable.descendantColumns.map(column =>
-                Equal(Col(closureTableAlias, column.propertyPath), column.referencedColumn!.getEntityValue(entity))));
+                Equal(Col(closureTableAlias, column), column.referencedColumn!.getEntityValue(entity))));
 
             return this
                 .createQueryBuilder(alias)
@@ -185,13 +185,13 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
         } else if (this.metadata.treeType === "nested-set") {
             const joinCondition = Between(
-                Col("joined", this.metadata.nestedSetLeftColumn!.propertyPath),
-                Col(alias, this.metadata.nestedSetLeftColumn!.propertyPath),
-                Col(alias, this.metadata.nestedSetRightColumn!.propertyPath)
+                Col("joined", this.metadata.nestedSetLeftColumn!),
+                Col(alias, this.metadata.nestedSetLeftColumn!),
+                Col(alias, this.metadata.nestedSetRightColumn!)
             );
 
             const whereCondition = And(...this.metadata.treeParentRelation!.joinColumns.map(joinColumn =>
-                Equal(Col("joined", joinColumn.referencedColumn!.propertyPath), joinColumn.referencedColumn!.getEntityValue(entity))));
+                Equal(Col("joined", joinColumn.referencedColumn!), joinColumn.referencedColumn!.getEntityValue(entity))));
 
             return this
                 .createQueryBuilder(alias)
@@ -207,7 +207,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                         .whereInIds(this.metadata.getEntityIdMap(entity))
                 ),
                 Concat(
-                    Col(alias, this.metadata.materializedPathColumn!.propertyPath),
+                    Col(alias, this.metadata.materializedPathColumn!),
                     "%"
                 )
             );

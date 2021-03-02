@@ -49,9 +49,9 @@ export class RelationRemover {
             const condition =
                 Or(...ofs.map(of =>
                     And(
-                        ...relation.inverseRelation!.joinColumns.map(column => Equal(Col(column.propertyPath), of instanceof Object ? column.referencedColumn!.getEntityValue(of) : of)),
+                        ...relation.inverseRelation!.joinColumns.map(column => Equal(Col(column), of instanceof Object ? column.referencedColumn!.getEntityValue(of) : of)),
                         Or(...values.map(value =>
-                            And(...relation.inverseRelation!.entityMetadata.primaryColumns.map(column => Equal(Col(column.propertyPath), value instanceof Object ? column.getEntityValue(value) : value))))))));
+                            And(...relation.inverseRelation!.entityMetadata.primaryColumns.map(column => Equal(Col(column), value instanceof Object ? column.getEntityValue(value) : value))))))));
 
             await this.queryBuilder
                 .createQueryBuilder()

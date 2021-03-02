@@ -1,11 +1,13 @@
 import { ExpressionBuilder } from "../Expression";
 import { ExpressionBuildInterface } from "../ExpressionBuildInterface";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {Alias} from "../../query-builder/Alias";
 
 export function Col(): ColumnBuilder;
-export function Col(column: string): ColumnBuilder;
-export function Col(alias: string, column?: string): ColumnBuilder;
-export function Col(aliasOrColumn?: string, column?: string): ColumnBuilder {
-    if (column !== undefined) return new ColumnBuilder(column, aliasOrColumn);
+export function Col(column: string | ColumnMetadata): ColumnBuilder;
+export function Col(alias: string | Alias, column?: string | ColumnMetadata): ColumnBuilder;
+export function Col(aliasOrColumn?: string | Alias | ColumnMetadata, column?: string | ColumnMetadata): ColumnBuilder {
+    if (column !== undefined) return new ColumnBuilder(column, aliasOrColumn as (string | Alias));
     return new ColumnBuilder(aliasOrColumn);
 }
 
@@ -14,7 +16,7 @@ export function c(strings: TemplateStringsArray, ...args: any[]) {
 }
 
 export class ColumnBuilder extends ExpressionBuilder {
-    constructor(readonly column?: string, readonly alias?: string) {
+    constructor(readonly column?: string | ColumnMetadata, readonly alias?: string | Alias) {
         super();
     }
 

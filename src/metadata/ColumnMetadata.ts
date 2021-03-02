@@ -546,8 +546,8 @@ export class ColumnMetadata {
             const relatedEntity = this.relationMetadata.getEntityValue(entity);
             if (relatedEntity && relatedEntity instanceof Object && !(relatedEntity instanceof ExpressionBuilder) && !(relatedEntity instanceof Function)) {
                 value = this.referencedColumn.getEntityValue(relatedEntity);
-            } else if (entity[this.propertyName] && entity[this.propertyName] instanceof Object && !(entity[this.propertyName] instanceof ExpressionBuilder) && !(entity[this.propertyName] instanceof Function)) {
-                value = this.referencedColumn.getEntityValue(entity[this.propertyName]);
+            } else if (entity[this.relationMetadata.propertyName] && entity[this.relationMetadata.propertyName] instanceof Object && !(entity[this.relationMetadata.propertyName] instanceof ExpressionBuilder) && !(entity[this.relationMetadata.propertyName] instanceof Function)) {
+                value = this.referencedColumn.getEntityValue(entity[this.relationMetadata.propertyName]);
             } else {
                 value = entity[this.propertyName];
             }
@@ -616,8 +616,8 @@ export class ColumnMetadata {
         // we add reference column to property path only if this column is internal
         // because if its not internal it means user defined a real column for this relation
         // also we don't do it if column is inside a junction table
-        if (!this.entityMetadata.isJunction && this.isInternal && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
-            path += "." + this.referencedColumn.propertyName;
+        //if (!this.entityMetadata.isJunction && this.isInternal && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
+        //    path += "." + this.referencedColumn.propertyName;
 
         return path;
     }

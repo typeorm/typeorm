@@ -1059,19 +1059,19 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
                 if (relation.isManyToOne || relation.isOneToOneOwner) {
                     // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
                     destinationConditions = relation.joinColumns.map(joinColumn => {
-                        return Equal(Col(destinationTableAlias, joinColumn.referencedColumn!.propertyPath),
+                        return Equal(Col(destinationTableAlias, joinColumn.referencedColumn!),
                             Col(parentAlias, relation.propertyPath + "." + joinColumn.referencedColumn!.propertyPath));
                     });
                 } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
                     // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
                     destinationConditions = relation.inverseRelation!.joinColumns.map(joinColumn => {
                         return Equal(Col(destinationTableAlias, relation.inverseRelation!.propertyPath + "." + joinColumn.referencedColumn!.propertyPath),
-                            Col(parentAlias, joinColumn.referencedColumn!.propertyPath));
+                            Col(parentAlias, joinColumn.referencedColumn!));
                     });
 
                     if (relation.inverseEntityMetadata.tableType === "entity-child" && relation.inverseEntityMetadata.discriminatorColumn) {
                         destinationConditions.push(
-                            Equal(Col(destinationTableAlias, relation.inverseEntityMetadata.discriminatorColumn.propertyPath), relation.inverseEntityMetadata.discriminatorValue));
+                            Equal(Col(destinationTableAlias, relation.inverseEntityMetadata.discriminatorColumn), relation.inverseEntityMetadata.discriminatorValue));
                     }
                 } else { // means many-to-many
                     const junctionTableName = relation.junctionEntityMetadata!.tablePath;
@@ -1081,22 +1081,22 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
                     if (relation.isOwning) {
                         junctionConditions = relation.joinColumns.map(joinColumn => {
                             // `post_category`.`postId` = `post`.`id`
-                            return Equal(Col(junctionTableAlias, joinColumn.propertyPath), Col(parentAlias, joinColumn.referencedColumn!.propertyPath));
+                            return Equal(Col(junctionTableAlias, joinColumn), Col(parentAlias, joinColumn.referencedColumn!));
                         });
 
                         destinationConditions = relation.inverseJoinColumns.map(joinColumn => {
                             // `category`.`id` = `post_category`.`categoryId`
-                            return Equal(Col(destinationTableAlias, joinColumn.referencedColumn!.propertyPath), Col(junctionTableAlias, joinColumn.propertyPath));
+                            return Equal(Col(destinationTableAlias, joinColumn.referencedColumn!), Col(junctionTableAlias, joinColumn));
                         });
                     } else {
                         junctionConditions = relation.inverseRelation!.inverseJoinColumns.map(joinColumn => {
                             // `post_category`.`categoryId` = `category`.`id`
-                            return Equal(Col(junctionTableAlias, joinColumn.propertyPath), Col(parentAlias, joinColumn.referencedColumn!.propertyPath));
+                            return Equal(Col(junctionTableAlias, joinColumn), Col(parentAlias, joinColumn.referencedColumn!));
                         });
 
                         destinationConditions = relation.inverseRelation!.joinColumns.map(joinColumn => {
                             // `post`.`id` = `post_category`.`postId`
-                            return Equal(Col(destinationTableAlias, joinColumn.referencedColumn!.propertyPath), Col(junctionTableAlias, joinColumn.propertyPath));
+                            return Equal(Col(destinationTableAlias, joinColumn.referencedColumn!), Col(junctionTableAlias, joinColumn));
                         });
                     }
 
@@ -1217,7 +1217,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
 
                             const computedSelect = {
                                 selection: selectionPath,
-                                expression: Col(fullAlias.name, column.propertyPath),
+                                expression: Col(fullAlias, column),
                                 alias: DriverUtils.buildColumnAlias(this.connection.driver, fullAlias.name, column.databaseName),
                                 target: fullAlias,
                                 column: column
@@ -1231,7 +1231,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
                         });
                     return;
                 } else {
-                    computedSelects.add({ expression: Col(fullAlias.name, "*") });
+                    computedSelects.add({ expression: Col(fullAlias, "*") });
                     return;
                 }
             }
@@ -1256,7 +1256,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
 
                             computedSelects.add({
                                 selection: selectionPath,
-                                expression: Col(alias.name, column.propertyPath),
+                                expression: Col(alias, column),
                                 alias: select.alias ? select.alias : DriverUtils.buildColumnAlias(this.connection.driver, alias.name, column.databaseName),
                                 target: alias,
                                 column: column
@@ -1268,7 +1268,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
                             return;
                         }
                     } else {
-                        computedSelects.add({ expression: Col(alias.name, propertyPath), alias: select.alias });
+                        computedSelects.add({ expression: Col(alias, propertyPath), alias: select.alias });
                         return;
                     }
                 }
@@ -1286,7 +1286,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
                 .forEach(alias => alias.metadata.primaryColumns
                     .filter(column => !allSelects.has(alias.name + "." + column.propertyPath))
                     .forEach(column => computedSelects.add({
-                        expression: Col(alias.name, column.propertyPath),
+                        expression: Col(alias, column),
                         alias: DriverUtils.buildColumnAlias(this.connection.driver, alias.name, column.databaseName),
                         internal: true,
                         target: alias,
@@ -1320,7 +1320,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
             return Count(Raw("1"));
         } else {
             // If joins are used there may be multiple results produced per actual row so we must filter distinct values
-            return CountDistinct(...this.expressionMap.mainAlias!.metadata.primaryColumns.map(c => Col(c.propertyPath)));
+            return CountDistinct(...this.expressionMap.mainAlias!.metadata.primaryColumns.map(c => Col(c)));
         }
     }
 

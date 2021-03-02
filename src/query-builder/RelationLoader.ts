@@ -56,7 +56,7 @@ export class RelationLoader {
         const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation!.joinColumns;
         const joinAliasName = relation.entityMetadata.name;
         const conditions = And(...joinColumns.map(joinColumn =>
-            Equal(Col(joinAliasName, joinColumn.propertyPath), Col(relation.propertyName, joinColumn.referencedColumn!.propertyName))));
+            Equal(Col(joinAliasName, joinColumn), Col(relation.propertyName, joinColumn.referencedColumn!))));
 
         const qb = this.connection
             .createQueryBuilder(queryRunner)
@@ -65,12 +65,12 @@ export class RelationLoader {
             .innerJoin(relation.entityMetadata.target as Function, joinAliasName, conditions);
 
         if (columns.length === 1) {
-            qb.where(In(Col(joinAliasName, columns[0].propertyPath), entities.map(entity => columns[0].getEntityValue(entity))));
+            qb.where(In(Col(joinAliasName, columns[0]), entities.map(entity => columns[0].getEntityValue(entity))));
         } else {
             qb.where(
                 Or(...entities.map(entity =>
                     And(...columns.map(column =>
-                        Equal(Col(joinAliasName, column.propertyPath), column.getEntityValue(entity)))))));
+                        Equal(Col(joinAliasName, column), column.getEntityValue(entity)))))));
         }
 
         return qb.getMany();
@@ -94,12 +94,12 @@ export class RelationLoader {
             .from(relation.inverseRelation!.entityMetadata.target, aliasName);
 
         if (columns.length === 1) {
-            qb.where(In(Col(aliasName, columns[0].propertyPath), entities.map(entity => columns[0].referencedColumn!.getEntityValue(entity))));
+            qb.where(In(Col(aliasName, columns[0]), entities.map(entity => columns[0].referencedColumn!.getEntityValue(entity))));
         } else {
             qb.where(
                 Or(...entities.map(entity =>
                     And(...columns.map(column =>
-                        Equal(Col(aliasName, column.propertyPath), column.referencedColumn!.getEntityValue(entity)))))));
+                        Equal(Col(aliasName, column), column.referencedColumn!.getEntityValue(entity)))))));
         }
         return qb.getMany();
         // return relation.isOneToMany ? qb.getMany() : qb.getOne(); todo: fix all usages
@@ -119,10 +119,10 @@ export class RelationLoader {
         const mainAlias = relation.propertyName;
         const joinAlias = relation.junctionEntityMetadata!.tableName;
         const joinColumnConditions = And(...relation.joinColumns.map(joinColumn =>
-            In(Col(joinAlias, joinColumn.propertyPath), entities.map(entity => joinColumn.referencedColumn!.getEntityValue(entity)))));
+            In(Col(joinAlias, joinColumn), entities.map(entity => joinColumn.referencedColumn!.getEntityValue(entity)))));
 
         const inverseJoinColumnConditions = And(...relation.inverseJoinColumns.map(inverseJoinColumn =>
-            Equal(Col(joinAlias, inverseJoinColumn.propertyPath), Col(mainAlias, inverseJoinColumn.referencedColumn!.propertyPath))));
+            Equal(Col(joinAlias, inverseJoinColumn), Col(mainAlias, inverseJoinColumn.referencedColumn!))));
 
         return this.connection
             .createQueryBuilder(queryRunner)
@@ -147,10 +147,10 @@ export class RelationLoader {
         const joinAlias = relation.junctionEntityMetadata!.tableName;
 
         const joinColumnConditions = And(...relation.inverseRelation!.joinColumns.map(joinColumn =>
-            Equal(Col(joinAlias, joinColumn.propertyPath), Col(mainAlias, joinColumn.referencedColumn!.propertyPath))));
+            Equal(Col(joinAlias, joinColumn), Col(mainAlias, joinColumn.referencedColumn!))));
 
         const inverseJoinColumnConditions = And(...relation.inverseRelation!.inverseJoinColumns.map(inverseJoinColumn =>
-            In(Col(joinAlias, inverseJoinColumn.propertyPath), entities.map(entity => inverseJoinColumn.referencedColumn!.getEntityValue(entity)))));
+            In(Col(joinAlias, inverseJoinColumn), entities.map(entity => inverseJoinColumn.referencedColumn!.getEntityValue(entity)))));
 
         return this.connection
             .createQueryBuilder(queryRunner)

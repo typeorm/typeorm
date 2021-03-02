@@ -103,7 +103,7 @@ export class RelationJoinColumnBuilder {
      * Collects referenced columns from the given join column args.
      */
     protected collectReferencedColumns(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata): ColumnMetadata[] {
-        const hasAnyReferencedColumnName = joinColumns.find(joinColumnArgs => !!joinColumnArgs.referencedColumnName);
+        const hasAnyReferencedColumnName = joinColumns.some(joinColumnArgs => joinColumnArgs.referencedColumnName !== undefined);
         const manyToOneWithoutJoinColumn = joinColumns.length === 0 && relation.isManyToOne;
         const hasJoinColumnWithoutAnyReferencedColumnName = joinColumns.length > 0 && !hasAnyReferencedColumnName;
 
@@ -144,7 +144,7 @@ export class RelationJoinColumnBuilder {
                     args: {
                         target: "",
                         mode: "internal",
-                        propertyName: relation.propertyName,
+                        propertyName: joinColumnName!,
                         options: {
                             name: joinColumnName,
                             type: referencedColumn.type,

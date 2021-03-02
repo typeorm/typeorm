@@ -1,14 +1,12 @@
 import {BuildableExpression, Expression, ExpressionBuilder} from "../Expression";
 import {ExpressionBuildInterface} from "../ExpressionBuildInterface";
-import {isPlainObjectConditions} from "../ExpressionUtils";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {And, AndBuilder} from "./logical/And";
 import {Equal} from "./comparison/Equal";
 import {QuantifierBuildable} from "./comparison/quantifier/Quantifier";
-import { IsNull } from "./comparison/Is";
 
-export function Conditions(object: ObjectLiteral): AndBuilder | ExpressionBuilder {
-    const mapped = Object.entries(object).map(([key, value]): [string, Expression] => {
+export function Conditions(conditions: ObjectLiteral): AndBuilder | ExpressionBuilder {
+    /*const mapped = Object.entries(conditions).map(([key, value]): [string, Expression] => {
         if (value === undefined) return [key, undefined];
         if (isPlainObjectConditions(value)) return [key, Conditions(value)];
         if (value instanceof ExpressionBuilder) return [key, value.columnComparator ? value : Equal(value)];
@@ -19,7 +17,8 @@ export function Conditions(object: ObjectLiteral): AndBuilder | ExpressionBuilde
     //if (mapped.length === 0) throw new Error(""); // TODO: CRITICAL
     if (mapped.length === 0) return Equal(1, 1);
 
-    return And(...mapped);
+    return And(...mapped);*/
+    return new ConditionsBuilder(conditions);
 }
 
 export function ConditionsAliases(object: ObjectLiteral): AndBuilder | ExpressionBuilder {
@@ -29,6 +28,16 @@ export function ConditionsAliases(object: ObjectLiteral): AndBuilder | Expressio
     if (mapped.length === 0) return Equal(1, 1);
 
     return And(...mapped);
+}
+
+export class ConditionsBuilder extends ExpressionBuilder {
+    constructor(readonly conditions: ObjectLiteral) {
+        super();
+    }
+
+    build(eb: ExpressionBuildInterface, ctx: any): string {
+        return eb.buildConditions(ctx, this.conditions);
+    }
 }
 
 export class EnterAliasBuildable extends BuildableExpression {

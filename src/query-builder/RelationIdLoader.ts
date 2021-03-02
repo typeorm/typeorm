@@ -208,22 +208,22 @@ export class RelationIdLoader {
         // add conditions for the given entities
         let condition1: Expression;
         if (columns.length === 1) {
-            condition1 = In(Col(mainAlias, columns[0].propertyPath), entities.map(entity => columns[0].referencedColumn!.getEntityValue(entity)));
+            condition1 = In(Col(mainAlias, columns[0]), entities.map(entity => columns[0].referencedColumn!.getEntityValue(entity)));
         } else {
             condition1 = Or(...entities.map(entity =>
                     And(...columns.map(column =>
-                        Equal(Col(mainAlias, column.propertyPath), column.referencedColumn!.getEntityValue(entity))))));
+                        Equal(Col(mainAlias, column), column.referencedColumn!.getEntityValue(entity))))));
         }
 
         // add conditions for the given inverse entities
         let condition2: Expression | undefined = undefined;
         if (relatedEntities) {
             if (inverseColumns.length === 1) {
-                condition2 = In(Col(mainAlias, inverseColumns[0].propertyPath), entities.map(entity => inverseColumns[0].referencedColumn!.getEntityValue(entity)));
+                condition2 = In(Col(mainAlias, inverseColumns[0]), entities.map(entity => inverseColumns[0].referencedColumn!.getEntityValue(entity)));
             } else {
                 condition2 = Or(...entities.map(entity =>
                     And(...inverseColumns.map(column =>
-                        Equal(Col(mainAlias, column.propertyPath), column.referencedColumn!.getEntityValue(entity))))));
+                        Equal(Col(mainAlias, column), column.referencedColumn!.getEntityValue(entity))))));
             }
         }
 
@@ -254,12 +254,12 @@ export class RelationIdLoader {
         // add condition for entities
         let condition: Expression;
         if (relation.entityMetadata.primaryColumns.length === 1) {
-            condition = In(Col(mainAlias, relation.entityMetadata.primaryColumns[0].propertyPath),
+            condition = In(Col(mainAlias, relation.entityMetadata.primaryColumns[0]),
                 entities.map(entity => relation.entityMetadata.primaryColumns[0].getEntityValue(entity)));
         } else {
             condition = Or(...entities.map(entity =>
                 And(...relation.entityMetadata.primaryColumns.map(column =>
-                    Equal(Col(mainAlias, column.propertyPath), column.getEntityValue(entity))))));
+                    Equal(Col(mainAlias, column), column.getEntityValue(entity))))));
         }
 
         // execute query
@@ -289,12 +289,12 @@ export class RelationIdLoader {
         // add condition for entities
         let condition: Expression;
         if (relation.joinColumns.length === 1) {
-            condition = In(Col(mainAlias, relation.joinColumns[0].propertyPath),
+            condition = In(Col(mainAlias, relation.joinColumns[0]),
                 entities.map(entity => relation.joinColumns[0].referencedColumn!.getEntityValue(entity)));
         } else {
             condition = Or(...entities.map(entity =>
                 And(... relation.joinColumns.map(joinColumn =>
-                    Equal(Col(mainAlias, joinColumn.propertyPath), joinColumn.referencedColumn!.getEntityValue(entity))))));
+                    Equal(Col(mainAlias, joinColumn), joinColumn.referencedColumn!.getEntityValue(entity))))));
         }
 
         // execute query
