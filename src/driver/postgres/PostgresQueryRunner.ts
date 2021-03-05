@@ -632,6 +632,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         let clonedTable = table.clone();
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
+        let defaultValueChanged = false
 
         const oldColumn = oldTableColumnOrName instanceof TableColumn
             ? oldTableColumnOrName
@@ -784,9 +785,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 downQueries.push(this.dropEnumTypeSql(table, newColumn, newEnumName));
 
                 // if column have default value, we must drop it to avoid issues with type casting
-                if (newColumn.default !== null && newColumn.default !== undefined) {
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`));
+                if (oldColumn.default !== null && oldColumn.default !== undefined) {
+                    // mark default as changed to prevent double update
+                    defaultValueChanged = true
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${oldColumn.default}`));
                 }
 
                 // build column types
@@ -797,7 +800,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`));
 
-                // if column have default value and we dropped it before, we must bring it back
+                // restore column default or create new one
                 if (newColumn.default !== null && newColumn.default !== undefined) {
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
@@ -899,7 +902,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
             }
 
-            if (newColumn.default !== oldColumn.default) {
+            // the default might have changed when the enum changed
+            if (newColumn.default !== oldColumn.default && !defaultValueChanged) {
                 if (newColumn.default !== null && newColumn.default !== undefined) {
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`));
 
