@@ -41,7 +41,7 @@ export class RawSqlResultsToEntityTransformer {
         const entities: any[] = [];
         group.forEach(results => {
             const entity = this.transformRawResultsGroup(results, alias);
-            if (entity !== undefined)
+            if (entity !== undefined && !Object.values(entity).every((value) => value === null))
                 entities.push(entity);
         });
         return entities;
@@ -187,10 +187,7 @@ export class RawSqlResultsToEntityTransformer {
             // transform joined data into entities
             let result: any = this.transform(rawResults, join.alias);
             result = !join.isMany ? result[0] : result;
-            // this is needed to make relations to return null when its joined but nothing was found in the database
-            result = !join.isMany && (result === undefined || Object.values(result).every((value) => value === null)) ? null : result;
-            // this is needed to make many relations to return [] when nothing found on nested joins
-            result = join.isMany && result.length === 1 && Object.values(result[0]).every((value) => value === null) ? [] : result;
+            result = !join.isMany && result === undefined ? null : result; // this is needed to make relations to return null when its joined but nothing was found in the database
             if (result === undefined) // if nothing was joined then simply return
                 return;
 
