@@ -48,7 +48,7 @@ describe("github issues > #3246", () => {
 
             const result = await myOrderRepository.createOrder(order);
 
-            expect(result.id).not.to.be.empty;
+            expect(result.id).not.to.be.undefined;
 
         }
       } catch (err) {
