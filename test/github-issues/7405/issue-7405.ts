@@ -56,7 +56,7 @@ describe.only("github issues > #7405 condition to enable where", () => {
 
             const searchTitle = undefined;
             const posts = await postRepository.createQueryBuilder("p")
-                .andWhere("p.title = :title", { title: searchTitle}, searchTitle)
+                .andWhere("p.title = :title", { title: searchTitle }, searchTitle !== undefined)
                 .getMany();
 
             expect(posts.length).equal(2);
