@@ -720,8 +720,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(where: string|Brackets|((qb: this) => string), parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
+    andWhere(where: string|Brackets|((qb: this) => string), parameters?: ObjectLiteral, condition?: boolean|(() => boolean)): this {
+        let shouldEnableWhere = true;
+        if (condition !== undefined) {
+            if (typeof condition === "function")
+                shouldEnableWhere = condition();
+            else if (typeof condition === "boolean")
+                shouldEnableWhere = condition;
+        }
+        if (shouldEnableWhere) this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
         if (parameters) this.setParameters(parameters);
         return this;
     }

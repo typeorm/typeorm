@@ -50,19 +50,19 @@ export interface WhereExpression {
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(where: string, parameters?: ObjectLiteral): this;
+    andWhere(where: string, parameters?: ObjectLiteral, condition?: boolean|(() => boolean)): this;
 
     /**
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(where: Brackets, parameters?: ObjectLiteral): this;
+    andWhere(where: Brackets, parameters?: ObjectLiteral, condition?: boolean|(() => boolean)): this;
 
     /**
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(subQuery: (qb: this) => string, parameters?: ObjectLiteral): this;
+    andWhere(subQuery: (qb: this) => string, parameters?: ObjectLiteral, condition?: boolean|(() => boolean)): this;
 
     /**
      * Adds new OR WHERE condition in the query builder.
