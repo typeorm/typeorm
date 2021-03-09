@@ -682,6 +682,16 @@ export class EntityMetadata {
     }
 
     /**
+     * Finds column with a given property path.
+     */
+    findColumnOrRelationWithPropertyPath(propertyPath: string): ColumnMetadata|RelationMetadata|undefined {
+        const column = this.columns.find(column => column.propertyPath === propertyPath);
+        if (column) return column;
+
+        return this.findRelationWithPropertyPath(propertyPath);
+    }
+
+    /**
      * Finds relation with the given property path.
      */
     findRelationWithPropertyPath(propertyPath: string): RelationMetadata|undefined {
@@ -702,14 +712,14 @@ export class EntityMetadata {
         return this.allEmbeddeds.find(embedded => embedded.propertyPath === propertyPath);
     }
 
-    extractColumnsInEntity(entity: ObjectLiteral): ColumnMetadata[] {
-        const extractColumns = (metadata: EntityMetadata | EmbeddedMetadata, entity: ObjectLiteral, prefix: string): ColumnMetadata[] =>
+    extractColumnsInEntity(entity: ObjectLiteral): (ColumnMetadata | RelationMetadata)[] {
+        const extractColumns = (metadata: EntityMetadata | EmbeddedMetadata, entity: ObjectLiteral, prefix: string): (ColumnMetadata | RelationMetadata)[] =>
             Object.keys(entity).flatMap(key => {
                 const embedded = metadata.embeddeds.find(embedded => embedded.propertyName === key);
                 if (embedded) return extractColumns(embedded, entity[embedded.propertyName], prefix ? prefix + "." + key : key);
 
                 const relation = metadata.relations.find(relation => relation.propertyName === key);
-                if (relation) return relation.joinColumns;
+                if (relation) return relation;
 
                 const metadataColumns = (metadata instanceof EmbeddedMetadata ? metadata.columns : metadata.ownColumns);
                 const column = metadataColumns.find(column => column.propertyName === key);

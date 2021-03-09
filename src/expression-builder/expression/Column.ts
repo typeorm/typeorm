@@ -8,7 +8,7 @@ export function Col(column: string | ColumnMetadata): ColumnBuilder;
 export function Col(alias: string | Alias, column?: string | ColumnMetadata): ColumnBuilder;
 export function Col(aliasOrColumn?: string | Alias | ColumnMetadata, column?: string | ColumnMetadata): ColumnBuilder {
     if (column !== undefined) return new ColumnBuilder(column, aliasOrColumn as (string | Alias));
-    return new ColumnBuilder(aliasOrColumn);
+    return new ColumnBuilder(aliasOrColumn as string | ColumnMetadata);
 }
 
 export function c(strings: TemplateStringsArray, ...args: any[]) {

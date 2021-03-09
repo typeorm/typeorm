@@ -546,8 +546,8 @@ export class ColumnMetadata {
             const relatedEntity = this.relationMetadata.getEntityValue(entity);
             if (relatedEntity && relatedEntity instanceof Object && !(relatedEntity instanceof ExpressionBuilder) && !(relatedEntity instanceof Function)) {
                 value = this.referencedColumn.getEntityValue(relatedEntity);
-            } else if (entity[this.relationMetadata.propertyName] && entity[this.relationMetadata.propertyName] instanceof Object && !(entity[this.relationMetadata.propertyName] instanceof ExpressionBuilder) && !(entity[this.relationMetadata.propertyName] instanceof Function)) {
-                value = this.referencedColumn.getEntityValue(entity[this.relationMetadata.propertyName]);
+            //} else if (entity[this.relationMetadata.propertyName] && entity[this.relationMetadata.propertyName] instanceof Object && !(entity[this.relationMetadata.propertyName] instanceof ExpressionBuilder) && !(entity[this.relationMetadata.propertyName] instanceof Function)) {
+            //    value = this.referencedColumn.getEntityValue(entity[this.relationMetadata.propertyName]);
             } else {
                 value = entity[this.propertyName];
             }

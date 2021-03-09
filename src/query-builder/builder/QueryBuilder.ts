@@ -27,7 +27,6 @@ import {EntityColumnNotFound} from "../../error/EntityColumnNotFound";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {EmbeddedMetadata} from "../../metadata/EmbeddedMetadata";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
-import {isPlainObjectConditions} from "../../expression-builder/ExpressionUtils";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -572,8 +571,8 @@ export abstract class QueryBuilder<Entity, Result = any> {
             return aliasPrefix + this.escape(key);
         }
 
-        /*if (columnName) {
-            return this.buildColumn(this.enterPathContext(this.enterAliasContext(context, alias.name), columnName));
+        if (columnOrName) {
+            return this.buildColumn(this.enterPathContext(this.enterAliasContext(context, alias), columnOrName));
         }
 
         // No explicit column provided so use the column in current context
@@ -585,7 +584,7 @@ export abstract class QueryBuilder<Entity, Result = any> {
                 if (context.metadata.inverseEntityMetadata.primaryColumns.length > 1) throw new Error("Col() used on relation with multiple primary columns, must specify which one to use");
                 return this.buildColumn(this.enterPathContext(context, context.metadata.inverseEntityMetadata.primaryColumns[0].databaseName));
             }
-        }*/
+        }
 
         throw new Error("Col() used outside of context in which current column could be determined");
     }
@@ -635,8 +634,7 @@ export abstract class QueryBuilder<Entity, Result = any> {
         return this.subQuery();
     }
 
-    protected enterAliasContext(context: QueryBuilderExpressionContext, aliasName: string): QueryBuilderExpressionContext {
-        const alias = this.expressionMap.findAliasByName(aliasName);
+    protected enterAliasContext(context: QueryBuilderExpressionContext, alias: Alias): QueryBuilderExpressionContext {
         return {...context, alias: alias, metadata: alias.hasMetadata ? alias.metadata : undefined};
     }
 

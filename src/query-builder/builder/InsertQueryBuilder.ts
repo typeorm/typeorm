@@ -17,6 +17,7 @@ import {AbstractPersistQueryBuilder} from "./AbstractPersistQueryBuilder";
 import {UpdateValuesMissingError} from "../../error/UpdateValuesMissingError";
 import {ConflictExpressionMissingError} from "../../error/ConflictExpressionMissingError";
 import {RandomGenerator} from "../../util/RandomGenerator";
+import {RelationMetadata} from "../../metadata/RelationMetadata";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -305,15 +306,14 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
         const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
 
         // Convert overwrite parameter to columns
-        let overwriteColumns: (string | ColumnMetadata)[];
+        let overwriteColumns: (string | ColumnMetadata | RelationMetadata)[];
         if (this.expressionMap.orUpdate.overwrite === true) {
             overwriteColumns = insertColumnsOrKeys;
         } else if (Array.isArray(this.expressionMap.orUpdate.overwrite)) {
             if (metadata) {
-                overwriteColumns = [];
-                this.expressionMap.orUpdate.overwrite.forEach(columnName => {
-                    overwriteColumns.push(...metadata.findColumnsWithPropertyPath(columnName));
-                });
+                overwriteColumns = this.expressionMap.orUpdate.overwrite
+                    .map(propertyPath => metadata.findColumnOrRelationWithPropertyPath(propertyPath))
+                    .filter(column => column !== undefined) as (ColumnMetadata | RelationMetadata)[];
             } else {
                 overwriteColumns = this.expressionMap.orUpdate.overwrite;
             }
@@ -326,9 +326,8 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
         // Map column values to assignment expressions
         let valuesSet = this.expressionMap.orUpdate.values;
         if (valuesSet) {
-            const updatedColumns: (string | ColumnMetadata)[] =
-                !metadata ? Object.keys(valuesSet) : metadata.extractColumnsInEntity(valuesSet)
-                    .filter(column => column.isUpdate);
+            const updatedColumns: (string | ColumnMetadata | RelationMetadata)[] =
+                !metadata ? Object.keys(valuesSet) : metadata.extractColumnsInEntity(valuesSet);
 
             overwriteColumns = overwriteColumns.filter(column => !updatedColumns.includes(column));
 
