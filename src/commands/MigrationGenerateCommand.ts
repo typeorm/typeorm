@@ -97,7 +97,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: false
+                logging: ["error", "schema"]
             });
 
             const upSqls: string[] = [], downSqls: string[] = [];
