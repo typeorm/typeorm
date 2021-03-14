@@ -586,21 +586,30 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum" ) {
             if (columnMetadata.isArray) {
+                if (value === "{}") return [];
+
                 // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
-                value = value !== "{}" ? (value as string).substr(1, (value as string).length - 2).split(",") : [];
-                // convert to number if that exists in poosible enum options
+                value = (value as string).substr(1, (value as string).length - 2).split(",").map(val => {
+                    // replace double quotes from the beginning and from the end
+                    if (val.startsWith(`"`) && val.endsWith(`"`)) val = val.slice(1, -1);
+                    // replace double escaped backslash to single escaped e.g. \\\\ -> \\
+                    val = val.replace(/(\\\\)/g, "\\")
+                    // replace escaped double quotes to non-escaped e.g. \"asd\" -> "asd"
+                    return val.replace(/(\\")/g, '"')
+                });
+
+                // convert to number if that exists in possible enum options
                 value = value.map((val: string) => {
                     return !isNaN(+val) && columnMetadata.enum!.indexOf(parseInt(val)) >= 0 ? parseInt(val) : val;
                 });
             } else {
-                // convert to number if that exists in poosible enum options
+                // convert to number if that exists in possible enum options
                 value = !isNaN(+value) && columnMetadata.enum!.indexOf(parseInt(value)) >= 0 ? parseInt(value) : value;
             }
         }
 
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
-
         return value;
     }
 
@@ -719,18 +728,22 @@ export class PostgresDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
-        if (columnMetadata.isArray && Array.isArray(defaultValue)) {
+
+        if (defaultValue === null) {
+            return undefined;
+
+        } else if (columnMetadata.isArray && Array.isArray(defaultValue)) {
             return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
-        }
 
-        if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum")
-            && defaultValue !== undefined) {
-            return `'${defaultValue}'`;
-        }
-
-        if (typeof defaultValue === "number") {
+        } else if (
+            (columnMetadata.type === "enum"
+            || columnMetadata.type === "simple-enum"
+            || typeof defaultValue === "number"
+            || typeof defaultValue === "string")
+            && defaultValue !== undefined
+        ) {
             return `'${defaultValue}'`;
 
         } else if (typeof defaultValue === "boolean") {
@@ -739,10 +752,7 @@ export class PostgresDriver implements Driver {
         } else if (typeof defaultValue === "function") {
             return defaultValue();
 
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else if (typeof defaultValue === "object" && defaultValue !== null) {
+        } else if (typeof defaultValue === "object") {
             return `'${JSON.stringify(defaultValue)}'`;
 
         } else {
@@ -867,6 +877,7 @@ export class PostgresDriver implements Driver {
             const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
+                || tableColumn.isArray !== columnMetadata.isArray
                 || tableColumn.precision !== columnMetadata.precision
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
                 || tableColumn.comment !== columnMetadata.comment
@@ -874,6 +885,7 @@ export class PostgresDriver implements Driver {
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                || tableColumn.enumName !== columnMetadata.enumName
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + ""))) // enums in postgres are always strings
                 || tableColumn.isGenerated !== columnMetadata.isGenerated
                 || (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase()
@@ -885,9 +897,11 @@ export class PostgresDriver implements Driver {
             //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
             //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
             //     console.log("length:", tableColumn.length, columnMetadata.length);
+            //     console.log("isArray:", tableColumn.isArray, columnMetadata.isArray);
             //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
             //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
             //     console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            //     console.log("enumName:", tableColumn.enumName, columnMetadata.enumName);
             //     console.log("enum:", tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
             //     console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
             //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);

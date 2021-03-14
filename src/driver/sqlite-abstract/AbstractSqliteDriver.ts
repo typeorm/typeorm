@@ -565,7 +565,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             // console.log("precision:", tableColumn.precision, columnMetadata.precision);
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
             // console.log("comment:", tableColumn.comment, columnMetadata.comment);
-            // console.log("default:", tableColumn.default, columnMetadata.default);
+            // console.log("default:", this.normalizeDefault(columnMetadata), columnMetadata.default);
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));

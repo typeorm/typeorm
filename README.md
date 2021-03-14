@@ -83,7 +83,7 @@ And more...
 With TypeORM your models look like this:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity()
 export class User {
@@ -124,7 +124,7 @@ await repository.remove(timber);
 Alternatively, if you prefer to use the `ActiveRecord` implementation, you can use it as well:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, BaseEntity} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from "typeorm";
 
 @Entity()
 export class User extends BaseEntity {
@@ -373,7 +373,7 @@ You can load/insert/update/remove and perform other operations with them.
 Let's make our `Photo` model as an entity:
 
 ```typescript
-import {Entity} from "typeorm";
+import { Entity } from "typeorm";
 
 @Entity()
 export class Photo {
@@ -396,7 +396,7 @@ To add database columns, you simply need to decorate an entity's properties you 
 with a `@Column` decorator.
 
 ```typescript
-import {Entity, Column} from "typeorm";
+import { Entity, Column } from "typeorm";
 
 @Entity()
 export class Photo {
@@ -436,7 +436,7 @@ This is a requirement and you can't avoid it.
 To make a column a primary key, you need to use `@PrimaryColumn` decorator.
 
 ```typescript
-import {Entity, Column, PrimaryColumn} from "typeorm";
+import { Entity, Column, PrimaryColumn } from "typeorm";
 
 @Entity()
 export class Photo {
@@ -467,7 +467,7 @@ Now, let's say you want your id column to be auto-generated (this is known as au
 To do that, you need to change the `@PrimaryColumn` decorator to a `@PrimaryGeneratedColumn` decorator:
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class Photo {
@@ -500,7 +500,7 @@ We don't want all our columns to be limited varchars or integers.
 Let's setup correct data types:
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class Photo {
@@ -537,8 +537,8 @@ Now, when our entity is created, let's create an `index.ts` (or `app.ts` whateve
 
 ```typescript
 import "reflect-metadata";
-import {createConnection} from "typeorm";
-import {Photo} from "./entity/Photo";
+import { createConnection } from "typeorm";
+import { Photo } from "./entity/Photo";
 
 createConnection({
     type: "mysql",
@@ -574,7 +574,7 @@ Later, when we create more entities we need to add them to the entities in our c
 This is not very convenient, so instead we can set up the whole directory, from where all entities will be connected and used in our connection:
 
 ```typescript
-import {createConnection} from "typeorm";
+import { createConnection } from "typeorm";
 
 createConnection({
     type: "mysql",
@@ -622,8 +622,8 @@ Now if you run your `index.ts`, a connection with database will be initialized a
 Now let's create a new photo to save it in the database:
 
 ```typescript
-import {createConnection} from "typeorm";
-import {Photo} from "./entity/Photo";
+import { createConnection } from "typeorm";
+import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/).then(connection => {
 
@@ -652,8 +652,8 @@ It's not a new copy of the object, it modifies its "id" and returns it.
 Let's take advantage of the latest ES8 (ES2017) features and use async/await syntax instead:
 
 ```typescript
-import {createConnection} from "typeorm";
-import {Photo} from "./entity/Photo";
+import { createConnection } from "typeorm";
+import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/).then(async connection => {
 
@@ -678,8 +678,8 @@ Using entity manager you can manipulate any entity in your app.
 For example, let's load our saved entity:
 
 ```typescript
-import {createConnection} from "typeorm";
-import {Photo} from "./entity/Photo";
+import { createConnection } from "typeorm";
+import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/).then(async connection => {
 
@@ -702,8 +702,8 @@ When you deal with entities a lot, Repositories are more convenient to use than 
 
 
 ```typescript
-import {createConnection} from "typeorm";
-import {Photo} from "./entity/Photo";
+import { createConnection } from "typeorm";
+import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/).then(async connection => {
 
@@ -732,8 +732,8 @@ Learn more about Repository [here](./docs/working-with-repository.md).
 Let's try more load operations using the Repository:
 
 ```typescript
-import {createConnection} from "typeorm";
-import {Photo} from "./entity/Photo";
+import { createConnection } from "typeorm";
+import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/).then(async connection => {
 
@@ -765,8 +765,8 @@ createConnection(/*...*/).then(async connection => {
 Now let's load a single photo from the database, update it and save it:
 
 ```typescript
-import {createConnection} from "typeorm";
-import {Photo} from "./entity/Photo";
+import { createConnection } from "typeorm";
+import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/).then(async connection => {
 
@@ -785,8 +785,8 @@ Now photo with `id = 1` will be updated in the database.
 Now let's remove our photo from the database:
 
 ```typescript
-import {createConnection} from "typeorm";
-import {Photo} from "./entity/Photo";
+import { createConnection } from "typeorm";
+import { Photo } from "./entity/Photo";
 
 createConnection(/*...*/).then(async connection => {
 
@@ -805,8 +805,8 @@ Let's create a one-to-one relation with another class.
 Let's create a new class in `PhotoMetadata.ts`. This PhotoMetadata class is supposed to contain our photo's additional meta-information:
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from "typeorm";
-import {Photo} from "./Photo";
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
+import { Photo } from "./Photo";
 
 @Entity()
 export class PhotoMetadata {
@@ -867,9 +867,9 @@ If you run the app, you'll see a newly generated table, and it will contain a co
 Now let's save a photo, its metadata and attach them to each other.
 
 ```typescript
-import {createConnection} from "typeorm";
-import {Photo} from "./entity/Photo";
-import {PhotoMetadata} from "./entity/PhotoMetadata";
+import { createConnection } from "typeorm";
+import { Photo } from "./entity/Photo";
+import { PhotoMetadata } from "./entity/PhotoMetadata";
 
 createConnection(/*...*/).then(async connection => {
 
@@ -915,8 +915,8 @@ To fix this issue we should add an inverse relation, and make relations between 
 Let's modify our entities:
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from "typeorm";
-import {Photo} from "./Photo";
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
+import { Photo } from "./Photo";
 
 @Entity()
 export class PhotoMetadata {
@@ -930,8 +930,8 @@ export class PhotoMetadata {
 ```
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn, OneToOne} from "typeorm";
-import {PhotoMetadata} from "./PhotoMetadata";
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from "typeorm";
+import { PhotoMetadata } from "./PhotoMetadata";
 
 @Entity()
 export class Photo {
@@ -960,9 +960,9 @@ Let's use `find*` methods first.
 `find*` methods allow you to specify an object with the `FindOneOptions` / `FindManyOptions` interface.
 
 ```typescript
-import {createConnection} from "typeorm";
-import {Photo} from "./entity/Photo";
-import {PhotoMetadata} from "./entity/PhotoMetadata";
+import { createConnection } from "typeorm";
+import { Photo } from "./entity/Photo";
+import { PhotoMetadata } from "./entity/PhotoMetadata";
 
 createConnection(/*...*/).then(async connection => {
 
@@ -980,9 +980,9 @@ Using find options is good and dead simple, but if you need a more complex query
 `QueryBuilder` allows more complex queries to be used in an elegant way:
 
 ```typescript
-import {createConnection} from "typeorm";
-import {Photo} from "./entity/Photo";
-import {PhotoMetadata} from "./entity/PhotoMetadata";
+import { createConnection } from "typeorm";
+import { Photo } from "./entity/Photo";
+import { PhotoMetadata } from "./entity/PhotoMetadata";
 
 createConnection(/*...*/).then(async connection => {
 
@@ -1061,8 +1061,8 @@ Let's say a photo has one author, and each author can have many photos.
 First, let's create an `Author` class:
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinColumn} from "typeorm";
-import {Photo} from "./Photo";
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinColumn } from "typeorm";
+import { Photo } from "./Photo";
 
 @Entity()
 export class Author {
@@ -1084,9 +1084,9 @@ export class Author {
 Now let's add the owner side of the relation into the Photo entity:
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn, ManyToOne} from "typeorm";
-import {PhotoMetadata} from "./PhotoMetadata";
-import {Author} from "./Author";
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
+import { PhotoMetadata } from "./PhotoMetadata";
+import { Author } from "./Author";
 
 @Entity()
 export class Photo {
@@ -1135,7 +1135,7 @@ Let's say a photo can be in many albums, and each album can contain many photos.
 Let's create an `Album` class:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
 
 @Entity()
 export class Album {

@@ -1710,11 +1710,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         // Check if this is an enum
                         const columnCheckConstraints = columnConstraints.filter(constraint => constraint["CONSTRAINT_TYPE"] === "CHECK");
                         if (columnCheckConstraints.length) {
-                            const isEnumRegexp = new RegExp("^\\(\\[" + tableColumn.name + "\\]='[^']+'(?: OR \\[" + tableColumn.name + "\\]='[^']+')*\\)$");
+                            // const isEnumRegexp = new RegExp("^\\(\\[" + tableColumn.name + "\\]='[^']+'(?: OR \\[" + tableColumn.name + "\\]='[^']+')*\\)$");
                             for (const checkConstraint of columnCheckConstraints) {
-                                if (isEnumRegexp.test(checkConstraint["definition"])) {
+                                if (this.isEnumCheckConstraint(checkConstraint["CONSTRAINT_NAME"])) {
                                     // This is an enum constraint, make column into an enum
-                                    tableColumn.type = "simple-enum";
                                     tableColumn.enum = [];
                                     const enumValueRegexp = new RegExp("\\[" + tableColumn.name + "\\]='([^']+)'", "g");
                                     let result;
@@ -1775,13 +1774,15 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     && dbConstraint["CONSTRAINT_TYPE"] === "CHECK";
             }), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
 
-            table.checks = tableCheckConstraints.map(constraint => {
-                const checks = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
-                return new TableCheck({
-                    name: constraint["CONSTRAINT_NAME"],
-                    columnNames: checks.map(c => c["COLUMN_NAME"]),
-                    expression: constraint["definition"]
-                });
+            table.checks = tableCheckConstraints
+                .filter(constraint => !this.isEnumCheckConstraint(constraint["CONSTRAINT_NAME"]))
+                .map(constraint => {
+                    const checks = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
+                    return new TableCheck({
+                        name: constraint["CONSTRAINT_NAME"],
+                        columnNames: checks.map(c => c["COLUMN_NAME"]),
+                        expression: constraint["definition"]
+                    });
             });
 
             // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
@@ -2125,8 +2126,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     protected buildCreateColumnSql(table: Table, column: TableColumn, skipIdentity: boolean, createDefault: boolean) {
         let c = `"${column.name}" ${this.connection.driver.createFullType(column)}`;
 
-        if (column.enum)
-            c += " CHECK( " + column.name + " IN (" + column.enum.map(val => "'" + val + "'").join(",") + ") )";
+        if (column.enum) {
+            const expression = column.name + " IN (" + column.enum.map(val => "'" + val + "'").join(",") + ")";
+            const checkName = this.connection.namingStrategy.checkConstraintName(table, expression, true)
+            c += ` CONSTRAINT ${checkName} CHECK(${expression})`;
+        }
 
         if (column.collation)
             c += " COLLATE " + column.collation;
@@ -2149,6 +2153,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             c += ` CONSTRAINT "${defaultName}" DEFAULT NEWSEQUENTIALID()`;
         }
         return c;
+    }
+
+    protected isEnumCheckConstraint(name: string): boolean {
+        return name.indexOf("CHK_") !== -1 && name.indexOf("_ENUM") !== -1
     }
 
     /**

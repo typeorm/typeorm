@@ -666,7 +666,7 @@ export class EntityMetadataBuilder {
         entityMetadata.relations.forEach(relation => {
 
             // compute inverse side (related) entity metadatas for all relation metadatas
-            const inverseEntityMetadata = entityMetadatas.find(m => m.target === relation.type || (typeof relation.type === "string" && m.targetName === relation.type));
+            const inverseEntityMetadata = entityMetadatas.find(m => m.target === relation.type || (typeof relation.type === "string" && (m.targetName === relation.type || m.givenTableName === relation.type)));
             if (!inverseEntityMetadata)
                 throw new Error("Entity metadata for " + entityMetadata.name + "#" + relation.propertyPath + " was not found. Check if you specified a correct entity object and if it's connected in the connection options.");
 

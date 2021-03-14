@@ -1529,7 +1529,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     if (tableColumn.type === "enum" || tableColumn.type === "simple-enum" || tableColumn.type === "set") {
                         const colType = dbColumn["COLUMN_TYPE"];
-                        const items = colType.substring(colType.indexOf("(") + 1, colType.indexOf(")")).split(",");
+                        const items = colType.substring(colType.indexOf("(") + 1, colType.lastIndexOf(")")).split(",");
                         tableColumn.enum = (items as string[]).map(item => {
                             return item.substring(1, item.length - 1);
                         });
@@ -1861,7 +1861,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const isMariaDb = this.driver.options.type === "mariadb";
         if (isMariaDb && column.asExpression && (column.generatedType || "VIRTUAL") === "VIRTUAL") {
             // do nothing - MariaDB does not support NULL/NOT NULL expressions for VIRTUAL columns
-        } else {   
+        } else {
             if (!column.isNullable)
                 c += " NOT NULL";
             if (column.isNullable)
