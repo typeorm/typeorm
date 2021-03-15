@@ -14,7 +14,7 @@ describe("transaction > transaction with load many", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it.only("should loadMany in same transaction with same query runner", () => Promise.all(connections.map(async connection => {
+    it("should loadMany in same transaction with same query runner", () => Promise.all(connections.map(async connection => {
         
         await connection.manager.transaction(async entityManager => {
             
