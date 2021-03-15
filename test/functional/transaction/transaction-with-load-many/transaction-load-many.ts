@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 
-describe.only("transaction > transaction with load many", () => {
+describe("transaction > transaction with load many", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
