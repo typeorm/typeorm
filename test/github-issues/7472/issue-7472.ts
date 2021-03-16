@@ -117,6 +117,13 @@ describe("github issues -> #7472 ", () => {
         await em.find(Post, {order: {id: "ASC"}}).should.become([{id:1, owner: alice}, {id:2, owner: bob}]);
         await releaseAdmin(connection);
 
+        // Check again, using EntityManager.
+        await em.remove(Post, {id: 1, owner: alice} as Post, {sessionVariables: {myVar: {user: bob}}});
+        await becomeAdmin(connection);
+        await em.find(Post, {order: {id: "ASC"}}).should.become([{id:1, owner: alice}, {id:2, owner: bob}]);
+        await releaseAdmin(connection);
+        
+        // Delete ""everything"" from Post as alice. Bob should remain, as alice can't see bob's row.
         await em.createQueryBuilder().setSessionVariables({myVar: {user: alice}}).delete().from(Post, "post").execute();
         await becomeAdmin(connection);
         await em.find(Post, {order: {id: "ASC"}}).should.become([{id:2, owner: bob}]);
@@ -128,7 +135,7 @@ describe("github issues -> #7472 ", () => {
         await em.find(Post, {order: {id: "ASC"}}).should.become([{id:2, owner: bob}]);
         await releaseAdmin(connection);
 
-        await em.createQueryBuilder().setSessionVariables({myVar: {user: bob}}).delete().from(Post, "post").execute();
+        await em.remove(Post, {id: 2, owner: bob} as Post, {sessionVariables: {myVar: {user: bob}}});
         await becomeAdmin(connection);
         await em.find(Post).should.become([]);
         await releaseAdmin(connection);

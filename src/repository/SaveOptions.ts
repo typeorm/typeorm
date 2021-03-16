@@ -30,6 +30,12 @@ export interface SaveOptions {
     chunk?: number;
 
     /**
+     * An object containing session variables to use for this query. This will set `transaction` to true to prevent session variables bleeding across queries.
+     * This can be used to help implement row level security for application users.
+     */
+    sessionVariables?: Record<string, any>;
+    
+    /**
      * Flag to determine whether the entity that is being persisted
      * should be reloaded during the persistence operation.
      *

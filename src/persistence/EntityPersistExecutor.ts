@@ -40,6 +40,10 @@ export class EntityPersistExecutor {
      */
     async execute(): Promise<void> {
 
+        if (this.options?.transaction === false && this.options?.sessionVariables !== undefined) {
+            throw new Error("cannot set transaction to false when using sessionVariables.");
+        }
+
         // check if entity we are going to save is valid and is an object
         if (!this.entity || typeof this.entity !== "object")
             return Promise.reject(new MustBeEntityError(this.mode, this.entity));
@@ -133,13 +137,19 @@ export class EntityPersistExecutor {
             let isTransactionStartedByUs = false;
             try {
 
-                // open transaction if its not opened yet
-                if (!queryRunner.isTransactionActive) {
-                    if (!this.options || this.options.transaction !== false) { // start transaction until it was not explicitly disabled
-                        isTransactionStartedByUs = true;
-                        await queryRunner.startTransaction();
-                    }
+                // start transaction if it was not disabled
+                if ((this.options?.transaction !== false || this.options?.sessionVariables)
+                 && queryRunner.isTransactionActive === false) {
+                    await queryRunner.startTransaction();
+                    isTransactionStartedByUs = true;
                 }
+
+                // set configuration parameters / session variables
+                if (this.options?.sessionVariables) {
+                    await queryRunner.setSessionVariables(this.options.sessionVariables);
+                }
+
+
 
                 // execute all persistence operations for all entities we have
                 // console.time("executing subject executors...");
