@@ -22,6 +22,12 @@ export interface RemoveOptions {
     transaction?: boolean;
 
     /**
+     * An object containing session variables to use for this query. This will set `transaction` to true to prevent session variables bleeding across queries.
+     * This can be used to help implement row level security for application users.
+     */
+    sessionVariables?: Record<string, any>;
+    
+    /**
      * Breaks save execution into given number of chunks.
      * For example, if you want to save 100,000 objects but you have issues with saving them,
      * you can break them into 10 groups of 10,000 objects (by setting { chunk: 10000 }) and save each group separately.

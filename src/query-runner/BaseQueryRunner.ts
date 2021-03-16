@@ -9,6 +9,7 @@ import {EntityManager} from "../entity-manager/EntityManager";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
+import { ObjectLiteral } from "../common/ObjectLiteral";
 
 export abstract class BaseQueryRunner {
 
@@ -188,6 +189,13 @@ export abstract class BaseQueryRunner {
         for (const {query, parameters} of this.sqlInMemory.downQueries.reverse()) {
             await this.query(query, parameters);
         }
+    }
+
+    /**
+     * Sets session variables to use. Starts a transaction if one does not exist.
+     */
+    async setSessionVariables(sessionVariables: {[variableName: string]: ObjectLiteral}): Promise<void> {
+        throw new Error(`This feature is not supported by this dbms at this time.`);
     }
 
     // -------------------------------------------------------------------------

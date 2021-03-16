@@ -98,6 +98,11 @@ export interface QueryRunner {
     rollbackTransaction(): Promise<void>;
 
     /**
+     * Sets session variables to use. Starts a transaction if one does not exist.
+     */
+    setSessionVariables(sessionVariables: {[variableName: string]: ObjectLiteral}): Promise<void>;
+
+    /**
      * Executes a given SQL query and returns raw database results.
      */
     query(query: string, parameters?: any[]): Promise<any>;

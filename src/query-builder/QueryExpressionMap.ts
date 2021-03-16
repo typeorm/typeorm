@@ -174,6 +174,13 @@ export class QueryExpressionMap {
     parameters: ObjectLiteral = {};
 
     /**
+     * An object mapping sessionVariableName(s) to sessionVariableValue
+     * This enables using a transaction.
+     * This creates "SET LOCAL" clauses before the query, and the variables will be unset after the transaction ends.
+     */
+    sessionVariables?: {[variableName: string]: ObjectLiteral};
+
+    /**
      * Indicates if alias, table names and column names will be ecaped by driver, or not.
      *
      * todo: rename to isQuotingDisabled, also think if it should be named "escaping"
@@ -441,6 +448,7 @@ export class QueryExpressionMap {
         map.useTransaction = this.useTransaction;
         map.nativeParameters = Object.assign({}, this.nativeParameters);
         map.comment = this.comment;
+        map.sessionVariables = Object.assign({}, this.sessionVariables);
         return map;
     }
 

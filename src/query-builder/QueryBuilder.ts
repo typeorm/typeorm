@@ -495,7 +495,19 @@ export abstract class QueryBuilder<Entity> {
      * If set to true the query will be wrapped into a transaction.
      */
     useTransaction(enabled: boolean): this {
+        if (!enabled && this.expressionMap.sessionVariables)
+            throw new Error(`Must use transaction when using sessionVariables.`)
         this.expressionMap.useTransaction = enabled;
+        return this;
+    }
+
+    /**
+     * If set to true the query will be wrapped into a transaction.
+     */
+    setSessionVariables(sessionVariables: {[variableName: string]: ObjectLiteral}): this {
+        if (this.expressionMap.sessionVariables)
+            throw new Error(`Cannot specify sessionVariables outside of a transaction. call "qb.useTransaction(true)" method to enable transaction.`)
+        this.expressionMap.sessionVariables = sessionVariables;
         return this;
     }
 

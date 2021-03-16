@@ -35,7 +35,8 @@ export class FindOptionsUtils {
                     typeof possibleOptions.loadRelationIds === "boolean" ||
                     typeof possibleOptions.loadEagerRelations === "boolean" ||
                     typeof possibleOptions.withDeleted === "boolean" ||
-                    typeof possibleOptions.transaction === "boolean"
+                    typeof possibleOptions.transaction === "boolean" ||
+                    possibleOptions.sessionVariables instanceof Object
                 );
     }
 
@@ -85,8 +86,16 @@ export class FindOptionsUtils {
         if (!options || (!this.isFindOneOptions(options) && !this.isFindManyOptions(options)))
             return qb;
 
+        if (options.transaction === false && options.sessionVariables) {
+            throw new Error("cannot set transaction to false when using session variables.");
+        }
+
         if (options.transaction === true) {
             qb.expressionMap.useTransaction = true;
+        }
+
+        if (options.sessionVariables) {
+            qb.expressionMap.sessionVariables = options.sessionVariables;
         }
 
         if (!qb.expressionMap.mainAlias || !qb.expressionMap.mainAlias.hasMetadata)

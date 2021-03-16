@@ -862,7 +862,13 @@ export class MongoQueryRunner implements QueryRunner {
     async executeMemoryDownSql(): Promise<void> {
         throw new Error(`This operation is not supported by MongoDB driver.`);
     }
-
+    
+    /**
+     * Sets session variables to use. Starts a transaction if one does not exist.
+     */
+     async setSessionVariables(sessionVariables: {[variableName: string]: ObjectLiteral}): Promise<void> {
+        throw new Error(`This operation is not supported by MongoDB driver.`);
+    }
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

@@ -67,4 +67,9 @@ export interface FindOneOptions<Entity = any> {
      */
     transaction?: boolean
 
+    /**
+     * An object containing session variables to use for this query. This will set `transaction` to true to prevent session variables bleeding across queries.
+     * This can be used to help implement row level security for application users.
+     */
+    sessionVariables?: {[variableName: string]: ObjectLiteral};
 }

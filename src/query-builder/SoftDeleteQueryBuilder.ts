@@ -60,9 +60,15 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
         try {
 
             // start transaction if it was enabled
-            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+            if ((this.expressionMap.useTransaction === true || this.expressionMap.sessionVariables)
+             && queryRunner.isTransactionActive === false) {
                 await queryRunner.startTransaction();
                 transactionStartedByUs = true;
+            }
+
+            // set configuration parameters / session variables
+            if (this.expressionMap.sessionVariables) {
+                await queryRunner.setSessionVariables(this.expressionMap.sessionVariables);
             }
 
             // call before updation methods in listeners and subscribers

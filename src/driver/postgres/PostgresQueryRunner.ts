@@ -195,6 +195,28 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
+     * Sets session variables to use. Starts a transaction if one does not exist.
+     */
+    async setSessionVariables(sessionVariables: {[variableName: string]: ObjectLiteral}): Promise<void> {
+        if (!this.isTransactionActive)
+            throw new TransactionNotStartedError();
+        
+        const sql = [];
+        const params: ObjectLiteral = {};
+        let paramIdx = 0;
+        for (const sessionVarNameSpaceName in sessionVariables) {
+            for (const sessionVarName in sessionVariables[sessionVarNameSpaceName]) {
+                const sessionVarValue = sessionVariables[sessionVarNameSpaceName][sessionVarName];
+                sql.push(`set_config('${sessionVarNameSpaceName}.${sessionVarName}', :${++paramIdx}, true)`);
+                params[paramIdx] = sessionVarValue;
+            }
+        }
+        
+        const [query, queryParams] = this.driver.escapeQueryWithParameters("SELECT " + sql.join(", "), params, []);
+        await this.query(query, queryParams);
+    }
+
+    /**
      * Executes a given SQL query.
      */
     async query(query: string, parameters?: any[]): Promise<any> {
