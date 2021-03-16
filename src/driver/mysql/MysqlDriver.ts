@@ -896,11 +896,6 @@ export class MysqlDriver implements Driver {
 
                 connection.release();
                 ok(pool);
-                
-                pool.on('acquire', function (connection: any) {
-                    console.log('Connection %d acquired', connection.threadId);
-                });
-
             });
         });
     }
