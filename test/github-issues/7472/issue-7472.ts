@@ -47,7 +47,7 @@ const makePolicy = async(connection: Connection) => {
     await connection.query(`SET SESSION AUTHORIZATION test_role`);
 };
 
-describe("github issues -> #7472 ", () => {
+describe("github issues -> #7472 Add ability for entitymanager and query builder to set session variables. This PR is only for postgresql support.", () => {
 
     let connections: Connection[];
 
