@@ -80,13 +80,10 @@ describe("github issues -> #7472 Add ability for entitymanager and query builder
         await releaseAdmin(connection);
         
         await em.find(Post, {sessionVariables: {myVar: {user: alice}}, transaction:false}).should.rejected;
-
         await em.find(Post, {sessionVariables: {myVar: {user: alice}}}).should.become([{id:1, owner: alice}]);
         await em.find(Post, {sessionVariables: {myVar: {user: bob}}}).should.become([{id:2, owner: bob}]);
-
         await em.findOne(Post, 1, {sessionVariables: {myVar: {user: alice}}}).should.become({id:1, owner: alice});
         await em.findOne(Post, 1, {sessionVariables: {myVar: {user: bob}}}).should.become(undefined);
-        
         await em.find(Post, {
             sessionVariables: {
                 myVar: {isAdmin: true},
@@ -124,13 +121,13 @@ describe("github issues -> #7472 Add ability for entitymanager and query builder
         await releaseAdmin(connection);
         
         // Delete ""everything"" from Post as alice. Bob should remain, as alice can't see bob's row.
-        await em.createQueryBuilder().setSessionVariables({myVar: {user: alice}}).delete().from(Post, "post").execute();
+        await em.createQueryBuilder().useTransaction(true).setSessionVariables({myVar: {user: alice}}).delete().from(Post, "post").execute();
         await becomeAdmin(connection);
         await em.find(Post, {order: {id: "ASC"}}).should.become([{id:2, owner: bob}]);
         await releaseAdmin(connection);
 
         // Deleting 'alice' again shouldn't change the db entries.
-        await em.createQueryBuilder().setSessionVariables({myVar: {user: alice}}).delete().from(Post, "post").execute();
+        await em.createQueryBuilder().useTransaction(true).setSessionVariables({myVar: {user: alice}}).delete().from(Post, "post").execute();
         await becomeAdmin(connection);
         await em.find(Post, {order: {id: "ASC"}}).should.become([{id:2, owner: bob}]);
         await releaseAdmin(connection);
@@ -159,9 +156,59 @@ describe("github issues -> #7472 Add ability for entitymanager and query builder
         await em.find(Post, {order: {id: "ASC"}}).should.become([{id:1, owner: alice}, {id:2, owner: bob}]);
         await releaseAdmin(connection);
 
-        await em.createQueryBuilder().setSessionVariables({myVar: {user: alice}}).update(Post, {id: 3}).execute();
+        await em.createQueryBuilder().useTransaction(true).setSessionVariables({myVar: {user: alice}}).update(Post, {id: 3}).execute();
         await becomeAdmin(connection);
         await em.find(Post, {order: {id: "ASC"}}).should.become([{id:2, owner: bob}, {id:3, owner: alice}]);
         await releaseAdmin(connection);
+    });
+
+    it("should not bleed session variables across queries", async () => {
+        const connection = connections[0];
+        const em = connection.createEntityManager();
+        const alice = "alice", bob = "bob";
+        
+        await becomeAdmin(connection);
+        await em.save([
+            em.create(Post, {id: 1, owner: alice}),
+            em.create(Post, {id: 2, owner: bob})
+        ]);
+        await releaseAdmin(connection);
+        
+        const aliceConnection = connection.createQueryRunner("master");
+        const bobConnection = connection.createQueryRunner("master");
+        
+        // concurrently run 500 queries, checking:
+        // alice can get alice's row, but not bob's row,
+        // and bob can get bob's row, but not alice's row.
+        
+        // If session variables are bleeding, then:
+        // alice would get bob's row, or alice would not be able to get her own row, OR
+        // bob would get alice's row, or bob would not be able to get his own row.
+        await Promise.all(
+            Array.from(Array(500)).map((_, i) => {
+                let query;
+                switch(i % 2 ? alice : bob){
+                    case alice:
+                        query = aliceConnection
+                                .manager
+                                .findOne(Post, 1, {sessionVariables: {myVar: {user: alice}}})
+                                .should
+                                .become({id: 1, owner: alice});
+                        break;
+
+                    case bob:
+                        query = bobConnection
+                                .manager
+                                .findOne(Post, 2, {sessionVariables: {myVar: {user: bob}}})
+                                .should
+                                .become({id: 2, owner: bob});
+                        break;
+                };
+                return query;
+            })
+        );
+
+        await aliceConnection.release();
+        await bobConnection.release();
     });
 });
