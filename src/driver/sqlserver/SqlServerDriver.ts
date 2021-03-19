@@ -774,11 +774,16 @@ export class SqlServerDriver implements Driver {
             options: this.options.options,
         }, {
             server: credentials.host,
-            user: credentials.username,
-            password: credentials.password,
             database: credentials.database,
             port: credentials.port,
-            domain: credentials.domain,
+            authentication: credentials.authentication || {
+                // fallback for support deprecation
+                type: credentials.domain ? "ntlm" : "default",
+                options: {
+                    userName: credentials.username,
+                    password: credentials.password,
+                }
+            },
         }, options.extra || {});
 
         // set default useUTC option if it hasn't been set
