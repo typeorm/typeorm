@@ -41,7 +41,18 @@ export interface SqlServerConnectionCredentialsOptions {
     readonly database?: string;
 
     /**
+     * Database username.
+     */
+    readonly username?: string;
+
+    /**
+     * Database password.
+     */
+    readonly password?: string;
+
+    /**
      * Authentication settings
+     * It overrides username and password, when passed.
      */
     readonly authentication?: SqlServerConnectionCredentialsAuthenticationOptions
 
@@ -52,21 +63,5 @@ export interface SqlServerConnectionCredentialsOptions {
      * @deprecated
      */
     readonly domain?: string;
-
-    /**
-     * Database username.
-     * @see SqlServerConnectionCredentialsOptions.authentication
-     * @see DefaultAuthentication
-     * @deprecated
-     */
-    readonly username?: string;
-
-    /**
-     * Database password.
-     * @see SqlServerConnectionCredentialsOptions.authentication
-     * @see DefaultAuthentication
-     * @deprecated
-     */
-    readonly password?: string;
 
 }
