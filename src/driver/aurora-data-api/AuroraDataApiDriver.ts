@@ -33,6 +33,8 @@ export class AuroraDataApiDriver implements Driver {
      */
     DataApiDriver: any;
 
+    client: any;
+
     /**
      * Connection pool.
      * Used in non-replication mode.
@@ -299,6 +301,16 @@ export class AuroraDataApiDriver implements Driver {
         // load mysql package
         this.loadDependencies();
 
+        this.client = new this.DataApiDriver(
+            this.options.region,
+            this.options.secretArn,
+            this.options.resourceArn,
+            this.options.database,
+            (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
+            this.options.serviceConfigOptions,
+            this.options.formatOptions,
+        );
+
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
         // if (!(this.options.host || (this.options.extra && this.options.extra.socketPath)) && !this.options.socketPath)
@@ -407,6 +419,10 @@ export class AuroraDataApiDriver implements Driver {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
+        if (!this.options.formatOptions || this.options.formatOptions.castParameters !== false) {
+            return this.client.preparePersistentValue(value, columnMetadata)
+        }
+
         if (value === null || value === undefined)
             return value;
 
@@ -444,6 +460,10 @@ export class AuroraDataApiDriver implements Driver {
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
+
+        if (!this.options.formatOptions || this.options.formatOptions.castParameters !== false) {
+            return this.client.prepareHydratedValue(value, columnMetadata)
+        }
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "bool" || columnMetadata.type === "boolean") {
             value = value ? true : false;
