@@ -190,7 +190,7 @@ export class Post {
 ```
 
 ```typescript
-import {ViewEntity, ViewColumn} from "typeorm";
+import {ViewEntity, ViewColumn, Connection} from "typeorm";
 
 @ViewEntity({ 
     expression: (connection: Connection) => connection.createQueryBuilder()
