@@ -84,7 +84,7 @@ user.photos = [photo1, photo2];
 await connection.manager.save(user);
 ```
 
-or alternative you can do:
+or alternatively you can do:
 
 ```typescript
 const user = new User();
