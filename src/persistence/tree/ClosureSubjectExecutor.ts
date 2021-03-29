@@ -22,7 +22,7 @@ export class ClosureSubjectExecutor {
     /**
      * Removes all children of the given subject's entity.
 
-    async deleteChildrenOf(subject: Subject) {
+     async deleteChildrenOf(subject: Subject) {
         // const relationValue = subject.metadata.treeParentRelation.getEntityValue(subject.databaseEntity);
         // console.log("relationValue: ", relationValue);
         // this.queryRunner.manager
@@ -75,14 +75,14 @@ export class ClosureSubjectExecutor {
                 firstQueryParameters.push(childEntityIdValues[index]);
                 return this.queryRunner.connection.driver.createParameter("child_entity_" + column.databaseName, firstQueryParameters.length - 1);
             });
-            const whereCondition = subject.metadata.primaryColumns.map(column => {
-                const columnName = escape(column.databaseName + "_descendant");
-                const parentId = column.getEntityValue(parent);
+            const whereCondition = subject.metadata.closureJunctionTable.descendantColumns.map(column => {
+                const columnName = escape(column.databaseName);
+                const parentId = column.referencedColumn!.getEntityValue(parent);
                 if (!parentId)
                     throw new CannotAttachTreeChildrenEntityError(subject.metadata.name);
 
                 firstQueryParameters.push(parentId);
-                const parameterName = this.queryRunner.connection.driver.createParameter("parent_entity_" + column.databaseName, firstQueryParameters.length - 1);
+                const parameterName = this.queryRunner.connection.driver.createParameter("parent_entity_" + column.referencedColumn!.databaseName, firstQueryParameters.length - 1);
                 return columnName + " = " + parameterName;
             }).join(", ");
 

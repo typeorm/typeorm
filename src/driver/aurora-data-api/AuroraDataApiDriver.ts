@@ -531,8 +531,12 @@ export class AuroraDataApiDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
+
+        if (defaultValue === null) {
+            return undefined
+        }
 
         if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
             return `'${defaultValue}'`;
@@ -549,9 +553,6 @@ export class AuroraDataApiDriver implements Driver {
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;
-
-        } else if (defaultValue === null) {
-            return `null`;
 
         } else {
             return defaultValue;
@@ -827,7 +828,7 @@ export class AuroraDataApiDriver implements Driver {
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
      */
-    protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
+    protected compareDefaultValues(columnMetadataValue: string | undefined, databaseValue: string | undefined): boolean {
         if (typeof columnMetadataValue === "string" && typeof databaseValue === "string") {
             // we need to cut out "'" because in mysql we can understand returned value is a string or a function
             // as result compare cannot understand if default is really changed or not

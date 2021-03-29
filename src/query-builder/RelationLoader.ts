@@ -216,7 +216,7 @@ export class RelationLoader {
 
                 // nothing is loaded yet, load relation data and save it in the model once they are loaded
                 const loader = relationLoader.load(relation, this, queryRunner).then(
-                    result => relation.isOneToOne || relation.isManyToOne ? result[0] : result
+                    result => relation.isOneToOne || relation.isManyToOne ? (result.length === 0 ? null : result[0]) : result
                 );
                 return setPromise(this, loader);
             },

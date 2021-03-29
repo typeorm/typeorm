@@ -27,7 +27,8 @@ import {TableType} from "./types/TableTypes";
 import {TreeType} from "./types/TreeTypes";
 import {UniqueMetadata} from "./UniqueMetadata";
 import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
-import { BetterSqlite3Driver } from "../driver/better-sqlite3/BetterSqlite3Driver";
+import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver";
+import {ClosureTreeOptions} from "./types/ClosureTreeOptions";
 
 /**
  * Contains all entity metadata.
@@ -192,6 +193,11 @@ export class EntityMetadata {
      * Indicates if this entity is a tree, what type of tree it is.
      */
     treeType?: TreeType;
+
+    /**
+     * Indicates if this entity is a tree, what options of tree it has.
+     */
+    treeOptions?: ClosureTreeOptions;
 
     /**
      * Checks if this table is a junction table of the closure table.
@@ -505,6 +511,7 @@ export class EntityMetadata {
         this.inheritanceTree = options.inheritanceTree || [];
         this.inheritancePattern = options.inheritancePattern;
         this.treeType = options.tableTree ? options.tableTree.type : undefined;
+        this.treeOptions = options.tableTree ? options.tableTree.options : undefined;
         this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
         this.tableMetadataArgs = options.args;
         this.target = this.tableMetadataArgs.target;

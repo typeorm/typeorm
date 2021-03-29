@@ -165,13 +165,19 @@ export class OneToManySubjectBuilder {
                 const removedRelatedEntitySubject = new Subject({
                     metadata: relation.inverseEntityMetadata,
                     parentSubject: subject,
-                    canBeUpdated: true,
                     identifier: removedRelatedEntityRelationId,
-                    changeMaps: [{
+                });
+
+                if (!relation.inverseRelation || relation.inverseRelation.orphanedRowAction === "nullify") {
+                    removedRelatedEntitySubject.canBeUpdated = true;
+                    removedRelatedEntitySubject.changeMaps = [{
                         relation: relation.inverseRelation!,
                         value: null
-                    }]
-                });
+                    }];
+                } else if (relation.inverseRelation.orphanedRowAction === "delete") {
+                    removedRelatedEntitySubject.mustBeRemoved = true;
+                }
+
                 this.subjects.push(removedRelatedEntitySubject);
             });
     }

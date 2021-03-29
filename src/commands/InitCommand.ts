@@ -1,8 +1,9 @@
-import {CommandUtils} from "./CommandUtils";
-import {ObjectLiteral} from "../common/ObjectLiteral";
+import { CommandUtils } from "./CommandUtils";
+import { ObjectLiteral } from "../common/ObjectLiteral";
 import * as path from "path";
 import * as yargs from "yargs";
 import chalk from "chalk";
+import { exec } from "child_process";
 
 /**
  * Generates a new project with TypeORM.
@@ -33,6 +34,12 @@ export class InitCommand implements yargs.CommandModule {
             })
             .option("docker", {
                 describe: "Set to true if docker-compose must be generated as well. False by default."
+            })
+            .option("pm", {
+                alias: "manager",
+                choices: ["npm", "yarn"],
+                default: "npm",
+                describe: "Install packages, expected values are npm or yarn."
             });
     }
 
@@ -43,6 +50,7 @@ export class InitCommand implements yargs.CommandModule {
             const isDocker = args.docker !== undefined ? true : false;
             const basePath = process.cwd() + (args.name ? ("/" + args.name) : "");
             const projectName = args.name ? path.basename(args.name as any) : undefined;
+            const installNpm = args.pm === "yarn" ? false : true;
             await CommandUtils.createFile(basePath + "/package.json", InitCommand.getPackageJsonTemplate(projectName), false);
             if (isDocker)
                 await CommandUtils.createFile(basePath + "/docker-compose.yml", InitCommand.getDockerComposeTemplate(database), false);
@@ -70,6 +78,12 @@ export class InitCommand implements yargs.CommandModule {
                 console.log(chalk.green(`Project created inside current directory.`));
             }
 
+            if (args.pm && installNpm) {
+                await InitCommand.executeCommand("npm install");
+            } else {
+                await InitCommand.executeCommand("yarn install");
+            }
+
         } catch (err) {
             console.log(chalk.black.bgRed("Error during project initialization:"));
             console.error(err);
@@ -81,11 +95,22 @@ export class InitCommand implements yargs.CommandModule {
     // Protected Static Methods
     // -------------------------------------------------------------------------
 
+    protected static executeCommand(command: string) {
+        return new Promise<string>((ok, fail) => {
+            exec(command, (error: any, stdout: any, stderr: any) => {
+                if (stdout) return ok(stdout);
+                if (stderr) return fail(stderr);
+                if (error) return fail(error);
+                ok("");
+            });
+        });
+    }
+
     /**
      * Gets contents of the ormconfig file.
      */
     protected static getOrmConfigTemplate(database: string): string {
-        const options: ObjectLiteral = { };
+        const options: ObjectLiteral = {};
         switch (database) {
             case "mysql":
                 Object.assign(options, {

@@ -180,9 +180,18 @@ export class FindOptionsUtils {
 
         if (options.lock) {
             if (options.lock.mode === "optimistic") {
-                qb.setLock(options.lock.mode, options.lock.version as any);
+                qb.setLock(options.lock.mode, options.lock.version);
             } else if (options.lock.mode === "pessimistic_read" || options.lock.mode === "pessimistic_write" || options.lock.mode === "dirty_read" || options.lock.mode === "pessimistic_partial_write" || options.lock.mode === "pessimistic_write_or_fail") {
-                qb.setLock(options.lock.mode);
+                const tableNames = options.lock.tables ? options.lock.tables.map((table) => {
+                    const tableAlias = qb.expressionMap.aliases.find((alias) => {
+                        return alias.metadata.tableNameWithoutPrefix === table;
+                    });
+                    if (!tableAlias) {
+                        throw new Error(`"${table}" is not part of this query`);
+                    }
+                    return qb.escape(tableAlias.name);
+                }) : undefined;
+                qb.setLock(options.lock.mode, undefined, tableNames);
             }
         }
 

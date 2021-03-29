@@ -265,7 +265,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         const parentEntityId = this.metadata.primaryColumns[0].getEntityValue(entity);
         const childRelationMaps = relationMaps.filter(relationMap => relationMap.parentId === parentEntityId);
         const childIds = new Set(childRelationMaps.map(relationMap => relationMap.id));
-        entity[childProperty] = entities.filter(entity => childIds.has(entity[this.metadata.primaryColumns[0].propertyName]));
+        entity[childProperty] = entities.filter(entity => childIds.has(this.metadata.primaryColumns[0].getEntityValue(entity)));
         entity[childProperty].forEach((childEntity: any) => {
             this.buildChildrenEntityTree(childEntity, entities, relationMaps);
         });
@@ -279,7 +279,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
             if (!parentRelationMap)
                 return false;
 
-            return entity[this.metadata.primaryColumns[0].propertyName] === parentRelationMap.parentId;
+            return this.metadata.primaryColumns[0].getEntityValue(entity) === parentRelationMap.parentId;
         });
         if (parentEntity) {
             entity[parentProperty] = parentEntity;

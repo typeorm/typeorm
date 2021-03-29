@@ -114,7 +114,7 @@ export class ColumnMetadata {
      * Column comment.
      * This feature is not supported by all databases.
      */
-    comment: string = "";
+    comment?: string;
 
     /**
      * Default database value.
@@ -421,6 +421,8 @@ export class ColumnMetadata {
                 this.type = options.connection.driver.mappedDataTypes.updateDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
+            if (!this.onUpdate)
+                this.onUpdate = options.connection.driver.mappedDataTypes.updateDateDefault;
             if (this.precision === undefined && options.connection.driver.mappedDataTypes.updateDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
         }
@@ -542,9 +544,9 @@ export class ColumnMetadata {
             return Object.keys(map).length > 0 ? map : undefined;
 
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
-            if (this.relationMetadata && entity[this.propertyName] && entity[this.propertyName] instanceof Object) {
+            if (this.relationMetadata && entity[this.relationMetadata.propertyName] && entity[this.relationMetadata.propertyName] instanceof Object) {
                 const map = this.relationMetadata.joinColumns.reduce((map, joinColumn) => {
-                    const value = joinColumn.referencedColumn!.getEntityValueMap(entity[this.propertyName]);
+                    const value = joinColumn.referencedColumn!.getEntityValueMap(entity[this.relationMetadata!.propertyName]);
                     if (value === undefined) return map;
                     return OrmUtils.mergeDeep(map, value);
                 }, {});

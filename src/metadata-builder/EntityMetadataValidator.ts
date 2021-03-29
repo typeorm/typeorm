@@ -87,6 +87,8 @@ export class EntityMetadataValidator {
                     throw new DataTypeNotSupportedError(column, normalizedColumn, driver.options.type);
                 if (column.length && driver.withLengthColumnTypes.indexOf(normalizedColumn) === -1)
                     throw new Error(`Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`);
+                if (column.type === "enum" && !column.enum && !column.enumName)
+                    throw new Error(`Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`);
             });
         }
 

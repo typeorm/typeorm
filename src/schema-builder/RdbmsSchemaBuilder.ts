@@ -651,7 +651,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!table)
                 continue;
 
-            const newKeys = metadata.foreignKeys.filter(foreignKey => {
+            const newKeys = metadata.foreignKeys
+                .filter(foreignKey => {
                 return !table.foreignKeys.find(dbForeignKey => foreignKeysMatch(dbForeignKey, foreignKey));
             });
             if (newKeys.length === 0)

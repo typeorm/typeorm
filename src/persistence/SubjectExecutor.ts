@@ -428,15 +428,19 @@ export class SubjectExecutor {
                 }
 
                 const updateResult = await updateQueryBuilder.execute();
-                subject.generatedMap = updateResult.generatedMaps[0];
-                if (subject.generatedMap) {
+                let updateGeneratedMap = updateResult.generatedMaps[0];
+                if (updateGeneratedMap) {
                     subject.metadata.columns.forEach(column => {
-                        const value = column.getEntityValue(subject.generatedMap!);
+                        const value = column.getEntityValue(updateGeneratedMap!);
                         if (value !== undefined && value !== null) {
                             const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
-                            column.setEntityValue(subject.generatedMap!, preparedValue);
+                            column.setEntityValue(updateGeneratedMap!, preparedValue);
                         }
                     });
+                    if (!subject.generatedMap) {
+                        subject.generatedMap = {};
+                    }
+                    Object.assign(subject.generatedMap, updateGeneratedMap);
                 }
 
                 // experiments, remove probably, need to implement tree tables children removal

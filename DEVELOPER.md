@@ -93,9 +93,9 @@ Most tests will benefit from using this template as a starting point:
 
 ```ts
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
+import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "../../../src/connection/Connection";
+import { expect } from "chai";
 
 describe("github issues > #<issue number> <issue title>", () => {
 

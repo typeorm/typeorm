@@ -458,7 +458,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
 
         if (typeof defaultValue === "number") {
@@ -472,6 +472,9 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;
+
+        } else if (defaultValue === null) {
+            return undefined;
 
         } else {
             return defaultValue;
@@ -572,7 +575,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             // console.log("precision:", tableColumn.precision, columnMetadata.precision);
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
             // console.log("comment:", tableColumn.comment, columnMetadata.comment);
-            // console.log("default:", tableColumn.default, columnMetadata.default);
+            // console.log("default:", this.normalizeDefault(columnMetadata), columnMetadata.default);
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));

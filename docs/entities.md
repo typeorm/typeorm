@@ -102,7 +102,7 @@ Learn more about parameters `@Entity` in [Decorators reference](decorator-refere
 
 ## Entity columns
 
-Since database table consist of columns your entities must consist of columns too.
+Since database tables consist of columns your entities must consist of columns too.
 Each entity class property you marked with `@Column` will be mapped to a database table column.
 
 ### Primary columns
