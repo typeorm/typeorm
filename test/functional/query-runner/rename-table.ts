@@ -30,25 +30,50 @@ describe("query runner > rename table", () => {
 
         const queryRunner = connection.createQueryRunner();
 
+        // check if sequence "faculty_id_seq" exist
+        if (connection.driver instanceof PostgresDriver) {
+            const facultySeq = await queryRunner.query(`SELECT COUNT(*) FROM "pg_class" "c" WHERE "c"."relkind" = 'S' and "c"."relname" = 'faculty_id_seq'`);
+            facultySeq[0].count.should.be.equal("1");
+        }
+
         let table = await queryRunner.getTable("faculty");
 
         await queryRunner.renameTable(table!, "question");
         table = await queryRunner.getTable("question");
         table!.should.be.exist;
 
+        // check if sequence "faculty_id_seq" was renamed to "question_id_seq"
+        if (connection.driver instanceof PostgresDriver) {
+            const facultySeq = await queryRunner.query(`SELECT COUNT(*) FROM "pg_class" "c" WHERE "c"."relkind" = 'S' and "c"."relname" = 'faculty_id_seq'`);
+            const questionSeq = await queryRunner.query(`SELECT COUNT(*) FROM "pg_class" "c" WHERE "c"."relkind" = 'S' and "c"."relname" = 'question_id_seq'`);
+            facultySeq[0].count.should.be.equal("0");
+            questionSeq[0].count.should.be.equal("1");
+        }
+
         await queryRunner.renameTable("question", "answer");
         table = await queryRunner.getTable("answer");
         table!.should.be.exist;
 
+        // check if sequence "question_id_seq" was renamed to "answer_id_seq"
         if (connection.driver instanceof PostgresDriver) {
-            let result = await queryRunner.query(`SELECT COUNT(*) FROM "pg_class" "c" WHERE "c"."relkind" = 'S' and "c"."relname" = 'answer_id_seq'`);
-            result[0].count.should.be.equal("1");
+            const questionSeq = await queryRunner.query(`SELECT COUNT(*) FROM "pg_class" "c" WHERE "c"."relkind" = 'S' and "c"."relname" = 'question_id_seq'`);
+            const answerSeq = await queryRunner.query(`SELECT COUNT(*) FROM "pg_class" "c" WHERE "c"."relkind" = 'S' and "c"."relname" = 'answer_id_seq'`);
+            questionSeq[0].count.should.be.equal("0");
+            answerSeq[0].count.should.be.equal("1");
         }
 
         await queryRunner.executeMemoryDownSql();
 
         table = await queryRunner.getTable("faculty");
         table!.should.be.exist;
+
+        // check if sequence "answer_id_seq" was renamed to "faculty_id_seq"
+        if (connection.driver instanceof PostgresDriver) {
+            const answerSeq = await queryRunner.query(`SELECT COUNT(*) FROM "pg_class" "c" WHERE "c"."relkind" = 'S' and "c"."relname" = 'answer_id_seq'`);
+            const facultySeq = await queryRunner.query(`SELECT COUNT(*) FROM "pg_class" "c" WHERE "c"."relkind" = 'S' and "c"."relname" = 'faculty_id_seq'`);
+            answerSeq[0].count.should.be.equal("0");
+            facultySeq[0].count.should.be.equal("1");
+        }
 
         await queryRunner.release();
     })));
