@@ -6,6 +6,7 @@ import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SapDriver} from "../driver/sap/SapDriver";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
@@ -25,6 +26,7 @@ import {RelationMetadata} from "./RelationMetadata";
 import {TableType} from "./types/TableTypes";
 import {TreeType} from "./types/TreeTypes";
 import {UniqueMetadata} from "./UniqueMetadata";
+import {ClosureTreeOptions} from "./types/ClosureTreeOptions";
 
 /**
  * Contains all entity metadata.
@@ -189,6 +191,11 @@ export class EntityMetadata {
      * Indicates if this entity is a tree, what type of tree it is.
      */
     treeType?: TreeType;
+
+    /**
+     * Indicates if this entity is a tree, what options of tree it has.
+     */
+    treeOptions?: ClosureTreeOptions;
 
     /**
      * Checks if this table is a junction table of the closure table.
@@ -502,6 +509,7 @@ export class EntityMetadata {
         this.inheritanceTree = options.inheritanceTree || [];
         this.inheritancePattern = options.inheritancePattern;
         this.treeType = options.tableTree ? options.tableTree.type : undefined;
+        this.treeOptions = options.tableTree ? options.tableTree.options : undefined;
         this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
         this.tableMetadataArgs = options.args;
         this.target = this.tableMetadataArgs.target;
@@ -700,12 +708,19 @@ export class EntityMetadata {
         relations.forEach(relation => {
             const value = relation.getEntityValue(entity);
             if (Array.isArray(value)) {
-                value.forEach(subValue => relationsAndValues.push([relation, subValue, relation.inverseEntityMetadata]));
+                value.forEach(subValue => relationsAndValues.push([relation, subValue, this.getInverseEntityMetadata(subValue, relation)]));
             } else if (value) {
-                relationsAndValues.push([relation, value, relation.inverseEntityMetadata]);
+                relationsAndValues.push([relation, value, this.getInverseEntityMetadata(value, relation)]);
             }
         });
         return relationsAndValues;
+    }
+
+    private getInverseEntityMetadata(value: any, relation: RelationMetadata): EntityMetadata {
+        const childEntityMetadata = relation.inverseEntityMetadata.childEntityMetadatas.find(metadata =>
+            metadata.target === value.constructor
+        );
+        return childEntityMetadata ? childEntityMetadata : relation.inverseEntityMetadata;
     }
 
     // -------------------------------------------------------------------------
@@ -841,7 +856,7 @@ export class EntityMetadata {
      */
     protected buildTablePath(): string {
         let tablePath = this.tableName;
-        if (this.schema && ((this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
+        if (this.schema && ((this.connection.driver instanceof OracleDriver) || (this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
             tablePath = this.schema + "." + tablePath;
         }
 

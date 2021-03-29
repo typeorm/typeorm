@@ -1,7 +1,7 @@
-import { Driver } from "./Driver";
+import {Driver} from "./Driver";
 import { hash } from "../util/StringUtils";
 
-    /**
+/**
  * Common driver utility functions.
  */
 export class DriverUtils {
@@ -16,26 +16,48 @@ export class DriverUtils {
      */
     static buildDriverOptions(options: any, buildOptions?: { useSid: boolean }): any {
         if (options.url) {
-            const parsedUrl = this.parseConnectionUrl(options.url);
-            let urlDriverOptions: any = {
-                type: parsedUrl.type,
-                host: parsedUrl.host,
-                username: parsedUrl.username,
-                password: parsedUrl.password,
-                port: parsedUrl.port,
-                database: parsedUrl.database
-            };
-            if (buildOptions && buildOptions.useSid) {
-                urlDriverOptions.sid = parsedUrl.database;
+            const urlDriverOptions = this.parseConnectionUrl(options.url) as { [key: string]: any };
+
+            if (buildOptions && buildOptions.useSid && urlDriverOptions.database) {
+                urlDriverOptions.sid = urlDriverOptions.database;
             }
-            return Object.assign({}, urlDriverOptions, options);
+
+            for (const key of Object.keys(urlDriverOptions)) {
+                if (typeof urlDriverOptions[key] === "undefined") {
+                    delete urlDriverOptions[key];
+                }
+            }
+
+            return Object.assign({}, options, urlDriverOptions);
+        }
+        return Object.assign({}, options);
+    }
+
+    /**
+     * buildDriverOptions for MongodDB only to support replica set
+     */
+    static buildMongoDBDriverOptions(options: any, buildOptions?: { useSid: boolean }): any {
+        if (options.url) {
+            const urlDriverOptions = this.parseMongoDBConnectionUrl(options.url) as { [key: string]: any };
+
+            if (buildOptions && buildOptions.useSid && urlDriverOptions.database) {
+                urlDriverOptions.sid = urlDriverOptions.database;
+            }
+
+            for (const key of Object.keys(urlDriverOptions)) {
+                if (typeof urlDriverOptions[key] === "undefined") {
+                    delete urlDriverOptions[key];
+                }
+            }
+
+            return Object.assign({}, options, urlDriverOptions);
         }
         return Object.assign({}, options);
     }
 
     /**
      * Builds column alias from given alias name and column name.
-     * 
+     *
      * If alias length is greater than the limit (if any) allowed by the current
      * driver, replaces it with a hashed string.
      *
@@ -68,7 +90,11 @@ export class DriverUtils {
         const preBase = url.substr(firstSlashes + 2);
         const secondSlash = preBase.indexOf("/");
         const base = (secondSlash !== -1) ? preBase.substr(0, secondSlash) : preBase;
-        const afterBase = (secondSlash !== -1) ? preBase.substr(secondSlash + 1) : undefined;
+        let afterBase = (secondSlash !== -1) ? preBase.substr(secondSlash + 1) : undefined;
+        // remove mongodb query params
+        if (afterBase && afterBase.indexOf("?") !== -1) {
+            afterBase = afterBase.substr(0, afterBase.indexOf("?"));
+        }
 
         const lastAtSign = base.lastIndexOf("@");
         const usernameAndPassword = base.substr(0, lastAtSign);
@@ -90,6 +116,60 @@ export class DriverUtils {
             password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
             database: afterBase || undefined
+        };
+    }
+
+    /**
+     * Extracts connection data from the connection url for MongoDB to support replica set.
+     */
+    private static parseMongoDBConnectionUrl(url: string) {
+        const type = url.split(":")[0];
+        const firstSlashes = url.indexOf("//");
+        const preBase = url.substr(firstSlashes + 2);
+        const secondSlash = preBase.indexOf("/");
+        const base = (secondSlash !== -1) ? preBase.substr(0, secondSlash) : preBase;
+        let afterBase = (secondSlash !== -1) ? preBase.substr(secondSlash + 1) : undefined;
+        let afterQuestionMark = "";
+        let host = undefined;
+        let port = undefined;
+        let hostReplicaSet = undefined;
+        let replicaSet = undefined;
+        // remove mongodb query params
+        if (afterBase && afterBase.indexOf("?") !== -1) {
+            // split params to get replica set
+            afterQuestionMark = afterBase.substr((afterBase.indexOf("?") + 1), afterBase.length);
+            replicaSet = afterQuestionMark.split("=")[1];
+
+            afterBase = afterBase.substr(0, afterBase.indexOf("?"));
+        }
+
+        const lastAtSign = base.lastIndexOf("@");
+        const usernameAndPassword = base.substr(0, lastAtSign);
+        const hostAndPort = base.substr(lastAtSign + 1);
+
+        let username = usernameAndPassword;
+        let password = "";
+        const firstColon = usernameAndPassword.indexOf(":");
+        if (firstColon !== -1) {
+            username = usernameAndPassword.substr(0, firstColon);
+            password = usernameAndPassword.substr(firstColon + 1);
+        }
+
+        if (replicaSet) {
+            hostReplicaSet = hostAndPort;
+        } else {
+            [host, port] = hostAndPort.split(":");
+        }
+
+        return {
+            type: type,
+            host: host,
+            hostReplicaSet: hostReplicaSet,
+            username: decodeURIComponent(username),
+            password: decodeURIComponent(password),
+            port: port ? parseInt(port) : undefined,
+            database: afterBase || undefined,
+            replicaSet: replicaSet || undefined
         };
     }
 }

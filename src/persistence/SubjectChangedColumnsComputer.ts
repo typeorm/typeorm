@@ -61,9 +61,11 @@ export class SubjectChangedColumnsComputer {
 
             // if there is no database entity then all columns are treated as new, e.g. changed
             if (subject.databaseEntity) {
+                // skip transform database value for json / jsonb for comparison later on
+                const shouldTransformDatabaseEntity = column.type !== "json" && column.type !== "jsonb";
 
                 // get database value of the column
-                let databaseValue = column.getEntityValue(subject.databaseEntity, true);
+                let databaseValue = column.getEntityValue(subject.databaseEntity, shouldTransformDatabaseEntity);
 
                 // filter out "relational columns" only in the case if there is a relation object in entity
                 if (column.relationMetadata) {

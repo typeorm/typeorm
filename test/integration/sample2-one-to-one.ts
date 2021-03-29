@@ -64,7 +64,7 @@ describe("one-to-one", function() {
             return;
 
         let newPost: Post, details: PostDetails, savedPost: Post;
-        
+
         before(reloadDatabase);
 
         before(function() {
@@ -72,7 +72,7 @@ describe("one-to-one", function() {
             details.authorName = "Umed";
             details.comment = "this is post";
             details.metadata = "post,posting,postman";
-            
+
             newPost = new Post();
             newPost.text = "Hello post";
             newPost.title = "this is post title";
@@ -85,12 +85,12 @@ describe("one-to-one", function() {
         });
 
         it("should return the same post details instance after its created", function () {
-            savedPost.details.should.be.equal(newPost.details);
+            savedPost.details!.should.be.equal(newPost.details);
         });
 
         it("should have a new generated id after post is created", function () {
             expect(savedPost.id).not.to.be.undefined;
-            expect(savedPost.details.id).not.to.be.undefined;
+            expect(savedPost.details!.id).not.to.be.undefined;
         });
 
         it("should have inserted post in the database", function() {
@@ -100,7 +100,7 @@ describe("one-to-one", function() {
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
-            
+
             return postRepository.findOne(savedPost.id).should.eventually.eql(expectedPost);
         });
 
@@ -108,12 +108,12 @@ describe("one-to-one", function() {
             if (!connection)
                 return;
             const expectedDetails = new PostDetails();
-            expectedDetails.id = savedPost.details.id;
-            expectedDetails.authorName = savedPost.details.authorName;
-            expectedDetails.comment = savedPost.details.comment;
-            expectedDetails.metadata = savedPost.details.metadata;
+            expectedDetails.id = savedPost.details!.id;
+            expectedDetails.authorName = savedPost.details!.authorName;
+            expectedDetails.comment = savedPost.details!.comment;
+            expectedDetails.metadata = savedPost.details!.metadata;
 
-            const loadedPostDetails = await postDetailsRepository.findOne(savedPost.details.id);
+            const loadedPostDetails = await postDetailsRepository.findOne(savedPost.details!.id);
             loadedPostDetails!.should.be.eql(expectedDetails);
         });
 
@@ -125,11 +125,11 @@ describe("one-to-one", function() {
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
             expectedPost.details = new PostDetails();
-            expectedPost.details.id = savedPost.details.id;
-            expectedPost.details.authorName = savedPost.details.authorName;
-            expectedPost.details.comment = savedPost.details.comment;
-            expectedPost.details.metadata = savedPost.details.metadata;
-            
+            expectedPost.details!.id = savedPost.details!.id;
+            expectedPost.details!.authorName = savedPost.details!.authorName;
+            expectedPost.details!.comment = savedPost.details!.comment;
+            expectedPost.details!.metadata = savedPost.details!.metadata;
+
             const post = await postRepository
                 .createQueryBuilder("post")
                 .leftJoinAndSelect("post.details", "details")
@@ -146,16 +146,16 @@ describe("one-to-one", function() {
                 return;
 
             const expectedDetails = new PostDetails();
-            expectedDetails.id = savedPost.details.id;
-            expectedDetails.authorName = savedPost.details.authorName;
-            expectedDetails.comment = savedPost.details.comment;
-            expectedDetails.metadata = savedPost.details.metadata;
+            expectedDetails.id = savedPost.details!.id;
+            expectedDetails.authorName = savedPost.details!.authorName;
+            expectedDetails.comment = savedPost.details!.comment;
+            expectedDetails.metadata = savedPost.details!.metadata;
 
             expectedDetails.post = new Post();
             expectedDetails.post.id = savedPost.id;
             expectedDetails.post.text = savedPost.text;
             expectedDetails.post.title = savedPost.title;
-            
+
             return postDetailsRepository
                 .createQueryBuilder("details")
                 .leftJoinAndSelect("details.post", "post")
@@ -170,7 +170,7 @@ describe("one-to-one", function() {
             expectedPost.id = savedPost.id;
             expectedPost.text = savedPost.text;
             expectedPost.title = savedPost.title;
-            
+
             return postRepository
                 .createQueryBuilder("post")
                 .where("post.id=:id", { id: savedPost.id })
@@ -180,11 +180,11 @@ describe("one-to-one", function() {
 
         it("should load saved post without details if left joins are not specified", function() {
             const expectedDetails = new PostDetails();
-            expectedDetails.id = savedPost.details.id;
-            expectedDetails.authorName = savedPost.details.authorName;
-            expectedDetails.comment = savedPost.details.comment;
-            expectedDetails.metadata = savedPost.details.metadata;
-            
+            expectedDetails.id = savedPost.details!.id;
+            expectedDetails.authorName = savedPost.details!.authorName;
+            expectedDetails.comment = savedPost.details!.comment;
+            expectedDetails.metadata = savedPost.details!.metadata;
+
             return postDetailsRepository
                 .createQueryBuilder("details")
                 .where("details.id=:id", { id: savedPost.id })
@@ -268,7 +268,7 @@ describe("one-to-one", function() {
                 .getSingleResult()
                 .should.be.rejectedWith(Error);*/ // not working, find fix
         });
-        
+
     });
 
     describe("cascade updates should not be executed when cascadeUpdate option is not set", function() {
@@ -294,7 +294,7 @@ describe("one-to-one", function() {
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
-            newPost.details.comment = "i am updated comment";
+            newPost.details!.comment = "i am updated comment";
             return postRepository.save(newPost).then(updatedPost => {
                 updatedPost.details!.comment!.should.be.equal("i am updated comment");
                 return postRepository
@@ -304,7 +304,7 @@ describe("one-to-one", function() {
                     .setParameter("id", updatedPost.id)
                     .getOne();
             }).then(updatedPostReloaded => {
-                updatedPostReloaded!.details.comment.should.be.equal("this is post");
+                updatedPostReloaded!.details!.comment.should.be.equal("this is post");
             });
         }); // todo: also check that updates throw exception in strict cascades mode
     });
@@ -343,7 +343,7 @@ describe("one-to-one", function() {
                     .setParameter("id", updatedPost.id)
                     .getOne();
             }).then(updatedPostReloaded => {
-                updatedPostReloaded!.details.comment.should.be.equal("this is post");
+                updatedPostReloaded!.details!.comment.should.be.equal("this is post");
             });
         });
     });
@@ -391,7 +391,7 @@ describe("one-to-one", function() {
                         .where("post.id=:id")
                         .setParameter("id", newPost.id)
                         .getOne();
-                    
+
                 }).then(reloadedPost => {
                     reloadedPost!.image.url.should.be.equal("new-logo.png");
                 });

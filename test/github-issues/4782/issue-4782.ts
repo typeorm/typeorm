@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {expect} from "chai";
 import { VersionUtils } from "../../../src/util/VersionUtils";
 
-describe("github issues > 4782 mariadb driver wants to recreate create/update date columns CURRENT_TIMESTAMP(6) === current_timestamp(6)", () => {
+describe("github issues > #4782 mariadb driver wants to recreate create/update date columns CURRENT_TIMESTAMP(6) === current_timestamp(6)", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

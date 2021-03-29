@@ -10,7 +10,7 @@ import {Image} from "./entity/Image";
 import {User} from "./entity/User";
 
 describe("query builder > joins", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],

@@ -25,6 +25,7 @@ export interface AuroraDataApiPostgresConnectionOptions extends BaseConnectionOp
      */
     readonly uuidExtension?: "pgcrypto" | "uuid-ossp";
 
+    readonly transformParameters?: boolean;
 
     /*
     * Function handling errors thrown by drivers pool.
@@ -33,4 +34,6 @@ export interface AuroraDataApiPostgresConnectionOptions extends BaseConnectionOp
     readonly poolErrorHandler?: (err: any) => any;
 
     readonly serviceConfigOptions?: { [key: string]: any };
+
+    readonly formatOptions?: { [key: string]: any, castParameters: boolean };
 }

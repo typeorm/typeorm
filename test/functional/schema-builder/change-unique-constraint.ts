@@ -1,5 +1,4 @@
 import "reflect-metadata";
-import {PromiseUtils} from "../../../src";
 import {Connection} from "../../../src";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {SapDriver} from "../../../src/driver/sap/SapDriver";
@@ -23,7 +22,7 @@ describe("schema builder > change unique constraint", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should correctly add new unique constraint", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly add new unique constraint", () => Promise.all(connections.map(async connection => {
         const teacherMetadata = connection.getMetadata(Teacher);
         const nameColumn = teacherMetadata.findColumnWithPropertyName("name")!;
         let uniqueIndexMetadata: IndexMetadata|undefined = undefined;
@@ -74,9 +73,9 @@ describe("schema builder > change unique constraint", () => {
             // revert changes
             teacherMetadata.uniques.splice(teacherMetadata.uniques.indexOf(uniqueMetadata!), 1);
         }
-    }));
+    })));
 
-    it("should correctly change unique constraint", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly change unique constraint", () => Promise.all(connections.map(async connection => {
         // Sqlite does not store unique constraint name
         if (connection.driver instanceof AbstractSqliteDriver)
             return;
@@ -116,9 +115,9 @@ describe("schema builder > change unique constraint", () => {
             uniqueMetadata!.name = connection.namingStrategy.uniqueConstraintName(table!, uniqueMetadata!.columns.map(c => c.databaseName));
         }
 
-    }));
+    })));
 
-    it("should correctly drop removed unique constraint", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly drop removed unique constraint", () => Promise.all(connections.map(async connection => {
         const postMetadata = connection.getMetadata(Post);
 
         // Mysql and SAP stores unique constraints as unique indices.
@@ -143,6 +142,6 @@ describe("schema builder > change unique constraint", () => {
         } else {
             table!.uniques.length.should.be.equal(1);
         }
-    }));
+    })));
 
 });

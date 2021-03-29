@@ -11,10 +11,14 @@ export class Tag {
     @Column()
     code: number;
 
-    @PrimaryColumn()
+    @PrimaryColumn("varchar", {
+        length: 31,
+    })
     title: string;
 
-    @PrimaryColumn()
+    @PrimaryColumn("varchar", {
+        length: 31,
+    })
     description: string;
 
     @ManyToMany(type => Category, category => category.tags)

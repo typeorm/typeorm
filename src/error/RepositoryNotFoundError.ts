@@ -1,3 +1,4 @@
+import {EntityTarget} from "../common/EntityTarget";
 import {EntitySchema} from "../index";
 
 /**
@@ -6,13 +7,15 @@ import {EntitySchema} from "../index";
 export class RepositoryNotFoundError extends Error {
     name = "RepositoryNotFoundError";
 
-    constructor(connectionName: string, entityClass: Function|EntitySchema<any>|string) {
+    constructor(connectionName: string, entityClass: EntityTarget<any>) {
         super();
         Object.setPrototypeOf(this, RepositoryNotFoundError.prototype);
         let targetName: string;
         if (entityClass instanceof EntitySchema) {
             targetName = entityClass.options.name;
         } else if (typeof entityClass === "function") {
+            targetName = entityClass.name;
+        } else if (typeof entityClass === "object" && "name" in entityClass) {
             targetName = entityClass.name;
         } else {
             targetName = entityClass;

@@ -18,6 +18,7 @@ import {DriverUtils} from "../DriverUtils";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -215,6 +216,9 @@ export class OracleDriver implements Driver {
         this.connection = connection;
         this.options = connection.options as OracleConnectionOptions;
 
+        if (this.options.useUTC === true) {
+            process.env.ORA_SDTZ = 'UTC';
+        }
         // load oracle package
         this.loadDependencies();
 
@@ -287,7 +291,7 @@ export class OracleDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new OracleQueryRunner(this, mode);
     }
 
@@ -392,7 +396,7 @@ export class OracleDriver implements Driver {
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         if (columnMetadata.type === Boolean) {
-            value = value ? true : false;
+            value = !!value;
 
         } else if (columnMetadata.type === "date") {
             value = DateUtils.mixedDateToDateString(value);
@@ -460,7 +464,7 @@ export class OracleDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
 
         if (typeof defaultValue === "number") {
@@ -474,6 +478,9 @@ export class OracleDriver implements Driver {
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;
+
+        } else if (defaultValue === null) {
+            return undefined;
 
         } else {
             return defaultValue;
@@ -595,17 +602,38 @@ export class OracleDriver implements Driver {
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            return tableColumn.name !== columnMetadata.databaseName
+            const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
-                // || tableColumn.comment !== columnMetadata.comment || // todo
-                || this.normalizeDefault(columnMetadata) !== tableColumn.default
+                // || tableColumn.comment !== columnMetadata.comment
+                || tableColumn.default !== this.normalizeDefault(columnMetadata)
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
+
+            // DEBUG SECTION
+            // if (isColumnChanged) {
+            //     console.log("table:", columnMetadata.entityMetadata.tableName);
+            //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
+            //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            //     console.log("length:", tableColumn.length, columnMetadata.length);
+            //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
+            //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
+            //     console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            //     console.log("default:", tableColumn.default, this.normalizeDefault(columnMetadata));
+            //     console.log("enum:", tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
+            //     console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
+            //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
+            //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
+            //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            //     console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            //     console.log("==========================================");
+            // }
+
+            return isColumnChanged
         });
     }
 
@@ -624,10 +652,17 @@ export class OracleDriver implements Driver {
     }
 
     /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
+        return false;
+    }
+
+    /**
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return ":" + parameterName;
+        return ":" + (index + 1);
     }
 
     /**

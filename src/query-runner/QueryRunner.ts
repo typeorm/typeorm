@@ -92,7 +92,7 @@ export interface QueryRunner {
     commitTransaction(): Promise<void>;
 
     /**
-     * Ends transaction.
+     * Rollbacks transaction.
      * Error will be thrown if transaction was not started.
      */
     rollbackTransaction(): Promise<void>;

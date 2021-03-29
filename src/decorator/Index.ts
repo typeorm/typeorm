@@ -6,49 +6,49 @@ import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
  */
-export function Index(options?: IndexOptions): Function;
+export function Index(options?: IndexOptions): ClassDecorator & PropertyDecorator;
 
 /**
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
  */
-export function Index(name: string, options?: IndexOptions): Function;
+export function Index(name: string, options?: IndexOptions): ClassDecorator & PropertyDecorator;
 
 /**
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
  */
-export function Index(name: string, options: { synchronize: false }): Function;
+export function Index(name: string, options: { synchronize: false }): ClassDecorator & PropertyDecorator;
 
 /**
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
  */
-export function Index(name: string, fields: string[], options?: IndexOptions): Function;
+export function Index(name: string, fields: string[], options?: IndexOptions): ClassDecorator & PropertyDecorator;
 
 /**
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
  */
-export function Index(fields: string[], options?: IndexOptions): Function;
+export function Index(fields: string[], options?: IndexOptions): ClassDecorator & PropertyDecorator;
 
 /**
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
  */
-export function Index(fields: (object?: any) => (any[]|{ [key: string]: number }), options?: IndexOptions): Function;
+export function Index(fields: (object?: any) => (any[]|{ [key: string]: number }), options?: IndexOptions): ClassDecorator & PropertyDecorator;
 
 /**
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
  */
-export function Index(name: string, fields: (object?: any) => (any[]|{ [key: string]: number }), options?: IndexOptions): Function;
+export function Index(name: string, fields: (object?: any) => (any[]|{ [key: string]: number }), options?: IndexOptions): ClassDecorator & PropertyDecorator;
 
 /**
  * Creates a database index.
@@ -57,7 +57,7 @@ export function Index(name: string, fields: (object?: any) => (any[]|{ [key: str
  */
 export function Index(nameOrFieldsOrOptions?: string|string[]|((object: any) => (any[]|{ [key: string]: number }))|IndexOptions,
                       maybeFieldsOrOptions?: ((object?: any) => (any[]|{ [key: string]: number }))|IndexOptions|string[]|{ synchronize: false },
-                      maybeOptions?: IndexOptions): Function {
+                      maybeOptions?: IndexOptions): ClassDecorator & PropertyDecorator {
 
     // normalize parameters
     const name = typeof nameOrFieldsOrOptions === "string" ? nameOrFieldsOrOptions : undefined;
@@ -66,7 +66,7 @@ export function Index(nameOrFieldsOrOptions?: string|string[]|((object: any) => 
     if (!options)
         options = (typeof maybeFieldsOrOptions === "object" && !Array.isArray(maybeFieldsOrOptions)) ? maybeFieldsOrOptions as IndexOptions : maybeOptions;
 
-    return function (clsOrObject: Function|Object, propertyName?: string) {
+    return function (clsOrObject: Function|Object, propertyName?: string | symbol) {
 
         getMetadataArgsStorage().indices.push({
             target: propertyName ? clsOrObject.constructor : clsOrObject as Function,

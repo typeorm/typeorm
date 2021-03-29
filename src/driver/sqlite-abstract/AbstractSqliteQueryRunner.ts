@@ -8,6 +8,7 @@ import {Table} from "../../schema-builder/table/Table";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {View} from "../../schema-builder/view/View";
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult";
 import {Query} from "../Query";
 import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
 import {ReadStream} from "../../platform/PlatformTools";
@@ -70,8 +71,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        this.isTransactionActive = true;
-
         if (isolationLevel) {
             if (isolationLevel !== "READ UNCOMMITTED" && isolationLevel !== "SERIALIZABLE") {
                 throw new Error(`SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation`);
@@ -84,7 +83,17 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             }
         }
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
+        this.isTransactionActive = true;
+
         await this.query("BEGIN TRANSACTION");
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -95,8 +104,16 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         await this.query("COMMIT");
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -107,8 +124,17 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         await this.query("ROLLBACK");
+
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -820,21 +846,34 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                     const enumMatch = sql.match(new RegExp("\"(" + tableColumn.name + ")\" varchar CHECK\\s*\\(\\s*\\1\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)"));
                     if (enumMatch) {
                         // This is an enum
-                        tableColumn.type = "simple-enum";
                         tableColumn.enum = enumMatch[2].substr(1, enumMatch[2].length - 2).split("','");
                     }
                 }
 
-                // parse datatype and attempt to retrieve length
+                // parse datatype and attempt to retrieve length, precision and scale
                 let pos = tableColumn.type.indexOf("(");
                 if (pos !== -1) {
-                    let dataType = tableColumn.type.substr(0, pos);
+                    const fullType = tableColumn.type;
+                    let dataType = fullType.substr(0, pos);
                     if (!!this.driver.withLengthColumnTypes.find(col => col === dataType)) {
-                        let len = parseInt(tableColumn.type.substring(pos + 1, tableColumn.type.length - 1));
+                        let len = parseInt(fullType.substring(pos + 1, fullType.length - 1));
                         if (len) {
                             tableColumn.length = len.toString();
                             tableColumn.type = dataType; // remove the length part from the datatype
                         }
+                    }
+                    if (!!this.driver.withPrecisionColumnTypes.find(col => col === dataType)) {
+                        const re = new RegExp(`^${dataType}\\((\\d+),?\\s?(\\d+)?\\)`);
+                        const matches = fullType.match(re);
+                        if (matches && matches[1]) {
+                            tableColumn.precision = +matches[1];
+                        }
+                        if (!!this.driver.withScaleColumnTypes.find(col => col === dataType)) {
+                            if (matches && matches[2]) {
+                                tableColumn.scale = +matches[2];
+                            }
+                        }
+                        tableColumn.type = dataType; // remove the precision/scale part from the datatype
                     }
                 }
 

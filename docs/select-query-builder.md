@@ -174,6 +174,16 @@ const timber = await getRepository(User)
     .getOne();
 ```
 
+`getOneOrFail` will get a single result from the database, but if
+no result exists it will throw an `EntityNotFoundError`:
+
+```typescript
+const timber = await getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id OR user.name = :name", { id: 1, name: "Timber" })
+    .getOneOrFail();
+```
+
 To get multiple results from the database,
 for example, to get all users from the database, use `getMany`:
 
@@ -342,7 +352,7 @@ createQueryBuilder("user")
 Which will produce the following SQL query:
 
 ```sql
-SELECT ... FROM users user WHERE user.firstName IN (1, 2, 3, 4)
+SELECT ... FROM users user WHERE user.id IN (1, 2, 3, 4)
 ```
 
 

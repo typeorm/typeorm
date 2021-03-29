@@ -1,71 +1,92 @@
 [
   {
-    "skip": false,
+    "skip": true,
     "name": "mysql",
     "type": "mysql",
-    "host": "localhost",
+    "host": "typeorm-mysql",
     "port": 3306,
     "username": "root",
     "password": "admin",
-    "database": "test"
+    "database": "test",
+    "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "mariadb",
     "type": "mariadb",
-    "host": "mariadb",
+    "host": "typeorm-mariadb",
     "port": 3306,
     "username": "root",
     "password": "admin",
-    "database": "test"
+    "database": "test",
+    "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "sqlite",
     "type": "sqlite",
-    "database": "temp/sqlitedb.db"
+    "database": "temp/sqlitedb.db",
+    "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
+    "name": "better-sqlite3",
+    "type": "better-sqlite3",
+    "database": "temp/better-sqlite3db.db",
+    "logging": false
+  },
+  {
+    "skip": true,
     "name": "postgres",
     "type": "postgres",
-    "host": "localhost",
+    "host": "typeorm-postgres",
     "port": 5432,
     "username": "test",
     "password": "test",
-    "database": "test"
+    "database": "test",
+    "logging": false
   },
   {
     "skip": false,
     "name": "sqljs",
-    "type": "sqljs"
+    "type": "sqljs",
+    "logging": false
   },
+
   {
     "skip": true,
     "name": "mssql",
     "type": "mssql",
-    "host": "localhost",
+    "host": "typeorm-mssql",
+    "port": 1433,
     "username": "sa",
     "password": "Admin12345",
-    "database": "tempdb"
+    "database": "tempdb",
+    "logging": false,
+    "extra": {
+      "trustServerCertificate": true
+    }
   },
   {
     "skip": true,
     "name": "sap",
     "type": "sap",
-    "host": "localhost",
+    "host": "typeorm-hana",
     "port": 39015,
     "username": "SYSTEM",
-    "password": "HXEHana1",
+    "password": "MySuperHanaPwd123!",
     "database": "HXE",
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
+    "host": "typeorm-mongodb",
+    "port": 27017,
     "database": "test",
+    "logging": false,
     "useNewUrlParser": true,
     "useUnifiedTopology": true
   },
@@ -73,7 +94,7 @@
     "skip": true,
     "name": "cockroachdb",
     "type": "cockroachdb",
-    "host": "localhost",
+    "host": "typeorm-cockroachdb",
     "port": 26257,
     "username": "root",
     "password": "",
@@ -83,10 +104,14 @@
     "skip": true,
     "name": "oracle",
     "type": "oracle",
-    "host": "localhost",
-    "username": "typeorm",
-    "password": "Passw0rd",
+    "host": "typeorm-oracle",
     "port": 1521,
-    "sid": "orclpdb1.localdomain"
+    "sid": "XE",
+    "username": "system",
+    "password": "oracle",
+    "logging": false,
+    "extra": {
+      "connectString": "typeorm-oracle:1521/XE"
+    }
   }
 ]

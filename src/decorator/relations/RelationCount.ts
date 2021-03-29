@@ -6,7 +6,7 @@ import {RelationCountMetadataArgs} from "../../metadata-args/RelationCountMetada
  *
  * @deprecated Do not use this decorator, it may be removed in the future versions
  */
-export function RelationCount<T>(relation: string|((object: T) => any), alias?: string, queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>): Function {
+export function RelationCount<T>(relation: string|((object: T) => any), alias?: string, queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>): PropertyDecorator {
     return function (object: Object, propertyName: string) {
 
         getMetadataArgsStorage().relationCounts.push({

@@ -2,7 +2,7 @@ import {createConnection} from "../index";
 import {Connection} from "../connection/Connection";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import * as yargs from "yargs";
-const chalk = require("chalk");
+import chalk from "chalk";
 
 /**
  * Drops all tables of the database from the given connection.

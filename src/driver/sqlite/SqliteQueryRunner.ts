@@ -1,8 +1,10 @@
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
+import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
 import {SqliteDriver} from "./SqliteDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
+import { ConnectionIsNotSetError } from '../../error/ConnectionIsNotSetError';
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -36,10 +38,34 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         const connection = this.driver.connection;
+        const options = connection.options as SqliteConnectionOptions;
+
+        if (!connection.isConnected){
+            throw new ConnectionIsNotSetError('sqlite')
+        }
 
         return new Promise<any[]>(async (ok, fail) => {
 
+            const databaseConnection = await this.connect();
+            this.driver.connection.logger.logQuery(query, parameters, this);
+            const queryStartTime = +new Date();
+            const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
+
+            const execute = async () => {
+                if (isInsertQuery) {
+                    databaseConnection.run(query, parameters, handler);
+                } else {
+                    databaseConnection.all(query, parameters, handler);
+                }
+            };
+
             const handler = function (err: any, result: any) {
+                if (err && err.toString().indexOf("SQLITE_BUSY:") !== -1) {
+                    if (typeof options.busyErrorRetry === "number" && options.busyErrorRetry > 0) {
+                        setTimeout(execute, options.busyErrorRetry);
+                        return;
+                    }
+                }
 
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime = connection.options.maxQueryExecutionTime;
@@ -56,15 +82,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                 }
             };
 
-            const databaseConnection = await this.connect();
-            this.driver.connection.logger.logQuery(query, parameters, this);
-            const queryStartTime = +new Date();
-            const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
-            if (isInsertQuery) {
-                databaseConnection.run(query, parameters, handler);
-            } else {
-                databaseConnection.all(query, parameters, handler);
-            }
+            await execute();
         });
     }
 }

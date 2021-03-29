@@ -74,6 +74,14 @@ userRepository.find({
 });
 ```
 
+* `withDeleted` - include entities which have been soft deleted with `softDelete` or `softRemove`, e.g. have their `@DeleteDateColumn` column set. By default, soft deleted entities are not included.
+
+```typescript
+userRepository.find({
+    withDeleted: true
+});
+```
+
 `find` methods which return multiple entities (`find`, `findAndCount`, `findByIds`) also accept following options:
 
 * `skip` - offset (paginated) from where entities should be taken.
@@ -270,6 +278,22 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" LIKE '%out #%'
 ```
 
+* `ILike`
+
+```ts
+import {ILike} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    title: ILike("%out #%")
+});
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "title" ILIKE '%out #%'
+```
+
 * `Between`
 
 ```ts
@@ -367,8 +391,39 @@ will execute following query:
 SELECT * FROM "post" WHERE "currentDate" > NOW()
 ```
 
-> Note: beware with `Raw` operator. It executes pure SQL from supplied expression and should not contain a user input,
- otherwise it will lead to SQL-injection.
+If you need to provide user input, you should not include the user input directly in your query as this may create a SQL injection vulnerability.  Instead, you can use the second argument of the `Raw` function to provide a list of parameters to bind to the query.
+
+```ts
+import {Raw} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    currentDate: Raw(alias =>`${alias} > ':date'`, { date: "2020-10-06" })
+});
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "currentDate" > '2020-10-06'
+```
+
+If you need to provide user input that is an array, you can bind them as a list of values in the SQL statement by using the special expression syntax:
+
+```ts
+import {Raw} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    title: Raw(alias =>`${alias} IN (:...titles)`, { titles: ["Go To Statement Considered Harmful", "Structured Programming"] })
+});
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "titles" IN ('Go To Statement Considered Harmful', 'Structured Programming')
+```
+
+## Combining Advanced Options
 
 Also you can combine these operators with `Not` operator:
 

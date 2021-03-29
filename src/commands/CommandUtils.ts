@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-const mkdirp = require("mkdirp");
+import mkdirp from "mkdirp";
 
 /**
  * Command line utils functions.

@@ -1,8 +1,6 @@
 import "reflect-metadata";
-
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src";
-
 import {Person} from "./entity/person";
 import {Note} from "./entity/note";
 
@@ -21,8 +19,8 @@ describe("github issues > #2965 Reuse preloaded lazy relations", () => {
         const repoPerson = connection.getRepository(Person);
         const repoNote = connection.getRepository(Note);
 
-        const personA  = await repoPerson.create({ name: "personA" });
-        const personB    = await repoPerson.create({ name: "personB" });
+        const personA = await repoPerson.create({ name: "personA" });
+        const personB = await repoPerson.create({ name: "personB" });
 
         await repoPerson.save([
             personA,
@@ -31,7 +29,6 @@ describe("github issues > #2965 Reuse preloaded lazy relations", () => {
 
         await repoNote.insert({ label: "note1", owner: personA });
         await repoNote.insert({ label: "note2", owner: personB });
-
 
         const originalLoad: (...args: any[]) => Promise<any[]> = connection.relationLoader.load;
         let loadCalledCounter = 0;
