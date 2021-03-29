@@ -2173,7 +2173,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         }
 
         comment = comment
-            .replace("'", "''")
+            .replace(/'/g, "''")
             .replace("\0", ""); // Null bytes aren't allowed in comments
 
         return `'${comment}'`;

@@ -1609,6 +1609,22 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     }
 
     /**
+     * Escapes a given comment so it's safe to include in a query.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment || comment.length === 0) {
+            return `''`;
+        }
+
+        comment = comment
+            .replace("\\", "\\\\") // MySQL allows escaping characters via backslashes
+            .replace(/'/g, "''")
+            .replace("\0", ""); // Null bytes aren't allowed in comments
+
+        return `'${comment}'`;
+    }
+
+    /**
      * Escapes given table or view path.
      */
     protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
@@ -1650,7 +1666,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (column.isGenerated && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
         if (column.comment)
-            c += ` COMMENT '${column.comment}'`;
+            c += ` COMMENT ${this.escapeComment(column.comment)}`;
         if (column.default !== undefined && column.default !== null)
             c += ` DEFAULT ${column.default}`;
         if (column.onUpdate)

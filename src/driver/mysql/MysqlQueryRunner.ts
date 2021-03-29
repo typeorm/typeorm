@@ -1818,7 +1818,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         comment = comment
             .replace("\\", "\\\\") // MySQL allows escaping characters via backslashes
-            .replace("'", "''")
+            .replace(/'/g, "''")
             .replace("\0", ""); // Null bytes aren't allowed in comments
 
         return `'${comment}'`;
