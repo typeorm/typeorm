@@ -167,11 +167,8 @@ await timber.remove();
 
     `npm install typeorm --save`
 
-2. You need to install `reflect-metadata` shim:
-
-    `npm install reflect-metadata --save`
-
-    and import it somewhere in the global place of your app (for example in `app.ts`):
+2. Import the `reflect-metadata` shim somewhere in the global place of
+   your app (for example in `app.ts`):
 
     `import "reflect-metadata";`
 
