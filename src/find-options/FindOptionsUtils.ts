@@ -3,7 +3,7 @@ import {FindOneOptions} from "./FindOneOptions";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {shorten} from "../util/StringUtils";
+import {hash} from "../util/StringUtils";
 
 /**
  * Utilities to work with FindOptions.
@@ -235,9 +235,9 @@ export class FindOptionsUtils {
 
             // generate a relation alias
             let relationAlias: string = alias + "__" + relation;
-            // shorten it if needed by the driver
-            if (qb.connection.driver.maxAliasLength && relationAlias.length > qb.connection.driver.maxAliasLength) {
-                relationAlias = shorten(relationAlias);
+            // hash it if needed by the driver
+            if (qb.connection.driver.maxAliasLength && qb.connection.driver.maxAliasLength > 0 && relationAlias.length > qb.connection.driver.maxAliasLength) {
+                relationAlias = hash(relationAlias, { length: qb.connection.driver.maxAliasLength });
             }
 
             // add a join for the found relation
@@ -261,8 +261,18 @@ export class FindOptionsUtils {
 
     public static joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
         metadata.eagerRelations.forEach(relation => {
-            const relationAlias = qb.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath);
+
+            // generate a relation alias
+            let relationAlias = qb.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath);
+            // hash relationAlias if needed by the driver
+            if (qb.connection.driver.maxAliasLength && qb.connection.driver.maxAliasLength > 0 && relationAlias.length > qb.connection.driver.maxAliasLength) {
+                relationAlias = hash(relationAlias, { length: qb.connection.driver.maxAliasLength });
+            }
+
+            // add a join for the relation
             qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
+
+            // (recursive) join the eager relations
             this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
         });
     }
