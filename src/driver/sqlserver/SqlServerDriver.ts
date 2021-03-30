@@ -501,7 +501,11 @@ export class SqlServerDriver implements Driver {
             return defaultValue === true ? "1" : "0";
 
         } else if (typeof defaultValue === "function") {
-            return /*"(" + */defaultValue()/* + ")"*/;
+            const value = defaultValue();
+            if (value === "CURRENT_TIMESTAMP") {
+                return "getdate()"
+            }
+            return value
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;

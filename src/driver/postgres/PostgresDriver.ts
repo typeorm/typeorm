@@ -750,7 +750,19 @@ export class PostgresDriver implements Driver {
             return defaultValue === true ? "true" : "false";
 
         } else if (typeof defaultValue === "function") {
-            return defaultValue();
+            const value = defaultValue();
+            if (value === "CURRENT_TIMESTAMP") {
+                return "now()";
+            } else if (value === "CURRENT_DATE") {
+                return "('now'::text)::date"
+            } else if (value === "CURRENT_TIME") {
+                return "('now'::text)::time with time zone"
+            } else if (value === "LOCALTIMESTAMP") {
+                return "('now'::text)::timestamp without time zone"
+            } else if (value === "LOCALTIME") {
+                return "('now'::text)::time without time zone"
+            }
+            return value
 
         } else if (typeof defaultValue === "object") {
             return `'${JSON.stringify(defaultValue)}'`;

@@ -490,7 +490,13 @@ export class CockroachDriver implements Driver {
             return defaultValue === true ? "true" : "false";
 
         } else if (typeof defaultValue === "function") {
-            return defaultValue();
+            const value = defaultValue();
+            if (value === "CURRENT_TIMESTAMP") {
+                return "current_timestamp()";
+            } else if (value === "CURRENT_DATE") {
+                return "current_date()";
+            }
+            return value;
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'${arrayCast}`;

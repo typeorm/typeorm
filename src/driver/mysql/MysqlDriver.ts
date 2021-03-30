@@ -602,7 +602,13 @@ export class MysqlDriver implements Driver {
             return defaultValue === true ? "1" : "0";
 
         } else if (typeof defaultValue === "function") {
-            return defaultValue();
+            const value = defaultValue();
+            if (value === "CURRENT_TIMESTAMP()" && this.options.type === "mysql") {
+                return "CURRENT_TIMESTAMP";
+            } else if (value === "CURRENT_TIMESTAMP" && this.options.type === "mariadb") {
+                return "CURRENT_TIMESTAMP()";
+            }
+            return value;
 
         } else {
             return defaultValue;

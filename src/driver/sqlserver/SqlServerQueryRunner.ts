@@ -1730,10 +1730,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     tableColumn.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined
                         ? this.removeParenthesisFromDefault(dbColumn["COLUMN_DEFAULT"])
                         : undefined;
-                    if (tableColumn.default === "getdate()") {
-                        tableColumn.default = "CURRENT_TIMESTAMP"
-                    }
-
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = isPrimary;
                     tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;

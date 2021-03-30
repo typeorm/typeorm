@@ -1680,20 +1680,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "uuid";
                         } else if (dbColumn["column_default"] === "now()" || dbColumn["column_default"].indexOf("'now'::text") !== -1) {
-                            if (dbColumn["column_default"] === "now()") {
-                                tableColumn.default = "CURRENT_TIMESTAMP"
-                            } else {
-                                const now = dbColumn["column_default"].replace(/\(\d+\)/, "");
-                                if (now === "('now'::text)::time without time zone") {
-                                    tableColumn.default = "LOCALTIME";
-                                } else if (now === "('now'::text)::timestamp without time zone") {
-                                    tableColumn.default = "LOCALTIMESTAMP";
-                                } else if (now === "('now'::text)::time with time zone") {
-                                    tableColumn.default = "CURRENT_TIME";
-                                } else if (now === "('now'::text)::date") {
-                                    tableColumn.default = "CURRENT_DATE";
-                                }
-                            }
+                            tableColumn.default = dbColumn["column_default"]
                         } else {
                             tableColumn.default = dbColumn["column_default"].replace(/::.*/, "");
                             tableColumn.default = tableColumn.default.replace(/^(-?\d+)$/, "'$1'");

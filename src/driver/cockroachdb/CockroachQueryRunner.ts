@@ -1530,12 +1530,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                         } else  {
                             tableColumn.default = dbColumn["column_default"].replace(/:::.*/, "");
                             tableColumn.default = tableColumn.default.replace(/^(-?[\d\.]+)$/, "($1)");
-
-                            if (tableColumn.default === "current_date()") {
-                                tableColumn.default = "CURRENT_DATE";
-                            } else if (tableColumn.default === "current_timestamp()") {
-                                tableColumn.default = "CURRENT_TIMESTAMP";
-                            }
                         }
                     }
 

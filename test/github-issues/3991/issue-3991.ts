@@ -7,7 +7,7 @@ import {Post as OraclePost} from "./entity/oracle/Post";
 import {Post as SqlitePost} from "./entity/sqlite/Post";
 import {Post as OtherPost} from "./entity/other/Post";
 
-describe.only("github issues > #3991 Migration keeps changing @CreateDateColumn/@UpdateDateColumn timestamp column to same definition", () => {
+describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@UpdateDateColumn timestamp column to same definition", () => {
     describe("postgres", () => {
         let connections: Connection[];
         before(async () => connections = await createTestingConnections({
@@ -104,10 +104,10 @@ describe.only("github issues > #3991 Migration keeps changing @CreateDateColumn/
         })));
     })
 
-    describe("mysql, mssql", () => {
+    describe("mysql, mariadb, mssql", () => {
         let connections: Connection[];
         before(async () => connections = await createTestingConnections({
-            enabledDrivers: ["mysql", "mssql"],
+            enabledDrivers: ["mysql", "mariadb", "mssql"],
             schemaCreate: false,
             dropSchema: true,
             entities: [OtherPost],
@@ -123,7 +123,6 @@ describe.only("github issues > #3991 Migration keeps changing @CreateDateColumn/
         it("should not generate queries when no model changes", () => Promise.all(connections.map(async connection => {
             await connection.driver.createSchemaBuilder().build();
             const sqlInMemory = await connection.driver.createSchemaBuilder().log();
-            console.log(sqlInMemory);
             sqlInMemory.upQueries.length.should.be.equal(0);
             sqlInMemory.downQueries.length.should.be.equal(0);
         })));
