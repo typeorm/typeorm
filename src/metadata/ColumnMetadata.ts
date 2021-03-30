@@ -368,7 +368,7 @@ export class ColumnMetadata {
         }
         if (options.args.options.unsigned)
             this.unsigned = options.args.options.unsigned;
-        if (options.args.options.precision !== undefined)
+        if (options.args.options.precision !== null)
             this.precision = options.args.options.precision;
         if (options.args.options.enum) {
             if (options.args.options.enum instanceof Object && !Array.isArray(options.args.options.enum)) {
@@ -413,7 +413,8 @@ export class ColumnMetadata {
                 this.type = options.connection.driver.mappedDataTypes.createDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.createDateDefault;
-            if (this.precision === undefined && options.connection.driver.mappedDataTypes.createDatePrecision)
+            // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
+            if (this.precision === undefined && options.args.options.precision === undefined && options.connection.driver.mappedDataTypes.createDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.createDatePrecision;
         }
         if (this.isUpdateDate) {
@@ -423,7 +424,8 @@ export class ColumnMetadata {
                 this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
             if (!this.onUpdate)
                 this.onUpdate = options.connection.driver.mappedDataTypes.updateDateDefault;
-            if (this.precision === undefined && options.connection.driver.mappedDataTypes.updateDatePrecision)
+            // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
+            if (this.precision === undefined && options.args.options.precision === undefined && options.connection.driver.mappedDataTypes.updateDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
         }
         if (this.isDeleteDate) {
@@ -431,7 +433,8 @@ export class ColumnMetadata {
                 this.type = options.connection.driver.mappedDataTypes.deleteDate;
             if (!this.isNullable)
                 this.isNullable = options.connection.driver.mappedDataTypes.deleteDateNullable;
-            if (this.precision === undefined && options.connection.driver.mappedDataTypes.deleteDatePrecision)
+            // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
+            if (this.precision === undefined && options.args.options.precision === undefined && options.connection.driver.mappedDataTypes.deleteDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.deleteDatePrecision;
         }
         if (this.isVersion)
