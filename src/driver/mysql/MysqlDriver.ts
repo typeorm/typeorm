@@ -761,7 +761,7 @@ export class MysqlDriver implements Driver {
                 || tableColumn.comment !== columnMetadata.comment
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
-                || tableColumn.onUpdate !== columnMetadata.onUpdate
+                || tableColumn.onUpdate !== this.normalizeOnUpdate(columnMetadata.onUpdate)
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
@@ -781,10 +781,10 @@ export class MysqlDriver implements Driver {
             //     console.log("asExpression:", tableColumn.asExpression, columnMetadata.asExpression);
             //     console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
             //     console.log("comment:", tableColumn.comment, columnMetadata.comment);
-            //     console.log("default:", tableColumn.default, columnMetadata.default);
+            //     console.log("default:", tableColumn.default, this.normalizeDefault(columnMetadata));
             //     console.log("enum:", tableColumn.enum, columnMetadata.enum);
             //     console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
-            //     console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
+            //     console.log("onUpdate:", tableColumn.onUpdate, this.normalizeOnUpdate(columnMetadata.onUpdate));
             //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
@@ -939,6 +939,15 @@ export class MysqlDriver implements Driver {
         }
 
         return columnMetadataValue === databaseValue;
+    }
+
+    protected normalizeOnUpdate(onUpdate?: string) {
+        if (onUpdate === "CURRENT_TIMESTAMP()" && this.options.type === "mysql") {
+            return "CURRENT_TIMESTAMP";
+        } else if (onUpdate === "CURRENT_TIMESTAMP" && this.options.type === "mariadb") {
+            return "CURRENT_TIMESTAMP()";
+        }
+        return onUpdate
     }
 
 }
