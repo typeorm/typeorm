@@ -127,6 +127,11 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
         if (options.type === "hstore" && !options.hstoreType)
             options.hstoreType = reflectMetadataType === Object ? "object" : "string";
 
+        // we cast "null" to "undefined" because there is no difference between "null" and "undefined" on database level
+        if (options.precision === null) {
+            options.precision = undefined
+        }
+
         if (typeOrOptions instanceof Function) { // register an embedded
             getMetadataArgsStorage().embeddeds.push({
                 target: object.constructor,
