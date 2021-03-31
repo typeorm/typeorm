@@ -6,7 +6,7 @@ import {BaseEntity} from "../../../../../src/repository/BaseEntity";
 import {Column} from "../../../../../src/decorator/columns/Column";
 import {Post} from "./post.entity";
 
-@Entity("tag_test", { schema: "public" })
+@Entity("tag_test")
 export class Tag  extends BaseEntity {
 
     @PrimaryColumn()

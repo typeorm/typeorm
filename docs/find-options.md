@@ -74,6 +74,14 @@ userRepository.find({
 });
 ```
 
+* `withDeleted` - include entities which have been soft deleted with `softDelete` or `softRemove`, e.g. have their `@DeleteDateColumn` column set. By default, soft deleted entities are not included.
+
+```typescript
+userRepository.find({
+    withDeleted: true
+});
+```
+
 `find` methods which return multiple entities (`find`, `findAndCount`, `findByIds`) also accept following options:
 
 * `skip` - offset (paginated) from where entities should be taken.
@@ -268,6 +276,22 @@ will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "title" LIKE '%out #%'
+```
+
+* `ILike`
+
+```ts
+import {ILike} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    title: ILike("%out #%")
+});
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "title" ILIKE '%out #%'
 ```
 
 * `Between`

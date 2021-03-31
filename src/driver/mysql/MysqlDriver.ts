@@ -579,18 +579,23 @@ export class MysqlDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
 
-        if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
+        if (defaultValue === null) {
+            return undefined
+
+        } else if (
+            (columnMetadata.type === "enum"
+            || columnMetadata.type === "simple-enum"
+            || typeof defaultValue === "string")
+            && defaultValue !== undefined) {
             return `'${defaultValue}'`;
-        }
 
-        if ((columnMetadata.type === "set") && defaultValue !== undefined) {
+        } else if ((columnMetadata.type === "set") && defaultValue !== undefined) {
             return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
-        }
 
-        if (typeof defaultValue === "number") {
+        } else if (typeof defaultValue === "number") {
             return `'${defaultValue.toFixed(columnMetadata.scale)}'`;
 
         } else if (typeof defaultValue === "boolean") {
@@ -598,12 +603,6 @@ export class MysqlDriver implements Driver {
 
         } else if (typeof defaultValue === "function") {
             return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else if (defaultValue === null) {
-            return `NULL`;
 
         } else {
             return defaultValue;
@@ -776,7 +775,7 @@ export class MysqlDriver implements Driver {
                 || tableColumn.unsigned !== columnMetadata.unsigned
                 || tableColumn.asExpression !== columnMetadata.asExpression
                 || tableColumn.generatedType !== columnMetadata.generatedType
-                || (tableColumn.comment || "") !== columnMetadata.comment
+                || tableColumn.comment !== columnMetadata.comment
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
                 || tableColumn.onUpdate !== columnMetadata.onUpdate
@@ -871,7 +870,8 @@ export class MysqlDriver implements Driver {
             password: credentials.password,
             database: credentials.database,
             port: credentials.port,
-            ssl: options.ssl
+            ssl: options.ssl,
+            socketPath: credentials.socketPath
         },
         options.acquireTimeout === undefined
           ? {}
@@ -919,7 +919,7 @@ export class MysqlDriver implements Driver {
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
      */
-    protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
+    protected compareDefaultValues(columnMetadataValue: string | undefined, databaseValue: string | undefined): boolean {
         if (typeof columnMetadataValue === "string" && typeof databaseValue === "string") {
             // we need to cut out "'" because in mysql we can understand returned value is a string or a function
             // as result compare cannot understand if default is really changed or not

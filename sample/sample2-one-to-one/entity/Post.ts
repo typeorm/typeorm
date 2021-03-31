@@ -26,13 +26,13 @@ export class Post {
     @JoinColumn()
     category: PostCategory;
 
-    // post has relation with details. cascade inserts here means if new PostDetails instance will be set to this 
+    // post has relation with details. cascade inserts here means if new PostDetails instance will be set to this
     // relation it will be inserted automatically to the db when you save this Post entity
     @OneToOne(type => PostDetails, details => details.post, {
         cascade: ["insert"]
     })
     @JoinColumn()
-    details: PostDetails;
+    details?: PostDetails;
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
     // it will be inserted automatically to the db when you save this Post entity

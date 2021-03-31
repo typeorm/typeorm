@@ -846,7 +846,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                     const enumMatch = sql.match(new RegExp("\"(" + tableColumn.name + ")\" varchar CHECK\\s*\\(\\s*\\1\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)"));
                     if (enumMatch) {
                         // This is an enum
-                        tableColumn.type = "simple-enum";
                         tableColumn.enum = enumMatch[2].substr(1, enumMatch[2].length - 2).split("','");
                     }
                 }
