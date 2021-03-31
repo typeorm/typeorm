@@ -222,7 +222,7 @@ export abstract class AbstractPersistQueryBuilder<Entity, Result> extends QueryB
         if (value instanceof Function)
             value = Raw(value());
 
-        const expression = this.buildExpression(this.createExpressionContext(column), value, true);
+        const expression = this.buildExpression(this.createExpressionContext(undefined, column), value, true);
 
         // Wrap special columns (spatial types, etc)
         if (!(value instanceof ExpressionBuilder) && column && this.connection.driver.wrapPersistExpression)

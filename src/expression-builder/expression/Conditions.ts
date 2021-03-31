@@ -50,13 +50,13 @@ export class EnterAliasBuildable extends BuildableExpression {
     }
 }
 
-export class EnterPathBuildable extends BuildableExpression {
-    constructor(readonly path: string, readonly expression: Expression) {
+export class EnterContextBuildable extends BuildableExpression {
+    constructor(readonly context: any, readonly expression: Expression) {
         super();
     }
 
     build(eb: ExpressionBuildInterface, ctx: any): string {
-        return eb.buildExpression(eb.enterPathContext(ctx, this.path), this.expression);
+        return eb.buildExpression(this.context, this.expression);
     }
 }
 

@@ -23,11 +23,9 @@ import {Equal} from "../../expression-builder/expression/comparison/Equal";
 import {Col} from "../../expression-builder/expression/Column";
 import {And} from "../../expression-builder/expression/logical/And";
 import {SubQuery} from "../../expression-builder/expression/SubQuery";
-import {EntityColumnNotFound} from "../../error/EntityColumnNotFound";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {EmbeddedMetadata} from "../../metadata/EmbeddedMetadata";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
-import {ConditionsAliases, EnterPathBuildable} from "../../expression-builder/expression/Conditions";
+import {Conditions, EnterContextBuildable} from "../../expression-builder/expression/Conditions";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -44,11 +42,12 @@ import {ConditionsAliases, EnterPathBuildable} from "../../expression-builder/ex
 // .loadAndMap("post.categories", "post.categories", qb => ...)
 // .loadAndMap("post.categories", Category, qb => ...)
 
-export type PathMetadata = EntityMetadata | EmbeddedMetadata | RelationMetadata | ColumnMetadata;
+//export type PathMetadata = EntityMetadata | EmbeddedMetadata | RelationMetadata | ColumnMetadata;
 export interface QueryBuilderExpressionContext {
     alias?: Alias;
-    metadata?: PathMetadata;
-    key?: string;
+    metadata?: EntityMetadata;
+    columnOrKey?: ColumnMetadata | string;
+    //key?: string;
 }
 
 /**
@@ -539,10 +538,11 @@ export abstract class QueryBuilder<Entity, Result = any> {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected createExpressionContext(metadata?: PathMetadata): QueryBuilderExpressionContext {
+    protected createExpressionContext(metadata?: EntityMetadata, columnOrKey?: ColumnMetadata | string): QueryBuilderExpressionContext {
         return {
             alias: this.expressionMap.mainAlias,
-            metadata: metadata ? metadata : (this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined)
+            metadata: metadata ?? (this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined),
+            columnOrKey: columnOrKey
         };
     }
 
@@ -567,25 +567,19 @@ export abstract class QueryBuilder<Entity, Result = any> {
 
         // Without alias or metadata we can't check if the column exists, so treat as raw database name
         if (alias === undefined || !alias.hasMetadata) {
-            const key = columnOrName ?? context.key;
+            const key = columnOrName ?? context.columnOrKey as string;
             if (key === undefined) throw new Error("Col() used outside of context in which current column could be determined");
             return aliasPrefix + this.escape(key);
         }
 
         if (columnOrName) {
-            return this.buildColumn(this.enterPathContext(this.enterAliasContext(context, alias), columnOrName));
+            return this.buildColumn(this.enterColumnOrKeyContext(this.enterAliasContext(context, alias), column));
         }
 
         // No explicit column provided so use the column in current context
-        if (context.metadata instanceof ColumnMetadata) return aliasPrefix + this.escape(context.metadata.databaseName);
-        if (context.metadata instanceof RelationMetadata) {
-            if (context.metadata.joinColumns.length > 1) throw new Error("Col() used on relation with multiple join columns, must specify which column to use");
-            if (context.metadata.joinColumns.length === 1) return aliasPrefix + this.escape(context.metadata.joinColumns[0].databaseName);
-            if (context.metadata.joinColumns.length === 0) {
-                if (context.metadata.inverseEntityMetadata.primaryColumns.length > 1) throw new Error("Col() used on relation with multiple primary columns, must specify which one to use");
-                return this.buildColumn(this.enterPathContext(context, context.metadata.inverseEntityMetadata.primaryColumns[0].databaseName));
-            }
-        }
+        if (context.columnOrKey instanceof ColumnMetadata) return aliasPrefix + this.escape(context.columnOrKey.databaseName);
+
+        // TODO: CRITICAL
 
         throw new Error("Col() used outside of context in which current column could be determined");
     }
@@ -598,10 +592,10 @@ export abstract class QueryBuilder<Entity, Result = any> {
     protected buildExpression(context: QueryBuilderExpressionContext | null, expression: Expression, root: boolean = false) {
         if (context === null) context = this.createExpressionContext();
 
-        if (root && context.metadata instanceof ColumnMetadata && !(expression instanceof BuildableExpression)) {
+        if (root && context.columnOrKey instanceof ColumnMetadata && !(expression instanceof BuildableExpression)) {
             // Some drivers require additional type information for parameters
             if (this.connection.driver.parametrizeValue)
-                expression = this.connection.driver.parametrizeValue(context.metadata, expression);
+                expression = this.connection.driver.parametrizeValue(context.columnOrKey, expression);
         }
 
         // TODO: CRITICAL: implement ExpressionBuildInterface
@@ -618,7 +612,55 @@ export abstract class QueryBuilder<Entity, Result = any> {
         return qb.getQuery(false);
     }
 
+    protected computeConditionValue(value: Expression): Expression {
+        if (value === undefined) return undefined;
+        if (value === null) return IsNull();
+        if (value instanceof ExpressionBuilder && value.columnComparator) return value;
+        return Equal(value);
+    }
+
     protected buildConditions(context: QueryBuilderExpressionContext, conditions: ObjectLiteral): string {
+        const columnsOrRelationsOrKeys: (string | ColumnMetadata | RelationMetadata)[] =
+            context.metadata?.extractColumnsInEntity(conditions) ?? Object.keys(conditions);
+
+        return this.buildExpression(context, And(...columnsOrRelationsOrKeys.map((columnOrRelationOrKey): [QueryBuilderExpressionContext, Expression][] => {
+            if (columnOrRelationOrKey instanceof RelationMetadata) {
+                const relation = columnOrRelationOrKey;
+                const relatedEntity = columnOrRelationOrKey.getEntityValue(conditions);
+
+                if (relation.isWithJoinColumn && relation.inverseEntityMetadata.hasAllPrimaryKeys(relatedEntity)) {
+                    return relation.joinColumns.map(joinColumn => {
+                        return [
+                            this.enterColumnOrKeyContext(context, joinColumn),
+                            this.computeConditionValue(joinColumn.getEntityValue(conditions))];
+                    });
+                }
+
+                // If not, it is a property of the relation so we need to switch to its join alias and metadata
+                const join = this.expressionMap.joinAttributes.find(join => join.relation === columnOrRelationOrKey && context.alias!.name === join.parentAlias);
+                if (!join) throw new Error(`Relation "${columnOrRelationOrKey.propertyPath}" is not joined, cannot apply conditions`);
+
+                // Switch alias and proceed as if we were at the root of the relation entity metadata
+                return [[
+                    this.enterAliasContext(context, join.alias),
+                    Conditions(relatedEntity),
+                ]];
+            }
+
+            if (columnOrRelationOrKey instanceof ColumnMetadata)
+                return [[
+                    this.enterColumnOrKeyContext(context, columnOrRelationOrKey),
+                    this.computeConditionValue(columnOrRelationOrKey.getEntityValue(conditions))]];
+
+            return [[
+                this.enterColumnOrKeyContext(context, columnOrRelationOrKey),
+                this.computeConditionValue(conditions[columnOrRelationOrKey])]];
+        })
+            .flat(1)
+            .filter(([, value]) => value !== undefined)
+            .map(([context, expression]) => new EnterContextBuildable(context, expression))));
+
+        /*
         let expression: Expression;
         if (context.metadata === undefined) {
             expression = And(...Object.entries(conditions).map(([key, value]): [string, Expression] => {
@@ -626,12 +668,49 @@ export abstract class QueryBuilder<Entity, Result = any> {
                 if (value === null) return [key, IsNull()];
                 if (value instanceof ExpressionBuilder && value.columnComparator) return [key, value];
                 return [key, Equal(value)];
-            }).filter(([, value]) => value !== undefined).map(([key, value]) => new EnterPathBuildable(key, value)));
+            }).filter(([, value]) => value !== undefined)
+                .map(([key, value]) => new EnterContextBuildable(this.enterColumnOrKeyContext(context, key), value)));
         } else {
-            expression = And(...context.metadata)
+            expression = And(...context.metadata.extractColumnsInEntity(conditions).map((columnOrRelation): [ColumnMetadata, Expression] => {
+                const value = columnOrRelation.getEntityValue(conditions, false);
+                if (columnOrRelation instanceof RelationMetadata) {
+                    const relation = columnOrRelation;
+
+                    if (relation.joinColumns.length === 1) {
+                        const joinColumn = relation.joinColumns[0];
+                        return In(Col(joinColumn), )
+                    }
+
+                    // Use IN() if only a single primary columns
+                    if (!metadata.hasMultiplePrimaryKeys) {
+                        const primaryColumn = metadata.primaryColumns[0];
+                        return In(Col(primaryColumn), normalized.map(id => primaryColumn.getEntityValue(id, true)));
+                    }
+
+                    // Otherwise check if (col1 = val1 AND col2 = val2) ...
+                    return Or(
+                        ...normalized.map(id =>
+                            And(
+                                ...relation.joinColumns.map(column =>
+                                    Equal(Col(column), column.referencedColumn.getEntityValue(id, true)))
+                            )
+                        )
+                    );
+                } else {
+                    let expression: Expression;
+                    if (value === undefined) expression = undefined;
+                    else if (value === null) expression = IsNull();
+                    else if (value instanceof ExpressionBuilder && value.columnComparator) expression = value;
+                    else expression = Equal(value);
+
+                    return new EnterContextBuildable(columnOrRelation, expression);
+                }
+
+
+            })).filter(([, value]) => value !== undefined).map(([key, value]) => new EnterContextBuildable(key, value)));
         }
 
-        return this.buildExpression(expression, context);
+        return this.buildExpression(expression, context);*/
     }
 
     protected createSubQuery(context: any): QueryBuilder<any> {
@@ -642,7 +721,11 @@ export abstract class QueryBuilder<Entity, Result = any> {
         return {...context, alias: alias, metadata: alias.hasMetadata ? alias.metadata : undefined};
     }
 
-    protected enterPathContext(context: QueryBuilderExpressionContext, path: string): QueryBuilderExpressionContext {
+    protected enterColumnOrKeyContext(context: QueryBuilderExpressionContext, columnOrKey: ColumnMetadata | string) {
+        return {...context, columnOrKey: columnOrKey};
+    }
+
+    /*protected enterPathContext(context: QueryBuilderExpressionContext, path: string): QueryBuilderExpressionContext {
         // We must split the path because of relations
         // e.g. "post.category.embedded.column" does not exist in "post", but it is a valid path nonetheless
         if (path.includes("."))
@@ -705,7 +788,7 @@ export abstract class QueryBuilder<Entity, Result = any> {
 
             throw new EntityColumnNotFound(current.entityMetadata, path);
         }
-    }
+    }*/
 
     /**
      * Replaces all entity's propertyName to name in the given statement.
