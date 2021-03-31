@@ -41,4 +41,26 @@ describe("query runner > rename column", () => {
         await queryRunner.release();
     })));
 
+    it("should correctly remove column and revert it back", () => Promise.all(connections.map(async connection => {
+
+        const queryRunner = connection.createQueryRunner();
+
+        let table = await queryRunner.getTable("user");
+
+        await queryRunner.dropColumn(table!, "created_at");
+        await queryRunner.dropColumn(table!, "updated_at");
+
+        table = await queryRunner.getTable("user");
+        expect(table!.findColumnByName("created_at")).to.be.undefined;
+        expect(table!.findColumnByName("updated_at")).to.be.undefined;
+
+        await queryRunner.executeMemoryDownSql();
+
+        table = await queryRunner.getTable("user");
+        table!.findColumnByName("created_at")!.should.be.exist;
+        table!.findColumnByName("updated_at")!.should.be.exist;
+
+        await queryRunner.release();
+    })));
+
 });
