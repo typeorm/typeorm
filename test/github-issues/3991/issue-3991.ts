@@ -2,10 +2,11 @@ import "reflect-metadata";
 import {Connection} from "../../../src";
 import {createTestingConnections, closeTestingConnections} from "../../utils/test-utils";
 import {Post as CockroachPost} from "./entity/cockroachdb/Post";
+import {Post as MssqlPost} from "./entity/mssql/Post";
+import {Post as MysqlPost} from "./entity/mysql/Post";
 import {Post as PostgresPost} from "./entity/postgres/Post";
 import {Post as OraclePost} from "./entity/oracle/Post";
 import {Post as SqlitePost} from "./entity/sqlite/Post";
-import {Post as OtherPost} from "./entity/other/Post";
 
 describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@UpdateDateColumn timestamp column to same definition", () => {
     describe("postgres", () => {
@@ -104,13 +105,37 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
         })));
     })
 
-    describe("mysql, mariadb, mssql", () => {
+    describe("mysql, mariadb", () => {
         let connections: Connection[];
         before(async () => connections = await createTestingConnections({
-            enabledDrivers: ["mysql", "mariadb", "mssql"],
+            enabledDrivers: ["mysql", "mariadb"],
             schemaCreate: false,
             dropSchema: true,
-            entities: [OtherPost],
+            entities: [MysqlPost],
+        }));
+        after(() => closeTestingConnections(connections));
+
+        it("should recognize model changes", () => Promise.all(connections.map(async connection => {
+            const sqlInMemory = await connection.driver.createSchemaBuilder().log();
+            sqlInMemory.upQueries.length.should.be.greaterThan(0);
+            sqlInMemory.downQueries.length.should.be.greaterThan(0);
+        })));
+
+        it("should not generate queries when no model changes", () => Promise.all(connections.map(async connection => {
+            await connection.driver.createSchemaBuilder().build();
+            const sqlInMemory = await connection.driver.createSchemaBuilder().log();
+            sqlInMemory.upQueries.length.should.be.equal(0);
+            sqlInMemory.downQueries.length.should.be.equal(0);
+        })));
+    })
+
+    describe("mssql", () => {
+        let connections: Connection[];
+        before(async () => connections = await createTestingConnections({
+            enabledDrivers: ["mssql"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [MssqlPost],
         }));
         after(() => closeTestingConnections(connections));
 

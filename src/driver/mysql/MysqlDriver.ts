@@ -603,13 +603,7 @@ export class MysqlDriver implements Driver {
 
         } else if (typeof defaultValue === "function") {
             const value = defaultValue();
-            if (value === "CURRENT_TIMESTAMP()" && this.options.type === "mysql") {
-                return "CURRENT_TIMESTAMP";
-            } else if (value === "CURRENT_TIMESTAMP" && this.options.type === "mariadb") {
-                return "CURRENT_TIMESTAMP()";
-            }
-            return value;
-
+            return this.normalizeDatetimeFunction(value)
         } else {
             return defaultValue;
         }
@@ -761,7 +755,7 @@ export class MysqlDriver implements Driver {
                 || tableColumn.comment !== columnMetadata.comment
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
-                || tableColumn.onUpdate !== this.normalizeOnUpdate(columnMetadata.onUpdate)
+                || tableColumn.onUpdate !== this.normalizeDatetimeFunction(columnMetadata.onUpdate)
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
@@ -941,13 +935,28 @@ export class MysqlDriver implements Driver {
         return columnMetadataValue === databaseValue;
     }
 
-    protected normalizeOnUpdate(onUpdate?: string) {
-        if (onUpdate === "CURRENT_TIMESTAMP()" && this.options.type === "mysql") {
-            return "CURRENT_TIMESTAMP";
-        } else if (onUpdate === "CURRENT_TIMESTAMP" && this.options.type === "mariadb") {
-            return "CURRENT_TIMESTAMP()";
+    /**
+     * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
+     * Otherwise returns original input.
+     */
+    protected normalizeDatetimeFunction(value?: string) {
+        if (!value) return value
+
+        // check if input is datetime function
+        const isDatetimeFunction = value.toUpperCase().indexOf("CURRENT_TIMESTAMP") !== -1
+            || value.toUpperCase().indexOf("NOW") !== -1;
+
+        if (isDatetimeFunction) {
+            // extract precision, e.g "(3)"
+            const precision = value.match(/\(\d+\)/)
+            if (this.options.type === "mariadb") {
+                return precision ? `CURRENT_TIMESTAMP${precision[0]}` : "CURRENT_TIMESTAMP()";
+            } else {
+                return precision ? `CURRENT_TIMESTAMP${precision[0]}` : "CURRENT_TIMESTAMP";
+            }
+        } else {
+            return value
         }
-        return onUpdate
     }
 
 }
