@@ -473,6 +473,13 @@ export class ColumnMetadata {
         if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint" && value !== null)
             value = String(value);
 
+        if (this.relationMetadata && this.referencedColumn && this.isInternal && !this.entityMetadata.isJunction) {
+            map[this.relationMetadata.propertyName] = {
+                [useDatabaseName ? this.referencedColumn.databaseName : this.referencedColumn.propertyName]: value
+            };
+            return base;
+        }
+
         map[useDatabaseName ? this.databaseName : this.propertyName] = value;
         return base;
     }
@@ -505,14 +512,14 @@ export class ColumnMetadata {
             }
         }
 
-        if (this.relationMetadata && entity[this.propertyName] && entity[this.propertyName] instanceof Object) {
+        if (this.relationMetadata && entity[this.relationMetadata.propertyName] && entity[this.relationMetadata.propertyName] instanceof Object && !this.entityMetadata.isJunction) {
             const joinEntityValueMaps = this.relationMetadata.joinColumns
-                .map(joinColumn => joinColumn.referencedColumn!.getEntityValueMap(entity[this.propertyName]))
+                .map(joinColumn => joinColumn.referencedColumn!.getEntityValueMap(entity[this.relationMetadata!.propertyName]))
                 .filter(value => value !== undefined);
             if (joinEntityValueMaps.length === 0)
                 return undefined;
 
-            map[this.propertyName] = OrmUtils.mergeDeep({}, ...joinEntityValueMaps);
+            map[this.relationMetadata.propertyName] = OrmUtils.mergeDeep({}, ...joinEntityValueMaps);
         } else {
             if (entity[this.propertyName] === undefined || (returnNulls && entity[this.propertyName] === null))
                 return undefined;
@@ -546,8 +553,10 @@ export class ColumnMetadata {
             const relatedEntity = this.relationMetadata.getEntityValue(entity);
             if (relatedEntity && relatedEntity instanceof Object && !(relatedEntity instanceof ExpressionBuilder) && !(relatedEntity instanceof Function)) {
                 value = this.referencedColumn.getEntityValue(relatedEntity);
-            //} else if (entity[this.relationMetadata.propertyName] && entity[this.relationMetadata.propertyName] instanceof Object && !(entity[this.relationMetadata.propertyName] instanceof ExpressionBuilder) && !(entity[this.relationMetadata.propertyName] instanceof Function)) {
-            //    value = this.referencedColumn.getEntityValue(entity[this.relationMetadata.propertyName]);
+            } else if (entity[this.relationMetadata.propertyName] && entity[this.relationMetadata.propertyName] instanceof Object && !(entity[this.relationMetadata.propertyName] instanceof ExpressionBuilder) && !(entity[this.relationMetadata.propertyName] instanceof Function)) {
+                value = this.referencedColumn.getEntityValue(entity[this.relationMetadata.propertyName]);
+            } else if (relatedEntity && this.relationMetadata.joinColumns.length === 1) {
+                value = relatedEntity;
             } else {
                 value = entity[this.propertyName];
             }
@@ -582,7 +591,13 @@ export class ColumnMetadata {
         // we write a deep object in this entity only if the column is internal
         // because if its not internal it means the user defined a real column for this relation
         // also we don't do it if column is inside a junction table
-        if (!this.entityMetadata.isJunction && this.isInternal && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName) {
+        if (this.relationMetadata && this.referencedColumn && this.isInternal) {
+            if (!(this.relationMetadata.propertyName in entity)) {
+                entity[this.relationMetadata.propertyName] = {};
+            }
+
+            entity[this.relationMetadata.propertyName][this.referencedColumn.propertyName] = value;
+        } else if (!this.entityMetadata.isJunction && this.isInternal && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName) {
             if (!(this.propertyName in entity)) {
                 entity[this.propertyName] = {};
             }

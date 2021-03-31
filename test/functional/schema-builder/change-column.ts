@@ -81,7 +81,7 @@ describe("schema builder > change column", () => {
 
         // in test we must manually change referenced column too, but in real sync, it changes automatically
         const postVersionMetadata = connection.getMetadata(PostVersion);
-        const postVersionColumn = postVersionMetadata.findColumnWithPropertyName("post")!;
+        const postVersionColumn = postVersionMetadata.findColumnWithPropertyName("postVersion")!;
         postVersionColumn.type = "int";
 
         await connection.synchronize();
@@ -209,7 +209,7 @@ describe("schema builder > change column", () => {
         const teacherMetadata = connection.getMetadata("teacher");
         const studentMetadata = connection.getMetadata("student");
         const idColumn = teacherMetadata.findColumnWithPropertyName("id")!;
-        const teacherColumn = studentMetadata.findColumnWithPropertyName("teacher")!;
+        const teacherColumn = studentMetadata.findColumnWithPropertyName("teacherId")!;
         idColumn.generationStrategy = "uuid";
 
         // depending on driver, we must change column and referenced column types

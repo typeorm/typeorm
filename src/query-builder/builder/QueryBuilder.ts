@@ -27,6 +27,7 @@ import {EntityColumnNotFound} from "../../error/EntityColumnNotFound";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {EmbeddedMetadata} from "../../metadata/EmbeddedMetadata";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
+import {ConditionsAliases, EnterPathBuildable} from "../../expression-builder/expression/Conditions";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -620,11 +621,14 @@ export abstract class QueryBuilder<Entity, Result = any> {
     protected buildConditions(context: QueryBuilderExpressionContext, conditions: ObjectLiteral): string {
         let expression: Expression;
         if (context.metadata === undefined) {
-            expression = And(...Object.entries(conditions).map(([key, value]) => {
-
-            }));
+            expression = And(...Object.entries(conditions).map(([key, value]): [string, Expression] => {
+                if (value === undefined) return [key, undefined];
+                if (value === null) return [key, IsNull()];
+                if (value instanceof ExpressionBuilder && value.columnComparator) return [key, value];
+                return [key, Equal(value)];
+            }).filter(([, value]) => value !== undefined).map(([key, value]) => new EnterPathBuildable(key, value)));
         } else {
-
+            expression = And(...context.metadata)
         }
 
         return this.buildExpression(expression, context);

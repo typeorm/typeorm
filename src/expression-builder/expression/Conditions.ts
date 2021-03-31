@@ -4,11 +4,9 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {And, AndBuilder} from "./logical/And";
 import {Equal} from "./comparison/Equal";
 import {QuantifierBuildable} from "./comparison/quantifier/Quantifier";
-import {isPlainObjectConditions} from "../ExpressionUtils";
-import {IsNull} from "./comparison/Is";
 
 export function Conditions(conditions: ObjectLiteral): AndBuilder | ExpressionBuilder {
-    const mapped = Object.entries(conditions).map(([key, value]): [string, Expression] => {
+    /*const mapped = Object.entries(conditions).map(([key, value]): [string, Expression] => {
         if (value === undefined) return [key, undefined];
         if (isPlainObjectConditions(value)) return [key, Conditions(value)];
         if (value instanceof ExpressionBuilder) return [key, value.columnComparator ? value : Equal(value)];
@@ -19,8 +17,8 @@ export function Conditions(conditions: ObjectLiteral): AndBuilder | ExpressionBu
     //if (mapped.length === 0) throw new Error(""); // TODO: CRITICAL
     if (mapped.length === 0) return Equal(1, 1);
 
-    return And(...mapped);
-    //return new ConditionsBuilder(conditions);
+    return And(...mapped);*/
+    return new ConditionsBuilder(conditions);
 }
 
 export function ConditionsAliases(object: ObjectLiteral): AndBuilder | ExpressionBuilder {

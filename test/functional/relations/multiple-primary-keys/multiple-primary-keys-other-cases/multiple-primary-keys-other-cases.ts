@@ -8,7 +8,7 @@ import {Event} from "./entity/Event";
 import {Person} from "./entity/Person";
 
 describe("relations > multiple-primary-keys > other-cases", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],

@@ -24,13 +24,13 @@ describe("github issues > #5444 EntitySchema missing support for multiple joinCo
       expect(joinColumns).to.deep.eq([
           {
               target: Post,
-              propertyName: "author",
+              relationName: "author",
               name: "authorPublisherId",
               referencedColumnName: "publisherId"
           },
           {
               target: Post,
-              propertyName: "author",
+              relationName: "author",
               name: "authorId",
               referencedColumnName: "id"
           },

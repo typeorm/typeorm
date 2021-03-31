@@ -324,20 +324,20 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
         const columnValuesExpressions: string[] = [];
 
         // Map column values to assignment expressions
-        let valuesSet = this.expressionMap.orUpdate.values;
-        if (valuesSet) {
+        let valueSet = this.expressionMap.orUpdate.values;
+        if (valueSet) {
             const updatedColumns: (string | ColumnMetadata | RelationMetadata)[] =
-                !metadata ? Object.keys(valuesSet) : metadata.extractColumnsInEntity(valuesSet);
+                !metadata ? Object.keys(valueSet) : metadata.extractColumnsInEntity(valueSet);
 
             overwriteColumns = overwriteColumns.filter(column => !updatedColumns.includes(column));
 
             columnValuesExpressions.push(...updatedColumns.map(columnOrKey => {
-                const column = columnOrKey instanceof ColumnMetadata ? columnOrKey : undefined;
-                const value = column ? column.getEntityValue(valuesSet!) : valuesSet![columnOrKey as string];
-
+                if (columnOrKey instanceof ColumnMetadata) return [[columnOrKey, columnOrKey.getEntityValue(valueSet!)]];
+                if (columnOrKey instanceof RelationMetadata) return columnOrKey.joinColumns.map(column => [column, column.getEntityValue(valueSet!)]);
+                return [[columnOrKey, valueSet![columnOrKey]]];
+            }).flat(1).map(([columnOrKey, value]) => {
                 const expression = this.computePersistValueExpression(columnOrKey, value);
-
-                const columnName = column ? column.databaseName : columnOrKey as string;
+                const columnName = columnOrKey instanceof ColumnMetadata ? columnOrKey.databaseName : columnOrKey as string;
                 return `${this.escape(columnName)} = ${expression}`;
             }));
         }

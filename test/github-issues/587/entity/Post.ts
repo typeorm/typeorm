@@ -5,8 +5,8 @@ import {Index} from "../../../../src/decorator/Index";
 import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
 import {Tag} from "./Tag";
 
-@Index(["a", "b", "c", "tag"])
-@Index(["b", "tag", "c"])
+@Index(["a", "b", "c", "tagId"])
+@Index(["b", "tagId", "c"])
 @Index(["c", "a"])
 @Entity("Posts")
 export class Post {

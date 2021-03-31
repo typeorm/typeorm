@@ -19,7 +19,7 @@ describe("schema builder > drop column", () => {
     it("should correctly drop column", () => Promise.all(connections.map(async connection => {
 
         const studentMetadata = connection.getMetadata("student");
-        const removedColumns = studentMetadata.columns.filter(column => ["name", "faculty"].indexOf(column.propertyName) !== -1);
+        const removedColumns = studentMetadata.columns.filter(column => ["name", "facultyId"].indexOf(column.propertyName) !== -1);
         removedColumns.forEach(column => {
             studentMetadata.columns.splice(studentMetadata.columns.indexOf(column), 1);
         });
@@ -30,7 +30,7 @@ describe("schema builder > drop column", () => {
         });
 
         const removedForeignKey = studentMetadata.foreignKeys.find(fk => {
-            return !!fk.columns.find(column => column.propertyName === "faculty");
+            return !!fk.columns.find(column => column.propertyName === "facultyId");
         });
         studentMetadata.foreignKeys.splice(studentMetadata.foreignKeys.indexOf(removedForeignKey!), 1);
 

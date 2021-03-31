@@ -9,6 +9,7 @@ import {UpdateValuesMissingError} from "../../error/UpdateValuesMissingError";
 import {QueryDeepPartialEntity} from "../QueryPartialEntity";
 import {AbstractModifyQueryBuilder} from "./AbstractModifyQueryBuilder";
 import {MissingDeleteDateColumnError} from "../../error/MissingDeleteDateColumnError";
+import {RelationMetadata} from "../../metadata/RelationMetadata";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -57,9 +58,8 @@ export class UpdateQueryBuilder<Entity> extends AbstractModifyQueryBuilder<Entit
                 throw new MissingDeleteDateColumnError(metadata);
         }
 
-        const updatedColumns: (string | ColumnMetadata)[] =
-            !metadata ? Object.keys(valueSet) : metadata.extractColumnsInEntity(valueSet)
-                .filter(column => column.isUpdate);
+        const updatedColumns: (string | ColumnMetadata | RelationMetadata)[] =
+            !metadata ? Object.keys(valueSet) : metadata.extractColumnsInEntity(valueSet).filter(column => !(column instanceof ColumnMetadata) || column.isUpdate);
 
         // Extra columns that must be updated
         if (metadata) {
@@ -70,12 +70,12 @@ export class UpdateQueryBuilder<Entity> extends AbstractModifyQueryBuilder<Entit
         }
 
         const columnValuesExpressions = updatedColumns.map(columnOrKey => {
-            const column = columnOrKey instanceof ColumnMetadata ? columnOrKey : undefined;
-            const value = column ? column.getEntityValue(valueSet) : valueSet[columnOrKey as string];
-
+            if (columnOrKey instanceof ColumnMetadata) return [[columnOrKey, columnOrKey.getEntityValue(valueSet)]];
+            if (columnOrKey instanceof RelationMetadata) return columnOrKey.joinColumns.map(column => [column, column.getEntityValue(valueSet)]);
+            return [[columnOrKey, valueSet[columnOrKey]]];
+        }).flat(1).map(([columnOrKey, value]) => {
             const expression = this.computePersistValueExpression(columnOrKey, value);
-
-            const columnName = column ? column.databaseName : columnOrKey as string;
+            const columnName = columnOrKey instanceof ColumnMetadata ? columnOrKey.databaseName : columnOrKey as string;
             return `${this.escape(columnName)} = ${expression}`;
         });
 
