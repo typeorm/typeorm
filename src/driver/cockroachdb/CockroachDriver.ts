@@ -491,9 +491,9 @@ export class CockroachDriver implements Driver {
 
         } else if (typeof defaultValue === "function") {
             const value = defaultValue();
-            if (value === "CURRENT_TIMESTAMP") {
+            if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
                 return "current_timestamp()";
-            } else if (value === "CURRENT_DATE") {
+            } else if (value.toUpperCase() === "CURRENT_DATE") {
                 return "current_date()";
             }
             return value;
