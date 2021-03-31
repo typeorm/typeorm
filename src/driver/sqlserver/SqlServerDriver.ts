@@ -502,7 +502,7 @@ export class SqlServerDriver implements Driver {
 
         } else if (typeof defaultValue === "function") {
             const value = defaultValue();
-            if (value === "CURRENT_TIMESTAMP") {
+            if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
                 return "getdate()"
             }
             return value
