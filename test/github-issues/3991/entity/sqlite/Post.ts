@@ -6,12 +6,18 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ precision: null, default: () => 'CURRENT_DATE' })
+    @Column({ default: () => "CURRENT_DATE" })
     col1: Date;
 
-    @Column({ precision: null, default: () => 'CURRENT_TIME' })
+    @Column({ default: () => "CURRENT_TIME" })
     col2: Date;
 
-    @Column({ precision: null, default: () => 'CURRENT_TIMESTAMP' })
+    @Column({ default: () => "CURRENT_TIMESTAMP" })
     col3: Date;
+
+    @Column({ precision: 3,  default: () => "CURRENT_TIMESTAMP" })
+    col4: Date;
+
+    @Column({ precision: null, default: () => "NOW()" })
+    col5: Date;
 }

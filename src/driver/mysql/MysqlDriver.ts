@@ -947,7 +947,7 @@ export class MysqlDriver implements Driver {
             || value.toUpperCase().indexOf("NOW") !== -1;
 
         if (isDatetimeFunction) {
-            // extract precision, e.g "(3)"
+            // extract precision, e.g. "(3)"
             const precision = value.match(/\(\d+\)/)
             if (this.options.type === "mariadb") {
                 return precision ? `CURRENT_TIMESTAMP${precision[0]}` : "CURRENT_TIMESTAMP()";
