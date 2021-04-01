@@ -36,6 +36,7 @@ import { Raw } from "../../expression-builder/expression/Raw";
 import {SubQuery} from "../../expression-builder/expression/SubQuery";
 import { Count, CountDistinct } from "../../expression-builder/expression/aggregate/Count";
 import { QueryBuilderUtils } from "../QueryBuilderUtils";
+import {IsNull} from "../../expression-builder/expression/comparison/Is";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -934,10 +935,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
         this.expressionMap.joinAttributes.push(joinAttribute);
 
         if (joinAttribute.metadata) {
-           if (joinAttribute.metadata.deleteDateColumn && !this.expressionMap.withDeleted) {
-                const conditionDeleteColumn = `${aliasName}.${joinAttribute.metadata.deleteDateColumn.propertyName} IS NULL`;
-                joinAttribute.condition += joinAttribute.condition ? ` AND ${conditionDeleteColumn}`: `${conditionDeleteColumn}`;
-            }
             // todo: find and set metadata right there?
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
@@ -952,6 +949,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity, { entities:
                 });
             }
 
+            if (joinAttribute.metadata.deleteDateColumn && !this.expressionMap.withDeleted) {
+                const deleteColumnCondition = IsNull(Col(joinAttribute.alias, joinAttribute.metadata.deleteDateColumn));
+                if (joinAttribute.condition !== undefined) joinAttribute.condition = And(joinAttribute.condition, deleteColumnCondition);
+                else joinAttribute.condition = deleteColumnCondition;
+            }
         } else {
             let subQuery: Expression;
             if (entityOrProperty instanceof Function) {

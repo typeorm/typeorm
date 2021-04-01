@@ -205,8 +205,6 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
             if (connectionOptions.disabledIfNotEnabledImplicitly === true)
                 return false;
 
-            if (connectionOptions.type !== "mysql") return false;
-
             return true;
         })
         .map(connectionOptions => {

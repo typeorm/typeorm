@@ -655,7 +655,7 @@ export abstract class QueryBuilder<Entity, Result = any> {
             if (columnOrRelationOrKey instanceof ColumnMetadata)
                 return [[
                     this.enterColumnOrKeyContext(context, columnOrRelationOrKey),
-                    this.computeConditionValue(columnOrRelationOrKey.getEntityValue(conditions))]];
+                    this.computeConditionValue(columnOrRelationOrKey.getEntityValue(conditions, true))]];
 
             return [[
                 this.enterColumnOrKeyContext(context, columnOrRelationOrKey),
