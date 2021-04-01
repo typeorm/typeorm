@@ -494,7 +494,7 @@ export class EntityMetadata {
      * - Column Property Name
      * - Column Property Path
      */
-    replacementsMap: ObjectLiteral;
+    columnsMap: Record<string, ColumnMetadata>;
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -865,31 +865,30 @@ export class EntityMetadata {
     /**
      * Creates
      */
-    createReplacementsMap(): ObjectLiteral {
+    createColumnMap(): Record<string, ColumnMetadata> {
         const replacements: ObjectLiteral = {};
 
         for (const relation of this.relations) {
-            if (relation.joinColumns.length > 0)
-                replacements[relation.propertyPath] = relation.joinColumns[0].databaseName;
+            if (relation.joinColumns.length === 1) replacements[relation.propertyPath] = relation.joinColumns[0];
         }
 
         for (const relation of this.relations) {
             for (const joinColumn of [...relation.joinColumns, ...relation.inverseJoinColumns]) {
                 const propertyKey = `${relation.propertyPath}.${joinColumn.referencedColumn!.propertyPath}`;
-                replacements[propertyKey] = joinColumn.databaseName;
+                replacements[propertyKey] = joinColumn;
             }
         }
 
         for (const column of this.columns) {
-            replacements[column.databaseName] = column.databaseName;
+            replacements[column.databaseName] = column;
         }
 
         for (const column of this.columns) {
-            replacements[column.propertyName] = column.databaseName;
+            replacements[column.propertyName] = column;
         }
 
         for (const column of this.columns) {
-            replacements[column.propertyPath] = column.databaseName;
+            replacements[column.propertyPath] = column;
         }
 
         return replacements;

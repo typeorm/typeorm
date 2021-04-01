@@ -572,14 +572,8 @@ export abstract class QueryBuilder<Entity, Result = any> {
             return aliasPrefix + this.escape(key);
         }
 
-        if (columnOrName) {
-            return this.buildColumn(this.enterColumnOrKeyContext(this.enterAliasContext(context, alias), column));
-        }
-
-        // No explicit column provided so use the column in current context
-        if (context.columnOrKey instanceof ColumnMetadata) return aliasPrefix + this.escape(context.columnOrKey.databaseName);
-
-        // TODO: CRITICAL
+        const column = columnOrName ? alias.metadata.columnsMap[columnOrName] : context.columnOrKey as ColumnMetadata;
+        if (column !== undefined) return aliasPrefix + this.escape(column.databaseName);
 
         throw new Error("Col() used outside of context in which current column could be determined");
     }
@@ -623,17 +617,28 @@ export abstract class QueryBuilder<Entity, Result = any> {
         const columnsOrRelationsOrKeys: (string | ColumnMetadata | RelationMetadata)[] =
             context.metadata?.extractColumnsInEntity(conditions) ?? Object.keys(conditions);
 
-        return this.buildExpression(context, And(...columnsOrRelationsOrKeys.map((columnOrRelationOrKey): [QueryBuilderExpressionContext, Expression][] => {
+        const mappedConditions = columnsOrRelationsOrKeys.map((columnOrRelationOrKey): [QueryBuilderExpressionContext, Expression][] => {
             if (columnOrRelationOrKey instanceof RelationMetadata) {
                 const relation = columnOrRelationOrKey;
-                const relatedEntity = columnOrRelationOrKey.getEntityValue(conditions);
+                const relatedEntity = columnOrRelationOrKey.getEntityValue(conditions, true);
 
-                if (relation.isWithJoinColumn && relation.inverseEntityMetadata.hasAllPrimaryKeys(relatedEntity)) {
-                    return relation.joinColumns.map(joinColumn => {
-                        return [
-                            this.enterColumnOrKeyContext(context, joinColumn),
-                            this.computeConditionValue(joinColumn.getEntityValue(conditions))];
-                    });
+                if (relation.isWithJoinColumn) {
+                    if (relatedEntity instanceof Object) {
+                        if (relation.inverseEntityMetadata.hasAllPrimaryKeys(relatedEntity)) {
+                            return relation.joinColumns.map(joinColumn => {
+                                return [
+                                    this.enterColumnOrKeyContext(context, joinColumn),
+                                    this.computeConditionValue(joinColumn.getEntityValue(conditions))];
+                            });
+                        }
+                    } else {
+                        if (relation.joinColumns.length === 1) {
+                            return [[
+                                this.enterColumnOrKeyContext(context, relation.joinColumns[0]),
+                                this.computeConditionValue(relatedEntity)
+                            ]];
+                        }
+                    }
                 }
 
                 // If not, it is a property of the relation so we need to switch to its join alias and metadata
@@ -658,7 +663,10 @@ export abstract class QueryBuilder<Entity, Result = any> {
         })
             .flat(1)
             .filter(([, value]) => value !== undefined)
-            .map(([context, expression]) => new EnterContextBuildable(context, expression))));
+            .map(([context, expression]) => new EnterContextBuildable(context, expression));
+
+        if (mappedConditions.length === 0) return this.buildExpression(context, Equal(1, 1));
+        return this.buildExpression(context, And(...mappedConditions));
 
         /*
         let expression: Expression;
@@ -803,7 +811,7 @@ export abstract class QueryBuilder<Entity, Result = any> {
             const replaceAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? `${alias.name}.` : "";
             const replacementAliasNamePrefix = this.expressionMap.aliasNamePrefixingEnabled ? `${this.escape(alias.name)}.` : "";
 
-            const replacements = alias.metadata.replacementsMap;
+            const replacements = alias.metadata.columnsMap;
             const replacementKeys = Object.keys(replacements);
             if (replacementKeys.length) {
                 statement = statement.replace(new RegExp(
@@ -812,7 +820,7 @@ export abstract class QueryBuilder<Entity, Result = any> {
                     `(?=[ =\)\,]|.{0}$)`,
                     "gm"
                     ), (_, p) =>
-                        `${replacementAliasNamePrefix}${this.escape(replacements[p])}`
+                        `${replacementAliasNamePrefix}${this.escape(replacements[p].databaseName)}`
                 );
             }
         }
