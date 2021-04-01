@@ -1,5 +1,5 @@
 import {Driver} from "./Driver";
-import {hash,shorten} from "../util/StringUtils";
+import {hash} from "../util/StringUtils";
 
 /**
  * Common driver utility functions.
