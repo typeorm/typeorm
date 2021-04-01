@@ -291,7 +291,7 @@ export class QueryExpressionMap {
     /**
      * Generated UUIDs during insertion
      */
-    generatedUuids: string[] = [];
+    generatedUuids: Record<string, string>[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor

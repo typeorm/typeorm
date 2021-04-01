@@ -103,7 +103,7 @@ export class ReturningResultsEntityUpdater {
                         // uuid can be defined by user in a model, that's why first we get it
                         let uuid = generatedColumn.getEntityValue(entity);
                         // if it was not defined by a user then InsertQueryBuilder generates it by its own, get this generated uuid value
-                        if (!uuid) uuid = this.expressionMap.generatedUuids[entityIndex];
+                        if (!uuid) uuid = this.expressionMap.generatedUuids[entityIndex]?.[generatedColumn.databaseName];
 
                         OrmUtils.mergeDeep(generatedMap, generatedColumn.createValueMap(uuid));
                     }

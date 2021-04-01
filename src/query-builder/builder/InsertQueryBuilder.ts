@@ -274,7 +274,9 @@ export class InsertQueryBuilder<Entity> extends AbstractPersistQueryBuilder<Enti
                 // Store UUID for returning generated map
                 if (value === undefined && column && column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.config.uuidGeneration) {
                     value = RandomGenerator.uuid4();
-                    this.expressionMap.generatedUuids[valueSetIndex] = value;
+                    if (this.expressionMap.generatedUuids[valueSetIndex] === undefined)
+                        this.expressionMap.generatedUuids[valueSetIndex] = {};
+                    this.expressionMap.generatedUuids[valueSetIndex][column.databaseName] = value;
                 }
 
                 return this.computePersistValueExpression(columnOrKey, value);
