@@ -1,5 +1,5 @@
 import {Driver} from "./Driver";
-import { hash } from "../util/StringUtils";
+import {hash,shorten} from "../util/StringUtils";
 
 /**
  * Common driver utility functions.
@@ -55,26 +55,31 @@ export class DriverUtils {
         return Object.assign({}, options);
     }
 
+
     /**
-     * Builds column alias from given alias name and column name.
+     * Joins and shortens alias.
      *
-     * If alias length is greater than the limit (if any) allowed by the current
-     * driver, replaces it with a hashed string.
+     * If the alias length is greater than the limit allowed by the current
+     * driver, replaces it with a shortend string, if the shortend string
+     * is still too long, it will then hash the alias.
      *
      * @param driver Current `Driver`.
-     * @param alias Alias part.
-     * @param column Name of the column to be concatened to `alias`.
+     * @param alias Alias parts.
      *
-     * @return An alias allowing to select/transform the target `column`.
+     * @return An alias that is no longer than the divers max alias length.
      */
-    static buildColumnAlias({ maxAliasLength }: Driver, alias: string, column: string): string {
-        const columnAliasName = alias + "_" + column;
+     static buildAlias({ maxAliasLength }: Driver, ...alias: string[]): string {
+        const newAlias = alias.length === 1 ? alias[0] : alias.join("_");
 
-        if (maxAliasLength && maxAliasLength > 0 && columnAliasName.length > maxAliasLength) {
-            return hash(columnAliasName, { length: maxAliasLength });
+        if (maxAliasLength && maxAliasLength > 0 && alias.length > maxAliasLength) {
+            const shortenedAlias = shorten(newAlias);
+            if (shortenedAlias.length > maxAliasLength) {
+                return hash(newAlias, { length: maxAliasLength });
+            }
+            return shortenedAlias;
         }
 
-        return columnAliasName;
+        return newAlias;
     }
 
     // -------------------------------------------------------------------------

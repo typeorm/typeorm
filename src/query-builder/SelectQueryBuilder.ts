@@ -1797,7 +1797,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
             return {
                 selection: selectionPath,
-                aliasName: selection && selection.aliasName ? selection.aliasName : DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column.databaseName),
+                aliasName: selection && selection.aliasName ? selection.aliasName : DriverUtils.buildAlias(this.connection.driver, aliasName, column.databaseName),
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
                 virtual: selection ? selection.virtual === true : (hasMainAlias ? false : true),
             };
@@ -1940,11 +1940,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             const querySelects = metadata.primaryColumns.map(primaryColumn => {
                 const distinctAlias = this.escape("distinctAlias");
-                const columnAlias = this.escape(DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName));
+                const columnAlias = this.escape(DriverUtils.buildAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName));
                 if (!orderBys[columnAlias]) // make sure we aren't overriding user-defined order in inverse direction
                     orderBys[columnAlias] = "ASC";
 
-                const alias = DriverUtils.buildColumnAlias(
+                const alias = DriverUtils.buildAlias(
                     this.connection.driver,
                     "ids_" + mainAliasName,
                     primaryColumn.databaseName
@@ -1977,7 +1977,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
-                    const alias = DriverUtils.buildColumnAlias(
+                    const alias = DriverUtils.buildAlias(
                         this.connection.driver,
                         "ids_" + mainAliasName,
                         metadata.primaryColumns[0].databaseName
@@ -2037,7 +2037,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     const propertyPath = criteriaParts.slice(1).join(".");
                     const alias = this.expressionMap.findAliasByName(aliasName);
                     const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
-                    return this.escape(parentAlias) + "." + this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName));
+                    return this.escape(parentAlias) + "." + this.escape(DriverUtils.buildAlias(this.connection.driver, aliasName, column!.databaseName));
                 } else {
                     if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria))
                         return this.escape(parentAlias) + "." + orderCriteria;
@@ -2055,7 +2055,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 const propertyPath = criteriaParts.slice(1).join(".");
                 const alias = this.expressionMap.findAliasByName(aliasName);
                 const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
-                orderByObject[this.escape(parentAlias) + "." + this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName))] = orderBys[orderCriteria];
+                orderByObject[this.escape(parentAlias) + "." + this.escape(DriverUtils.buildAlias(this.connection.driver, aliasName, column!.databaseName))] = orderBys[orderCriteria];
             } else {
                 if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria)) {
                     orderByObject[this.escape(parentAlias) + "." + orderCriteria] = orderBys[orderCriteria];

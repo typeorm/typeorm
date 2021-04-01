@@ -3,7 +3,7 @@ import {FindOneOptions} from "./FindOneOptions";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {hash} from "../util/StringUtils";
+import {DriverUtils} from "../driver/DriverUtils";
 
 /**
  * Utilities to work with FindOptions.
@@ -234,11 +234,7 @@ export class FindOptionsUtils {
         matchedBaseRelations.forEach(relation => {
 
             // generate a relation alias
-            let relationAlias: string = alias + "__" + relation;
-            // hash it if needed by the driver
-            if (qb.connection.driver.maxAliasLength && qb.connection.driver.maxAliasLength > 0 && relationAlias.length > qb.connection.driver.maxAliasLength) {
-                relationAlias = hash(relationAlias, { length: qb.connection.driver.maxAliasLength });
-            }
+            let relationAlias: string = DriverUtils.buildAlias(qb.connection.driver, alias + "__" + relation);
 
             // add a join for the found relation
             const selection = alias + "." + relation;
@@ -263,11 +259,7 @@ export class FindOptionsUtils {
         metadata.eagerRelations.forEach(relation => {
 
             // generate a relation alias
-            let relationAlias = qb.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath);
-            // hash relationAlias if needed by the driver
-            if (qb.connection.driver.maxAliasLength && qb.connection.driver.maxAliasLength > 0 && relationAlias.length > qb.connection.driver.maxAliasLength) {
-                relationAlias = hash(relationAlias, { length: qb.connection.driver.maxAliasLength });
-            }
+            let relationAlias = DriverUtils.buildAlias(qb.connection.driver, qb.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath));
 
             // add a join for the relation
             qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
