@@ -4896,6 +4896,7 @@ export type CursorResult = any | void | boolean;
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html
  */
 export declare class Cursor<T> extends Readable {
+    [Symbol.asyncIterator](): AsyncIterableIterator<T>;
 
     /**
      * Cursor query sort setting.
