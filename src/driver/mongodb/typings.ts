@@ -2929,8 +2929,7 @@ export interface Collection<T> {
      *
      * @param query Query for find Operation.
      * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
-     * @deprecated use find().limit(1).next(function(err, doc){}).
+     * @see https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#findOne
      */
     findOne(query: FilterQuery<T>, callback: MongoCallback<any>): void;
 
@@ -2939,8 +2938,7 @@ export interface Collection<T> {
      *
      * @param query Query for find Operation.
      * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
-     * @deprecated use find().limit(1).next(function(err, doc){}).
+     * @see https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#findOne
      */
     findOne(query: FilterQuery<T>, options?: MongodbFindOneOptions): Promise<any>;
 
@@ -2950,8 +2948,7 @@ export interface Collection<T> {
      * @param query Query for find Operation.
      * @param options Optional settings.
      * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
-     * @deprecated use find().limit(1).next(function(err, doc){}).
+     * @see https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#findOne
      */
     findOne(query: FilterQuery<T>, options: MongodbFindOneOptions, callback: MongoCallback<any>): void;
 
