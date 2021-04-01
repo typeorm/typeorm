@@ -71,7 +71,7 @@ export class DriverUtils {
      static buildAlias({ maxAliasLength }: Driver, ...alias: string[]): string {
         const newAlias = alias.length === 1 ? alias[0] : alias.join("_");
 
-        if (maxAliasLength && maxAliasLength > 0 && alias.length > maxAliasLength) {
+        if (maxAliasLength && maxAliasLength > 0 && newAlias.length > maxAliasLength) {
             const shortenedAlias = shorten(newAlias);
             if (shortenedAlias.length > maxAliasLength) {
                 return hash(newAlias, { length: maxAliasLength });
