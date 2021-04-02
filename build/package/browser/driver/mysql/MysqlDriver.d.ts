@@ -220,9 +220,4 @@ export declare class MysqlDriver implements Driver {
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
      */
     protected compareDefaultValues(columnMetadataValue: string | undefined, databaseValue: string | undefined): boolean;
-    /**
-     * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
-     * Otherwise returns original input.
-     */
-    protected normalizeDatetimeFunction(value?: string): string | undefined;
 }

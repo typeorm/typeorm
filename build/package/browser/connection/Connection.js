@@ -481,10 +481,37 @@ var Connection = /** @class */ (function () {
     /**
      * Finds exist entity metadata by the given entity class, target name or table name.
      */
-    Connection.prototype.findMetadata = function (target) {
-        return this.entityMetadatas.find(function (metadata) {
+    /*
+    protected findMetadata(target: EntityTarget<any>): EntityMetadata|undefined {
+        return this.entityMetadatas.find(metadata => {
             if (metadata.target === target)
                 return true;
+            if (target instanceof EntitySchema) {
+                return metadata.name === target.options.name;
+            }
+            if (typeof target === "string") {
+                if (target.indexOf(".") !== -1) {
+                    return metadata.tablePath === target;
+                } else {
+                    return metadata.name === target || metadata.tableName === target;
+                }
+            }
+
+            return false;
+        });
+    }
+    */
+    Connection.prototype.findMetadata = function (target) {
+        return this.entityMetadatas.find(function (metadata) {
+            if (typeof metadata.target === "function" && typeof target === "function" && metadata.target.name === target.name) {
+                return true;
+            }
+            if (metadata.target === target) {
+                return true;
+            }
+            if (typeof target === "function" && (metadata.name === target.name)) {
+                return true;
+            }
             if (target instanceof EntitySchema) {
                 return metadata.name === target.options.name;
             }

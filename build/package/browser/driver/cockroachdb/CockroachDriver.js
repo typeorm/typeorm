@@ -434,14 +434,7 @@ var CockroachDriver = /** @class */ (function () {
             return defaultValue === true ? "true" : "false";
         }
         else if (typeof defaultValue === "function") {
-            var value = defaultValue();
-            if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
-                return "current_timestamp()";
-            }
-            else if (value.toUpperCase() === "CURRENT_DATE") {
-                return "current_date()";
-            }
-            return value;
+            return defaultValue();
         }
         else if (typeof defaultValue === "string") {
             return "'" + defaultValue + "'" + arrayCast;

@@ -203,7 +203,7 @@ export declare class Connection {
     /**
      * Finds exist entity metadata by the given entity class, target name or table name.
      */
-    protected findMetadata(target: EntityTarget<any>): EntityMetadata | undefined;
+    protected findMetadata(target: Function | EntityTarget<any> | string): EntityMetadata | undefined;
     /**
      * Builds metadatas for all registered classes inside this connection.
      */

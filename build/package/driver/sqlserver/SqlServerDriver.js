@@ -453,11 +453,7 @@ var SqlServerDriver = /** @class */ (function () {
             return defaultValue === true ? "1" : "0";
         }
         else if (typeof defaultValue === "function") {
-            var value = defaultValue();
-            if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
-                return "getdate()";
-            }
-            return value;
+            return /*"(" + */ defaultValue() /* + ")"*/;
         }
         else if (typeof defaultValue === "string") {
             return "'" + defaultValue + "'";

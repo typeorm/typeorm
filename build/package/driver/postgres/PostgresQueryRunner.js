@@ -2410,9 +2410,6 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
                                                                         tableColumn.isGenerated = true;
                                                                         tableColumn.generationStrategy = "uuid";
                                                                     }
-                                                                    else if (dbColumn["column_default"] === "now()" || dbColumn["column_default"].indexOf("'now'::text") !== -1) {
-                                                                        tableColumn.default = dbColumn["column_default"];
-                                                                    }
                                                                     else {
                                                                         tableColumn.default = dbColumn["column_default"].replace(/::.*/, "");
                                                                         tableColumn.default = tableColumn.default.replace(/^(-?\d+)$/, "'$1'");

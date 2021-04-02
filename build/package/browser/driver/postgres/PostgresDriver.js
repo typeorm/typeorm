@@ -765,8 +765,7 @@ var PostgresDriver = /** @class */ (function () {
             return defaultValue === true ? "true" : "false";
         }
         else if (typeof defaultValue === "function") {
-            var value = defaultValue();
-            return this.normalizeDatetimeFunction(value);
+            return defaultValue();
         }
         else if (typeof defaultValue === "object") {
             return "'" + JSON.stringify(defaultValue) + "'";
@@ -912,6 +911,7 @@ var PostgresDriver = /** @class */ (function () {
             //     console.log("comment:", tableColumn.comment, columnMetadata.comment);
             //     console.log("enumName:", tableColumn.enumName, columnMetadata.enumName);
             //     console.log("enum:", tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
+            //     console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
             //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
@@ -1072,39 +1072,6 @@ var PostgresDriver = /** @class */ (function () {
                 ok(result);
             });
         });
-    };
-    /**
-     * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
-     * Otherwise returns original input.
-     */
-    PostgresDriver.prototype.normalizeDatetimeFunction = function (value) {
-        // check if input is datetime function
-        var upperCaseValue = value.toUpperCase();
-        var isDatetimeFunction = upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1
-            || upperCaseValue.indexOf("CURRENT_DATE") !== -1
-            || upperCaseValue.indexOf("CURRENT_TIME") !== -1
-            || upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1
-            || upperCaseValue.indexOf("LOCALTIME") !== -1;
-        if (isDatetimeFunction) {
-            // extract precision, e.g. "(3)"
-            var precision = value.match(/\(\d+\)/);
-            if (upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1) {
-                return precision ? "('now'::text)::timestamp" + precision[0] + " with time zone" : "now()";
-            }
-            else if (upperCaseValue === "CURRENT_DATE") {
-                return "('now'::text)::date";
-            }
-            else if (upperCaseValue.indexOf("CURRENT_TIME") !== -1) {
-                return precision ? "('now'::text)::time" + precision[0] + " with time zone" : "('now'::text)::time with time zone";
-            }
-            else if (upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1) {
-                return precision ? "('now'::text)::timestamp" + precision[0] + " without time zone" : "('now'::text)::timestamp without time zone";
-            }
-            else if (upperCaseValue.indexOf("LOCALTIME") !== -1) {
-                return precision ? "('now'::text)::time" + precision[0] + " without time zone" : "('now'::text)::time without time zone";
-            }
-        }
-        return value;
     };
     return PostgresDriver;
 }());

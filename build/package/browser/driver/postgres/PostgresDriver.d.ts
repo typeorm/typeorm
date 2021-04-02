@@ -234,9 +234,4 @@ export declare class PostgresDriver implements Driver {
      * Executes given query.
      */
     protected executeQuery(connection: any, query: string): Promise<unknown>;
-    /**
-     * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
-     * Otherwise returns original input.
-     */
-    protected normalizeDatetimeFunction(value: string): string;
 }
