@@ -1,5 +1,5 @@
 import {Driver} from "./Driver";
-import {hash} from "../util/StringUtils";
+import {hash,shorten} from "../util/StringUtils";
 
 /**
  * Common driver utility functions.
@@ -57,29 +57,36 @@ export class DriverUtils {
 
 
     /**
-     * Joins and shortens alias.
+     * Joins and shortens alias if needed.
      *
      * If the alias length is greater than the limit allowed by the current
      * driver, replaces it with a shortend string, if the shortend string
      * is still too long, it will then hash the alias.
      *
      * @param driver Current `Driver`.
+     * @param buildOptions Optional settings.
      * @param alias Alias parts.
      *
      * @return An alias that is no longer than the divers max alias length.
      */
-     static buildAlias({ maxAliasLength }: Driver, ...alias: string[]): string {
-        const newAlias = alias.length === 1 ? alias[0] : alias.join("_");
+     static buildAlias({ maxAliasLength }: Driver, buildOptions: { shorten?: boolean, joiner?: string } | string, ...alias: string[]): string {
+        if (typeof buildOptions === "string") {
+            alias.unshift(buildOptions);
+            buildOptions = { shorten: false, joiner: "_" };
+        } else {
+            buildOptions = Object.assign({ shorten: false, joiner: "_" }, buildOptions);
+        }
 
+        const newAlias = alias.length === 1 ? alias[0] : alias.join(buildOptions.joiner);
         if (maxAliasLength && maxAliasLength > 0 && newAlias.length > maxAliasLength) {
-            return hash(newAlias, { length: maxAliasLength });
-            /*
-            const shortenedAlias = shorten(newAlias);
-            if (shortenedAlias.length > maxAliasLength) {
-                return hash(newAlias, { length: maxAliasLength });
+            if (buildOptions.shorten === true) {
+                const shortenedAlias = shorten(newAlias);
+                if (shortenedAlias.length < maxAliasLength) {
+                    return shortenedAlias;
+                }
             }
-            return shortenedAlias;
-            */
+
+            return hash(newAlias, { length: maxAliasLength });
         }
 
         return newAlias;
