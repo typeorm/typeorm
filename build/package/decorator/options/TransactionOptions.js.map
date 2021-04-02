@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/decorator/options/TransactionOptions.ts"],"names":[],"mappings":"","file":"TransactionOptions.js","sourcesContent":["import {IsolationLevel} from \"../../driver/types/IsolationLevel\";\n\nexport interface TransactionOptions {\n  connectionName?: string;\n  isolation?: IsolationLevel;\n}\n"],"sourceRoot":"../.."}
