@@ -2,6 +2,8 @@
 .DS_Store
 .vscode/
 .idea/
+build/browser/
+build/compiled/
 coverage/
 node_modules/
 ormconfig.json
