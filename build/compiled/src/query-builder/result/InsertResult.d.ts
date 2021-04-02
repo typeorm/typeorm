@@ -1,0 +1,20 @@
+import { ObjectLiteral } from "../../common/ObjectLiteral";
+/**
+ * Result object returned by InsertQueryBuilder execution.
+ */
+export declare class InsertResult {
+    /**
+     * Contains inserted entity id.
+     * Has entity-like structure (not just column database name and values).
+     */
+    identifiers: ObjectLiteral[];
+    /**
+     * Generated values returned by a database.
+     * Has entity-like structure (not just column database name and values).
+     */
+    generatedMaps: ObjectLiteral[];
+    /**
+     * Raw SQL result returned by executed query.
+     */
+    raw: any;
+}
