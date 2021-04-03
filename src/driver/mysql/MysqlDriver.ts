@@ -752,7 +752,7 @@ export class MysqlDriver implements Driver {
                 || tableColumn.unsigned !== columnMetadata.unsigned
                 || tableColumn.asExpression !== columnMetadata.asExpression
                 || tableColumn.generatedType !== columnMetadata.generatedType
-                || tableColumn.comment !== columnMetadata.comment
+                || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
                 || tableColumn.onUpdate !== this.normalizeDatetimeFunction(columnMetadata.onUpdate)
@@ -774,7 +774,7 @@ export class MysqlDriver implements Driver {
             //     console.log("unsigned:", tableColumn.unsigned, columnMetadata.unsigned);
             //     console.log("asExpression:", tableColumn.asExpression, columnMetadata.asExpression);
             //     console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
-            //     console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            //     console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
             //     console.log("default:", tableColumn.default, this.normalizeDefault(columnMetadata));
             //     console.log("enum:", tableColumn.enum, columnMetadata.enum);
             //     console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
@@ -957,6 +957,17 @@ export class MysqlDriver implements Driver {
         } else {
             return value
         }
+    }
+
+    /**
+     * Escapes a given comment.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment)  return comment;
+
+        comment = comment.replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+
+        return comment;
     }
 
 }

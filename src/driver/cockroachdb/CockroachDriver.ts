@@ -608,7 +608,7 @@ export class CockroachDriver implements Driver {
             // console.log("width:", tableColumn.width, columnMetadata.width);
             // console.log("precision:", tableColumn.precision, columnMetadata.precision);
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            // console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            // console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
             // console.log("default:", tableColumn.default, columnMetadata.default);
             // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
@@ -622,7 +622,7 @@ export class CockroachDriver implements Driver {
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
-                || tableColumn.comment !== columnMetadata.comment
+                || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
                 || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
@@ -750,6 +750,19 @@ export class CockroachDriver implements Driver {
         return new Promise<void>((ok, fail) => {
             pool.end((err: any) => err ? fail(err) : ok());
         });
+    }
+
+    /**
+     * Escapes a given comment.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment) return comment;
+
+        comment = comment
+            .replace(/'/g, "''")
+            .replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+
+        return comment;
     }
 
 }

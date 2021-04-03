@@ -718,7 +718,7 @@ export class AuroraDataApiDriver implements Driver {
             // console.log("unsigned:", tableColumn.unsigned, columnMetadata.unsigned);
             // console.log("asExpression:", tableColumn.asExpression, columnMetadata.asExpression);
             // console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
-            // console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            // console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
             // console.log("default:", tableColumn.default, columnMetadata.default);
             // console.log("enum:", tableColumn.enum, columnMetadata.enum);
             // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
@@ -745,7 +745,7 @@ export class AuroraDataApiDriver implements Driver {
                 || tableColumn.unsigned !== columnMetadata.unsigned
                 || tableColumn.asExpression !== columnMetadata.asExpression
                 || tableColumn.generatedType !== columnMetadata.generatedType
-                // || tableColumn.comment !== columnMetadata.comment // todo
+                || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
                 || tableColumn.onUpdate !== columnMetadata.onUpdate
@@ -859,6 +859,17 @@ export class AuroraDataApiDriver implements Driver {
         }
 
         return columnMetadataValue === databaseValue;
+    }
+
+    /**
+     * Escapes a given comment.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment)  return comment;
+
+        comment = comment.replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+
+        return comment;
     }
 
 }

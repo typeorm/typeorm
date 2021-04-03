@@ -881,7 +881,7 @@ export class PostgresDriver implements Driver {
                 || tableColumn.isArray !== columnMetadata.isArray
                 || tableColumn.precision !== columnMetadata.precision
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
-                || tableColumn.comment !== columnMetadata.comment
+                || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
                 || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
@@ -901,7 +901,7 @@ export class PostgresDriver implements Driver {
             //     console.log("isArray:", tableColumn.isArray, columnMetadata.isArray);
             //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
             //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            //     console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            //     console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
             //     console.log("enumName:", tableColumn.enumName, columnMetadata.enumName);
             //     console.log("enum:", tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
             //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
@@ -1104,6 +1104,17 @@ export class PostgresDriver implements Driver {
         }
 
         return value
+    }
+
+    /**
+     * Escapes a given comment.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment) return comment;
+
+        comment = comment.replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+
+        return comment;
     }
 
 }
