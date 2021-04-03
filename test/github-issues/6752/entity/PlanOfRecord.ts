@@ -1,12 +1,11 @@
 import {
-    Check, Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn,
+    Check, Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn, Unique,
 } from "../../../../src";
 import { Block } from "./Block";
 
-// @Entity({ synchronize: false })
 @Entity({ synchronize: true })
 @Index(["block", "softwareComponent", "module", "module_sku ", "isSafety"], { unique: true })
-// Enable sync will sometimes cause planOfRecord column become null
+@Unique(["block", "softwareComponent", "module", "module_sku ", "isSafety"])
 @Check(`"planOfRecord" IN ('NOT_POR', 'POR_BUT_PROD_VAL', 'POR_BUT_RESET_VAL')`)
 export class PlanOfRecord {
     @PrimaryGeneratedColumn()
