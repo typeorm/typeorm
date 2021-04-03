@@ -1,8 +1,8 @@
-import { Expression } from "../expression-builder/Expression";
+import {BuildableExpression} from "../expression-builder/Expression";
 
 /**
  * Used for find operations.
  */
 export type FindConditions<T> = {
-    [P in keyof T]?: FindConditions<T[P]> | Expression;
+    [P in keyof T]?: FindConditions<T[P]> | BuildableExpression;
 };

@@ -1,5 +1,5 @@
 import {expect} from "chai";
-import {Brackets, Connection} from "../../../src";
+import {Connection, Or, Raw} from "../../../src";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {User} from "./entity/user";
 
@@ -39,10 +39,7 @@ describe("github issues > #3685 Brackets syntax failed when use where with objec
         ]);
 
         const qb = connection.createQueryBuilder(User, "u")
-            .where(new Brackets(qb => {
-                qb.where({ firstName: "John" })
-                    .orWhere("u.firstName = :firstName", { firstName: "Jean" });
-            }))
+            .where(Or({ firstName: "John" }, Raw("u.firstName = :firstName", { firstName: "Jean" })))
             .andWhere("u.lastName = :lastName", { lastName: "Doe" })
             .orderBy({
                 "u.firstName": "ASC",

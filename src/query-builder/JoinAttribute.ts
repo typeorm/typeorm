@@ -4,7 +4,7 @@ import {RelationMetadata} from "../metadata/RelationMetadata";
 import {QueryBuilderUtils} from "./QueryBuilderUtils";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {Alias} from "./Alias";
-import { Expression } from "../expression-builder/Expression";
+import {ExpressionBuilder} from "../expression-builder/Expression";
 
 /**
  * Stores all join attributes which will be used to build a JOIN query.
@@ -33,7 +33,7 @@ export class JoinAttribute {
     /**
      * Extra condition applied to "ON" section of join.
      */
-    condition?: Expression;
+    condition?: ExpressionBuilder;
 
     /**
      * Property + alias of the object where to joined data should be mapped.

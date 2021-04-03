@@ -3,7 +3,6 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {Connection} from "../../connection/Connection";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {WhereExpression} from "../WhereExpression";
-import {Brackets} from "../Brackets";
 import {OrderByCondition} from "../../find-options/OrderByCondition";
 import {LimitOnUpdateNotSupportedError} from "../../error/LimitOnUpdateNotSupportedError";
 import {AbstractPersistQueryBuilder} from "./AbstractPersistQueryBuilder";
@@ -52,7 +51,7 @@ export abstract class AbstractModifyQueryBuilder<Entity, Result> extends Abstrac
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
-    where(where: string | ExpressionBuilder | ((qb: this) => string) | Brackets | ObjectLiteral | ObjectLiteral[], parameters?: ObjectLiteral): this {
+    where(where: string | ExpressionBuilder | ((qb: this) => string) | ObjectLiteral | ObjectLiteral[], parameters?: ObjectLiteral): this {
         this.expressionMap.where = undefined;
         const condition = this.computeWhereExpression(where);
         if (condition) this.expressionMap.where = condition;
@@ -64,7 +63,7 @@ export abstract class AbstractModifyQueryBuilder<Entity, Result> extends Abstrac
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(where: string | ExpressionBuilder | ((qb: this) => string) | Brackets | ObjectLiteral | ObjectLiteral[], parameters?: ObjectLiteral): this {
+    andWhere(where: string | ExpressionBuilder | ((qb: this) => string) | ObjectLiteral | ObjectLiteral[], parameters?: ObjectLiteral): this {
         const condition = this.computeWhereExpression(where);
         if (condition === undefined) throw new Error(""); // TODO: Critical
         if (this.expressionMap.where !== undefined) this.expressionMap.where = And(this.expressionMap.where, condition);
@@ -78,7 +77,7 @@ export abstract class AbstractModifyQueryBuilder<Entity, Result> extends Abstrac
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    orWhere(where: string | ExpressionBuilder | ((qb: this) => string) | Brackets | ObjectLiteral | ObjectLiteral[], parameters?: ObjectLiteral): this {
+    orWhere(where: string | ExpressionBuilder | ((qb: this) => string) | ObjectLiteral | ObjectLiteral[], parameters?: ObjectLiteral): this {
         const condition = this.computeWhereExpression(where);
         if (condition === undefined) throw new Error(""); // TODO: Critical
         if (this.expressionMap.where !== undefined) this.expressionMap.where = Or(this.expressionMap.where, condition);

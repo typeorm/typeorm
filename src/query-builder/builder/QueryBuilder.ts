@@ -10,7 +10,6 @@ import {InsertQueryBuilder} from "./InsertQueryBuilder";
 import {RelationQueryBuilder} from "./RelationQueryBuilder";
 import {EntityTarget} from "../../common/EntityTarget";
 import {Alias} from "../Alias";
-import {Brackets} from "../Brackets";
 import {QueryDeepPartialEntity} from "../QueryPartialEntity";
 import {SqljsDriver} from "../../driver/sqljs/SqljsDriver";
 import {Driver, EntityMetadata, EntitySchema, IsNull} from "../../index";
@@ -538,10 +537,10 @@ export abstract class QueryBuilder<Entity, Result = any> {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected createExpressionContext(metadata?: EntityMetadata, columnOrKey?: ColumnMetadata | string): QueryBuilderExpressionContext {
+    protected createExpressionContext(alias: Alias = this.expressionMap.mainAlias!, columnOrKey?: ColumnMetadata | string): QueryBuilderExpressionContext {
         return {
-            alias: this.expressionMap.mainAlias,
-            metadata: metadata ?? (this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined),
+            alias: alias,
+            metadata: alias.hasMetadata ? alias.metadata : undefined,
             columnOrKey: columnOrKey
         };
     }
@@ -1008,19 +1007,11 @@ export abstract class QueryBuilder<Entity, Result = any> {
     /**
      * Computes given where argument - transforms to a where string all forms it can take.
      */
-    protected computeWhereExpression(where: ExpressionBuilder|string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[]): Expression | undefined {
+    protected computeWhereExpression(where: ExpressionBuilder|string|((qb: this) => string)|ObjectLiteral|ObjectLiteral[]): Expression | undefined {
         if (typeof where === "string") return Raw(where);
         else if (typeof where === "function") return Raw(where(this));
-        else if (where instanceof Brackets) {
-            const whereQueryBuilder = this.createQueryBuilder();
-            whereQueryBuilder.expressionMap.mainAlias = this.expressionMap.mainAlias;
-            where.whereFactory(whereQueryBuilder as any);
-            this.setParameters(whereQueryBuilder.getParameters());
-            return whereQueryBuilder.expressionMap.where;
-        } else if (where instanceof Object) {
-            return Or(...(Array.isArray(where) ? where : [where]));
-        }
-
+        else if (where instanceof ExpressionBuilder) return where;
+        else if (where instanceof Object) return Or(...(Array.isArray(where) ? where : [where]));
         return undefined;
     }
 

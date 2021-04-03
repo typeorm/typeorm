@@ -83,7 +83,7 @@ export class Gulpfile {
     browserCompile() {
         const tsProject = ts.createProject("tsconfig.json", {
             module: "es2015",
-            "lib": ["es5", "es6", "dom"],
+            "lib": ["es5", "es6", "es2019.array", "dom"],
             typescript: require("typescript")
         });
         const tsResult = gulp.src([
