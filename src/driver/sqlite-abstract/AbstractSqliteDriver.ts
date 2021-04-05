@@ -393,6 +393,11 @@ export abstract class AbstractSqliteDriver implements Driver {
 
             }
 
+            if (value instanceof Date) {
+                escapedParameters.push(DateUtils.mixedDateToUtcDatetimeString(value));
+                return this.createParameter(key, escapedParameters.length - 1);
+            }
+
             escapedParameters.push(value);
             return this.createParameter(key, escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
