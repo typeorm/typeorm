@@ -151,6 +151,11 @@ Example with `ts-node`:
 ts-node ./node_modules/typeorm/cli.js migration:run
 ```
 
+Example with `ts-node` using `yarn v2` with `pnp`:
+```
+ts-node $(yarn bin typeorm) migration:run
+```
+
 This command will execute all pending migrations and run them in a sequence ordered by their timestamps.
 This means all sql queries written in the `up` methods of your created migrations will be executed.
 That's all! Now you have your database schema up-to-date.
