@@ -8,7 +8,7 @@ import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
  * Describes all primary key column's options.
  * If specified, the nullable field must be set to false.
  */
-export type PrimaryColumnOptions = ColumnOptions & { nullable?: false };
+export type PrimaryColumnOptions = ColumnOptions & { nullable?: boolean };
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
