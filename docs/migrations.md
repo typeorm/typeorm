@@ -151,7 +151,7 @@ Example with `ts-node`:
 ts-node ./node_modules/typeorm/cli.js migration:run
 ```
 
-Example with `ts-node` using `yarn v2` with `pnp`:
+Example `ts-node` not using `node_modules` directly:
 ```
 ts-node $(yarn bin typeorm) migration:run
 ```
