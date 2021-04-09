@@ -357,7 +357,15 @@ export class AuroraDataApiDriver implements Driver {
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new AuroraDataApiQueryRunner(this);
+        return new AuroraDataApiQueryRunner(this, new this.DataApiDriver(
+            this.options.region,
+            this.options.secretArn,
+            this.options.resourceArn,
+            this.options.database,
+            (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
+            this.options.serviceConfigOptions,
+            this.options.formatOptions,
+        ));
     }
 
     /**
@@ -411,6 +419,10 @@ export class AuroraDataApiDriver implements Driver {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
+        if (!this.options.formatOptions || this.options.formatOptions.castParameters !== false) {
+            return this.client.preparePersistentValue(value, columnMetadata)
+        }
+
         if (value === null || value === undefined)
             return value;
 
@@ -448,6 +460,10 @@ export class AuroraDataApiDriver implements Driver {
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
+
+        if (!this.options.formatOptions || this.options.formatOptions.castParameters !== false) {
+            return this.client.prepareHydratedValue(value, columnMetadata)
+        }
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "bool" || columnMetadata.type === "boolean") {
             value = value ? true : false;
@@ -535,8 +551,12 @@ export class AuroraDataApiDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
+
+        if (defaultValue === null) {
+            return undefined
+        }
 
         if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
             return `'${defaultValue}'`;
@@ -553,9 +573,6 @@ export class AuroraDataApiDriver implements Driver {
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;
-
-        } else if (defaultValue === null) {
-            return `null`;
 
         } else {
             return defaultValue;
@@ -662,11 +679,13 @@ export class AuroraDataApiDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any, entityIndex: number) {
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
-                value = insertResult.insertId;
+                // NOTE: When multiple rows is inserted by a single INSERT statement,
+                // `insertId` is the value generated for the first inserted row only.
+                value = insertResult.insertId + entityIndex;
             // } else if (generatedColumn.generationStrategy === "uuid") {
             //     console.log("getting db value:", generatedColumn.databaseName);
             //     value = generatedColumn.getEntityValue(uuidMap);
@@ -699,7 +718,7 @@ export class AuroraDataApiDriver implements Driver {
             // console.log("unsigned:", tableColumn.unsigned, columnMetadata.unsigned);
             // console.log("asExpression:", tableColumn.asExpression, columnMetadata.asExpression);
             // console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
-            // console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            // console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
             // console.log("default:", tableColumn.default, columnMetadata.default);
             // console.log("enum:", tableColumn.enum, columnMetadata.enum);
             // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
@@ -726,7 +745,7 @@ export class AuroraDataApiDriver implements Driver {
                 || tableColumn.unsigned !== columnMetadata.unsigned
                 || tableColumn.asExpression !== columnMetadata.asExpression
                 || tableColumn.generatedType !== columnMetadata.generatedType
-                // || tableColumn.comment !== columnMetadata.comment // todo
+                || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
                 || tableColumn.onUpdate !== columnMetadata.onUpdate
@@ -831,7 +850,7 @@ export class AuroraDataApiDriver implements Driver {
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
      */
-    protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
+    protected compareDefaultValues(columnMetadataValue: string | undefined, databaseValue: string | undefined): boolean {
         if (typeof columnMetadataValue === "string" && typeof databaseValue === "string") {
             // we need to cut out "'" because in mysql we can understand returned value is a string or a function
             // as result compare cannot understand if default is really changed or not
@@ -840,6 +859,17 @@ export class AuroraDataApiDriver implements Driver {
         }
 
         return columnMetadataValue === databaseValue;
+    }
+
+    /**
+     * Escapes a given comment.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment)  return comment;
+
+        comment = comment.replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+
+        return comment;
     }
 
 }

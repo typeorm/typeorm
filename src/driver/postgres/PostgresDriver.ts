@@ -2,7 +2,6 @@ import {Driver} from "../Driver";
 import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {DriverUtils} from "../DriverUtils";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
 import {DateUtils} from "../../util/DateUtils";
@@ -19,8 +18,6 @@ import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredenti
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
-import {AuroraDataApiPostgresConnectionOptions} from "../aurora-data-api-pg/AuroraDataApiPostgresConnectionOptions";
-import {AuroraDataApiPostgresQueryRunner} from "../aurora-data-api-pg/AuroraDataApiPostgresQueryRunner";
 import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
@@ -260,7 +257,9 @@ export class PostgresDriver implements Driver {
         this.connection = connection;
         this.options = connection.options as PostgresConnectionOptions;
         this.isReplicated = this.options.replication ? true : false;
-
+        if(this.options.useUTC) {
+            process.env.PGTZ = 'UTC';
+        }
         // load postgres package
         this.loadDependencies();
 
@@ -307,7 +306,7 @@ export class PostgresDriver implements Driver {
 
         if (extensionsMetadata.hasExtensions) {
             await Promise.all([this.master, ...this.slaves].map(pool => {
-                return new Promise((ok, fail) => {
+                return new Promise<void>((ok, fail) => {
                     pool.connect(async (err: any, connection: any, release: Function) => {
                         await this.enableExtensions(extensionsMetadata, connection);
                         if (err) return fail(err);
@@ -396,7 +395,7 @@ export class PostgresDriver implements Driver {
             return metadata.columns.filter(column => this.spatialTypes.indexOf(column.type) >= 0).length > 0;
         });
         const hasLtreeColumns = this.connection.entityMetadatas.some(metadata => {
-            return metadata.columns.filter(column => column.type === 'ltree').length > 0;
+            return metadata.columns.filter(column => column.type === "ltree").length > 0;
         });
         const hasExclusionConstraints = this.connection.entityMetadatas.some(metadata => {
             return metadata.exclusions.length > 0;
@@ -501,7 +500,7 @@ export class PostgresDriver implements Driver {
             return `(${value.join(",")})`;
 
         } else if (columnMetadata.type === "ltree") {
-            return value.split(".").filter(Boolean).join('.').replace(/[\s]+/g, "_");
+            return value.split(".").filter(Boolean).join(".").replace(/[\s]+/g, "_");
         } else if (
             (
                 columnMetadata.type === "enum"
@@ -587,21 +586,30 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum" ) {
             if (columnMetadata.isArray) {
+                if (value === "{}") return [];
+
                 // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
-                value = value !== "{}" ? (value as string).substr(1, (value as string).length - 2).split(",") : [];
-                // convert to number if that exists in poosible enum options
+                value = (value as string).substr(1, (value as string).length - 2).split(",").map(val => {
+                    // replace double quotes from the beginning and from the end
+                    if (val.startsWith(`"`) && val.endsWith(`"`)) val = val.slice(1, -1);
+                    // replace double escaped backslash to single escaped e.g. \\\\ -> \\
+                    val = val.replace(/(\\\\)/g, "\\")
+                    // replace escaped double quotes to non-escaped e.g. \"asd\" -> "asd"
+                    return val.replace(/(\\")/g, '"')
+                });
+
+                // convert to number if that exists in possible enum options
                 value = value.map((val: string) => {
                     return !isNaN(+val) && columnMetadata.enum!.indexOf(parseInt(val)) >= 0 ? parseInt(val) : val;
                 });
             } else {
-                // convert to number if that exists in poosible enum options
+                // convert to number if that exists in possible enum options
                 value = !isNaN(+value) && columnMetadata.enum!.indexOf(parseInt(value)) >= 0 ? parseInt(value) : value;
             }
         }
 
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
-
         return value;
     }
 
@@ -720,36 +728,30 @@ export class PostgresDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
-        const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
 
-        if (
-            (
-                columnMetadata.type === "enum"
-                || columnMetadata.type === "simple-enum"
-            ) && defaultValue !== undefined
+        if (defaultValue === null) {
+            return undefined;
+
+        } else if (columnMetadata.isArray && Array.isArray(defaultValue)) {
+            return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
+
+        } else if (
+            (columnMetadata.type === "enum"
+            || columnMetadata.type === "simple-enum"
+            || typeof defaultValue === "number"
+            || typeof defaultValue === "string")
+            && defaultValue !== undefined
         ) {
-            if (columnMetadata.isArray && Array.isArray(defaultValue)) {
-                return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
-            }
             return `'${defaultValue}'`;
-        }
-
-        if (typeof defaultValue === "number") {
-            return "" + defaultValue;
 
         } else if (typeof defaultValue === "boolean") {
             return defaultValue === true ? "true" : "false";
 
         } else if (typeof defaultValue === "function") {
-            return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'${arrayCast}`;
-
-        } else if (defaultValue === null) {
-            return `null`;
+            const value = defaultValue();
+            return this.normalizeDatetimeFunction(value)
 
         } else if (typeof defaultValue === "object") {
             return `'${JSON.stringify(defaultValue)}'`;
@@ -873,20 +875,46 @@ export class PostgresDriver implements Driver {
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            return tableColumn.name !== columnMetadata.databaseName
+            const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
+                || tableColumn.isArray !== columnMetadata.isArray
                 || tableColumn.precision !== columnMetadata.precision
-                || tableColumn.scale !== columnMetadata.scale
-                // || tableColumn.comment !== columnMetadata.comment // todo
+                || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
+                || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
                 || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                || tableColumn.enumName !== columnMetadata.enumName
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + ""))) // enums in postgres are always strings
                 || tableColumn.isGenerated !== columnMetadata.isGenerated
                 || (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase()
                 || tableColumn.srid !== columnMetadata.srid;
+
+            // DEBUG SECTION
+            // if (isColumnChanged) {
+            //     console.log("table:", columnMetadata.entityMetadata.tableName);
+            //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
+            //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            //     console.log("length:", tableColumn.length, columnMetadata.length);
+            //     console.log("isArray:", tableColumn.isArray, columnMetadata.isArray);
+            //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
+            //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
+            //     console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
+            //     console.log("enumName:", tableColumn.enumName, columnMetadata.enumName);
+            //     console.log("enum:", tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
+            //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
+            //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
+            //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            //     console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            //     console.log("isGenerated 2:", !tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default);
+            //     console.log("spatialFeatureType:", (tableColumn.spatialFeatureType || "").toLowerCase(), (columnMetadata.spatialFeatureType || "").toLowerCase());
+            //     console.log("srid", tableColumn.srid, columnMetadata.srid);
+            //     console.log("==========================================");
+            // }
+
+            return isColumnChanged
         });
     }
 
@@ -899,6 +927,7 @@ export class PostgresDriver implements Driver {
             return i % 2 === 1 ? v : v.toLowerCase();
         }).join(`'`);
     }
+
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
@@ -973,11 +1002,12 @@ export class PostgresDriver implements Driver {
      */
     protected async createPool(options: PostgresConnectionOptions, credentials: PostgresConnectionCredentialsOptions): Promise<any> {
 
-        credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+        credentials = Object.assign({}, credentials);
 
         // build connection options for the driver
         // See: https://github.com/brianc/node-postgres/tree/master/packages/pg-pool#create
         const connectionOptions = Object.assign({}, {
+            connectionString: credentials.url,
             host: credentials.host,
             user: credentials.username,
             password: credentials.password,
@@ -1039,125 +1069,52 @@ export class PostgresDriver implements Driver {
         });
     }
 
-}
-
-abstract class PostgresWrapper extends PostgresDriver {
-    options: any;
-
-    abstract createQueryRunner(mode: ReplicationMode): any;
-}
-
-export class AuroraDataApiPostgresDriver extends PostgresWrapper {
-
-    // -------------------------------------------------------------------------
-    // Public Properties
-    // -------------------------------------------------------------------------
-
     /**
-     * Connection used by driver.
+     * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
+     * Otherwise returns original input.
      */
-    connection: Connection;
+    protected normalizeDatetimeFunction(value: string) {
+        // check if input is datetime function
+        const upperCaseValue = value.toUpperCase()
+        const isDatetimeFunction = upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1
+            || upperCaseValue.indexOf("CURRENT_DATE") !== -1
+            || upperCaseValue.indexOf("CURRENT_TIME") !== -1
+            || upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1
+            || upperCaseValue.indexOf("LOCALTIME") !== -1;
 
-    /**
-     * Aurora Data API underlying library.
-     */
-    DataApiDriver: any;
+        if (isDatetimeFunction) {
+            // extract precision, e.g. "(3)"
+            const precision = value.match(/\(\d+\)/)
 
-    client: any;
+            if (upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1) {
+                return precision ? `('now'::text)::timestamp${precision[0]} with time zone` : "now()";
 
-    // -------------------------------------------------------------------------
-    // Public Implemented Properties
-    // -------------------------------------------------------------------------
+            } else if (upperCaseValue === "CURRENT_DATE") {
+                return "('now'::text)::date"
 
-    /**
-     * Connection options.
-     */
-    options: AuroraDataApiPostgresConnectionOptions;
+            } else if (upperCaseValue.indexOf("CURRENT_TIME") !== -1) {
+                return precision ? `('now'::text)::time${precision[0]} with time zone` : "('now'::text)::time with time zone"
 
-    /**
-     * Master database used to perform all write queries.
-     */
-    database?: string;
+            } else if (upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1) {
+                return precision ? `('now'::text)::timestamp${precision[0]} without time zone` : "('now'::text)::timestamp without time zone"
 
-    // -------------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------------
-
-    constructor(connection: Connection) {
-        super();
-        this.connection = connection;
-        this.options = connection.options as AuroraDataApiPostgresConnectionOptions;
-        this.isReplicated = false;
-
-        // load data-api package
-        this.loadDependencies();
-
-        this.client = new this.DataApiDriver(
-            this.options.region,
-            this.options.secretArn,
-            this.options.resourceArn,
-            this.options.database,
-            (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
-            this.options.serviceConfigOptions,
-            this.options.formatOptions,
-        );
-    }
-
-    // -------------------------------------------------------------------------
-    // Public Implemented Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Performs connection to the database.
-     * Based on pooling options, it can either create connection immediately,
-     * either create a pool and create connection when needed.
-     */
-    async connect(): Promise<void> {
-    }
-
-    /**
-     * Closes connection with database.
-     */
-    async disconnect(): Promise<void> {
-    }
-
-    /**
-     * Creates a query runner used to execute database queries.
-     */
-    createQueryRunner(mode: ReplicationMode) {
-        return new AuroraDataApiPostgresQueryRunner(this, mode);
-    }
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * If driver dependency is not given explicitly, then try to load it via "require".
-     */
-    protected loadDependencies(): void {
-        const { pg } = PlatformTools.load("typeorm-aurora-data-api-driver");
-
-        this.DataApiDriver = pg;
-    }
-
-    /**
-     * Executes given query.
-     */
-    protected executeQuery(connection: any, query: string) {
-        return this.client.query(query);
-    }
-
-    /**
-     * Makes any action after connection (e.g. create extensions in Postgres driver).
-     */
-    async afterConnect(): Promise<void> {
-        const extensionsMetadata = await this.checkMetadataForExtensions();
-
-        if (extensionsMetadata.hasExtensions) {
-            await this.enableExtensions(extensionsMetadata, this.connection);
+            } else if (upperCaseValue.indexOf("LOCALTIME") !== -1) {
+                return precision ? `('now'::text)::time${precision[0]} without time zone` : "('now'::text)::time without time zone"
+            }
         }
 
-        return Promise.resolve();
+        return value
     }
+
+    /**
+     * Escapes a given comment.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment) return comment;
+
+        comment = comment.replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+
+        return comment;
+    }
+
 }

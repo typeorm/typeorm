@@ -14,11 +14,11 @@ export class ConnectionOptionsYmlReader {
     /**
      * Reads connection options from given yml file.
      */
-    read(path: string): ConnectionOptions[] {
+    async read(path: string): Promise<ConnectionOptions[]> {
         const contentsBuffer = PlatformTools.readFileSync(path);
         const contents = contentsBuffer.toString();
 
-        const config: undefined | string | {[key: string]: any} = ymlParser.safeLoad(contents);
+        const config: undefined | string | {[key: string]: any} = ymlParser.loadAll(contents);
 
         if (typeof config !== 'object') {
             return [];

@@ -10,11 +10,15 @@ import chalk from "chalk";
  * Executes an sql query on the given connection.
  */
 export class QueryCommand implements yargs.CommandModule {
-    command = "query";
+    command = "query [query]";
     describe = "Executes given SQL query on a default connection. Specify connection name to run query on a specific connection.";
 
     builder(args: yargs.Argv) {
         return args
+            .positional("query", {
+                describe: "The SQL Query to run",
+                type: "string"
+            })
             .option("c", {
                 alias: "connection",
                 default: "default",
@@ -49,10 +53,16 @@ export class QueryCommand implements yargs.CommandModule {
 
             // create a query runner and execute query using it
             queryRunner = connection.createQueryRunner();
-            console.log(chalk.green("Running query: ") + PlatformTools.highlightSql(args._[1]));
-            const queryResult = await queryRunner.query(args._[1]);
-            console.log(chalk.green("Query has been executed. Result: "));
-            console.log(PlatformTools.highlightJson(JSON.stringify(queryResult, undefined, 2)));
+            const query = args.query as string;
+            console.log(chalk.green("Running query: ") + PlatformTools.highlightSql(query));
+            const queryResult = await queryRunner.query(query);
+
+            if (typeof queryResult === "undefined") {
+                console.log(chalk.green("Query has been executed. No result was returned."));
+            } else {
+                console.log(chalk.green("Query has been executed. Result: "));
+                console.log(PlatformTools.highlightJson(JSON.stringify(queryResult, undefined, 2)));
+            }
 
             await queryRunner.release();
             await connection.close();

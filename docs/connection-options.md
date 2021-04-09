@@ -370,6 +370,10 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `port` - Database host port. Default mongodb port is `27017`.
 
+* `username` - Database username (replacement for `auth.user`).
+
+* `password` - Database password (replacement for `auth.password`).
+
 * `database` - Database name.
 
 * `poolSize` - Set the maximum pool size for each individual server or proxy connection.

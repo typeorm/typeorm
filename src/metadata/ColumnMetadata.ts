@@ -114,7 +114,7 @@ export class ColumnMetadata {
      * Column comment.
      * This feature is not supported by all databases.
      */
-    comment: string = "";
+    comment?: string;
 
     /**
      * Default database value.
@@ -368,7 +368,7 @@ export class ColumnMetadata {
         }
         if (options.args.options.unsigned)
             this.unsigned = options.args.options.unsigned;
-        if (options.args.options.precision !== undefined)
+        if (options.args.options.precision !== null)
             this.precision = options.args.options.precision;
         if (options.args.options.enum) {
             if (options.args.options.enum instanceof Object && !Array.isArray(options.args.options.enum)) {
@@ -413,7 +413,8 @@ export class ColumnMetadata {
                 this.type = options.connection.driver.mappedDataTypes.createDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.createDateDefault;
-            if (this.precision === undefined && options.connection.driver.mappedDataTypes.createDatePrecision)
+            // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
+            if (this.precision === undefined && options.args.options.precision === undefined && options.connection.driver.mappedDataTypes.createDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.createDatePrecision;
         }
         if (this.isUpdateDate) {
@@ -421,7 +422,10 @@ export class ColumnMetadata {
                 this.type = options.connection.driver.mappedDataTypes.updateDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
-            if (this.precision === undefined && options.connection.driver.mappedDataTypes.updateDatePrecision)
+            if (!this.onUpdate)
+                this.onUpdate = options.connection.driver.mappedDataTypes.updateDateDefault;
+            // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
+            if (this.precision === undefined && options.args.options.precision === undefined && options.connection.driver.mappedDataTypes.updateDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
         }
         if (this.isDeleteDate) {
@@ -429,7 +433,8 @@ export class ColumnMetadata {
                 this.type = options.connection.driver.mappedDataTypes.deleteDate;
             if (!this.isNullable)
                 this.isNullable = options.connection.driver.mappedDataTypes.deleteDateNullable;
-            if (this.precision === undefined && options.connection.driver.mappedDataTypes.deleteDatePrecision)
+            // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
+            if (this.precision === undefined && options.args.options.precision === undefined && options.connection.driver.mappedDataTypes.deleteDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.deleteDatePrecision;
         }
         if (this.isVersion)
@@ -477,7 +482,7 @@ export class ColumnMetadata {
                 }
 
                 // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-                if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
+                if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint" && value !== null)
                     value = String(value);
 
                 map[useDatabaseName ? this.databaseName : this.propertyName] = value;
@@ -488,7 +493,7 @@ export class ColumnMetadata {
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
 
             // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-            if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
+            if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint" && value !== null)
                 value = String(value);
 
             return { [useDatabaseName ? this.databaseName : this.propertyName]: value };
@@ -542,9 +547,9 @@ export class ColumnMetadata {
             return Object.keys(map).length > 0 ? map : undefined;
 
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
-            if (this.relationMetadata && entity[this.propertyName] && entity[this.propertyName] instanceof Object) {
+            if (this.relationMetadata && entity[this.relationMetadata.propertyName] && entity[this.relationMetadata.propertyName] instanceof Object) {
                 const map = this.relationMetadata.joinColumns.reduce((map, joinColumn) => {
-                    const value = joinColumn.referencedColumn!.getEntityValueMap(entity[this.propertyName]);
+                    const value = joinColumn.referencedColumn!.getEntityValueMap(entity[this.relationMetadata!.propertyName]);
                     if (value === undefined) return map;
                     return OrmUtils.mergeDeep(map, value);
                 }, {});
@@ -662,7 +667,18 @@ export class ColumnMetadata {
             return extractEmbeddedColumnValue([...this.embeddedMetadata.embeddedMetadataTree], entity);
 
         } else {
-            entity[this.propertyName] = value;
+            // we write a deep object in this entity only if the column is virtual
+            // because if its not virtual it means the user defined a real column for this relation
+            // also we don't do it if column is inside a junction table
+            if (!this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName) {
+                if (!(this.propertyName in entity)) {
+                    entity[this.propertyName] = {};
+                }
+
+                entity[this.propertyName][this.referencedColumn.propertyName] = value;
+            } else {
+                entity[this.propertyName] = value;
+            }
         }
     }
 

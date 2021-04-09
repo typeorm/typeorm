@@ -20,7 +20,6 @@ import {
     CollStats,
     CommandCursor,
     Cursor,
-    Db,
     DeleteWriteOpResultObject,
     FindAndModifyWriteOpResultObject,
     FindOneAndReplaceOption,
@@ -29,6 +28,7 @@ import {
     InsertOneWriteOpResult,
     InsertWriteOpResult,
     MapReduceOptions,
+    MongoClient,
     MongoCountPreferences,
     MongodbIndexOptions,
     OrderedBulkOperation,
@@ -103,13 +103,13 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Real database connection from a connection pool used to perform queries.
      */
-    databaseConnection: Db;
+    databaseConnection: MongoClient;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection, databaseConnection: Db) {
+    constructor(connection: Connection, databaseConnection: MongoClient) {
         this.connection = connection;
         this.databaseConnection = databaseConnection;
         this.broadcaster = new Broadcaster(this);

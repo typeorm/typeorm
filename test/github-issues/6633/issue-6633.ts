@@ -2,14 +2,14 @@ import "reflect-metadata";
 import { expect } from "chai";
 import { Connection } from "../../../src";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { Post } from "../4440/entity/Post";
+import { Test } from "./entity/Test";
 
 describe("github issues > #6633 Fulltext indices continually dropped & re-created", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
-            entities: [Post],
+            entities: [Test],
             schemaCreate: true,
             dropSchema: true
         });

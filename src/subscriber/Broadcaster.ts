@@ -182,6 +182,126 @@ export class Broadcaster {
     }
 
     /**
+     * Broadcasts "BEFORE_TRANSACTION_START" event.
+     */
+    broadcastBeforeTransactionStartEvent(result: BroadcasterResult): void {
+        if (this.queryRunner.connection.subscribers.length) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (subscriber.beforeTransactionStart) {
+                    const executionResult = subscriber.beforeTransactionStart({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
+                    });
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+    }
+
+    /**
+     * Broadcasts "AFTER_TRANSACTION_START" event.
+     */
+    broadcastAfterTransactionStartEvent(result: BroadcasterResult): void {
+        if (this.queryRunner.connection.subscribers.length) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (subscriber.afterTransactionStart) {
+                    const executionResult = subscriber.afterTransactionStart({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
+                    });
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+    }
+
+    /**
+     * Broadcasts "BEFORE_TRANSACTION_COMMIT" event.
+     */
+    broadcastBeforeTransactionCommitEvent(result: BroadcasterResult): void {
+        if (this.queryRunner.connection.subscribers.length) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (subscriber.beforeTransactionCommit) {
+                    const executionResult = subscriber.beforeTransactionCommit({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
+                    });
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+    }
+
+    /**
+     * Broadcasts "AFTER_TRANSACTION_COMMIT" event.
+     */
+    broadcastAfterTransactionCommitEvent(result: BroadcasterResult): void {
+        if (this.queryRunner.connection.subscribers.length) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (subscriber.afterTransactionCommit) {
+                    const executionResult = subscriber.afterTransactionCommit({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
+                    });
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+    }
+
+    /**
+     * Broadcasts "BEFORE_TRANSACTION_ROLLBACK" event.
+     */
+    broadcastBeforeTransactionRollbackEvent(result: BroadcasterResult): void {
+        if (this.queryRunner.connection.subscribers.length) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (subscriber.beforeTransactionRollback) {
+                    const executionResult = subscriber.beforeTransactionRollback({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
+                    });
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+    }
+
+    /**
+     * Broadcasts "AFTER_TRANSACTION_ROLLBACK" event.
+     */
+    broadcastAfterTransactionRollbackEvent(result: BroadcasterResult): void {
+        if (this.queryRunner.connection.subscribers.length) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (subscriber.afterTransactionRollback) {
+                    const executionResult = subscriber.afterTransactionRollback({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
+                    });
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+    }
+
+    /**
      * Broadcasts "AFTER_UPDATE" event.
      * After update event is executed after entity is being updated in the database.
      * All subscribers and entity listeners who listened to this event will be executed at this point.

@@ -15,7 +15,7 @@ export function ChildEntity(discriminatorValue?: any): ClassDecorator {
         } as TableMetadataArgs);
 
         // register discriminator value if it was provided
-        if (discriminatorValue) {
+        if (typeof discriminatorValue !== 'undefined') {
             getMetadataArgsStorage().discriminatorValues.push({
                 target: target,
                 value: discriminatorValue

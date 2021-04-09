@@ -24,7 +24,7 @@ import {createConnection} from "typeorm";
 const connection = await createConnection();
 ```
 
-Supported ormconfig file formats are: `.json`, `.js`, `.env`, `.yml` and `.xml`.
+Supported ormconfig file formats are: `.json`, `.js`, `.ts`, `.env`, `.yml` and `.xml`.
 
 ## Using `ormconfig.json`
 
@@ -71,6 +71,19 @@ Create `ormconfig.js` in the project root (near `package.json`). It should have 
 
 ```javascript
 module.exports = {
+   "type": "mysql",
+   "host": "localhost",
+   "port": 3306,
+   "username": "test",
+   "password": "test",
+   "database": "test"
+}
+```
+
+Alternatively, you may use the ECMAScript module format if your environment supports it:
+
+```javascript
+export default {
    "type": "mysql",
    "host": "localhost",
    "port": 3306,

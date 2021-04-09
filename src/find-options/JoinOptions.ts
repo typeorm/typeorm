@@ -38,22 +38,34 @@ export interface JoinOptions {
     alias: string;
 
     /**
-     * Array of columns to LEFT JOIN.
+     * Object where each key represents the LEFT JOIN alias,
+     * and the corresponding value represents the relation path.
+     *
+     * The columns of the joined table are included in the selection.
      */
     leftJoinAndSelect?: { [key: string]: string };
 
     /**
-     * Array of columns to INNER JOIN.
+     * Object where each key represents the INNER JOIN alias,
+     * and the corresponding value represents the relation path.
+     *
+     * The columns of the joined table are included in the selection.
      */
     innerJoinAndSelect?: { [key: string]: string };
 
     /**
-     * Array of columns to LEFT JOIN.
+     * Object where each key represents the LEFT JOIN alias,
+     * and the corresponding value represents the relation path.
+     *
+     * This method does not select the columns of the joined table.
      */
     leftJoin?: { [key: string]: string };
 
     /**
-     * Array of columns to INNER JOIN.
+     * Object where each key represents the INNER JOIN alias,
+     * and the corresponding value represents the relation path.
+     *
+     * This method does not select the columns of the joined table.
      */
     innerJoin?: { [key: string]: string };
 

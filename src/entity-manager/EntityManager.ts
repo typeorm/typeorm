@@ -32,7 +32,6 @@ import {ObjectID} from "../driver/mongodb/typings";
 import {InsertResult} from "../query-builder/result/InsertResult";
 import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {FindConditions} from "../find-options/FindConditions";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {ObjectUtils} from "../util/ObjectUtils";
@@ -292,13 +291,25 @@ export class EntityManager {
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: EntityTarget<Entity>, entities: T[], options?: SaveOptions): Promise<T[]>;
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: EntityTarget<Entity>, entities: T[], options: SaveOptions & { reload: false }): Promise<T[]>;
 
     /**
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: EntityTarget<Entity>, entity: T, options?: SaveOptions): Promise<T>;
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: EntityTarget<Entity>, entities: T[], options?: SaveOptions): Promise<(T & Entity)[]>;
+
+    /**
+     * Saves a given entity in the database.
+     * If entity does not exist in the database then inserts, otherwise updates.
+     */
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: EntityTarget<Entity>, entity: T, options: SaveOptions & { reload: false }): Promise<T>;
+
+    /**
+     * Saves a given entity in the database.
+     * If entity does not exist in the database then inserts, otherwise updates.
+     */
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: EntityTarget<Entity>, entity: T, options?: SaveOptions): Promise<T & Entity>;
 
     /**
      * Saves a given entity in the database.
@@ -457,11 +468,6 @@ export class EntityManager {
      * You can execute bulk inserts using this method.
      */
     async insert<Entity>(target: EntityTarget<Entity>, entity: QueryDeepPartialEntity<Entity>|(QueryDeepPartialEntity<Entity>[])): Promise<InsertResult> {
-        // TODO: Oracle does not support multiple values. Need to create another nice solution.
-        if (this.connection.driver instanceof OracleDriver && Array.isArray(entity)) {
-            const results = await Promise.all(entity.map(entity => this.insert(target, entity)));
-            return results.reduce((mergedResult, result) => Object.assign(mergedResult, result), {} as InsertResult);
-        }
         return this.createQueryBuilder()
             .insert()
             .into(target)
@@ -622,12 +628,6 @@ export class EntityManager {
     }
 
     /**
-     * Counts entities that match given conditions.
-     * Useful for pagination.
-     */
-    count<Entity>(entityClass: EntityTarget<Entity>, conditions?: FindConditions<Entity>): Promise<number>;
-
-    /**
      * Counts entities that match given options.
      * Useful for pagination.
      */
@@ -640,6 +640,12 @@ export class EntityManager {
     count<Entity>(entityClass: EntityTarget<Entity>, options?: FindManyOptions<Entity>): Promise<number>;
 
     /**
+     * Counts entities that match given conditions.
+     * Useful for pagination.
+     */
+    count<Entity>(entityClass: EntityTarget<Entity>, conditions?: FindConditions<Entity>): Promise<number>;
+
+    /**
      * Counts entities that match given find options or conditions.
      * Useful for pagination.
      */
@@ -650,14 +656,14 @@ export class EntityManager {
     }
 
     /**
-     * Finds entities that match given conditions.
-     */
-    find<Entity>(entityClass: EntityTarget<Entity>, conditions?: FindConditions<Entity>): Promise<Entity[]>;
-
-    /**
      * Finds entities that match given options.
      */
     find<Entity>(entityClass: EntityTarget<Entity>, options?: FindManyOptions<Entity>): Promise<Entity[]>;
+
+    /**
+     * Finds entities that match given conditions.
+     */
+    find<Entity>(entityClass: EntityTarget<Entity>, conditions?: FindConditions<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities that match given find options or conditions.
@@ -673,18 +679,18 @@ export class EntityManager {
     }
 
     /**
-     * Finds entities that match given conditions.
-     * Also counts all entities that match given conditions,
-     * but ignores pagination settings (from and take options).
-     */
-    findAndCount<Entity>(entityClass: EntityTarget<Entity>, conditions?: FindConditions<Entity>): Promise<[Entity[], number]>;
-
-    /**
      * Finds entities that match given find options.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
     findAndCount<Entity>(entityClass: EntityTarget<Entity>, options?: FindManyOptions<Entity>): Promise<[Entity[], number]>;
+
+    /**
+     * Finds entities that match given conditions.
+     * Also counts all entities that match given conditions,
+     * but ignores pagination settings (from and take options).
+     */
+    findAndCount<Entity>(entityClass: EntityTarget<Entity>, conditions?: FindConditions<Entity>): Promise<[Entity[], number]>;
 
     /**
      * Finds entities that match given find options and conditions.
@@ -703,15 +709,15 @@ export class EntityManager {
 
     /**
      * Finds entities with ids.
-     * Optionally conditions can be applied.
-     */
-    findByIds<Entity>(entityClass: EntityTarget<Entity>, ids: any[], conditions?: FindConditions<Entity>): Promise<Entity[]>;
-
-    /**
-     * Finds entities with ids.
      * Optionally find options can be applied.
      */
     findByIds<Entity>(entityClass: EntityTarget<Entity>, ids: any[], options?: FindManyOptions<Entity>): Promise<Entity[]>;
+
+    /**
+     * Finds entities with ids.
+     * Optionally conditions can be applied.
+     */
+    findByIds<Entity>(entityClass: EntityTarget<Entity>, ids: any[], conditions?: FindConditions<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities with ids.

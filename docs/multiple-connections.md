@@ -275,7 +275,8 @@ Example of replication connection settings:
 ```
 
 All schema update and write operations are performed using `master` server.
-All simple queries performed by find methods or select query builder are using a random `slave` instance. 
+All simple queries performed by find methods or select query builder are using a random `slave` instance.
+All queries performed by query method are performed using the `master` instance.
 
 If you want to explicitly use master in SELECT created by query builder, you can use the following code:
 
@@ -289,6 +290,18 @@ try {
       await masterQueryRunner.release();
 }
         
+```
+
+If you want to use `slave` in raw queries, you also need to explicitly specify the query runner.
+
+```typescript
+
+const slaveQueryRunner = connection.createQueryRunner("slave");
+try {
+    const userFromSlave = await connection.query('SELECT * FROM users WHERE id = $1', [userId], slaveQueryRunner);
+} finally {
+    return slaveQueryRunner.release();
+}
 ```
 
 Note that connection created by a `QueryRunner` need to be explicitly released.

@@ -1,6 +1,5 @@
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
-import {Connection} from "../connection/Connection";
 import {createConnection} from "../index";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {camelCase} from "../util/StringUtils";
@@ -28,7 +27,8 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             .option("n", {
                 alias: "name",
                 describe: "Name of the migration class.",
-                demand: true
+                demand: true,
+                type: "string"
             })
             .option("d", {
                 alias: "dir",
@@ -44,6 +44,24 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
+            })
+            .option("o", {
+                alias: "outputJs",
+                type: "boolean",
+                default: false,
+                describe: "Generate a migration file on Javascript instead of Typescript",
+            })
+            .option("dr", {
+                alias: "dryrun",
+                type: "boolean",
+                default: false,
+                describe: "Prints out the contents of the migration instead of writing it to a file",
+            })
+            .option("ch", {
+                alias: "check",
+                type: "boolean",
+                default: false,
+                describe: "Verifies that the current database is up to date and that no migrations are needed. Otherwise exits with code 1.",
             });
     }
 
@@ -53,7 +71,8 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
         }
 
         const timestamp = new Date().getTime();
-        const filename = timestamp + "-" + args.name + ".ts";
+        const extension = args.outputJs ? ".js" : ".ts";
+        const filename = timestamp + "-" + args.name + extension;
         let directory = args.dir;
 
         // if directory is not set then try to open tsconfig and find default path there
@@ -68,7 +87,6 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             } catch (err) { }
         }
 
-        let connection: Connection|undefined = undefined;
         try {
             const connectionOptionsReader = new ConnectionOptionsReader({
                 root: process.cwd(),
@@ -81,56 +99,74 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 dropSchema: false,
                 logging: false
             });
-            connection = await createConnection(connectionOptions);
-            const sqlInMemory = await connection.driver.createSchemaBuilder().log();
-
-            if (args.pretty) {
-                sqlInMemory.upQueries.forEach(upQuery => {
-                    upQuery.query = MigrationGenerateCommand.prettifyQuery(upQuery.query);
-                });
-                sqlInMemory.downQueries.forEach(downQuery => {
-                    downQuery.query = MigrationGenerateCommand.prettifyQuery(downQuery.query);
-                });
-            }
 
             const upSqls: string[] = [], downSqls: string[] = [];
 
-            // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
-            // we are using simple quoted string instead of template string syntax
-            if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver) {
-                sqlInMemory.upQueries.forEach(upQuery => {
-                    upSqls.push("        await queryRunner.query(\"" + upQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\"" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
-                });
-                sqlInMemory.downQueries.forEach(downQuery => {
-                    downSqls.push("        await queryRunner.query(\"" + downQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\"" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
-                });
-            } else {
-                sqlInMemory.upQueries.forEach(upQuery => {
-                    upSqls.push("        await queryRunner.query(`" + upQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
-                });
-                sqlInMemory.downQueries.forEach(downQuery => {
-                    downSqls.push("        await queryRunner.query(`" + downQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
-                });
-            }
+            const connection = await createConnection(connectionOptions);
+            try {
+                const sqlInMemory = await connection.driver.createSchemaBuilder().log();
 
-            if (upSqls.length) {
-                if (args.name) {
-                    const fileContent = MigrationGenerateCommand.getTemplate(args.name as any, timestamp, upSqls, downSqls.reverse());
-                    const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
-                    await CommandUtils.createFile(path, fileContent);
-
-                    console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
-                } else {
-                    console.log(chalk.yellow("Please specify migration name"));
+                if (args.pretty) {
+                    sqlInMemory.upQueries.forEach(upQuery => {
+                        upQuery.query = MigrationGenerateCommand.prettifyQuery(upQuery.query);
+                    });
+                    sqlInMemory.downQueries.forEach(downQuery => {
+                        downQuery.query = MigrationGenerateCommand.prettifyQuery(downQuery.query);
+                    });
                 }
-            } else {
-                console.log(chalk.yellow(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`));
+
+                // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
+                // we are using simple quoted string instead of template string syntax
+                if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver) {
+                    sqlInMemory.upQueries.forEach(upQuery => {
+                        upSqls.push("        await queryRunner.query(\"" + upQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\"" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
+                    });
+                    sqlInMemory.downQueries.forEach(downQuery => {
+                        downSqls.push("        await queryRunner.query(\"" + downQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\"" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
+                    });
+                } else {
+                    sqlInMemory.upQueries.forEach(upQuery => {
+                        upSqls.push("        await queryRunner.query(`" + upQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
+                    });
+                    sqlInMemory.downQueries.forEach(downQuery => {
+                        downSqls.push("        await queryRunner.query(`" + downQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
+                    });
+                }
+            } finally {
+                await connection.close();
             }
-            await connection.close();
 
+            if (!upSqls.length) {
+                if (args.check) {
+                    console.log(chalk.green(`No changes in database schema were found`));
+                    process.exit(0);
+                } else {
+                    console.log(chalk.yellow(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`));
+                    process.exit(1);
+                }
+            } else if (!args.name) {
+                console.log(chalk.yellow("Please specify a migration name using the `-n` argument"));
+                process.exit(1);
+            }
+
+            const fileContent = args.outputJs ?
+                MigrationGenerateCommand.getJavascriptTemplate(args.name as any, timestamp, upSqls, downSqls.reverse()) :
+                MigrationGenerateCommand.getTemplate(args.name as any, timestamp, upSqls, downSqls.reverse());
+            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+
+            if (args.check) {
+                console.log(chalk.yellow(`Unexpected changes in database schema were found in check mode:\n\n${chalk.white(fileContent)}`));
+                process.exit(1);
+            }
+
+            if (args.dryrun) {
+                console.log(chalk.green(`Migration ${chalk.blue(path)} has content:\n\n${chalk.white(fileContent)}`));
+            } else {
+                await CommandUtils.createFile(path, fileContent);
+
+                console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
+            }
         } catch (err) {
-            if (connection) await (connection as Connection).close();
-
             console.log(chalk.black.bgRed("Error during migration generation:"));
             console.error(err);
             process.exit(1);
@@ -173,6 +209,30 @@ ${downSqls.join(`
 `)}
     }
 
+}
+`;
+    }
+
+    /**
+     * Gets contents of the migration file in Javascript.
+     */
+    protected static getJavascriptTemplate(name: string, timestamp: number, upSqls: string[], downSqls: string[]): string {
+        const migrationName = `${camelCase(name, true)}${timestamp}`;
+
+        return `const { MigrationInterface, QueryRunner } = require("typeorm");
+
+module.exports = class ${migrationName} {
+    name = '${migrationName}'
+
+    async up(queryRunner) {
+${upSqls.join(`
+`)}
+    }
+
+    async down(queryRunner) {
+${downSqls.join(`
+`)}
+    }
 }
 `;
     }

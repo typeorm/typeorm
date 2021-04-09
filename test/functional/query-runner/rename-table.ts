@@ -24,26 +24,60 @@ describe("query runner > rename table", () => {
 
     it("should correctly rename table and revert rename", () => Promise.all(connections.map(async connection => {
 
+        const sequenceQuery = (name: string) => {
+            return `SELECT COUNT(*) FROM information_schema.sequences WHERE sequence_schema = 'public' and sequence_name = '${name}'`
+        }
+
         // CockroachDB does not support renaming constraints and removing PK.
         if (connection.driver instanceof CockroachDriver)
             return;
 
         const queryRunner = connection.createQueryRunner();
 
-        let table = await queryRunner.getTable("post");
+        // check if sequence "faculty_id_seq" exist
+        if (connection.driver instanceof PostgresDriver) {
+            const facultySeq = await queryRunner.query(sequenceQuery("faculty_id_seq"));
+            facultySeq[0].count.should.be.equal("1");
+        }
+
+        let table = await queryRunner.getTable("faculty");
 
         await queryRunner.renameTable(table!, "question");
         table = await queryRunner.getTable("question");
         table!.should.be.exist;
 
-        await queryRunner.renameTable("question", "user");
-        table = await queryRunner.getTable("user");
+        // check if sequence "faculty_id_seq" was renamed to "question_id_seq"
+        if (connection.driver instanceof PostgresDriver) {
+            const facultySeq = await queryRunner.query(sequenceQuery("faculty_id_seq"));
+            const questionSeq = await queryRunner.query(sequenceQuery("question_id_seq"));
+            facultySeq[0].count.should.be.equal("0");
+            questionSeq[0].count.should.be.equal("1");
+        }
+
+        await queryRunner.renameTable("question", "answer");
+        table = await queryRunner.getTable("answer");
         table!.should.be.exist;
+
+        // check if sequence "question_id_seq" was renamed to "answer_id_seq"
+        if (connection.driver instanceof PostgresDriver) {
+            const questionSeq = await queryRunner.query(sequenceQuery("question_id_seq"));
+            const answerSeq = await queryRunner.query(sequenceQuery("answer_id_seq"));
+            questionSeq[0].count.should.be.equal("0");
+            answerSeq[0].count.should.be.equal("1");
+        }
 
         await queryRunner.executeMemoryDownSql();
 
-        table = await queryRunner.getTable("post");
+        table = await queryRunner.getTable("faculty");
         table!.should.be.exist;
+
+        // check if sequence "answer_id_seq" was renamed to "faculty_id_seq"
+        if (connection.driver instanceof PostgresDriver) {
+            const answerSeq = await queryRunner.query(sequenceQuery("answer_id_seq"));
+            const facultySeq = await queryRunner.query(sequenceQuery("faculty_id_seq"));
+            answerSeq[0].count.should.be.equal("0");
+            facultySeq[0].count.should.be.equal("1");
+        }
 
         await queryRunner.release();
     })));

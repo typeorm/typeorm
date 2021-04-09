@@ -491,7 +491,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
 
         if (typeof defaultValue === "number") {
@@ -501,7 +501,11 @@ export class SqlServerDriver implements Driver {
             return defaultValue === true ? "1" : "0";
 
         } else if (typeof defaultValue === "function") {
-            return /*"(" + */defaultValue()/* + ")"*/;
+            const value = defaultValue();
+            if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
+                return "getdate()"
+            }
+            return value
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;
@@ -602,20 +606,38 @@ export class SqlServerDriver implements Driver {
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            return  tableColumn.name !== columnMetadata.databaseName
+            const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
-                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNessesary(this.normalizeDefault(columnMetadata)) !== this.lowerDefaultValueIfNessesary(tableColumn.default)) // we included check for generated here, because generated columns already can have default values
+                || tableColumn.isGenerated !== columnMetadata.isGenerated
+                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== this.lowerDefaultValueIfNecessary(tableColumn.default)) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
-                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || tableColumn.isGenerated !== columnMetadata.isGenerated;
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata);
+
+            // DEBUG SECTION
+            // if (isColumnChanged) {
+            //     console.log("table:", columnMetadata.entityMetadata.tableName);
+            //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
+            //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            //     console.log("length:", tableColumn.length, columnMetadata.length);
+            //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
+            //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
+            //     console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            //     console.log("isGenerated 2:", !tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== this.lowerDefaultValueIfNecessary(tableColumn.default));
+            //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
+            //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
+            //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            //     console.log("==========================================");
+            // }
+
+            return isColumnChanged
         });
     }
-    private lowerDefaultValueIfNessesary(value: string | undefined) {
+    private lowerDefaultValueIfNecessary(value: string | undefined) {
         // SqlServer saves function calls in default value as lowercase https://github.com/typeorm/typeorm/issues/2733
         if (!value) {
             return value;
@@ -747,6 +769,15 @@ export class SqlServerDriver implements Driver {
 
         credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
+        // todo: credentials.domain is deprecation. remove it in future
+        const authentication = !credentials.domain ? credentials.authentication : {
+            type: "ntlm",
+            options: {
+                domain: credentials.domain,
+                userName: credentials.username,
+                password: credentials.password
+            }
+        };
         // build connection options for the driver
         const connectionOptions = Object.assign({}, {
             connectionTimeout: this.options.connectionTimeout,
@@ -756,11 +787,11 @@ export class SqlServerDriver implements Driver {
             options: this.options.options,
         }, {
             server: credentials.host,
-            user: credentials.username,
-            password: credentials.password,
             database: credentials.database,
             port: credentials.port,
-            domain: credentials.domain,
+            user: credentials.username,
+            password: credentials.password,
+            authentication: authentication,
         }, options.extra || {});
 
         // set default useUTC option if it hasn't been set

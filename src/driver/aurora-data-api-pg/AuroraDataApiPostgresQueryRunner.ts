@@ -3,9 +3,10 @@ import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStar
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {IsolationLevel} from "../types/IsolationLevel";
-import {AuroraDataApiPostgresDriver} from "../postgres/PostgresDriver";
+import {AuroraDataApiPostgresDriver} from "./AuroraDataApiPostgresDriver";
 import {PostgresQueryRunner} from "../postgres/PostgresQueryRunner";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
     driver: any;
@@ -29,6 +30,8 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
      */
     driver: AuroraDataApiPostgresDriver;
 
+    protected client: any;
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
@@ -47,8 +50,10 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AuroraDataApiPostgresDriver, mode: ReplicationMode) {
+    constructor(driver: AuroraDataApiPostgresDriver, client: any, mode: ReplicationMode) {
         super(driver, mode);
+
+        this.client = client
     }
 
     // -------------------------------------------------------------------------
@@ -93,8 +98,17 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         this.isTransactionActive = true;
-        await this.driver.client.startTransaction();
+      
+        await this.client.startTransaction();
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -104,9 +118,18 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
     async commitTransaction(): Promise<void> {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
+      
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
 
-        await this.driver.client.commitTransaction();
+        await this.client.commitTransaction();
+
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -117,8 +140,15 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.driver.client.rollbackTransaction();
-        this.isTransactionActive = false;
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
+        await this.client.rollbackTransaction();
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -128,7 +158,7 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const result = await this.driver.client.query(query, parameters);
+        const result = await this.client.query(query, parameters);
 
         if (result.records) {
             return result.records;
