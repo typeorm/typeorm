@@ -149,12 +149,27 @@ export class DriverUtils {
         let port = undefined;
         let hostReplicaSet = undefined;
         let replicaSet = undefined;
-        // remove mongodb query params
-        if (afterBase && afterBase.indexOf("?") !== -1) {
-            // split params to get replica set
-            afterQuestionMark = afterBase.substr((afterBase.indexOf("?") + 1), afterBase.length);
-            replicaSet = afterQuestionMark.split("=")[1];
+        
+        let optionsObject: any = {};
 
+        if (afterBase && afterBase.indexOf("?") !== -1) {
+
+            // split params
+            afterQuestionMark = afterBase.substr((afterBase.indexOf("?") + 1), afterBase.length);
+
+            const optionsList = afterQuestionMark.split("&");
+            let optionKey: string;
+            let optionValue: string;
+
+            // create optionsObject for merge with connectionUrl object before return
+            optionsList.forEach(optionItem => {
+                optionKey = optionItem.split("=")[0];
+                optionValue = optionItem.split("=")[1];
+                optionsObject[optionKey] = optionValue;
+            });
+
+            // specific replicaSet value to set options about hostReplicaSet
+            replicaSet = optionsObject["replicaSet"];
             afterBase = afterBase.substr(0, afterBase.indexOf("?"));
         }
 
@@ -170,21 +185,28 @@ export class DriverUtils {
             password = usernameAndPassword.substr(firstColon + 1);
         }
 
+        // If replicaSet have value set It as hostlist, If not set like standalone host
         if (replicaSet) {
             hostReplicaSet = hostAndPort;
         } else {
             [host, port] = hostAndPort.split(":");
         }
 
-        return {
+        let connectionUrl: any = {
             type: type,
             host: host,
             hostReplicaSet: hostReplicaSet,
             username: decodeURIComponent(username),
             password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined,
-            replicaSet: replicaSet || undefined
+            database: afterBase || undefined
         };
+        
+        // Loop to set every options in connectionUrl to object
+        for (const [key, value] of Object.entries(optionsObject)) {
+            connectionUrl[key] = value;
+        }
+
+        return connectionUrl;
     }
 }
