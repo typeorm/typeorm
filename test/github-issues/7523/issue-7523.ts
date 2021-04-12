@@ -14,10 +14,10 @@ describe("github issues > #7523 Do not create duplicate CREATE TYPE migration qu
     }));
     after(() => closeTestingConnections(connections));
 
-    it("should recognize model changes", () => Promise.all(connections.map(async connection => {
+    it("should not generate duplicate CREATE TYPE query", () => Promise.all(connections.map(async connection => {
         const sqlInMemory = await connection.driver.createSchemaBuilder().log();
-        expect(sqlInMemory.upQueries.length).greaterThan(0);
-        expect(sqlInMemory.downQueries.length).greaterThan(0);
+        expect(sqlInMemory.upQueries.length).equals(3);
+        expect(sqlInMemory.downQueries.length).equals(3);
     })));
 
     it("should not generate queries when no model changes", () => Promise.all(connections.map(async connection => {
