@@ -180,7 +180,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `uuidExtension` - The Postgres extension to use when generating UUIDs. Defaults to `uuid-ossp`. Can be changed to `pgcrypto` if the `uuid-ossp` extension is unavailable.
 
-* `uuidExtension` - The Postgres function to use when generating UUIDs. Overrides uuidExtension if set.
+* `uuidExtension` - The Postgres function to use when generating UUIDs. Overrides uuidExtension if provided.
 
 * `poolErrorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
 
