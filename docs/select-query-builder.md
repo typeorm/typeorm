@@ -1,6 +1,7 @@
 # Select using Query Builder
 
 * [What is `QueryBuilder`](#what-is-querybuilder)
+* [Important note when using the `QueryBuilder`](#important-note-when-using-the-querybuilder)
 * [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
 * [Getting values using QueryBuilder](#getting-values-using-querybuilder)
 * [What are aliases for?](#what-are-aliases-for)
@@ -61,6 +62,32 @@ User {
     lastName: "Saw"
 }
 ```
+
+## Important note when using the `QueryBuilder`
+
+When using the `QueryBuilder`, you need to provide unique parameters in your `WHERE` expressions. **This will not work**:
+
+```TypeScript
+const result = await getConnection()
+    .createQueryBuilder('user')
+    .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
+    .leftJoinAndSelect('user.linkedCow', 'linkedCow')
+    .where('user.linkedSheep = :id', { id: sheepId })
+    .andWhere('user.linkedCow = :id', { id: cowId });
+```
+
+... but this will:
+
+```TypeScript
+const result = await getConnection()
+    .createQueryBuilder('user')
+    .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
+    .leftJoinAndSelect('user.linkedCow', 'linkedCow')
+    .where('user.linkedSheep = :sheepId', { sheepId })
+    .andWhere('user.linkedCow = :cowId', { cowId });
+```
+
+Note that we uniquely named `:sheepId` and `:cowId` instead of using `:id` twice for different parameters.
 
 ## How to create and use a `QueryBuilder`
 
