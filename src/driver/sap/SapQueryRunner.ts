@@ -1414,24 +1414,28 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     // -------------------------------------------------------------------------
-    // Protected Methods
+    // Driver-specific Methods
     // -------------------------------------------------------------------------
 
     /**
-     * Return current database.
+     * Returns current database.
      */
-    protected async getCurrentDatabase(): Promise<string> {
+    async getCurrentDatabase(): Promise<string> {
         const currentDBQuery = await this.query(`SELECT "VALUE" AS "db_name" FROM "SYS"."M_SYSTEM_OVERVIEW" WHERE "SECTION" = 'System' and "NAME" = 'Instance ID'`);
         return currentDBQuery[0]["db_name"];
     }
 
     /**
-     * Return current schema.
+     * Returns current schema.
      */
-    protected async getCurrentSchema(): Promise<string> {
+    async getCurrentSchema(): Promise<string> {
         const currentSchemaQuery = await this.query(`SELECT CURRENT_SCHEMA AS "schema_name" FROM "SYS"."DUMMY"`);
         return currentSchemaQuery[0]["schema_name"];
     }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
 
     protected async loadViews(viewNames: string[]): Promise<View[]> {
         const hasTable = await this.hasTable(this.getTypeormMetadataTableName());

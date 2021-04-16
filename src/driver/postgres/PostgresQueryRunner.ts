@@ -1396,6 +1396,15 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     // -------------------------------------------------------------------------
+    // Driver-specific Methods
+    // -------------------------------------------------------------------------
+
+    async getCurrentSchema(): Promise<string> {
+        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
+        return currentSchemaQuery[0]["current_schema"];
+    }
+
+    // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
 
@@ -1404,9 +1413,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!hasTable)
             return Promise.resolve([]);
 
-        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
-        const currentSchema = currentSchemaQuery[0]["current_schema"];
-
+        const currentSchema = await this.getCurrentSchema()
         const viewsCondition = viewNames.map(viewName => {
             let [schema, name] = viewName.split(".");
             if (!name) {
@@ -1552,8 +1559,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const getSchemaFromKey = (dbObject: any, key: string) => dbObject[key] === currentSchema && !this.driver.options.schema ? undefined : dbObject[key];
             // We do not need to join schema name, when database is by default.
             // In this case we need local variable `tableFullName` for below comparison.
-            // const schema = getSchemaFromKey(dbTable, "table_schema");
-            table.name = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
+            const schema = getSchemaFromKey(dbTable, "table_schema");
+            table.name = this.driver.buildTableName(dbTable["table_name"], schema);
             const tableFullName = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
 
             // create columns from the loaded columns
@@ -2141,8 +2148,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     protected async getEnumTypeName(table: Table, column: TableColumn) {
-        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
-        const currentSchema = currentSchemaQuery[0]["current_schema"];
+        const currentSchema = await this.getCurrentSchema()
         let [schema, name] = table.name.split(".");
         if (!name) {
             name = schema;
