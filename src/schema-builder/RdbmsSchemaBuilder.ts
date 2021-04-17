@@ -366,11 +366,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async createNewTables(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
-            let currentSchema: string | undefined
+            let currentSchema: string | undefined;
             if (this.queryRunner instanceof PostgresQueryRunner
                 || this.queryRunner instanceof SqlServerQueryRunner
                 || this.queryRunner instanceof SapQueryRunner) {
-                currentSchema = await this.queryRunner.getCurrentSchema()
+                currentSchema = await this.queryRunner.getCurrentSchema();
             }
 
             // check if table does not exist yet
@@ -378,7 +378,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
                 let schema = metadata.schema || (<SqlServerDriver|PostgresDriver|SapDriver>this.connection.driver).options.schema;
                 // if schema is default db schema (e.g. "public" in PostgreSQL), skip it.
-                schema = schema === currentSchema ? undefined : schema
+                schema = schema === currentSchema ? undefined : schema;
                 const fullTableName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
 
                 return table.name === fullTableName;
