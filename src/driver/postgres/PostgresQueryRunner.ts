@@ -1563,7 +1563,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
 
-            const getSchemaFromKey = (dbObject: any, key: string) => dbObject[key] === currentSchema && !this.driver.options.schema ? undefined : dbObject[key];
+            const getSchemaFromKey = (dbObject: any, key: string) => {
+                return dbObject[key] === currentSchema && (!this.driver.options.schema || this.driver.options.schema === currentSchema)
+                    ? undefined
+                    : dbObject[key]
+            };
             // We do not need to join schema name, when database is by default.
             // In this case we need local variable `tableFullName` for below comparison.
             const schema = getSchemaFromKey(dbTable, "table_schema");
