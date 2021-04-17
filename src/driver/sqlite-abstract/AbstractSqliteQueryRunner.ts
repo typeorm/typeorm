@@ -167,10 +167,24 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<undefined> {
+        return Promise.resolve(undefined);
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         throw new Error(`This driver does not support table schemas`);
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<undefined> {
+        return Promise.resolve(undefined);
     }
 
     /**

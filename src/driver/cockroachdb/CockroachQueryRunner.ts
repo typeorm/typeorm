@@ -298,11 +298,27 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<string> {
+        const query = await this.query(`SELECT * FROM current_database()`);
+        return query[0]["current_database"];
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         const result = await this.query(`SELECT * FROM "information_schema"."schemata" WHERE "schema_name" = '${schema}'`);
         return result.length ? true : false;
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<string> {
+        const query = await this.query(`SELECT * FROM current_schema()`);
+        return query[0]["current_schema"];
     }
 
     /**

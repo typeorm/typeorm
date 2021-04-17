@@ -364,12 +364,28 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<string> {
+        const currentDBQuery = await this.query(`SELECT DB_NAME() AS "db_name"`);
+        return currentDBQuery[0]["db_name"];
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         const result = await this.query(`SELECT SCHEMA_ID('${schema}') as "schema_id"`);
         const schemaId = result[0]["schema_id"];
         return !!schemaId;
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<string> {
+        const currentSchemaQuery = await this.query(`SELECT SCHEMA_NAME() AS "schema_name"`);
+        return currentSchemaQuery[0]["schema_name"];
     }
 
     /**
@@ -1438,26 +1454,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             } catch (rollbackError) { }
             throw error;
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // Driver-specific Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Returns current database.
-     */
-    async getCurrentDatabase(): Promise<string> {
-        const currentDBQuery = await this.query(`SELECT DB_NAME() AS "db_name"`);
-        return currentDBQuery[0]["db_name"];
-    }
-
-    /**
-     * Returns current schema.
-     */
-    async getCurrentSchema(): Promise<string> {
-        const currentSchemaQuery = await this.query(`SELECT SCHEMA_NAME() AS "schema_name"`);
-        return currentSchemaQuery[0]["schema_name"];
     }
 
     // -------------------------------------------------------------------------

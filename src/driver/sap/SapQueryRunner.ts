@@ -280,11 +280,27 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Returns current database.
+     */
+    async getCurrentDatabase(): Promise<string> {
+        const currentDBQuery = await this.query(`SELECT "VALUE" AS "db_name" FROM "SYS"."M_SYSTEM_OVERVIEW" WHERE "SECTION" = 'System' and "NAME" = 'Instance ID'`);
+        return currentDBQuery[0]["db_name"];
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         const schemas = await this.getSchemas();
         return schemas.indexOf(schema) !== -1;
+    }
+
+    /**
+     * Returns current schema.
+     */
+    async getCurrentSchema(): Promise<string> {
+        const currentSchemaQuery = await this.query(`SELECT CURRENT_SCHEMA AS "schema_name" FROM "SYS"."DUMMY"`);
+        return currentSchemaQuery[0]["schema_name"];
     }
 
     /**
@@ -1411,26 +1427,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             } catch (rollbackError) { }
             throw error;
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // Driver-specific Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Returns current database.
-     */
-    async getCurrentDatabase(): Promise<string> {
-        const currentDBQuery = await this.query(`SELECT "VALUE" AS "db_name" FROM "SYS"."M_SYSTEM_OVERVIEW" WHERE "SECTION" = 'System' and "NAME" = 'Instance ID'`);
-        return currentDBQuery[0]["db_name"];
-    }
-
-    /**
-     * Returns current schema.
-     */
-    async getCurrentSchema(): Promise<string> {
-        const currentSchemaQuery = await this.query(`SELECT CURRENT_SCHEMA AS "schema_name" FROM "SYS"."DUMMY"`);
-        return currentSchemaQuery[0]["schema_name"];
     }
 
     // -------------------------------------------------------------------------

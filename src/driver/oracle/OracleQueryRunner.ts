@@ -247,10 +247,26 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<undefined> {
+        const query = await this.query(`SELECT SYS_CONTEXT('USERENV','DB_NAME') AS "db_name" FROM dual`)
+        return query[0]["db_name"]
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         return Promise.resolve(false);
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<string> {
+        const query = await this.query(`SELECT SYS_CONTEXT('USERENV','CURRENT_SCHEMA') AS "schema_name" FROM dual`)
+        return query[0]["schema_name"]
     }
 
     /**

@@ -23,9 +23,6 @@ import {TableExclusion} from "./table/TableExclusion";
 import {View} from "./view/View";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata";
-import {PostgresQueryRunner} from "../driver/postgres/PostgresQueryRunner";
-import {SqlServerQueryRunner} from "../driver/sqlserver/SqlServerQueryRunner";
-import {SapQueryRunner} from "../driver/sap/SapQueryRunner";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -365,14 +362,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Primary key only can be created in conclusion with auto generated column.
      */
     protected async createNewTables(): Promise<void> {
+        const currentSchema = await this.queryRunner.getCurrentSchema();
         for (const metadata of this.entityToSyncMetadatas) {
-            let currentSchema: string | undefined;
-            if (this.queryRunner instanceof PostgresQueryRunner
-                || this.queryRunner instanceof SqlServerQueryRunner
-                || this.queryRunner instanceof SapQueryRunner) {
-                currentSchema = await this.queryRunner.getCurrentSchema();
-            }
-
             // check if table does not exist yet
             const existTable = this.queryRunner.loadedTables.find(table => {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
