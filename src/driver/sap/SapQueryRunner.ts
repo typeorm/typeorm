@@ -1529,10 +1529,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
+            const getSchemaFromKey = (dbObject: any, key: string) => {
+                return dbObject[key] === currentSchema && (!this.driver.options.schema || this.driver.options.schema === currentSchema)
+                    ? undefined
+                    : dbObject[key]
+            };
 
             // We do not need to join schema name, when database is by default.
             // In this case we need local variable `tableFullName` for below comparision.
-            const schema = dbTable["SCHEMA_NAME"] === currentSchema && !this.driver.options.schema ? undefined : dbTable["SCHEMA_NAME"];
+            const schema = getSchemaFromKey(dbTable, "SCHEMA_NAME");
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema);
             const tableFullName = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["SCHEMA_NAME"]);
 
@@ -1649,7 +1654,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
 
                 // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                const schema = dbForeignKey["REFERENCED_SCHEMA_NAME"] === currentSchema ? undefined : dbForeignKey["REFERENCED_SCHEMA_NAME"];
+                const schema = getSchemaFromKey(dbTable, "REFERENCED_SCHEMA_NAME");
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], schema);
 
                 return new TableForeignKey({
