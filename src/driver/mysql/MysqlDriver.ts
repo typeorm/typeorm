@@ -583,8 +583,9 @@ export class MysqlDriver implements Driver {
         const defaultValue = columnMetadata.default;
 
         if (defaultValue === null) {
-            return undefined
-
+            return 'NULL';
+        } else if (defaultValue === undefined && columnMetadata.isNullable) {
+            return 'NULL';
         } else if (
             (columnMetadata.type === "enum"
             || columnMetadata.type === "simple-enum"
