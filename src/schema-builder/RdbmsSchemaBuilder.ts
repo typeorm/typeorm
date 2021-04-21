@@ -410,6 +410,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     protected async dropOldViews(): Promise<void> {
+        const droppedViews: Set<View> = new Set();
         for (const view of this.queryRunner.loadedViews) {
             const existViewMetadata = this.viewEntityToSyncMetadatas.find(metadata => {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
@@ -427,8 +428,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // drop an old view
             await this.queryRunner.dropView(view);
-            this.queryRunner.loadedViews.splice(this.queryRunner.loadedViews.indexOf(view), 1);
+            droppedViews.add(view);
         }
+        this.queryRunner.loadedViews = this.queryRunner.loadedViews.filter(view => !droppedViews.has(view));
     }
 
     /**
