@@ -271,7 +271,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Checks if database with the given name exist.
      */
     async hasDatabase(database: string): Promise<boolean> {
-        return Promise.resolve(false);
+        const result = await this.query(`SELECT * FROM pg_database WHERE datname='${database}';`);
+        return result.length ? true : false;
     }
 
     /**
@@ -320,18 +321,25 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
     /**
      * Creates a new database.
-     * Postgres does not supports database creation inside a transaction block.
+     * Note: Postgres does not support database creation inside a transaction block.
      */
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
-        await Promise.resolve();
+        if (ifNotExist)
+            throw new Error(`PostgreSQL does not support 'IF NOT EXISTS' in database creation.`);
+
+        const up = `CREATE DATABASE "${database}"`;
+        const down = `DROP DATABASE "${database}"`;
+        await this.executeQueries(new Query(up), new Query(down));
     }
 
     /**
      * Drops database.
-     * Postgres does not supports database drop inside a transaction block.
+     * Note: Postgres does not support database dropping inside a transaction block.
      */
     async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
-        return Promise.resolve();
+        const up = ifExist ? `DROP DATABASE IF EXISTS "${database}"` : `DROP DATABASE "${database}"`;
+        const down = `CREATE DATABASE "${database}"`;
+        await this.executeQueries(new Query(up), new Query(down));
     }
 
     /**
