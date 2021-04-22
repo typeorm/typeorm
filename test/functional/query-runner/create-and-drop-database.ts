@@ -1,6 +1,5 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 
 describe("query runner > create and drop database", () => {
@@ -20,10 +19,7 @@ describe("query runner > create and drop database", () => {
 
         const queryRunner = connection.createQueryRunner();
 
-        // Postgres does not support 'IF NOT EXISTS' in database creation.
-        const ifNotExist = connection.driver instanceof PostgresDriver? false : true;
-        
-        await queryRunner.createDatabase("myTestDatabase", ifNotExist);
+        await queryRunner.createDatabase("myTestDatabase", true);
         let hasDatabase = await queryRunner.hasDatabase("myTestDatabase");
         hasDatabase.should.be.true;
 

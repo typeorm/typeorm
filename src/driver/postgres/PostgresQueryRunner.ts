@@ -324,8 +324,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Note: Postgres does not support database creation inside a transaction block.
      */
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
-        if (ifNotExist)
-            throw new Error(`PostgreSQL does not support 'IF NOT EXISTS' in database creation.`);
+        if (ifNotExist) {
+            const databaseAlreadyExists = await this.hasDatabase(database);
+            
+            if (databaseAlreadyExists)
+                return Promise.resolve();
+        }
 
         const up = `CREATE DATABASE "${database}"`;
         const down = `DROP DATABASE "${database}"`;
