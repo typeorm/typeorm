@@ -23,6 +23,7 @@ import { EntitySchema } from "../";
 import { FindOperator } from "../find-options/FindOperator";
 import { In } from "../find-options/operator/In";
 import { EntityColumnNotFound } from "../error/EntityColumnNotFound";
+import { DB2Driver } from "../driver/db2/DB2Driver";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -815,11 +816,25 @@ export abstract class QueryBuilder<Entity> {
             this.expressionMap.extraReturningColumns.length > 0 &&
             driver.isReturningSqlSupported()
         ) {
-            columns.push(
-                ...this.expressionMap.extraReturningColumns.filter((column) => {
-                    return columns.indexOf(column) === -1;
-                })
-            );
+            if (driver instanceof DB2Driver) {
+                columns.push(
+                    ...this.expressionMap.extraReturningColumns
+                        .filter((column) => {
+                            return column.isPrimary || column.isGenerated;
+                        })
+                        .filter((column) => {
+                            return columns.indexOf(column) === -1;
+                        })
+                );
+            } else {
+                columns.push(
+                    ...this.expressionMap.extraReturningColumns.filter(
+                        (column) => {
+                            return columns.indexOf(column) === -1;
+                        }
+                    )
+                );
+            }
         }
 
         if (columns.length) {

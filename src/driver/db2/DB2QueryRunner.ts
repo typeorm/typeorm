@@ -127,7 +127,9 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
             await Promise.all(beforeBroadcastResult.promises);
 
         this.isTransactionActive = true;
-        await this.query("BEGIN TRANSACTION");
+        const databaseConnection = await this.connect();
+        await databaseConnection.beginTransaction();
+        // await this.query("BEGIN TRANSACTION");
         if (isolationLevel) {
             await this.query(
                 "SET TRANSACTION ISOLATION LEVEL " + isolationLevel
@@ -156,7 +158,9 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
         if (beforeBroadcastResult.promises.length > 0)
             await Promise.all(beforeBroadcastResult.promises);
 
-        await this.query("COMMIT");
+        // await this.query("COMMIT");
+        const databaseConnection = await this.connect();
+        await databaseConnection.commitTransaction();
         this.isTransactionActive = false;
 
         const afterBroadcastResult = new BroadcasterResult();
@@ -181,7 +185,9 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
         if (beforeBroadcastResult.promises.length > 0)
             await Promise.all(beforeBroadcastResult.promises);
 
-        await this.query("ROLLBACK");
+        // await this.query("ROLLBACK");
+        const databaseConnection = await this.connect();
+        await databaseConnection.rollbackTransaction();
         this.isTransactionActive = false;
 
         const afterBroadcastResult = new BroadcasterResult();

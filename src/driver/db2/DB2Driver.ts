@@ -349,20 +349,24 @@ export class DB2Driver implements Driver {
 
         if (columnMetadata.type === Boolean) {
             return value ? 1 : 0;
-        } else if (columnMetadata.type === "date") {
-            if (typeof value === "string")
-                value = value.replace(/[^0-9-]/g, "");
-            return () =>
-                `TO_DATE('${DateUtils.mixedDateToDateString(
-                    value
-                )}', 'YYYY-MM-DD')`;
         } else if (
+            columnMetadata.type === "date" ||
+            // ) {
+            // if (typeof value === "string")
+            //     value = value.replace(/[^0-9-]/g, "");
+            // return () =>
+            //     `TO_DATE('${DateUtils.mixedDateToDateString(
+            //         value
+            //     )}', 'YYYY-MM-DD')`;
+
+            // } else if (
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
             columnMetadata.type === "timestamp with time zone" ||
             columnMetadata.type === "timestamp with local time zone"
         ) {
-            return DateUtils.mixedDateToDate(value);
+            // return DateUtils.mixedDateToDate(value);
+            return DateUtils.mixedDateToUtcDatetimeString(value);
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
         } else if (columnMetadata.type === "simple-json") {
@@ -387,7 +391,8 @@ export class DB2Driver implements Driver {
         if (columnMetadata.type === Boolean) {
             value = !!value;
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value);
+            // value = DateUtils.mixedDateToDateString(value);
+            value = DateUtils.mixedDateToUtcDatetimeString(value);
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value);
         } else if (
@@ -396,7 +401,8 @@ export class DB2Driver implements Driver {
             columnMetadata.type === "timestamp with time zone" ||
             columnMetadata.type === "timestamp with local time zone"
         ) {
-            value = DateUtils.normalizeHydratedDate(value);
+            // value = DateUtils.normalizeHydratedDate(value);
+            value = DateUtils.mixedDateToUtcDatetimeString(value);
         } else if (columnMetadata.type === "json") {
             value = JSON.parse(value);
         } else if (columnMetadata.type === "simple-array") {

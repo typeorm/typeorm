@@ -1,7 +1,7 @@
 {
   "name": "typeorm-db2",
   "private": false,
-  "version": "0.2.320",
+  "version": "0.2.325",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB, DB2 databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
