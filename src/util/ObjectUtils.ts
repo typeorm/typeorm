@@ -1,7 +1,7 @@
 export class ObjectUtils {
   /**
    * Copy the values of all of the enumerable own properties from one or more source objects to a
-   * target object. Returns the target object.
+   * target object.
    * @param target The target object to copy to.
    * @param source The source object from which to copy properties.
    */
@@ -9,7 +9,7 @@ export class ObjectUtils {
 
   /**
    * Copy the values of all of the enumerable own properties from one or more source objects to a
-   * target object. Returns the target object.
+   * target object.
    * @param target The target object to copy to.
    * @param source1 The first source object from which to copy properties.
    * @param source2 The second source object from which to copy properties.
@@ -18,7 +18,7 @@ export class ObjectUtils {
 
   /**
    * Copy the values of all of the enumerable own properties from one or more source objects to a
-   * target object. Returns the target object.
+   * target object.
    * @param target The target object to copy to.
    * @param source1 The first source object from which to copy properties.
    * @param source2 The second source object from which to copy properties.
@@ -28,7 +28,7 @@ export class ObjectUtils {
 
   /**
    * Copy the values of all of the enumerable own properties from one or more source objects to a
-   * target object. Returns the target object.
+   * target object.
    * @param target The target object to copy to.
    * @param sources One or more source objects from which to copy properties
    */
