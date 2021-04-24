@@ -326,7 +326,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
         if (ifNotExist) {
             const databaseAlreadyExists = await this.hasDatabase(database);
-            
+
             if (databaseAlreadyExists)
                 return Promise.resolve();
         }
@@ -1401,16 +1401,27 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         await this.startTransaction();
         try {
+            // drop views
             const selectViewDropsQuery = `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
              `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`;
             const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
             await Promise.all(dropViewQueries.map(q => this.query(q["query"])));
 
+            // drop materialized views
+            const selectMatViewDropsQuery = `SELECT 'DROP MATERIALIZED VIEW IF EXISTS "' || schemaname || '"."' || matviewname || '" CASCADE;' as "query" ` +
+             `FROM "pg_matviews" WHERE "schemaname" IN (${schemaNamesString})`;
+            const dropMatViewQueries: ObjectLiteral[] = await this.query(selectMatViewDropsQuery);
+            await Promise.all(dropMatViewQueries.map(q => this.query(q["query"])));
+
             // ignore spatial_ref_sys; it's a special table supporting PostGIS
             // TODO generalize this as this.driver.ignoreTables
+
+            // drop tables
             const selectTableDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND "tablename" NOT IN ('spatial_ref_sys')`;
             const dropTableQueries: ObjectLiteral[] = await this.query(selectTableDropsQuery);
             await Promise.all(dropTableQueries.map(q => this.query(q["query"])));
+
+            // drop enum types
             await this.dropEnumTypes(schemaNamesString);
 
             await this.commitTransaction();
@@ -1442,14 +1453,18 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return `("t"."schema" = '${schema}' AND "t"."name" = '${name}')`;
         }).join(" OR ");
 
-        const query = `SELECT "t".*, "v"."check_option" FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" ` +
-            `INNER JOIN "information_schema"."views" "v" ON "v"."table_schema" = "t"."schema" AND "v"."table_name" = "t"."name" WHERE "t"."type" = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+        const query = `SELECT "t".* FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" ` +
+            `INNER JOIN "pg_catalog"."pg_class" "c" ON "c"."relname" = "t"."name" ` +
+            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "c"."relnamespace" AND "n"."nspname" = "t"."schema" ` +
+            `WHERE "t"."type" IN ('VIEW', 'MATERIALIZED_VIEW') ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
             const schema = dbView["schema"] === currentSchema && !this.driver.options.schema ? undefined : dbView["schema"];
             view.name = this.driver.buildTableName(dbView["name"], schema);
             view.expression = dbView["value"];
+            view.materialized = dbView["type"] === "MATERIALIZED_VIEW";
             return view;
         });
     }
@@ -1463,8 +1478,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!tableNames || !tableNames.length)
             return [];
 
-        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
-        const currentSchema: string = currentSchemaQuery[0]["current_schema"];
+        const currentSchema = await this.getCurrentSchema()
 
         const tablesCondition = tableNames.map(tableName => {
             let [schema, name] = tableName.split(".");
@@ -1918,8 +1932,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
-        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
-        const currentSchema = currentSchemaQuery[0]["current_schema"];
+        const currentSchema = await this.getCurrentSchema()
         const splittedName = view.name.split(".");
         let schema = this.driver.options.schema || currentSchema;
         let name = view.name;
@@ -1928,11 +1941,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             name = splittedName[1];
         }
 
+        const type = view.materialized ? "MATERIALIZED_VIEW" : "VIEW"
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
         const [query, parameters] = this.connection.createQueryBuilder()
             .insert()
             .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", schema: schema, name: name, value: expression })
+            .values({ type: type, schema: schema, name: name, value: expression })
             .getQueryAndParameters();
 
         return new Query(query, parameters);
@@ -1941,29 +1955,29 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Builds drop view sql.
      */
-    protected dropViewSql(viewOrPath: View|string): Query {
-        return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`);
+    protected dropViewSql(view: View): Query {
+        const materializedClause = view.materialized ? "MATERIALIZED " : "";
+        return new Query(`DROP ${materializedClause}VIEW ${this.escapePath(view)}`);
     }
 
     /**
      * Builds remove view sql.
      */
-    protected async deleteViewDefinitionSql(viewOrPath: View|string): Promise<Query> {
-        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
-        const currentSchema = currentSchemaQuery[0]["current_schema"];
-        const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
-        const splittedName = viewName.split(".");
+    protected async deleteViewDefinitionSql(view: View): Promise<Query> {
+        const currentSchema = await this.getCurrentSchema()
+        const splittedName = view.name.split(".");
         let schema = this.driver.options.schema || currentSchema;
-        let name = viewName;
+        let name = view.name;
         if (splittedName.length === 2) {
             schema = splittedName[0];
             name = splittedName[1];
         }
 
+        const type = view.materialized ? "MATERIALIZED_VIEW" : "VIEW"
         const qb = this.connection.createQueryBuilder();
         const [query, parameters] = qb.delete()
             .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = 'VIEW'`)
+            .where(`${qb.escape("type")} = :type`, { type })
             .andWhere(`${qb.escape("schema")} = :schema`, { schema })
             .andWhere(`${qb.escape("name")} = :name`, { name })
             .getQueryAndParameters();
