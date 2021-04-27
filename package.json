@@ -102,7 +102,7 @@
     "oracledb": "^5.1.0",
     "pg": "^8.5.1",
     "pg-query-stream": "^4.0.0",
-    "redis": "^3.0.2",
+    "redis": "^3.1.1",
     "remap-istanbul": "^0.13.0",
     "rimraf": "^3.0.2",
     "sinon": "^9.2.4",
