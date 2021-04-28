@@ -1,29 +1,29 @@
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {QueryFailedError} from "../../error/QueryFailedError";
-import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
-import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
-import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {NotImplementedError} from "../../error/NotImplementedError";
-import {ColumnType} from "../../index";
-import {ReadStream} from "../../platform/PlatformTools";
-import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
-import {Table} from "../../schema-builder/table/Table";
-import {TableCheck} from "../../schema-builder/table/TableCheck";
-import {TableColumn} from "../../schema-builder/table/TableColumn";
-import {TableExclusion} from "../../schema-builder/table/TableExclusion";
-import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
-import {TableIndex} from "../../schema-builder/table/TableIndex";
-import {TableUnique} from "../../schema-builder/table/TableUnique";
-import {View} from "../../schema-builder/view/View";
-import {Broadcaster} from "../../subscriber/Broadcaster";
-import {OrmUtils} from "../../util/OrmUtils";
-import {Query} from "../Query";
-import {IsolationLevel} from "../types/IsolationLevel";
-import {MssqlParameter} from "./MssqlParameter";
-import {SqlServerDriver} from "./SqlServerDriver";
-import {ReplicationMode} from "../types/ReplicationMode";
+import { ObjectLiteral } from "../../common/ObjectLiteral";
+import { NotImplementedError } from "../../error/NotImplementedError";
+import { QueryFailedError } from "../../error/QueryFailedError";
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError";
+import { TransactionAlreadyStartedError } from "../../error/TransactionAlreadyStartedError";
+import { TransactionNotStartedError } from "../../error/TransactionNotStartedError";
+import { ColumnType } from "../../index";
+import { ReadStream } from "../../platform/PlatformTools";
+import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner";
+import { QueryRunner } from "../../query-runner/QueryRunner";
+import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions";
+import { Table } from "../../schema-builder/table/Table";
+import { TableCheck } from "../../schema-builder/table/TableCheck";
+import { TableColumn } from "../../schema-builder/table/TableColumn";
+import { TableExclusion } from "../../schema-builder/table/TableExclusion";
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
+import { TableIndex } from "../../schema-builder/table/TableIndex";
+import { TableUnique } from "../../schema-builder/table/TableUnique";
+import { View } from "../../schema-builder/view/View";
+import { Broadcaster } from "../../subscriber/Broadcaster";
+import { OrmUtils } from "../../util/OrmUtils";
+import { Query } from "../Query";
+import { IsolationLevel } from "../types/IsolationLevel";
+import { ReplicationMode } from "../types/ReplicationMode";
+import { MssqlParameter } from "./MssqlParameter";
+import { SqlServerDriver } from "./SqlServerDriver";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -187,15 +187,21 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
                 if (parameters && parameters.length) {
                     parameters.forEach((parameter, index) => {
+                        /**
+                         * Newer versions of tedious (>v11) is not accepting number as
+                         * parameters names, only strings.
+                         */
+                        const nameOfParameter = index.toString();
+
                         if (parameter instanceof MssqlParameter) {
                             const mssqlParameter = this.mssqlParameterToNativeParameter(parameter);
                             if (mssqlParameter) {
-                                request.input(index, mssqlParameter, parameter.value);
+                                request.input(nameOfParameter, mssqlParameter, parameter.value);
                             } else {
-                                request.input(index, parameter.value);
+                                request.input(nameOfParameter, parameter.value);
                             }
                         } else {
-                            request.input(index, parameter);
+                            request.input(nameOfParameter, parameter);
                         }
                     });
                 }
