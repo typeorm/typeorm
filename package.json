@@ -125,7 +125,8 @@
     "xml2js": "^0.4.23",
     "yargonaut": "^1.1.2",
     "yargs": "^16.0.3",
-    "zen-observable-ts": "^0.8.21"
+    "zen-observable-ts": "^0.8.21",
+    "date-fns": "2.21.1"
   },
   "lint-staged": {
     "*.ts": [
