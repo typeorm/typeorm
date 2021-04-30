@@ -441,7 +441,7 @@ createQueryBuilder("user").groupBy("user.id");
 SELECT ... FROM users user GROUP BY user.id
 ```
 
-如果要使用更多 group-by, 则可以使用 c`addGroupBy`:
+如果要使用更多 group-by, 则可以使用 `addGroupBy`:
 
 ```typescript
 createQueryBuilder("user")
