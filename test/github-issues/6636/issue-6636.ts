@@ -19,7 +19,7 @@ describe("github issues > #6636 migration issues with scale & precision", () => 
                 expect(sqlInMemory.upQueries).to.eql([]);
                 expect(sqlInMemory.downQueries).to.eql([]);
             }
-        ))
+        ));
     });
 
 });

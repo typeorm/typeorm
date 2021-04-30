@@ -1,3 +1,4 @@
+/* eslint-disable id-blacklist */
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";

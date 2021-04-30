@@ -1,5 +1,5 @@
-import mkdirp from 'mkdirp';
-import path from 'path';
+import mkdirp from "mkdirp";
+import path from "path";
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
 import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
 import { PlatformTools } from "../../platform/PlatformTools";

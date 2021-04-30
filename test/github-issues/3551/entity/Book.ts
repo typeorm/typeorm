@@ -1,3 +1,4 @@
+/* eslint-disable id-blacklist */
 import { Entity, ObjectIdColumn, Column, ObjectID } from "../../../../src";
 
 export class Page {

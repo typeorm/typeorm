@@ -1,3 +1,4 @@
+/* eslint-disable id-blacklist */
 import "reflect-metadata";
 import {Post} from "./entity/Post";
 import {Connection} from "../../../../../src/connection/Connection";

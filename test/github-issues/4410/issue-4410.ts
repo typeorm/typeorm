@@ -30,7 +30,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
         });
         it("writes to the base path", async () =>
         Promise.all(connections.map(async (connection) => {
-            const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape('username')}`;
+            const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape("username")}`;
 
             await connection.query(testQuery);
             sinon.assert.calledWith(
@@ -52,7 +52,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
         });
         it("writes to the given filename", async () =>
         Promise.all(connections.map(async (connection) => {
-            const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape('username')}`;
+            const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape("username")}`;
 
             await connection.query(testQuery);
             sinon.assert.calledWith(
@@ -74,7 +74,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
         });
         it("writes to the given path", () =>
         Promise.all(connections.map(async (connection) => {
-            const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape('username')}`;
+            const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape("username")}`;
 
             await connection.query(testQuery);
             sinon.assert.calledWith(

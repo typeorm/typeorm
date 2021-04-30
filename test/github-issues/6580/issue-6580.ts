@@ -8,17 +8,18 @@ describe("github issues > #6580 DeepPartial does not handle `any` and `{[k: stri
 
     it("DeepPartial should correctly handle any", () => {
         attemptDeepPartial({
+            // eslint-disable-next-line id-blacklist
             any: {
-                foo: 'bar',
+                foo: "bar",
             }
-        })
+        });
     });
 
     it("DeepPartial should correctly handle {[k: string]: any}", () => {
         attemptDeepPartial({
             object: {
-                foo: 'bar'
+                foo: "bar"
             },
-        })
+        });
     });
 });

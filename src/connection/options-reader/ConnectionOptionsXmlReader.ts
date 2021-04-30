@@ -1,4 +1,4 @@
-import {parseString as xmlParser} from 'xml2js';
+import {parseString as xmlParser} from "xml2js";
 import {PlatformTools} from "../../platform/PlatformTools";
 import {ConnectionOptions} from "../ConnectionOptions";
 

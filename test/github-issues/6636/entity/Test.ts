@@ -9,7 +9,7 @@ export class Test {
     @Column({ nullable: true, precision: 6 })
     startedAt?: Date;
 
-    @Column({ type: 'decimal', precision: 5, scale: 2 })
+    @Column({ type: "decimal", precision: 5, scale: 2 })
     value: number;
 
 }

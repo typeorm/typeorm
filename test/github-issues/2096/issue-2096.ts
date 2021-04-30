@@ -21,7 +21,7 @@ describe("github issues > #2096 [mysql] Database name isn't read from url", () =
                 database
             } = mysqlConfig;
 
-            const url = `mysql://${username}:${password}@${host}:${port}/${database}`
+            const url = `mysql://${username}:${password}@${host}:${port}/${database}`;
 
             const connection = await createConnection({
                 name: "#2096",
