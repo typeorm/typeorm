@@ -188,7 +188,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 if (parameters && parameters.length) {
                     parameters.forEach((parameter, index) => {
                         /**
-                         * Newer versions of tedious (>v11) is not accepting number as
+                         * Newer versions of mssql (>v7) is not accepting number as
                          * parameters names, only strings.
                          */
                         const nameOfParameter = index.toString();
