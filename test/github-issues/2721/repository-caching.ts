@@ -33,7 +33,6 @@ describe("Repository > cache", () => {
         user1.lastName = "Saw";
         user1.isAdmin = false;
         await connection.getRepository(User).save(user1);
-
         const user2 = new User();
         user2.firstName = "Alex";
         user2.lastName = "Messer";
@@ -66,7 +65,7 @@ describe("Repository > cache", () => {
         await connection.getRepository(User).save(user4);
 
         // without cache it must return really how many there entities are
-        const users2 = await await connection.getRepository(User).find({
+        const users2 = await connection.getRepository(User).find({
             where:{
                 isAdmin: true
             }
