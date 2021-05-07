@@ -2076,26 +2076,40 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const queryId = sql + " -- PARAMETERS: " + JSON.stringify(parameters);
         const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
         let savedQueryResultCacheOptions: QueryResultCacheOptions|undefined = undefined;
+        let cacheError = false;
         if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
-            savedQueryResultCacheOptions = await this.connection.queryResultCache.getFromCache({
-                identifier: this.expressionMap.cacheId,
-                query: queryId,
-                duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
-            }, queryRunner);
-            if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
-                return JSON.parse(savedQueryResultCacheOptions.result);
+            try {            
+                savedQueryResultCacheOptions = await this.connection.queryResultCache.getFromCache({
+                    identifier: this.expressionMap.cacheId,
+                    query: queryId,
+                    duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
+                }, queryRunner);
+                if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
+                    return JSON.parse(savedQueryResultCacheOptions.result);
+            } catch(error) {
+                if (!cacheOptions.ignoreErrors) {
+                    throw error;
+                }
+                cacheError = true;
+            }            
         }
 
         const results = await queryRunner.query(sql, parameters);
 
-        if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
-            await this.connection.queryResultCache.storeInCache({
-                identifier: this.expressionMap.cacheId,
-                query: queryId,
-                time: new Date().getTime(),
-                duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
-                result: JSON.stringify(results)
-            }, savedQueryResultCacheOptions, queryRunner);
+        if (!cacheError && this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
+            try {
+                await this.connection.queryResultCache.storeInCache({
+                    identifier: this.expressionMap.cacheId,
+                    query: queryId,
+                    time: new Date().getTime(),
+                    duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
+                    result: JSON.stringify(results)
+                }, savedQueryResultCacheOptions, queryRunner);
+            } catch(error) {
+                if (!cacheOptions.ignoreErrors) {
+                    throw error;
+                }
+            }            
         }
 
         return results;
