@@ -249,7 +249,7 @@ Example:
             host: "localhost",
             port: 6379
         },
-        ignoreErrors:true
+        ignoreErrors: true
     }
 }
 ```
