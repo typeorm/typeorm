@@ -234,4 +234,24 @@ class CustomQueryResultCache implements QueryResultCache {
 }
 ```
 
+If you wish to ignore cache errors and want the queries to pass through to database in case of cache errors, you can use ignoreErrors option. 
+Example:
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    ...
+    cache: {
+        type: "redis",
+        options: {
+            host: "localhost",
+            port: 6379
+        },
+        ignoreErrors: true
+    }
+}
+```
+
 You can use `typeorm cache:clear` to clear everything stored in the cache.

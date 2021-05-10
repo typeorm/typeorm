@@ -127,7 +127,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             this.releaseCallback();
 
         const index = this.driver.connectedQueryRunners.indexOf(this);
-        if (index !== -1) this.driver.connectedQueryRunners.splice(index);
+        if (index !== -1) this.driver.connectedQueryRunners.splice(index, 1);
 
         return Promise.resolve();
     }
