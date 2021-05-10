@@ -4,6 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 import {EntityNotFoundError} from "../../../../src/error/EntityNotFoundError";
+import { MysqlDriver } from '../../../../src/driver/mysql/MysqlDriver';
 
 describe("query builder > select", () => {
 
@@ -153,4 +154,16 @@ describe("query builder > select", () => {
             .getOneOrFail()
         ).to.be.rejectedWith(EntityNotFoundError);
     })));
+
+    it("Support max execution time", async () => Promise.all(
+        connections
+            .filter(connection => connection.driver instanceof MysqlDriver)
+            .map(async connection => {
+                const sql = connection
+                    .createQueryBuilder(Post, "post")
+                    .maxExecutionTime(1000)
+                    .getSql();
+                expect(sql).contains("SELECT /*+ MAX_EXECUTION_TIME(1000) */");
+            })
+    ));
 });
