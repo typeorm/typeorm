@@ -15,7 +15,6 @@ describe("github issues > #7161 Add support for non-distinct count in getCount()
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
-                logging: true,
             }))
     );
     beforeEach(() => reloadTestingDatabases(connections));
