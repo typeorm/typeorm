@@ -22,26 +22,13 @@ export class CountOptionsUtils {
     }
 
     /**
-     * Applies give find many options to the given query builder.
-     */
-    static applyCountOptionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: CountOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
-        if (this.isCountOptions(options))
-            return this.applyOptionsToQueryBuilder(qb, options);
-
-        return qb;
-    }
-
-    /**
      * Applies give count options to the given query builder.
      */
-    static applyOptionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: CountOptions<T>|undefined): SelectQueryBuilder<T> {
-
-        // if options are not set then simply return query builder. This is made for simplicity of usage.
-        if (!options || !this.isCountOptions(options))
-            return qb;
-
-        if (options.distinct !== undefined && options.distinct === false) {
-            qb.setOption("disable-count-distinct");
+    static applyCountOptionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: CountOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
+        if (this.isCountOptions(options)) {
+            if (options.distinct !== undefined && options.distinct === false) {
+                qb.setOption("disable-count-distinct");
+            }
         }
 
         return qb;
