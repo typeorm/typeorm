@@ -760,6 +760,27 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Compares "default" value of the column.
+     * Postgres sorts json values before it is saved, so in that case a deep comparison has to be performed to see if has changed.
+     */
+    defaultEqual(columnMetadata: ColumnMetadata, tableColumn: TableColumn): boolean {
+      if (Array<ColumnType>("json", "jsonb").indexOf(columnMetadata.type) >= 0
+       && typeof columnMetadata.default !== "function"
+       && columnMetadata.default !== undefined) {
+        let columnDefault = columnMetadata.default;
+        if (typeof columnDefault !== "object") {
+          columnDefault = JSON.parse(columnMetadata.default);
+        }
+        let tableDefault = JSON.parse(tableColumn.default.substring(1, tableColumn.default.length-1));
+        return OrmUtils.deepCompare(columnDefault, tableDefault);
+      }
+      else {
+        const columnDefault = this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata));
+        return (columnDefault === tableColumn.default);
+      }
+    }
+
+    /**
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
@@ -880,7 +901,7 @@ export class PostgresDriver implements Driver {
                 || tableColumn.precision !== columnMetadata.precision
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
                 || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
-                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
+                || (!tableColumn.isGenerated && !this.defaultEqual(columnMetadata, tableColumn)) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
