@@ -91,25 +91,48 @@ describe("github issues > #7161 Add support for non-distinct count in getCount()
     it("Repository.count()", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const users = await createData(connection);
-                const userA = users[0];
+                const data = await createData(connection);
+                const userA = data[0];
 
                 const userRepository = connection.getRepository(User);
                 const userCount = await userRepository.count();
                 userCount.should.eql(3);
 
                 const orderRepository = connection.getRepository(Order);
-                const orderCount = await orderRepository.count({
+                const orderByUser = await orderRepository.count({
                     relations: ["user"],
                     where: { user: userA },
                 });
-                orderCount.should.eql(2);
+                orderByUser.should.eql(2);
 
-                const orderCount2 = await orderRepository.count({
+                const orderByUserWithoutDistinct = await orderRepository.count({
+                    distinct: false,
+                    relations: ["user"],
+                    where: { user: userA },
+                });
+                orderByUserWithoutDistinct.should.eql(2);
+
+                const orderWithProducts = await orderRepository.count({
                     relations: ["user", "products"],
                     where: { user: userA },
                 });
-                orderCount2.should.eql(2);
+                orderWithProducts.should.eql(2);
+
+                const orderWithProductsWithDistinct =
+                    await orderRepository.count({
+                        distinct: true,
+                        relations: ["user", "products"],
+                        where: { user: userA },
+                    });
+                orderWithProductsWithDistinct.should.eql(2);
+
+                const orderWithProductsWithoutDistinct =
+                    await orderRepository.count({
+                        distinct: false,
+                        relations: ["user", "products"],
+                        where: { user: userA },
+                    });
+                orderWithProductsWithoutDistinct.should.eql(4);
             })
         ));
 
@@ -126,36 +149,38 @@ describe("github issues > #7161 Add support for non-distinct count in getCount()
                 userCount.should.eql(3);
 
                 const orderRepository = connection.getRepository(Order);
-                const orderCount = await orderRepository
+                const orderByUser = await orderRepository
                     .createQueryBuilder("order")
                     .leftJoin("order.user", "user")
                     .where("user.id = :id", { id: userA.id })
                     .getCount();
-                orderCount.should.eql(2);
+                orderByUser.should.eql(2);
 
-                const orderCount2 = await orderRepository
+                const orderByUserWithoutDistinct = await orderRepository
+                    .createQueryBuilder("order")
+                    .leftJoin("order.user", "user")
+                    .where("user.id = :id", { id: userA.id })
+                    .setOption("disable-count-distinct")
+                    .getCount();
+                orderByUserWithoutDistinct.should.eql(2);
+
+                const orderWithProducts = await orderRepository
                     .createQueryBuilder("order")
                     .leftJoin("order.user", "user")
                     .leftJoin("order.products", "product")
                     .where("user.id = :id", { id: userA.id })
                     .getCount();
-                orderCount2.should.eql(2);
+                orderWithProducts.should.eql(2);
+
+                const orderWithProductsWithoutDistinct = await orderRepository
+                    .createQueryBuilder("order")
+                    .leftJoin("order.user", "user")
+                    .leftJoin("order.products", "product")
+                    .where("user.id = :id", { id: userA.id })
+                    .setOption("disable-count-distinct")
+                    .getCount();
+                orderWithProductsWithoutDistinct.should.eql(4);
             })
         ));
 
-    /*
-    it("my first test", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const [userA, userB, userC] = await createData(connection);
-                console.log(userA, userB, userC);
-                //const userRepository = connection.getRepository(User);
-                const productRepository = connection.getRepository(Product);
-                //const orderRepository = connection.getRepository(Order);
-
-                const products = await productRepository.count();
-                console.log(products);
-            })
-        ));
-        */
 });

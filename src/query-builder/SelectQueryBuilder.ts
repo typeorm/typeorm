@@ -1831,6 +1831,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             return "COUNT(1)";
         }
 
+        // If we won't want to set `DISTINCT` with relations,
+        // we can handle with a option in expressionMap.options
+        if (this.expressionMap.options.indexOf("disable-count-distinct") !== -1) {
+            return "COUNT(CONCAT(" +
+                primaryColumns.map(c => `${distinctAlias}.${this.escape(c.databaseName)}`).join(", ") +
+                "))";
+        }
+
         // For everything else, we'll need to do some hackery to get the correct count values.
 
         if (this.connection.driver instanceof CockroachDriver || this.connection.driver instanceof PostgresDriver) {
