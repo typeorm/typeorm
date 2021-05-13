@@ -380,7 +380,7 @@ export class ColumnMetadata {
                     // like Java (enum methods). Here in case if enum have function, we need to remove it from metadata, otherwise
                     // generated SQL statements contains string representation of that function which leads into syntax error
                     // at database side.
-                    .filter(key => isNaN(+key) && typeof (options.args.options.enum as ObjectLiteral)[key] !== 'function')
+                    .filter(key => isNaN(+key) && typeof (options.args.options.enum as ObjectLiteral)[key] !== "function")
                     .map(key => (options.args.options.enum as ObjectLiteral)[key]);
 
             } else {
