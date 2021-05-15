@@ -164,6 +164,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Set max execution time.
+     * @param milliseconds
+     */
+    maxExecutionTime(milliseconds: number): this {
+        this.expressionMap.maxExecutionTime = milliseconds;
+        return this;
+    }
+
+    /**
      * Sets whether the selection is DISTINCT.
      */
     distinct(distinct: boolean = true): this {
@@ -1448,10 +1457,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Creates select | select distinct part of SQL query.
      */
     protected createSelectDistinctExpression(): string {
-        const {selectDistinct, selectDistinctOn} = this.expressionMap;
+        const {selectDistinct, selectDistinctOn, maxExecutionTime} = this.expressionMap;
         const {driver} = this.connection;
 
         let select = "SELECT ";
+
+        if (maxExecutionTime > 0) {
+            if (driver instanceof MysqlDriver) {
+                select += ` /*+ MAX_EXECUTION_TIME(${ this.expressionMap.maxExecutionTime }) */`;
+            }
+        }
+
         if (driver instanceof PostgresDriver && selectDistinctOn.length > 0) {
             const selectDistinctOnMap = selectDistinctOn.map(
               (on) => this.replacePropertyNames(on)

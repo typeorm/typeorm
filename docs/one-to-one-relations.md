@@ -82,7 +82,7 @@ user.profile = profile;
 await connection.manager.save(user);
 ```
 
-With [cascades](https://github.com/typeorm/typeorm/blob/master/docs/relations.md#cascades) enabled you can save this relation with only one `save` call.
+With <a href="https://github.com/typeorm/typeorm/blob/master/docs/relations.md#cascades" target="_blank">cascades</a> enabled you can save this relation with only one `save` call.
 
 To load user with profile inside you must specify relation in `FindOptions`:
  

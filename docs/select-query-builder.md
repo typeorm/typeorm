@@ -22,6 +22,7 @@
 * [Streaming result data](#streaming-result-data)
 * [Using pagination](#using-pagination)
 * [Set locking](#set-locking)
+* [Max execution time](#max-execution-time)
 * [Partial selection](#partial-selection)
 * [Using subqueries](#using-subqueries)
 * [Hidden Columns](#hidden-columns)
@@ -913,6 +914,17 @@ const users = await getRepository(User)
 ```
 
 Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` decorators.
+
+## Max execution time
+
+We can drop slow query to avoid crashing the server. Only MySQL driver is supported at the moment:
+
+```typescript
+const users = await getRepository(User)
+    .createQueryBuilder("user")
+    .maxExecutionTime(1000) // milliseconds.
+    .getMany();
+```
 
 ## Partial selection
 
