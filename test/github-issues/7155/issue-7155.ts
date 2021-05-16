@@ -231,6 +231,40 @@ describe("github issues > #7155", () => {
             })
         ));
 
+    it("(Closure/SingleID/Save) Remove and re-add parent", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const Entity = getEntity(connection, "single_closure");
+                const repo = connection.getTreeRepository(Entity);
+
+                const entry1 = new Entity();
+                await repo.save(entry1);
+
+                const entry11 = new Entity();
+                entry11.parent = entry1;
+                await repo.save(entry11);
+
+                const entry111 = new Entity();
+                entry111.parent = entry11;
+                await repo.save(entry111);
+
+                let descendants = await repo.findDescendants(entry1);
+                descendants.length.should.be.eql(3);
+
+                entry11.parent = null;
+                await repo.save(entry11);
+
+                descendants = await repo.findDescendants(entry1);
+                descendants.length.should.be.eql(1);
+
+                entry11.parent = entry1;
+                await repo.save(entry11);
+
+                descendants = await repo.findDescendants(entry1);
+                descendants.length.should.be.eql(3);
+            })
+        ));
+
 
     it("(Closure/SingleID/Remove) Remove leaf with multi root", () =>
         Promise.all(
