@@ -45,7 +45,8 @@ import { DB2Driver } from "../driver/db2/DB2Driver";
  */
 export class SelectQueryBuilder<Entity>
     extends QueryBuilder<Entity>
-    implements WhereExpression {
+    implements WhereExpression
+{
     // -------------------------------------------------------------------------
     // Public Implemented Methods
     // -------------------------------------------------------------------------
@@ -241,7 +242,7 @@ export class SelectQueryBuilder<Entity>
     ): SelectQueryBuilder<T> {
         const mainAlias = this.createFromAlias(entityTarget, aliasName);
         this.expressionMap.setMainAlias(mainAlias);
-        return (this as any) as SelectQueryBuilder<T>;
+        return this as any as SelectQueryBuilder<T>;
     }
 
     /**
@@ -276,7 +277,7 @@ export class SelectQueryBuilder<Entity>
         if (!this.expressionMap.mainAlias)
             this.expressionMap.setMainAlias(alias);
 
-        return (this as any) as SelectQueryBuilder<T>;
+        return this as any as SelectQueryBuilder<T>;
     }
 
     /**
@@ -1571,9 +1572,8 @@ export class SelectQueryBuilder<Entity>
             const metadata = this.expressionMap.mainAlias!.metadata;
 
             if (this.expressionMap.lockVersion instanceof Date) {
-                const actualVersion = metadata.updateDateColumn!.getEntityValue(
-                    result
-                ); // what if columns arent set?
+                const actualVersion =
+                    metadata.updateDateColumn!.getEntityValue(result); // what if columns arent set?
                 if (
                     actualVersion.getTime() !==
                     this.expressionMap.lockVersion.getTime()
@@ -1584,9 +1584,8 @@ export class SelectQueryBuilder<Entity>
                         actualVersion
                     );
             } else {
-                const actualVersion = metadata.versionColumn!.getEntityValue(
-                    result
-                ); // what if columns arent set?
+                const actualVersion =
+                    metadata.versionColumn!.getEntityValue(result); // what if columns arent set?
                 if (actualVersion !== this.expressionMap.lockVersion)
                     throw new OptimisticLockVersionMismatchError(
                         metadata.name,
@@ -1875,9 +1874,9 @@ export class SelectQueryBuilder<Entity>
         } else {
             let subQuery: string = "";
             if (entityOrProperty instanceof Function) {
-                const subQueryBuilder: SelectQueryBuilder<any> = (entityOrProperty as any)(
-                    ((this as any) as SelectQueryBuilder<any>).subQuery()
-                );
+                const subQueryBuilder: SelectQueryBuilder<any> = (
+                    entityOrProperty as any
+                )((this as any as SelectQueryBuilder<any>).subQuery());
                 this.setParameters(subQueryBuilder.getParameters());
                 subQuery = subQueryBuilder.getQuery();
             } else {
@@ -2139,8 +2138,8 @@ export class SelectQueryBuilder<Entity>
                 );
             } else {
                 // means many-to-many
-                const junctionTableName = relation.junctionEntityMetadata!
-                    .tablePath;
+                const junctionTableName =
+                    relation.junctionEntityMetadata!.tablePath;
 
                 const junctionAlias = joinAttr.junctionAlias;
                 let junctionCondition = "",
@@ -2363,6 +2362,12 @@ export class SelectQueryBuilder<Entity>
     protected createLockExpression(): string {
         const driver = this.connection.driver;
         switch (this.expressionMap.lockMode) {
+            case "optimistic":
+                if (driver instanceof DB2Driver) {
+                    return " WITH UR";
+                }
+                return "";
+                break;
             case "pessimistic_read":
                 if (
                     driver instanceof MysqlDriver ||
@@ -2375,6 +2380,8 @@ export class SelectQueryBuilder<Entity>
                     return " FOR UPDATE";
                 } else if (driver instanceof SqlServerDriver) {
                     return "";
+                } else if (driver instanceof DB2Driver) {
+                    return " WITH RS";
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
                 }
@@ -2496,8 +2503,8 @@ export class SelectQueryBuilder<Entity>
                     this.connection.driver instanceof MysqlDriver ||
                     this.connection.driver instanceof AuroraDataApiDriver
                 ) {
-                    const useLegacy = this.connection.driver.options
-                        .legacySpatialSupport;
+                    const useLegacy =
+                        this.connection.driver.options.legacySpatialSupport;
                     const asText = useLegacy ? "AsText" : "ST_AsText";
                     selectionPath = `${asText}(${selectionPath})`;
                 }
@@ -2700,13 +2707,11 @@ export class SelectQueryBuilder<Entity>
             queryRunner,
             this.expressionMap.relationCountAttributes
         );
-        const relationIdMetadataTransformer = new RelationIdMetadataToAttributeTransformer(
-            this.expressionMap
-        );
+        const relationIdMetadataTransformer =
+            new RelationIdMetadataToAttributeTransformer(this.expressionMap);
         relationIdMetadataTransformer.transform();
-        const relationCountMetadataTransformer = new RelationCountMetadataToAttributeTransformer(
-            this.expressionMap
-        );
+        const relationCountMetadataTransformer =
+            new RelationCountMetadataToAttributeTransformer(this.expressionMap);
         relationCountMetadataTransformer.transform();
 
         let rawResults: any[] = [],
@@ -2722,10 +2727,8 @@ export class SelectQueryBuilder<Entity>
         ) {
             // we are skipping order by here because its not working in subqueries anyway
             // to make order by working we need to apply it on a distinct query
-            const [
-                selects,
-                orderBys,
-            ] = this.createOrderByCombinedWithSelectExpression("distinctAlias");
+            const [selects, orderBys] =
+                this.createOrderByCombinedWithSelectExpression("distinctAlias");
             const metadata = this.expressionMap.mainAlias.metadata;
             const mainAliasName = this.expressionMap.mainAlias.name;
 
@@ -2879,9 +2882,8 @@ export class SelectQueryBuilder<Entity>
                 if (orderCriteria.indexOf(".") !== -1) {
                     const [aliasName, propertyPath] = orderCriteria.split(".");
                     const alias = this.expressionMap.findAliasByName(aliasName);
-                    const column = alias.metadata.findColumnWithPropertyName(
-                        propertyPath
-                    );
+                    const column =
+                        alias.metadata.findColumnWithPropertyName(propertyPath);
                     return (
                         this.escape(parentAlias) +
                         "." +
@@ -2913,9 +2915,8 @@ export class SelectQueryBuilder<Entity>
             if (orderCriteria.indexOf(".") !== -1) {
                 const [aliasName, propertyPath] = orderCriteria.split(".");
                 const alias = this.expressionMap.findAliasByName(aliasName);
-                const column = alias.metadata.findColumnWithPropertyName(
-                    propertyPath
-                );
+                const column =
+                    alias.metadata.findColumnWithPropertyName(propertyPath);
                 orderByObject[
                     this.escape(parentAlias) +
                         "." +
@@ -2957,24 +2958,24 @@ export class SelectQueryBuilder<Entity>
             typeof this.connection.options.cache === "object"
                 ? this.connection.options.cache
                 : {};
-        let savedQueryResultCacheOptions:
-            | QueryResultCacheOptions
-            | undefined = undefined;
+        let savedQueryResultCacheOptions: QueryResultCacheOptions | undefined =
+            undefined;
         if (
             this.connection.queryResultCache &&
             (this.expressionMap.cache || cacheOptions.alwaysEnabled)
         ) {
-            savedQueryResultCacheOptions = await this.connection.queryResultCache.getFromCache(
-                {
-                    identifier: this.expressionMap.cacheId,
-                    query: queryId,
-                    duration:
-                        this.expressionMap.cacheDuration ||
-                        cacheOptions.duration ||
-                        1000,
-                },
-                queryRunner
-            );
+            savedQueryResultCacheOptions =
+                await this.connection.queryResultCache.getFromCache(
+                    {
+                        identifier: this.expressionMap.cacheId,
+                        query: queryId,
+                        duration:
+                            this.expressionMap.cacheDuration ||
+                            cacheOptions.duration ||
+                            1000,
+                    },
+                    queryRunner
+                );
             if (
                 savedQueryResultCacheOptions &&
                 !this.connection.queryResultCache.isExpired(

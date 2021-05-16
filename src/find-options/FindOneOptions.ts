@@ -1,12 +1,11 @@
-import {JoinOptions} from "./JoinOptions";
-import {ObjectLiteral} from "../common/ObjectLiteral";
-import {FindConditions} from "./FindConditions";
+import { JoinOptions } from "./JoinOptions";
+import { ObjectLiteral } from "../common/ObjectLiteral";
+import { FindConditions } from "./FindConditions";
 
 /**
  * Defines a special criteria to find specific entity.
  */
 export interface FindOneOptions<Entity = any> {
-
     /**
      * Specifies what columns should be retrieved.
      */
@@ -15,7 +14,11 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Simple condition that should be applied to match entities.
      */
-    where?: FindConditions<Entity>[]|FindConditions<Entity>|ObjectLiteral|string;
+    where?:
+        | FindConditions<Entity>[]
+        | FindConditions<Entity>
+        | ObjectLiteral
+        | string;
 
     /**
      * Indicates what relations of entity should be loaded (simplified left join form).
@@ -30,17 +33,26 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Order, in which entities should be ordered.
      */
-    order?: { [P in keyof Entity]?: "ASC"|"DESC"|1|-1 };
+    order?: { [P in keyof Entity]?: "ASC" | "DESC" | 1 | -1 };
 
     /**
      * Enables or disables query result caching.
      */
-    cache?: boolean | number | { id: any, milliseconds: number };
+    cache?: boolean | number | { id: any; milliseconds: number };
 
     /**
      * Indicates what locking mode should be used.
      */
-    lock?: { mode: "optimistic", version: number|Date } | { mode: "pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail" };
+    lock?:
+        | { mode: "optimistic"; version: number | Date }
+        | {
+              mode:
+                  | "pessimistic_read"
+                  | "pessimistic_write"
+                  | "dirty_read"
+                  | "pessimistic_partial_write"
+                  | "pessimistic_write_or_fail";
+          };
 
     /**
      * Indicates if soft-deleted rows should be included in entity result.
@@ -51,7 +63,9 @@ export interface FindOneOptions<Entity = any> {
      * If sets to true then loads all relation ids of the entity and maps them into relation values (not relation objects).
      * If array of strings is given then loads only relation ids of the given properties.
      */
-    loadRelationIds?: boolean|{ relations?: string[], disableMixedMap?: boolean }; // todo: extract options into separate interface, reuse
+    loadRelationIds?:
+        | boolean
+        | { relations?: string[]; disableMixedMap?: boolean }; // todo: extract options into separate interface, reuse
 
     /**
      * Indicates if eager relations should be loaded or not.
@@ -62,6 +76,5 @@ export interface FindOneOptions<Entity = any> {
     /**
      * If this is set to true, SELECT query in a `find` method will be executed in a transaction.
      */
-    transaction?: boolean
-
+    transaction?: boolean;
 }
