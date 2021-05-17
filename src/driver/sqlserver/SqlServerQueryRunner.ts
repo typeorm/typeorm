@@ -24,7 +24,6 @@ import {MssqlParameter} from "./MssqlParameter";
 import {SqlServerDriver} from "./SqlServerDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -1289,15 +1288,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        
-        let metadata: EntityMetadata | undefined = undefined;
-        try {
-            metadata = this.connection.getMetadata(table.name);
-        } catch (err) { } // Ignore error and continue
+        const metadata = this.connection.hasMetadata(table.name) ? this.connection.getMetadata(table.name) : undefined;
 
-        if (metadata && metadata.treeParentRelation && metadata.treeParentRelation!.isTreeParent && metadata.foreignKeys.find(foreignKey => foreignKey.onDelete !== "NO ACTION")) {
+        if (metadata && metadata.treeParentRelation && metadata.treeParentRelation!.isTreeParent && metadata.foreignKeys.find(foreignKey => foreignKey.onDelete !== "NO ACTION"))
             throw new Error("SqlServer does not support options in TreeParent.");
-        }
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
