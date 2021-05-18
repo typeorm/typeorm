@@ -445,7 +445,7 @@ export class AuroraDataApiDriver implements Driver {
         } else if (columnMetadata.type === "simple-array" || columnMetadata.type === "set") {
             return DateUtils.simpleArrayToString(value);
 
-	} else if (columnMetadata.type === "simple-json") {
+        } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
 
         } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") {
