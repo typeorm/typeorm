@@ -117,6 +117,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 // console.timeEnd(".updating entity");
             }
 
+            // close transaction if we started it
+            // console.time(".commit");
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction();
+            }
+            // console.timeEnd(".commit");
+
             // call after insertion methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
                 const broadcastResult = new BroadcasterResult();
@@ -125,13 +132,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 });
                 if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
             }
-
-            // close transaction if we started it
-            // console.time(".commit");
-            if (transactionStartedByUs) {
-                await queryRunner.commitTransaction();
-            }
-            // console.timeEnd(".commit");
 
             return insertResult;
 
@@ -632,15 +632,15 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     /**
      * Checks if column is an auto-generated primary key, but the current insertion specifies a value for it.
-     * 
+     *
      * @param column
      */
     protected isOverridingAutoIncrementBehavior(column: ColumnMetadata): boolean {
-        return column.isPrimary 
-                && column.isGenerated 
+        return column.isPrimary
+                && column.isGenerated
                 && column.generationStrategy === "increment"
-                && this.getValueSets().some((valueSet) => 
-                    column.getEntityValue(valueSet) !== undefined 
+                && this.getValueSets().some((valueSet) =>
+                    column.getEntityValue(valueSet) !== undefined
                     && column.getEntityValue(valueSet) !== null
                 );
     }
