@@ -120,15 +120,19 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new TransactionAlreadyStartedError();
 
         const beforeBroadcastResult = new BroadcasterResult();
+
         this.broadcaster.broadcastBeforeTransactionStartEvent(
             beforeBroadcastResult
         );
+
         if (beforeBroadcastResult.promises.length > 0)
             await Promise.all(beforeBroadcastResult.promises);
 
         this.isTransactionActive = true;
         const databaseConnection = await this.connect();
+
         await databaseConnection.beginTransaction();
+
         // await this.query("BEGIN TRANSACTION");
         if (isolationLevel) {
             await this.query(
@@ -215,8 +219,9 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
                     parameters || [],
                     (err: any, result: any) => {
                         // log slow queries if maxQueryExecution time is set
-                        const maxQueryExecutionTime = this.driver.connection
-                            .options.maxQueryExecutionTime;
+                        const maxQueryExecutionTime =
+                            this.driver.connection.options
+                                .maxQueryExecutionTime;
                         const queryEndTime = +new Date();
                         const queryExecutionTime =
                             queryEndTime - queryStartTime;
@@ -568,10 +573,11 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
         // rename unique constraints
         newTable.uniques.forEach((unique) => {
             // build new constraint name
-            const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(
-                newTable,
-                unique.columnNames
-            );
+            const newUniqueName =
+                this.connection.namingStrategy.uniqueConstraintName(
+                    newTable,
+                    unique.columnNames
+                );
 
             // build queries
             upQueries.push(
@@ -613,12 +619,13 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
         // rename foreign key constraints
         newTable.foreignKeys.forEach((foreignKey) => {
             // build new constraint name
-            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(
-                newTable,
-                foreignKey.columnNames,
-                foreignKey.referencedTableName,
-                foreignKey.referencedColumnNames
-            );
+            const newForeignKeyName =
+                this.connection.namingStrategy.foreignKeyName(
+                    newTable,
+                    foreignKey.columnNames,
+                    foreignKey.referencedTableName,
+                    foreignKey.referencedColumnNames
+                );
 
             // build queries
             upQueries.push(
@@ -864,20 +871,22 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
                     const columnNames = primaryColumns.map(
                         (column) => column.name
                     );
-                    const oldPkName = this.connection.namingStrategy.primaryKeyName(
-                        clonedTable,
-                        columnNames
-                    );
+                    const oldPkName =
+                        this.connection.namingStrategy.primaryKeyName(
+                            clonedTable,
+                            columnNames
+                        );
 
                     // replace old column name with new column name
                     columnNames.splice(columnNames.indexOf(oldColumn.name), 1);
                     columnNames.push(newColumn.name);
 
                     // build new primary constraint name
-                    const newPkName = this.connection.namingStrategy.primaryKeyName(
-                        clonedTable,
-                        columnNames
-                    );
+                    const newPkName =
+                        this.connection.namingStrategy.primaryKeyName(
+                            clonedTable,
+                            columnNames
+                        );
 
                     upQueries.push(
                         new Query(
@@ -899,10 +908,11 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
                         1
                     );
                     unique.columnNames.push(newColumn.name);
-                    const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(
-                        clonedTable,
-                        unique.columnNames
-                    );
+                    const newUniqueName =
+                        this.connection.namingStrategy.uniqueConstraintName(
+                            clonedTable,
+                            unique.columnNames
+                        );
 
                     // build queries
                     upQueries.push(
@@ -928,11 +938,12 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
                         1
                     );
                     index.columnNames.push(newColumn.name);
-                    const newIndexName = this.connection.namingStrategy.indexName(
-                        clonedTable,
-                        index.columnNames,
-                        index.where
-                    );
+                    const newIndexName =
+                        this.connection.namingStrategy.indexName(
+                            clonedTable,
+                            index.columnNames,
+                            index.where
+                        );
 
                     // build queries
                     upQueries.push(
@@ -960,12 +971,13 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
                             1
                         );
                         foreignKey.columnNames.push(newColumn.name);
-                        const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(
-                            clonedTable,
-                            foreignKey.columnNames,
-                            foreignKey.referencedTableName,
-                            foreignKey.referencedColumnNames
-                        );
+                        const newForeignKeyName =
+                            this.connection.namingStrategy.foreignKeyName(
+                                clonedTable,
+                                foreignKey.columnNames,
+                                foreignKey.referencedTableName,
+                                foreignKey.referencedColumnNames
+                            );
 
                         // build queries
                         upQueries.push(
@@ -1058,10 +1070,11 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
-                    const pkName = this.connection.namingStrategy.primaryKeyName(
-                        clonedTable.name,
-                        primaryColumns.map((column) => column.name)
-                    );
+                    const pkName =
+                        this.connection.namingStrategy.primaryKeyName(
+                            clonedTable.name,
+                            primaryColumns.map((column) => column.name)
+                        );
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
                         .join(", ");
@@ -1084,10 +1097,11 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
                         (column) => column.name === newColumn.name
                     );
                     column!.isPrimary = true;
-                    const pkName = this.connection.namingStrategy.primaryKeyName(
-                        clonedTable.name,
-                        primaryColumns.map((column) => column.name)
-                    );
+                    const pkName =
+                        this.connection.namingStrategy.primaryKeyName(
+                            clonedTable.name,
+                            primaryColumns.map((column) => column.name)
+                        );
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
                         .join(", ");
@@ -1118,10 +1132,11 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
-                        const pkName = this.connection.namingStrategy.primaryKeyName(
-                            clonedTable.name,
-                            primaryColumns.map((column) => column.name)
-                        );
+                        const pkName =
+                            this.connection.namingStrategy.primaryKeyName(
+                                clonedTable.name,
+                                primaryColumns.map((column) => column.name)
+                            );
                         const columnNames = primaryColumns
                             .map((column) => `"${column.name}"`)
                             .join(", ");
@@ -1476,10 +1491,11 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
         if (!uniqueConstraint.name)
-            uniqueConstraint.name = this.connection.namingStrategy.uniqueConstraintName(
-                table.name,
-                uniqueConstraint.columnNames
-            );
+            uniqueConstraint.name =
+                this.connection.namingStrategy.uniqueConstraintName(
+                    table.name,
+                    uniqueConstraint.columnNames
+                );
 
         const up = this.createUniqueConstraintSql(table, uniqueConstraint);
         const down = this.dropUniqueConstraintSql(table, uniqueConstraint);
@@ -1553,10 +1569,11 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
         if (!checkConstraint.name)
-            checkConstraint.name = this.connection.namingStrategy.checkConstraintName(
-                table.name,
-                checkConstraint.expression!
-            );
+            checkConstraint.name =
+                this.connection.namingStrategy.checkConstraintName(
+                    table.name,
+                    checkConstraint.expression!
+                );
 
         const up = this.createCheckConstraintSql(table, checkConstraint);
         const down = this.dropCheckConstraintSql(table, checkConstraint);
@@ -1826,26 +1843,31 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async clearDatabase(): Promise<void> {
         await this.startTransaction();
+
         try {
-            const dropViewsQuery = `SELECT 'DROP VIEW "' || VIEW_NAME || '"' AS "query" FROM "USER_VIEWS"`;
+            const dropViewsQuery = `SELECT 'DROP VIEW "' || TRIM(TABSCHEMA) || '"."' || TABNAME || '"' as "query" FROM SYSCAT.TABLES WHERE TYPE = 'V' AND owner = USER`;
             const dropViewQueries: ObjectLiteral[] = await this.query(
                 dropViewsQuery
             );
+
             await Promise.all(
                 dropViewQueries.map((query) => this.query(query["query"]))
             );
 
-            const dropTablesQuery = `SELECT 'DROP TABLE "' || TABLE_NAME || '" CASCADE CONSTRAINTS' AS "query" FROM "USER_TABLES"`;
+            const dropTablesQuery = `SELECT 'DROP TABLE "' || TRIM(TABSCHEMA) || '"."' || TABNAME || '"' as "query" FROM SYSCAT.TABLES WHERE TYPE = 'T' AND owner = USER`;
             const dropTableQueries: ObjectLiteral[] = await this.query(
                 dropTablesQuery
             );
+
             await Promise.all(
                 dropTableQueries.map((query) => this.query(query["query"]))
             );
+
             await this.commitTransaction();
         } catch (error) {
             try {
                 // we throw original error even if rollback thrown an error
+
                 await this.rollbackTransaction();
             } catch (rollbackError) {}
             throw error;
@@ -1883,6 +1905,25 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
         });
     }
 
+    protected escapePath(
+        target: Table | View | string,
+        disableEscape?: boolean
+    ): string {
+        let tableName =
+            target instanceof Table || target instanceof View
+                ? target.name
+                : target;
+        tableName =
+            tableName.indexOf(".") === -1 && this.driver.options.schema
+                ? `${this.driver.options.schema}.${tableName}`
+                : tableName;
+
+        return tableName
+            .split(".")
+            .map((i) => (disableEscape ? i : `"${i}"`))
+            .join(".");
+    }
+
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
      */
@@ -1896,32 +1937,30 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
         const tableNamesString = tableNames
             .map((name) => "'" + name + "'")
             .join(", ");
-        const tablesSql = `SELECT * FROM "SYSCAT"."TABLES" WHERE "NAME" IN (${tableNamesString})`;
-        const columnsSql = `SELECT * FROM "SYSCAT"."COLUMNS" WHERE "NAME" IN (${tableNamesString})`;
+        const tablesSql = `SELECT * FROM "SYSCAT"."TABLES" WHERE "TABNAME" IN (${tableNamesString})`;
+        const columnsSql = `SELECT * FROM "SYSCAT"."COLUMNS" WHERE "TABNAME" IN (${tableNamesString})`;
 
         const indicesSql =
-            `SELECT "IND"."INDNAME", "IND"."TBNAME", "IND"."UNIQUERULE" as "UNIQUENESS", ` +
-            `LISTAGG ("COL"."NAME", ',') WITHIN GROUP (ORDER BY "COL"."NAME") AS "COLUMN_NAMES" ` +
+            `SELECT "IND"."INDNAME","IND"."TABNAME","IND"."UNIQUERULE" AS "UNIQUENESS",` +
+            `LISTAGG ("COL"."COLNAME",',') WITHIN GROUP (ORDER BY "COL"."COLNAME") AS "COLUMN_NAMES" ` +
             `FROM "SYSCAT"."INDEXES" "IND" ` +
-            `INNER JOIN "SYSCAT"."COLUMNS" "COL" ON "COL"."INDEX_NAME" = "IND"."INDEX_NAME" ` +
+            `INNER JOIN "SYSCAT"."COLUMNS" "COL" ON "COL"."COLNAME" = REPLACE("IND"."COLNAMES",'+','') ` +
             // `LEFT JOIN "USER_CONSTRAINTS" "CON" ON "CON"."CONSTRAINT_NAME" = "IND"."INDEX_NAME" ` +
-            `WHERE "IND"."TABLE_NAME" IN (${tableNamesString}) ` +
+            `WHERE "IND"."TABNAME" IN (${tableNamesString}) ` +
             // `AND "CON"."CONSTRAINT_NAME" IS NULL ` +
-            `GROUP BY "IND"."NAME", "IND"."TBNAME", "IND"."UNIQUERULE"`;
+            `GROUP BY "IND"."INDNAME","IND"."TABNAME","IND"."UNIQUERULE"`;
 
         const foreignKeysSql =
-            `SELECT "C"."CONSTRAINT_NAME", "C"."TABLE_NAME", "COL"."COLUMN_NAME", "REF_COL"."TABLE_NAME" AS "REFERENCED_TABLE_NAME", ` +
-            `"REF_COL"."COLUMN_NAME" AS "REFERENCED_COLUMN_NAME", "C"."DELETE_RULE" AS "ON_DELETE" ` +
-            `FROM "SYSIBM"."SYSFOREIGNKEYS" "C" ` +
-            `INNER JOIN "USER_CONS_COLUMNS" "COL" ON "COL"."OWNER" = "C"."OWNER" AND "COL"."CONSTRAINT_NAME" = "C"."CONSTRAINT_NAME" ` +
-            `INNER JOIN "USER_CONS_COLUMNS" "REF_COL" ON "REF_COL"."OWNER" = "C"."R_OWNER" AND "REF_COL"."CONSTRAINT_NAME" = "C"."R_CONSTRAINT_NAME" AND "REF_COL"."POSITION" = "COL"."POSITION" ` +
-            `WHERE "C"."TABLE_NAME" IN (${tableNamesString}) AND "C"."CONSTRAINT_TYPE" = 'R'`;
+            `SELECT "C"."CONSTNAME" AS "CONSTRAINT_NAME","C"."TABNAME","C"."REFKEYNAME" AS "COLUMN_NAME",` +
+            `"C"."TABSCHEMA" || '.' || "C"."TABNAME" AS "REFERENCED_TABLE_NAME","C"."REFKEYNAME" AS "REFERENCED_COLUMN_NAME",` +
+            `"C"."DELETERULE" AS "ON_DELETE" FROM "SYSCAT"."REFERENCES" "C"` +
+            `WHERE "C"."TABNAME" IN (${tableNamesString}) AND "C"."OWNER" = USER`;
 
-        const constraintsSql =
-            `SELECT "C"."CONSTRAINT_NAME", "C"."CONSTRAINT_TYPE", "C"."TABLE_NAME", "COL"."COLUMN_NAME", "C"."SEARCH_CONDITION" ` +
-            `FROM "USER_CONSTRAINTS" "C" ` +
-            `INNER JOIN "USER_CONS_COLUMNS" "COL" ON "COL"."OWNER" = "C"."OWNER" AND "COL"."CONSTRAINT_NAME" = "C"."CONSTRAINT_NAME" ` +
-            `WHERE "C"."TABLE_NAME" IN (${tableNamesString}) AND "C"."CONSTRAINT_TYPE" IN ('C', 'U', 'P') AND "C"."GENERATED" = 'USER NAME'`;
+        // const constraintsSql =
+        //     `SELECT "C"."CONSTRAINT_NAME", "C"."CONSTRAINT_TYPE", "C"."TABLE_NAME", "COL"."COLUMN_NAME", "C"."SEARCH_CONDITION" ` +
+        //     `FROM "USER_CONSTRAINTS" "C" ` +
+        //     `INNER JOIN "USER_CONS_COLUMNS" "COL" ON "COL"."OWNER" = "C"."OWNER" AND "COL"."CONSTRAINT_NAME" = "C"."CONSTRAINT_NAME" ` +
+        //     `WHERE "C"."TABLE_NAME" IN (${tableNamesString}) AND "C"."CONSTRAINT_TYPE" IN ('C', 'U', 'P') AND "C"."GENERATED" = 'USER NAME'`;
 
         const [
             dbTables,
@@ -1934,7 +1973,8 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
             this.query(columnsSql),
             this.query(indicesSql),
             this.query(foreignKeysSql),
-            this.query(constraintsSql),
+            [],
+            // [this.query(constraintsSql)],
         ]);
 
         // if tables were not found in the db, no need to proceed
@@ -2048,9 +2088,8 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
                         dbColumn["DATA_DEFAULT"] !== null &&
                         dbColumn["DATA_DEFAULT"] !== undefined &&
                         dbColumn["DATA_DEFAULT"].trim() !== "NULL"
-                            ? (tableColumn.default = dbColumn[
-                                  "DATA_DEFAULT"
-                              ].trim())
+                            ? (tableColumn.default =
+                                  dbColumn["DATA_DEFAULT"].trim())
                             : undefined;
 
                     tableColumn.isNullable = dbColumn["NULLABLE"] === "Y";
@@ -2164,7 +2203,9 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
         const columnDefinitions = table.columns
             .map((column) => this.buildCreateColumnSql(column))
             .join(", ");
-        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
+        let sql = `CREATE TABLE ${this.escapePath(
+            table.name
+        )} (${columnDefinitions}`;
 
         table.columns
             .filter((column) => column.isUnique)
@@ -2253,10 +2294,11 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
             (column) => column.isPrimary
         );
         if (primaryColumns.length > 0) {
-            const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
-                table.name,
-                primaryColumns.map((column) => column.name)
-            );
+            const primaryKeyName =
+                this.connection.namingStrategy.primaryKeyName(
+                    table.name,
+                    primaryColumns.map((column) => column.name)
+                );
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ");
@@ -2291,9 +2333,9 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
             );
         } else {
             return new Query(
-                `CREATE ${materializedClause}VIEW "${
-                    view.name
-                }" AS ${view.expression(this.connection).getQuery()}`
+                `CREATE ${materializedClause}VIEW "${view.name}" AS ${view
+                    .expression(this.connection)
+                    .getQuery()}`
             );
         }
     }
@@ -2303,10 +2345,7 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
             typeof view.expression === "string"
                 ? view.expression.trim()
                 : view.expression(this.connection).getQuery();
-        const [
-            query,
-            parameters,
-        ] = this.connection
+        const [query, parameters] = this.connection
             .createQueryBuilder()
             .insert()
             .into(this.getTypeormMetadataTableName())
@@ -2509,7 +2548,7 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
             column.isGenerated === true &&
             column.generationStrategy === "increment"
         )
-            c += " GENERATED BY DEFAULT AS IDENTITY";
+            c += " GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1)";
 
         return c;
     }

@@ -304,7 +304,8 @@ export class Connection {
         migrationExecutor.transaction =
             (options && options.transaction) || "all";
 
-        const successMigrations = await migrationExecutor.executePendingMigrations();
+        const successMigrations =
+            await migrationExecutor.executePendingMigrations();
         return successMigrations;
     }
 
@@ -503,9 +504,10 @@ export class Connection {
         entityTarget: EntityTarget<any>,
         relationPropertyPath: string
     ) {
-        const relationMetadata = this.getMetadata(
-            entityTarget
-        ).findRelationWithPropertyPath(relationPropertyPath);
+        const relationMetadata =
+            this.getMetadata(entityTarget).findRelationWithPropertyPath(
+                relationPropertyPath
+            );
         if (!relationMetadata)
             throw new Error(
                 `Relation "${relationPropertyPath}" was not found in ${entityTarget} entity.`

@@ -94,10 +94,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             // if update entity mode is enabled we may need extra columns for the returning statement
             // console.time(".prepare returning statement");
-            const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(
-                queryRunner,
-                this.expressionMap
-            );
+            const returningResultsEntityUpdator =
+                new ReturningResultsEntityUpdator(
+                    queryRunner,
+                    this.expressionMap
+                );
             if (
                 this.expressionMap.updateEntity === true &&
                 this.expressionMap.mainAlias!.hasMetadata
@@ -108,16 +109,18 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         this.connection.driver instanceof OracleDriver
                     )
                 ) {
-                    this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getInsertionReturningColumns();
+                    this.expressionMap.extraReturningColumns =
+                        returningResultsEntityUpdator.getInsertionReturningColumns();
                 }
                 if (
                     this.expressionMap.extraReturningColumns.length > 0 &&
                     this.connection.driver instanceof SqlServerDriver
                 ) {
-                    declareSql = this.connection.driver.buildTableVariableDeclaration(
-                        "@OutputTable",
-                        this.expressionMap.extraReturningColumns
-                    );
+                    declareSql =
+                        this.connection.driver.buildTableVariableDeclaration(
+                            "@OutputTable",
+                            this.expressionMap.extraReturningColumns
+                        );
                     selectOutputSql = `SELECT * FROM @OutputTable`;
                 }
             }
@@ -126,10 +129,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // execute query
             // console.time(".getting query and parameters");
             let [insertSql, parameters] = this.getQueryAndParameters();
-
-            if (this.connection.driver instanceof DB2Driver) {
-                // insertSql = `SELECT * FROM FINAL TABLE (${insertSql})`;
-            }
 
             // console.timeEnd(".getting query and parameters");
             const insertResult = new InsertResult();
@@ -222,7 +221,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const mainAlias = this.createFromAlias(entityTarget);
         this.expressionMap.setMainAlias(mainAlias);
         this.expressionMap.insertColumns = columns || [];
-        return (this as any) as InsertQueryBuilder<T>;
+        return this as any as InsertQueryBuilder<T>;
     }
 
     /**
@@ -439,11 +438,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     : ""
             }`;
             if (this.expressionMap.onUpdate) {
-                const {
-                    overwrite,
-                    columns,
-                    conflict,
-                } = this.expressionMap.onUpdate;
+                const { overwrite, columns, conflict } =
+                    this.expressionMap.onUpdate;
                 query += `${
                     columns
                         ? " ON CONFLICT " +
@@ -628,7 +624,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     } else if (column.isDiscriminator) {
                         this.expressionMap.nativeParameters[
                             "discriminator_value_" + parametersCount
-                        ] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
+                        ] =
+                            this.expressionMap.mainAlias!.metadata.discriminatorValue;
                         expression += this.connection.driver.createParameter(
                             "discriminator_value_" + parametersCount,
                             parametersCount
@@ -671,9 +668,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                             // unfortunately sqlite does not support DEFAULT expression in INSERT queries
                             if (column.default !== undefined) {
                                 // try to use default defined in the column
-                                expression += this.connection.driver.normalizeDefault(
-                                    column
-                                );
+                                expression +=
+                                    this.connection.driver.normalizeDefault(
+                                        column
+                                    );
                             } else {
                                 expression += "NULL"; // otherwise simply use NULL and pray if column is nullable
                             }
@@ -706,8 +704,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                                 column.type
                             ) !== -1
                         ) {
-                            const useLegacy = this.connection.driver.options
-                                .legacySpatialSupport;
+                            const useLegacy =
+                                this.connection.driver.options
+                                    .legacySpatialSupport;
                             const geomFromText = useLegacy
                                 ? "GeomFromText"
                                 : "ST_GeomFromText";
@@ -756,10 +755,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                                 (column.srid || "0") +
                                 ")";
                         } else {
-                            expression += this.connection.driver.createParameter(
-                                paramName,
-                                parametersCount
-                            );
+                            expression +=
+                                this.connection.driver.createParameter(
+                                    paramName,
+                                    parametersCount
+                                );
                         }
                         parametersCount++;
                     }

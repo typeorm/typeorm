@@ -88,6 +88,7 @@ export class DB2Driver implements Driver {
         "decimal",
         "numeric",
         "decfloat",
+        "text",
         "varchar",
         "clob",
         "char",
@@ -446,7 +447,11 @@ export class DB2Driver implements Driver {
             column.type === "double precision"
         ) {
             return "float";
-        } else if (column.type === String || column.type === "varchar") {
+        } else if (
+            column.type === String ||
+            column.type === "varchar" ||
+            column.type === "text"
+        ) {
             return "varchar";
         } else if (column.type === Date) {
             return "timestamp";
@@ -572,10 +577,17 @@ export class DB2Driver implements Driver {
                 {
                     connectString: credentials.connectString
                         ? credentials.connectString
-                        : `DATABASE=${credentials.database};HOSTNAME=${credentials.host};PORT=${credentials.port};PROTOCOL=TCPIP;UID=${credentials.username};PWD=${credentials.password};Security=SSL`,
+                        : `DATABASE=${credentials.database};HOSTNAME=${
+                              credentials.host
+                          };PORT=${credentials.port};PROTOCOL=TCPIP;UID=${
+                              credentials.username
+                          };PWD=${credentials.password}${
+                              credentials.secure ? "Security=SSL" : ""
+                          }`,
                 },
                 this.options.extra || {}
             );
+
             this.master.open(
                 connectionOptions.connectString,
                 (err: any, connection: any) => {
@@ -608,7 +620,13 @@ export class DB2Driver implements Driver {
                 {
                     connectString: credentials.connectString
                         ? credentials.connectString
-                        : `DATABASE=${credentials.database};HOSTNAME=${credentials.host};PORT=${credentials.port};PROTOCOL=TCPIP;UID=${credentials.username};PWD=${credentials.password};Security=SSL`,
+                        : `DATABASE=${credentials.database};HOSTNAME=${
+                              credentials.host
+                          };PORT=${credentials.port};PROTOCOL=TCPIP;UID=${
+                              credentials.username
+                          };PWD=${credentials.password}${
+                              credentials.secure ? "Security=SSL" : ""
+                          }`,
                 },
                 this.options.extra || {}
             );

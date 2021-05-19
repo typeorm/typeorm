@@ -32,7 +32,8 @@ import { DB2Driver } from "../driver/db2/DB2Driver";
  */
 export class UpdateQueryBuilder<Entity>
     extends QueryBuilder<Entity>
-    implements WhereExpression {
+    implements WhereExpression
+{
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -96,25 +97,28 @@ export class UpdateQueryBuilder<Entity>
             let selectOutputSql: string | null = null;
 
             // if update entity mode is enabled we may need extra columns for the returning statement
-            const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(
-                queryRunner,
-                this.expressionMap
-            );
+            const returningResultsEntityUpdator =
+                new ReturningResultsEntityUpdator(
+                    queryRunner,
+                    this.expressionMap
+                );
             if (
                 this.expressionMap.updateEntity === true &&
                 this.expressionMap.mainAlias!.hasMetadata &&
                 this.expressionMap.whereEntities.length > 0
             ) {
-                this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getUpdationReturningColumns();
+                this.expressionMap.extraReturningColumns =
+                    returningResultsEntityUpdator.getUpdationReturningColumns();
 
                 if (
                     this.expressionMap.extraReturningColumns.length > 0 &&
                     this.connection.driver instanceof SqlServerDriver
                 ) {
-                    declareSql = this.connection.driver.buildTableVariableDeclaration(
-                        "@OutputTable",
-                        this.expressionMap.extraReturningColumns
-                    );
+                    declareSql =
+                        this.connection.driver.buildTableVariableDeclaration(
+                            "@OutputTable",
+                            this.expressionMap.extraReturningColumns
+                        );
                     selectOutputSql = `SELECT * FROM @OutputTable`;
                 }
             }
@@ -429,9 +433,8 @@ export class UpdateQueryBuilder<Entity>
         this.expressionMap.wheres = [];
         const entities: Entity[] = Array.isArray(entity) ? entity : [entity];
         entities.forEach((entity) => {
-            const entityIdMap = this.expressionMap.mainAlias!.metadata.getEntityIdMap(
-                entity
-            );
+            const entityIdMap =
+                this.expressionMap.mainAlias!.metadata.getEntityIdMap(entity);
             if (!entityIdMap)
                 throw new Error(
                     `Provided entity does not have ids set, cannot perform operation.`
@@ -472,6 +475,7 @@ export class UpdateQueryBuilder<Entity>
         const updatedColumns: ColumnMetadata[] = [];
         const newParameters: ObjectLiteral = {};
         let parametersCount =
+            this.connection.driver instanceof DB2Driver ||
             this.connection.driver instanceof MysqlDriver ||
             this.connection.driver instanceof AuroraDataApiDriver ||
             this.connection.driver instanceof OracleDriver ||
@@ -483,9 +487,8 @@ export class UpdateQueryBuilder<Entity>
             EntityMetadata.createPropertyPath(metadata, valuesSet).forEach(
                 (propertyPath) => {
                     // todo: make this and other query builder to work with properly with tables without metadata
-                    const columns = metadata.findColumnsWithPropertyPath(
-                        propertyPath
-                    );
+                    const columns =
+                        metadata.findColumnsWithPropertyPath(propertyPath);
 
                     if (columns.length <= 0) {
                         throw new EntityColumnNotFound(propertyPath);
@@ -505,14 +508,14 @@ export class UpdateQueryBuilder<Entity>
                             column.referencedColumn &&
                             value instanceof Object
                         ) {
-                            value = column.referencedColumn.getEntityValue(
-                                value
-                            );
+                            value =
+                                column.referencedColumn.getEntityValue(value);
                         } else if (!(value instanceof Function)) {
-                            value = this.connection.driver.preparePersistentValue(
-                                value,
-                                column
-                            );
+                            value =
+                                this.connection.driver.preparePersistentValue(
+                                    value,
+                                    column
+                                );
                         }
 
                         // todo: duplication zone
@@ -545,6 +548,7 @@ export class UpdateQueryBuilder<Entity>
                             }
 
                             if (
+                                this.connection.driver instanceof DB2Driver ||
                                 this.connection.driver instanceof MysqlDriver ||
                                 this.connection.driver instanceof
                                     AuroraDataApiDriver ||
@@ -556,9 +560,8 @@ export class UpdateQueryBuilder<Entity>
                             ) {
                                 newParameters[paramName] = value;
                             } else {
-                                this.expressionMap.nativeParameters[
-                                    paramName
-                                ] = value;
+                                this.expressionMap.nativeParameters[paramName] =
+                                    value;
                             }
 
                             let expression = null;
@@ -571,8 +574,9 @@ export class UpdateQueryBuilder<Entity>
                                     column.type
                                 ) !== -1
                             ) {
-                                const useLegacy = this.connection.driver.options
-                                    .legacySpatialSupport;
+                                const useLegacy =
+                                    this.connection.driver.options
+                                        .legacySpatialSupport;
                                 const geomFromText = useLegacy
                                     ? "GeomFromText"
                                     : "ST_GeomFromText";
@@ -623,10 +627,11 @@ export class UpdateQueryBuilder<Entity>
                                     (column.srid || "0") +
                                     ")";
                             } else {
-                                expression = this.connection.driver.createParameter(
-                                    paramName,
-                                    parametersCount
-                                );
+                                expression =
+                                    this.connection.driver.createParameter(
+                                        paramName,
+                                        parametersCount
+                                    );
                             }
                             updateColumnAndValues.push(
                                 this.escape(column.databaseName) +
@@ -678,6 +683,7 @@ export class UpdateQueryBuilder<Entity>
                     //     value = new ArrayParameter(value);
 
                     if (
+                        this.connection.driver instanceof DB2Driver ||
                         this.connection.driver instanceof MysqlDriver ||
                         this.connection.driver instanceof AuroraDataApiDriver ||
                         this.connection.driver instanceof OracleDriver ||
@@ -710,6 +716,7 @@ export class UpdateQueryBuilder<Entity>
         // we re-write parameters this way because we want our "UPDATE ... SET" parameters to be first in the list of "nativeParameters"
         // because some drivers like mysql depend on order of parameters
         if (
+            this.connection.driver instanceof DB2Driver ||
             this.connection.driver instanceof MysqlDriver ||
             this.connection.driver instanceof AuroraDataApiDriver ||
             this.connection.driver instanceof OracleDriver ||
