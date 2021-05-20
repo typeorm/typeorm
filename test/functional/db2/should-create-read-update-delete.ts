@@ -109,6 +109,33 @@ describe("DB2 crud", () => {
                 expect(result[0].title).to.be.eq(post.title);
             })
         ));
+    it("should list existing post with lock mode (WITH UR)", async () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const transaction = await connection.transaction(
+                    async (entity) => {
+                        const post = new Post();
+                        post.title = "Title";
+                        post.subtitle = "Subtitle";
+                        post.description = "Description";
+                        await connection.manager.save(post);
+
+                        const result = await entity.find(Post, {
+                            where: {
+                                id: 1,
+                            },
+                            transaction: true,
+                            lock: {
+                                mode: "pessimistic_read",
+                            },
+                        });
+
+                        expect(result.length).to.be.eq(1);
+                        expect(result[0].title).to.be.eq(post.title);
+                    }
+                );
+            })
+        ));
 
     it("should delete existing post", async () =>
         Promise.all(

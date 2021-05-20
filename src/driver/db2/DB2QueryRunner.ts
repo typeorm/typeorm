@@ -135,9 +135,23 @@ export class DB2QueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // await this.query("BEGIN TRANSACTION");
         if (isolationLevel) {
-            await this.query(
-                "SET TRANSACTION ISOLATION LEVEL " + isolationLevel
-            );
+            switch (isolationLevel) {
+                case "READ UNCOMMITTED":
+                    await databaseConnection.setIsolationLevel(1);
+                    break;
+                case "READ COMMITTED":
+                    await databaseConnection.setIsolationLevel(2);
+                    break;
+                case "REPEATABLE READ":
+                    await databaseConnection.setIsolationLevel(4);
+                    break;
+                case "SERIALIZABLE":
+                    await databaseConnection.setIsolationLevel(8);
+                    break;
+                case "NO COMMIT":
+                    await databaseConnection.setIsolationLevel(32);
+                    break;
+            }
         }
 
         const afterBroadcastResult = new BroadcasterResult();

@@ -582,7 +582,7 @@ export class DB2Driver implements Driver {
                           };PORT=${credentials.port};PROTOCOL=TCPIP;UID=${
                               credentials.username
                           };PWD=${credentials.password}${
-                              credentials.secure ? "Security=SSL" : ""
+                              credentials.secure ? ";Security=SSL" : ""
                           }`,
                 },
                 this.options.extra || {}
@@ -761,9 +761,6 @@ export class DB2Driver implements Driver {
     protected loadDependencies(): void {
         try {
             this.db2 = PlatformTools.load("ibm_db");
-            if (this.options.debug) {
-                this.db2.debug(this.options.debug);
-            }
         } catch (e) {
             throw new DriverPackageNotInstalledError("DB2", "ibm_db");
         }

@@ -2362,12 +2362,6 @@ export class SelectQueryBuilder<Entity>
     protected createLockExpression(): string {
         const driver = this.connection.driver;
         switch (this.expressionMap.lockMode) {
-            case "optimistic":
-                if (driver instanceof DB2Driver) {
-                    return " WITH UR";
-                }
-                return "";
-                break;
             case "pessimistic_read":
                 if (
                     driver instanceof MysqlDriver ||
@@ -2378,10 +2372,10 @@ export class SelectQueryBuilder<Entity>
                     return " FOR SHARE";
                 } else if (driver instanceof OracleDriver) {
                     return " FOR UPDATE";
+                } else if (driver instanceof DB2Driver) {
+                    return " WITH UR";
                 } else if (driver instanceof SqlServerDriver) {
                     return "";
-                } else if (driver instanceof DB2Driver) {
-                    return " WITH RS";
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
                 }
@@ -2393,6 +2387,8 @@ export class SelectQueryBuilder<Entity>
                     driver instanceof OracleDriver
                 ) {
                     return " FOR UPDATE";
+                } else if (driver instanceof DB2Driver) {
+                    return " WITH RS";
                 } else if (driver instanceof SqlServerDriver) {
                     return "";
                 } else {
