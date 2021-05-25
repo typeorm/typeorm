@@ -556,7 +556,7 @@ export class AuroraDataApiDriver implements Driver {
         const defaultValue = columnMetadata.default;
 
         if (defaultValue === null) {
-            return undefined
+            return undefined;
         }
 
         if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
@@ -582,6 +582,40 @@ export class AuroraDataApiDriver implements Driver {
             return defaultValue;
         }
     }
+
+    /**
+     * Normalizes "setDefault" value of the column.
+     */
+     normalizeSetDefault(columnMetadata: ColumnMetadata): string | undefined {
+      const defaultValue = columnMetadata.setDefault;
+
+      if (defaultValue === null) {
+          return undefined;
+      }
+
+      if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
+          return `'${defaultValue}'`;
+      }
+      if ((columnMetadata.type === "set") && defaultValue !== undefined) {
+          return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
+
+      }
+      if (typeof defaultValue === "number") {
+          return "" + defaultValue;
+
+      } else if (typeof defaultValue === "boolean") {
+          return defaultValue === true ? "1" : "0";
+
+      } else if (typeof defaultValue === "function") {
+          return defaultValue();
+
+      } else if (typeof defaultValue === "string") {
+          return `'${defaultValue}'`;
+
+      } else {
+          return defaultValue;
+      }
+  }
 
     /**
      * Normalizes "isUnique" value of the column.

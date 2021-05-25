@@ -583,7 +583,7 @@ export class MysqlDriver implements Driver {
         const defaultValue = columnMetadata.default;
 
         if (defaultValue === null) {
-            return undefined
+            return undefined;
 
         } else if (
             (columnMetadata.type === "enum"
@@ -604,6 +604,38 @@ export class MysqlDriver implements Driver {
         } else if (typeof defaultValue === "function") {
             const value = defaultValue();
             return this.normalizeDatetimeFunction(value)
+        } else {
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Normalizes "setDefault" value of the column.
+     */
+     normalizeSetDefault(columnMetadata: ColumnMetadata): string | undefined {
+        const defaultValue = columnMetadata.setDefault;
+
+        if (defaultValue === null) {
+            return undefined;
+
+        } else if (
+            (columnMetadata.type === "enum"
+            || columnMetadata.type === "simple-enum"
+            || typeof defaultValue === "string")
+            && defaultValue !== undefined) {
+            return `'${defaultValue}'`;
+
+        } else if ((columnMetadata.type === "set") && defaultValue !== undefined) {
+            return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
+
+        } else if (typeof defaultValue === "number") {
+            return `'${defaultValue.toFixed(columnMetadata.scale)}'`;
+
+        } else if (typeof defaultValue === "boolean") {
+            return defaultValue === true ? "1" : "0";
+
+        } else if (typeof defaultValue === "function") {
+            return defaultValue();
         } else {
             return defaultValue;
         }

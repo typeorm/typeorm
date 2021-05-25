@@ -327,6 +327,13 @@ export class MongoDriver implements Driver {
     }
 
     /**
+     * Normalizes "setDefault" value of the column.
+     */
+    normalizeSetDefault(columnMetadata: ColumnMetadata): string | undefined {
+      throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+    }
+
+    /**
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {

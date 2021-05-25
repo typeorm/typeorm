@@ -510,6 +510,33 @@ export class CockroachDriver implements Driver {
     }
 
     /**
+     * Normalizes "setDefault" value of the column.
+     */
+    normalizeSetDefault(columnMetadata: ColumnMetadata): string | undefined {
+        const defaultValue = columnMetadata.setDefault;
+        const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
+
+        if (typeof defaultValue === "number") {
+            return `(${defaultValue})`;
+
+        } else if (typeof defaultValue === "boolean") {
+            return defaultValue === true ? "true" : "false";
+
+        } else if (typeof defaultValue === "function") {
+            return defaultValue();
+
+        } else if (typeof defaultValue === "string") {
+            return `'${defaultValue}'${arrayCast}`;
+
+        } else if (typeof defaultValue === "object" && defaultValue !== null) {
+            return `'${JSON.stringify(defaultValue)}'`;
+
+        } else {
+            return defaultValue;
+        }
+    }
+
+    /**
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {

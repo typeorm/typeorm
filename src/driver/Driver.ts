@@ -145,6 +145,11 @@ export interface Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined;
 
     /**
+     * Normalizes "setDefault" value of the column.
+     */
+    normalizeSetDefault(columnMetadata: ColumnMetadata): string | undefined;
+
+    /**
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean;

@@ -762,6 +762,41 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Normalizes "setDefault" value of the column.
+     */
+     normalizeSetDefault(columnMetadata: ColumnMetadata): string | undefined {
+        const defaultValue = columnMetadata.setDefault;
+
+        if (defaultValue === null) {
+            return undefined;
+
+        } else if (columnMetadata.isArray && Array.isArray(defaultValue)) {
+            return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
+
+        } else if (
+            (columnMetadata.type === "enum"
+            || columnMetadata.type === "simple-enum"
+            || typeof defaultValue === "number"
+            || typeof defaultValue === "string")
+            && defaultValue !== undefined
+        ) {
+            return `'${defaultValue}'`;
+
+        } else if (typeof defaultValue === "boolean") {
+            return defaultValue === true ? "true" : "false";
+
+        } else if (typeof defaultValue === "function") {
+            return defaultValue();
+
+        } else if (typeof defaultValue === "object") {
+            return `'${JSON.stringify(defaultValue)}'`;
+
+        } else {
+            return defaultValue;
+        }
+    }
+
+    /**
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {

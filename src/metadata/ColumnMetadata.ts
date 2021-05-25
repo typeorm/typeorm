@@ -117,9 +117,14 @@ export class ColumnMetadata {
     comment?: string;
 
     /**
-     * Default database value.
+     * Set the default value on insert at the database level
      */
     default?: any;
+
+    /**
+     * Set the default value on insert at the ORM level
+     */
+    setDefault?: any;
 
     /**
      * ON UPDATE trigger. Works only for MySQL.
@@ -358,6 +363,8 @@ export class ColumnMetadata {
             this.comment = options.args.options.comment;
         if (options.args.options.default !== undefined)
             this.default = options.args.options.default;
+        if (options.args.options.setDefault !== undefined)
+            this.setDefault = options.args.options.setDefault;
         if (options.args.options.onUpdate)
             this.onUpdate = options.args.options.onUpdate;
         if (options.args.options.scale !== null && options.args.options.scale !== undefined)

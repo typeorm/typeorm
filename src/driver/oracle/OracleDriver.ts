@@ -488,6 +488,32 @@ export class OracleDriver implements Driver {
     }
 
     /**
+     * Normalizes "setDefault" value of the column.
+     */
+     normalizeSetDefault(columnMetadata: ColumnMetadata): string | undefined {
+        const defaultValue = columnMetadata.setDefault;
+
+        if (typeof defaultValue === "number") {
+            return "" + defaultValue;
+
+        } else if (typeof defaultValue === "boolean") {
+            return defaultValue === true ? "1" : "0";
+
+        } else if (typeof defaultValue === "function") {
+            return defaultValue();
+
+        } else if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
+
+        } else if (defaultValue === null) {
+            return undefined;
+
+        } else {
+            return defaultValue;
+        }
+    }
+
+    /**
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {

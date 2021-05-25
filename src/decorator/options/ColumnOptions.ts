@@ -65,9 +65,14 @@ export interface ColumnOptions extends ColumnCommonOptions {
     insert?: boolean;
 
     /**
-     * Default database value.
+     * Set the default value on insert at the database level
      */
     default?: any;
+
+    /**
+     * Set the default value on insert at the ORM level. Overrides database default if set.
+     */
+    setDefault?: any;
 
     /**
      * ON UPDATE trigger. Works only for MySQL.
