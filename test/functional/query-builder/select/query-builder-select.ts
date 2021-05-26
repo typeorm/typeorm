@@ -167,4 +167,32 @@ describe("query builder > select", () => {
 
         expect(sql).contains("SELECT /*+ MAX_EXECUTION_TIME(1000) */");
     })));
+
+    it("should erased andWhere condition when null condition", () => Promise.all(connections.map(async connection => {
+        const sql = connection.createQueryBuilder(Post, "post")
+            .select("post.id")
+            .where("post.title = :title", { title: "test" })
+            .andWhere(null)
+            .disableEscaping()
+            .getSql();
+
+        expect(sql).to.equal("SELECT post.id AS post_id " +
+            "FROM post post " +
+            "WHERE post.title = ?"
+        );
+    })));
+
+    it("should erased orWhere condition when null condition", () => Promise.all(connections.map(async connection => {
+        const sql = connection.createQueryBuilder(Post, "post")
+            .select("post.id")
+            .where("post.title = :title", { title: "test" })
+            .orWhere(null)
+            .disableEscaping()
+            .getSql();
+
+        expect(sql).to.equal("SELECT post.id AS post_id " +
+            "FROM post post " +
+            "WHERE post.title = ?"
+        );
+    })));
 });
