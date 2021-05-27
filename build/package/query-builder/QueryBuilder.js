@@ -738,6 +738,7 @@ var QueryBuilder = /** @class */ (function () {
                             if (PlatformTools_1.PlatformTools.getEnvVariable("GATEWAY_ENV") === "production") {
                                 var logger = (new LoggerFactory_1.LoggerFactory()).create();
                                 logger.log("warn", "TYPEORM QUERY ERROR UNKNOWN COLUMN: " + propertyPath);
+                                return undefined;
                             }
                             else {
                                 throw new EntityColumnNotFound_1.EntityColumnNotFound(propertyPath);

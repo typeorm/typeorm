@@ -864,6 +864,7 @@ export abstract class QueryBuilder<Entity> {
                             if (PlatformTools.getEnvVariable("GATEWAY_ENV") === "production") {
                                 const logger = (new LoggerFactory()).create();
                                 logger.log("warn", `TYPEORM QUERY ERROR UNKNOWN COLUMN: ${propertyPath}`);
+                                return undefined;
                             } else {
                                 throw new EntityColumnNotFound(propertyPath);
                             }

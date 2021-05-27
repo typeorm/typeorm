@@ -415,6 +415,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     if (PlatformTools.getEnvVariable("GATEWAY_ENV") === "production") {
                         const logger = (new LoggerFactory()).create();
                         logger.log("warn", `TYPEORM UPDATE ERROR UNKNOWN COLUMN: ${propertyPath}`);
+                        return;
                     } else {
                         throw new EntityColumnNotFound(propertyPath);
                     }

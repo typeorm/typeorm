@@ -353,6 +353,7 @@ var UpdateQueryBuilder = /** @class */ (function (_super) {
                     if (PlatformTools_1.PlatformTools.getEnvVariable("GATEWAY_ENV") === "production") {
                         var logger = (new LoggerFactory_1.LoggerFactory()).create();
                         logger.log("warn", "TYPEORM UPDATE ERROR UNKNOWN COLUMN: " + propertyPath);
+                        return;
                     }
                     else {
                         throw new EntityColumnNotFound_1.EntityColumnNotFound(propertyPath);
