@@ -416,7 +416,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     if (["development", "local"].includes(env)) {
                         throw new EntityColumnNotFound(propertyPath);
                     } else {
-                        const logger = (new LoggerFactory()).create();
+                        const logger = (new LoggerFactory()).create("advanced-console", "all");
                         logger.log("warn", `TYPEORM UPDATE ERROR UNKNOWN COLUMN: ${propertyPath}`);
                         return;
                     }

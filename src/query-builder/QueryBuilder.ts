@@ -865,7 +865,7 @@ export abstract class QueryBuilder<Entity> {
                             if (["development", "local"].includes(env)) {
                                 throw new EntityColumnNotFound(propertyPath);
                             } else {
-                                const logger = (new LoggerFactory()).create();
+                                const logger = (new LoggerFactory()).create("advanced-console", "all");
                                 logger.log("warn", `TYPEORM QUERY ERROR UNKNOWN COLUMN: ${propertyPath}`);
                                 return undefined;
                             }
