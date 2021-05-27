@@ -732,13 +732,14 @@ var QueryBuilder = /** @class */ (function () {
                     return propertyPaths.map(function (propertyPath, propertyIndex) {
                         var columns = _this.expressionMap.mainAlias.metadata.findColumnsWithPropertyPath(propertyPath);
                         if (!columns.length) {
-                            if (PlatformTools.getEnvVariable("GATEWAY_ENV") === "production") {
+                            var env = PlatformTools.getEnvVariable("GATEWAY_ENV");
+                            if (["development", "local"].includes(env)) {
+                                throw new EntityColumnNotFound(propertyPath);
+                            }
+                            else {
                                 var logger = (new LoggerFactory()).create();
                                 logger.log("warn", "TYPEORM QUERY ERROR UNKNOWN COLUMN: " + propertyPath);
                                 return undefined;
-                            }
-                            else {
-                                throw new EntityColumnNotFound(propertyPath);
                             }
                         }
                         return columns.map(function (column, columnIndex) {

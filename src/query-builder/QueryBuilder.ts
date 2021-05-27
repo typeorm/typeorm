@@ -861,12 +861,13 @@ export abstract class QueryBuilder<Entity> {
                         const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);
 
                         if (!columns.length) {
-                            if (PlatformTools.getEnvVariable("GATEWAY_ENV") === "production") {
+                            const env = PlatformTools.getEnvVariable("GATEWAY_ENV");
+                            if (["development", "local"].includes(env)) {
+                                throw new EntityColumnNotFound(propertyPath);
+                            } else {
                                 const logger = (new LoggerFactory()).create();
                                 logger.log("warn", `TYPEORM QUERY ERROR UNKNOWN COLUMN: ${propertyPath}`);
                                 return undefined;
-                            } else {
-                                throw new EntityColumnNotFound(propertyPath);
                             }
                         }
 

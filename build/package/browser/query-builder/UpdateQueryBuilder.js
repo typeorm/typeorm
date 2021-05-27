@@ -347,13 +347,14 @@ var UpdateQueryBuilder = /** @class */ (function (_super) {
                 // todo: make this and other query builder to work with properly with tables without metadata
                 var columns = metadata.findColumnsWithPropertyPath(propertyPath);
                 if (columns.length <= 0) {
-                    if (PlatformTools.getEnvVariable("GATEWAY_ENV") === "production") {
+                    var env = PlatformTools.getEnvVariable("GATEWAY_ENV");
+                    if (["development", "local"].includes(env)) {
+                        throw new EntityColumnNotFound(propertyPath);
+                    }
+                    else {
                         var logger = (new LoggerFactory()).create();
                         logger.log("warn", "TYPEORM UPDATE ERROR UNKNOWN COLUMN: " + propertyPath);
                         return;
-                    }
-                    else {
-                        throw new EntityColumnNotFound(propertyPath);
                     }
                 }
                 columns.forEach(function (column) {
