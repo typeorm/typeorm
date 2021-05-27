@@ -18,6 +18,8 @@ import { UpdateValuesMissingError } from "../error/UpdateValuesMissingError";
 import { EntityColumnNotFound } from "../error/EntityColumnNotFound";
 import { AuroraDataApiDriver } from "../driver/aurora-data-api/AuroraDataApiDriver";
 import { BetterSqlite3Driver } from "../driver/better-sqlite3/BetterSqlite3Driver";
+import { LoggerFactory } from "../logger/LoggerFactory";
+import { PlatformTools } from "../platform/PlatformTools";
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
@@ -345,7 +347,13 @@ var UpdateQueryBuilder = /** @class */ (function (_super) {
                 // todo: make this and other query builder to work with properly with tables without metadata
                 var columns = metadata.findColumnsWithPropertyPath(propertyPath);
                 if (columns.length <= 0) {
-                    throw new EntityColumnNotFound(propertyPath);
+                    if (PlatformTools.getEnvVariable("GATEWAY_ENV") === "production") {
+                        var logger = (new LoggerFactory()).create();
+                        logger.log("warn", "TYPEORM UPDATE ERROR UNKNOWN COLUMN: " + propertyPath);
+                    }
+                    else {
+                        throw new EntityColumnNotFound(propertyPath);
+                    }
                 }
                 columns.forEach(function (column) {
                     if (!column.isUpdate) {

@@ -14,6 +14,8 @@ var __1 = require("../");
 var FindOperator_1 = require("../find-options/FindOperator");
 var In_1 = require("../find-options/operator/In");
 var EntityColumnNotFound_1 = require("../error/EntityColumnNotFound");
+var LoggerFactory_1 = require("../logger/LoggerFactory");
+var PlatformTools_1 = require("../platform/PlatformTools");
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
 // todo: check in persistment if id exist on object and throw exception (can be in partial selection?)
@@ -733,7 +735,13 @@ var QueryBuilder = /** @class */ (function () {
                     return propertyPaths.map(function (propertyPath, propertyIndex) {
                         var columns = _this.expressionMap.mainAlias.metadata.findColumnsWithPropertyPath(propertyPath);
                         if (!columns.length) {
-                            throw new EntityColumnNotFound_1.EntityColumnNotFound(propertyPath);
+                            if (PlatformTools_1.PlatformTools.getEnvVariable("GATEWAY_ENV") === "production") {
+                                var logger = (new LoggerFactory_1.LoggerFactory()).create();
+                                logger.log("warn", "TYPEORM QUERY ERROR UNKNOWN COLUMN: " + propertyPath);
+                            }
+                            else {
+                                throw new EntityColumnNotFound_1.EntityColumnNotFound(propertyPath);
+                            }
                         }
                         return columns.map(function (column, columnIndex) {
                             var aliasPath = _this.expressionMap.aliasNamePrefixingEnabled ? _this.alias + "." + propertyPath : column.propertyPath;

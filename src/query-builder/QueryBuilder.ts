@@ -23,6 +23,8 @@ import {EntitySchema} from "../";
 import {FindOperator} from "../find-options/FindOperator";
 import {In} from "../find-options/operator/In";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
+import { LoggerFactory } from "../logger/LoggerFactory";
+import { PlatformTools } from "../platform/PlatformTools";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -859,7 +861,12 @@ export abstract class QueryBuilder<Entity> {
                         const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);
 
                         if (!columns.length) {
-                            throw new EntityColumnNotFound(propertyPath);
+                            if (PlatformTools.getEnvVariable("GATEWAY_ENV") === "production") {
+                                const logger = (new LoggerFactory()).create();
+                                logger.log("warn", `TYPEORM QUERY ERROR UNKNOWN COLUMN: ${propertyPath}`);
+                            } else {
+                                throw new EntityColumnNotFound(propertyPath);
+                            }
                         }
 
                         return columns.map((column, columnIndex) => {

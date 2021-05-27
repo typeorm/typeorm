@@ -25,6 +25,8 @@ import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver";
+import { LoggerFactory } from "../logger/LoggerFactory";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -410,7 +412,12 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 const columns = metadata.findColumnsWithPropertyPath(propertyPath);
 
                 if (columns.length <= 0) {
-                    throw new EntityColumnNotFound(propertyPath);
+                    if (PlatformTools.getEnvVariable("GATEWAY_ENV") === "production") {
+                        const logger = (new LoggerFactory()).create();
+                        logger.log("warn", `TYPEORM UPDATE ERROR UNKNOWN COLUMN: ${propertyPath}`);
+                    } else {
+                        throw new EntityColumnNotFound(propertyPath);
+                    }
                 }
 
                 columns.forEach(column => {

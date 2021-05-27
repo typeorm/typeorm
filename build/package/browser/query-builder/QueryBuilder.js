@@ -11,6 +11,8 @@ import { EntitySchema } from "../";
 import { FindOperator } from "../find-options/FindOperator";
 import { In } from "../find-options/operator/In";
 import { EntityColumnNotFound } from "../error/EntityColumnNotFound";
+import { LoggerFactory } from "../logger/LoggerFactory";
+import { PlatformTools } from "../platform/PlatformTools";
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
 // todo: check in persistment if id exist on object and throw exception (can be in partial selection?)
@@ -730,7 +732,13 @@ var QueryBuilder = /** @class */ (function () {
                     return propertyPaths.map(function (propertyPath, propertyIndex) {
                         var columns = _this.expressionMap.mainAlias.metadata.findColumnsWithPropertyPath(propertyPath);
                         if (!columns.length) {
-                            throw new EntityColumnNotFound(propertyPath);
+                            if (PlatformTools.getEnvVariable("GATEWAY_ENV") === "production") {
+                                var logger = (new LoggerFactory()).create();
+                                logger.log("warn", "TYPEORM QUERY ERROR UNKNOWN COLUMN: " + propertyPath);
+                            }
+                            else {
+                                throw new EntityColumnNotFound(propertyPath);
+                            }
                         }
                         return columns.map(function (column, columnIndex) {
                             var aliasPath = _this.expressionMap.aliasNamePrefixingEnabled ? _this.alias + "." + propertyPath : column.propertyPath;
