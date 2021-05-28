@@ -6,6 +6,7 @@
 * [`postgres` / `cockroachdb` connection options](#postgres--cockroachdb-connection-options)
 * [`sqlite` connection options](#sqlite-connection-options)
 * [`better-sqlite3` connection options](#better-sqlite3-connection-options)
+* [`capacitor` connection options](#capacitor-connection-options)
 * [`cordova` connection options](#cordova-connection-options)
 * [`react-native` connection options](#react-native-connection-options)
 * [`nativescript` connection options](#nativescript-connection-options)
@@ -23,8 +24,8 @@ Connection options is a connection configuration you pass to `createConnection`
 ## Common connection options
 
 * `type` - Database type. You must specify what database engine you use.
- Possible values are "mysql", "postgres", "cockroachdb", "mariadb", "sqlite", "better-sqlite3", "cordova", "nativescript",
- "oracle", "mssql", "mongodb", "sqljs", "react-native".
+ Possible values are "mysql", "postgres", "cockroachdb", "mariadb", "sqlite", "better-sqlite3", "capacitor", "cordova", 
+ "nativescript", "oracle", "mssql", "mongodb", "sqljs", "react-native".
  This option is **required**.
 
 * `name` - Connection name. You'll use it to get connection you need using `getConnection(name: string)` 
@@ -195,6 +196,12 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 * `statementCacheSize` - Cache size of sqlite statement to speed up queries (default 100).
 
 * `prepareDatabase` - Function to run before a database is used in typeorm. You can access original better-sqlite3 Database object here.
+
+## `capacitor` connection options
+
+* `database` - Database name (capacitor-sqlite will add the suffix `SQLite.db`)
+
+* `driver` - The capacitor-sqlite instance. For example, `new SQLiteConnection(CapacitorSQLite)`.
 
 ## `cordova` connection options
 

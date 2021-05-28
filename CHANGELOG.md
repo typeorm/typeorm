@@ -1,3 +1,11 @@
+## 0.2.33 (UNRELEASED)
+
+### Bug fixes
+
+### Features
+
+* added capacitor driver ([#7690](https://github.com/typeorm/typeorm/pull/7690))
+
 ## [0.2.32](https://github.com/typeorm/typeorm/compare/0.2.31...0.2.32) (2021-03-30)
 
 ### Bug Fixes
