@@ -98,7 +98,7 @@ export class UniqueMetadata {
                     if (this.embeddedMetadata)
                         return this.embeddedMetadata.propertyPath + "." + columnName;
 
-                    return columnName;
+                    return columnName.trim();
                 });
                 columnPropertyPaths.forEach(propertyPath => map[propertyPath] = 1);
             } else {

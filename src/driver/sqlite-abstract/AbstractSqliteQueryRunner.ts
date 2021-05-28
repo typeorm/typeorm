@@ -167,10 +167,24 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<undefined> {
+        return Promise.resolve(undefined);
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         throw new Error(`This driver does not support table schemas`);
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<undefined> {
+        return Promise.resolve(undefined);
     }
 
     /**
@@ -899,6 +913,17 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 });
             });
 
+            // find unique constraints from CREATE TABLE sql
+            let uniqueRegexResult;
+            const uniqueMappings: { name: string, columns: string[] }[] = []
+            const uniqueRegex = /CONSTRAINT "([^"]*)" UNIQUE \((.*?)\)/g;
+            while ((uniqueRegexResult = uniqueRegex.exec(sql)) !== null) {
+                uniqueMappings.push({
+                    name: uniqueRegexResult[1],
+                    columns: uniqueRegexResult[2].substr(1, uniqueRegexResult[2].length - 2).split(`", "`)
+                });
+            }
+
             // build unique constraints
             const tableUniquePromises = dbIndices
                 .filter(dbIndex => dbIndex["origin"] === "u")
@@ -919,9 +944,15 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                             column.isUnique = true;
                     }
 
-                    // Sqlite does not store unique constraint name, so we generate its name manually.
+                    // find existent mapping by a column names
+                    const foundMapping = uniqueMappings.find(mapping => {
+                        return mapping!.columns.every(column =>
+                            indexColumns.indexOf(column) !== -1
+                        )
+                    })
+
                     return new TableUnique({
-                        name: this.connection.namingStrategy.uniqueConstraintName(table, indexColumns),
+                        name: foundMapping ? foundMapping.name : this.connection.namingStrategy.uniqueConstraintName(table, indexColumns),
                         columnNames: indexColumns
                     });
                 });

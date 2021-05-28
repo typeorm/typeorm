@@ -248,10 +248,26 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<string> {
+        const query = await this.query(`SELECT DATABASE() AS \`db_name\``);
+        return query[0]["db_name"];
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         throw new Error(`MySql driver does not support table schemas`);
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<string> {
+        const query = await this.query(`SELECT SCHEMA() AS \`schema_name\``);
+        return query[0]["schema_name"];
     }
 
     /**
@@ -1179,14 +1195,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Returns current database.
-     */
-    protected async getCurrentDatabase(): Promise<string> {
-        const currentDBQuery = await this.query(`SELECT DATABASE() AS \`db_name\``);
-        return currentDBQuery[0]["db_name"];
-    }
 
     protected async loadViews(viewNames: string[]): Promise<View[]> {
         const hasTable = await this.hasTable(this.getTypeormMetadataTableName());

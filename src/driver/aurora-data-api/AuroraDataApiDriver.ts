@@ -117,6 +117,7 @@ export class AuroraDataApiDriver implements Driver {
         "longblob",
         "longtext",
         "enum",
+        "set",
         "binary",
         "varbinary",
         // json data type
@@ -441,7 +442,7 @@ export class AuroraDataApiDriver implements Driver {
         } else if (columnMetadata.type === "timestamp" || columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             return DateUtils.mixedDateToDate(value);
 
-        } else if (columnMetadata.type === "simple-array") {
+        } else if (columnMetadata.type === "simple-array" || columnMetadata.type === "set") {
             return DateUtils.simpleArrayToString(value);
 
         } else if (columnMetadata.type === "simple-json") {
@@ -480,7 +481,7 @@ export class AuroraDataApiDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value);
 
-        } else if (columnMetadata.type === "simple-array") {
+        } else if (columnMetadata.type === "simple-array" || columnMetadata.type === "set") {
             value = DateUtils.stringToSimpleArray(value);
 
         } else if (columnMetadata.type === "simple-json") {
@@ -561,7 +562,10 @@ export class AuroraDataApiDriver implements Driver {
         if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
             return `'${defaultValue}'`;
         }
+        if ((columnMetadata.type === "set") && defaultValue !== undefined) {
+            return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
 
+        }
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
 
@@ -671,7 +675,7 @@ export class AuroraDataApiDriver implements Driver {
 
         return new Promise<any>((ok, fail) => {
             this.poolCluster.getConnection("SLAVE*", (err: any, dbConnection: any) => {
-                err ? fail(err) : ok(dbConnection);
+                err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
             });
         });
     }

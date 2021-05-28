@@ -164,6 +164,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Set max execution time.
+     * @param milliseconds
+     */
+    maxExecutionTime(milliseconds: number): this {
+        this.expressionMap.maxExecutionTime = milliseconds;
+        return this;
+    }
+
+    /**
      * Sets whether the selection is DISTINCT.
      */
     distinct(distinct: boolean = true): this {
@@ -1448,10 +1457,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Creates select | select distinct part of SQL query.
      */
     protected createSelectDistinctExpression(): string {
-        const {selectDistinct, selectDistinctOn} = this.expressionMap;
+        const {selectDistinct, selectDistinctOn, maxExecutionTime} = this.expressionMap;
         const {driver} = this.connection;
 
         let select = "SELECT ";
+
+        if (maxExecutionTime > 0) {
+            if (driver instanceof MysqlDriver) {
+                select += `/*+ MAX_EXECUTION_TIME(${ this.expressionMap.maxExecutionTime }) */ `;
+            }
+        }
+
         if (driver instanceof PostgresDriver && selectDistinctOn.length > 0) {
             const selectDistinctOnMap = selectDistinctOn.map(
               (on) => this.replacePropertyNames(on)
@@ -2076,26 +2092,40 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const queryId = sql + " -- PARAMETERS: " + JSON.stringify(parameters);
         const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
         let savedQueryResultCacheOptions: QueryResultCacheOptions|undefined = undefined;
+        let cacheError = false;
         if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
-            savedQueryResultCacheOptions = await this.connection.queryResultCache.getFromCache({
-                identifier: this.expressionMap.cacheId,
-                query: queryId,
-                duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
-            }, queryRunner);
-            if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
-                return JSON.parse(savedQueryResultCacheOptions.result);
+            try {
+                savedQueryResultCacheOptions = await this.connection.queryResultCache.getFromCache({
+                    identifier: this.expressionMap.cacheId,
+                    query: queryId,
+                    duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
+                }, queryRunner);
+                if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
+                    return JSON.parse(savedQueryResultCacheOptions.result);
+            } catch(error) {
+                if (!cacheOptions.ignoreErrors) {
+                    throw error;
+                }
+                cacheError = true;
+            }
         }
 
         const results = await queryRunner.query(sql, parameters);
 
-        if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
-            await this.connection.queryResultCache.storeInCache({
-                identifier: this.expressionMap.cacheId,
-                query: queryId,
-                time: new Date().getTime(),
-                duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
-                result: JSON.stringify(results)
-            }, savedQueryResultCacheOptions, queryRunner);
+        if (!cacheError && this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
+            try {
+                await this.connection.queryResultCache.storeInCache({
+                    identifier: this.expressionMap.cacheId,
+                    query: queryId,
+                    time: new Date().getTime(),
+                    duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
+                    result: JSON.stringify(results)
+                }, savedQueryResultCacheOptions, queryRunner);
+            } catch(error) {
+                if (!cacheOptions.ignoreErrors) {
+                    throw error;
+                }
+            }
         }
 
         return results;

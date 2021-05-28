@@ -151,6 +151,10 @@ export interface BaseConnectionOptions {
          */
         readonly duration?: number;
 
+        /**
+         * Used to specify if cache errors should be ignored, and pass through the call to the Database.
+         */
+        readonly ignoreErrors?: boolean;
     };
 
     /**

@@ -701,7 +701,7 @@ export class MysqlDriver implements Driver {
 
         return new Promise<any>((ok, fail) => {
             this.poolCluster.getConnection("SLAVE*", (err: any, dbConnection: any) => {
-                err ? fail(err) : ok(dbConnection);
+                err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
             });
         });
     }

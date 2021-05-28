@@ -136,7 +136,8 @@ export class EntitySchemaTransformer {
                             onUpdate: relationSchema.onUpdate,
                             deferrable: relationSchema.deferrable,
                             primary: relationSchema.primary,
-                            persistence: relationSchema.persistence
+                            persistence: relationSchema.persistence,
+                            orphanedRowAction: relationSchema.orphanedRowAction
                         }
                     };
 

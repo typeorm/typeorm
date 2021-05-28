@@ -280,11 +280,27 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Returns current database.
+     */
+    async getCurrentDatabase(): Promise<string> {
+        const currentDBQuery = await this.query(`SELECT "VALUE" AS "db_name" FROM "SYS"."M_SYSTEM_OVERVIEW" WHERE "SECTION" = 'System' and "NAME" = 'Instance ID'`);
+        return currentDBQuery[0]["db_name"];
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         const schemas = await this.getSchemas();
         return schemas.indexOf(schema) !== -1;
+    }
+
+    /**
+     * Returns current schema.
+     */
+    async getCurrentSchema(): Promise<string> {
+        const currentSchemaQuery = await this.query(`SELECT CURRENT_SCHEMA AS "schema_name" FROM "SYS"."DUMMY"`);
+        return currentSchemaQuery[0]["schema_name"];
     }
 
     /**
@@ -1417,22 +1433,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    /**
-     * Return current database.
-     */
-    protected async getCurrentDatabase(): Promise<string> {
-        const currentDBQuery = await this.query(`SELECT "VALUE" AS "db_name" FROM "SYS"."M_SYSTEM_OVERVIEW" WHERE "SECTION" = 'System' and "NAME" = 'Instance ID'`);
-        return currentDBQuery[0]["db_name"];
-    }
-
-    /**
-     * Return current schema.
-     */
-    protected async getCurrentSchema(): Promise<string> {
-        const currentSchemaQuery = await this.query(`SELECT CURRENT_SCHEMA AS "schema_name" FROM "SYS"."DUMMY"`);
-        return currentSchemaQuery[0]["schema_name"];
-    }
-
     protected async loadViews(viewNames: string[]): Promise<View[]> {
         const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
         if (!hasTable)
@@ -1529,10 +1529,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
+            const getSchemaFromKey = (dbObject: any, key: string) => {
+                return dbObject[key] === currentSchema && (!this.driver.options.schema || this.driver.options.schema === currentSchema)
+                    ? undefined
+                    : dbObject[key]
+            };
 
             // We do not need to join schema name, when database is by default.
             // In this case we need local variable `tableFullName` for below comparision.
-            const schema = dbTable["SCHEMA_NAME"] === currentSchema && !this.driver.options.schema ? undefined : dbTable["SCHEMA_NAME"];
+            const schema = getSchemaFromKey(dbTable, "SCHEMA_NAME");
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema);
             const tableFullName = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["SCHEMA_NAME"]);
 
@@ -1649,7 +1654,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
 
                 // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                const schema = dbForeignKey["REFERENCED_SCHEMA_NAME"] === currentSchema ? undefined : dbForeignKey["REFERENCED_SCHEMA_NAME"];
+                const schema = getSchemaFromKey(dbTable, "REFERENCED_SCHEMA_NAME");
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], schema);
 
                 return new TableForeignKey({

@@ -380,7 +380,7 @@ export class SubjectExecutor {
      * Updates all given subjects in the database.
      */
     protected async executeUpdateOperations(): Promise<void> {
-        await Promise.all(this.updateSubjects.map(async subject => {
+        const updateSubject = async (subject: Subject) => {
 
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject);
@@ -407,6 +407,21 @@ export class SubjectExecutor {
             } else {
 
                 const updateMap: ObjectLiteral = subject.createValueSetAndPopChangeMap();
+
+                // for tree tables we execute additional queries
+                switch (subject.metadata.treeType) {
+                    case "nested-set":
+                        await new NestedSetSubjectExecutor(this.queryRunner).update(subject);
+                        break;
+
+                    case "closure-table":
+                        await new ClosureSubjectExecutor(this.queryRunner).update(subject);
+                        break;
+
+                    case "materialized-path":
+                        await new MaterializedPathSubjectExecutor(this.queryRunner).update(subject);
+                        break;
+                }
 
                 // here we execute our updation query
                 // we need to enable entity updation because we update a subject identifier
@@ -442,20 +457,36 @@ export class SubjectExecutor {
                     }
                     Object.assign(subject.generatedMap, updateGeneratedMap);
                 }
-
-                // experiments, remove probably, need to implement tree tables children removal
-                // if (subject.updatedRelationMaps.length > 0) {
-                //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
-                //         if (!updatedRelation.relation.isTreeParent) return;
-                //         if (!updatedRelation.value !== null) return;
-                //
-                //         if (subject.metadata.treeType === "closure-table") {
-                //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
-                //         }
-                //     }));
-                // }
             }
-        }));
+        };
+
+        // Nested sets need to be updated one by one
+        // Split array in two, one with nested set subjects and the other with the remaining subjects
+        const nestedSetSubjects: Subject[] = [];
+        const remainingSubjects: Subject[] = [];
+
+        for (const subject of this.updateSubjects) {
+            if (subject.metadata.treeType === "nested-set") {
+                nestedSetSubjects.push(subject);
+            } else {
+                remainingSubjects.push(subject);
+            }
+        }
+
+        // Run nested set updates one by one
+        const nestedSetPromise = new Promise<void>(async (resolve, reject) => {
+            for (const subject of nestedSetSubjects) {
+                try {
+                    await updateSubject(subject);
+                } catch (error) {
+                    reject(error);
+                }
+            }
+            resolve();
+        });
+
+        // Run all remaning subjects in parallel
+        await Promise.all([...remainingSubjects.map(updateSubject), nestedSetPromise]);
     }
 
     /**
@@ -482,6 +513,16 @@ export class SubjectExecutor {
                 await manager.delete(subjects[0].metadata.target, deleteMaps);
 
             } else {
+                // for tree tables we execute additional queries
+                switch (subjects[0].metadata.treeType) {
+                    case "nested-set":
+                        await new NestedSetSubjectExecutor(this.queryRunner).remove(subjects);
+                        break;
+
+                    case "closure-table":
+                        await new ClosureSubjectExecutor(this.queryRunner).remove(subjects);
+                        break;
+                }
 
                 // here we execute our deletion query
                 // we don't need to specify entities and set update entity to true since the only thing query builder

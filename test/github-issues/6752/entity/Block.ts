@@ -1,9 +1,6 @@
-import {
-    Column, Entity, Index, OneToMany, PrimaryGeneratedColumn,
-} from "../../../../src";
-import { PlanOfRecord } from "./PlanOfRecord";
+import {Column, Entity, Index, OneToMany, PrimaryGeneratedColumn} from "../../../../src";
+import {PlanOfRecord} from "./PlanOfRecord";
 
-// @Entity({ synchronize: false })
 @Entity({ synchronize: true })
 @Index(["chip_name", "manual", "frequency", "mode"], { unique: true })
 export class Block {
@@ -30,7 +27,6 @@ export class Block {
     @Index()
     public mode: string;
 
-    @OneToMany((type) => PlanOfRecord, (por) => por.block)
+    @OneToMany(() => PlanOfRecord, (por) => por.block)
     public plan_of_records: PlanOfRecord[];
 }
- 

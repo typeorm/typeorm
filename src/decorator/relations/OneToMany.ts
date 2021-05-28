@@ -11,7 +11,7 @@ export function OneToMany<T>(typeFunctionOrTarget: string|((type?: any) => Objec
         if (!options) options = {} as RelationOptions;
 
         // Now try to determine if it is a lazy relation.
-        let isLazy = options && options.lazy === true ? true : false;
+        let isLazy = options && options.lazy === true;
         if (!isLazy && Reflect && (Reflect as any).getMetadata) { // automatic determination
             const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
             if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise")

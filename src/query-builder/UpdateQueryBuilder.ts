@@ -1,6 +1,6 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {SapDriver} from "../driver/sap/SapDriver";
-import { ColumnMetadata } from "../metadata/ColumnMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";

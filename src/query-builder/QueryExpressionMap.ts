@@ -47,6 +47,11 @@ export class QueryExpressionMap {
     selects: SelectQuery[] = [];
 
     /**
+     * Max execution time in millisecond.
+     */
+    maxExecutionTime: number = 0;
+
+    /**
      * Whether SELECT is DISTINCT.
      */
     selectDistinct: boolean = false;
@@ -399,6 +404,7 @@ export class QueryExpressionMap {
         const map = new QueryExpressionMap(this.connection);
         map.queryType = this.queryType;
         map.selects = this.selects.map(select => select);
+        map.maxExecutionTime = this.maxExecutionTime;
         map.selectDistinct = this.selectDistinct;
         map.selectDistinctOn = this.selectDistinctOn;
         this.aliases.forEach(alias => map.aliases.push(new Alias(alias)));
