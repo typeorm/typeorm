@@ -737,7 +737,7 @@ var QueryBuilder = /** @class */ (function () {
                                 throw new EntityColumnNotFound(propertyPath);
                             }
                             else {
-                                var logger = (new LoggerFactory()).create();
+                                var logger = (new LoggerFactory()).create("advanced-console", "all");
                                 logger.log("warn", "TYPEORM QUERY ERROR UNKNOWN COLUMN: " + propertyPath);
                                 return undefined;
                             }

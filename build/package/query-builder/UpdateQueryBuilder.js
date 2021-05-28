@@ -355,7 +355,7 @@ var UpdateQueryBuilder = /** @class */ (function (_super) {
                         throw new EntityColumnNotFound_1.EntityColumnNotFound(propertyPath);
                     }
                     else {
-                        var logger = (new LoggerFactory_1.LoggerFactory()).create();
+                        var logger = (new LoggerFactory_1.LoggerFactory()).create("advanced-console", "all");
                         logger.log("warn", "TYPEORM UPDATE ERROR UNKNOWN COLUMN: " + propertyPath);
                         return;
                     }
