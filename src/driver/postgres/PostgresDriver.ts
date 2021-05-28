@@ -1,24 +1,24 @@
-import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {Connection} from "../../connection/Connection";
+import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {PostgresQueryRunner} from "./PostgresQueryRunner";
-import {DateUtils} from "../../util/DateUtils";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
-import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
-import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
-import {MappedColumnTypes} from "../types/MappedColumnTypes";
-import {ColumnType} from "../types/ColumnTypes";
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/table/TableColumn";
-import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {OrmUtils} from "../../util/OrmUtils";
+import {PlatformTools} from "../../platform/PlatformTools";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {DateUtils} from "../../util/DateUtils";
+import {OrmUtils} from "../../util/OrmUtils";
+import {Driver} from "../Driver";
+import {ColumnType} from "../types/ColumnTypes";
+import {DataTypeDefaults} from "../types/DataTypeDefaults";
+import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
+import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
+import {PostgresQueryRunner} from "./PostgresQueryRunner";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -305,16 +305,14 @@ export class PostgresDriver implements Driver {
         const extensionsMetadata = await this.checkMetadataForExtensions();
 
         if (extensionsMetadata.hasExtensions) {
-            await Promise.all([this.master, ...this.slaves].map(pool => {
-                return new Promise<void>((ok, fail) => {
-                    pool.connect(async (err: any, connection: any, release: Function) => {
-                        await this.enableExtensions(extensionsMetadata, connection);
-                        if (err) return fail(err);
-                        release();
-                        ok();
-                    });
+            return new Promise<void>((ok, fail) => {
+                this.master.connect(async (err: any, connection: any, release: Function) => {
+                    await this.enableExtensions(extensionsMetadata, connection);
+                    if (err) return fail(err);
+                    release();
+                    ok();
                 });
-            }));
+            });
         }
 
         return Promise.resolve();
