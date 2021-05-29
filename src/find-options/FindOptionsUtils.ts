@@ -3,7 +3,7 @@ import {FindOneOptions} from "./FindOneOptions";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {shorten} from "../util/StringUtils";
+import {DriverUtils} from "../driver/DriverUtils";
 
 /**
  * Utilities to work with FindOptions.
@@ -34,7 +34,8 @@ export class FindOptionsUtils {
                     possibleOptions.loadRelationIds instanceof Object ||
                     typeof possibleOptions.loadRelationIds === "boolean" ||
                     typeof possibleOptions.loadEagerRelations === "boolean" ||
-                    typeof possibleOptions.withDeleted === "boolean"
+                    typeof possibleOptions.withDeleted === "boolean" ||
+                    typeof possibleOptions.transaction === "boolean"
                 );
     }
 
@@ -83,6 +84,10 @@ export class FindOptionsUtils {
         // if options are not set then simply return query builder. This is made for simplicity of usage.
         if (!options || (!this.isFindOneOptions(options) && !this.isFindManyOptions(options)))
             return qb;
+
+        if (options.transaction === true) {
+            qb.expressionMap.useTransaction = true;
+        }
 
         if (!qb.expressionMap.mainAlias || !qb.expressionMap.mainAlias.hasMetadata)
             return qb;
@@ -175,9 +180,18 @@ export class FindOptionsUtils {
 
         if (options.lock) {
             if (options.lock.mode === "optimistic") {
-                qb.setLock(options.lock.mode, options.lock.version as any);
+                qb.setLock(options.lock.mode, options.lock.version);
             } else if (options.lock.mode === "pessimistic_read" || options.lock.mode === "pessimistic_write" || options.lock.mode === "dirty_read" || options.lock.mode === "pessimistic_partial_write" || options.lock.mode === "pessimistic_write_or_fail") {
-                qb.setLock(options.lock.mode);
+                const tableNames = options.lock.tables ? options.lock.tables.map((table) => {
+                    const tableAlias = qb.expressionMap.aliases.find((alias) => {
+                        return alias.metadata.tableNameWithoutPrefix === table;
+                    });
+                    if (!tableAlias) {
+                        throw new Error(`"${table}" is not part of this query`);
+                    }
+                    return qb.escape(tableAlias.name);
+                }) : undefined;
+                qb.setLock(options.lock.mode, undefined, tableNames);
             }
         }
 
@@ -220,11 +234,7 @@ export class FindOptionsUtils {
         matchedBaseRelations.forEach(relation => {
 
             // generate a relation alias
-            let relationAlias: string = alias + "__" + relation;
-            // shorten it if needed by the driver
-            if (qb.connection.driver.maxAliasLength && relationAlias.length > qb.connection.driver.maxAliasLength) {
-                relationAlias = shorten(relationAlias);
-            }
+            let relationAlias: string = DriverUtils.buildAlias(qb.connection.driver, { shorten: true, joiner: "__" }, alias, relation);
 
             // add a join for the found relation
             const selection = alias + "." + relation;
@@ -247,8 +257,14 @@ export class FindOptionsUtils {
 
     public static joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
         metadata.eagerRelations.forEach(relation => {
-            const relationAlias = qb.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath);
+
+            // generate a relation alias
+            let relationAlias = DriverUtils.buildAlias(qb.connection.driver, { shorten: true }, qb.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath));
+
+            // add a join for the relation
             qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
+
+            // (recursive) join the eager relations
             this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
         });
     }

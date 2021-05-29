@@ -20,6 +20,7 @@ import {ColumnType} from "../../index";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -36,6 +37,8 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
 
     driver: AuroraDataApiDriver;
 
+    protected client: any
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
@@ -49,10 +52,11 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AuroraDataApiDriver) {
+    constructor(driver: AuroraDataApiDriver, client: any) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
+        this.client = client;
         this.broadcaster = new Broadcaster(this);
     }
 
@@ -86,8 +90,17 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         this.isTransactionActive = true;
-        await this.driver.client.startTransaction();
+        await this.client.startTransaction();
+
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -98,8 +111,16 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.driver.client.commitTransaction();
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
+        await this.client.commitTransaction();
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -110,8 +131,17 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.driver.client.rollbackTransaction();
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
+        await this.client.rollbackTransaction();
+
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -121,7 +151,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const result = await this.driver.client.query(query, parameters);
+        const result = await this.client.query(query, parameters);
 
         if (result.records) {
             return result.records;
@@ -175,10 +205,26 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<string> {
+        const query = await this.query(`SELECT DATABASE() AS \`db_name\``);
+        return query[0]["db_name"];
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         throw new Error(`MySql driver does not support table schemas`);
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<string> {
+        const query = await this.query(`SELECT SCHEMA() AS \`schema_name\``);
+        return query[0]["schema_name"];
     }
 
     /**
@@ -1103,14 +1149,6 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    /**
-     * Returns current database.
-     */
-    protected async getCurrentDatabase(): Promise<string> {
-        const currentDBQuery = await this.query(`SELECT DATABASE() AS \`db_name\``);
-        return currentDBQuery[0]["db_name"];
-    }
-
     protected async loadViews(viewNames: string[]): Promise<View[]> {
         const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
         if (!hasTable)
@@ -1301,9 +1339,9 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
                             tableColumn.scale = parseInt(dbColumn["NUMERIC_SCALE"]);
                     }
 
-                    if (tableColumn.type === "enum" || tableColumn.type === "simple-enum") {
+                    if (tableColumn.type === "enum" || tableColumn.type === "simple-enum" || tableColumn.type === "set") {
                         const colType = dbColumn["COLUMN_TYPE"];
-                        const items = colType.substring(colType.indexOf("(") + 1, colType.indexOf(")")).split(",");
+                        const items = colType.substring(colType.indexOf("(") + 1, colType.lastIndexOf(")")).split(",");
                         tableColumn.enum = (items as string[]).map(item => {
                             return item.substring(1, item.length - 1);
                         });
@@ -1579,6 +1617,22 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     }
 
     /**
+     * Escapes a given comment so it's safe to include in a query.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment || comment.length === 0) {
+            return `''`;
+        }
+
+        comment = comment
+            .replace(/\\/g, "\\\\") // MySQL allows escaping characters via backslashes
+            .replace(/'/g, "''")
+            .replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+
+        return `'${comment}'`;
+    }
+
+    /**
      * Escapes given table or view path.
      */
     protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
@@ -1620,7 +1674,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (column.isGenerated && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
         if (column.comment)
-            c += ` COMMENT '${column.comment}'`;
+            c += ` COMMENT ${this.escapeComment(column.comment)}`;
         if (column.default !== undefined && column.default !== null)
             c += ` DEFAULT ${column.default}`;
         if (column.onUpdate)

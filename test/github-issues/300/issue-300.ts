@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {expect} from "chai";
 import {Race} from "./entity/Race";
 
-describe("github issues > support of embeddeds that are not set", () => {
+describe("github issues > #300 support of embeddeds that are not set", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

@@ -22,6 +22,7 @@ import {ColumnType} from "../../index";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -130,6 +131,10 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         this.isTransactionActive = true;
         await this.query("START TRANSACTION");
         await this.query("SAVEPOINT cockroach_restart");
@@ -137,6 +142,10 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
         }
         this.storeQueries = true;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -146,6 +155,10 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     async commitTransaction(): Promise<void> {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
+
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
 
         this.storeQueries = false;
 
@@ -164,6 +177,10 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 await this.commitTransaction();
             }
         }
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -174,10 +191,18 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         this.storeQueries = false;
         await this.query("ROLLBACK");
         this.queries = [];
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -273,11 +298,27 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<string> {
+        const query = await this.query(`SELECT * FROM current_database()`);
+        return query[0]["current_database"];
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         const result = await this.query(`SELECT * FROM "information_schema"."schemata" WHERE "schema_name" = '${schema}'`);
         return result.length ? true : false;
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<string> {
+        const query = await this.query(`SELECT * FROM current_schema()`);
+        return query[0]["current_schema"];
     }
 
     /**
@@ -1427,9 +1468,15 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
 
+            const getSchemaFromKey = (dbObject: any, key: string) => {
+                return dbObject[key] === currentSchema && (!this.driver.options.schema || this.driver.options.schema === currentSchema)
+                    ? undefined
+                    : dbObject[key]
+            };
+
             // We do not need to join schema name, when database is by default.
-            // In this case we need local variable `tableFullName` for below comparision.
-            const schema = dbTable["table_schema"] === currentSchema && !this.driver.options.schema ? undefined : dbTable["table_schema"];
+            // In this case we need local variable `tableFullName` for below comparison.
+            const schema = getSchemaFromKey(dbTable, "table_schema");
             table.name = this.driver.buildTableName(dbTable["table_name"], schema);
             const tableFullName = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
 
@@ -1502,7 +1549,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "uuid";
 
-                        } else {
+                        } else  {
                             tableColumn.default = dbColumn["column_default"].replace(/:::.*/, "");
                             tableColumn.default = tableColumn.default.replace(/^(-?[\d\.]+)$/, "($1)");
                         }
@@ -1566,7 +1613,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["constraint_name"] === dbForeignKey["constraint_name"]);
 
                 // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                const schema = dbForeignKey["referenced_table_schema"] === currentSchema ? undefined : dbForeignKey["referenced_table_schema"];
+                const schema = getSchemaFromKey(dbTable, "referenced_table_schema");
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["referenced_table_name"], schema);
 
                 return new TableForeignKey({
@@ -1867,8 +1914,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         comment = comment
-            .replace("'", "''")
-            .replace("\0", ""); // Null bytes aren't allowed in comments
+            .replace(/'/g, "''")
+            .replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
 
         return `'${comment}'`;
     }

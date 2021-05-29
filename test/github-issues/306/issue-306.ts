@@ -5,7 +5,7 @@ import {expect} from "chai";
 import {Race} from "./entity/Race";
 import {Duration} from "./entity/Duration";
 
-describe("github issues > embeddeds with custom column name don't work", () => {
+describe("github issues > #306 embeddeds with custom column name don't work", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

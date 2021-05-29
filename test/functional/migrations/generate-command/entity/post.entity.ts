@@ -5,7 +5,7 @@ import {Column} from "../../../../../src/decorator/columns/Column";
 import {ManyToMany, JoinTable} from "../../../../../src";
 import {Category} from "./category.entity";
 
-@Entity("post_test", { schema: "public" })
+@Entity("post_test")
 export class Post extends BaseEntity {
 
     @PrimaryGeneratedColumn()

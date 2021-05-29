@@ -92,7 +92,7 @@ export interface QueryRunner {
     commitTransaction(): Promise<void>;
 
     /**
-     * Ends transaction.
+     * Rollbacks transaction.
      * Error will be thrown if transaction was not started.
      */
     rollbackTransaction(): Promise<void>;
@@ -147,9 +147,19 @@ export interface QueryRunner {
     hasDatabase(database: string): Promise<boolean>;
 
     /**
+     * Loads currently using database
+     */
+    getCurrentDatabase(): Promise<string|undefined>;
+
+    /**
      * Checks if a schema with the given name exist.
      */
     hasSchema(schema: string): Promise<boolean>;
+
+    /**
+     * Loads currently using database schema
+     */
+    getCurrentSchema(): Promise<string|undefined>;
 
     /**
      * Checks if a table with the given name exist.

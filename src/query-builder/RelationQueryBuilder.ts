@@ -161,7 +161,7 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
             of = metadata.primaryColumns[0].createValueMap(of);
         }
 
-        return this.connection.relationLoader.load(this.expressionMap.relationMetadata, of);
+        return this.connection.relationLoader.load(this.expressionMap.relationMetadata, of, this.queryRunner);
     }
 
 }

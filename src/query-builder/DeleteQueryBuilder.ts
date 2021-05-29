@@ -73,9 +73,13 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             const result = await queryRunner.query(sql, parameters);
 
             const driver = queryRunner.connection.driver;
-            if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver) {
+            if (driver instanceof MysqlDriver) {
                 deleteResult.raw = result;
                 deleteResult.affected = result.affectedRows;
+
+            } else if (driver instanceof AuroraDataApiDriver) {
+                deleteResult.raw = result;
+                deleteResult.affected = result.numberOfRecordsUpdated;
 
             } else if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                 deleteResult.raw = result[0] ? result[0] : null;

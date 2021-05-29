@@ -62,23 +62,16 @@ import { BroadcasterResult } from "../subscriber/BroadcasterResult";
  */
 export class MongoEntityManager extends EntityManager {
 
+    get mongoQueryRunner(): MongoQueryRunner {
+        return (this.connection.driver as MongoDriver).queryRunner as MongoQueryRunner;
+    }
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(connection: Connection) {
         super(connection);
-    }
-
-    // -------------------------------------------------------------------------
-    // Overridden Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Gets query runner used to execute queries.
-     */
-    get queryRunner(): MongoQueryRunner {
-        return (this.connection.driver as MongoDriver).queryRunner!;
     }
 
     // -------------------------------------------------------------------------
@@ -262,7 +255,7 @@ export class MongoEntityManager extends EntityManager {
      */
     createCursor<Entity, T = any>(entityClassOrName: EntityTarget<Entity>, query?: ObjectLiteral): Cursor<T> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.cursor(metadata.tableName, query);
+        return this.mongoQueryRunner.cursor(metadata.tableName, query);
     }
 
     /**
@@ -281,7 +274,7 @@ export class MongoEntityManager extends EntityManager {
      */
     aggregate<Entity, R = any>(entityClassOrName: EntityTarget<Entity>, pipeline: ObjectLiteral[], options?: CollectionAggregationOptions): AggregationCursor<R> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.aggregate(metadata.tableName, pipeline, options);
+        return this.mongoQueryRunner.aggregate(metadata.tableName, pipeline, options);
     }
 
     /**
@@ -290,7 +283,7 @@ export class MongoEntityManager extends EntityManager {
      */
     aggregateEntity<Entity>(entityClassOrName: EntityTarget<Entity>, pipeline: ObjectLiteral[], options?: CollectionAggregationOptions): AggregationCursor<Entity> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        const cursor = this.queryRunner.aggregate(metadata.tableName, pipeline, options);
+        const cursor = this.mongoQueryRunner.aggregate(metadata.tableName, pipeline, options);
         this.applyEntityTransformationToCursor(metadata, cursor);
         return cursor;
     }
@@ -300,7 +293,7 @@ export class MongoEntityManager extends EntityManager {
      */
     bulkWrite<Entity>(entityClassOrName: EntityTarget<Entity>, operations: ObjectLiteral[], options?: CollectionBulkWriteOptions): Promise<BulkWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.bulkWrite(metadata.tableName, operations, options);
+        return this.mongoQueryRunner.bulkWrite(metadata.tableName, operations, options);
     }
 
     /**
@@ -308,7 +301,7 @@ export class MongoEntityManager extends EntityManager {
      */
     count<Entity>(entityClassOrName: EntityTarget<Entity>, query?: ObjectLiteral, options?: MongoCountPreferences): Promise<number> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.count(metadata.tableName, query, options);
+        return this.mongoQueryRunner.count(metadata.tableName, query, options);
     }
 
     /**
@@ -316,7 +309,7 @@ export class MongoEntityManager extends EntityManager {
      */
     createCollectionIndex<Entity>(entityClassOrName: EntityTarget<Entity>, fieldOrSpec: string | any, options?: MongodbIndexOptions): Promise<string> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.createCollectionIndex(metadata.tableName, fieldOrSpec, options);
+        return this.mongoQueryRunner.createCollectionIndex(metadata.tableName, fieldOrSpec, options);
     }
 
     /**
@@ -326,7 +319,7 @@ export class MongoEntityManager extends EntityManager {
      */
     createCollectionIndexes<Entity>(entityClassOrName: EntityTarget<Entity>, indexSpecs: ObjectLiteral[]): Promise<void> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.createCollectionIndexes(metadata.tableName, indexSpecs);
+        return this.mongoQueryRunner.createCollectionIndexes(metadata.tableName, indexSpecs);
     }
 
     /**
@@ -334,7 +327,7 @@ export class MongoEntityManager extends EntityManager {
      */
     deleteMany<Entity>(entityClassOrName: EntityTarget<Entity>, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.deleteMany(metadata.tableName, query, options);
+        return this.mongoQueryRunner.deleteMany(metadata.tableName, query, options);
     }
 
     /**
@@ -342,7 +335,7 @@ export class MongoEntityManager extends EntityManager {
      */
     deleteOne<Entity>(entityClassOrName: EntityTarget<Entity>, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.deleteOne(metadata.tableName, query, options);
+        return this.mongoQueryRunner.deleteOne(metadata.tableName, query, options);
     }
 
     /**
@@ -350,7 +343,7 @@ export class MongoEntityManager extends EntityManager {
      */
     distinct<Entity>(entityClassOrName: EntityTarget<Entity>, key: string, query: ObjectLiteral, options?: { readPreference?: ReadPreference | string }): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.distinct(metadata.tableName, key, query, options);
+        return this.mongoQueryRunner.distinct(metadata.tableName, key, query, options);
     }
 
     /**
@@ -358,7 +351,7 @@ export class MongoEntityManager extends EntityManager {
      */
     dropCollectionIndex<Entity>(entityClassOrName: EntityTarget<Entity>, indexName: string, options?: CollectionOptions): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.dropCollectionIndex(metadata.tableName, indexName, options);
+        return this.mongoQueryRunner.dropCollectionIndex(metadata.tableName, indexName, options);
     }
 
     /**
@@ -366,7 +359,7 @@ export class MongoEntityManager extends EntityManager {
      */
     dropCollectionIndexes<Entity>(entityClassOrName: EntityTarget<Entity>): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.dropCollectionIndexes(metadata.tableName);
+        return this.mongoQueryRunner.dropCollectionIndexes(metadata.tableName);
     }
 
     /**
@@ -374,7 +367,7 @@ export class MongoEntityManager extends EntityManager {
      */
     findOneAndDelete<Entity>(entityClassOrName: EntityTarget<Entity>, query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.findOneAndDelete(metadata.tableName, query, options);
+        return this.mongoQueryRunner.findOneAndDelete(metadata.tableName, query, options);
     }
 
     /**
@@ -382,7 +375,7 @@ export class MongoEntityManager extends EntityManager {
      */
     findOneAndReplace<Entity>(entityClassOrName: EntityTarget<Entity>, query: ObjectLiteral, replacement: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.findOneAndReplace(metadata.tableName, query, replacement, options);
+        return this.mongoQueryRunner.findOneAndReplace(metadata.tableName, query, replacement, options);
     }
 
     /**
@@ -390,7 +383,7 @@ export class MongoEntityManager extends EntityManager {
      */
     findOneAndUpdate<Entity>(entityClassOrName: EntityTarget<Entity>, query: ObjectLiteral, update: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.findOneAndUpdate(metadata.tableName, query, update, options);
+        return this.mongoQueryRunner.findOneAndUpdate(metadata.tableName, query, update, options);
     }
 
     /**
@@ -398,7 +391,7 @@ export class MongoEntityManager extends EntityManager {
      */
     geoHaystackSearch<Entity>(entityClassOrName: EntityTarget<Entity>, x: number, y: number, options?: GeoHaystackSearchOptions): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.geoHaystackSearch(metadata.tableName, x, y, options);
+        return this.mongoQueryRunner.geoHaystackSearch(metadata.tableName, x, y, options);
     }
 
     /**
@@ -406,7 +399,7 @@ export class MongoEntityManager extends EntityManager {
      */
     geoNear<Entity>(entityClassOrName: EntityTarget<Entity>, x: number, y: number, options?: GeoNearOptions): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.geoNear(metadata.tableName, x, y, options);
+        return this.mongoQueryRunner.geoNear(metadata.tableName, x, y, options);
     }
 
     /**
@@ -414,7 +407,7 @@ export class MongoEntityManager extends EntityManager {
      */
     group<Entity>(entityClassOrName: EntityTarget<Entity>, keys: Object | Array<any> | Function | Code, condition: Object, initial: Object, reduce: Function | Code, finalize: Function | Code, command: boolean, options?: { readPreference?: ReadPreference | string }): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.group(metadata.tableName, keys, condition, initial, reduce, finalize, command, options);
+        return this.mongoQueryRunner.group(metadata.tableName, keys, condition, initial, reduce, finalize, command, options);
     }
 
     /**
@@ -422,7 +415,7 @@ export class MongoEntityManager extends EntityManager {
      */
     collectionIndexes<Entity>(entityClassOrName: EntityTarget<Entity>): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.collectionIndexes(metadata.tableName);
+        return this.mongoQueryRunner.collectionIndexes(metadata.tableName);
     }
 
     /**
@@ -430,7 +423,7 @@ export class MongoEntityManager extends EntityManager {
      */
     collectionIndexExists<Entity>(entityClassOrName: EntityTarget<Entity>, indexes: string | string[]): Promise<boolean> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.collectionIndexExists(metadata.tableName, indexes);
+        return this.mongoQueryRunner.collectionIndexExists(metadata.tableName, indexes);
     }
 
     /**
@@ -438,7 +431,7 @@ export class MongoEntityManager extends EntityManager {
      */
     collectionIndexInformation<Entity>(entityClassOrName: EntityTarget<Entity>, options?: { full: boolean }): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.collectionIndexInformation(metadata.tableName, options);
+        return this.mongoQueryRunner.collectionIndexInformation(metadata.tableName, options);
     }
 
     /**
@@ -446,7 +439,7 @@ export class MongoEntityManager extends EntityManager {
      */
     initializeOrderedBulkOp<Entity>(entityClassOrName: EntityTarget<Entity>, options?: CollectionOptions): OrderedBulkOperation {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.initializeOrderedBulkOp(metadata.tableName, options);
+        return this.mongoQueryRunner.initializeOrderedBulkOp(metadata.tableName, options);
     }
 
     /**
@@ -454,7 +447,7 @@ export class MongoEntityManager extends EntityManager {
      */
     initializeUnorderedBulkOp<Entity>(entityClassOrName: EntityTarget<Entity>, options?: CollectionOptions): UnorderedBulkOperation {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.initializeUnorderedBulkOp(metadata.tableName, options);
+        return this.mongoQueryRunner.initializeUnorderedBulkOp(metadata.tableName, options);
     }
 
     /**
@@ -462,7 +455,7 @@ export class MongoEntityManager extends EntityManager {
      */
     insertMany<Entity>(entityClassOrName: EntityTarget<Entity>, docs: ObjectLiteral[], options?: CollectionInsertManyOptions): Promise<InsertWriteOpResult> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.insertMany(metadata.tableName, docs, options);
+        return this.mongoQueryRunner.insertMany(metadata.tableName, docs, options);
     }
 
     /**
@@ -470,7 +463,7 @@ export class MongoEntityManager extends EntityManager {
      */
     insertOne<Entity>(entityClassOrName: EntityTarget<Entity>, doc: ObjectLiteral, options?: CollectionInsertOneOptions): Promise<InsertOneWriteOpResult> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.insertOne(metadata.tableName, doc, options);
+        return this.mongoQueryRunner.insertOne(metadata.tableName, doc, options);
     }
 
     /**
@@ -478,7 +471,7 @@ export class MongoEntityManager extends EntityManager {
      */
     isCapped<Entity>(entityClassOrName: EntityTarget<Entity>): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.isCapped(metadata.tableName);
+        return this.mongoQueryRunner.isCapped(metadata.tableName);
     }
 
     /**
@@ -486,7 +479,7 @@ export class MongoEntityManager extends EntityManager {
      */
     listCollectionIndexes<Entity>(entityClassOrName: EntityTarget<Entity>, options?: { batchSize?: number, readPreference?: ReadPreference | string }): CommandCursor {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.listCollectionIndexes(metadata.tableName, options);
+        return this.mongoQueryRunner.listCollectionIndexes(metadata.tableName, options);
     }
 
     /**
@@ -494,7 +487,7 @@ export class MongoEntityManager extends EntityManager {
      */
     mapReduce<Entity>(entityClassOrName: EntityTarget<Entity>, map: Function | string, reduce: Function | string, options?: MapReduceOptions): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.mapReduce(metadata.tableName, map, reduce, options);
+        return this.mongoQueryRunner.mapReduce(metadata.tableName, map, reduce, options);
     }
 
     /**
@@ -503,7 +496,7 @@ export class MongoEntityManager extends EntityManager {
      */
     parallelCollectionScan<Entity>(entityClassOrName: EntityTarget<Entity>, options?: ParallelCollectionScanOptions): Promise<Cursor<Entity>[]> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.parallelCollectionScan(metadata.tableName, options);
+        return this.mongoQueryRunner.parallelCollectionScan(metadata.tableName, options);
     }
 
     /**
@@ -511,7 +504,7 @@ export class MongoEntityManager extends EntityManager {
      */
     reIndex<Entity>(entityClassOrName: EntityTarget<Entity>): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.reIndex(metadata.tableName);
+        return this.mongoQueryRunner.reIndex(metadata.tableName);
     }
 
     /**
@@ -519,7 +512,7 @@ export class MongoEntityManager extends EntityManager {
      */
     rename<Entity>(entityClassOrName: EntityTarget<Entity>, newName: string, options?: { dropTarget?: boolean }): Promise<Collection<any>> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.rename(metadata.tableName, newName, options);
+        return this.mongoQueryRunner.rename(metadata.tableName, newName, options);
     }
 
     /**
@@ -527,7 +520,7 @@ export class MongoEntityManager extends EntityManager {
      */
     replaceOne<Entity>(entityClassOrName: EntityTarget<Entity>, query: ObjectLiteral, doc: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.replaceOne(metadata.tableName, query, doc, options);
+        return this.mongoQueryRunner.replaceOne(metadata.tableName, query, doc, options);
     }
 
     /**
@@ -535,12 +528,12 @@ export class MongoEntityManager extends EntityManager {
      */
     stats<Entity>(entityClassOrName: EntityTarget<Entity>, options?: { scale: number }): Promise<CollStats> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.stats(metadata.tableName, options);
+        return this.mongoQueryRunner.stats(metadata.tableName, options);
     }
 
     watch<Entity>(entityClassOrName: EntityTarget<Entity>, pipeline?: Object[], options?: ChangeStreamOptions): ChangeStream {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.watch(metadata.tableName, pipeline, options);
+        return this.mongoQueryRunner.watch(metadata.tableName, pipeline, options);
     }
 
     /**
@@ -548,7 +541,7 @@ export class MongoEntityManager extends EntityManager {
      */
     updateMany<Entity>(entityClassOrName: EntityTarget<Entity>, query: ObjectLiteral, update: ObjectLiteral, options?: { upsert?: boolean, w?: any, wtimeout?: number, j?: boolean }): Promise<UpdateWriteOpResult> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.updateMany(metadata.tableName, query, update, options);
+        return this.mongoQueryRunner.updateMany(metadata.tableName, query, update, options);
     }
 
     /**
@@ -556,7 +549,7 @@ export class MongoEntityManager extends EntityManager {
      */
     updateOne<Entity>(entityClassOrName: EntityTarget<Entity>, query: ObjectLiteral, update: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
         const metadata = this.connection.getMetadata(entityClassOrName);
-        return this.queryRunner.updateOne(metadata.tableName, query, update, options);
+        return this.mongoQueryRunner.updateOne(metadata.tableName, query, update, options);
     }
 
     // -------------------------------------------------------------------------
@@ -664,7 +657,7 @@ export class MongoEntityManager extends EntityManager {
      */
     protected applyEntityTransformationToCursor<Entity>(metadata: EntityMetadata, cursor: Cursor<Entity> | AggregationCursor<Entity>) {
         const ParentCursor = PlatformTools.load("mongodb").Cursor;
-        const queryRunner = this.queryRunner;
+        const queryRunner = this.mongoQueryRunner;
         cursor.toArray = function (callback?: MongoCallback<Entity[]>) {
             if (callback) {
                 ParentCursor.prototype.toArray.call(this, (error: MongoError, results: Entity[]): void => {

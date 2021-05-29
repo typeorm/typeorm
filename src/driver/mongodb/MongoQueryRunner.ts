@@ -514,9 +514,23 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<undefined> {
+        throw new Error(`Check database queries are not supported by MongoDB driver.`);
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
+        throw new Error(`Check schema queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<undefined> {
         throw new Error(`Check schema queries are not supported by MongoDB driver.`);
     }
 

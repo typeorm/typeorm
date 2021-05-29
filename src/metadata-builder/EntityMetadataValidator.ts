@@ -62,8 +62,8 @@ export class EntityMetadataValidator {
             if (!entityMetadata.discriminatorColumn)
                 throw new Error(`Entity ${entityMetadata.name} using single-table inheritance, it should also have a discriminator column. Did you forget to put discriminator column options?`);
 
-            if (["", undefined, null].indexOf(entityMetadata.discriminatorValue) !== -1)
-                throw new Error(`Entity ${entityMetadata.name} has empty discriminator value. Discriminator value should not be empty.`);
+            if (typeof entityMetadata.discriminatorValue === "undefined")
+                throw new Error(`Entity ${entityMetadata.name} has an undefined discriminator value. Discriminator value should be defined.`);
 
             const sameDiscriminatorValueEntityMetadata = allEntityMetadatas.find(metadata => {
                 return metadata !== entityMetadata
@@ -87,6 +87,8 @@ export class EntityMetadataValidator {
                     throw new DataTypeNotSupportedError(column, normalizedColumn, driver.options.type);
                 if (column.length && driver.withLengthColumnTypes.indexOf(normalizedColumn) === -1)
                     throw new Error(`Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`);
+                if (column.type === "enum" && !column.enum && !column.enumName)
+                    throw new Error(`Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`);
             });
         }
 

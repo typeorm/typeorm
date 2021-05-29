@@ -102,7 +102,7 @@ Learn more about parameters `@Entity` in [Decorators reference](decorator-refere
 
 ## Entity columns
 
-Since database table consist of columns your entities must consist of columns too.
+Since database tables consist of columns your entities must consist of columns too.
 Each entity class property you marked with `@Column` will be mapped to a database table column.
 
 ### Primary columns
@@ -480,7 +480,7 @@ Note you **MUST NOT** have any comma in values you write.
 There is a special column type called `simple-json` which can store any values which can be stored in database
 via JSON.stringify.
 Very useful when you do not have json type in your database and you want to store and load object
-without any hustle.
+without any hassle.
 For example:
 
 ```typescript
@@ -569,6 +569,7 @@ You can change it by specifying your own name.
 * `charset: string` - Defines a column character set. Not supported by all database types.
 * `collation: string` - Defines a column collation.
 * `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values. You can specify array of values or specify a enum class.
+* `enumName: string` - Defines the name for the used enum.
 * `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).

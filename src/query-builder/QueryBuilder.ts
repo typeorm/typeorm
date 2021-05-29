@@ -15,6 +15,8 @@ import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {EntitySchema} from "../";
@@ -585,36 +587,50 @@ export abstract class QueryBuilder<Entity> {
 
             const replacements: { [key: string]: string } = {};
 
-            for (const column of alias.metadata.columns) {
-                if (!(column.propertyPath in replacements))
-                    replacements[column.propertyPath] = column.databaseName;
-                if (!(column.propertyName in replacements))
-                    replacements[column.propertyName] = column.databaseName;
-                if (!(column.databaseName in replacements))
-                    replacements[column.databaseName] = column.databaseName;
+            // Insert & overwrite the replacements from least to most relevant in our replacements object.
+            // To do this we iterate and overwrite in the order of relevance.
+            // Least to Most Relevant:
+            // * Relation Property Path to first join column key
+            // * Relation Property Path + Column Path
+            // * Column Database Name
+            // * Column Propety Name
+            // * Column Property Path
+
+            for (const relation of alias.metadata.relations) {
+                if (relation.joinColumns.length > 0)
+                    replacements[relation.propertyPath] = relation.joinColumns[0].databaseName;
             }
 
             for (const relation of alias.metadata.relations) {
                 for (const joinColumn of [...relation.joinColumns, ...relation.inverseJoinColumns]) {
-                    const key = `${relation.propertyPath}.${joinColumn.referencedColumn!.propertyPath}`;
-                    if (!(key in replacements))
-                        replacements[key] = joinColumn.databaseName;
+                    const propertyKey = `${relation.propertyPath}.${joinColumn.referencedColumn!.propertyPath}`;
+                    replacements[propertyKey] = joinColumn.databaseName;
                 }
+            }
 
-                if (relation.joinColumns.length > 0 && !(relation.propertyPath in replacements))
-                    replacements[relation.propertyPath] = relation.joinColumns[0].databaseName;
+            for (const column of alias.metadata.columns) {
+                replacements[column.databaseName] = column.databaseName;
+            }
+
+            for (const column of alias.metadata.columns) {
+                replacements[column.propertyName] = column.databaseName;
+            }
+
+            for (const column of alias.metadata.columns) {
+                replacements[column.propertyPath] = column.databaseName;
             }
 
             const replacementKeys = Object.keys(replacements);
 
             if (replacementKeys.length) {
                 statement = statement.replace(new RegExp(
-                    `(?<=[ =\(]|^.{0})` +
+                    // Avoid a lookbehind here since it's not well supported
+                    `([ =\(]|^.{0})` +
                     `${escapeRegExp(replaceAliasNamePrefix)}(${replacementKeys.map(escapeRegExp).join("|")})` +
                     `(?=[ =\)\,]|.{0}$)`,
                     "gm"
-                ), (_, p) =>
-                    `${replacementAliasNamePrefix}${this.escape(replacements[p])}`
+                ), (_, pre, p) =>
+                    `${pre}${replacementAliasNamePrefix}${this.escape(replacements[p])}`
                 );
             }
         }
@@ -672,7 +688,7 @@ export abstract class QueryBuilder<Entity> {
         }
 
         if (!conditionsArray.length) {
-            return " ";
+            return "";
         } else if (conditionsArray.length === 1) {
             return ` WHERE ${conditionsArray[0]}`;
         } else {
@@ -914,6 +930,8 @@ export abstract class QueryBuilder<Entity> {
      * Gets SQL needs to be inserted into final query.
      */
     protected computeFindOperatorExpression(operator: FindOperator<any>, aliasPath: string, parameters: any[]): string {
+        const { driver } = this.connection;
+
         switch (operator.type) {
             case "not":
                 if (operator.child) {
@@ -932,7 +950,11 @@ export abstract class QueryBuilder<Entity> {
             case "equal":
                 return `${aliasPath} = ${parameters[0]}`;
             case "ilike":
-                return `${aliasPath} ILIKE ${parameters[0]}`;
+                if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
+                    return `${aliasPath} ILIKE ${parameters[0]}`;
+                }
+
+                return `UPPER(${aliasPath}) LIKE UPPER(${parameters[0]})`;
             case "like":
                 return `${aliasPath} LIKE ${parameters[0]}`;
             case "between":

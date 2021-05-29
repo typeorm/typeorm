@@ -455,7 +455,7 @@ export class MigrationExecutor {
         }
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);
+            await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insertOne(values);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.insert()

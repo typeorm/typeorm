@@ -40,4 +40,8 @@ export interface MysqlConnectionCredentialsOptions {
      */
     readonly ssl?: any;
 
+    /**
+     * Database socket path
+     */
+    readonly socketPath?: string;
 }

@@ -4,6 +4,7 @@
 * [How to use relation id without joining relation](#how-to-use-relation-id-without-joining-relation)
 * [How to load relations in entities](#how-to-load-relations-in-entities)
 * [Avoid relation property initializers](#avoid-relation-property-initializers)
+* [Avoid foreign key constraint creation](#avoid-foreign-key-constraint-creation)
 
 ## How to create self referencing relation
 
@@ -214,3 +215,32 @@ Therefore, saving an object like this will bring you problems - it will remove a
 
 How to avoid this behaviour? Simply don't initialize arrays in your entities.
 Same rule applies to a constructor - don't initialize it in a constructor as well.
+
+## Avoid foreign key constraint creation
+
+Sometimes for performance reasons you might want to have a relation between entities, but without foreign key constraint.
+You can define if foreign key constraint should be created with `createForeignKeyConstraints` option (default: true).
+
+```typescript
+import {Entity, PrimaryColumn, Column, ManyToOne} from "typeorm";
+import {Person} from "./Person";
+
+@Entity()
+export class ActionLog {
+    
+    @PrimaryColumn()
+    id: number;
+
+    @Column()
+    date: Date;
+
+    @Column()
+    action: string;
+    
+    @ManyToOne(type => Person, {
+        createForeignKeyConstraints: false
+    })
+    person: Person;
+    
+}
+```

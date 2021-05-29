@@ -298,7 +298,7 @@ If you want to use `slave` in raw queries, you also need to explicitly specify t
 
 const slaveQueryRunner = connection.createQueryRunner("slave");
 try {
-    const userFromSlave = await connection.query('SELECT * FROM users WHERE id = $1', [userId], slaveQueryRunner);
+    const userFromSlave = await slaveQueryRunner.query('SELECT * FROM users WHERE id = $1', [userId], slaveQueryRunner);
 } finally {
     return slaveQueryRunner.release();
 }

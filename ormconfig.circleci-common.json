@@ -62,7 +62,10 @@
     "username": "sa",
     "password": "Admin12345",
     "database": "tempdb",
-    "logging": false
+    "logging": false,
+    "extra": {
+      "trustServerCertificate": true
+    }
   },
   {
     "skip": true,
