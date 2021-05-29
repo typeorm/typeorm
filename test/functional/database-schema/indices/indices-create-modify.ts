@@ -1,10 +1,9 @@
-import "reflect-metadata";
-import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
 import {expect} from "chai";
-import {EntityMetadata} from "../../../../src/metadata/EntityMetadata";
+import "reflect-metadata";
+import {Connection, EntityMetadata} from "../../../../src";
+import {CockroachDriver} from "../../../../src/driver/cockroachdb/CockroachDriver";
 import {IndexMetadata} from "../../../../src/metadata/IndexMetadata";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
 import {Person} from "./entity/Person";
 
@@ -59,7 +58,7 @@ describe("database schema > indices > reading index from entity and updating dat
 
     })));
 
-    it("should update the index swaping the 2 columns", () => Promise.all(connections.map(async connection => {
+    it("should update the index swapping the 2 columns", () => Promise.all(connections.map(async connection => {
 
         const entityMetadata = connection.entityMetadatas.find(x => x.name === "Person");
         entityMetadata!.indices = [new IndexMetadata({

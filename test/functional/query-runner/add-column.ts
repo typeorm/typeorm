@@ -1,11 +1,11 @@
-import "reflect-metadata";
 import {expect} from "chai";
+import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {TableColumn} from "../../../src/schema-builder/table/TableColumn";
-import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
+import {TableColumn} from "../../../src/schema-builder/table/TableColumn";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 
 describe("query runner > add column", () => {
 

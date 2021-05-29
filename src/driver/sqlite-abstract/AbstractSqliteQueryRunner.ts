@@ -8,6 +8,7 @@ import {Table} from "../../schema-builder/table/Table";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {View} from "../../schema-builder/view/View";
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult";
 import {Query} from "../Query";
 import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
 import {ReadStream} from "../../platform/PlatformTools";
@@ -70,8 +71,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        this.isTransactionActive = true;
-
         if (isolationLevel) {
             if (isolationLevel !== "READ UNCOMMITTED" && isolationLevel !== "SERIALIZABLE") {
                 throw new Error(`SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation`);
@@ -84,7 +83,17 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             }
         }
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
+        this.isTransactionActive = true;
+
         await this.query("BEGIN TRANSACTION");
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -95,8 +104,16 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         await this.query("COMMIT");
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -107,8 +124,17 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         await this.query("ROLLBACK");
+
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -141,10 +167,24 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<undefined> {
+        return Promise.resolve(undefined);
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         throw new Error(`This driver does not support table schemas`);
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<undefined> {
+        return Promise.resolve(undefined);
     }
 
     /**
@@ -304,7 +344,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         // rename foreign key constraints
         newTable.foreignKeys.forEach(foreignKey => {
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames);
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
         });
 
         // rename indices
@@ -384,7 +424,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 changedTable.findColumnForeignKeys(changedColumnSet.oldColumn).forEach(fk => {
                     fk.columnNames.splice(fk.columnNames.indexOf(changedColumnSet.oldColumn.name), 1);
                     fk.columnNames.push(changedColumnSet.newColumn.name);
-                    fk.name = this.connection.namingStrategy.foreignKeyName(changedTable, fk.columnNames);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(changedTable, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
                 });
 
                 changedTable.findColumnIndices(changedColumnSet.oldColumn).forEach(index => {
@@ -820,21 +860,34 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                     const enumMatch = sql.match(new RegExp("\"(" + tableColumn.name + ")\" varchar CHECK\\s*\\(\\s*\\1\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)"));
                     if (enumMatch) {
                         // This is an enum
-                        tableColumn.type = "simple-enum";
                         tableColumn.enum = enumMatch[2].substr(1, enumMatch[2].length - 2).split("','");
                     }
                 }
 
-                // parse datatype and attempt to retrieve length
+                // parse datatype and attempt to retrieve length, precision and scale
                 let pos = tableColumn.type.indexOf("(");
                 if (pos !== -1) {
-                    let dataType = tableColumn.type.substr(0, pos);
+                    const fullType = tableColumn.type;
+                    let dataType = fullType.substr(0, pos);
                     if (!!this.driver.withLengthColumnTypes.find(col => col === dataType)) {
-                        let len = parseInt(tableColumn.type.substring(pos + 1, tableColumn.type.length - 1));
+                        let len = parseInt(fullType.substring(pos + 1, fullType.length - 1));
                         if (len) {
                             tableColumn.length = len.toString();
                             tableColumn.type = dataType; // remove the length part from the datatype
                         }
+                    }
+                    if (!!this.driver.withPrecisionColumnTypes.find(col => col === dataType)) {
+                        const re = new RegExp(`^${dataType}\\((\\d+),?\\s?(\\d+)?\\)`);
+                        const matches = fullType.match(re);
+                        if (matches && matches[1]) {
+                            tableColumn.precision = +matches[1];
+                        }
+                        if (!!this.driver.withScaleColumnTypes.find(col => col === dataType)) {
+                            if (matches && matches[2]) {
+                                tableColumn.scale = +matches[2];
+                            }
+                        }
+                        tableColumn.type = dataType; // remove the precision/scale part from the datatype
                     }
                 }
 
@@ -848,7 +901,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 const columnNames = ownForeignKeys.map(dbForeignKey => dbForeignKey["from"]);
                 const referencedColumnNames = ownForeignKeys.map(dbForeignKey => dbForeignKey["to"]);
                 // build foreign key name, because we can not get it directly.
-                const fkName = this.connection.namingStrategy.foreignKeyName(table, columnNames);
+                const fkName = this.connection.namingStrategy.foreignKeyName(table, columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
 
                 return new TableForeignKey({
                     name: fkName,
@@ -859,6 +912,17 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                     onUpdate: foreignKey["on_update"]
                 });
             });
+
+            // find unique constraints from CREATE TABLE sql
+            let uniqueRegexResult;
+            const uniqueMappings: { name: string, columns: string[] }[] = []
+            const uniqueRegex = /CONSTRAINT "([^"]*)" UNIQUE \((.*?)\)/g;
+            while ((uniqueRegexResult = uniqueRegex.exec(sql)) !== null) {
+                uniqueMappings.push({
+                    name: uniqueRegexResult[1],
+                    columns: uniqueRegexResult[2].substr(1, uniqueRegexResult[2].length - 2).split(`", "`)
+                });
+            }
 
             // build unique constraints
             const tableUniquePromises = dbIndices
@@ -880,9 +944,15 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                             column.isUnique = true;
                     }
 
-                    // Sqlite does not store unique constraint name, so we generate its name manually.
+                    // find existent mapping by a column names
+                    const foundMapping = uniqueMappings.find(mapping => {
+                        return mapping!.columns.every(column =>
+                            indexColumns.indexOf(column) !== -1
+                        )
+                    })
+
                     return new TableUnique({
-                        name: this.connection.namingStrategy.uniqueConstraintName(table, indexColumns),
+                        name: foundMapping ? foundMapping.name : this.connection.namingStrategy.uniqueConstraintName(table, indexColumns),
                         columnNames: indexColumns
                     });
                 });
@@ -975,7 +1045,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
                 if (!fk.name)
-                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
 
                 let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES "${fk.referencedTableName}" (${referencedColumnNames})`;
@@ -996,6 +1066,11 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         }
 
         sql += `)`;
+
+        const tableMetadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === table.name);
+        if (tableMetadata && tableMetadata.withoutRowid) {
+            sql += " WITHOUT ROWID";
+        }
 
         return new Query(sql);
     }

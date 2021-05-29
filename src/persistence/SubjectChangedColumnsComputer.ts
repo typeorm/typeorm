@@ -1,8 +1,8 @@
 import {Subject} from "./Subject";
 import {DateUtils} from "../util/DateUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {OrmUtils} from "../util/OrmUtils";
+import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
 
 /**
  * Finds what columns are changed in the subject entities.
@@ -40,10 +40,11 @@ export class SubjectChangedColumnsComputer {
 
             // ignore special columns
             if (column.isVirtual ||
-                column.isDiscriminator ||
-                column.isUpdateDate ||
-                column.isVersion ||
-                column.isCreateDate)
+                column.isDiscriminator // ||
+                // column.isUpdateDate ||
+                // column.isVersion ||
+                // column.isCreateDate
+            )
                 return;
 
             const changeMap = subject.changeMaps.find(changeMap => changeMap.column === column);
@@ -60,9 +61,11 @@ export class SubjectChangedColumnsComputer {
 
             // if there is no database entity then all columns are treated as new, e.g. changed
             if (subject.databaseEntity) {
+                // skip transform database value for json / jsonb for comparison later on
+                const shouldTransformDatabaseEntity = column.type !== "json" && column.type !== "jsonb";
 
                 // get database value of the column
-                let databaseValue = column.getEntityValue(subject.databaseEntity);
+                let databaseValue = column.getEntityValue(subject.databaseEntity, shouldTransformDatabaseEntity);
 
                 // filter out "relational columns" only in the case if there is a relation object in entity
                 if (column.relationMetadata) {
@@ -73,28 +76,54 @@ export class SubjectChangedColumnsComputer {
                 let normalizedValue = entityValue;
                 // normalize special values to make proper comparision
                 if (entityValue !== null) {
-                    if (column.type === "date") {
-                        normalizedValue = DateUtils.mixedDateToDateString(entityValue);
+                    switch (column.type) {
+                        case "date":
+                            normalizedValue = DateUtils.mixedDateToDateString(entityValue);
+                            break;
 
-                    } else if (column.type === "time") {
-                        normalizedValue = DateUtils.mixedDateToTimeString(entityValue);
+                        case "time":
+                        case "time with time zone":
+                        case "time without time zone":
+                        case "timetz":
+                            normalizedValue = DateUtils.mixedDateToTimeString(entityValue);
+                            break;
 
-                    } else if (column.type === "datetime" || column.type === Date) {
-                        normalizedValue = DateUtils.mixedDateToUtcDatetimeString(entityValue);
-                        databaseValue = DateUtils.mixedDateToUtcDatetimeString(databaseValue);
+                        case "datetime":
+                        case "datetime2":
+                        case Date:
+                        case "timestamp":
+                        case "timestamp without time zone":
+                        case "timestamp with time zone":
+                        case "timestamp with local time zone":
+                        case "timestamptz":
+                            normalizedValue = DateUtils.mixedDateToUtcDatetimeString(entityValue);
+                            databaseValue = DateUtils.mixedDateToUtcDatetimeString(databaseValue);
+                            break;
 
-                    } else if (column.type === "json" || column.type === "jsonb") {
-                        // JSON.stringify doesn't work because postgresql sorts jsonb before save.
-                        // If you try to save json '[{"messages": "", "attribute Key": "", "level":""}] ' as jsonb,
-                        // then postgresql will save it as '[{"level": "", "message":"", "attributeKey": ""}]'
-                        if (OrmUtils.deepCompare(entityValue, databaseValue)) return;
+                        case "json":
+                        case "jsonb":
+                            // JSON.stringify doesn't work because postgresql sorts jsonb before save.
+                            // If you try to save json '[{"messages": "", "attribute Key": "", "level":""}] ' as jsonb,
+                            // then postgresql will save it as '[{"level": "", "message":"", "attributeKey": ""}]'
+                            if (OrmUtils.deepCompare(entityValue, databaseValue)) return;
+                            break;
 
-                    } else if (column.type === "simple-array") {
-                        normalizedValue = DateUtils.simpleArrayToString(entityValue);
-                        databaseValue = DateUtils.simpleArrayToString(databaseValue);
-                    } else if (column.type === "simple-enum") {
-                        normalizedValue = DateUtils.simpleEnumToString(entityValue);
-                        databaseValue = DateUtils.simpleEnumToString(databaseValue);
+                        case "simple-array":
+                            normalizedValue = DateUtils.simpleArrayToString(entityValue);
+                            databaseValue = DateUtils.simpleArrayToString(databaseValue);
+                            break;
+                        case "simple-enum":
+                            normalizedValue = DateUtils.simpleEnumToString(entityValue);
+                            databaseValue = DateUtils.simpleEnumToString(databaseValue);
+                            break;
+                        case "simple-json":
+                            normalizedValue = DateUtils.simpleJsonToString(entityValue);
+                            databaseValue = DateUtils.simpleJsonToString(databaseValue);
+                            break;
+                    }
+
+                    if (column.transformer) {
+                        normalizedValue = ApplyValueTransformers.transformTo(column.transformer, entityValue);
                     }
                 }
 
@@ -145,7 +174,7 @@ export class SubjectChangedColumnsComputer {
                 const databaseRelatedEntityRelationIdMap = relation.getEntityValue(subject.databaseEntity);
 
                 // if relation ids are equal then we don't need to update anything
-                const areRelatedIdsEqual = EntityMetadata.compareIds(relatedEntityRelationIdMap, databaseRelatedEntityRelationIdMap);
+                const areRelatedIdsEqual = OrmUtils.compareIds(relatedEntityRelationIdMap, databaseRelatedEntityRelationIdMap);
                 if (areRelatedIdsEqual) {
                     return;
                 } else {

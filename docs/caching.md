@@ -113,7 +113,7 @@ await connection.queryResultCache.remove(["users_admins"]);
 
 
 By default, TypeORM uses a separate table called `query-result-cache` and stores all queries and results there.
-Table name is configurable, so you could change its by give the value in the tableName property.
+Table name is configurable, so you could change it by specifying a different value in the tableName property.
 Example:
 
 ```typescript
@@ -188,7 +188,8 @@ In case you want to connect to a redis-cluster using IORedis's cluster functiona
 }
 ```
 
-Note that, you can still use options as first argument of IORedis's cluster constructor.
+Note that, you can still use options as the first argument of IORedis's cluster constructor.
+
 ```typescript
 {
     ...
@@ -210,6 +211,46 @@ Note that, you can still use options as first argument of IORedis's cluster cons
         ]
     },
     ...
+}
+```
+
+If none of the built-in cache providers satisfy your demands, then you can also specify your own cache provider by using a `provider` factory function which needs to return a new object that implements the `QueryResultCache` interface:
+
+```typescript
+class CustomQueryResultCache implements QueryResultCache {
+    constructor(private connection: Connection) {}
+    ...
+}
+```
+
+```typescript
+{
+    ...
+    cache: {
+        provider(connection) {
+            return new CustomQueryResultCache(connection);
+        }
+    }
+}
+```
+
+If you wish to ignore cache errors and want the queries to pass through to database in case of cache errors, you can use ignoreErrors option. 
+Example:
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    ...
+    cache: {
+        type: "redis",
+        options: {
+            host: "localhost",
+            port: 6379
+        },
+        ignoreErrors: true
+    }
 }
 ```
 

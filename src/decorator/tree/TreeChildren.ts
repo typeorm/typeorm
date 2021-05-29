@@ -5,7 +5,7 @@ import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
  * Marks a entity property as a children of the tree.
  * "Tree children" will contain all children (bind) of this entity.
  */
-export function TreeChildren(options?: { cascade?: boolean|("insert"|"update"|"remove")[] }): Function {
+export function TreeChildren(options?: { cascade?: boolean|("insert"|"update"|"remove"|"soft-remove"|"recover")[] }): PropertyDecorator {
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 
@@ -13,7 +13,7 @@ export function TreeChildren(options?: { cascade?: boolean|("insert"|"update"|"r
         const reflectedType = Reflect && (Reflect as any).getMetadata ? Reflect.getMetadata("design:type", object, propertyName) : undefined;
         const isLazy = (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise") || false;
 
-        // add one-to-many relation for this 
+        // add one-to-many relation for this
         getMetadataArgsStorage().relations.push({
             isTreeChildren: true,
             target: object.constructor,

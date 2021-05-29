@@ -1,3 +1,5 @@
+import { EntityTarget } from "../common/EntityTarget";
+
 /**
  * Arguments for EntityRepositoryMetadata class, helps to construct an EntityRepositoryMetadata object.
  */
@@ -11,6 +13,6 @@ export interface EntityRepositoryMetadataArgs {
     /**
      * Entity managed by this custom repository.
      */
-    readonly entity?: Function|string;
+    readonly entity?: EntityTarget<any>;
 
 }

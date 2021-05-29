@@ -6,6 +6,7 @@ import {RelationMetadata} from "../metadata/RelationMetadata";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
+import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
 /**
  * Builds join column for the many-to-one and one-to-one owner relations.
@@ -55,13 +56,14 @@ export class RelationJoinColumnBuilder {
      */
     build(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata): {
       foreignKey: ForeignKeyMetadata|undefined,
+      columns: ColumnMetadata[],
       uniqueConstraint: UniqueMetadata|undefined,
     } {
         const referencedColumns = this.collectReferencedColumns(joinColumns, relation);
-        if (!referencedColumns.length)
-            return { foreignKey: undefined, uniqueConstraint: undefined }; // this case is possible only for one-to-one non owning side
-
         const columns = this.collectColumns(joinColumns, relation, referencedColumns);
+        if (!referencedColumns.length || !relation.createForeignKeyConstraints)
+            return { foreignKey: undefined, columns, uniqueConstraint: undefined }; // this case is possible for one-to-one non owning side and relations with createForeignKeyConstraints = false
+
         const foreignKey = new ForeignKeyMetadata({
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
@@ -75,7 +77,7 @@ export class RelationJoinColumnBuilder {
 
         // Oracle does not allow both primary and unique constraints on the same column
         if (this.connection.driver instanceof OracleDriver && columns.every(column => column.isPrimary))
-            return { foreignKey, uniqueConstraint: undefined };
+            return { foreignKey, columns, uniqueConstraint: undefined };
 
         // CockroachDB requires UNIQUE constraints on referenced columns
         if (referencedColumns.length > 0 && relation.isOneToOne) {
@@ -88,10 +90,10 @@ export class RelationJoinColumnBuilder {
                 }
             });
             uniqueConstraint.build(this.connection.namingStrategy);
-            return {foreignKey, uniqueConstraint};
+            return {foreignKey, columns, uniqueConstraint};
         }
 
-        return { foreignKey, uniqueConstraint: undefined };
+        return { foreignKey, columns, uniqueConstraint: undefined };
     }
     // -------------------------------------------------------------------------
     // Protected Methods
@@ -145,7 +147,7 @@ export class RelationJoinColumnBuilder {
                             name: joinColumnName,
                             type: referencedColumn.type,
                             length: !referencedColumn.length
-                                        && (this.connection.driver instanceof MysqlDriver)
+                                        && (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
                                         && (referencedColumn.generationStrategy === "uuid" || referencedColumn.type === "uuid")
                                     ? "36"
                                     : referencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
@@ -157,8 +159,10 @@ export class RelationJoinColumnBuilder {
                             zerofill: referencedColumn.zerofill,
                             unsigned: referencedColumn.unsigned,
                             comment: referencedColumn.comment,
+                            enum: referencedColumn.enum,
+                            enumName: referencedColumn.enumName,
                             primary: relation.isPrimary,
-                            nullable: relation.isNullable
+                            nullable: relation.isNullable,
                         }
                     }
                 });

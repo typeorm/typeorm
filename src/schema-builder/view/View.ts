@@ -1,5 +1,4 @@
-import {Connection, Driver, SelectQueryBuilder} from "../..";
-import {EntityMetadata} from "../..";
+import {Connection, Driver, EntityMetadata, SelectQueryBuilder} from "../..";
 import {ViewOptions} from "../options/ViewOptions";
 
 /**
@@ -17,10 +16,16 @@ export class View {
      */
     name: string;
 
+
+    /**
+     * Indicates if view is materialized.
+     */
+    materialized: boolean;
+
     /**
      * View definition.
      */
-    expression: string|((connection: Connection) => SelectQueryBuilder<any>);
+    expression: string | ((connection: Connection) => SelectQueryBuilder<any>);
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -30,6 +35,7 @@ export class View {
         if (options) {
             this.name = options.name;
             this.expression = options.expression;
+            this.materialized = !!options.materialized;
         }
     }
 
@@ -41,9 +47,10 @@ export class View {
      * Clones this table to a new table with all properties cloned.
      */
     clone(): View {
-        return new View(<ViewOptions> {
+        return new View(<ViewOptions>{
             name: this.name,
             expression: this.expression,
+            materialized: this.materialized,
         });
     }
 
@@ -58,6 +65,7 @@ export class View {
         const options: ViewOptions = {
             name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
             expression: entityMetadata.expression!,
+            materialized: entityMetadata.tableMetadataArgs.materialized
         };
 
         return new View(options);

@@ -6,21 +6,21 @@ import {CheckMetadataArgs} from "../metadata-args/CheckMetadataArgs";
  * Can be used on entity property or on entity.
  * Can create checks with composite columns when used on entity.
  */
-export function Check(expression: string): Function;
+export function Check(expression: string): ClassDecorator & PropertyDecorator;
 
 /**
  * Creates a database check.
  * Can be used on entity property or on entity.
  * Can create checks with composite columns when used on entity.
  */
-export function Check(name: string, expression: string): Function;
+export function Check(name: string, expression: string): ClassDecorator & PropertyDecorator;
 
 /**
  * Creates a database check.
  * Can be used on entity property or on entity.
  * Can create checks with composite columns when used on entity.
  */
-export function Check(nameOrExpression: string, maybeExpression?: string): Function {
+export function Check(nameOrExpression: string, maybeExpression?: string): ClassDecorator & PropertyDecorator {
 
     const name = maybeExpression ? nameOrExpression : undefined;
     const expression = maybeExpression ? maybeExpression : nameOrExpression;
@@ -28,7 +28,7 @@ export function Check(nameOrExpression: string, maybeExpression?: string): Funct
     if (!expression)
         throw new Error(`Check expression is required`);
 
-    return function (clsOrObject: Function|Object, propertyName?: string) {
+    return function (clsOrObject: Function|Object, propertyName?: string | symbol) {
 
         getMetadataArgsStorage().checks.push({
             target: propertyName ? clsOrObject.constructor : clsOrObject as Function,

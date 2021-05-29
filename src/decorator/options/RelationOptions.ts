@@ -12,9 +12,9 @@ export interface RelationOptions {
      * If set to true then it means that related object can be allowed to be inserted or updated in the database.
      * You can separately restrict cascades to insertion or updation using following syntax:
      *
-     * cascade: ["insert", "update"] // include or exclude one of them
+     * cascade: ["insert", "update", "remove", "soft-remove", "recover"] // include or exclude one of them
      */
-    cascade?: boolean|("insert"|"update"|"remove")[];
+    cascade?: boolean|("insert"|"update"|"remove"|"soft-remove"|"recover")[];
 
     /**
      * Indicates if relation column value can be nullable or not.
@@ -43,6 +43,13 @@ export interface RelationOptions {
     primary?: boolean;
 
     /**
+     * Indicates whether foreign key constraints will be created for join columns.
+     * Can be used only for many-to-one and owner one-to-one relations.
+     * Defaults to true.
+     */
+    createForeignKeyConstraints?: boolean;
+
+    /**
      * Set this relation to be lazy. Note: lazy relations are promises. When you call them they return promise
      * which resolve relation result then. If your property's type is Promise then this relation is set to lazy automatically.
      */
@@ -63,5 +70,10 @@ export interface RelationOptions {
      * This is useful for performance optimization since its disabling avoid multiple extra queries during entity save.
      */
     persistence?: boolean;
+
+    /**
+     * When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
+     */
+    orphanedRowAction?: "nullify" | "delete";
 
 }

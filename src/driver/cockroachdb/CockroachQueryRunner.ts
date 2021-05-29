@@ -17,11 +17,12 @@ import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions"
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
-import {PromiseUtils} from "../../";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {ColumnType} from "../../index";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import {ReplicationMode} from "../types/ReplicationMode";
+import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -65,7 +66,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: CockroachDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: CockroachDriver, mode: ReplicationMode) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
@@ -130,6 +131,10 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         this.isTransactionActive = true;
         await this.query("START TRANSACTION");
         await this.query("SAVEPOINT cockroach_restart");
@@ -137,6 +142,10 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
         }
         this.storeQueries = true;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -146,6 +155,10 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     async commitTransaction(): Promise<void> {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
+
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
 
         this.storeQueries = false;
 
@@ -158,10 +171,16 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         } catch (e) {
             if (e.code === "40001") {
                 await this.query("ROLLBACK TO SAVEPOINT cockroach_restart");
-                await PromiseUtils.runInSequence(this.queries, q => this.query(q.query, q.parameters));
+                for (const q of this.queries) {
+                    await this.query(q.query, q.parameters);
+                }
                 await this.commitTransaction();
             }
         }
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -172,10 +191,18 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         this.storeQueries = false;
         await this.query("ROLLBACK");
         this.queries = [];
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -271,11 +298,27 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<string> {
+        const query = await this.query(`SELECT * FROM current_database()`);
+        return query[0]["current_database"];
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         const result = await this.query(`SELECT * FROM "information_schema"."schemata" WHERE "schema_name" = '${schema}'`);
         return result.length ? true : false;
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<string> {
+        const query = await this.query(`SELECT * FROM current_schema()`);
+        return query[0]["current_schema"];
     }
 
     /**
@@ -505,7 +548,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         // rename foreign key constraints
         newTable.foreignKeys.forEach(foreignKey => {
             // build new constraint name
-            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames);
+            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
 
             // build queries
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`));
@@ -583,6 +626,12 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             downQueries.push(this.dropIndexSql(table, uniqueConstraint.name!)); // CockroachDB creates indices for unique constraints
         }
 
+        // create column's comment
+        if (column.comment) {
+            upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${column.name}" IS ${this.escapeComment(column.comment)}`));
+            downQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${column.name}" IS ${this.escapeComment(column.comment)}`));
+        }
+
         await this.executeQueries(upQueries, downQueries);
 
         clonedTable.addColumn(column);
@@ -593,7 +642,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new columns from the column in the table.
      */
     async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        await PromiseUtils.runInSequence(columns, column => this.addColumn(tableOrName, column));
+        for (const column of columns) {
+            await this.addColumn(tableOrName, column);
+        }
     }
 
     /**
@@ -702,7 +753,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                     // build new constraint name
                     foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
                     foreignKey.columnNames.push(newColumn.name);
-                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
+                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
 
                     // build queries
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`));
@@ -734,8 +785,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             }
 
             if (oldColumn.comment !== newColumn.comment) {
-                upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${oldColumn.name}" IS '${newColumn.comment}'`));
-                downQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${newColumn.name}" IS '${oldColumn.comment}'`));
+                upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${oldColumn.name}" IS ${this.escapeComment(newColumn.comment)}`));
+                downQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${newColumn.name}" IS ${this.escapeComment(oldColumn.comment)}`));
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
@@ -843,7 +894,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Changes a column in the table.
      */
     async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
-        await PromiseUtils.runInSequence(changedColumns, changedColumn => this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn));
+        for (const {oldColumn, newColumn} of changedColumns) {
+            await this.changeColumn(tableOrName, oldColumn, newColumn);
+        }
     }
 
     /**
@@ -922,7 +975,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops the columns in the table.
      */
     async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        await PromiseUtils.runInSequence(columns, column => this.dropColumn(tableOrName, column));
+        for (const column of columns) {
+            await this.dropColumn(tableOrName, column);
+        }
     }
 
     /**
@@ -1013,7 +1068,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates new unique constraints.
      */
     async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        await PromiseUtils.runInSequence(uniqueConstraints, uniqueConstraint => this.createUniqueConstraint(tableOrName, uniqueConstraint));
+        for (const uniqueConstraint of uniqueConstraints) {
+            await this.createUniqueConstraint(tableOrName, uniqueConstraint);
+        }
     }
 
     /**
@@ -1037,7 +1094,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops unique constraints.
      */
     async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        await PromiseUtils.runInSequence(uniqueConstraints, uniqueConstraint => this.dropUniqueConstraint(tableOrName, uniqueConstraint));
+        for (const uniqueConstraint of uniqueConstraints) {
+            await this.dropUniqueConstraint(tableOrName, uniqueConstraint);
+        }
     }
 
     /**
@@ -1123,7 +1182,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames);
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
 
         const up = this.createForeignKeySql(table, foreignKey);
         const down = this.dropForeignKeySql(table, foreignKey);
@@ -1135,7 +1194,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new foreign keys.
      */
     async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        await PromiseUtils.runInSequence(foreignKeys, foreignKey => this.createForeignKey(tableOrName, foreignKey));
+        for (const foreignKey of foreignKeys) {
+            await this.createForeignKey(tableOrName, foreignKey);
+        }
     }
 
     /**
@@ -1157,7 +1218,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops a foreign keys from the table.
      */
     async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        await PromiseUtils.runInSequence(foreignKeys, foreignKey => this.dropForeignKey(tableOrName, foreignKey));
+        for (const foreignKey of foreignKeys) {
+            await this.dropForeignKey(tableOrName, foreignKey);
+        }
     }
 
     /**
@@ -1195,7 +1258,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new indices
      */
     async createIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
-        await PromiseUtils.runInSequence(indices, index => this.createIndex(tableOrName, index));
+        for (const index of indices) {
+            await this.createIndex(tableOrName, index);
+        }
     }
 
     /**
@@ -1217,7 +1282,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops an indices from the table.
      */
     async dropIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
-        await PromiseUtils.runInSequence(indices, index => this.dropIndex(tableOrName, index));
+        for (const index of indices) {
+            await this.dropIndex(tableOrName, index);
+        }
     }
 
     /**
@@ -1324,7 +1391,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
         }).join(" OR ");
         const tablesSql = `SELECT * FROM "information_schema"."tables" WHERE ` + tablesCondition;
-        const columnsSql = `SELECT * FROM "information_schema"."columns" WHERE "is_hidden" = 'NO' AND ` + tablesCondition;
+
+        const columnsSql = `
+            SELECT
+                *,
+                pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) as description
+            FROM "information_schema"."columns"
+            WHERE "is_hidden" = 'NO' AND ` + tablesCondition;
 
         const constraintsCondition = tableNames.map(tableName => {
             let [schema, name] = tableName.split(".");
@@ -1336,7 +1409,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         }).join(" OR ");
 
         const constraintsSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "cnst"."conname" AS "constraint_name", ` +
-            `CASE "cnst"."contype" WHEN 'x' THEN pg_get_constraintdef("cnst"."oid", true) ELSE "cnst"."consrc" END AS "expression", ` +
+            `pg_get_constraintdef("cnst"."oid") AS "expression", ` +
             `CASE "cnst"."contype" WHEN 'p' THEN 'PRIMARY' WHEN 'u' THEN 'UNIQUE' WHEN 'c' THEN 'CHECK' WHEN 'x' THEN 'EXCLUDE' END AS "constraint_type", "a"."attname" AS "column_name" ` +
             `FROM "pg_constraint" "cnst" ` +
             `INNER JOIN "pg_class" "t" ON "t"."oid" = "cnst"."conrelid" ` +
@@ -1395,9 +1468,15 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
 
+            const getSchemaFromKey = (dbObject: any, key: string) => {
+                return dbObject[key] === currentSchema && (!this.driver.options.schema || this.driver.options.schema === currentSchema)
+                    ? undefined
+                    : dbObject[key]
+            };
+
             // We do not need to join schema name, when database is by default.
-            // In this case we need local variable `tableFullName` for below comparision.
-            const schema = dbTable["table_schema"] === currentSchema && !this.driver.options.schema ? undefined : dbTable["table_schema"];
+            // In this case we need local variable `tableFullName` for below comparison.
+            const schema = getSchemaFromKey(dbTable, "table_schema");
             table.name = this.driver.buildTableName(dbTable["table_name"], schema);
             const tableFullName = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
 
@@ -1470,12 +1549,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "uuid";
 
-                        } else {
+                        } else  {
                             tableColumn.default = dbColumn["column_default"].replace(/:::.*/, "");
+                            tableColumn.default = tableColumn.default.replace(/^(-?[\d\.]+)$/, "($1)");
                         }
                     }
 
-                    tableColumn.comment = ""; // dbColumn["COLUMN_COMMENT"];
+                    tableColumn.comment = dbColumn["description"] == null ? undefined : dbColumn["description"];
                     if (dbColumn["character_set_name"])
                         tableColumn.charset = dbColumn["character_set_name"];
 
@@ -1507,7 +1587,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 return new TableCheck({
                     name: constraint["constraint_name"],
                     columnNames: checks.map(c => c["column_name"]),
-                    expression: constraint["expression"] // column names are not escaped, may cause problems
+                    expression: constraint["expression"].replace(/^\s*CHECK\s*\((.*)\)\s*$/i, "$1")
                 });
             });
 
@@ -1533,7 +1613,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["constraint_name"] === dbForeignKey["constraint_name"]);
 
                 // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                const schema = dbForeignKey["referenced_table_schema"] === currentSchema ? undefined : dbTable["referenced_table_schema"];
+                const schema = getSchemaFromKey(dbTable, "referenced_table_schema");
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["referenced_table_name"], schema);
 
                 return new TableForeignKey({
@@ -1618,7 +1698,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
                 if (!fk.name)
-                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
 
                 let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(fk.referencedTableName)} (${referencedColumnNames})`;
@@ -1641,6 +1721,11 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         sql += `)`;
+
+        table.columns
+            .filter(it => it.comment)
+            .forEach(it => sql += `; COMMENT ON COLUMN ${this.escapePath(table)}."${it.name}" IS ${this.escapeComment(it.comment)}`);
+
 
         return new Query(sql);
     }
@@ -1818,6 +1903,21 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     protected buildSequenceName(table: Table, columnOrName: TableColumn|string, disableEscape?: true): string {
         const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
         return disableEscape ? `${table.name}_${columnName}_seq` : `"${table.name}_${columnName}_seq"`;
+    }
+
+    /**
+     * Escapes a given comment so it's safe to include in a query.
+     */
+    protected escapeComment(comment?: string) {
+        if (comment === undefined || comment.length === 0) {
+            return 'NULL';
+        }
+
+        comment = comment
+            .replace(/'/g, "''")
+            .replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+
+        return `'${comment}'`;
     }
 
     /**

@@ -13,7 +13,7 @@ Examples:
 ```typescript
 import {getConnection} from "typeorm";
 
-await getConnection().transaction(transactionalEntityManager => {
+await getConnection().transaction(async transactionalEntityManager => {
     
 });
 ```
@@ -23,7 +23,7 @@ or
 ```typescript
 import {getManager} from "typeorm";
 
-await getManager().transaction(transactionalEntityManager => {
+await getManager().transaction(async transactionalEntityManager => {
     
 });
 ```
@@ -150,7 +150,7 @@ try {
     
 } catch (err) {
     
-    // since we have errors lets rollback changes we made
+    // since we have errors let's rollback changes we made
     await queryRunner.rollbackTransaction();
     
 } finally {

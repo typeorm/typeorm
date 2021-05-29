@@ -2,6 +2,7 @@ import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
+import {SapDriver} from "../../../src/driver/sap/SapDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {Table} from "../../../src/schema-builder/table/Table";
 import {TableOptions} from "../../../src/schema-builder/options/TableOptions";
@@ -10,6 +11,7 @@ import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
 import {Photo} from "./entity/Photo";
+import {Book2, Book} from "./entity/Book";
 
 describe("query runner > create table", () => {
 
@@ -56,7 +58,7 @@ describe("query runner > create table", () => {
         nameColumn!.should.be.exist;
         nameColumn!.isUnique.should.be.true;
         table!.should.exist;
-        if (!(connection.driver instanceof MysqlDriver))
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof SapDriver))
             table!.uniques.length.should.be.equal(1);
 
         await queryRunner.executeMemoryDownSql();
@@ -78,7 +80,7 @@ describe("query runner > create table", () => {
         const versionColumn = table!.findColumnByName("version");
         const nameColumn = table!.findColumnByName("name");
         table!.should.exist;
-        if (!(connection.driver instanceof MysqlDriver)) {
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof SapDriver)) {
             table!.uniques.length.should.be.equal(2);
             table!.checks.length.should.be.equal(1);
         }
@@ -152,7 +154,7 @@ describe("query runner > create table", () => {
             ]
         };
 
-        if (connection.driver instanceof MysqlDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
             questionTableOptions.indices!.push({ columnNames: ["name", "text"] });
         } else {
             questionTableOptions.uniques = [{ columnNames: ["name", "text"] }];
@@ -197,14 +199,14 @@ describe("query runner > create table", () => {
             ]
         };
 
-        if (connection.driver instanceof MysqlDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
             categoryTableOptions.indices = [{ columnNames: ["name", "alternativeName"]}];
         } else {
             categoryTableOptions.uniques = [{ columnNames: ["name", "alternativeName"]}];
         }
 
         // When we mark column as unique, MySql create index for that column and we don't need to create index separately.
-        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof OracleDriver))
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof OracleDriver) && !(connection.driver instanceof SapDriver))
             categoryTableOptions.indices = [{ columnNames: ["questionId"] }];
 
         await queryRunner.createTable(new Table(categoryTableOptions), true);
@@ -223,8 +225,8 @@ describe("query runner > create table", () => {
         questionIdColumn!.generationStrategy!.should.be.equal("increment");
         questionTable!.should.exist;
 
-        if (connection.driver instanceof MysqlDriver) {
-            // MySql driver does not have unique and check constraints.
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
+            // MySql and SAP HANA does not have unique constraints.
             // all unique constraints is unique indexes.
             questionTable!.uniques.length.should.be.equal(0);
             questionTable!.indices.length.should.be.equal(2);
@@ -257,8 +259,8 @@ describe("query runner > create table", () => {
         categoryTable!.should.exist;
         categoryTable!.foreignKeys.length.should.be.equal(1);
 
-        if (connection.driver instanceof MysqlDriver) {
-            // MySql driver does not have unique constraints. All unique constraints is unique indexes.
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
+            // MySql and SAP HANA does not have unique constraints. All unique constraints is unique indexes.
             categoryTable!.indices.length.should.be.equal(3);
 
         } else if (connection.driver instanceof OracleDriver) {
@@ -299,7 +301,7 @@ describe("query runner > create table", () => {
         nameColumn!.isUnique.should.be.true;
         descriptionColumn!.isUnique.should.be.true;
 
-        if (connection.driver instanceof MysqlDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
             table!.uniques.length.should.be.equal(0);
             table!.indices.length.should.be.equal(4);
             tagColumn!.isUnique.should.be.true;
@@ -325,6 +327,45 @@ describe("query runner > create table", () => {
         expect(table).to.be.undefined;
 
         await queryRunner.release();
+    })));
+
+    it("should correctly create table with different `withoutRowid` definitions", () => Promise.all(connections.map(async connection => {
+
+        if (connection.driver instanceof AbstractSqliteDriver) {
+            const queryRunner = connection.createQueryRunner();
+
+            // the table 'book' must contain a 'rowid' column
+            const metadataBook = connection.getMetadata(Book);
+            const newTableBook = Table.create(metadataBook, connection.driver);
+            await queryRunner.createTable(newTableBook);
+            const aBook = new Book();
+            aBook.ean = "asdf";
+            await connection.manager.save(aBook);
+
+            const desc = await connection.manager.query("SELECT rowid FROM book WHERE ean = 'asdf'");
+            expect(desc[0].rowid).equals(1);
+
+            await queryRunner.dropTable("book");
+            const bookTableIsGone = await queryRunner.getTable("book");
+            expect(bookTableIsGone).to.be.undefined;
+
+            // the table 'book2' must NOT contain a 'rowid' column
+            const metadataBook2 = connection.getMetadata(Book2);
+            const newTableBook2 = Table.create(metadataBook2, connection.driver);
+            await queryRunner.createTable(newTableBook2);
+
+            try {
+                await connection.manager.query("SELECT rowid FROM book2");
+            } catch (e) {
+                expect(e.message).contains("no such column: rowid");
+            }
+
+            await queryRunner.dropTable("book2");
+            const book2TableIsGone = await queryRunner.getTable("book2");
+            expect(book2TableIsGone).to.be.undefined;
+
+            await queryRunner.release();
+        }
     })));
 
 });

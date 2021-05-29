@@ -3,7 +3,7 @@ import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
 import * as process from "process";
 import * as yargs from "yargs";
-const chalk = require("chalk");
+import chalk from "chalk";
 
 /**
  * Runs migration command.
@@ -55,8 +55,24 @@ export class MigrationRunCommand implements yargs.CommandModule {
             connection = await createConnection(connectionOptions);
 
             const options = {
-                transaction: args["t"] === "false" ? false : true
+                transaction: connectionOptions.migrationsTransactionMode ?? "all" as "all" | "none" | "each",
             };
+
+            switch (args.t) {
+                case "all":
+                    options.transaction = "all";
+                    break;
+                case "none":
+                case "false":
+                    options.transaction = "none";
+                    break;
+                case "each":
+                    options.transaction = "each";
+                    break;
+                default:
+                    // noop
+            }
+
             await connection.runMigrations(options);
             await connection.close();
             // exit process if no errors

@@ -19,6 +19,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {CockroachQueryRunner} from "./CockroachQueryRunner";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -172,6 +173,8 @@ export class CockroachDriver implements Driver {
         createDateDefault: "now()",
         updateDate: "timestamptz",
         updateDateDefault: "now()",
+        deleteDate: "timestamptz",
+        deleteDateNullable: true,
         version: Number,
         treeLevel: Number,
         migrationId: Number,
@@ -282,7 +285,7 @@ export class CockroachDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new CockroachQueryRunner(this, mode);
     }
 
@@ -335,7 +338,8 @@ export class CockroachDriver implements Driver {
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         // unique_rowid() generates bigint value and should not be converted to number
-        if ((columnMetadata.type === Number && !columnMetadata.isArray) || columnMetadata.generationStrategy === "increment") {
+        if (([Number, "int4", "smallint", "int2"].some(v => v === columnMetadata.type)
+            && !columnMetadata.isArray) || columnMetadata.generationStrategy === "increment") {
             value = parseInt(value);
 
         } else if (columnMetadata.type === Boolean) {
@@ -475,26 +479,29 @@ export class CockroachDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
         const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
 
         if (typeof defaultValue === "number") {
-            return "" + defaultValue;
+            return `(${defaultValue})`;
 
         } else if (typeof defaultValue === "boolean") {
             return defaultValue === true ? "true" : "false";
 
         } else if (typeof defaultValue === "function") {
-            return defaultValue();
+            const value = defaultValue();
+            if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
+                return "current_timestamp()";
+            } else if (value.toUpperCase() === "CURRENT_DATE") {
+                return "current_date()";
+            }
+            return value;
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'${arrayCast}`;
 
-        } else if (defaultValue === null) {
-            return `null`;
-
-        } else if (typeof defaultValue === "object") {
+        } else if (typeof defaultValue === "object" && defaultValue !== null) {
             return `'${JSON.stringify(defaultValue)}'`;
 
         } else {
@@ -601,7 +608,7 @@ export class CockroachDriver implements Driver {
             // console.log("width:", tableColumn.width, columnMetadata.width);
             // console.log("precision:", tableColumn.precision, columnMetadata.precision);
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            // console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            // console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
             // console.log("default:", tableColumn.default, columnMetadata.default);
             // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
@@ -614,8 +621,8 @@ export class CockroachDriver implements Driver {
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
-                || tableColumn.scale !== columnMetadata.scale
-                // || tableColumn.comment !== columnMetadata.comment // todo
+                || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
+                || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
                 || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
@@ -644,6 +651,13 @@ export class CockroachDriver implements Driver {
      */
     isUUIDGenerationSupported(): boolean {
         return true;
+    }
+
+    /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
+        return false;
     }
 
     /**
@@ -695,7 +709,7 @@ export class CockroachDriver implements Driver {
      */
     protected async createPool(options: CockroachConnectionOptions, credentials: CockroachConnectionCredentialsOptions): Promise<any> {
 
-        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+        credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
         // build connection options for the driver
         const connectionOptions = Object.assign({}, {
@@ -710,11 +724,14 @@ export class CockroachDriver implements Driver {
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions);
         const { logger } = this.connection;
+
+        const poolErrorHandler = options.poolErrorHandler || ((error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
+
         /*
           Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
           cause the hosting app to crash.
          */
-        pool.on("error", (error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
+        pool.on("error", poolErrorHandler);
 
         return new Promise((ok, fail) => {
             pool.connect((err: any, connection: any, release: Function) => {
@@ -736,15 +753,16 @@ export class CockroachDriver implements Driver {
     }
 
     /**
-     * Executes given query.
+     * Escapes a given comment.
      */
-    protected executeQuery(connection: any, query: string) {
-        return new Promise((ok, fail) => {
-            connection.query(query, (err: any, result: any) => {
-                if (err) return fail(err);
-                ok(result);
-            });
-        });
+    protected escapeComment(comment?: string) {
+        if (!comment) return comment;
+
+        comment = comment
+            .replace(/'/g, "''")
+            .replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+
+        return comment;
     }
 
 }

@@ -214,14 +214,14 @@ await manager.clear(User);
 ```
 
 * `getRepository` - Gets `Repository` to perform operations on a specific entity.
- Learn more about [Repositories](working-with-entity-manager.md).
+ Learn more about [Repositories](working-with-repository.md).
 
 ```typescript
 const userRepository = manager.getRepository(User);
 ```
 
 * `getTreeRepository` - Gets `TreeRepository` to perform operations on a specific entity.
- Learn more about [Repositories](working-with-entity-manager.md).
+ Learn more about [Repositories](working-with-repository.md).
 
 ```typescript
 const categoryRepository = manager.getTreeRepository(Category);
@@ -235,7 +235,7 @@ const userRepository = manager.getMongoRepository(User);
 ```
 
 * `getCustomRepository` - Gets custom entity repository.
- Learn more about [Custom repositories](working-with-entity-manager.md).
+ Learn more about [Custom repositories](custom-repository.md).
 
 ```typescript
 const myUserRepository = manager.getCustomRepository(UserRepository);

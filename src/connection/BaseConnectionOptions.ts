@@ -3,6 +3,8 @@ import {LoggerOptions} from "../logger/LoggerOptions";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {DatabaseType} from "../driver/types/DatabaseType";
 import {Logger} from "../logger/Logger";
+import {Connection} from "./Connection";
+import {QueryResultCache} from "../cache/QueryResultCache";
 
 /**
  * BaseConnectionOptions is set of connection options shared by all database types.
@@ -46,6 +48,11 @@ export interface BaseConnectionOptions {
      * Accepts single string name.
      */
     readonly migrationsTableName?: string;
+
+    /**
+     * Transaction mode for migrations to run in
+     */
+    readonly migrationsTransactionMode?: "all" | "none" | "each";
 
     /**
      * Naming strategy to be used to name tables and columns in the database.
@@ -117,6 +124,11 @@ export interface BaseConnectionOptions {
         readonly type?: "database" | "redis" | "ioredis" | "ioredis/cluster"; // todo: add mongodb and other cache providers as well in the future
 
         /**
+         * Factory function for custom cache providers that implement QueryResultCache.
+         */
+        readonly provider?: (connection: Connection) => QueryResultCache;
+
+        /**
          * Configurable table name for "database" type cache.
          * Default value is "query-result-cache"
          */
@@ -139,6 +151,10 @@ export interface BaseConnectionOptions {
          */
         readonly duration?: number;
 
+        /**
+         * Used to specify if cache errors should be ignored, and pass through the call to the Database.
+         */
+        readonly ignoreErrors?: boolean;
     };
 
     /**

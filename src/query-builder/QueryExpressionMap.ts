@@ -39,12 +39,27 @@ export class QueryExpressionMap {
     /**
      * Represents query type. QueryBuilder is able to build SELECT, UPDATE and DELETE queries.
      */
-    queryType: "select"|"update"|"delete"|"insert"|"relation" = "select";
+    queryType: "select"|"update"|"delete"|"insert"|"relation"|"soft-delete"|"restore" = "select";
 
     /**
      * Data needs to be SELECT-ed.
      */
     selects: SelectQuery[] = [];
+
+    /**
+     * Max execution time in millisecond.
+     */
+    maxExecutionTime: number = 0;
+
+    /**
+     * Whether SELECT is DISTINCT.
+     */
+    selectDistinct: boolean = false;
+
+    /**
+     * SELECT DISTINCT ON query (postgres).
+     */
+    selectDistinctOn: string[] = [];
 
     /**
      * FROM-s to be selected.
@@ -75,7 +90,7 @@ export class QueryExpressionMap {
     /**
      * Optional on ignore statement used in insertion query in databases.
      */
-    onIgnore: string | boolean = false;
+    onIgnore: string|boolean = false;
 
     /**
      * Optional on update statement used in insertion query in databases.
@@ -140,12 +155,23 @@ export class QueryExpressionMap {
     /**
      * Locking mode.
      */
-    lockMode?: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read";
+    lockMode?: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail"|"for_no_key_update";
 
     /**
      * Current version of the entity, used for locking.
      */
     lockVersion?: number|Date;
+
+    /**
+     * Tables to be specified in the "FOR UPDATE OF" clause, referred by their alias
+     */
+    lockTables?: string[];
+
+    /**
+     * Indicates if soft-deleted rows should be included in entity result.
+     * By default the soft-deleted rows are not included.
+     */
+    withDeleted: boolean = false;
 
     /**
      * Parameters used to be escaped in final query.
@@ -254,6 +280,11 @@ export class QueryExpressionMap {
      * Used in InsertQueryBuilder to avoid default parameters mechanizm and execute high performance insertions.
      */
     nativeParameters: ObjectLiteral = {};
+
+    /**
+     * Query Comment to include extra information for debugging or other purposes.
+     */
+    comment?: string;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -373,6 +404,9 @@ export class QueryExpressionMap {
         const map = new QueryExpressionMap(this.connection);
         map.queryType = this.queryType;
         map.selects = this.selects.map(select => select);
+        map.maxExecutionTime = this.maxExecutionTime;
+        map.selectDistinct = this.selectDistinct;
+        map.selectDistinctOn = this.selectDistinctOn;
         this.aliases.forEach(alias => map.aliases.push(new Alias(alias)));
         map.mainAlias = this.mainAlias;
         map.valuesSet = this.valuesSet;
@@ -393,6 +427,8 @@ export class QueryExpressionMap {
         map.take = this.take;
         map.lockMode = this.lockMode;
         map.lockVersion = this.lockVersion;
+        map.lockTables = this.lockTables;
+        map.withDeleted = this.withDeleted;
         map.parameters = Object.assign({}, this.parameters);
         map.disableEscaping = this.disableEscaping;
         map.enableRelationIdValues = this.enableRelationIdValues;
@@ -410,6 +446,7 @@ export class QueryExpressionMap {
         map.callListeners = this.callListeners;
         map.useTransaction = this.useTransaction;
         map.nativeParameters = Object.assign({}, this.nativeParameters);
+        map.comment = this.comment;
         return map;
     }
 

@@ -1,8 +1,8 @@
-import { Connection } from "../connection/Connection";
-import { SchemaBuilder } from "./SchemaBuilder";
-import { MongoDriver } from "../driver/mongodb/MongoDriver";
-import { SqlInMemory } from "../driver/SqlInMemory";
-import { MongodbIndexOptions } from "../driver/mongodb/typings";
+import {Connection} from "../connection/Connection";
+import {SchemaBuilder} from "./SchemaBuilder";
+import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
+import {SqlInMemory} from "../driver/SqlInMemory";
+import {MongodbIndexOptions} from "../driver/mongodb/typings";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -35,7 +35,7 @@ export class MongoSchemaBuilder implements SchemaBuilder {
      * Creates complete schemas for the given entity metadatas.
      */
     async build(): Promise<void> {
-        const queryRunner = (this.connection.driver as MongoDriver).createQueryRunner();
+        const queryRunner = this.connection.createQueryRunner() as MongoQueryRunner;
         const promises: Promise<any>[] = [];
         this.connection.entityMetadatas.forEach(metadata => {
             metadata.indices.forEach(index => {

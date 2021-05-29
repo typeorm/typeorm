@@ -11,7 +11,7 @@ describe("database schema > column types > sqlite", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["sqlite"],
+            enabledDrivers: ["sqlite", "better-sqlite3"],
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
@@ -42,7 +42,7 @@ describe("database schema > column types > sqlite", () => {
         post.nchar = "This is nchar";
         post.nativeCharacter = "This is native character";
         post.nvarchar = "This is nvarchar";
-        post.blob = new Buffer("This is blob");
+        post.blob = Buffer.from("This is blob");
         post.clob = "This is clob";
         post.text = "This is text";
         post.real = 10.5;
@@ -128,11 +128,11 @@ describe("database schema > column types > sqlite", () => {
         table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
         table!.findColumnByName("simpleArray")!.type.should.be.equal("text");
         table!.findColumnByName("simpleJson")!.type.should.be.equal("text");
-        table!.findColumnByName("simpleEnum")!.type.should.be.equal("simple-enum");
+        table!.findColumnByName("simpleEnum")!.type.should.be.equal("varchar");
         table!.findColumnByName("simpleEnum")!.enum![0].should.be.equal("A");
         table!.findColumnByName("simpleEnum")!.enum![1].should.be.equal("B");
         table!.findColumnByName("simpleEnum")!.enum![2].should.be.equal("C");
-        table!.findColumnByName("simpleClassEnum1")!.type.should.be.equal("simple-enum");
+        table!.findColumnByName("simpleClassEnum1")!.type.should.be.equal("varchar");
         table!.findColumnByName("simpleClassEnum1")!.enum![0].should.be.equal("apple");
         table!.findColumnByName("simpleClassEnum1")!.enum![1].should.be.equal("pineapple");
         table!.findColumnByName("simpleClassEnum1")!.enum![2].should.be.equal("banana");
@@ -150,7 +150,7 @@ describe("database schema > column types > sqlite", () => {
         post.id = 1;
         post.name = "Post";
         post.boolean = true;
-        post.blob = new Buffer("A");
+        post.blob = Buffer.from("A");
         post.datetime = new Date();
         post.datetime.setMilliseconds(0);
         await postRepository.save(post);

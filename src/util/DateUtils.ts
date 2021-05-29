@@ -22,7 +22,7 @@ export class DateUtils {
     /**
      * Converts given value into date string in a "YYYY-MM-DD" format.
      */
-    static mixedDateToDateString(value: Date|any): string|any {
+    static mixedDateToDateString(value: string|Date): string {
         if (value instanceof Date)
             return this.formatZerolessValue(value.getFullYear()) + "-" + this.formatZerolessValue(value.getMonth() + 1) + "-" + this.formatZerolessValue(value.getDate());
 
@@ -100,25 +100,30 @@ export class DateUtils {
     /**
      * Converts given value into datetime string in a "YYYY-MM-DD HH-mm-ss" format.
      */
-    static mixedDateToDatetimeString(value: Date|any): string|any {
+    static mixedDateToDatetimeString(value: Date|any, useMilliseconds?: boolean): string|any {
         if (typeof value === "string") {
             value = new Date(value);
         }
         if (value instanceof Date) {
-            return this.formatZerolessValue(value.getFullYear()) + "-" +
+            let finalValue = this.formatZerolessValue(value.getFullYear()) + "-" +
                 this.formatZerolessValue(value.getMonth() + 1) + "-" +
                 this.formatZerolessValue(value.getDate()) + " " +
                 this.formatZerolessValue(value.getHours()) + ":" +
                 this.formatZerolessValue(value.getMinutes()) + ":" +
-                this.formatZerolessValue(value.getSeconds()) + "." +
-                this.formatMilliseconds(value.getMilliseconds());
+                this.formatZerolessValue(value.getSeconds());
+
+            if (useMilliseconds)
+                finalValue += `.${this.formatMilliseconds(value.getMilliseconds())}`;
+
+            value = finalValue;
         }
+
 
         return value;
     }
 
     /**
-     * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss" format.
+     * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss.sss" format.
      */
     static mixedDateToUtcDatetimeString(value: Date|any): string|any {
         if (typeof value === "string") {
@@ -141,7 +146,7 @@ export class DateUtils {
      * Converts each item in the given array to string joined by "," separator.
      */
     static simpleArrayToString(value: any[]|any): string[]|any {
-        if (value instanceof Array) {
+        if (Array.isArray(value)) {
             return (value as any[])
                 .map(i => String(i))
                 .join(",");

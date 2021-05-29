@@ -8,7 +8,6 @@ import {Connection} from "../connection/Connection";
 import {OrmUtils} from "../util/OrmUtils";
 import {ValueTransformer} from "../decorator/options/ValueTransformer";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
-import {PromiseUtils} from "../util/PromiseUtils";
 import {FindOperator} from "../find-options/FindOperator";
 import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
 
@@ -115,7 +114,7 @@ export class ColumnMetadata {
      * Column comment.
      * This feature is not supported by all databases.
      */
-    comment: string = "";
+    comment?: string;
 
     /**
      * Default database value.
@@ -157,6 +156,11 @@ export class ColumnMetadata {
      * for numeric and heterogeneous based typescript enums, so we need (string|number)[]
      */
     enum?: (string|number)[];
+
+    /**
+     * Exact name of enum
+     */
+    enumName?: string;
 
     /**
      * Generated column expression. Supports only in MySQL.
@@ -240,6 +244,11 @@ export class ColumnMetadata {
      * Indicates if this column contains an entity update date.
      */
     isUpdateDate: boolean = false;
+
+    /**
+     * Indicates if this column contains an entity delete date.
+     */
+    isDeleteDate: boolean = false;
 
     /**
      * Indicates if this column contains an entity version.
@@ -359,17 +368,27 @@ export class ColumnMetadata {
         }
         if (options.args.options.unsigned)
             this.unsigned = options.args.options.unsigned;
-        if (options.args.options.precision !== undefined)
+        if (options.args.options.precision !== null)
             this.precision = options.args.options.precision;
         if (options.args.options.enum) {
             if (options.args.options.enum instanceof Object && !Array.isArray(options.args.options.enum)) {
                 this.enum = Object.keys(options.args.options.enum)
-                    .filter(key => isNaN(+key))     // remove numeric keys - typescript numeric enum types generate them
+                    // remove numeric keys - typescript numeric enum types generate them
+                    // From the documentation: “declaration merging” means that the compiler merges two separate declarations
+                    // declared with the same name into a single definition. This concept is often used to merge enum with namespace
+                    // where in namespace we define e.g. utility methods for creating enum. This is well known in other languages
+                    // like Java (enum methods). Here in case if enum have function, we need to remove it from metadata, otherwise
+                    // generated SQL statements contains string representation of that function which leads into syntax error
+                    // at database side.
+                    .filter(key => isNaN(+key) && typeof (options.args.options.enum as ObjectLiteral)[key] !== "function")
                     .map(key => (options.args.options.enum as ObjectLiteral)[key]);
 
             } else {
                 this.enum = options.args.options.enum;
             }
+        }
+        if (options.args.options.enumName) {
+            this.enumName = options.args.options.enumName;
         }
         if (options.args.options.asExpression) {
             this.asExpression = options.args.options.asExpression;
@@ -384,6 +403,7 @@ export class ColumnMetadata {
             this.isTreeLevel = options.args.mode === "treeLevel";
             this.isCreateDate = options.args.mode === "createDate";
             this.isUpdateDate = options.args.mode === "updateDate";
+            this.isDeleteDate = options.args.mode === "deleteDate";
             this.isVersion = options.args.mode === "version";
             this.isObjectId = options.args.mode === "objectId";
         }
@@ -391,7 +411,7 @@ export class ColumnMetadata {
             this.transformer = options.args.options.transformer;
         if (options.args.options.spatialFeatureType)
             this.spatialFeatureType = options.args.options.spatialFeatureType;
-        if (options.args.options.srid)
+        if (options.args.options.srid !== undefined)
             this.srid = options.args.options.srid;
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;
@@ -400,7 +420,8 @@ export class ColumnMetadata {
                 this.type = options.connection.driver.mappedDataTypes.createDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.createDateDefault;
-            if (this.precision === undefined && options.connection.driver.mappedDataTypes.createDatePrecision)
+            // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
+            if (this.precision === undefined && options.args.options.precision === undefined && options.connection.driver.mappedDataTypes.createDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.createDatePrecision;
         }
         if (this.isUpdateDate) {
@@ -408,8 +429,20 @@ export class ColumnMetadata {
                 this.type = options.connection.driver.mappedDataTypes.updateDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
-            if (this.precision === undefined && options.connection.driver.mappedDataTypes.updateDatePrecision)
+            if (!this.onUpdate)
+                this.onUpdate = options.connection.driver.mappedDataTypes.updateDateDefault;
+            // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
+            if (this.precision === undefined && options.args.options.precision === undefined && options.connection.driver.mappedDataTypes.updateDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
+        }
+        if (this.isDeleteDate) {
+            if (!this.type)
+                this.type = options.connection.driver.mappedDataTypes.deleteDate;
+            if (!this.isNullable)
+                this.isNullable = options.connection.driver.mappedDataTypes.deleteDateNullable;
+            // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
+            if (this.precision === undefined && options.args.options.precision === undefined && options.connection.driver.mappedDataTypes.deleteDatePrecision)
+                this.precision = options.connection.driver.mappedDataTypes.deleteDatePrecision;
         }
         if (this.isVersion)
             this.type = options.connection.driver.mappedDataTypes.version;
@@ -456,7 +489,7 @@ export class ColumnMetadata {
                 }
 
                 // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-                if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
+                if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint" && value !== null)
                     value = String(value);
 
                 map[useDatabaseName ? this.databaseName : this.propertyName] = value;
@@ -467,7 +500,7 @@ export class ColumnMetadata {
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
 
             // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-            if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
+            if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint" && value !== null)
                 value = String(value);
 
             return { [useDatabaseName ? this.databaseName : this.propertyName]: value };
@@ -521,9 +554,9 @@ export class ColumnMetadata {
             return Object.keys(map).length > 0 ? map : undefined;
 
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
-            if (this.relationMetadata && entity[this.propertyName] && entity[this.propertyName] instanceof Object) {
+            if (this.relationMetadata && entity[this.relationMetadata.propertyName] && entity[this.relationMetadata.propertyName] instanceof Object) {
                 const map = this.relationMetadata.joinColumns.reduce((map, joinColumn) => {
-                    const value = joinColumn.referencedColumn!.getEntityValueMap(entity[this.propertyName]);
+                    const value = joinColumn.referencedColumn!.getEntityValueMap(entity[this.relationMetadata!.propertyName]);
                     if (value === undefined) return map;
                     return OrmUtils.mergeDeep(map, value);
                 }, {});
@@ -570,21 +603,21 @@ export class ColumnMetadata {
                 if (this.relationMetadata && this.referencedColumn) {
                     const relatedEntity = this.relationMetadata.getEntityValue(embeddedObject);
                     if (relatedEntity && relatedEntity instanceof Object && !(relatedEntity instanceof FindOperator)) {
-                        value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
+                        value = this.referencedColumn.getEntityValue(relatedEntity);
 
                     } else if (embeddedObject[this.propertyName] && embeddedObject[this.propertyName] instanceof Object && !(embeddedObject[this.propertyName] instanceof FindOperator)) {
-                        value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(embeddedObject[this.propertyName]));
+                        value = this.referencedColumn.getEntityValue(embeddedObject[this.propertyName]);
 
                     } else {
-                        value = PromiseUtils.extractValue(embeddedObject[this.propertyName]);
+                        value = embeddedObject[this.propertyName];
 
                     }
 
                 } else if (this.referencedColumn) {
-                    value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(embeddedObject[this.propertyName]));
+                    value = this.referencedColumn.getEntityValue(embeddedObject[this.propertyName]);
 
                 } else {
-                    value = PromiseUtils.extractValue(embeddedObject[this.propertyName]);
+                    value = embeddedObject[this.propertyName];
                 }
             }
 
@@ -592,17 +625,17 @@ export class ColumnMetadata {
             if (this.relationMetadata && this.referencedColumn) {
                 const relatedEntity = this.relationMetadata.getEntityValue(entity);
                 if (relatedEntity && relatedEntity instanceof Object && !(relatedEntity instanceof FindOperator) && !(relatedEntity instanceof Function)) {
-                    value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
+                    value = this.referencedColumn.getEntityValue(relatedEntity);
 
                 } else if (entity[this.propertyName] && entity[this.propertyName] instanceof Object && !(entity[this.propertyName] instanceof FindOperator) && !(entity[this.propertyName] instanceof Function)) {
-                    value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
+                    value = this.referencedColumn.getEntityValue(entity[this.propertyName]);
 
                 } else {
                     value = entity[this.propertyName];
                 }
 
             } else if (this.referencedColumn) {
-                value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
+                value = this.referencedColumn.getEntityValue(entity[this.propertyName]);
 
             } else {
                 value = entity[this.propertyName];
@@ -641,7 +674,18 @@ export class ColumnMetadata {
             return extractEmbeddedColumnValue([...this.embeddedMetadata.embeddedMetadataTree], entity);
 
         } else {
-            entity[this.propertyName] = value;
+            // we write a deep object in this entity only if the column is virtual
+            // because if its not virtual it means the user defined a real column for this relation
+            // also we don't do it if column is inside a junction table
+            if (!this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName) {
+                if (!(this.propertyName in entity)) {
+                    entity[this.propertyName] = {};
+                }
+
+                entity[this.propertyName][this.referencedColumn.propertyName] = value;
+            } else {
+                entity[this.propertyName] = value;
+            }
         }
     }
 

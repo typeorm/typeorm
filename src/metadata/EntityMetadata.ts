@@ -3,8 +3,10 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {SapDriver} from "../driver/sap/SapDriver";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
@@ -24,6 +26,7 @@ import {RelationMetadata} from "./RelationMetadata";
 import {TableType} from "./types/TableTypes";
 import {TreeType} from "./types/TreeTypes";
 import {UniqueMetadata} from "./UniqueMetadata";
+import {ClosureTreeOptions} from "./types/ClosureTreeOptions";
 
 /**
  * Contains all entity metadata.
@@ -100,6 +103,11 @@ export class EntityMetadata {
      * Used in views
      */
     expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
+
+    /**
+     * Enables Sqlite "WITHOUT ROWID" modifier for the "CREATE TABLE" statement
+     */
+    withoutRowid?: boolean = false;
 
     /**
      * Original user-given table name (taken from schema or @Entity(tableName) decorator).
@@ -185,6 +193,11 @@ export class EntityMetadata {
     treeType?: TreeType;
 
     /**
+     * Indicates if this entity is a tree, what options of tree it has.
+     */
+    treeOptions?: ClosureTreeOptions;
+
+    /**
      * Checks if this table is a junction table of the closure table.
      * This type is for tables that contain junction metadata of the closure tables.
      */
@@ -262,6 +275,11 @@ export class EntityMetadata {
      * Gets entity column which contains an update date value.
      */
     updateDateColumn?: ColumnMetadata;
+
+    /**
+     * Gets entity column which contains a delete date value.
+     */
+    deleteDateColumn?: ColumnMetadata;
 
     /**
      * Gets entity column which contains an entity version.
@@ -491,11 +509,13 @@ export class EntityMetadata {
         this.inheritanceTree = options.inheritanceTree || [];
         this.inheritancePattern = options.inheritancePattern;
         this.treeType = options.tableTree ? options.tableTree.type : undefined;
+        this.treeOptions = options.tableTree ? options.tableTree.options : undefined;
         this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
         this.tableMetadataArgs = options.args;
         this.target = this.tableMetadataArgs.target;
         this.tableType = this.tableMetadataArgs.type;
         this.expression = this.tableMetadataArgs.expression;
+        this.withoutRowid = this.tableMetadataArgs.withoutRowid;
     }
 
     // -------------------------------------------------------------------------
@@ -606,7 +626,7 @@ export class EntityMetadata {
         const secondEntityIdMap = this.getEntityIdMap(secondEntity);
         if (!secondEntityIdMap) return false;
 
-        return EntityMetadata.compareIds(firstEntityIdMap, secondEntityIdMap);
+        return OrmUtils.compareIds(firstEntityIdMap, secondEntityIdMap);
     }
 
     /**
@@ -687,13 +707,20 @@ export class EntityMetadata {
         const relationsAndValues: [RelationMetadata, any, EntityMetadata][] = [];
         relations.forEach(relation => {
             const value = relation.getEntityValue(entity);
-            if (value instanceof Array) {
-                value.forEach(subValue => relationsAndValues.push([relation, subValue, relation.inverseEntityMetadata]));
+            if (Array.isArray(value)) {
+                value.forEach(subValue => relationsAndValues.push([relation, subValue, this.getInverseEntityMetadata(subValue, relation)]));
             } else if (value) {
-                relationsAndValues.push([relation, value, relation.inverseEntityMetadata]);
+                relationsAndValues.push([relation, value, this.getInverseEntityMetadata(value, relation)]);
             }
         });
         return relationsAndValues;
+    }
+
+    private getInverseEntityMetadata(value: any, relation: RelationMetadata): EntityMetadata {
+        const childEntityMetadata = relation.inverseEntityMetadata.childEntityMetadatas.find(metadata =>
+            metadata.target === value.constructor
+        );
+        return childEntityMetadata ? childEntityMetadata : relation.inverseEntityMetadata;
     }
 
     // -------------------------------------------------------------------------
@@ -727,19 +754,8 @@ export class EntityMetadata {
      */
     static difference(firstIdMaps: ObjectLiteral[], secondIdMaps: ObjectLiteral[]): ObjectLiteral[] {
         return firstIdMaps.filter(firstIdMap => {
-            return !secondIdMaps.find(secondIdMap => OrmUtils.deepCompare(firstIdMap, secondIdMap));
+            return !secondIdMaps.find(secondIdMap => OrmUtils.compareIds(firstIdMap, secondIdMap));
         });
-    }
-
-    /**
-     * Compares ids of the two entities.
-     * Returns true if they match, false otherwise.
-     */
-    static compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined): boolean {
-        if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
-            return false;
-
-        return OrmUtils.deepCompare(firstId, secondId);
     }
 
     /**
@@ -794,6 +810,7 @@ export class EntityMetadata {
         this.target = this.target ? this.target : this.tableName;
         this.name = this.targetName ? this.targetName : this.tableName;
         this.expression = this.tableMetadataArgs.expression;
+        this.withoutRowid = this.tableMetadataArgs.withoutRowid === true ? true : false;
         this.tablePath = this.buildTablePath();
         this.schemaPath = this.buildSchemaPath();
         this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
@@ -839,8 +856,10 @@ export class EntityMetadata {
      */
     protected buildTablePath(): string {
         let tablePath = this.tableName;
-        if (this.schema)
+        if (this.schema && ((this.connection.driver instanceof OracleDriver) || (this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
             tablePath = this.schema + "." + tablePath;
+        }
+
         if (this.database && !(this.connection.driver instanceof PostgresDriver)) {
             if (!this.schema && this.connection.driver instanceof SqlServerDriver) {
                 tablePath = this.database + ".." + tablePath;

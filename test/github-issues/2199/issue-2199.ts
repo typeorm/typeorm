@@ -1,15 +1,16 @@
 import { expect } from "chai";
 import "reflect-metadata";
 import { Connection } from "../../../src/connection/Connection";
+import { SqlServerDriver } from '../../../src/driver/sqlserver/SqlServerDriver';
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { Bar } from "./entity/Bar";
 
-describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() for mysql and sqlite", () => {
+describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() for mysql, sqlite and mssql", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mysql", "mariadb", "sqlite"],
+        enabledDrivers: ["mysql", "mariadb", "sqlite", "better-sqlite3", "mssql"],
         schemaCreate: true,
         dropSchema: true
     }));
@@ -43,5 +44,26 @@ describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() 
         });
         const thirdBar = await connection.manager.save(thirdBarQuery);
         expect(thirdBar.id).to.eql(5);
+    })));
+
+    it("should reset mssql's INSERT_IDENTITY flag correctly after failed queries", () => Promise.all(connections
+        .filter(connection => connection.driver instanceof SqlServerDriver)
+        .map(async connection => {
+            // Run a query that failes at the database level
+            await expect(connection.createQueryBuilder()
+                .insert()
+                .into(Bar)
+                .values({
+                    id: 20,
+                    description: () => "NONEXISTINGFUNCTION()",
+                })
+                .execute()
+            ).to.be.rejectedWith("Error: 'NONEXISTINGFUNCTION' is not a recognized built-in function name.");
+            // And now check that IDENTITY_INSERT is disabled by inserting something without an ID value and see if that works
+            const successfulBarQuery = connection.manager.create(Bar, {
+                description: "default id value"
+            });
+            const bar = await connection.manager.save(successfulBarQuery);
+            expect(bar.id).to.be.a('number');
     })));
 });

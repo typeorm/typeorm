@@ -55,7 +55,7 @@ export interface EntitySchemaRelationOptions {
     /**
      * Join column options of this column. If set to true then it simply means that it has a join column.
      */
-    joinColumn?: boolean|JoinColumnOptions;
+    joinColumn?: boolean|JoinColumnOptions|JoinColumnOptions[];
 
     /**
      * Indicates if this is a parent (can be only many-to-one relation) relation in the tree tables.
@@ -71,7 +71,7 @@ export interface EntitySchemaRelationOptions {
      * If set to true then it means that related object can be allowed to be inserted / updated / removed to the db.
      * This is option a shortcut if you would like to set cascadeInsert, cascadeUpdate and cascadeRemove to true.
      */
-    cascade?: boolean|("insert"|"update"|"remove")[];
+    cascade?: boolean|("insert"|"update"|"remove"|"soft-remove"|"recover")[];
 
     /**
      * Default database value.
@@ -98,4 +98,8 @@ export interface EntitySchemaRelationOptions {
      */
     deferrable?: DeferrableType;
 
+    /**
+     * When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
+     */
+    orphanedRowAction?: "nullify" | "delete";
 }

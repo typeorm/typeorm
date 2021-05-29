@@ -25,6 +25,7 @@
 - `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` - 指定删除引用对象时外键的行为方式
 - `primary: boolean` - 指示此关系的列是否为主列。
 - `nullable: boolean` -指示此关系的列是否可为空。 默认情况下是可空。
+- `orphanedRowAction: "nullify" | "delete"` - 将子行从其父行中删除后，确定该子行是孤立的（默认值）还是删除的。
 
 ## 级联
 

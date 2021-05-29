@@ -1,6 +1,7 @@
 import {Driver} from "../driver/Driver";
 import {Repository} from "../repository/Repository";
 import {EntitySubscriberInterface} from "../subscriber/EntitySubscriberInterface";
+import {EntityTarget} from "../common/EntityTarget";
 import {ObjectType} from "../common/ObjectType";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {DefaultNamingStrategy} from "../naming-strategy/DefaultNamingStrategy";
@@ -35,8 +36,10 @@ import {EntitySchema} from "../";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ObjectUtils} from "../util/ObjectUtils";
-import {PromiseUtils} from "../";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
+import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {DriverUtils} from "../driver/DriverUtils";
+import {ReplicationMode} from "../driver/types/ReplicationMode";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -201,7 +204,7 @@ export class Connection {
 
             // if option is set - automatically synchronize a schema
             if (this.options.migrationsRun)
-                await this.runMigrations();
+                await this.runMigrations({ transaction: this.options.migrationsTransactionMode });
 
         } catch (error) {
 
@@ -256,15 +259,18 @@ export class Connection {
      */
     // TODO rename
     async dropDatabase(): Promise<void> {
-        const queryRunner = await this.createQueryRunner("master");
+        const queryRunner = this.createQueryRunner();
         try {
-            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
+            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver || this.driver instanceof AuroraDataApiDriver) {
                 const databases: string[] = this.driver.database ? [this.driver.database] : [];
                 this.entityMetadatas.forEach(metadata => {
                     if (metadata.database && databases.indexOf(metadata.database) === -1)
                         databases.push(metadata.database);
                 });
-                await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(database));
+
+                for (const database of databases) {
+                    await queryRunner.clearDatabase(database);
+                }
             } else {
                 await queryRunner.clearDatabase();
             }
@@ -277,14 +283,13 @@ export class Connection {
      * Runs all pending migrations.
      * Can be used only after connection to the database is established.
      */
-    async runMigrations(options?: { transaction?: boolean }): Promise<Migration[]> {
+    async runMigrations(options?: { transaction?: "all" | "none" | "each" }): Promise<Migration[]> {
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
-        if (options && options.transaction === false) {
-            migrationExecutor.transaction = false;
-        }
+        migrationExecutor.transaction = (options && options.transaction) || "all";
+
         const successMigrations = await migrationExecutor.executePendingMigrations();
         return successMigrations;
     }
@@ -293,21 +298,20 @@ export class Connection {
      * Reverts last executed migration.
      * Can be used only after connection to the database is established.
      */
-    async undoLastMigration(options?: { transaction?: boolean }): Promise<void> {
+    async undoLastMigration(options?: { transaction?: "all" | "none" | "each" }): Promise<void> {
 
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
-        if (options && options.transaction === false) {
-            migrationExecutor.transaction = false;
-        }
+        migrationExecutor.transaction = (options && options.transaction) || "all";
+
         await migrationExecutor.undoLastMigration();
     }
 
     /**
      * Lists all migrations and whether they have been run.
-     * Returns true if there are no pending migrations
+     * Returns true if there are pending migrations
      */
     async showMigrations(): Promise<boolean> {
         if (!this.isConnected) {
@@ -320,14 +324,14 @@ export class Connection {
     /**
      * Checks if entity metadata exist for the given entity class, target name or table name.
      */
-    hasMetadata(target: Function|EntitySchema<any>|string): boolean {
+    hasMetadata(target: EntityTarget<any>): boolean {
         return !!this.findMetadata(target);
     }
 
     /**
      * Gets entity metadata for the given entity class or schema name.
      */
-    getMetadata(target: Function|EntitySchema<any>|string): EntityMetadata {
+    getMetadata(target: EntityTarget<any>): EntityMetadata {
         const metadata = this.findMetadata(target);
         if (!metadata)
             throw new EntityMetadataNotFoundError(target);
@@ -338,7 +342,7 @@ export class Connection {
     /**
      * Gets repository for the given entity.
      */
-    getRepository<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string): Repository<Entity> {
+    getRepository<Entity>(target: EntityTarget<Entity>): Repository<Entity> {
         return this.manager.getRepository(target);
     }
 
@@ -346,7 +350,7 @@ export class Connection {
      * Gets tree repository for the given entity class or name.
      * Only tree-type entities can have a TreeRepository, like ones decorated with @Tree decorator.
      */
-    getTreeRepository<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string): TreeRepository<Entity> {
+    getTreeRepository<Entity>(target: EntityTarget<Entity>): TreeRepository<Entity> {
         return this.manager.getTreeRepository(target);
     }
 
@@ -354,7 +358,7 @@ export class Connection {
      * Gets mongodb-specific repository for the given entity class or name.
      * Works only if connection is mongodb-specific.
      */
-    getMongoRepository<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string): MongoRepository<Entity> {
+    getMongoRepository<Entity>(target: EntityTarget<Entity>): MongoRepository<Entity> {
         if (!(this.driver instanceof MongoDriver))
             throw new Error(`You can use getMongoRepository only for MongoDB connections.`);
 
@@ -394,7 +398,7 @@ export class Connection {
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
-        const usedQueryRunner = queryRunner || this.createQueryRunner("master");
+        const usedQueryRunner = queryRunner || this.createQueryRunner();
 
         try {
             return await usedQueryRunner.query(query, parameters);  // await is needed here because we are using finally
@@ -408,7 +412,7 @@ export class Connection {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|Function|string, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
+    createQueryBuilder<Entity>(entityClass: EntityTarget<Entity>, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
 
     /**
      * Creates a new query builder that can be used to build a sql query.
@@ -418,12 +422,12 @@ export class Connection {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityOrRunner?: ObjectType<Entity>|EntitySchema<Entity>|Function|string|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
+    createQueryBuilder<Entity>(entityOrRunner?: EntityTarget<Entity>|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         if (this instanceof MongoEntityManager)
             throw new Error(`Query Builder is not supported by MongoDB.`);
 
         if (alias) {
-            const metadata = this.getMetadata(entityOrRunner as Function|EntitySchema<Entity>|string);
+            const metadata = this.getMetadata(entityOrRunner as EntityTarget<Entity>);
             return new SelectQueryBuilder(this, queryRunner)
                 .select(alias)
                 .from(metadata.target, alias);
@@ -443,7 +447,7 @@ export class Connection {
      * If you perform writes you must use master database,
      * if you perform reads you can use slave databases.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+    createQueryRunner(mode: ReplicationMode = "master"): QueryRunner {
         const queryRunner = this.driver.createQueryRunner(mode);
         const manager = this.createEntityManager(queryRunner);
         Object.assign(queryRunner, { manager: manager });
@@ -453,7 +457,7 @@ export class Connection {
     /**
      * Gets entity metadata of the junction table (many-to-many table).
      */
-    getManyToManyMetadata(entityTarget: Function|string, relationPropertyPath: string) {
+    getManyToManyMetadata(entityTarget: EntityTarget<any>, relationPropertyPath: string) {
         const relationMetadata = this.getMetadata(entityTarget).findRelationWithPropertyPath(relationPropertyPath);
         if (!relationMetadata)
             throw new Error(`Relation "${relationPropertyPath}" was not found in ${entityTarget} entity.`);
@@ -478,7 +482,7 @@ export class Connection {
     /**
      * Finds exist entity metadata by the given entity class, target name or table name.
      */
-    protected findMetadata(target: Function|EntitySchema<any>|string): EntityMetadata|undefined {
+    protected findMetadata(target: EntityTarget<any>): EntityMetadata|undefined {
         return this.entityMetadatas.find(metadata => {
             if (metadata.target === target)
                 return true;
@@ -517,8 +521,28 @@ export class Connection {
         const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
         ObjectUtils.assign(this, { migrations: migrations });
 
+        this.driver.database = this.getDatabaseName();
+
         // validate all created entity metadatas to make sure user created entities are valid and correct
         entityMetadataValidator.validateMany(this.entityMetadatas.filter(metadata => metadata.tableType !== "view"), this.driver);
     }
+
+    // This database name property is nested for replication configs.
+    protected getDatabaseName(): string {
+        const options = this.options;
+        switch (options.type) {
+            case "mysql" :
+            case "mariadb" :
+            case "postgres":
+            case "cockroachdb":
+            case "mssql":
+            case "oracle":
+                return DriverUtils.buildDriverOptions(options.replication ? options.replication.master : options).database;
+            case "mongodb":
+                return DriverUtils.buildMongoDBDriverOptions(options).database;
+            default:
+                return DriverUtils.buildDriverOptions(options).database;
+    }
+}
 
 }

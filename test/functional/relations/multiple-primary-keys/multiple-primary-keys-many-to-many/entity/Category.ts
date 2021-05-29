@@ -10,10 +10,14 @@ import {Unique} from "../../../../../../src";
 @Unique(["code", "version", "description"])
 export class Category {
 
-    @PrimaryColumn()
+    @PrimaryColumn("varchar", {
+        length: 31,
+    })
     name: string;
 
-    @PrimaryColumn()
+    @PrimaryColumn("varchar", {
+        length: 31,
+    })
     type: string;
 
     @Column()

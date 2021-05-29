@@ -192,9 +192,109 @@ Just like separate like `MongoEntityManager` there is a `MongoRepository` with e
 ```typescript
 import {getMongoRepository} from "typeorm";
 
-const userRepository = getMongoRepository(User); // or connection.getMongoManager
+const userRepository = getMongoRepository(User); // or connection.getMongoRepository
 const timber = await userRepository.findOne({ firstName: "Timber", lastName: "Saw" });
 ```
+
+Use Advanced options in find():
+
+Equal:
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+const timber = await userRepository.find({
+  where: {
+    firstName: {$eq: "Timber"},
+  }
+});
+```
+
+LessThan:
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+const timber = await userRepository.find({
+  where: {
+    age: {$lt: 60},
+  }
+});
+```
+
+In:
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+const timber = await userRepository.find({
+  where: {
+    firstName: {$in: ["Timber","Zhang"]},
+  }
+});
+```
+
+Not in:
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+const timber = await userRepository.find({
+  where: {
+firstName: {$not: {$in: ["Timber","Zhang"]}},
+}
+});
+```
+
+Or:
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+const timber = await userRepository.find({
+  where: {
+    $or: [
+        {firstName:"Timber"},
+        {firstName:"Zhang"}
+      ]
+  }
+});
+```
+
+Querying subdocuments
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+// Query users with education Tree School
+const users = await userRepository.find({
+  where: {
+   'profile.education': { $eq: "Tree School"}
+  }
+});
+```
+
+Querying Array of subdocuments
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+// Query users with photos of size less than 500
+const users = await userRepository.find({
+  where: {
+   'photos.size': { $lt: 500}
+  }
+});
+
+```
+
 
 Both `MongoEntityManager` and `MongoRepository` contain lot of useful MongoDB-specific methods:
 
@@ -238,7 +338,7 @@ Delete a document on MongoDB.
 
 #### `distinct`
 
-The distinct command returns returns a list of distinct values for the given key across a collection.
+The distinct command returns a list of distinct values for the given key across a collection.
 
 #### `dropCollectionIndex`
 

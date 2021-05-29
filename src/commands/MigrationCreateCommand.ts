@@ -2,7 +2,7 @@ import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
 import {camelCase} from "../util/StringUtils";
 import * as yargs from "yargs";
-const chalk = require("chalk");
+import chalk from "chalk";
 
 /**
  * Creates a new migration file.
@@ -33,6 +33,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
+            })
+            .option("o", {
+                alias: "outputJs",
+                type: "boolean",
+                default: false,
+                describe: "Generate a migration file on Javascript instead of Typescript",
             });
     }
 
@@ -43,9 +49,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
         try {
             const timestamp = new Date().getTime();
-            const fileContent = MigrationCreateCommand.getTemplate(args.name as any, timestamp);
-            const filename = timestamp + "-" + args.name + ".ts";
-            let directory = args.dir;
+            const fileContent = args.outputJs ?
+                MigrationCreateCommand.getJavascriptTemplate(args.name as any, timestamp)
+                : MigrationCreateCommand.getTemplate(args.name as any, timestamp);
+            const extension = args.outputJs ? ".js" : ".ts";
+            const filename = timestamp + "-" + args.name + extension;
+            let directory = args.dir as string | undefined;
 
             // if directory is not set then try to open tsconfig and find default path there
             if (!directory) {
@@ -55,11 +64,14 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                         configName: args.config as any
                     });
                     const connectionOptions = await connectionOptionsReader.get(args.connection as any);
-                    directory = connectionOptions.cli ? connectionOptions.cli.migrationsDir : undefined;
+                    directory = connectionOptions.cli ? (connectionOptions.cli.migrationsDir || "") : "";
                 } catch (err) { }
             }
 
-            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+            if (directory && !directory.startsWith("/")) {
+                directory = process.cwd() + "/" + directory;
+            }
+            const path = (directory ? (directory + "/") : "") + filename;
             await CommandUtils.createFile(path, fileContent);
             console.log(`Migration ${chalk.blue(path)} has been generated successfully.`);
 
@@ -82,14 +94,30 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
 export class ${camelCase(name, true)}${timestamp} implements MigrationInterface {
 
-    public async up(queryRunner: QueryRunner): Promise<any> {
+    public async up(queryRunner: QueryRunner): Promise<void> {
     }
 
-    public async down(queryRunner: QueryRunner): Promise<any> {
+    public async down(queryRunner: QueryRunner): Promise<void> {
     }
 
 }
 `;
     }
 
+    /**
+     * Gets contents of the migration file in Javascript.
+     */
+    protected static getJavascriptTemplate(name: string, timestamp: number): string {
+        return `const { MigrationInterface, QueryRunner } = require("typeorm");
+
+module.exports = class ${camelCase(name, true)}${timestamp} {
+
+    async up(queryRunner) {
+    }
+
+    async down(queryRunner) {
+    }
+}
+        `;
+    }
 }

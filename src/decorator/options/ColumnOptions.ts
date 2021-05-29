@@ -1,6 +1,6 @@
 import {ColumnType} from "../../driver/types/ColumnTypes";
 import {ValueTransformer} from "./ValueTransformer";
-import { ColumnCommonOptions } from "./ColumnCommonOptions";
+import {ColumnCommonOptions} from "./ColumnCommonOptions";
 
 /**
  * Describes all column's options.
@@ -128,6 +128,10 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * Array of possible enumerated values.
      */
     enum?: (string|number)[]|Object;
+    /**
+     * Exact name of enum
+     */
+    enumName?: string;
 
     /**
      * Generated column expression. Supports only in MySQL.

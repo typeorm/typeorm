@@ -1,6 +1,6 @@
+import {SapDriver} from "../driver/sap/SapDriver";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Subject} from "./Subject";
-import {PromiseUtils} from "../util/PromiseUtils";
 import {SubjectTopoligicalSorter} from "./SubjectTopoligicalSorter";
 import {SubjectChangedColumnsComputer} from "./SubjectChangedColumnsComputer";
 import {SubjectWithoutIdentifierError} from "../error/SubjectWithoutIdentifierError";
@@ -67,6 +67,16 @@ export class SubjectExecutor {
      */
     protected removeSubjects: Subject[] = [];
 
+    /**
+     * Subjects that must be soft-removed.
+     */
+    protected softRemoveSubjects: Subject[] = [];
+
+    /**
+     * Subjects that must be recovered.
+     */
+    protected recoverSubjects: Subject[] = [];
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -106,6 +116,8 @@ export class SubjectExecutor {
             this.insertSubjects.forEach(subject => subject.recompute());
             this.updateSubjects.forEach(subject => subject.recompute());
             this.removeSubjects.forEach(subject => subject.recompute());
+            this.softRemoveSubjects.forEach(subject => subject.recompute());
+            this.recoverSubjects.forEach(subject => subject.recompute());
             this.recompute();
             // console.timeEnd(".recompute");
         }
@@ -134,6 +146,18 @@ export class SubjectExecutor {
         this.removeSubjects = new SubjectTopoligicalSorter(this.removeSubjects).sort("delete");
         await this.executeRemoveOperations();
         // console.timeEnd(".removal");
+
+        // recompute soft-remove operations
+        this.softRemoveSubjects = this.allSubjects.filter(subject => subject.mustBeSoftRemoved);
+
+        // execute soft-remove operations
+        await this.executeSoftRemoveOperations();
+
+        // recompute recover operations
+        this.recoverSubjects = this.allSubjects.filter(subject => subject.mustBeRecovered);
+
+        // execute recover operations
+        await this.executeRecoverOperations();
 
         // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
         // console.time(".updateSpecialColumnsInPersistedEntities");
@@ -172,7 +196,9 @@ export class SubjectExecutor {
         this.insertSubjects = this.allSubjects.filter(subject => subject.mustBeInserted);
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
         this.removeSubjects = this.allSubjects.filter(subject => subject.mustBeRemoved);
-        this.hasExecutableOperations = this.insertSubjects.length > 0 || this.updateSubjects.length > 0 || this.removeSubjects.length > 0;
+        this.softRemoveSubjects = this.allSubjects.filter(subject => subject.mustBeSoftRemoved);
+        this.recoverSubjects = this.allSubjects.filter(subject => subject.mustBeRecovered);
+        this.hasExecutableOperations = this.insertSubjects.length > 0 || this.updateSubjects.length > 0 || this.removeSubjects.length > 0 || this.softRemoveSubjects.length > 0 || this.recoverSubjects.length > 0;
     }
 
     /**
@@ -186,6 +212,10 @@ export class SubjectExecutor {
             this.updateSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         if (this.removeSubjects.length)
             this.removeSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
+        if (this.softRemoveSubjects.length)
+            this.softRemoveSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
+        if (this.recoverSubjects.length)
+            this.recoverSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         return result;
     }
 
@@ -202,6 +232,10 @@ export class SubjectExecutor {
             this.updateSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         if (this.removeSubjects.length)
             this.removeSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterRemoveEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
+        if (this.softRemoveSubjects.length)
+            this.softRemoveSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
+        if (this.recoverSubjects.length)
+            this.recoverSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         return result;
     }
 
@@ -213,7 +247,7 @@ export class SubjectExecutor {
         const [groupedInsertSubjects, groupedInsertSubjectKeys] = this.groupBulkSubjects(this.insertSubjects, "insert");
 
         // then we run insertion in the sequential order which is important since we have an ordered subjects
-        await PromiseUtils.runInSequence(groupedInsertSubjectKeys, async groupName => {
+        for (const groupName of groupedInsertSubjectKeys) {
             const subjects = groupedInsertSubjects[groupName];
 
             // we must separately insert entities which does not have any values to insert
@@ -249,7 +283,8 @@ export class SubjectExecutor {
                     // - when oracle is used, since oracle's bulk insertion is very bad
                     if (subject.changeMaps.length === 0 ||
                         subject.metadata.treeType ||
-                        this.queryRunner.connection.driver instanceof OracleDriver) {
+                        this.queryRunner.connection.driver instanceof OracleDriver ||
+                        this.queryRunner.connection.driver instanceof SapDriver) {
                         singleInsertSubjects.push(subject);
 
                     } else {
@@ -295,7 +330,7 @@ export class SubjectExecutor {
 
                 // insert subjects which must be inserted in separate requests (all default values)
                 if (singleInsertSubjects.length > 0) {
-                    await PromiseUtils.runInSequence(singleInsertSubjects, async subject => {
+                    for (const subject of singleInsertSubjects) {
                         subject.insertedValueSet = subject.createValueSetAndPopChangeMap(); // important to have because query builder sets inserted values into it
 
                         // for nested set we execute additional queries
@@ -323,7 +358,7 @@ export class SubjectExecutor {
                         } else if (subject.metadata.treeType === "materialized-path") {
                             await new MaterializedPathSubjectExecutor(this.queryRunner).insert(subject);
                         }
-                    });
+                    }
                 }
             }
 
@@ -338,14 +373,14 @@ export class SubjectExecutor {
                     });
                 }
             });
-        });
+        }
     }
 
     /**
      * Updates all given subjects in the database.
      */
     protected async executeUpdateOperations(): Promise<void> {
-        await Promise.all(this.updateSubjects.map(async subject => {
+        const updateSubject = async (subject: Subject) => {
 
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject);
@@ -373,6 +408,21 @@ export class SubjectExecutor {
 
                 const updateMap: ObjectLiteral = subject.createValueSetAndPopChangeMap();
 
+                // for tree tables we execute additional queries
+                switch (subject.metadata.treeType) {
+                    case "nested-set":
+                        await new NestedSetSubjectExecutor(this.queryRunner).update(subject);
+                        break;
+
+                    case "closure-table":
+                        await new ClosureSubjectExecutor(this.queryRunner).update(subject);
+                        break;
+
+                    case "materialized-path":
+                        await new MaterializedPathSubjectExecutor(this.queryRunner).update(subject);
+                        break;
+                }
+
                 // here we execute our updation query
                 // we need to enable entity updation because we update a subject identifier
                 // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
@@ -393,6 +443,157 @@ export class SubjectExecutor {
                 }
 
                 const updateResult = await updateQueryBuilder.execute();
+                let updateGeneratedMap = updateResult.generatedMaps[0];
+                if (updateGeneratedMap) {
+                    subject.metadata.columns.forEach(column => {
+                        const value = column.getEntityValue(updateGeneratedMap!);
+                        if (value !== undefined && value !== null) {
+                            const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                            column.setEntityValue(updateGeneratedMap!, preparedValue);
+                        }
+                    });
+                    if (!subject.generatedMap) {
+                        subject.generatedMap = {};
+                    }
+                    Object.assign(subject.generatedMap, updateGeneratedMap);
+                }
+            }
+        };
+
+        // Nested sets need to be updated one by one
+        // Split array in two, one with nested set subjects and the other with the remaining subjects
+        const nestedSetSubjects: Subject[] = [];
+        const remainingSubjects: Subject[] = [];
+
+        for (const subject of this.updateSubjects) {
+            if (subject.metadata.treeType === "nested-set") {
+                nestedSetSubjects.push(subject);
+            } else {
+                remainingSubjects.push(subject);
+            }
+        }
+
+        // Run nested set updates one by one
+        const nestedSetPromise = new Promise<void>(async (resolve, reject) => {
+            for (const subject of nestedSetSubjects) {
+                try {
+                    await updateSubject(subject);
+                } catch (error) {
+                    reject(error);
+                }
+            }
+            resolve();
+        });
+
+        // Run all remaning subjects in parallel
+        await Promise.all([...remainingSubjects.map(updateSubject), nestedSetPromise]);
+    }
+
+    /**
+     * Removes all given subjects from the database.
+     *
+     * todo: we need to apply topological sort here as well
+     */
+    protected async executeRemoveOperations(): Promise<void> {
+        // group insertion subjects to make bulk insertions
+        const [groupedRemoveSubjects, groupedRemoveSubjectKeys] = this.groupBulkSubjects(this.removeSubjects, "delete");
+
+        for (const groupName of groupedRemoveSubjectKeys) {
+            const subjects = groupedRemoveSubjects[groupName];
+            const deleteMaps = subjects.map(subject => {
+                if (!subject.identifier)
+                    throw new SubjectWithoutIdentifierError(subject);
+
+                return subject.identifier;
+            });
+
+            // for mongodb we have a bit different updation logic
+            if (this.queryRunner instanceof MongoQueryRunner) {
+                const manager = this.queryRunner.manager as MongoEntityManager;
+                await manager.delete(subjects[0].metadata.target, deleteMaps);
+
+            } else {
+                // for tree tables we execute additional queries
+                switch (subjects[0].metadata.treeType) {
+                    case "nested-set":
+                        await new NestedSetSubjectExecutor(this.queryRunner).remove(subjects);
+                        break;
+
+                    case "closure-table":
+                        await new ClosureSubjectExecutor(this.queryRunner).remove(subjects);
+                        break;
+                }
+
+                // here we execute our deletion query
+                // we don't need to specify entities and set update entity to true since the only thing query builder
+                // will do for use is a primary keys deletion which is handled by us later once persistence is finished
+                // also, we disable listeners because we call them on our own in persistence layer
+                await this.queryRunner
+                    .manager
+                    .createQueryBuilder()
+                    .delete()
+                    .from(subjects[0].metadata.target)
+                    .where(deleteMaps)
+                    .callListeners(false)
+                    .execute();
+            }
+        }
+    }
+
+    /**
+     * Soft-removes all given subjects in the database.
+     */
+    protected async executeSoftRemoveOperations(): Promise<void> {
+        await Promise.all(this.softRemoveSubjects.map(async subject => {
+
+            if (!subject.identifier)
+                throw new SubjectWithoutIdentifierError(subject);
+
+            // for mongodb we have a bit different updation logic
+            if (this.queryRunner instanceof MongoQueryRunner) {
+                const partialEntity = OrmUtils.mergeDeep({}, subject.entity!);
+                if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
+                    delete partialEntity[subject.metadata.objectIdColumn.propertyName];
+                }
+
+                if (subject.metadata.createDateColumn && subject.metadata.createDateColumn.propertyName) {
+                    delete partialEntity[subject.metadata.createDateColumn.propertyName];
+                }
+
+                if (subject.metadata.updateDateColumn && subject.metadata.updateDateColumn.propertyName) {
+                    partialEntity[subject.metadata.updateDateColumn.propertyName] = new Date();
+                }
+
+                if (subject.metadata.deleteDateColumn && subject.metadata.deleteDateColumn.propertyName) {
+                    partialEntity[subject.metadata.deleteDateColumn.propertyName] = new Date();
+                }
+
+                const manager = this.queryRunner.manager as MongoEntityManager;
+
+                await manager.update(subject.metadata.target, subject.identifier, partialEntity);
+
+            } else {
+
+                // here we execute our soft-deletion query
+                // we need to enable entity soft-deletion because we update a subject identifier
+                // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                // also, we disable listeners because we call them on our own in persistence layer
+                const softDeleteQueryBuilder = this.queryRunner
+                    .manager
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(subject.metadata.target)
+                    .updateEntity(this.options && this.options.reload === false ? false : true)
+                    .callListeners(false);
+
+                if (subject.entity) {
+                    softDeleteQueryBuilder.whereEntity(subject.identifier);
+
+                } else { // in this case identifier is just conditions object to update by
+                    softDeleteQueryBuilder.where(subject.identifier);
+                }
+
+                const updateResult = await softDeleteQueryBuilder.execute();
                 subject.generatedMap = updateResult.generatedMaps[0];
                 if (subject.generatedMap) {
                     subject.metadata.columns.forEach(column => {
@@ -420,44 +621,83 @@ export class SubjectExecutor {
     }
 
     /**
-     * Removes all given subjects from the database.
-     *
-     * todo: we need to apply topological sort here as well
+     * Recovers all given subjects in the database.
      */
-    protected async executeRemoveOperations(): Promise<void> {
-        // group insertion subjects to make bulk insertions
-        const [groupedRemoveSubjects, groupedRemoveSubjectKeys] = this.groupBulkSubjects(this.removeSubjects, "delete");
+    protected async executeRecoverOperations(): Promise<void> {
+        await Promise.all(this.recoverSubjects.map(async subject => {
 
-        await PromiseUtils.runInSequence(groupedRemoveSubjectKeys, async groupName => {
-            const subjects = groupedRemoveSubjects[groupName];
-            const deleteMaps = subjects.map(subject => {
-                if (!subject.identifier)
-                    throw new SubjectWithoutIdentifierError(subject);
-
-                return subject.identifier;
-            });
+            if (!subject.identifier)
+                throw new SubjectWithoutIdentifierError(subject);
 
             // for mongodb we have a bit different updation logic
             if (this.queryRunner instanceof MongoQueryRunner) {
+                const partialEntity = OrmUtils.mergeDeep({}, subject.entity!);
+                if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
+                    delete partialEntity[subject.metadata.objectIdColumn.propertyName];
+                }
+
+                if (subject.metadata.createDateColumn && subject.metadata.createDateColumn.propertyName) {
+                    delete partialEntity[subject.metadata.createDateColumn.propertyName];
+                }
+
+                if (subject.metadata.updateDateColumn && subject.metadata.updateDateColumn.propertyName) {
+                    partialEntity[subject.metadata.updateDateColumn.propertyName] = new Date();
+                }
+
+                if (subject.metadata.deleteDateColumn && subject.metadata.deleteDateColumn.propertyName) {
+                    partialEntity[subject.metadata.deleteDateColumn.propertyName] = null;
+                }
+
                 const manager = this.queryRunner.manager as MongoEntityManager;
-                await manager.delete(subjects[0].metadata.target, deleteMaps);
+
+                await manager.update(subject.metadata.target, subject.identifier, partialEntity);
 
             } else {
 
-                // here we execute our deletion query
-                // we don't need to specify entities and set update entity to true since the only thing query builder
-                // will do for use is a primary keys deletion which is handled by us later once persistence is finished
+                // here we execute our restory query
+                // we need to enable entity restory because we update a subject identifier
+                // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
                 // also, we disable listeners because we call them on our own in persistence layer
-                await this.queryRunner
+                const softDeleteQueryBuilder = this.queryRunner
                     .manager
                     .createQueryBuilder()
-                    .delete()
-                    .from(subjects[0].metadata.target)
-                    .where(deleteMaps)
-                    .callListeners(false)
-                    .execute();
+                    .restore()
+                    .from(subject.metadata.target)
+                    .updateEntity(this.options && this.options.reload === false ? false : true)
+                    .callListeners(false);
+
+                if (subject.entity) {
+                    softDeleteQueryBuilder.whereEntity(subject.identifier);
+
+                } else { // in this case identifier is just conditions object to update by
+                    softDeleteQueryBuilder.where(subject.identifier);
+                }
+
+                const updateResult = await softDeleteQueryBuilder.execute();
+                subject.generatedMap = updateResult.generatedMaps[0];
+                if (subject.generatedMap) {
+                    subject.metadata.columns.forEach(column => {
+                        const value = column.getEntityValue(subject.generatedMap!);
+                        if (value !== undefined && value !== null) {
+                            const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                            column.setEntityValue(subject.generatedMap!, preparedValue);
+                        }
+                    });
+                }
+
+                // experiments, remove probably, need to implement tree tables children removal
+                // if (subject.updatedRelationMaps.length > 0) {
+                //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
+                //         if (!updatedRelation.relation.isTreeParent) return;
+                //         if (!updatedRelation.value !== null) return;
+                //
+                //         if (subject.metadata.treeType === "closure-table") {
+                //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
+                //         }
+                //     }));
+                // }
             }
-        });
+        }));
     }
 
     /**
@@ -473,6 +713,14 @@ export class SubjectExecutor {
         // update updated entity properties
         if (this.updateSubjects.length)
             this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.updateSubjects);
+
+        // update soft-removed entity properties
+        if (this.updateSubjects.length)
+            this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.softRemoveSubjects);
+
+        // update recovered entity properties
+        if (this.updateSubjects.length)
+            this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.recoverSubjects);
 
         // remove ids from the entities that were removed
         if (this.removeSubjects.length) {

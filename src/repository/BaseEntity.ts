@@ -46,15 +46,29 @@ export class BaseEntity {
      * Saves current entity in the database.
      * If entity does not exist in the database then inserts, otherwise updates.
      */
-    save(): Promise<this> {
-        return (this.constructor as any).getRepository().save(this);
+    save(options?: SaveOptions): Promise<this> {
+        return (this.constructor as any).getRepository().save(this, options);
     }
 
     /**
      * Removes current entity from the database.
      */
-    remove(): Promise<this> {
-        return (this.constructor as any).getRepository().remove(this);
+    remove(options?: RemoveOptions): Promise<this> {
+        return (this.constructor as any).getRepository().remove(this, options);
+    }
+
+    /**
+     * Records the delete date of current entity.
+     */
+    softRemove(options?: SaveOptions): Promise<this> {
+        return (this.constructor as any).getRepository().softRemove(this, options);
+    }
+
+    /**
+     * Recovers a given entity in the database.
+     */
+    recover(options?: SaveOptions): Promise<this> {
+        return (this.constructor as any).getRepository().recover(this, options);
     }
 
     /**
@@ -126,7 +140,7 @@ export class BaseEntity {
      * Creates a new entities and copies all entity properties from given objects into their new entities.
      * Note that it copies only properties that present in entity schema.
      */
-    static create<T extends BaseEntity>(this: ObjectType<T>, entityLikeArray: DeepPartial<T>[]): T;
+    static create<T extends BaseEntity>(this: ObjectType<T>, entityLikeArray: DeepPartial<T>[]): T[];
 
     /**
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
@@ -149,7 +163,7 @@ export class BaseEntity {
     }
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * Creates a new entity from the given plain javascript object. If entity already exist in the database, then
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
@@ -198,6 +212,23 @@ export class BaseEntity {
     }
 
     /**
+     * Records the delete date of all given entities.
+     */
+    static softRemove<T extends BaseEntity>(this: ObjectType<T>, entities: T[], options?: SaveOptions): Promise<T[]>;
+
+    /**
+     * Records the delete date of a given entity.
+     */
+    static softRemove<T extends BaseEntity>(this: ObjectType<T>, entity: T, options?: SaveOptions): Promise<T>;
+
+    /**
+     * Records the delete date of one or many given entities.
+     */
+    static softRemove<T extends BaseEntity>(this: ObjectType<T>, entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
+        return (this as any).getRepository().softRemove(entityOrEntities as any, options);
+    }
+
+    /**
      * Inserts a given entity into the database.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT query.
@@ -219,7 +250,7 @@ export class BaseEntity {
 
     /**
      * Deletes entities by a given criteria.
-     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Unlike remove method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
      */

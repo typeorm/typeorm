@@ -11,8 +11,8 @@ To learn more about hierarchy table take a look at [this awesome presentation by
 
 ## Adjacency list
 
-Adjacency list is a simple model with self-referencing. 
-The benefit of this approach is simplicity, 
+Adjacency list is a simple model with self-referencing.
+The benefit of this approach is simplicity,
 drawback is that you can't load big trees in all at once because of join limitations.
 To learn more about the benefits and use of Adjacency Lists look at [this article by Matthew Schinckel](http://schinckel.net/2014/09/13/long-live-adjacency-lists/).
 Example:
@@ -38,7 +38,7 @@ export class Category {
     @OneToMany(type => Category, category => category.parent)
     children: Category[];
 }
-     
+
 ```
 
 ## Nested set
@@ -98,7 +98,7 @@ export class Category {
 
 ## Closure table
 
-Closure table stores relations between parent and child in a separate table in a special way. 
+Closure table stores relations between parent and child in a separate table in a special way.
 It's efficient in both reads and writes.
 Example:
 
@@ -122,6 +122,19 @@ export class Category {
     parent: Category;
 }
 ```
+
+You can specify closure table name and / or closure table columns names by setting optional parameter `options` into `@Tree("closure-table", options)`. `ancestorColumnName` and `descandantColumnName` are callback functions, which receive primary column's metadata and return column's name.
+
+```ts
+@Tree("closure-table", {
+    closureTableName: "category_closure",
+    ancestorColumnName: (column) => "ancestor_" + column.propertyName,
+    descendantColumnName: (column) => "descendant_" + column.propertyName,
+})
+```
+
+### Note:
+Updating or removing a component's parent has not been implemented yet ([see this issue](https://github.com/typeorm/typeorm/issues/2032)). The closure table will need to be explicitly updated to do either of these operations.
 
 ## Working with tree entities
 
@@ -186,7 +199,7 @@ const trees = await manager.getTreeRepository(Category).findTrees();
 }]
 ```
 
-There are other special methods to work with tree entities thought `TreeRepository`:
+There are other special methods to work with tree entities through `TreeRepository`:
 
 * `findTrees` - Returns all trees in the database with all their children, children of children, etc.
 

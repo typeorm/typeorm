@@ -93,9 +93,9 @@ Most tests will benefit from using this template as a starting point:
 
 ```ts
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
+import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { Connection } from "../../../src/connection/Connection";
+import { expect } from "chai";
 
 describe("github issues > #<issue number> <issue title>", () => {
 
@@ -148,6 +148,14 @@ describe.only('your describe test', ....)
 >```
 >
 >This is useful when trying to get a specific test or subset of tests to pass.
+
+### Faster developer cycle for editing code and running tests
+
+The `npm test` script works by deleting built TypeScript code, rebuilding the codebase, and then running tests. This can take a long time.
+
+Instead, for a quicker feedback cycle, you can run `npm run compile -- --watch` to make a fresh build and instruct TypeScript to watch for changes and only compile what code you've changed.
+
+Once TypeScript finishes compiling your changes, you can run `npm run test-fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
 
 ## Using Docker
 

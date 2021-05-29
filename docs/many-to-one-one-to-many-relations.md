@@ -17,7 +17,7 @@ export class Photo {
     @Column()
     url: string;
     
-    @ManyToOne(type => User, user => user.photos)
+    @ManyToOne(() => User, user => user.photos)
     user: User;
     
 }
@@ -36,7 +36,7 @@ export class User {
     @Column()
     name: string;
     
-    @OneToMany(type => Photo, photo => photo.user)
+    @OneToMany(() => Photo, photo => photo.user)
     photos: Photo[];
     
 }
@@ -45,7 +45,7 @@ export class User {
 Here we added `@OneToMany` to the `photos` property and specified the target relation type to be `Photo`.
 You can omit `@JoinColumn` in a `@ManyToOne` / `@OneToMany` relation.
 `@OneToMany` cannot exist without `@ManyToOne`.
-If you want to use `@OneToMany`, `@ManyToOne` is required.
+If you want to use `@OneToMany`, `@ManyToOne` is required. However, the inverse is not required: If you only care about the `@ManyToOne` relationship, you can define it without having `@OneToMany` on the related entity.
 Where you set `@ManyToOne` - its related entity will have "relation id" and foreign key.
 
 This example will produce following tables:
@@ -56,7 +56,7 @@ This example will produce following tables:
 +-------------+--------------+----------------------------+
 | id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
 | url         | varchar(255) |                            |
-| userId      | int(11)      |                            |
+| userId      | int(11)      | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 
 +-------------+--------------+----------------------------+
@@ -84,7 +84,7 @@ user.photos = [photo1, photo2];
 await connection.manager.save(user);
 ```
 
-or alternative you can do:
+or alternatively you can do:
 
 ```typescript
 const user = new User();
@@ -102,7 +102,7 @@ photo2.user = user;
 await connection.manager.save(photo2);
 ```
 
-With cascades enabled you can save this relation with only one `save` call.
+With [cascades](#/relations/cascades) enabled you can save this relation with only one `save` call.
 
 To load a user with photos inside you must specify the relation in `FindOptions`:
  

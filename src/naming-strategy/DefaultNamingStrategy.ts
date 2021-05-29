@@ -27,11 +27,13 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return originalClosureTableName + "_closure";
     }
 
-    columnName(propertyName: string, customName: string, embeddedPrefixes: string[]): string { // todo: simplify
-        if (embeddedPrefixes.length)
-            return camelCase(embeddedPrefixes.join("_")) + (customName ? titleCase(customName) : titleCase(propertyName));
+    columnName(propertyName: string, customName: string, embeddedPrefixes: string[]): string {
+        const name = customName || propertyName;
 
-        return customName ? customName : propertyName;
+        if (embeddedPrefixes.length)
+            return camelCase(embeddedPrefixes.join("_")) + titleCase(name);
+
+        return name;
     }
 
     relationName(propertyName: string): string {
@@ -78,7 +80,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "DF_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
-    foreignKeyName(tableOrName: Table|string, columnNames: string[]): string {
+    foreignKeyName(tableOrName: Table|string, columnNames: string[], _referencedTablePath?: string, _referencedColumnNames?: string[]): string {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
         const clonedColumnNames = [...columnNames];
         clonedColumnNames.sort();
@@ -101,11 +103,12 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "IDX_" + RandomGenerator.sha1(key).substr(0, 26);
     }
 
-    checkConstraintName(tableOrName: Table|string, expression: string): string {
+    checkConstraintName(tableOrName: Table|string, expression: string, isEnum?: boolean): string {
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const replacedTableName = tableName.replace(".", "_");
         const key = `${replacedTableName}_${expression}`;
-        return "CHK_" + RandomGenerator.sha1(key).substr(0, 26);
+        const name = "CHK_" + RandomGenerator.sha1(key).substr(0, 26);
+        return isEnum ? `${name}_ENUM` : name;
     }
 
     exclusionConstraintName(tableOrName: Table|string, expression: string): string {
@@ -151,4 +154,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     eagerJoinRelationAlias(alias: string, propertyPath: string): string {
         return alias + "_" + propertyPath.replace(".", "_");
     }
+
+    nestedSetColumnNames = { left: "nsleft", right: "nsright" };
+    materializedPathColumnName = "mpath";
 }

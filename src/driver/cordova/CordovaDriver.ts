@@ -5,6 +5,7 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {Connection} from "../../connection/Connection";
 import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 // needed for typescript compiler
 interface Window {
@@ -15,7 +16,7 @@ declare var window: Window;
 
 export class CordovaDriver extends AbstractSqliteDriver {
     options: CordovaConnectionOptions;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -37,7 +38,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
         // load sqlite package
         this.loadDependencies();
     }
-    
+
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -52,17 +53,17 @@ export class CordovaDriver extends AbstractSqliteDriver {
             this.databaseConnection.close(ok, fail);
         });
     }
-    
+
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+    createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner)
             this.queryRunner = new CordovaQueryRunner(this);
 
         return this.queryRunner;
     }
-    
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

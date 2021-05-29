@@ -44,8 +44,10 @@ createConnection(options).then(connection => {
         .save(entity)
         .then(entity => {
             console.log("EverythingEntity has been saved. Lets insert a new one to update it later");
-            delete entity.id;
-            return postRepository.save(entity);
+            return postRepository.save({
+                ...entity,
+                id: undefined
+            }) as Promise<EverythingEntity>;
         })
         .then(entity => {
             console.log("Second entity has been inserted. Lets update it");
@@ -74,9 +76,10 @@ createConnection(options).then(connection => {
         })
         .then(entity => {
             console.log("Entity has been updated. Persist once again to make find and remove then");
-
-            delete entity.id;
-            return postRepository.save(entity);
+            return postRepository.save({
+                ...entity,
+                id: undefined
+            }) as Promise<EverythingEntity>;
         })
         .then(entity => {
             return postRepository.findOne(entity.id);

@@ -5,6 +5,7 @@
   - [`mysql`/`mariadb`](#mysql/mariadb)
   - [`postgres`/`cockroachdb`连接选项](#postgres/cockroachdb连接选项)
   - [`sqlite`](#sqlite)
+  - [`better-sqlite3`](#better-sqlite3)
   - [`cordova`](#cordova)
   - [`react-native`](#react-native)
   - [`nativescript`](#nativescript)
@@ -20,7 +21,7 @@
 
 ## 常用的连接选项
 
-- `type` - 数据库类型。你必须指定要使用的数据库引擎。该值可以是"mysql"，"postgres"，"mariadb"，"sqlite"，"cordova"，"nativescript"，"oracle"，"mssql"，"mongodb"，"sqljs"，"react-native"。此选项是**必需**的。
+- `type` - 数据库类型。你必须指定要使用的数据库引擎。该值可以是"mysql"，"postgres"，"mariadb"，"sqlite", "better-sqlite3"，"cordova"，"nativescript"，"oracle"，"mssql"，"mongodb"，"sqljs"，"react-native"。此选项是**必需**的。
 
 - `name` - 连接名。 在使用 `getConnection(name: string)`
   或 `ConnectionManager.get(name: string)`时候需要用到。不同连接的连接名称不能相同，它们都必须是唯一的。如果没有给出连接名称，那么它将被设置为"default"。
@@ -98,6 +99,8 @@
 
 - `multipleStatements` - 每个查询允许多个 mysql 语句。请注意，它可能会增加 SQL 注入攻击的范围。 （默认值：`false`）
 
+- `legacySpatialSupport` - Use spatial functions like GeomFromText and AsText which are removed in MySQL 8. (Default: true)
+
 - `flags` - 使用非默认连接标志的连接标志列表。也可以将默认值列入黑名单。有关更多信息，请查看[Connection Flags](https://github.com/mysqljs/mysql#connection-flags)。
 
 - `ssl` - 带有 ssl 参数的对象或包含 ssl 配置文件名称的字符串。请参阅[SSL 选项](https://github.com/mysqljs/mysql#ssl-options)。
@@ -125,6 +128,14 @@
 ## `sqlite`
 
 - `database` - 数据库路径。 例如 "./mydb.sql"
+
+## `better-sqlite3`
+
+* `database` - 数据库路径。 例如 "./mydb.sql"
+
+* `statementCacheSize` - Sqlite 查询 Statement 缓存大小。默认100
+
+* `prepareDatabase` - 在数据库投入使用前运行的函数。你可以在这里访问到better-sqlite3原始数据库对象。
 
 ## `cordova`
 
@@ -372,6 +383,8 @@
 
 - `database`: 应导入的原始 UInt8Array 数据库。
 
+- `sqlJsConfig`: sql.js可选启动配置
+
 - `autoSave`: 是否应禁用 autoSave。如果设置为 true，则在发生更改并指定`location`时，数据库将保存到给定的文件位置（Node.js）或 LocalStorage（浏览器）。否则可以使用`autoSaveCallback`。
 
 - `autoSaveCallback`: 在对数据库进行更改并启用`autoSave`时调用的函数。该函数获取表示数据库的`UInt8Array`。
@@ -383,6 +396,7 @@
 ## `expo`
 
 - `database` - 数据库名， 例如 "mydb".
+- `driver` - Expo SQLite 模块. 例如，`require('expo-sqlite')`.
 
 ## 连接选项示例
 

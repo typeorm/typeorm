@@ -10,7 +10,9 @@ describe("github issues > #2518 TreeRepository.findDescendantsTree does not load
     before(
         async () =>
         (connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"]
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            // data type text isn't compatible with oracle
+            enabledDrivers: ["postgres", "cockroachdb", "mariadb", "mssql", "mysql", "sqlite", "better-sqlite3", "sqljs"]
         }))
     );
 

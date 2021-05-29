@@ -20,6 +20,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
 
         // create
         const token = new AccessToken();
+        token.expireTime = 60000;
         const user = new User();
         user.email = "mwelnick@test.com";
         user.access_token = token; // this is not necessary at all
@@ -37,6 +38,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
         expect(tokens).not.to.be.undefined;
         tokens.should.be.eql([{
             primaryKey: 1,
+            expireTime: 60000,
             user: {
                 primaryKey: 1,
                 email: "mwelnick@test.com",
@@ -54,7 +56,8 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
             primaryKey: 1,
             email: "mwelnick@test.com",
             access_token: {
-                primaryKey: 1
+                primaryKey: 1,
+                expireTime: 60000,
             }
         }]);
 

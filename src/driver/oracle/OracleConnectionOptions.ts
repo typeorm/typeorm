@@ -17,6 +17,11 @@ export interface OracleConnectionOptions extends BaseConnectionOptions, OracleCo
     readonly schema?: string;
 
     /**
+    * A boolean determining whether to pass time values in UTC or local time. (default: true).
+    */
+    readonly useUTC?: boolean;
+
+    /**
      * Replication setup.
      */
     readonly replication?: {

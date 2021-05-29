@@ -6,21 +6,21 @@ import {ExclusionMetadataArgs} from "../metadata-args/ExclusionMetadataArgs";
  * Can be used on entity.
  * Can create exclusions with composite columns when used on entity.
  */
-export function Exclusion(expression: string): Function;
+export function Exclusion(expression: string): ClassDecorator & PropertyDecorator;
 
 /**
  * Creates a database exclusion.
  * Can be used on entity.
  * Can create exclusions with composite columns when used on entity.
  */
-export function Exclusion(name: string, expression: string): Function;
+export function Exclusion(name: string, expression: string): ClassDecorator & PropertyDecorator;
 
 /**
  * Creates a database exclusion.
  * Can be used on entity.
  * Can create exclusions with composite columns when used on entity.
  */
-export function Exclusion(nameOrExpression: string, maybeExpression?: string): Function {
+export function Exclusion(nameOrExpression: string, maybeExpression?: string): ClassDecorator & PropertyDecorator {
 
     const name = maybeExpression ? nameOrExpression : undefined;
     const expression = maybeExpression ? maybeExpression : nameOrExpression;
@@ -28,7 +28,7 @@ export function Exclusion(nameOrExpression: string, maybeExpression?: string): F
     if (!expression)
         throw new Error(`Exclusion expression is required`);
 
-    return function (clsOrObject: Function|Object, propertyName?: string) {
+    return function (clsOrObject: Function|Object, propertyName?: string | symbol) {
 
         getMetadataArgsStorage().exclusions.push({
             target: propertyName ? clsOrObject.constructor : clsOrObject as Function,

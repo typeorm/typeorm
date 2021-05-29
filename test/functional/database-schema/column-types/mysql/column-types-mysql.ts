@@ -61,12 +61,12 @@ describe("database schema > column types > mysql", () => {
         post.timestamp.setMilliseconds(0); // set milliseconds to zero, because if datetime type specified without precision, milliseconds won't save in database
         post.time = "15:30:00";
         post.year = 2017;
-        post.binary = new Buffer("A");
-        post.varbinary = new Buffer("B");
-        post.blob = new Buffer("This is blob");
-        post.tinyblob = new Buffer("This is tinyblob");
-        post.mediumblob = new Buffer("This is mediumblob");
-        post.longblob = new Buffer("This is longblob");
+        post.binary = Buffer.from("A");
+        post.varbinary = Buffer.from("B");
+        post.blob = Buffer.from("This is blob");
+        post.tinyblob = Buffer.from("This is tinyblob");
+        post.mediumblob = Buffer.from("This is mediumblob");
+        post.longblob = Buffer.from("This is longblob");
         post.geometry = "POINT(1 1)";
         post.point = "POINT(1 1)";
         post.linestring = "LINESTRING(0 0,1 1,2 2)";
@@ -278,7 +278,7 @@ describe("database schema > column types > mysql", () => {
         post.id = 1;
         post.name = "Post";
         post.boolean = true;
-        post.blob = new Buffer("A");
+        post.blob = Buffer.from("A");
         post.datetime = new Date();
         post.datetime.setMilliseconds(0); // set milliseconds to zero, because if datetime type specified without precision, milliseconds won't save in database
         await postRepository.save(post);

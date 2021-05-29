@@ -2,7 +2,7 @@ import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {ObjectType} from "../common/ObjectType";
+import {EntityTarget} from "../common/EntityTarget";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -15,6 +15,8 @@ import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../index";
+import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -38,7 +40,8 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createDeleteExpression();
+        let sql = this.createComment();
+        sql += this.createDeleteExpression();
         return sql.trim();
     }
 
@@ -74,6 +77,10 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 deleteResult.raw = result;
                 deleteResult.affected = result.affectedRows;
 
+            } else if (driver instanceof AuroraDataApiDriver) {
+                deleteResult.raw = result;
+                deleteResult.affected = result.numberOfRecordsUpdated;
+
             } else if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                 deleteResult.raw = result[0] ? result[0] : null;
                 // don't return 0 because it could confuse. null means that we did not receive this value
@@ -81,6 +88,10 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             } else if (driver instanceof OracleDriver) {
                 deleteResult.affected = result;
+
+            } else if (driver instanceof BetterSqlite3Driver) { // only works for better-sqlite3
+                deleteResult.raw = result;
+                deleteResult.affected = result.changes;
 
             } else {
                 deleteResult.raw = result;
@@ -127,7 +138,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    from<T>(entityTarget: ObjectType<T>|EntitySchema<T>|string, aliasName?: string): DeleteQueryBuilder<T> {
+    from<T>(entityTarget: EntityTarget<T>, aliasName?: string): DeleteQueryBuilder<T> {
         entityTarget = entityTarget instanceof EntitySchema ? entityTarget.options.name : entityTarget;
         const mainAlias = this.createFromAlias(entityTarget, aliasName);
         this.expressionMap.setMainAlias(mainAlias);

@@ -68,7 +68,7 @@ using `eager: true` on both sides of relationship is disallowed.
 
 Entities in lazy relations are loaded once you access them. 
 Such relations must have `Promise` as type - you store your value in a promise,
-and when you load them promise is returned as well. Example:
+and when you load them a promise is returned as well. Example:
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, ManyToMany} from "typeorm";

@@ -261,6 +261,22 @@ const loadedPosts = await connection.getRepository(Post).find({
 SELECT * FROM "post" WHERE "title" LIKE '%out #%'
 ```
 
+-   `ILike`
+
+```ts
+import { ILike } from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    title: ILike("%out #%")
+});
+```
+
+将执行以下查询：
+
+```sql
+SELECT * FROM "post" WHERE "title" ILIKE '%out #%'
+```
+
 -   `Between`
 
 ```ts

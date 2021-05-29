@@ -30,7 +30,7 @@ await getConnection()
     .set({ 
         firstName: "Timber", 
         lastName: "Saw",
-        age: () => "'age' + 1"
+        age: () => "age + 1"
     })
     .where("id = :id", { id: 1 })
     .execute();

@@ -1,3 +1,5 @@
+import shajs from "sha.js";
+
 /**
  * Converts string into camelCase.
  *
@@ -12,7 +14,7 @@ export function camelCase(str: string, firstCapital: boolean = false): string {
 }
 
 /**
- * Converts string into snake-case.
+ * Converts string into snake_case.
  *
  * @see https://regex101.com/r/QeSm2I/1
  */
@@ -21,7 +23,7 @@ export function snakeCase(str: string) {
 }
 
 /**
- * Converts string into title-case.
+ * Converts string into Title Case.
  *
  * @see http://stackoverflow.com/questions/196972/convert-string-to-title-case-with-javascript
  */
@@ -87,4 +89,28 @@ export interface IShortenOptions {
     }, []);
 
     return shortSegments.join(separator);
+  }
+
+interface IHashOptions {
+    length?: number;
+}
+
+/**
+ * Returns a hashed input.
+ *
+ * @param input String to be hashed.
+ * @param options.length Optionally, shorten the output to desired length.
+ */
+export function hash(input: string, options: IHashOptions = {}): string {
+    const hashFunction = shajs("sha256");
+
+    hashFunction.update(input, "utf8");
+
+    const hashedInput = hashFunction.digest("hex");
+
+    if (options.length) {
+        return hashedInput.slice(0, options.length);
+    }
+
+    return hashedInput;
   }
