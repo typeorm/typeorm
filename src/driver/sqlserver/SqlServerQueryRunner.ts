@@ -364,12 +364,28 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<string> {
+        const currentDBQuery = await this.query(`SELECT DB_NAME() AS "db_name"`);
+        return currentDBQuery[0]["db_name"];
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         const result = await this.query(`SELECT SCHEMA_ID('${schema}') as "schema_id"`);
         const schemaId = result[0]["schema_id"];
         return !!schemaId;
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<string> {
+        const currentSchemaQuery = await this.query(`SELECT SCHEMA_NAME() AS "schema_name"`);
+        return currentSchemaQuery[0]["schema_name"];
     }
 
     /**
@@ -1288,6 +1304,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const metadata = this.connection.hasMetadata(table.name) ? this.connection.getMetadata(table.name) : undefined;
+
+        if (metadata && metadata.treeParentRelation && metadata.treeParentRelation!.isTreeParent && metadata.foreignKeys.find(foreignKey => foreignKey.onDelete !== "NO ACTION"))
+            throw new Error("SqlServer does not support options in TreeParent.");
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
@@ -1443,22 +1463,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Return current database.
-     */
-    protected async getCurrentDatabase(): Promise<string> {
-        const currentDBQuery = await this.query(`SELECT DB_NAME() AS "db_name"`);
-        return currentDBQuery[0]["db_name"];
-    }
-
-    /**
-     * Return current schema.
-     */
-    protected async getCurrentSchema(): Promise<string> {
-        const currentSchemaQuery = await this.query(`SELECT SCHEMA_NAME() AS "schema_name"`);
-        return currentSchemaQuery[0]["schema_name"];
-    }
 
     protected async loadViews(viewPaths: string[]): Promise<View[]> {
         const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
@@ -1655,10 +1659,16 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         return await Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
 
+            const getSchemaFromKey = (dbObject: any, key: string) => {
+                return dbObject[key] === currentSchema && (!this.driver.options.schema || this.driver.options.schema === currentSchema)
+                    ? undefined
+                    : dbObject[key]
+            };
+
             // We do not need to join schema and database names, when db or schema is by default.
             // In this case we need local variable `tableFullName` for below comparision.
             const db = dbTable["TABLE_CATALOG"] === currentDatabase ? undefined : dbTable["TABLE_CATALOG"];
-            const schema = dbTable["TABLE_SCHEMA"] === currentSchema && !this.driver.options.schema ? undefined : dbTable["TABLE_SCHEMA"];
+            const schema = getSchemaFromKey(dbTable, "TABLE_SCHEMA");
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema, db);
             const tableFullName = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLE_SCHEMA"], dbTable["TABLE_CATALOG"]);
             const defaultCollation = dbCollations.find(dbCollation => dbCollation["NAME"] === dbTable["TABLE_CATALOG"])!;
@@ -1795,7 +1805,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                 // if referenced table located in currently used db and schema, we don't need to concat db and schema names to table name.
                 const db = dbForeignKey["TABLE_CATALOG"] === currentDatabase ? undefined : dbForeignKey["TABLE_CATALOG"];
-                const schema = dbForeignKey["REF_SCHEMA"] === currentSchema ? undefined : dbForeignKey["REF_SCHEMA"];
+                const schema = getSchemaFromKey(dbTable, "REF_SCHEMA");
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["REF_TABLE"], schema, db);
 
                 return new TableForeignKey({

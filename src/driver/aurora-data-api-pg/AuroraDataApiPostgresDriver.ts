@@ -5,6 +5,8 @@ import {Connection} from "../../connection/Connection";
 import {AuroraDataApiPostgresConnectionOptions} from "../aurora-data-api-pg/AuroraDataApiPostgresConnectionOptions";
 import {AuroraDataApiPostgresQueryRunner} from "../aurora-data-api-pg/AuroraDataApiPostgresQueryRunner";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 
 abstract class PostgresWrapper extends PostgresDriver {
     options: any;
@@ -27,6 +29,8 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
      * Aurora Data API underlying library.
      */
     DataApiDriver: any;
+
+    client: any;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -54,6 +58,16 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
 
         // load data-api package
         this.loadDependencies();
+
+        this.client = new this.DataApiDriver(
+            this.options.region,
+            this.options.secretArn,
+            this.options.resourceArn,
+            this.options.database,
+            (query: string, parameters?: any[]) => this.connection.logger.logQuery(query, parameters),
+            this.options.serviceConfigOptions,
+            this.options.formatOptions,
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -91,6 +105,34 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
             ),
             mode
         );
+    }
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (this.options.formatOptions && this.options.formatOptions.castParameters === false) {
+            return super.preparePersistentValue(value, columnMetadata)
+        }
+
+        if (columnMetadata.transformer)
+            value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
+
+        return this.client.preparePersistentValue(value, columnMetadata)
+    }
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (this.options.formatOptions && this.options.formatOptions.castParameters === false) {
+            return super.prepareHydratedValue(value, columnMetadata)
+        }
+
+        if (columnMetadata.transformer)
+            value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
+
+        return this.client.prepareHydratedValue(value, columnMetadata)
     }
 
     // -------------------------------------------------------------------------

@@ -247,10 +247,26 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Loads currently using database
+     */
+    async getCurrentDatabase(): Promise<undefined> {
+        const query = await this.query(`SELECT SYS_CONTEXT('USERENV','DB_NAME') AS "db_name" FROM dual`)
+        return query[0]["db_name"]
+    }
+
+    /**
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
         return Promise.resolve(false);
+    }
+
+    /**
+     * Loads currently using database schema
+     */
+    async getCurrentSchema(): Promise<string> {
+        const query = await this.query(`SELECT SYS_CONTEXT('USERENV','CURRENT_SCHEMA') AS "schema_name" FROM dual`)
+        return query[0]["schema_name"]
     }
 
     /**
@@ -1137,10 +1153,17 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     async clearDatabase(): Promise<void> {
         await this.startTransaction();
         try {
+            // drop views
             const dropViewsQuery = `SELECT 'DROP VIEW "' || VIEW_NAME || '"' AS "query" FROM "USER_VIEWS"`;
             const dropViewQueries: ObjectLiteral[] = await this.query(dropViewsQuery);
             await Promise.all(dropViewQueries.map(query => this.query(query["query"])));
 
+            // drop materialized views
+            const dropMatViewsQuery = `SELECT 'DROP MATERIALIZED VIEW "' || MVIEW_NAME || '"' AS "query" FROM "USER_MVIEWS"`;
+            const dropMatViewQueries: ObjectLiteral[] = await this.query(dropMatViewsQuery);
+            await Promise.all(dropMatViewQueries.map(query => this.query(query["query"])));
+
+            // drop tables
             const dropTablesQuery = `SELECT 'DROP TABLE "' || TABLE_NAME || '" CASCADE CONSTRAINTS' AS "query" FROM "USER_TABLES"`;
             const dropTableQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
             await Promise.all(dropTableQueries.map(query => this.query(query["query"])));
@@ -1165,7 +1188,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             return Promise.resolve([]);
 
         const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
-        let query = `SELECT "T".* FROM "${this.getTypeormMetadataTableName()}" "T" INNER JOIN "USER_VIEWS" "V" ON "V"."VIEW_NAME" = "T"."name" WHERE "T"."type" = 'VIEW'`;
+        let query = `SELECT "T".* FROM "${this.getTypeormMetadataTableName()}" "T" ` +
+            `INNER JOIN "USER_OBJECTS" "O" ON "O"."OBJECT_NAME" = "T"."name" AND "O"."OBJECT_TYPE" IN ( 'MATERIALIZED VIEW', 'VIEW' ) ` +
+            `WHERE "T"."type" IN ( 'MATERIALIZED_VIEW', 'VIEW' )`;
         if (viewNamesString.length > 0)
             query += ` AND "T"."name" IN (${viewNamesString})`;
         const dbViews = await this.query(query);
@@ -1173,6 +1198,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const view = new View();
             view.name = dbView["name"];
             view.expression = dbView["value"];
+            view.materialized = dbView["type"] === "MATERIALIZED_VIEW";
             return view;
         });
     }
@@ -1428,10 +1454,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     protected insertViewDefinitionSql(view: View): Query {
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
+        const type = view.materialized ? "MATERIALIZED_VIEW" : "VIEW"
         const [query, parameters] = this.connection.createQueryBuilder()
             .insert()
             .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", name: view.name, value: expression })
+            .values({ type: type, name: view.name, value: expression })
             .getQueryAndParameters();
 
         return new Query(query, parameters);
@@ -1440,21 +1467,21 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Builds drop view sql.
      */
-    protected dropViewSql(viewOrPath: View|string): Query {
-        const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
-        return new Query(`DROP VIEW "${viewName}"`);
+    protected dropViewSql(view: View): Query {
+        const materializedClause = view.materialized ? "MATERIALIZED " : "";
+        return new Query(`DROP ${materializedClause}VIEW "${view.name}"`);
     }
 
     /**
      * Builds remove view sql.
      */
-    protected deleteViewDefinitionSql(viewOrPath: View|string): Query {
-        const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
+    protected deleteViewDefinitionSql(view: View): Query {
         const qb = this.connection.createQueryBuilder();
+        const type = view.materialized ? "MATERIALIZED_VIEW" : "VIEW"
         const [query, parameters] = qb.delete()
             .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = 'VIEW'`)
-            .andWhere(`${qb.escape("name")} = :name`, { name: viewName })
+            .where(`${qb.escape("type")} = :type`, { type })
+            .andWhere(`${qb.escape("name")} = :name`, { name: view.name })
             .getQueryAndParameters();
 
         return new Query(query, parameters);

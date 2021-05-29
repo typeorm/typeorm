@@ -1,3 +1,41 @@
+## 0.2.33 (UNRELEASED)
+
+### Bug fixes
+
+### Features
+
+* added capacitor driver ([#7695](https://github.com/typeorm/typeorm/pull/7695))
+
+## [0.2.32](https://github.com/typeorm/typeorm/compare/0.2.31...0.2.32) (2021-03-30)
+
+### Bug Fixes
+
+* aurora-data-api get correct increment primary key for multiple entities inserted ([#7434](https://github.com/typeorm/typeorm/issues/7434)) ([fc8af5f](https://github.com/typeorm/typeorm/commit/fc8af5f5289ea13d3f152efbd0b800917ca0306a)), closes [#7385](https://github.com/typeorm/typeorm/issues/7385)
+* aurora-data-api return number of affected rows in UpdatedResult and DeleteResult ([#7433](https://github.com/typeorm/typeorm/issues/7433)) ([46aba1d](https://github.com/typeorm/typeorm/commit/46aba1d1b947c9b03ba2661367427a818be46324)), closes [#7386](https://github.com/typeorm/typeorm/issues/7386)
+* RelationLoader load with existing queryRunner ([#7471](https://github.com/typeorm/typeorm/issues/7471)) ([2dcb493](https://github.com/typeorm/typeorm/commit/2dcb493d55d95536ba4c2085c8f7af740be9ec72)), closes [#5338](https://github.com/typeorm/typeorm/issues/5338)
+* Array type default value should not generate SQL commands without change ([#7409](https://github.com/typeorm/typeorm/issues/7409)) ([7f06e44](https://github.com/typeorm/typeorm/commit/7f06e447c60846c1aa28f2561b3f77a22e012f9a))
+* correctly get referenceColumn value in `getEntityValueMap` ([#7005](https://github.com/typeorm/typeorm/issues/7005)) ([7fe723b](https://github.com/typeorm/typeorm/commit/7fe723b23b74a4c81608a856a82b8aa85fe1b385)), closes [#7002](https://github.com/typeorm/typeorm/issues/7002)
+* don't transform json(b) column value when computing update changes ([#6929](https://github.com/typeorm/typeorm/issues/6929)) ([6be54d4](https://github.com/typeorm/typeorm/commit/6be54d46ac812487242ceffeda2922aff783b235))
+* empty entity when query with nested relations ([#7450](https://github.com/typeorm/typeorm/issues/7450)) ([9abf727](https://github.com/typeorm/typeorm/commit/9abf727691d98351f49aa523c5ea03ec2b1ac620)), closes [#7041](https://github.com/typeorm/typeorm/issues/7041) [#7041](https://github.com/typeorm/typeorm/issues/7041) [#7041](https://github.com/typeorm/typeorm/issues/7041)
+* fixed all known enum issues ([#7419](https://github.com/typeorm/typeorm/issues/7419)) ([724d80b](https://github.com/typeorm/typeorm/commit/724d80bf1aacedfc139ad09fe5842cad8fdb2893)), closes [#5371](https://github.com/typeorm/typeorm/issues/5371) [#6471](https://github.com/typeorm/typeorm/issues/6471) [#7217](https://github.com/typeorm/typeorm/issues/7217) [#6047](https://github.com/typeorm/typeorm/issues/6047) [#7283](https://github.com/typeorm/typeorm/issues/7283) [#5871](https://github.com/typeorm/typeorm/issues/5871) [#5729](https://github.com/typeorm/typeorm/issues/5729) [#5478](https://github.com/typeorm/typeorm/issues/5478) [#5882](https://github.com/typeorm/typeorm/issues/5882) [#5275](https://github.com/typeorm/typeorm/issues/5275) [#2233](https://github.com/typeorm/typeorm/issues/2233) [#5648](https://github.com/typeorm/typeorm/issues/5648) [#4897](https://github.com/typeorm/typeorm/issues/4897) [#6376](https://github.com/typeorm/typeorm/issues/6376) [#6115](https://github.com/typeorm/typeorm/issues/6115)
+* improve EntityManager.save() return type ([#7391](https://github.com/typeorm/typeorm/issues/7391)) ([66fbfda](https://github.com/typeorm/typeorm/commit/66fbfdaaa6e03114607671103fe0df7ab1d781a8))
+* Only first single quote in comments is escaped ([#7514](https://github.com/typeorm/typeorm/issues/7514)) ([e1e9423](https://github.com/typeorm/typeorm/commit/e1e94236e71c14a4682356ada7774d657eba8936))
+* performance issues of `RelationId`. ([#7318](https://github.com/typeorm/typeorm/issues/7318)) ([01a215a](https://github.com/typeorm/typeorm/commit/01a215a32b47a03af9301c0e6e68f943a24919c4)), closes [#5691](https://github.com/typeorm/typeorm/issues/5691)
+* rename a sequence related to generated primary key when a table is renamed ([#5406](https://github.com/typeorm/typeorm/issues/5406)) ([25b457f](https://github.com/typeorm/typeorm/commit/25b457f7e8d6cdeee146ba60a280f1a65bcec9eb))
+* resolve issue building tree entities with embeded primary column ([#7416](https://github.com/typeorm/typeorm/issues/7416)) ([dc81814](https://github.com/typeorm/typeorm/commit/dc81814056071ee3557043e5e6be06c431314634)), closes [#7415](https://github.com/typeorm/typeorm/issues/7415)
+* wrong migration generation when column default value is set to null [#6950](https://github.com/typeorm/typeorm/issues/6950) ([#7356](https://github.com/typeorm/typeorm/issues/7356)) ([5a3f9ff](https://github.com/typeorm/typeorm/commit/5a3f9ff3d6ff5ec1bf704c836bef5a7529ff7f5a))
+
+### Features
+
+* add check and dry-run to migration generate ([#7275](https://github.com/typeorm/typeorm/issues/7275)) ([d6df200](https://github.com/typeorm/typeorm/commit/d6df200772604103279502dfc61340475131d4e1)), closes [#3037](https://github.com/typeorm/typeorm/issues/3037) [#6978](https://github.com/typeorm/typeorm/issues/6978)
+* add option for installing package using CLI ([#6889](https://github.com/typeorm/typeorm/issues/6889)) ([3d876c6](https://github.com/typeorm/typeorm/commit/3d876c61fafc815e429c68f4f4e1ab79e47c7b9c))
+* Add support for Access Token Authentication for SQL Server Driver (mssql) ([#7477](https://github.com/typeorm/typeorm/issues/7477)) ([e639772](https://github.com/typeorm/typeorm/commit/e639772e3b5aa5fa2f40fd6cda984b13e4bf9c90))
+* added socketPath support for replicas in MySQL driver ([#7459](https://github.com/typeorm/typeorm/issues/7459)) ([8d7afaf](https://github.com/typeorm/typeorm/commit/8d7afaf78df8974ebbe00219716af8da738a6fe7))
+* allow to pass the given table name as string in RelationDecorators ([#7448](https://github.com/typeorm/typeorm/issues/7448)) ([4dbb10e](https://github.com/typeorm/typeorm/commit/4dbb10e11ff3fdd58fdaac87337aa0d3237002ba))
+* implement "FOR UPDATE OF" for postgres driver ([#7040](https://github.com/typeorm/typeorm/issues/7040)) ([fde9f07](https://github.com/typeorm/typeorm/commit/fde9f0772eef69836ff4d85816cfe4fd6f7028b4))
+* introduced a new configuration option "formatOptions.castParameters" to delegate the prepare/hydrate parameters to the driver which will result in casting the parameters to their respective column type ([#7483](https://github.com/typeorm/typeorm/issues/7483)) ([7793b3f](https://github.com/typeorm/typeorm/commit/7793b3f992d928b4db6bff6a5ad1b4cbe377a167))
+* output Javascript Migrations instead of TypeScript ([#7294](https://github.com/typeorm/typeorm/issues/7294)) ([b97cc4f](https://github.com/typeorm/typeorm/commit/b97cc4ff955de8be39258add958c2885d0bcdfe6))
+
 ## [0.2.31](https://github.com/typeorm/typeorm/compare/0.2.30...0.2.31) (2021-02-08)
 
 ### Bug Fixes

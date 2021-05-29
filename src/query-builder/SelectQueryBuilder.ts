@@ -164,6 +164,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Set max execution time.
+     * @param milliseconds
+     */
+    maxExecutionTime(milliseconds: number): this {
+        this.expressionMap.maxExecutionTime = milliseconds;
+        return this;
+    }
+
+    /**
      * Sets whether the selection is DISTINCT.
      */
     distinct(distinct: boolean = true): this {
@@ -1448,10 +1457,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Creates select | select distinct part of SQL query.
      */
     protected createSelectDistinctExpression(): string {
-        const {selectDistinct, selectDistinctOn} = this.expressionMap;
+        const {selectDistinct, selectDistinctOn, maxExecutionTime} = this.expressionMap;
         const {driver} = this.connection;
 
         let select = "SELECT ";
+
+        if (maxExecutionTime > 0) {
+            if (driver instanceof MysqlDriver) {
+                select += `/*+ MAX_EXECUTION_TIME(${ this.expressionMap.maxExecutionTime }) */ `;
+            }
+        }
+
         if (driver instanceof PostgresDriver && selectDistinctOn.length > 0) {
             const selectDistinctOnMap = selectDistinctOn.map(
               (on) => this.replacePropertyNames(on)
@@ -1797,7 +1813,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
             return {
                 selection: selectionPath,
-                aliasName: selection && selection.aliasName ? selection.aliasName : DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column.databaseName),
+                aliasName: selection && selection.aliasName ? selection.aliasName : DriverUtils.buildAlias(this.connection.driver, aliasName, column.databaseName),
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
                 virtual: selection ? selection.virtual === true : (hasMainAlias ? false : true),
             };
@@ -1940,11 +1956,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             const querySelects = metadata.primaryColumns.map(primaryColumn => {
                 const distinctAlias = this.escape("distinctAlias");
-                const columnAlias = this.escape(DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName));
+                const columnAlias = this.escape(DriverUtils.buildAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName));
                 if (!orderBys[columnAlias]) // make sure we aren't overriding user-defined order in inverse direction
                     orderBys[columnAlias] = "ASC";
 
-                const alias = DriverUtils.buildColumnAlias(
+                const alias = DriverUtils.buildAlias(
                     this.connection.driver,
                     "ids_" + mainAliasName,
                     primaryColumn.databaseName
@@ -1977,7 +1993,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
-                    const alias = DriverUtils.buildColumnAlias(
+                    const alias = DriverUtils.buildAlias(
                         this.connection.driver,
                         "ids_" + mainAliasName,
                         metadata.primaryColumns[0].databaseName
@@ -2037,7 +2053,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     const propertyPath = criteriaParts.slice(1).join(".");
                     const alias = this.expressionMap.findAliasByName(aliasName);
                     const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
-                    return this.escape(parentAlias) + "." + this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName));
+                    return this.escape(parentAlias) + "." + this.escape(DriverUtils.buildAlias(this.connection.driver, aliasName, column!.databaseName));
                 } else {
                     if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria))
                         return this.escape(parentAlias) + "." + orderCriteria;
@@ -2055,7 +2071,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 const propertyPath = criteriaParts.slice(1).join(".");
                 const alias = this.expressionMap.findAliasByName(aliasName);
                 const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
-                orderByObject[this.escape(parentAlias) + "." + this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName))] = orderBys[orderCriteria];
+                orderByObject[this.escape(parentAlias) + "." + this.escape(DriverUtils.buildAlias(this.connection.driver, aliasName, column!.databaseName))] = orderBys[orderCriteria];
             } else {
                 if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria)) {
                     orderByObject[this.escape(parentAlias) + "." + orderCriteria] = orderBys[orderCriteria];
@@ -2076,26 +2092,40 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const queryId = sql + " -- PARAMETERS: " + JSON.stringify(parameters);
         const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
         let savedQueryResultCacheOptions: QueryResultCacheOptions|undefined = undefined;
+        let cacheError = false;
         if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
-            savedQueryResultCacheOptions = await this.connection.queryResultCache.getFromCache({
-                identifier: this.expressionMap.cacheId,
-                query: queryId,
-                duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
-            }, queryRunner);
-            if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
-                return JSON.parse(savedQueryResultCacheOptions.result);
+            try {
+                savedQueryResultCacheOptions = await this.connection.queryResultCache.getFromCache({
+                    identifier: this.expressionMap.cacheId,
+                    query: queryId,
+                    duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
+                }, queryRunner);
+                if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
+                    return JSON.parse(savedQueryResultCacheOptions.result);
+            } catch(error) {
+                if (!cacheOptions.ignoreErrors) {
+                    throw error;
+                }
+                cacheError = true;
+            }
         }
 
         const results = await queryRunner.query(sql, parameters);
 
-        if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
-            await this.connection.queryResultCache.storeInCache({
-                identifier: this.expressionMap.cacheId,
-                query: queryId,
-                time: new Date().getTime(),
-                duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
-                result: JSON.stringify(results)
-            }, savedQueryResultCacheOptions, queryRunner);
+        if (!cacheError && this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
+            try {
+                await this.connection.queryResultCache.storeInCache({
+                    identifier: this.expressionMap.cacheId,
+                    query: queryId,
+                    time: new Date().getTime(),
+                    duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
+                    result: JSON.stringify(results)
+                }, savedQueryResultCacheOptions, queryRunner);
+            } catch(error) {
+                if (!cacheOptions.ignoreErrors) {
+                    throw error;
+                }
+            }
         }
 
         return results;

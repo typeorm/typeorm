@@ -3,7 +3,7 @@ import {FindOneOptions} from "./FindOneOptions";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {shorten} from "../util/StringUtils";
+import {DriverUtils} from "../driver/DriverUtils";
 
 /**
  * Utilities to work with FindOptions.
@@ -234,11 +234,7 @@ export class FindOptionsUtils {
         matchedBaseRelations.forEach(relation => {
 
             // generate a relation alias
-            let relationAlias: string = alias + "__" + relation;
-            // shorten it if needed by the driver
-            if (qb.connection.driver.maxAliasLength && relationAlias.length > qb.connection.driver.maxAliasLength) {
-                relationAlias = shorten(relationAlias);
-            }
+            let relationAlias: string = DriverUtils.buildAlias(qb.connection.driver, { shorten: true, joiner: "__" }, alias, relation);
 
             // add a join for the found relation
             const selection = alias + "." + relation;
@@ -261,8 +257,14 @@ export class FindOptionsUtils {
 
     public static joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
         metadata.eagerRelations.forEach(relation => {
-            const relationAlias = qb.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath);
+
+            // generate a relation alias
+            let relationAlias = DriverUtils.buildAlias(qb.connection.driver, { shorten: true }, qb.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath));
+
+            // add a join for the relation
             qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
+
+            // (recursive) join the eager relations
             this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
         });
     }

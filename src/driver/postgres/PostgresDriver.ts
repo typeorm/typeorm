@@ -1,24 +1,24 @@
-import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {Connection} from "../../connection/Connection";
+import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {PostgresQueryRunner} from "./PostgresQueryRunner";
-import {DateUtils} from "../../util/DateUtils";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
-import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
-import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
-import {MappedColumnTypes} from "../types/MappedColumnTypes";
-import {ColumnType} from "../types/ColumnTypes";
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/table/TableColumn";
-import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {OrmUtils} from "../../util/OrmUtils";
+import {PlatformTools} from "../../platform/PlatformTools";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {DateUtils} from "../../util/DateUtils";
+import {OrmUtils} from "../../util/OrmUtils";
+import {Driver} from "../Driver";
+import {ColumnType} from "../types/ColumnTypes";
+import {DataTypeDefaults} from "../types/DataTypeDefaults";
+import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
+import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
+import {PostgresQueryRunner} from "./PostgresQueryRunner";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -305,16 +305,14 @@ export class PostgresDriver implements Driver {
         const extensionsMetadata = await this.checkMetadataForExtensions();
 
         if (extensionsMetadata.hasExtensions) {
-            await Promise.all([this.master, ...this.slaves].map(pool => {
-                return new Promise<void>((ok, fail) => {
-                    pool.connect(async (err: any, connection: any, release: Function) => {
-                        await this.enableExtensions(extensionsMetadata, connection);
-                        if (err) return fail(err);
-                        release();
-                        ok();
-                    });
+            return new Promise<void>((ok, fail) => {
+                this.master.connect(async (err: any, connection: any, release: Function) => {
+                    await this.enableExtensions(extensionsMetadata, connection);
+                    if (err) return fail(err);
+                    release();
+                    ok();
                 });
-            }));
+            });
         }
 
         return Promise.resolve();
@@ -750,7 +748,8 @@ export class PostgresDriver implements Driver {
             return defaultValue === true ? "true" : "false";
 
         } else if (typeof defaultValue === "function") {
-            return defaultValue();
+            const value = defaultValue();
+            return this.normalizeDatetimeFunction(value)
 
         } else if (typeof defaultValue === "object") {
             return `'${JSON.stringify(defaultValue)}'`;
@@ -880,7 +879,7 @@ export class PostgresDriver implements Driver {
                 || tableColumn.isArray !== columnMetadata.isArray
                 || tableColumn.precision !== columnMetadata.precision
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
-                || tableColumn.comment !== columnMetadata.comment
+                || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
                 || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
@@ -900,10 +899,9 @@ export class PostgresDriver implements Driver {
             //     console.log("isArray:", tableColumn.isArray, columnMetadata.isArray);
             //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
             //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            //     console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            //     console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
             //     console.log("enumName:", tableColumn.enumName, columnMetadata.enumName);
             //     console.log("enum:", tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
-            //     console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
             //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
@@ -1051,7 +1049,10 @@ export class PostgresDriver implements Driver {
      * Closes connection pool.
      */
     protected async closePool(pool: any): Promise<void> {
-        await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
+        while (this.connectedQueryRunners.length) {
+            await this.connectedQueryRunners[0].release();
+        }
+
         return new Promise<void>((ok, fail) => {
             pool.end((err: any) => err ? fail(err) : ok());
         });
@@ -1067,6 +1068,54 @@ export class PostgresDriver implements Driver {
                 ok(result);
             });
         });
+    }
+
+    /**
+     * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
+     * Otherwise returns original input.
+     */
+    protected normalizeDatetimeFunction(value: string) {
+        // check if input is datetime function
+        const upperCaseValue = value.toUpperCase()
+        const isDatetimeFunction = upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1
+            || upperCaseValue.indexOf("CURRENT_DATE") !== -1
+            || upperCaseValue.indexOf("CURRENT_TIME") !== -1
+            || upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1
+            || upperCaseValue.indexOf("LOCALTIME") !== -1;
+
+        if (isDatetimeFunction) {
+            // extract precision, e.g. "(3)"
+            const precision = value.match(/\(\d+\)/)
+
+            if (upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1) {
+                return precision ? `('now'::text)::timestamp${precision[0]} with time zone` : "now()";
+
+            } else if (upperCaseValue === "CURRENT_DATE") {
+                return "('now'::text)::date"
+
+            } else if (upperCaseValue.indexOf("CURRENT_TIME") !== -1) {
+                return precision ? `('now'::text)::time${precision[0]} with time zone` : "('now'::text)::time with time zone"
+
+            } else if (upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1) {
+                return precision ? `('now'::text)::timestamp${precision[0]} without time zone` : "('now'::text)::timestamp without time zone"
+
+            } else if (upperCaseValue.indexOf("LOCALTIME") !== -1) {
+                return precision ? `('now'::text)::time${precision[0]} without time zone` : "('now'::text)::time without time zone"
+            }
+        }
+
+        return value
+    }
+
+    /**
+     * Escapes a given comment.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment) return comment;
+
+        comment = comment.replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+
+        return comment;
     }
 
 }
