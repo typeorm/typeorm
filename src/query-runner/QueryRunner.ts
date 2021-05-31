@@ -1,20 +1,20 @@
-import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Connection} from "../connection/Connection";
-import {SqlInMemory} from "../driver/SqlInMemory";
-import {IsolationLevel} from "../driver/types/IsolationLevel";
-import {ReplicationMode} from "../driver/types/ReplicationMode";
-import {EntityManager} from "../entity-manager/EntityManager";
-import {ReadStream} from "../platform/PlatformTools";
-import {Table} from "../schema-builder/table/Table";
-import {TableCheck} from "../schema-builder/table/TableCheck";
 import {TableColumn} from "../schema-builder/table/TableColumn";
-import {TableExclusion} from "../schema-builder/table/TableExclusion";
+import {Table} from "../schema-builder/table/Table";
 import {TableForeignKey} from "../schema-builder/table/TableForeignKey";
 import {TableIndex} from "../schema-builder/table/TableIndex";
+import {Connection} from "../connection/Connection";
+import {ReadStream} from "../platform/PlatformTools";
+import {EntityManager} from "../entity-manager/EntityManager";
+import {ObjectLiteral} from "../common/ObjectLiteral";
+import {SqlInMemory} from "../driver/SqlInMemory";
 import {TableUnique} from "../schema-builder/table/TableUnique";
 import {View} from "../schema-builder/view/View";
 import {Broadcaster} from "../subscriber/Broadcaster";
+import {TableCheck} from "../schema-builder/table/TableCheck";
+import {IsolationLevel} from "../driver/types/IsolationLevel";
+import {TableExclusion} from "../schema-builder/table/TableExclusion";
 import {QueryResult} from "./QueryResult";
+import {ReplicationMode} from "../driver/types/ReplicationMode";
 
 /**
  * Runs queries on a single database connection.
