@@ -476,8 +476,17 @@ export class EntityMetadataBuilder {
         entityMetadata.ownRelations = this.metadataArgsStorage.filterRelations(entityMetadata.inheritanceTree).map(args => {
 
             // for single table children we reuse relations created for their parents
-            if (entityMetadata.tableType === "entity-child")
-                return entityMetadata.parentEntityMetadata.ownRelations.find(relation => relation.propertyName === args.propertyName)!;
+            if (entityMetadata.tableType === "entity-child") {
+                const parentRelation = entityMetadata.parentEntityMetadata.ownRelations.find(relation => relation.propertyName === args.propertyName)!;
+                const type = args.type instanceof Function ? (args.type as () => any)() : args.type;
+                if (parentRelation.type !== type) {
+                    const clone = Object.create(parentRelation);
+                    clone.type = type;
+                    return clone;
+                }
+
+                return parentRelation;
+            }
 
             return new RelationMetadata({ entityMetadata, args });
         });

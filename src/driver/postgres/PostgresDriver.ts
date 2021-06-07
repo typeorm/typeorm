@@ -1,24 +1,24 @@
-import { Driver } from "../Driver";
-import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError";
-import { ObjectLiteral } from "../../common/ObjectLiteral";
-import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
-import { ColumnMetadata } from "../../metadata/ColumnMetadata";
-import { PostgresQueryRunner } from "./PostgresQueryRunner";
-import { DateUtils } from "../../util/DateUtils";
-import { PlatformTools } from "../../platform/PlatformTools";
-import { Connection } from "../../connection/Connection";
-import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder";
-import { PostgresConnectionOptions } from "./PostgresConnectionOptions";
-import { MappedColumnTypes } from "../types/MappedColumnTypes";
-import { ColumnType } from "../types/ColumnTypes";
-import { QueryRunner } from "../../query-runner/QueryRunner";
-import { DataTypeDefaults } from "../types/DataTypeDefaults";
-import { TableColumn } from "../../schema-builder/table/TableColumn";
-import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions";
-import { EntityMetadata } from "../../metadata/EntityMetadata";
-import { OrmUtils } from "../../util/OrmUtils";
-import { ApplyValueTransformers } from "../../util/ApplyValueTransformers";
-import { ReplicationMode } from "../types/ReplicationMode";
+import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {Connection} from "../../connection/Connection";
+import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
+import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
+import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {PlatformTools} from "../../platform/PlatformTools";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
+import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {DateUtils} from "../../util/DateUtils";
+import {OrmUtils} from "../../util/OrmUtils";
+import {Driver} from "../Driver";
+import {ColumnType} from "../types/ColumnTypes";
+import {DataTypeDefaults} from "../types/DataTypeDefaults";
+import {MappedColumnTypes} from "../types/MappedColumnTypes";
+import {ReplicationMode} from "../types/ReplicationMode";
+import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
+import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
+import {PostgresQueryRunner} from "./PostgresQueryRunner";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -301,27 +301,14 @@ export class PostgresDriver implements Driver {
         const extensionsMetadata = await this.checkMetadataForExtensions();
 
         if (extensionsMetadata.hasExtensions) {
-            await Promise.all(
-                [this.master, ...this.slaves].map((pool) => {
-                    return new Promise<void>((ok, fail) => {
-                        pool.connect(
-                            async (
-                                err: any,
-                                connection: any,
-                                release: Function
-                            ) => {
-                                await this.enableExtensions(
-                                    extensionsMetadata,
-                                    connection
-                                );
-                                if (err) return fail(err);
-                                release();
-                                ok();
-                            }
-                        );
-                    });
-                })
-            );
+            return new Promise<void>((ok, fail) => {
+                this.master.connect(async (err: any, connection: any, release: Function) => {
+                    await this.enableExtensions(extensionsMetadata, connection);
+                    if (err) return fail(err);
+                    release();
+                    ok();
+                });
+            });
         }
 
         return Promise.resolve();
@@ -917,6 +904,27 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Compares "default" value of the column.
+     * Postgres sorts json values before it is saved, so in that case a deep comparison has to be performed to see if has changed.
+     */
+    defaultEqual(columnMetadata: ColumnMetadata, tableColumn: TableColumn): boolean {
+      if (Array<ColumnType>("json", "jsonb").indexOf(columnMetadata.type) >= 0
+       && typeof columnMetadata.default !== "function"
+       && columnMetadata.default !== undefined) {
+        let columnDefault = columnMetadata.default;
+        if (typeof columnDefault !== "object") {
+          columnDefault = JSON.parse(columnMetadata.default);
+        }
+        let tableDefault = JSON.parse(tableColumn.default.substring(1, tableColumn.default.length-1));
+        return OrmUtils.deepCompare(columnDefault, tableDefault);
+      }
+      else {
+        const columnDefault = this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata));
+        return (columnDefault === tableColumn.default);
+      }
+    }
+
+    /**
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
@@ -1051,45 +1059,29 @@ export class PostgresDriver implements Driver {
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
-    findChangedColumns(
-        tableColumns: TableColumn[],
-        columnMetadatas: ColumnMetadata[]
-    ): ColumnMetadata[] {
-        return columnMetadatas.filter((columnMetadata) => {
-            const tableColumn = tableColumns.find(
-                (c) => c.name === columnMetadata.databaseName
-            );
-            if (!tableColumn) return false; // we don't need new columns, we only need exist and changed
 
-            const isColumnChanged =
-                tableColumn.name !== columnMetadata.databaseName ||
-                tableColumn.type !== this.normalizeType(columnMetadata) ||
-                tableColumn.length !== columnMetadata.length ||
-                tableColumn.isArray !== columnMetadata.isArray ||
-                tableColumn.precision !== columnMetadata.precision ||
-                (columnMetadata.scale !== undefined &&
-                    tableColumn.scale !== columnMetadata.scale) ||
-                tableColumn.comment !==
-                    this.escapeComment(columnMetadata.comment) ||
-                (!tableColumn.isGenerated &&
-                    this.lowerDefaultValueIfNecessary(
-                        this.normalizeDefault(columnMetadata)
-                    ) !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
-                tableColumn.isPrimary !== columnMetadata.isPrimary ||
-                tableColumn.isNullable !== columnMetadata.isNullable ||
-                tableColumn.isUnique !==
-                    this.normalizeIsUnique(columnMetadata) ||
-                tableColumn.enumName !== columnMetadata.enumName ||
-                (tableColumn.enum &&
-                    columnMetadata.enum &&
-                    !OrmUtils.isArraysEqual(
-                        tableColumn.enum,
-                        columnMetadata.enum.map((val) => val + "")
-                    )) || // enums in postgres are always strings
-                tableColumn.isGenerated !== columnMetadata.isGenerated ||
-                (tableColumn.spatialFeatureType || "").toLowerCase() !==
-                    (columnMetadata.spatialFeatureType || "").toLowerCase() ||
-                tableColumn.srid !== columnMetadata.srid;
+    findChangedColumns(tableColumns: TableColumn[], columnMetadatas: ColumnMetadata[]): ColumnMetadata[] {
+        return columnMetadatas.filter(columnMetadata => {
+            const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
+            if (!tableColumn)
+                return false; // we don't need new columns, we only need exist and changed
+
+            const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
+                || tableColumn.type !== this.normalizeType(columnMetadata)
+                || tableColumn.length !== columnMetadata.length
+                || tableColumn.isArray !== columnMetadata.isArray
+                || tableColumn.precision !== columnMetadata.precision
+                || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
+                || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
+                || (!tableColumn.isGenerated && !this.defaultEqual(columnMetadata, tableColumn)) // we included check for generated here, because generated columns already can have default values
+                || tableColumn.isPrimary !== columnMetadata.isPrimary
+                || tableColumn.isNullable !== columnMetadata.isNullable
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                || tableColumn.enumName !== columnMetadata.enumName
+                || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + ""))) // enums in postgres are always strings
+                || tableColumn.isGenerated !== columnMetadata.isGenerated
+                || (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase()
+                || tableColumn.srid !== columnMetadata.srid;
 
             // DEBUG SECTION
             // if (isColumnChanged) {

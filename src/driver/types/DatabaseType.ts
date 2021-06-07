@@ -18,4 +18,5 @@ export type DatabaseType =
     "aurora-data-api"|
     "aurora-data-api-pg"|
     "expo"|
-    "better-sqlite3";
+    "better-sqlite3" |
+    "capacitor";
