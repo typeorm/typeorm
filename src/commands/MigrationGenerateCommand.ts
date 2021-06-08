@@ -152,7 +152,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             const fileContent = args.outputJs ?
                 MigrationGenerateCommand.getJavascriptTemplate(args.name as any, timestamp, upSqls, downSqls.reverse()) :
                 MigrationGenerateCommand.getTemplate(args.name as any, timestamp, upSqls, downSqls.reverse());
-            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+            if (directory && !directory.startsWith("/")) {
+                directory = process.cwd() + "/" + directory;
+            }
+            const path = (directory ? (directory + "/") : "") + filename;
 
             if (args.check) {
                 console.log(chalk.yellow(`Unexpected changes in database schema were found in check mode:\n\n${chalk.white(fileContent)}`));
