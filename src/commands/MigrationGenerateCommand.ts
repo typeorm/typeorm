@@ -73,7 +73,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
         const timestamp = new Date().getTime();
         const extension = args.outputJs ? ".js" : ".ts";
         const filename = timestamp + "-" + args.name + extension;
-        let directory = args.dir;
+        let directory = args.dir as string | undefined;
 
         // if directory is not set then try to open tsconfig and find default path there
         if (!directory) {
