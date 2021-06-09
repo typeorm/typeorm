@@ -5,6 +5,7 @@ import {Post} from "./entity/Post";
 import {Counters} from "./entity/Counters";
 import {Information} from "./entity/Information";
 import {expect} from "chai";
+import { Tags } from "./entity/Tags";
 
 describe("mongodb > embedded columns listeners", () => {
 
@@ -27,7 +28,7 @@ describe("mongodb > embedded columns listeners", () => {
         post.counters.information = new Information();
         await postRepository.save(post);
 
-        const loadedPost = await postRepository.findOne({title: "Post"});
+        const loadedPost = await postRepository.findOne({ title: "Post" });
 
         expect(loadedPost).to.be.not.empty;
         expect(loadedPost!.counters).to.be.not.empty;
@@ -39,7 +40,7 @@ describe("mongodb > embedded columns listeners", () => {
         post.title = "Updated post";
         await postRepository.save(post);
 
-        const loadedUpdatedPost = await postRepository.findOne({title: "Updated post"});
+        const loadedUpdatedPost = await postRepository.findOne({ title: "Updated post" });
 
         expect(loadedUpdatedPost).to.be.not.empty;
         expect(loadedUpdatedPost!.counters).to.be.not.empty;
@@ -69,5 +70,29 @@ describe("mongodb > embedded columns listeners", () => {
         loadedPost.title.should.be.eql("Post");
         loadedPost.text.should.be.eql("Everything about post");
 
+    })));
+
+    it("should work listeners in entity array embeddeds correctly", () => Promise.all(connections.map(async connection => {
+        const postRepository = connection.getMongoRepository(Post);
+
+        // save posts without embeddeds
+        const post = new Post();
+        post.title = "Post";
+        post.text = "Everything about post";
+        const tag1 = new Tags();
+        tag1.name = "Tag #1";
+        const tag2 = new Tags();
+        tag2.name = "Tag #2";
+        post.tags = [tag1, tag2];
+        await postRepository.save(post);
+
+        const cursor = postRepository.createCursor();
+        const loadedPost = await cursor.next();
+
+        loadedPost.title.should.be.eql("Post");
+        loadedPost.text.should.be.eql("Everything about post");
+        expect(loadedPost!.tags).to.be.not.empty;
+        loadedPost!.tags![0].used.should.be.equal(100);
+        loadedPost!.tags![1].name.should.be.equal("Tag #2");
     })));
 });

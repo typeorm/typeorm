@@ -92,6 +92,13 @@ export class DriverUtils {
         return newAlias;
     }
 
+    /**
+     * @deprecated use `buildAlias` instead.
+     */
+    static buildColumnAlias({ maxAliasLength }: Driver, buildOptions: { shorten?: boolean, joiner?: string } | string, ...alias: string[]) {
+        return this.buildAlias({ maxAliasLength } as Driver, buildOptions, ...alias);
+    }
+
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------
@@ -149,7 +156,7 @@ export class DriverUtils {
         let port = undefined;
         let hostReplicaSet = undefined;
         let replicaSet = undefined;
-        
+
         let optionsObject: any = {};
 
         if (afterBase && afterBase.indexOf("?") !== -1) {
@@ -201,7 +208,7 @@ export class DriverUtils {
             port: port ? parseInt(port) : undefined,
             database: afterBase || undefined
         };
-        
+
         // Loop to set every options in connectionUrl to object
         for (const [key, value] of Object.entries(optionsObject)) {
             connectionUrl[key] = value;

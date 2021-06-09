@@ -444,13 +444,13 @@ export class MongoDriver implements Driver {
             : "";
 
         let connectionString = undefined;
+        const portUrlPart = (schemaUrlPart === "mongodb+srv")
+            ? ""
+            : `:${options.port || "27017"}`;
 
         if(options.replicaSet) {
-            connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.hostReplicaSet}/${options.database || ""}`;
+            connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.hostReplicaSet || options.host + portUrlPart || "127.0.0.1" + portUrlPart}/${options.database || ""}`;
         } else {
-            const portUrlPart = (schemaUrlPart === "mongodb+srv")
-                ? ""
-                : `:${options.port || "27017"}`;
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}`;
         }
             
