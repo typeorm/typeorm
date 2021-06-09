@@ -47,15 +47,9 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
         const command = query.substr(0, query.indexOf(" "));
 
         if (
-            [
-                "PRAGMA",
-                "BEGIN",
-                "ROLLBACK",
-                "COMMIT",
-                "CREATE",
-                "ALTER",
-                "DROP",
-            ].indexOf(command) !== -1
+            ["BEGIN", "ROLLBACK", "COMMIT", "CREATE", "ALTER", "DROP"].indexOf(
+                command
+            ) !== -1
         ) {
             pResult = databaseConnection.execute(query, false);
         } else if (["INSERT", "UPDATE", "DELETE"].indexOf(command) !== -1) {
@@ -70,7 +64,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
                 );
         } else {
             pResult = databaseConnection
-                .query(query, parameters)
+                .query(query, parameters || [])
                 .then(({ values }: { values: any[] }) => values);
         }
 

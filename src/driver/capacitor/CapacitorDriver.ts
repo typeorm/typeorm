@@ -81,9 +81,14 @@ export class CapacitorDriver extends AbstractSqliteDriver {
             1
         );
         await connection.open();
+
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
         // working properly. this also makes onDelete to work with sqlite.
-        await connection.execute(`PRAGMA foreign_keys = ON;`);
+        await connection.query(`PRAGMA foreign_keys = ON`, []);
+
+        // turn on WAL mode to enhance performance
+        await connection.query(`PRAGMA journal_mode = WAL`, []);
+
         return connection;
     }
 
