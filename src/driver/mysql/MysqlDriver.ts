@@ -940,7 +940,7 @@ export class MysqlDriver implements Driver {
      * Otherwise returns original input.
      */
     protected normalizeDatetimeFunction(value?: string) {
-        if (!value) return value
+        if (!value || typeof value === "number" || value === "''") return value
 
         // check if input is datetime function
         const isDatetimeFunction = value.toUpperCase().indexOf("CURRENT_TIMESTAMP") !== -1
