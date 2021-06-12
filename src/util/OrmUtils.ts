@@ -7,7 +7,7 @@ export class OrmUtils {
     // -------------------------------------------------------------------------
 
     /**
-     * Chunks array into peaces.
+     * Chunks array into pieces.
      */
     static chunk<T>(array: T[], size: number): T[][] {
         return Array.from(Array(Math.ceil(array.length / size)), (_, i) => {

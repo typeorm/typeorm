@@ -13,7 +13,7 @@ export interface Logger {
     /**
      * Logs query that is failed.
      */
-    logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner): any;
+    logQueryError(error: string | Error, query: string, parameters?: any[], queryRunner?: QueryRunner): any;
 
     /**
      * Logs query that is slow.

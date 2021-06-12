@@ -127,6 +127,11 @@ export class Thing {
 To create a spatial index on a column in PostgreSQL, add an `Index` with `spatial: true` on a column that uses a spatial type (`geometry`, `geography`):
 
 ```typescript
+export interface Geometry {
+  type: "Point";
+  coordinates: [Number, Number];
+}
+
 @Entity()
 export class Thing {
     @Column("geometry", {

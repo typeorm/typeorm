@@ -1,6 +1,6 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {SapDriver} from "../driver/sap/SapDriver";
-import { ColumnMetadata } from "../metadata/ColumnMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
@@ -48,7 +48,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createUpdateExpression();
+        let sql = this.createComment();
+        sql += this.createUpdateExpression();
         sql += this.createOrderByExpression();
         sql += this.createLimitExpression();
         return sql.trim();
@@ -108,6 +109,10 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             else if (this.connection.driver instanceof MysqlDriver) {
                 updateResult.raw = result;
                 updateResult.affected = result.affectedRows;
+            }
+            else if (this.connection.driver instanceof AuroraDataApiDriver) {
+                updateResult.raw = result;
+                updateResult.affected = result.numberOfRecordsUpdated;
             }
             else if (this.connection.driver instanceof BetterSqlite3Driver) { // only works for better-sqlite3
                 updateResult.raw = result;

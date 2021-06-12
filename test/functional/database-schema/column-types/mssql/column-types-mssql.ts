@@ -155,11 +155,11 @@ describe("database schema > column types > mssql", () => { // https://github.com
         table!.findColumnByName("geometry1")!.type.should.be.equal("geometry");
         table!.findColumnByName("simpleArray")!.type.should.be.equal("ntext");
         table!.findColumnByName("simpleJson")!.type.should.be.equal("ntext");
-        table!.findColumnByName("simpleEnum")!.type.should.be.equal("simple-enum");
+        table!.findColumnByName("simpleEnum")!.type.should.be.equal("nvarchar");
         table!.findColumnByName("simpleEnum")!.enum![0].should.be.equal("A");
         table!.findColumnByName("simpleEnum")!.enum![1].should.be.equal("B");
         table!.findColumnByName("simpleEnum")!.enum![2].should.be.equal("C");
-        table!.findColumnByName("simpleClassEnum1")!.type.should.be.equal("simple-enum");
+        table!.findColumnByName("simpleClassEnum1")!.type.should.be.equal("nvarchar");
         table!.findColumnByName("simpleClassEnum1")!.enum![0].should.be.equal("apple");
         table!.findColumnByName("simpleClassEnum1")!.enum![1].should.be.equal("pineapple");
         table!.findColumnByName("simpleClassEnum1")!.enum![2].should.be.equal("banana");

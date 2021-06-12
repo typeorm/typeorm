@@ -92,15 +92,15 @@ export class ConnectionOptionsReader {
             return PlatformTools.fileExist(this.baseFilePath + "." + format);
         });
 
-        // if .env file found then load all its variables into process.env using dotenv package
-        if (foundFileFormat === "env") {
-            PlatformTools.dotenv(this.baseFilePath);
-        } else if (PlatformTools.fileExist(".env")) {
-            PlatformTools.dotenv(".env");
-        }
-
         // Determine config file name
         const configFile = fileExtension ? this.baseFilePath : this.baseFilePath + "." + foundFileFormat;
+
+        // if .env file found then load all its variables into process.env using dotenv package
+        if (foundFileFormat === "env") {
+            PlatformTools.dotenv(configFile);
+        } else if (PlatformTools.fileExist(this.baseDirectory + "/.env")) {
+            PlatformTools.dotenv(this.baseDirectory + "/.env");
+        }
 
         // try to find connection options from any of available sources of configuration
         if (PlatformTools.getEnvVariable("TYPEORM_CONNECTION") || PlatformTools.getEnvVariable("TYPEORM_URL")) {

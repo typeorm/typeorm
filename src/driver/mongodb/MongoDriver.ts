@@ -17,6 +17,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {ObjectUtils} from "../../util/ObjectUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {DriverUtils} from "../DriverUtils";
 
 /**
  * Organizes communication with MongoDB.
@@ -223,9 +224,11 @@ export class MongoDriver implements Driver {
      */
     connect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
+            const options = DriverUtils.buildMongoDBDriverOptions(this.options);
+
             this.mongodb.MongoClient.connect(
-                this.buildConnectionUrl(),
-                this.buildConnectionOptions(),
+                this.buildConnectionUrl(options),
+                this.buildConnectionOptions(options),
                 (err: any, client: any) => {
                     if (err) return fail(err);
 
@@ -319,7 +322,7 @@ export class MongoDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 
@@ -434,30 +437,39 @@ export class MongoDriver implements Driver {
     /**
      * Builds connection url that is passed to underlying driver to perform connection to the mongodb database.
      */
-    protected buildConnectionUrl(): string {
-        if (this.options.url)
-            return this.options.url;
-
-        const credentialsUrlPart = (this.options.username && this.options.password)
-            ? `${this.options.username}:${this.options.password}@`
+    protected buildConnectionUrl(options: { [key: string]: any }): string {
+         const schemaUrlPart = options.type.toLowerCase();
+         const credentialsUrlPart = (options.username && options.password)
+            ? `${options.username}:${options.password}@`
             : "";
 
-        return `mongodb://${credentialsUrlPart}${this.options.host || "127.0.0.1"}:${this.options.port || "27017"}/${this.options.database}`;
+        let connectionString = undefined;
+        const portUrlPart = (schemaUrlPart === "mongodb+srv")
+            ? ""
+            : `:${options.port || "27017"}`;
+
+        if(options.replicaSet) {
+            connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.hostReplicaSet || options.host + portUrlPart || "127.0.0.1" + portUrlPart}/${options.database || ""}`;
+        } else {
+            connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}`;
+        }
+            
+        return connectionString;
     }
 
     /**
      * Build connection options from MongoConnectionOptions
      */
-    protected buildConnectionOptions(): any {
+    protected buildConnectionOptions(options: { [key: string]: any }): any {
         const mongoOptions: any = {};
 
         for (let index = 0; index < this.validOptionNames.length; index++) {
             const optionName = this.validOptionNames[index];
 
-            if (this.options.extra && optionName in this.options.extra) {
-                mongoOptions[optionName] = this.options.extra[optionName];
-            } else if (optionName in this.options) {
-                mongoOptions[optionName] = (this.options as any)[optionName];
+            if (options.extra && optionName in options.extra) {
+                mongoOptions[optionName] = options.extra[optionName];
+            } else if (optionName in options) {
+                mongoOptions[optionName] = options[optionName];
             }
         }
 

@@ -37,6 +37,7 @@ import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
+import {EntityNotFoundError} from "../error/EntityNotFoundError";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -51,7 +52,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createSelectExpression();
+        let sql = this.createComment();
+        sql += this.createSelectExpression();
         sql += this.createJoinExpression();
         sql += this.createWhereExpression();
         sql += this.createGroupByExpression();
@@ -158,6 +160,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             this.expressionMap.selects.push({ selection: selection, aliasName: selectionAliasName });
         }
 
+        return this;
+    }
+
+    /**
+     * Set max execution time.
+     * @param milliseconds
+     */
+    maxExecutionTime(milliseconds: number): this {
+        this.expressionMap.maxExecutionTime = milliseconds;
         return this;
     }
 
@@ -958,26 +969,21 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "optimistic", lockVersion: number): this;
+    setLock(lockMode: "optimistic", lockVersion: number | Date): this;
 
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "optimistic", lockVersion: Date): this;
+    setLock(lockMode: "pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail"|"for_no_key_update", lockVersion?: undefined, lockTables?: string[]): this;
 
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail"|"for_no_key_update"): this;
-
-    /**
-     * Sets locking mode.
-     */
-    setLock(lockMode: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail"|"for_no_key_update", lockVersion?: number|Date): this {
+    setLock(lockMode: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail"|"for_no_key_update", lockVersion?: number|Date, lockTables?: string[]): this {
         this.expressionMap.lockMode = lockMode;
         this.expressionMap.lockVersion = lockVersion;
+        this.expressionMap.lockTables = lockTables;
         return this;
-
     }
 
     /**
@@ -1102,6 +1108,19 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         }
 
         return result;
+    }
+
+    /**
+     * Gets the first entity returned by execution of generated query builder sql or rejects the returned promise on error.
+     */
+    async getOneOrFail(): Promise<Entity> {
+        const entity = await this.getOne();
+
+        if (!entity) {
+            throw new EntityNotFoundError(this.expressionMap.mainAlias!.target, this);
+        }
+
+        return entity;
     }
 
     /**
@@ -1246,9 +1265,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
             throw error;
 
-        } finally {
-            if (queryRunner !== this.queryRunner) // means we created our own query runner
-                await queryRunner.release();
         }
     }
 
@@ -1324,7 +1340,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         this.expressionMap.joinAttributes.push(joinAttribute);
 
         if (joinAttribute.metadata) {
-
+           if (joinAttribute.metadata.deleteDateColumn && !this.expressionMap.withDeleted) {
+                const conditionDeleteColumn = `${aliasName}.${joinAttribute.metadata.deleteDateColumn.propertyName} IS NULL`;
+                joinAttribute.condition += joinAttribute.condition ? ` AND ${conditionDeleteColumn}`: `${conditionDeleteColumn}`;
+            }
             // todo: find and set metadata right there?
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
@@ -1438,10 +1457,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Creates select | select distinct part of SQL query.
      */
     protected createSelectDistinctExpression(): string {
-        const {selectDistinct, selectDistinctOn} = this.expressionMap;
+        const {selectDistinct, selectDistinctOn, maxExecutionTime} = this.expressionMap;
         const {driver} = this.connection;
 
         let select = "SELECT ";
+
+        if (maxExecutionTime > 0) {
+            if (driver instanceof MysqlDriver) {
+                select += `/*+ MAX_EXECUTION_TIME(${ this.expressionMap.maxExecutionTime }) */ `;
+            }
+        }
+
         if (driver instanceof PostgresDriver && selectDistinctOn.length > 0) {
             const selectDistinctOnMap = selectDistinctOn.map(
               (on) => this.replacePropertyNames(on)
@@ -1469,11 +1495,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         //     .leftJoinAndSelect("category.post", "post");
 
         const joins = this.expressionMap.joinAttributes.map(joinAttr => {
-
             const relation = joinAttr.relation;
             const destinationTableName = joinAttr.tablePath;
             const destinationTableAlias = joinAttr.alias.name;
-            const appendedCondition = joinAttr.condition ? " AND (" + joinAttr.condition + ")" : "";
+            let appendedCondition = joinAttr.condition ? " AND (" + joinAttr.condition + ")" : "";
             const parentAlias = joinAttr.parentAlias;
 
             // if join was build without relation (e.g. without "post.category") then it means that we have direct
@@ -1499,6 +1524,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
                 const condition = relation.inverseRelation!.joinColumns.map(joinColumn => {
+                    if (relation.inverseEntityMetadata.tableType === "entity-child" && relation.inverseEntityMetadata.discriminatorColumn) {
+                        appendedCondition += " AND " + destinationTableAlias + "." + relation.inverseEntityMetadata.discriminatorColumn.databaseName + "='" + relation.inverseEntityMetadata.discriminatorValue + "'";
+                    }
+
                     return destinationTableAlias + "." + relation.inverseRelation!.propertyPath + "." + joinColumn.referencedColumn!.propertyPath + "=" +
                         parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
                 }).join(" AND ");
@@ -1646,13 +1675,26 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     protected createLockExpression(): string {
         const driver = this.connection.driver;
+
+        let lockTablesClause = "";
+
+        if (this.expressionMap.lockTables) {
+            if (!(driver instanceof PostgresDriver)) {
+                throw new Error("Lock tables not supported in selected driver");
+            }
+            if (this.expressionMap.lockTables.length < 1) {
+                throw new Error("lockTables cannot be an empty array");
+            }
+            lockTablesClause = " OF " + this.expressionMap.lockTables.join(", ");
+        }
+
         switch (this.expressionMap.lockMode) {
             case "pessimistic_read":
                 if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver) {
                     return " LOCK IN SHARE MODE";
 
                 } else if (driver instanceof PostgresDriver) {
-                    return " FOR SHARE";
+                    return " FOR SHARE" + lockTablesClause;
 
                 } else if (driver instanceof OracleDriver) {
                     return " FOR UPDATE";
@@ -1664,8 +1706,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     throw new LockNotSupportedOnGivenDriverError();
                 }
             case "pessimistic_write":
-                if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver || driver instanceof PostgresDriver || driver instanceof OracleDriver) {
+                if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver || driver instanceof OracleDriver) {
                     return " FOR UPDATE";
+
+                }
+                else if (driver instanceof PostgresDriver ) {
+                    return " FOR UPDATE" + lockTablesClause;
 
                 } else if (driver instanceof SqlServerDriver) {
                     return "";
@@ -1675,6 +1721,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 }
             case "pessimistic_partial_write":
                 if (driver instanceof PostgresDriver) {
+                    return " FOR UPDATE" + lockTablesClause + " SKIP LOCKED";
+
+                } else if (driver instanceof MysqlDriver) {
                     return " FOR UPDATE SKIP LOCKED";
 
                 } else {
@@ -1682,14 +1731,18 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 }
             case "pessimistic_write_or_fail":
                 if (driver instanceof PostgresDriver) {
+                    return " FOR UPDATE" + lockTablesClause + " NOWAIT";
+
+                } else if (driver instanceof MysqlDriver) {
                     return " FOR UPDATE NOWAIT";
+
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
                 }
 
             case "for_no_key_update":
                 if (driver instanceof PostgresDriver) {
-                    return " FOR NO KEY UPDATE";
+                    return " FOR NO KEY UPDATE" + lockTablesClause;
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
                 }
@@ -1750,14 +1803,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 if (this.connection.driver instanceof PostgresDriver)
                     // cast to JSON to trigger parsing in the driver
-                    selectionPath = `ST_AsGeoJSON(${selectionPath})::json`;
-
+                    if (column.precision) {
+                        selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`;
+                    } else {
+                        selectionPath = `ST_AsGeoJSON(${selectionPath})::json`;
+                    }
                 if (this.connection.driver instanceof SqlServerDriver)
                     selectionPath = `${selectionPath}.ToString()`;
             }
             return {
                 selection: selectionPath,
-                aliasName: selection && selection.aliasName ? selection.aliasName : DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column.databaseName),
+                aliasName: selection && selection.aliasName ? selection.aliasName : DriverUtils.buildAlias(this.connection.driver, aliasName, column.databaseName),
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
                 virtual: selection ? selection.virtual === true : (hasMainAlias ? false : true),
             };
@@ -1900,11 +1956,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             const querySelects = metadata.primaryColumns.map(primaryColumn => {
                 const distinctAlias = this.escape("distinctAlias");
-                const columnAlias = this.escape(DriverUtils.buildColumnAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName));
+                const columnAlias = this.escape(DriverUtils.buildAlias(this.connection.driver, mainAliasName, primaryColumn.databaseName));
                 if (!orderBys[columnAlias]) // make sure we aren't overriding user-defined order in inverse direction
                     orderBys[columnAlias] = "ASC";
 
-                const alias = DriverUtils.buildColumnAlias(
+                const alias = DriverUtils.buildAlias(
                     this.connection.driver,
                     "ids_" + mainAliasName,
                     primaryColumn.databaseName
@@ -1937,7 +1993,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
-                    const alias = DriverUtils.buildColumnAlias(
+                    const alias = DriverUtils.buildAlias(
                         this.connection.driver,
                         "ids_" + mainAliasName,
                         metadata.primaryColumns[0].databaseName
@@ -1992,10 +2048,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const selectString = Object.keys(orderBys)
             .map(orderCriteria => {
                 if (orderCriteria.indexOf(".") !== -1) {
-                    const [aliasName, propertyPath] = orderCriteria.split(".");
+                    const criteriaParts = orderCriteria.split(".");
+                    const aliasName = criteriaParts[0];
+                    const propertyPath = criteriaParts.slice(1).join(".");
                     const alias = this.expressionMap.findAliasByName(aliasName);
-                    const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-                    return this.escape(parentAlias) + "." + this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName));
+                    const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
+                    return this.escape(parentAlias) + "." + this.escape(DriverUtils.buildAlias(this.connection.driver, aliasName, column!.databaseName));
                 } else {
                     if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria))
                         return this.escape(parentAlias) + "." + orderCriteria;
@@ -2008,10 +2066,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const orderByObject: OrderByCondition = {};
         Object.keys(orderBys).forEach(orderCriteria => {
             if (orderCriteria.indexOf(".") !== -1) {
-                const [aliasName, propertyPath] = orderCriteria.split(".");
+                const criteriaParts = orderCriteria.split(".");
+                const aliasName = criteriaParts[0];
+                const propertyPath = criteriaParts.slice(1).join(".");
                 const alias = this.expressionMap.findAliasByName(aliasName);
-                const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-                orderByObject[this.escape(parentAlias) + "." + this.escape(DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column!.databaseName))] = orderBys[orderCriteria];
+                const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
+                orderByObject[this.escape(parentAlias) + "." + this.escape(DriverUtils.buildAlias(this.connection.driver, aliasName, column!.databaseName))] = orderBys[orderCriteria];
             } else {
                 if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria)) {
                     orderByObject[this.escape(parentAlias) + "." + orderCriteria] = orderBys[orderCriteria];
@@ -2032,26 +2092,40 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const queryId = sql + " -- PARAMETERS: " + JSON.stringify(parameters);
         const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
         let savedQueryResultCacheOptions: QueryResultCacheOptions|undefined = undefined;
+        let cacheError = false;
         if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
-            savedQueryResultCacheOptions = await this.connection.queryResultCache.getFromCache({
-                identifier: this.expressionMap.cacheId,
-                query: queryId,
-                duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
-            }, queryRunner);
-            if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
-                return JSON.parse(savedQueryResultCacheOptions.result);
+            try {
+                savedQueryResultCacheOptions = await this.connection.queryResultCache.getFromCache({
+                    identifier: this.expressionMap.cacheId,
+                    query: queryId,
+                    duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
+                }, queryRunner);
+                if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
+                    return JSON.parse(savedQueryResultCacheOptions.result);
+            } catch(error) {
+                if (!cacheOptions.ignoreErrors) {
+                    throw error;
+                }
+                cacheError = true;
+            }
         }
 
         const results = await queryRunner.query(sql, parameters);
 
-        if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
-            await this.connection.queryResultCache.storeInCache({
-                identifier: this.expressionMap.cacheId,
-                query: queryId,
-                time: new Date().getTime(),
-                duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
-                result: JSON.stringify(results)
-            }, savedQueryResultCacheOptions, queryRunner);
+        if (!cacheError && this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
+            try {
+                await this.connection.queryResultCache.storeInCache({
+                    identifier: this.expressionMap.cacheId,
+                    query: queryId,
+                    time: new Date().getTime(),
+                    duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
+                    result: JSON.stringify(results)
+                }, savedQueryResultCacheOptions, queryRunner);
+            } catch(error) {
+                if (!cacheOptions.ignoreErrors) {
+                    throw error;
+                }
+            }
         }
 
         return results;

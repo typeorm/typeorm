@@ -142,7 +142,7 @@ export interface Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string;
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined;
 
     /**
      * Normalizes "isUnique" value of the column.

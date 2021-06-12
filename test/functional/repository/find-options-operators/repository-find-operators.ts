@@ -273,9 +273,6 @@ describe("repository > find options > operators", () => {
     })));
 
     it("ilike", () => Promise.all(connections.map(async connection => {
-        if (!(connection.driver instanceof PostgresDriver))
-            return;
-
         // insert some fake data
         const post1 = new Post();
         post1.title = "about #1";
@@ -295,9 +292,6 @@ describe("repository > find options > operators", () => {
     })));
 
     it("not(ilike)", () => Promise.all(connections.map(async connection => {
-        if (!(connection.driver instanceof PostgresDriver))
-            return;
-
         // insert some fake data
         const post1 = new Post();
         post1.title = "about #1";
@@ -433,6 +427,10 @@ describe("repository > find options > operators", () => {
         });
         loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
 
+        const noPosts = await connection.getRepository(Post).find({
+            title: In([])
+        });
+        noPosts.length.should.be.eql(0);
     })));
 
     it("not(in)", () => Promise.all(connections.map(async connection => {
@@ -453,6 +451,10 @@ describe("repository > find options > operators", () => {
         });
         loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
 
+        const noPosts = await connection.getRepository(Post).find({
+            title: Not(In([]))
+        });
+        noPosts.length.should.be.eql(2);
     })));
 
     it("any", () => Promise.all(connections.map(async connection => {

@@ -33,6 +33,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
+            })
+            .option("o", {
+                alias: "outputJs",
+                type: "boolean",
+                default: false,
+                describe: "Generate a migration file on Javascript instead of Typescript",
             });
     }
 
@@ -43,8 +49,11 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
         try {
             const timestamp = new Date().getTime();
-            const fileContent = MigrationCreateCommand.getTemplate(args.name as any, timestamp);
-            const filename = timestamp + "-" + args.name + ".ts";
+            const fileContent = args.outputJs ?
+                MigrationCreateCommand.getJavascriptTemplate(args.name as any, timestamp)
+                : MigrationCreateCommand.getTemplate(args.name as any, timestamp);
+            const extension = args.outputJs ? ".js" : ".ts";
+            const filename = timestamp + "-" + args.name + extension;
             let directory = args.dir as string | undefined;
 
             // if directory is not set then try to open tsconfig and find default path there
@@ -95,4 +104,20 @@ export class ${camelCase(name, true)}${timestamp} implements MigrationInterface 
 `;
     }
 
+    /**
+     * Gets contents of the migration file in Javascript.
+     */
+    protected static getJavascriptTemplate(name: string, timestamp: number): string {
+        return `const { MigrationInterface, QueryRunner } = require("typeorm");
+
+module.exports = class ${camelCase(name, true)}${timestamp} {
+
+    async up(queryRunner) {
+    }
+
+    async down(queryRunner) {
+    }
+}
+        `;
+    }
 }

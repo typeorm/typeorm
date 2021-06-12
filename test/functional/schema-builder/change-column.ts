@@ -97,6 +97,24 @@ describe("schema builder > change column", () => {
         postVersionColumn.type = "varchar";
     })));
 
+    it("should correctly change column default value", () => Promise.all(connections.map(async connection => {
+
+        const postMetadata = connection.getMetadata(Post);
+        const nameColumn = postMetadata.findColumnWithPropertyName("name")!;
+
+        nameColumn.default = "My awesome post";
+        nameColumn.build(connection);
+
+        await connection.synchronize(false);
+
+        const queryRunner = connection.createQueryRunner();
+        const postTable = await queryRunner.getTable("post");
+        await queryRunner.release();
+
+        postTable!.findColumnByName("name")!.default.should.be.equal("'My awesome post'");
+
+    })));
+
     it("should correctly make column primary and generated", () => Promise.all(connections.map(async connection => {
         // CockroachDB does not allow changing PK
         if (connection.driver instanceof CockroachDriver)
@@ -248,4 +266,35 @@ describe("schema builder > change column", () => {
 
     })));
 
+    it("should correctly change column comment", () => Promise.all(connections.map(async connection => {
+        // Skip thie contents of this test if not one of the drivers that support comments
+        if (!(connection.driver instanceof CockroachDriver || connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver)) {
+            return;
+        }
+
+        const teacherMetadata = connection.getMetadata("teacher");
+        const idColumn = teacherMetadata.findColumnWithPropertyName("id")!;
+
+        idColumn.comment = "The Teacher's Key";
+
+        await connection.synchronize();
+
+        const queryRunnerA = connection.createQueryRunner();
+        const teacherTableA = await queryRunnerA.getTable("teacher");
+        await queryRunnerA.release();
+
+        expect(teacherTableA!.findColumnByName("id")!.comment).to.be.equal("The Teacher's Key", connection.name);
+
+        // revert changes
+        idColumn.comment = "";
+
+        await connection.synchronize();
+
+        const queryRunnerB = connection.createQueryRunner();
+        const teacherTableB = await queryRunnerB.getTable("teacher");
+        await queryRunnerB.release();
+
+        expect(teacherTableB!.findColumnByName("id")!.comment).to.be.undefined;
+
+    })));
 });

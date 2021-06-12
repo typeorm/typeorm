@@ -4,7 +4,7 @@ import { ConnectionOptionsReader } from "../../../src/connection/ConnectionOptio
 import { importClassesFromDirectories } from "../../../src/util/DirectoryExportedClassesLoader";
 import { LoggerFactory } from "../../../src/logger/LoggerFactory";
 
-describe("cli support for cjs extension", () => {
+describe("github issues > #6284 cli support for cjs extension", () => {
     it("will load a cjs file", async  () => {
         const cjsConfigPath = [__dirname, "ormconfig.cjs"].join("/");
         const databaseType = "postgres";

@@ -457,7 +457,7 @@ export class SapDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
 
         if (typeof defaultValue === "number") {

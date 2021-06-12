@@ -33,7 +33,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Gets generated sql query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createInsertExpression();
+        let sql = this.createComment();
+        sql += this.createInsertExpression();
         return sql.trim();
     }
 
@@ -86,8 +87,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // console.time(".prepare returning statement");
             const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(queryRunner, this.expressionMap);
             if (this.expressionMap.updateEntity === true && this.expressionMap.mainAlias!.hasMetadata) {
-                this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getInsertionReturningColumns();
-
+                if (!(valueSets.length > 1 && this.connection.driver instanceof OracleDriver)) {
+                    this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getInsertionReturningColumns();
+                }
                 if (this.expressionMap.extraReturningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
                     declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", this.expressionMap.extraReturningColumns);
                     selectOutputSql = `SELECT * FROM @OutputTable`;
@@ -266,16 +268,16 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     orUpdate(statement?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] }): this {
       this.expressionMap.onUpdate = {};
       if (statement && Array.isArray(statement.conflict_target))
-          this.expressionMap.onUpdate.conflict = ` ( ${statement.conflict_target.join(", ")} ) `;
+          this.expressionMap.onUpdate.conflict = ` ( ${statement.conflict_target.map((columnName) => this.escape(columnName)).join(", ")} ) `;
       if (statement && typeof statement.conflict_target === "string")
-          this.expressionMap.onUpdate.conflict = ` ON CONSTRAINT ${statement.conflict_target} `;
+          this.expressionMap.onUpdate.conflict = ` ON CONSTRAINT ${this.escape(statement.conflict_target)} `;
       if (statement && Array.isArray(statement.columns))
-          this.expressionMap.onUpdate.columns = statement.columns.map(column => `${column} = :${column}`).join(", ");
+          this.expressionMap.onUpdate.columns = statement.columns.map(column => `${this.escape(column)} = :${column}`).join(", ");
       if (statement && Array.isArray(statement.overwrite)) {
         if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = VALUES(${column})`).join(", ");
         } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
-          this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = EXCLUDED.${column}`).join(", ");
+          this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${this.escape(column)} = EXCLUDED.${this.escape(column)}`).join(", ");
         }
       }
       return this;
@@ -292,7 +294,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected createInsertExpression() {
         const tableName = this.getTableName(this.getMainTableName());
         const valuesExpression = this.createValuesExpression(); // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
-        const returningExpression = this.createReturningExpression();
+        const returningExpression = (this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1) ? null : this.createReturningExpression(); // oracle doesnt support returning with multi-row insert
         const columnsExpression = this.createColumnNamesExpression();
         let query = "INSERT ";
 
@@ -317,7 +319,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         // add VALUES expression
         if (valuesExpression) {
-            query += ` VALUES ${valuesExpression}`;
+            if (this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1) {
+                query += ` ${valuesExpression}`;
+            } else {
+                query += ` VALUES ${valuesExpression}`;
+            }
         } else {
             if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) { // special syntax for mysql DEFAULT VALUES insertion
                 query += " VALUES ()";
@@ -346,6 +352,18 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             query += ` RETURNING ${returningExpression}`;
         }
 
+
+        // Inserting a specific value for an auto-increment primary key in mssql requires enabling IDENTITY_INSERT
+        // IDENTITY_INSERT can only be enabled for tables where there is an IDENTITY column and only if there is a value to be inserted (i.e. supplying DEFAULT is prohibited if IDENTITY_INSERT is enabled)
+        if (this.connection.driver instanceof SqlServerDriver
+            && this.expressionMap.mainAlias!.hasMetadata
+            && this.expressionMap.mainAlias!.metadata.columns
+                .filter((column) => this.expressionMap.insertColumns.length > 0 ? this.expressionMap.insertColumns.indexOf(column.propertyPath) !== -1 : column.isInsert)
+                .some((column) => this.isOverridingAutoIncrementBehavior(column))
+        ) {
+            query = `SET IDENTITY_INSERT ${tableName} ON; ${query}; SET IDENTITY_INSERT ${tableName} OFF`;
+        }
+
         return query;
     }
 
@@ -371,7 +389,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 && !(this.connection.driver instanceof OracleDriver)
                 && !(this.connection.driver instanceof AbstractSqliteDriver)
                 && !(this.connection.driver instanceof MysqlDriver)
-                && !(this.connection.driver instanceof AuroraDataApiDriver))
+                && !(this.connection.driver instanceof AuroraDataApiDriver)
+                && !(this.connection.driver instanceof SqlServerDriver && this.isOverridingAutoIncrementBehavior(column)))
                 return false;
 
             return true;
@@ -412,7 +431,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             valueSets.forEach((valueSet, valueSetIndex) => {
                 columns.forEach((column, columnIndex) => {
                     if (columnIndex === 0) {
-                        expression += "(";
+                        if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
+                            expression += " SELECT ";
+                        } else {
+                            expression += "(";
+                        }
                     }
                     const paramName = "i" + valueSetIndex + "_" + column.databaseName;
 
@@ -472,8 +495,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
-                            if (column.default !== undefined) { // try to use default defined in the column
+                        if ((this.connection.driver instanceof OracleDriver && valueSets.length > 1) || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
+                            if (column.default !== undefined && column.default !== null) { // try to use default defined in the column
                                 expression += this.connection.driver.normalizeDefault(column);
                             } else {
                                 expression += "NULL"; // otherwise simply use NULL and pray if column is nullable
@@ -521,9 +544,17 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     if (columnIndex === columns.length - 1) {
                         if (valueSetIndex === valueSets.length - 1) {
-                            expression += ")";
+                            if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
+                                expression += " FROM DUAL ";
+                            } else {
+                                expression += ")";
+                            }
                         } else {
-                            expression += "), ";
+                            if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
+                                expression += " FROM DUAL UNION ALL ";
+                            } else {
+                                expression += "), ";
+                            }
                         }
                     } else {
                         expression += ", ";
@@ -597,6 +628,21 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             return [this.expressionMap.valuesSet];
 
         throw new InsertValuesMissingError();
+    }
+
+    /**
+     * Checks if column is an auto-generated primary key, but the current insertion specifies a value for it.
+     * 
+     * @param column
+     */
+    protected isOverridingAutoIncrementBehavior(column: ColumnMetadata): boolean {
+        return column.isPrimary 
+                && column.isGenerated 
+                && column.generationStrategy === "increment"
+                && this.getValueSets().some((valueSet) => 
+                    column.getEntityValue(valueSet) !== undefined 
+                    && column.getEntityValue(valueSet) !== null
+                );
     }
 
 }
