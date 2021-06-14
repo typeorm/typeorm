@@ -1969,7 +1969,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 return `${distinctAlias}.${columnAlias} as "${alias}"`;
             });
 
-            rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
+            rawResults = await this.dialect.getSelectQueryBuilder(this.connection, queryRunner)
                 .select(`DISTINCT ${querySelects.join(", ")}`)
                 .addSelect(selects)
                 .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")

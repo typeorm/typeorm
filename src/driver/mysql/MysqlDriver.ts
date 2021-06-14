@@ -19,6 +19,8 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {LegacyDialect} from "../LegacyDialect";
+import {Dialect} from "../Dialect";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -970,4 +972,10 @@ export class MysqlDriver implements Driver {
         return comment;
     }
 
+    /**
+     * Gets the Dialect in use by this driver.
+     */
+    getDialect(): Dialect {
+        return new LegacyDialect()
+    }
 }

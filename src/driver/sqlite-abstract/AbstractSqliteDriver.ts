@@ -14,6 +14,8 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {Dialect} from "../Dialect";
+import {LegacyDialect} from "../LegacyDialect";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -634,4 +636,10 @@ export abstract class AbstractSqliteDriver implements Driver {
         // dependencies have to be loaded in the specific driver
     }
 
+    /**
+     * Retrieves the Dialect for this driver.
+     */
+    getDialect(): Dialect {
+        return new LegacyDialect()
+    }
 }

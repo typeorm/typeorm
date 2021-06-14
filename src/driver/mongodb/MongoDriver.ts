@@ -18,6 +18,8 @@ import {ObjectUtils} from "../../util/ObjectUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {DriverUtils} from "../DriverUtils";
+import {MongoDialect} from "./MongoDialect";
+import {Dialect} from "../Dialect";
 
 /**
  * Organizes communication with MongoDB.
@@ -453,7 +455,7 @@ export class MongoDriver implements Driver {
         } else {
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}`;
         }
-            
+
         return connectionString;
     }
 
@@ -476,4 +478,10 @@ export class MongoDriver implements Driver {
         return mongoOptions;
     }
 
+    /**
+     * Retrieves the Dialect for this driver.
+     */
+    getDialect(): Dialect {
+        return new MongoDialect();
+    }
 }

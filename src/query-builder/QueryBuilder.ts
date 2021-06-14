@@ -23,6 +23,7 @@ import {EntitySchema} from "../";
 import {FindOperator} from "../find-options/FindOperator";
 import {In} from "../find-options/operator/In";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
+import {Dialect} from "../driver/Dialect";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -63,6 +64,11 @@ export abstract class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
+     * Dialect with which the QueryBuilder is working with
+     */
+    protected readonly dialect: Dialect;
+
+    /**
      * Query runner used to execute query builder query.
      */
     protected queryRunner?: QueryRunner;
@@ -95,6 +101,8 @@ export abstract class QueryBuilder<Entity> {
             this.queryRunner = queryRunner;
             this.expressionMap = new QueryExpressionMap(this.connection);
         }
+
+        this.dialect = this.connection.driver.getDialect();
     }
 
     // -------------------------------------------------------------------------
@@ -154,12 +162,7 @@ export abstract class QueryBuilder<Entity> {
             this.expressionMap.selects = [{ selection: selection, aliasName: selectionAliasName }];
         }
 
-        // loading it dynamically because of circular issue
-        const SelectQueryBuilderCls = require("./SelectQueryBuilder").SelectQueryBuilder;
-        if (this instanceof SelectQueryBuilderCls)
-            return this as any;
-
-        return new SelectQueryBuilderCls(this);
+        return this.dialect.getSelectQueryBuilder(this);
     }
 
     /**
@@ -168,12 +171,7 @@ export abstract class QueryBuilder<Entity> {
     insert(): InsertQueryBuilder<Entity> {
         this.expressionMap.queryType = "insert";
 
-        // loading it dynamically because of circular issue
-        const InsertQueryBuilderCls = require("./InsertQueryBuilder").InsertQueryBuilder;
-        if (this instanceof InsertQueryBuilderCls)
-            return this as any;
-
-        return new InsertQueryBuilderCls(this);
+        return this.dialect.getInsertQueryBuilder(this);
     }
 
     /**
@@ -211,12 +209,7 @@ export abstract class QueryBuilder<Entity> {
         this.expressionMap.queryType = "update";
         this.expressionMap.valuesSet = updateSet;
 
-        // loading it dynamically because of circular issue
-        const UpdateQueryBuilderCls = require("./UpdateQueryBuilder").UpdateQueryBuilder;
-        if (this instanceof UpdateQueryBuilderCls)
-            return this as any;
-
-        return new UpdateQueryBuilderCls(this);
+        return this.dialect.getUpdateQueryBuilder(this);
     }
 
     /**
@@ -225,34 +218,19 @@ export abstract class QueryBuilder<Entity> {
     delete(): DeleteQueryBuilder<Entity> {
         this.expressionMap.queryType = "delete";
 
-        // loading it dynamically because of circular issue
-        const DeleteQueryBuilderCls = require("./DeleteQueryBuilder").DeleteQueryBuilder;
-        if (this instanceof DeleteQueryBuilderCls)
-            return this as any;
-
-        return new DeleteQueryBuilderCls(this);
+        return this.dialect.getDeleteQueryBuilder(this);
     }
 
     softDelete(): SoftDeleteQueryBuilder<any> {
         this.expressionMap.queryType = "soft-delete";
 
-        // loading it dynamically because of circular issue
-        const SoftDeleteQueryBuilderCls = require("./SoftDeleteQueryBuilder").SoftDeleteQueryBuilder;
-        if (this instanceof SoftDeleteQueryBuilderCls)
-            return this as any;
-
-        return new SoftDeleteQueryBuilderCls(this);
+        return this.dialect.getSoftDeleteQueryBuilder(this);
     }
 
     restore(): SoftDeleteQueryBuilder<any> {
         this.expressionMap.queryType = "restore";
 
-        // loading it dynamically because of circular issue
-        const SoftDeleteQueryBuilderCls = require("./SoftDeleteQueryBuilder").SoftDeleteQueryBuilder;
-        if (this instanceof SoftDeleteQueryBuilderCls)
-            return this as any;
-
-        return new SoftDeleteQueryBuilderCls(this);
+        return this.dialect.getSoftDeleteQueryBuilder(this);
     }
 
     /**
@@ -280,12 +258,7 @@ export abstract class QueryBuilder<Entity> {
             this.expressionMap.setMainAlias(mainAlias);
         }
 
-        // loading it dynamically because of circular issue
-        const RelationQueryBuilderCls = require("./RelationQueryBuilder").RelationQueryBuilder;
-        if (this instanceof RelationQueryBuilderCls)
-            return this as any;
-
-        return new RelationQueryBuilderCls(this);
+        return this.dialect.getRelationQueryBuilder(this);
     }
 
 

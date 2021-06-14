@@ -20,6 +20,8 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {CockroachQueryRunner} from "./CockroachQueryRunner";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {Dialect} from "../Dialect";
+import {LegacyDialect} from "../LegacyDialect";
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -765,4 +767,10 @@ export class CockroachDriver implements Driver {
         return comment;
     }
 
+    /**
+     * Retrieves the Dialect for this driver.
+     */
+    getDialect(): Dialect {
+        return new LegacyDialect()
+    }
 }

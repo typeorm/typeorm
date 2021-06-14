@@ -19,6 +19,8 @@ import {ReplicationMode} from "../types/ReplicationMode";
 import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
+import {Dialect} from "../Dialect";
+import {LegacyDialect} from "../LegacyDialect";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -1139,4 +1141,10 @@ export class PostgresDriver implements Driver {
         return comment;
     }
 
+    /**
+     * Gets the Dialect in use by this driver.
+     */
+    getDialect(): Dialect {
+        return new LegacyDialect()
+    }
 }

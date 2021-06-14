@@ -20,6 +20,8 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {LegacyDialect} from "../LegacyDialect";
+import {Dialect} from "../Dialect";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -819,4 +821,10 @@ export class SqlServerDriver implements Driver {
         });
     }
 
+    /**
+     * Retrieves the Dialect for this driver.
+     */
+    getDialect(): Dialect {
+        return new LegacyDialect()
+    }
 }

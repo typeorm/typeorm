@@ -17,6 +17,8 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {Dialect} from "../Dialect";
+import {LegacyDialect} from "../LegacyDialect";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -876,4 +878,10 @@ export class AuroraDataApiDriver implements Driver {
         return comment;
     }
 
+    /**
+     * Retrieves a Select Query builder given a connection and optionally a QueryRunner.
+     */
+    getDialect(): Dialect {
+        return new LegacyDialect()
+    }
 }

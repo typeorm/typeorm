@@ -392,9 +392,6 @@ export class Connection {
      * Executes raw SQL query and returns raw database results.
      */
     async query(query: string, parameters?: any[], queryRunner?: QueryRunner): Promise<any> {
-        if (this instanceof MongoEntityManager)
-            throw new Error(`Queries aren't supported by MongoDB.`);
-
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
@@ -423,17 +420,14 @@ export class Connection {
      * Creates a new query builder that can be used to build a sql query.
      */
     createQueryBuilder<Entity>(entityOrRunner?: EntityTarget<Entity>|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
-        if (this instanceof MongoEntityManager)
-            throw new Error(`Query Builder is not supported by MongoDB.`);
-
         if (alias) {
             const metadata = this.getMetadata(entityOrRunner as EntityTarget<Entity>);
-            return new SelectQueryBuilder(this, queryRunner)
+            return this.driver.getDialect().getSelectQueryBuilder(this, queryRunner)
                 .select(alias)
                 .from(metadata.target, alias);
 
         } else {
-            return new SelectQueryBuilder(this, entityOrRunner as QueryRunner|undefined);
+            return this.driver.getDialect().getSelectQueryBuilder(this, entityOrRunner as QueryRunner|undefined);
         }
     }
 

@@ -12,6 +12,8 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {SapConnectionOptions} from "./SapConnectionOptions";
 import {SapQueryRunner} from "./SapQueryRunner";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {Dialect} from "../Dialect";
+import {LegacyDialect} from "../LegacyDialect";
 
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -662,4 +664,10 @@ export class SapDriver implements Driver {
         }
     }
 
+    /**
+     * Retrieves a Select Query builder given a connection and optionally a QueryRunner.
+     */
+    getDialect(): Dialect {
+        return new LegacyDialect()
+    }
 }

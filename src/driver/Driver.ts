@@ -9,6 +9,7 @@ import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ReplicationMode} from "./types/ReplicationMode";
+import {Dialect} from "./Dialect";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -204,4 +205,8 @@ export interface Driver {
      */
     createParameter(parameterName: string, index: number): string;
 
+    /**
+     * Gets the Dialect object
+     */
+    getDialect(): Dialect;
 }
