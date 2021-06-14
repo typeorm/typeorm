@@ -8,6 +8,7 @@ import {createConnections} from "../../src/index";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
 import {QueryResultCache} from "../../src/cache/QueryResultCache";
 import {Logger} from "../../src/logger/Logger";
+import {CockroachDriver} from "../../src/driver/cockroachdb/CockroachDriver.js";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -254,6 +255,20 @@ export async function createTestingConnections(options?: TestingOptions): Promis
 
         for (const database of databases) {
             await queryRunner.createDatabase(database, true);
+        }
+
+        if (connection.driver instanceof CockroachDriver) {
+            await queryRunner.query(`ALTER RANGE default CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER DATABASE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER TABLE system.public.jobs CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER RANGE meta CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER RANGE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER RANGE liveness CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`SET CLUSTER SETTING jobs.retention_time = '180s';`);
+            await queryRunner.query(`SET CLUSTER SETTING kv.range_merge.queue_interval = '200ms'`);
+            await queryRunner.query(`SET CLUSTER SETTING kv.raft_log.disable_synchronization_unsafe = 'true'`);
+            await queryRunner.query(`SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`);
+
         }
 
         // create new schemas
