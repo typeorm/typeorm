@@ -213,6 +213,8 @@ export class MongoDriver implements Driver {
 
         // load mongodb package
         this.loadDependencies();
+
+        this.database = DriverUtils.buildMongoDBDriverOptions(this.options).database;
     }
 
     // -------------------------------------------------------------------------

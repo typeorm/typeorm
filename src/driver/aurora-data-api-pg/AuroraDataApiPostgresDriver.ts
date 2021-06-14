@@ -7,6 +7,7 @@ import {AuroraDataApiPostgresQueryRunner} from "../aurora-data-api-pg/AuroraData
 import {ReplicationMode} from "../types/ReplicationMode";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {DriverUtils} from "../DriverUtils";
 
 abstract class PostgresWrapper extends PostgresDriver {
     options: any;
@@ -68,6 +69,8 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
             this.options.serviceConfigOptions,
             this.options.formatOptions,
         );
+
+        this.database = DriverUtils.buildDriverOptions(this.options).database;
     }
 
     // -------------------------------------------------------------------------

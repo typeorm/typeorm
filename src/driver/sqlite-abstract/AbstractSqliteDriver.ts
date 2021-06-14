@@ -14,6 +14,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {DriverUtils} from "../DriverUtils";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -206,6 +207,8 @@ export abstract class AbstractSqliteDriver implements Driver {
     constructor(connection: Connection) {
         this.connection = connection;
         this.options = connection.options as BaseConnectionOptions;
+
+        this.database = DriverUtils.buildDriverOptions(this.options).database;
     }
 
     // -------------------------------------------------------------------------

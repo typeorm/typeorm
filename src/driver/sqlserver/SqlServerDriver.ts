@@ -222,6 +222,8 @@ export class SqlServerDriver implements Driver {
         // load mssql package
         this.loadDependencies();
 
+        this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
+
         // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
         // if (!this.options.host)

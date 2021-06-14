@@ -310,7 +310,7 @@ export class MysqlDriver implements Driver {
         // load mysql package
         this.loadDependencies();
 
-        this.database = this.options.replication ? this.options.replication.master.database : this.options.database;
+        this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
 
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind

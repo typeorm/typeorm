@@ -312,6 +312,8 @@ export class AuroraDataApiDriver implements Driver {
             this.options.formatOptions,
         );
 
+        this.database = DriverUtils.buildDriverOptions(this.options).database;
+
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
         // if (!(this.options.host || (this.options.extra && this.options.extra.socketPath)) && !this.options.socketPath)

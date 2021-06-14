@@ -225,6 +225,8 @@ export class OracleDriver implements Driver {
         // extra oracle setup
         this.oracle.outFormat = this.oracle.OBJECT;
 
+        this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
+
         // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
         // if (!this.options.host)

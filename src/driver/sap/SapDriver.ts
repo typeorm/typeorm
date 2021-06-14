@@ -12,6 +12,7 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {SapConnectionOptions} from "./SapConnectionOptions";
 import {SapQueryRunner} from "./SapQueryRunner";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {DriverUtils} from "../DriverUtils";
 
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -198,6 +199,8 @@ export class SapDriver implements Driver {
         this.connection = connection;
         this.options = connection.options as SapConnectionOptions;
         this.loadDependencies();
+
+        this.database = DriverUtils.buildDriverOptions(this.options).database;
     }
 
     // -------------------------------------------------------------------------

@@ -38,7 +38,6 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import {DriverUtils} from "../driver/DriverUtils";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
 
 /**
@@ -521,28 +520,7 @@ export class Connection {
         const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
         ObjectUtils.assign(this, { migrations: migrations });
 
-        this.driver.database = this.getDatabaseName();
-
         // validate all created entity metadatas to make sure user created entities are valid and correct
         entityMetadataValidator.validateMany(this.entityMetadatas.filter(metadata => metadata.tableType !== "view"), this.driver);
     }
-
-    // This database name property is nested for replication configs.
-    protected getDatabaseName(): string {
-        const options = this.options;
-        switch (options.type) {
-            case "mysql" :
-            case "mariadb" :
-            case "postgres":
-            case "cockroachdb":
-            case "mssql":
-            case "oracle":
-                return DriverUtils.buildDriverOptions(options.replication ? options.replication.master : options).database;
-            case "mongodb":
-                return DriverUtils.buildMongoDBDriverOptions(options).database;
-            default:
-                return DriverUtils.buildDriverOptions(options).database;
-    }
-}
-
 }

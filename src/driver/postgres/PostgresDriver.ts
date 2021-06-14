@@ -19,6 +19,7 @@ import {ReplicationMode} from "../types/ReplicationMode";
 import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
+import {DriverUtils} from "../DriverUtils";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -262,6 +263,8 @@ export class PostgresDriver implements Driver {
         }
         // load postgres package
         this.loadDependencies();
+
+        this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
 
         // ObjectUtils.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
