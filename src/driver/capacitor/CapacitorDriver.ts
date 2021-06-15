@@ -86,8 +86,11 @@ export class CapacitorDriver extends AbstractSqliteDriver {
         // working properly. this also makes onDelete to work with sqlite.
         await connection.query(`PRAGMA foreign_keys = ON`, []);
 
-        // turn on WAL mode to enhance performance
-        await connection.query(`PRAGMA journal_mode = WAL`, []);
+        if (this.options.journalMode) {
+            await connection.query(`PRAGMA journal_mode = ?`, [
+                this.options.journalMode,
+            ]);
+        }
 
         return connection;
     }
