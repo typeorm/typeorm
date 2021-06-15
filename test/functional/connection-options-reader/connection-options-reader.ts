@@ -5,9 +5,14 @@ import {ConnectionOptionsReader} from "../../../src/connection/ConnectionOptions
 import path from "path";
 
 async function createDotenvFiles() {
-  // These files may not always exist
-  await fs.writeFile(path.join(__dirname, "configs/.env"), "TYPEORM_CONNECTION = mysql\nTYPEORM_DATABASE = test-env");
-  await fs.writeFile(path.join(__dirname, "configs/ormconfig.env"), "TYPEORM_CONNECTION = mysql\nTYPEORM_DATABASE = test-ormconfig-env");
+    // These files may not always exist
+    await fs.writeFile(path.join(__dirname, "configs/.env"), "TYPEORM_CONNECTION = mysql\nTYPEORM_DATABASE = test-env");
+    await fs.writeFile(path.join(__dirname, "configs/ormconfig.env"), "TYPEORM_CONNECTION = mysql\nTYPEORM_DATABASE = test-ormconfig-env");
+}
+
+async function createYamlFiles() {
+  await fs.mkdir(path.join(__dirname, "configs/yaml"));
+  await fs.writeFile(path.join(__dirname, "configs/yaml/test-yaml.yaml"), "- type: \"sqlite\"\n  name: \"file\"\n  database: \"test-yaml\"");
 }
 
 describe("ConnectionOptionsReader", () => {
@@ -82,4 +87,12 @@ describe("ConnectionOptionsReader", () => {
     expect(fileOptions.database).to.have.string("test-ormconfig-env");
     expect(process.env.TYPEORM_DATABASE).to.equal("test-ormconfig-env");
   });
+
+  it.only("properly loads config from yaml", async () => {
+    await createYamlFiles();
+
+    const connectionOptionsReader = new ConnectionOptionsReader({ root: path.join(__dirname, "configs/yaml"), configName: "test-yaml" });
+    const fileOptions: ConnectionOptions = await connectionOptionsReader.get("file");
+    expect(fileOptions.database).to.have.string("/test-yaml");
+  })
 });
