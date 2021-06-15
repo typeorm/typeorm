@@ -16,7 +16,7 @@ describe("query runner > drop column", () => {
     });
     after(() => closeTestingConnections(connections));
 
-    describe.skip("when columns are instances of TableColumn", () => {
+    describe("when columns are instances of TableColumn", () => {
         it("should correctly drop column and revert drop", () => Promise.all(connections.map(async connection => {
     
             const queryRunner = connection.createQueryRunner();
