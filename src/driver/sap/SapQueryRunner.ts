@@ -184,82 +184,101 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         const promise = new Promise(async (ok, fail) => {
-           try {
-               const databaseConnection = await this.connect();
-               // we disable autocommit because ROLLBACK does not work in autocommit mode
-               databaseConnection.setAutoCommit(!this.isTransactionActive);
-               this.driver.connection.logger.logQuery(query, parameters, this);
-               const queryStartTime = +new Date();
-               const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
+            const resolveChain = () => {
+                let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
+                let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
 
-               const statement = databaseConnection.prepare(query);
-               statement.exec(parameters, (err: any, raw: any) => {
+                if (promiseIndex !== -1)
+                    this.queryResponsibilityChain.splice(promiseIndex, 1);
+                if (waitingPromiseIndex !== -1)
+                    this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
 
-                   // log slow queries if maxQueryExecution time is set
-                   const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
-                   const queryEndTime = +new Date();
-                   const queryExecutionTime = queryEndTime - queryStartTime;
-                   if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                       this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                waitingOkay();
+            };
 
-                   const resolveChain = () => {
-                       if (promiseIndex !== -1)
-                           this.queryResponsibilityChain.splice(promiseIndex, 1);
-                       if (waitingPromiseIndex !== -1)
-                           this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
-                       waitingOkay();
-                   };
+            let statement: any;
 
-                   let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
-                   let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
-                   if (err) {
-                       this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                       resolveChain();
-                       return fail(new QueryFailedError(query, parameters, err));
+            const dropStatement = async () => {
+                return new Promise<void>((ok, fail) => {
+                    if (!statement?.drop) {
+                        ok();
+                    }
 
-                   } else {
-                       const result = new QueryResult();
+                    statement.drop(() => ok());
+                });
+            };
 
-                       if (typeof raw === "number") {
-                           result.affected = raw;
-                       } else if (Array.isArray(raw)) {
-                           result.records = raw;
-                       }
+            try {
+                const databaseConnection = await this.connect();
+                // we disable autocommit because ROLLBACK does not work in autocommit mode
+                databaseConnection.setAutoCommit(!this.isTransactionActive);
+                this.driver.connection.logger.logQuery(query, parameters, this);
+                const queryStartTime = +new Date();
+                const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
 
-                       if (isInsertQuery) {
-                           const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`;
-                           this.driver.connection.logger.logQuery(lastIdQuery, [], this);
-                           databaseConnection.exec(lastIdQuery, (err: any, identityValueResult: { "CURRENT_IDENTITY_VALUE()": number }[]) => {
-                               if (err) {
-                                   this.driver.connection.logger.logQueryError(err, lastIdQuery, [], this);
-                                   resolveChain();
-                                   fail(new QueryFailedError(lastIdQuery, [], err));
-                                   return;
-                               }
+                statement = databaseConnection.prepare(query);
+                statement.exec(parameters, async (err: any, raw: any) => {
+                    // log slow queries if maxQueryExecution time is set
+                    const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+                    const queryEndTime = +new Date();
+                    const queryExecutionTime = queryEndTime - queryStartTime;
+                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-                               result.raw = identityValueResult[0]["CURRENT_IDENTITY_VALUE()"];
-                               result.records = identityValueResult;
+                    if (err) {
+                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        await dropStatement();
+                        resolveChain();
+                        fail(new QueryFailedError(query, parameters, err));
+                        return;
+                    }
 
-                               if (useStructuredResult) {
-                                   ok(result);
-                               } else {
-                                   ok(result.raw);
-                               }
-                               resolveChain();
-                           });
-                       } else {
-                           result.raw = raw;
+                    const result = new QueryResult();
 
-                           if (useStructuredResult) {
-                               ok(result);
-                           } else {
-                               ok(result.raw);
-                           }
-                           resolveChain();
-                       }
-                   }
-               });
-           } catch (err) {
+                    if (typeof raw === "number") {
+                        result.affected = raw;
+                    } else if (Array.isArray(raw)) {
+                        result.records = raw;
+                    }
+
+                    result.raw = raw;
+
+                    if (isInsertQuery) {
+                        const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`;
+                        this.driver.connection.logger.logQuery(lastIdQuery, [], this);
+                        databaseConnection.exec(lastIdQuery, async (err: any, identityValueResult: { "CURRENT_IDENTITY_VALUE()": number }[]) => {
+                            if (err) {
+                                this.driver.connection.logger.logQueryError(err, lastIdQuery, [], this);
+                                await dropStatement();
+                                resolveChain();
+                                fail(new QueryFailedError(lastIdQuery, [], err));
+                                return;
+                            }
+
+                            result.raw = identityValueResult[0]["CURRENT_IDENTITY_VALUE()"];
+                            result.records = identityValueResult;
+
+                            await dropStatement();
+                            if (useStructuredResult) {
+                                ok(result);
+                            } else {
+                                ok(result.raw);
+                            }
+                            resolveChain();
+                        });
+                    } else {
+                        await dropStatement();
+                        if (useStructuredResult) {
+                            ok(result);
+                        } else {
+                            ok(result.raw);
+                        }
+                        resolveChain();
+                    }
+                });
+            } catch (err) {
+                await dropStatement();
+                resolveChain();
                 fail(err);
             }
         });
