@@ -66,6 +66,12 @@ export class EntityManager {
      */
     protected repositories: Repository<any>[] = [];
 
+
+    /**
+     * 
+     */
+    protected afterCommitHooks: (() => Promise<unknown> | unknown)[] = [];
+
     /**
      * Plain to object transformer used in create and merge operations.
      */
@@ -137,6 +143,11 @@ export class EntityManager {
               }
             const result = await runInTransaction(queryRunner.manager);
             await queryRunner.commitTransaction();
+
+            if (queryRunner.manager.afterCommitHooks.length) {
+                await Promise.all(queryRunner.manager.afterCommitHooks);
+            }
+            
             return result;
 
         } catch (err) {
@@ -181,25 +192,44 @@ export class EntityManager {
     }
 
     /**
-     * Checks if entity has an id.
+     * Adds a hook to run after current transaction completed succefully.
      */
-    hasId(entity: any): boolean;
+    onCommit(fn: () => unknown): void;
 
     /**
-     * Checks if entity of given schema name has an id.
+     * Adds an async hook to run after current transaction completed succefully.
      */
-    hasId(target: Function|string, entity: any): boolean;
+    onCommit(fn: () => Promise<unknown>): void;
 
     /**
-     * Checks if entity has an id by its Function type or schema name.
+     * Adds a hook to run after current transaction completed succefully.
      */
-    hasId(targetOrEntity: any|Function|string, maybeEntity?: any): boolean {
-        const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
-        const entity = arguments.length === 2 ? maybeEntity : targetOrEntity;
-        const metadata = this.connection.getMetadata(target);
-        return metadata.hasId(entity);
+    onCommit(fn: () => Promise<unknown> | unknown): void {
+        if (this.queryRunner && !this.queryRunner.isTransactionActive)
+            throw new Error(`There is no active transaction to add a hook`);
+        this.afterCommitHooks.push(fn);
     }
 
+    /**
+     * Checks if entity has an id.
+     */
+     hasId(entity: any): boolean;
+
+     /**
+      * Checks if entity of given schema name has an id.
+      */
+     hasId(target: Function|string, entity: any): boolean;
+ 
+     /**
+      * Checks if entity has an id by its Function type or schema name.
+      */
+     hasId(targetOrEntity: any|Function|string, maybeEntity?: any): boolean {
+         const target = arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor;
+         const entity = arguments.length === 2 ? maybeEntity : targetOrEntity;
+         const metadata = this.connection.getMetadata(target);
+         return metadata.hasId(entity);
+     }
+ 
     /**
      * Gets entity mixed id.
      */
