@@ -88,7 +88,7 @@ describe("ConnectionOptionsReader", () => {
     expect(process.env.TYPEORM_DATABASE).to.equal("test-ormconfig-env");
   });
 
-  it.only("properly loads config from yaml", async () => {
+  it("properly loads config from yaml", async () => {
     await createYamlFiles();
 
     const connectionOptionsReader = new ConnectionOptionsReader({ root: path.join(__dirname, "configs/yaml"), configName: "test-yaml" });
