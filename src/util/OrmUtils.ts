@@ -1,5 +1,14 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 
+/**
+ * Access `URL` in environments that support it.
+ * For example, React Native does not include `URL` (see https://github.com/typeorm/typeorm/issues/6142),
+ * but Node.js (>= v10) and browser implementations do.
+ *
+ * Note: `globalThis` is being extended with a `URL` property as @types/node does not declare it (see https://github.com/DefinitelyTyped/DefinitelyTyped/issues/34960)
+ */
+const GlobalURL = (typeof globalThis !== "undefined" ? globalThis as (typeof globalThis & {URL?: (typeof import('url').URL)}) : {URL: undefined}).URL;
+
 export class OrmUtils {
 
     // -------------------------------------------------------------------------
@@ -82,7 +91,8 @@ export class OrmUtils {
                 && !(value instanceof Set)
                 && !(value instanceof Date)
                 && !(value instanceof Buffer)
-                && !(value instanceof RegExp)) {
+                && !(value instanceof RegExp)
+                && !(GlobalURL && value instanceof GlobalURL)) {
                     if (!target[key])
                         Object.assign(target, { [key]: Object.create(Object.getPrototypeOf(value)) });
                     this.mergeDeep(target[key], value);
@@ -212,7 +222,8 @@ export class OrmUtils {
             (x instanceof Date && y instanceof Date) ||
             (x instanceof RegExp && y instanceof RegExp) ||
             (x instanceof String && y instanceof String) ||
-            (x instanceof Number && y instanceof Number))
+            (x instanceof Number && y instanceof Number) ||
+            (GlobalURL && x instanceof GlobalURL && y instanceof GlobalURL))
             return x.toString() === y.toString();
 
         // At last checking prototypes as good as we can
