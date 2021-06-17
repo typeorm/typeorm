@@ -590,7 +590,7 @@ export class EntityMetadata {
         if (!entity)
             return undefined;
 
-        return EntityMetadata.getValueMap(entity, this.primaryColumns, { skipNulls: true });
+        return this.getValueMap(entity, this.primaryColumns, { skipNulls: true });
     }
 
     /**
@@ -762,7 +762,7 @@ export class EntityMetadata {
      * Creates value map from the given values and columns.
      * Examples of usages are primary columns map and join columns map.
      */
-    static getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[], options?: { skipNulls?: boolean }): ObjectLiteral|undefined {
+    getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[], options?: { skipNulls?: boolean }): ObjectLiteral|undefined {
         return columns.reduce((map, column) => {
             const value = column.getEntityValueMap(entity, options);
 
@@ -770,7 +770,7 @@ export class EntityMetadata {
             if (map === undefined || value === null || value === undefined)
                 return undefined;
 
-            return column.isObjectId ? Object.assign(map, value) : OrmUtils.mergeDeep(map, value);
+            return column.isObjectId ? Object.assign(map, value) : OrmUtils.mergeDeep(this.connection.options.customDeepMerge, map, value);
         }, {} as ObjectLiteral|undefined);
     }
 
@@ -846,8 +846,8 @@ export class EntityMetadata {
      */
     createPropertiesMap(): { [name: string]: string|any } {
         const map: { [name: string]: string|any } = {};
-        this.columns.forEach(column => OrmUtils.mergeDeep(map, column.createValueMap(column.propertyPath)));
-        this.relations.forEach(relation => OrmUtils.mergeDeep(map, relation.createValueMap(relation.propertyPath)));
+        this.columns.forEach(column => OrmUtils.mergeDeep(this.connection.options.customDeepMerge, map, column.createValueMap(column.propertyPath)));
+        this.relations.forEach(relation => OrmUtils.mergeDeep(this.connection.options.customDeepMerge, map, relation.createValueMap(relation.propertyPath)));
         return map;
     }
 

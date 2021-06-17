@@ -877,7 +877,7 @@ export class PostgresDriver implements Driver {
         return Object.keys(insertResult).reduce((map, key) => {
             const column = metadata.findColumnWithDatabaseName(key);
             if (column) {
-                OrmUtils.mergeDeep(map, column.createValueMap(insertResult[key]));
+                OrmUtils.mergeDeep(this.connection.options.customDeepMerge, map, column.createValueMap(insertResult[key]));
                 // OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column))); // TODO: probably should be like there, but fails on enums, fix later
             }
             return map;

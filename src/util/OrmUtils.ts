@@ -1,4 +1,5 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {CustomDeepMerge} from "../connection/BaseConnectionOptions";
 
 export class OrmUtils {
 
@@ -67,7 +68,7 @@ export class OrmUtils {
      *
      * @see http://stackoverflow.com/a/34749873
      */
-    static mergeDeep(target: any, ...sources: any[]): any {
+    static mergeDeep(customDeepMerge: CustomDeepMerge[] = [], target: any, ...sources: any[]): any {
         if (!sources.length) return target;
         const source = sources.shift();
 
@@ -77,7 +78,11 @@ export class OrmUtils {
                 if (key === "__proto__" || value instanceof Promise)
                     continue;
 
-                if (this.isObject(value)
+                const customHandler = customDeepMerge.find(({predicate}) => predicate(value))?.handler;
+                if(customHandler) {
+                    Object.assign(target, { [key]: customHandler(value) });
+                }
+                else if (this.isObject(value)
                 && !(value instanceof Map)
                 && !(value instanceof Set)
                 && !(value instanceof Date)
@@ -85,14 +90,14 @@ export class OrmUtils {
                 && !(value instanceof RegExp)) {
                     if (!target[key])
                         Object.assign(target, { [key]: Object.create(Object.getPrototypeOf(value)) });
-                    this.mergeDeep(target[key], value);
+                    this.mergeDeep(customDeepMerge, target[key], value);
                 } else {
                     Object.assign(target, { [key]: value });
                 }
             }
         }
 
-        return this.mergeDeep(target, ...sources);
+        return this.mergeDeep(customDeepMerge, target, ...sources);
     }
 
     /**

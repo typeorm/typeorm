@@ -542,7 +542,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             }
 
             if (!value) return map;
-            return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
+            return OrmUtils.mergeDeep(this.connection.options.customDeepMerge, map, generatedColumn.createValueMap(value));
         }, {} as ObjectLiteral);
 
         return Object.keys(generatedMap).length > 0 ? generatedMap : undefined;

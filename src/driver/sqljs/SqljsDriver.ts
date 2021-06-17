@@ -213,7 +213,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                 try {
                     let result = this.databaseConnection.exec(query);
                     this.connection.logger.logQuery(query);
-                    return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(result[0].values[0][0]));
+                    return OrmUtils.mergeDeep(this.connection.options.customDeepMerge, map, generatedColumn.createValueMap(result[0].values[0][0]));
                 }
                 catch (e) {
                     this.connection.logger.logQueryError(e, query, []);

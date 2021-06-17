@@ -105,7 +105,7 @@ export class ReturningResultsEntityUpdator {
                         if (!uuid) // if it was not defined by a user then InsertQueryBuilder generates it by its own, get this generated uuid value
                             uuid = this.expressionMap.nativeParameters["uuid_" + generatedColumn.databaseName + entityIndex];
 
-                        OrmUtils.mergeDeep(generatedMap, generatedColumn.createValueMap(uuid));
+                        OrmUtils.mergeDeep(this.queryRunner.connection.options.customDeepMerge, generatedMap, generatedColumn.createValueMap(uuid));
                     }
                 });
             }

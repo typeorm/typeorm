@@ -8,6 +8,7 @@ import {createConnections} from "../../src/index";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
 import {QueryResultCache} from "../../src/cache/QueryResultCache";
 import {Logger} from "../../src/logger/Logger";
+import {CustomDeepMerge} from "../../src/connection/BaseConnectionOptions";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -138,6 +139,12 @@ export interface TestingOptions {
      * Factory to create a logger for each test connection.
      */
     createLogger?: () => "advanced-console"|"simple-console"|"file"|"debug"|Logger;
+
+    /**
+     * Any custom handlers for deep merge
+     */
+    customDeepMerge?: CustomDeepMerge[];
+
 }
 
 /**
@@ -232,6 +239,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.migrations = [options.__dirname + "/migration/*{.js,.ts}"];
             if (options && options.namingStrategy)
                 newOptions.namingStrategy = options.namingStrategy;
+            if (options && options.customDeepMerge)
+                newOptions.customDeepMerge = options.customDeepMerge;
             return newOptions;
         });
 }

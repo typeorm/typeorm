@@ -247,12 +247,12 @@ export class RawSqlResultsToEntityTransformer {
                         if (column.isVirtual && column.referencedColumn && column.referencedColumn.propertyName !== column.propertyName) // if column is a relation
                             value = column.referencedColumn.createValueMap(value);
 
-                        return OrmUtils.mergeDeep(idMap, column.createValueMap(value));
+                        return OrmUtils.mergeDeep(this.driver.options.customDeepMerge, idMap, column.createValueMap(value));
                     } else {
                         if (column.referencedColumn!.referencedColumn) // if column is a relation
                             value = column.referencedColumn!.referencedColumn!.createValueMap(value);
 
-                        return OrmUtils.mergeDeep(idMap, column.referencedColumn!.createValueMap(value));
+                        return OrmUtils.mergeDeep(this.driver.options.customDeepMerge, idMap, column.referencedColumn!.createValueMap(value));
                     }
                 }, {} as ObjectLiteral);
 

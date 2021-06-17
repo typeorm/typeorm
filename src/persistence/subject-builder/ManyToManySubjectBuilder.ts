@@ -232,10 +232,10 @@ export class ManyToManySubjectBuilder {
 
         const identifier: ObjectLiteral = {};
         relation.junctionEntityMetadata!.ownerColumns.forEach(column => {
-            OrmUtils.mergeDeep(identifier, column.createValueMap(column.referencedColumn!.getEntityValue(ownerEntityMap)));
+            OrmUtils.mergeDeep(subject.metadata.connection.options.customDeepMerge, identifier, column.createValueMap(column.referencedColumn!.getEntityValue(ownerEntityMap)));
         });
         relation.junctionEntityMetadata!.inverseColumns.forEach(column => {
-            OrmUtils.mergeDeep(identifier, column.createValueMap(column.referencedColumn!.getEntityValue(inverseEntityMap)));
+            OrmUtils.mergeDeep(subject.metadata.connection.options.customDeepMerge, identifier, column.createValueMap(column.referencedColumn!.getEntityValue(inverseEntityMap)));
         });
         return identifier;
     }

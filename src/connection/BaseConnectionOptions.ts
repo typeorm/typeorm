@@ -6,6 +6,13 @@ import {Logger} from "../logger/Logger";
 import {Connection} from "./Connection";
 import {QueryResultCache} from "../cache/QueryResultCache";
 
+export type CustomDeepMerge = {
+    predicate: CustomDeepMergePredicate
+    handler: CustomDeepMergeHandler
+};
+
+export type CustomDeepMergePredicate = (x: any) => boolean;
+export type CustomDeepMergeHandler = (x: any) => any;
 /**
  * BaseConnectionOptions is set of connection options shared by all database types.
  */
@@ -109,6 +116,11 @@ export interface BaseConnectionOptions {
      * todo: deprecate this and move all database-specific types into hts own connection options object.
      */
     readonly extra?: any;
+
+    /**
+     * Any custom handlers for deep merge
+     */
+    readonly customDeepMerge?: CustomDeepMerge[];
 
     /**
      * Allows to setup cache options.

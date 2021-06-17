@@ -92,6 +92,9 @@ By default this table is called "migrations".
 * `cache` - Enables entity result caching. You can also configure cache type and other cache options here.
 Read more about caching [here](./caching.md).
 
+* `customDeepMerge` - Configure custom handling for deep merge given a list of predicate/handler pair.
+This is useful especially for self referencing objects which would cause a stack overflow.
+
 * `cli.entitiesDir` - Directory where entities should be created by default by CLI.
 
 * `cli.migrationsDir` - Directory where migrations should be created by default by CLI.

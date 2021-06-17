@@ -336,7 +336,7 @@ export class RelationMetadata {
         const referencedColumns = joinColumns.map(joinColumn => joinColumn.referencedColumn!);
         // console.log("entity", entity);
         // console.log("referencedColumns", referencedColumns);
-        return EntityMetadata.getValueMap(entity, referencedColumns);
+        return this.entityMetadata.getValueMap(entity, referencedColumns);
     }
 
     /**

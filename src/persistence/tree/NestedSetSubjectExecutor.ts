@@ -62,6 +62,7 @@ export class NestedSetSubjectExecutor {
                 `WHERE ${rightColumnName} >= ${parentNsRight}`);
 
             OrmUtils.mergeDeep(
+                this.queryRunner.connection.options.customDeepMerge,
                 subject.insertedValueSet,
                 subject.metadata.nestedSetLeftColumn!.createValueMap(parentNsRight),
                 subject.metadata.nestedSetRightColumn!.createValueMap(parentNsRight + 1),
@@ -74,6 +75,7 @@ export class NestedSetSubjectExecutor {
                 throw new NestedSetMultipleRootError();
 
             OrmUtils.mergeDeep(
+                this.queryRunner.connection.options.customDeepMerge,
                 subject.insertedValueSet,
                 subject.metadata.nestedSetLeftColumn!.createValueMap(1),
                 subject.metadata.nestedSetRightColumn!.createValueMap(2),

@@ -558,7 +558,7 @@ export class ColumnMetadata {
                 const map = this.relationMetadata.joinColumns.reduce((map, joinColumn) => {
                     const value = joinColumn.referencedColumn!.getEntityValueMap(entity[this.relationMetadata!.propertyName]);
                     if (value === undefined) return map;
-                    return OrmUtils.mergeDeep(map, value);
+                    return OrmUtils.mergeDeep(this.entityMetadata.connection.options.customDeepMerge, map, value);
                 }, {});
                 if (Object.keys(map).length > 0)
                     return { [this.propertyName]: map };
