@@ -7,7 +7,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
  *
  * Note: `globalThis` is being extended with a `URL` property as @types/node does not declare it (see https://github.com/DefinitelyTyped/DefinitelyTyped/issues/34960)
  */
-const GlobalURL = (typeof globalThis !== "undefined" ? globalThis as (typeof globalThis & {URL?: (typeof import('url').URL)}) : {URL: undefined}).URL;
+const GlobalURL = (typeof globalThis !== "undefined" ? globalThis as (typeof globalThis & {URL?: (typeof import("url").URL)}) : {URL: undefined}).URL;
 
 export class OrmUtils {
 
