@@ -1,4 +1,5 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {PlatformTools} from "../platform/PlatformTools";
 
 /**
  * Access `URL` in environments that support it.
@@ -7,7 +8,8 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
  *
  * Note: `globalThis` is being extended with a `URL` property as @types/node does not declare it (see https://github.com/DefinitelyTyped/DefinitelyTyped/issues/34960)
  */
-const GlobalURL = (typeof globalThis !== "undefined" ? globalThis as (typeof globalThis & {URL?: (typeof import("url").URL)}) : {URL: undefined}).URL;
+const _global = PlatformTools.getGlobalVariable() as (typeof globalThis & {URL?: (typeof import("url").URL)});
+const GlobalURL = (typeof _global !== "undefined" ? _global : {URL: undefined}).URL;
 
 export class OrmUtils {
 
