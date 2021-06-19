@@ -114,6 +114,78 @@
     "typeorm-aurora-data-api-driver": "^2.0.0",
     "typescript": "^4.2.2"
   },
+  "peerDependencies": {
+    "@sap/hana-client": "*",
+    "better-sqlite3": "*",
+    "hdb-pool": "*",
+    "ioredis": "*",
+    "ioredis": "*",
+    "ioredis/cluster": "*",
+    "mongodb": "*",
+    "mssql": "*",
+    "mysql2": "*",
+    "oracledb": "*",
+    "pg": "*",
+    "pg-native": "*",
+    "pg-query-stream": "*",
+    "redis": "*",
+    "sql.js": "*",
+    "sqlite3": "*",
+    "typeorm-aurora-data-api-driver": "*"
+  },
+  "peerDependenciesMeta": {
+    "@sap/hana-client": {
+      "optional": true
+    },
+    "better-sqlite3": {
+      "optional": true
+    },
+    "hdb-pool": {
+      "optional": true
+    },
+    "ioredis": {
+      "optional": true
+    },
+    "ioredis": {
+      "optional": true
+    },
+    "ioredis/cluster": {
+      "optional": true
+    },
+    "mongodb": {
+      "optional": true
+    },
+    "mssql": {
+      "optional": true
+    },
+    "mysql2": {
+      "optional": true
+    },
+    "oracledb": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    },
+    "pg-native": {
+      "optional": true
+    },
+    "pg-query-stream": {
+      "optional": true
+    },
+    "redis": {
+      "optional": true
+    },
+    "sql.js": {
+      "optional": true
+    },
+    "sqlite3": {
+      "optional": true
+    },
+    "typeorm-aurora-data-api-driver": {
+      "optional": true
+    }
+  },
   "dependencies": {
     "@sqltools/formatter": "^1.2.2",
     "app-root-path": "^3.0.0",
