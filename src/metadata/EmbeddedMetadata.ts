@@ -87,6 +87,12 @@ export class EmbeddedMetadata {
     embeddeds: EmbeddedMetadata[] = [];
 
     /**
+     * Indicates if the entity should be instantiated using the constructor
+     * or via allocating a new object via `Object.create()`.
+     */
+    isAlwaysUsingConstructor: boolean = true;
+
+    /**
      * Indicates if this embedded is in array mode.
      *
      * This option works only in mongodb.
@@ -189,8 +195,12 @@ export class EmbeddedMetadata {
     /**
      * Creates a new embedded object.
      */
-    create(): any {
-        return new (this.type as any);
+    create(options?: { fromDeserializer?: boolean }): any {
+        if (!options?.fromDeserializer || this.isAlwaysUsingConstructor) {
+            return new (this.type as any);
+        } else {
+            return Object.create(this.type.prototype);
+        }
     }
 
     // ---------------------------------------------------------------------
@@ -211,6 +221,11 @@ export class EmbeddedMetadata {
         this.uniquesFromTree = this.buildUniquesFromTree();
         this.relationIdsFromTree = this.buildRelationIdsFromTree();
         this.relationCountsFromTree = this.buildRelationCountsFromTree();
+
+        if (connection.options.entitySkipConstructor) {
+            this.isAlwaysUsingConstructor = !connection.options.entitySkipConstructor;
+        }
+
         return this;
     }
 

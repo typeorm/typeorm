@@ -28,7 +28,7 @@ export class DocumentToEntityTransformer {
     }
 
     transform(document: any, metadata: EntityMetadata) {
-        const entity: any = metadata.create();
+        const entity: any = metadata.create(undefined, { fromDeserializer: true });
         let hasData = false;
 
         // handle _id property the special way
@@ -87,7 +87,7 @@ export class DocumentToEntityTransformer {
 
                 if (embedded.isArray) {
                     entity[embedded.propertyName] = (document[embedded.prefix] as any[]).map((subValue: any, index: number) => {
-                        const newItem = embedded.create();
+                        const newItem = embedded.create({ fromDeserializer: true });
                         embedded.columns.forEach(column => {
                             newItem[column.propertyName] = subValue[column.databaseNameWithoutPrefixes];
                         });
@@ -96,15 +96,15 @@ export class DocumentToEntityTransformer {
                     });
 
                 } else {
-                    if (embedded.embeddeds.length && !entity[embedded.propertyName]) 
-                        entity[embedded.propertyName] = embedded.create();
-                    
+                    if (embedded.embeddeds.length && !entity[embedded.propertyName])
+                        entity[embedded.propertyName] = embedded.create({ fromDeserializer: true });
+
                     embedded.columns.forEach(column => {
                         const value = document[embedded.prefix][column.databaseNameWithoutPrefixes];
                         if (value === undefined) return;
 
                         if (!entity[embedded.propertyName])
-                            entity[embedded.propertyName] = embedded.create();
+                            entity[embedded.propertyName] = embedded.create({ fromDeserializer: true });
 
                         entity[embedded.propertyName][column.propertyName] = value;
                     });

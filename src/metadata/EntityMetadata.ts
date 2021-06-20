@@ -188,6 +188,12 @@ export class EntityMetadata {
     isJunction: boolean = false;
 
     /**
+     * Indicates if the entity should be instantiated using the constructor
+     * or via allocating a new object via `Object.create()`.
+     */
+    isAlwaysUsingConstructor: boolean = true;
+
+    /**
      * Indicates if this entity is a tree, what type of tree it is.
      */
     treeType?: TreeType;
@@ -525,11 +531,16 @@ export class EntityMetadata {
     /**
      * Creates a new entity.
      */
-    create(queryRunner?: QueryRunner): any {
+    create(queryRunner?: QueryRunner, options?: { fromDeserializer?: boolean }): any {
         // if target is set to a function (e.g. class) that can be created then create it
         let ret: any;
         if (this.target instanceof Function) {
-            ret = new (<any> this.target)();
+            if (!options?.fromDeserializer || this.isAlwaysUsingConstructor) {
+                ret = new (<any> this.target)();
+            } else {
+                ret = Object.create(this.target.prototype);
+            }
+
             this.lazyRelations.forEach(relation => this.connection.relationLoader.enableLazyLoad(relation, ret, queryRunner));
             return ret;
         }
@@ -781,6 +792,8 @@ export class EntityMetadata {
     build() {
         const namingStrategy = this.connection.namingStrategy;
         const entityPrefix = this.connection.options.entityPrefix;
+        const entitySkipConstructor = this.connection.options.entitySkipConstructor;
+
         this.engine = this.tableMetadataArgs.engine;
         this.database = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.database : this.tableMetadataArgs.database;
         if (this.tableMetadataArgs.schema) {
@@ -814,6 +827,10 @@ export class EntityMetadata {
         this.tablePath = this.buildTablePath();
         this.schemaPath = this.buildSchemaPath();
         this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
+
+        if (entitySkipConstructor !== undefined) {
+            this.isAlwaysUsingConstructor = !entitySkipConstructor;
+        }
 
         this.isJunction = this.tableMetadataArgs.type === "closure-junction" || this.tableMetadataArgs.type === "junction";
         this.isClosureJunction = this.tableMetadataArgs.type === "closure-junction";
