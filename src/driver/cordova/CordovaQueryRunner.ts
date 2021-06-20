@@ -9,12 +9,12 @@ import {Broadcaster} from "../../subscriber/Broadcaster";
  * Runs queries on a single sqlite database connection.
  */
 export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
-    
+
     /**
      * Database driver used by connection.
      */
     driver: CordovaDriver;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -54,7 +54,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                     for (let i = 0; i < result.rows.length; i++) {
                         resultSet.push(result.rows.item(i));
                     }
-                    
+
                     ok(resultSet);
                 }
             }, (err: any) => {
@@ -97,6 +97,48 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
             });
         });
     }*/
+
+    /**
+     * Would start a transaction but this driver does not support transactions.
+     */
+    async startTransaction(): Promise<void> {
+        throw new Error('Transactions are not supported by the Cordova driver')
+    }
+
+    /**
+     * Would start a transaction but this driver does not support transactions.
+     */
+    async commitTransaction(): Promise<void> {
+        throw new Error('Transactions are not supported by the Cordova driver')
+    }
+
+    /**
+     * Would start a transaction but this driver does not support transactions.
+     */
+    async rollbackTransaction(): Promise<void> {
+        throw new Error('Transactions are not supported by the Cordova driver')
+    }
+
+    /**
+     * Removes all tables from the currently connected database.
+     * Be careful with using this method and avoid using it in production or migrations
+     * (because it can clear all your database).
+     */
+    async clearDatabase(): Promise<void> {
+        await this.query(`PRAGMA foreign_keys = OFF;`);
+        try {
+            const selectViewDropsQuery = `SELECT 'DROP VIEW "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'view'`;
+            const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
+
+            const selectTableDropsQuery = `SELECT 'DROP TABLE "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'table' AND "name" != 'sqlite_sequence'`;
+            const dropTableQueries: ObjectLiteral[] = await this.query(selectTableDropsQuery);
+
+            await Promise.all(dropViewQueries.map(q => this.query(q["query"])));
+            await Promise.all(dropTableQueries.map(q => this.query(q["query"])));
+        } finally {
+            await this.query(`PRAGMA foreign_keys = ON;`);
+        }
+    }
 
     // -------------------------------------------------------------------------
     // Protected Methods
