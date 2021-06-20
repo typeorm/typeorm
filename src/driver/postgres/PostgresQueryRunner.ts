@@ -221,7 +221,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const queryStartTime = +new Date();
             const raw = await databaseConnection.query(query, parameters);
             // log slow queries if maxQueryExecution time is set
-            const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+            const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
             const queryEndTime = +new Date();
             const queryExecutionTime = queryEndTime - queryStartTime;
             if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
