@@ -571,25 +571,32 @@ export class AuroraDataApiDriver implements Driver {
         if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
             return `'${defaultValue}'`;
         }
+
         if ((columnMetadata.type === "set") && defaultValue !== undefined) {
             return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
-
         }
+
         if (typeof defaultValue === "number") {
-            return "" + defaultValue;
-
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
-
-        } else if (typeof defaultValue === "function") {
-            return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else {
-            return defaultValue;
+            return `${defaultValue}`;
         }
+
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "1" : "0";
+        }
+
+        if (typeof defaultValue === "function") {
+            return defaultValue();
+        }
+
+        if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
+        }
+
+        if (defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**

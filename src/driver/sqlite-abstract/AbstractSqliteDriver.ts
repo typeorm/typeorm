@@ -453,22 +453,25 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
-
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
-
-        } else if (typeof defaultValue === "function") {
-            return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else if (defaultValue === null) {
-            return undefined;
-
-        } else {
-            return defaultValue;
         }
+
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "1" : "0";
+        }
+
+        if (typeof defaultValue === "function") {
+            return defaultValue();
+        }
+
+        if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
+        }
+
+        if (defaultValue === null || defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**

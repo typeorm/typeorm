@@ -119,7 +119,7 @@ export class ColumnMetadata {
     /**
      * Default database value.
      */
-    default?: any;
+    default?: number | boolean | string | null | (number | boolean | string)[] | Record<string, object> | (() => string);
 
     /**
      * ON UPDATE trigger. Works only for MySQL.

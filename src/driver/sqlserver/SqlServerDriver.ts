@@ -495,24 +495,31 @@ export class SqlServerDriver implements Driver {
         const defaultValue = columnMetadata.default;
 
         if (typeof defaultValue === "number") {
-            return "" + defaultValue;
+            return `${defaultValue}`;
+        }
 
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "1" : "0";
 
-        } else if (typeof defaultValue === "function") {
+        }
+
+        if (typeof defaultValue === "function") {
             const value = defaultValue();
             if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
                 return "getdate()"
             }
             return value
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else {
-            return defaultValue;
         }
+
+        if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
+        }
+
+        if (defaultValue === undefined || defaultValue === null) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**

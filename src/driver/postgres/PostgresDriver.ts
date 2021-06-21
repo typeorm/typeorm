@@ -732,11 +732,13 @@ export class PostgresDriver implements Driver {
 
         if (defaultValue === null) {
             return undefined;
+        }
 
-        } else if (columnMetadata.isArray && Array.isArray(defaultValue)) {
+        if (columnMetadata.isArray && Array.isArray(defaultValue)) {
             return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
+        }
 
-        } else if (
+        if (
             (columnMetadata.type === "enum"
             || columnMetadata.type === "simple-enum"
             || typeof defaultValue === "number"
@@ -744,20 +746,27 @@ export class PostgresDriver implements Driver {
             && defaultValue !== undefined
         ) {
             return `'${defaultValue}'`;
-
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "true" : "false";
-
-        } else if (typeof defaultValue === "function") {
-            const value = defaultValue();
-            return this.normalizeDatetimeFunction(value)
-
-        } else if (typeof defaultValue === "object") {
-            return `'${JSON.stringify(defaultValue)}'`;
-
-        } else {
-            return defaultValue;
         }
+
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "true" : "false";
+        }
+
+        if (typeof defaultValue === "function") {
+            const value = defaultValue();
+
+            return this.normalizeDatetimeFunction(value)
+        }
+
+        if (typeof defaultValue === "object") {
+            return `'${JSON.stringify(defaultValue)}'`;
+        }
+
+        if (defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**

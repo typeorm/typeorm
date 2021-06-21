@@ -461,20 +461,26 @@ export class SapDriver implements Driver {
         const defaultValue = columnMetadata.default;
 
         if (typeof defaultValue === "number") {
-            return "" + defaultValue;
-
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "true" : "false";
-
-        } else if (typeof defaultValue === "function") {
-            return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else {
-            return defaultValue;
+            return `${defaultValue}`;
         }
+
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "true" : "false";
+        }
+
+        if (typeof defaultValue === "function") {
+            return defaultValue();
+        }
+
+        if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
+        }
+
+        if (defaultValue === null || defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**

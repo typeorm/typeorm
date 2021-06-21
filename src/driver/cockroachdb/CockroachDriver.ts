@@ -486,11 +486,13 @@ export class CockroachDriver implements Driver {
 
         if (typeof defaultValue === "number") {
             return `(${defaultValue})`;
+        }
 
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "true" : "false";
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "true" : "false";
+        }
 
-        } else if (typeof defaultValue === "function") {
+        if (typeof defaultValue === "function") {
             const value = defaultValue();
             if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
                 return "current_timestamp()";
@@ -498,16 +500,21 @@ export class CockroachDriver implements Driver {
                 return "current_date()";
             }
             return value;
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'${arrayCast}`;
-
-        } else if (typeof defaultValue === "object" && defaultValue !== null) {
-            return `'${JSON.stringify(defaultValue)}'`;
-
-        } else {
-            return defaultValue;
         }
+
+        if (typeof defaultValue === "string") {
+            return `'${defaultValue}'${arrayCast}`;
+        }
+
+        if (typeof defaultValue === "object" && defaultValue !== null) {
+            return `'${JSON.stringify(defaultValue)}'`;
+        }
+
+        if (defaultValue === undefined || defaultValue === null) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**

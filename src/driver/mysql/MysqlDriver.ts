@@ -591,29 +591,38 @@ export class MysqlDriver implements Driver {
 
         if (defaultValue === null) {
             return undefined
+        }
 
-        } else if (
+        if (
             (columnMetadata.type === "enum"
             || columnMetadata.type === "simple-enum"
             || typeof defaultValue === "string")
             && defaultValue !== undefined) {
             return `'${defaultValue}'`;
+        }
 
-        } else if ((columnMetadata.type === "set") && defaultValue !== undefined) {
+        if ((columnMetadata.type === "set") && defaultValue !== undefined) {
             return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
+        }
 
-        } else if (typeof defaultValue === "number") {
+        if (typeof defaultValue === "number") {
             return `'${defaultValue.toFixed(columnMetadata.scale)}'`;
+        }
 
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "1" : "0";
+        }
 
-        } else if (typeof defaultValue === "function") {
+        if (typeof defaultValue === "function") {
             const value = defaultValue();
             return this.normalizeDatetimeFunction(value)
-        } else {
-            return defaultValue;
         }
+
+        if (defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**
