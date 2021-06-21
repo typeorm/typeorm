@@ -72,6 +72,10 @@ Learn more about [Naming strategies](./naming-strategy.md).
 
 * `entityPrefix` - Prefixes with the given string all tables (or collections) on this database connection.
 
+* `entitySkipConstructor` - Indicates if TypeORM should skip constructors when deserializing entities
+  from the database. Note that when you do not call the constructor both private properties and default
+  properties will not operate as expected.
+
 * `dropSchema` - Drops the schema each time connection is being established.
 Be careful with this option and don't use this in production - otherwise you'll lose all production data.
 This option is useful during debug and development.
