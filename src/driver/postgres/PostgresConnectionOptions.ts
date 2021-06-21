@@ -64,7 +64,7 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
     readonly logNotifications?: boolean;
 
     /**
-     * Automatically installing postgres extensions
+     * Automatically install postgres extensions
      */
-    readonly installExtensions?: boolean;
+     readonly installExtensions?: boolean;
 }
