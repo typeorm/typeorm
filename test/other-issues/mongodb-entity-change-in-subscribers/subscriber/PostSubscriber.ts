@@ -8,7 +8,9 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
     }
 
     beforeUpdate(event: UpdateEvent<Post>) {
-        event.entity.updatedColumns = event.updatedColumns.length;
+        if(event.entity) {
+            event.entity.updatedColumns = event.updatedColumns.length;
+        }
     }
 
     afterLoad(entity: Post) {

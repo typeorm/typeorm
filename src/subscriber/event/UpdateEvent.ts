@@ -30,7 +30,7 @@ export interface UpdateEvent<Entity> {
     /**
      * Updating entity.
      */
-    entity: Entity;
+    entity: Partial<Entity> | undefined;
 
     /**
      * Metadata of the entity.
