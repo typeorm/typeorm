@@ -1053,7 +1053,7 @@ export class PostgresDriver implements Driver {
     protected async queryServerVersion(): Promise<string> {
         const { connection } = this;
         let [{ server_version: serverVersion }] = await connection.query("SHOW SERVER_VERSION");
-        serverVersion = serverVersion.split(" "); // keep only numbers when format ex. 13.2 (Debian 13.2-1.pgdg100+1)
+        serverVersion = serverVersion.split(" ")[0]; // keep only numbers when format ex. 13.2 (Debian 13.2-1.pgdg100+1)
         return serverVersion;
     }
 
