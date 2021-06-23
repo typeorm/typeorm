@@ -245,6 +245,12 @@ export class PostgresDriver implements Driver {
      */
     maxAliasLength = 63;
 
+    /**
+     * The version of the PostgreSQL Database Server where the client connects to. It will be used as a cache variable
+     * placeholder to avoid re-querying the server
+     */
+    private serverVersion: string;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -995,9 +1001,35 @@ export class PostgresDriver implements Driver {
         }
     }
 
+    /**
+     * Public method than can be used to return connected database server version. It will store the value retrieved in
+     * order to avoid re-querying the database. Cache option can be overridden by providing appropriate flag value.
+     *
+     * @param forceQuery - If true, query the server no matter if cache value exists or not
+     */
+    async getServerVersion(forceQuery = false) {
+        const { serverVersion } = this;
+        if (serverVersion && !forceQuery) { // we already have retrieved serverVersion and re-query not required
+            return serverVersion;
+        }
+        // have to re-query
+        this.serverVersion = await this.queryServerVersion(); // assign to cache
+        return this.serverVersion;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Try to query database server for version
+     */
+    protected async queryServerVersion(): Promise<string> {
+        const { connection } = this;
+        let [{ server_version: serverVersion }] = await connection.query("SHOW SERVER_VERSION");
+        serverVersion = serverVersion.split(" "); // keep only numbers when format ex. 13.2 (Debian 13.2-1.pgdg100+1)
+        return serverVersion;
+    }
 
     /**
      * If driver dependency is not given explicitly, then try to load it via "require".
