@@ -169,7 +169,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(where: string|((qb: this) => string)|Brackets, parameters?: ObjectLiteral): this {
+    andWhere(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
         this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
         if (parameters) this.setParameters(parameters);
         return this;
@@ -179,7 +179,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    orWhere(where: string|((qb: this) => string)|Brackets, parameters?: ObjectLiteral): this {
+    orWhere(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
         this.expressionMap.wheres.push({ type: "or", condition: this.computeWhereParameter(where) });
         if (parameters) this.setParameters(parameters);
         return this;
