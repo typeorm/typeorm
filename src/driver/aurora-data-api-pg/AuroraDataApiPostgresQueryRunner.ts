@@ -41,11 +41,6 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
      */
     protected databaseConnectionPromise: Promise<any>;
 
-    /**
-     * Special callback provided by a driver used to release a created connection.
-     */
-    protected releaseCallback: Function;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

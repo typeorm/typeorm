@@ -50,7 +50,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Special callback provided by a driver used to release a created connection.
      */
-    protected releaseCallback: Function;
+    protected releaseCallback?: (err: any) => void;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -84,7 +84,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 this.driver.connectedQueryRunners.push(this);
                 this.databaseConnection = connection;
 
-                const onErrorCallback = () => this.release();
+                const onErrorCallback = (err: Error) => this.releasePostgresConnection(err);
                 this.releaseCallback = () => {
                     this.databaseConnection.removeListener("error", onErrorCallback);
                     release();
@@ -99,7 +99,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 this.driver.connectedQueryRunners.push(this);
                 this.databaseConnection = connection;
 
-                const onErrorCallback = () => this.release();
+                const onErrorCallback = (err: Error) => this.releasePostgresConnection(err);
                 this.releaseCallback = () => {
                     this.databaseConnection.removeListener("error", onErrorCallback);
                     release();
@@ -114,22 +114,33 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
+     * Release a connection back to the pool, optionally specifying an Error to release with.
+     * Per pg-pool documentation this will prevent the pool from re-using the broken connection.
+     */
+    private async releasePostgresConnection(err?: Error) {
+        if (this.isReleased) {
+            return
+        }
+
+        this.isReleased = true;
+        if (this.releaseCallback) {
+            this.releaseCallback(err);
+            this.releaseCallback = undefined
+        }
+
+        const index = this.driver.connectedQueryRunners.indexOf(this);
+
+        if (index !== -1) {
+            this.driver.connectedQueryRunners.splice(index, 1);
+        }
+    }
+
+    /**
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
     release(): Promise<void> {
-        if (this.isReleased) {
-            return Promise.resolve();
-        }
-
-        this.isReleased = true;
-        if (this.releaseCallback)
-            this.releaseCallback();
-
-        const index = this.driver.connectedQueryRunners.indexOf(this);
-        if (index !== -1) this.driver.connectedQueryRunners.splice(index, 1);
-
-        return Promise.resolve();
+        return this.releasePostgresConnection();
     }
 
     /**
