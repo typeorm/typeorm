@@ -166,6 +166,7 @@ export class MongoDriver implements Driver {
         "w",
         "wtimeout",
         "j",
+        "writeConcern",
         "forceServerObjectId",
         "serializeFunctions",
         "ignoreUndefined",
@@ -453,7 +454,7 @@ export class MongoDriver implements Driver {
         } else {
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}`;
         }
-            
+
         return connectionString;
     }
 
