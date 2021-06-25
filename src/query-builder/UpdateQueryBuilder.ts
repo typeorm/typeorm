@@ -25,6 +25,7 @@ import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver";
+import { TypeORMError } from "../error";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -356,7 +357,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     whereEntity(entity: Entity|Entity[]): this {
         if (!this.expressionMap.mainAlias!.hasMetadata)
-            throw new Error(`.whereEntity method can only be used on queries which update real entity table.`);
+            throw new TypeORMError(`.whereEntity method can only be used on queries which update real entity table.`);
 
         this.expressionMap.wheres = [];
         const entities: Entity[] = Array.isArray(entity) ? entity : [entity];
@@ -364,7 +365,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             const entityIdMap = this.expressionMap.mainAlias!.metadata.getEntityIdMap(entity);
             if (!entityIdMap)
-                throw new Error(`Provided entity does not have ids set, cannot perform operation.`);
+                throw new TypeORMError(`Provided entity does not have ids set, cannot perform operation.`);
 
             this.orWhereInIds(entityIdMap);
         });

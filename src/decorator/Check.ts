@@ -1,5 +1,6 @@
 import {getMetadataArgsStorage} from "../globals";
 import {CheckMetadataArgs} from "../metadata-args/CheckMetadataArgs";
+import { TypeORMError } from "../error";
 
 /**
  * Creates a database check.
@@ -26,7 +27,7 @@ export function Check(nameOrExpression: string, maybeExpression?: string): Class
     const expression = maybeExpression ? maybeExpression : nameOrExpression;
 
     if (!expression)
-        throw new Error(`Check expression is required`);
+        throw new TypeORMError(`Check expression is required`);
 
     return function (clsOrObject: Function|Object, propertyName?: string | symbol) {
 

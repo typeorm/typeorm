@@ -3,6 +3,7 @@ import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
+import { TypeORMError } from "../error";
 
 /**
  * Index metadata contains all information about table's index.
@@ -190,7 +191,7 @@ export class IndexMetadata {
                 }
                 const indexName = this.givenName ? "\"" + this.givenName + "\" " : "";
                 const entityName = this.entityMetadata.targetName;
-                throw new Error(`Index ${indexName}contains column that is missing in the entity (${entityName}): ` + propertyPath);
+                throw new TypeORMError(`Index ${indexName}contains column that is missing in the entity (${entityName}): ` + propertyPath);
             })
             .reduce((a, b) => a.concat(b));
         }

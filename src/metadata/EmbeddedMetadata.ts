@@ -9,6 +9,7 @@ import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {IndexMetadata} from "./IndexMetadata";
 import {UniqueMetadata} from "./UniqueMetadata";
+import { TypeORMError } from "../error";
 
 /**
  * Contains all information about entity's embedded property.
@@ -249,7 +250,7 @@ export class EmbeddedMetadata {
             return [this.customPrefix];
         }
 
-        throw new Error(`Invalid prefix option given for ${this.entityMetadata.targetName}#${this.propertyName}`);
+        throw new TypeORMError(`Invalid prefix option given for ${this.entityMetadata.targetName}#${this.propertyName}`);
     }
 
     protected buildPrefix(connection: Connection): string {

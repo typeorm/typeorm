@@ -21,6 +21,7 @@ import {MissingDeleteDateColumnError} from "../error/MissingDeleteDateColumnErro
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntitySchema} from "../entity-schema/EntitySchema";
+import { TypeORMError } from "../error";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -331,7 +332,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
      */
     whereEntity(entity: Entity|Entity[]): this {
         if (!this.expressionMap.mainAlias!.hasMetadata)
-            throw new Error(`.whereEntity method can only be used on queries which update real entity table.`);
+            throw new TypeORMError(`.whereEntity method can only be used on queries which update real entity table.`);
 
         this.expressionMap.wheres = [];
         const entities: Entity[] = Array.isArray(entity) ? entity : [entity];
@@ -339,7 +340,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
 
             const entityIdMap = this.expressionMap.mainAlias!.metadata.getEntityIdMap(entity);
             if (!entityIdMap)
-                throw new Error(`Provided entity does not have ids set, cannot perform operation.`);
+                throw new TypeORMError(`Provided entity does not have ids set, cannot perform operation.`);
 
             this.orWhereInIds(entityIdMap);
         });
@@ -368,7 +369,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
     protected createUpdateExpression() {
         const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
         if (!metadata)
-            throw new Error(`Cannot get entity metadata for the given alias "${this.expressionMap.mainAlias}"`);
+            throw new TypeORMError(`Cannot get entity metadata for the given alias "${this.expressionMap.mainAlias}"`);
         if (!metadata.deleteDateColumn) {
             throw new MissingDeleteDateColumnError(metadata);
         }
@@ -385,7 +386,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
                 updateColumnAndValues.push(this.escape(metadata.deleteDateColumn.databaseName) + " = NULL");
                 break;
             default:
-                throw new Error(`The queryType must be "soft-delete" or "restore"`);
+                throw new TypeORMError(`The queryType must be "soft-delete" or "restore"`);
         }
         if (metadata.versionColumn)
             updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");

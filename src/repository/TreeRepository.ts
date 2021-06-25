@@ -2,6 +2,7 @@ import {Repository} from "./Repository";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
+import { TypeORMError } from "../error/TypeORMError";
 
 /**
  * Repository with additional functions to work with trees.
@@ -131,7 +132,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                 });
         }
 
-        throw new Error(`Supported only in tree entities`);
+        throw new TypeORMError(`Supported only in tree entities`);
     }
 
     /**
@@ -229,7 +230,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                 });
         }
 
-        throw new Error(`Supported only in tree entities`);
+        throw new TypeORMError(`Supported only in tree entities`);
     }
 
     /**

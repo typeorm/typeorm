@@ -4,6 +4,7 @@ import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {QueryExpressionMap} from "../QueryExpressionMap";
 import {SelectQueryBuilder} from "../SelectQueryBuilder";
 import {ObjectUtils} from "../../util/ObjectUtils";
+import { TypeORMError } from "../../error/TypeORMError";
 
 export class RelationCountAttribute {
 
@@ -52,7 +53,7 @@ export class RelationCountAttribute {
      */
     get parentAlias(): string {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new Error(`Given value must be a string representation of alias property`);
+            throw new TypeORMError(`Given value must be a string representation of alias property`);
 
         return this.relationName.split(".")[0];
     }
@@ -66,7 +67,7 @@ export class RelationCountAttribute {
      */
     get relationProperty(): string|undefined {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new Error(`Given value is a string representation of alias property`);
+            throw new TypeORMError(`Given value is a string representation of alias property`);
 
         return this.relationName.split(".")[1];
     }
@@ -83,13 +84,13 @@ export class RelationCountAttribute {
      */
     get relation(): RelationMetadata {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new Error(`Given value is a string representation of alias property`);
+            throw new TypeORMError(`Given value is a string representation of alias property`);
 
         const [parentAlias, propertyPath] = this.relationName.split(".");
         const relationOwnerSelection = this.expressionMap.findAliasByName(parentAlias);
         const relation = relationOwnerSelection.metadata.findRelationWithPropertyPath(propertyPath);
         if (!relation)
-            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
+            throw new TypeORMError(`Relation with property path ${propertyPath} in entity was not found.`);
         return relation;
     }
 
@@ -99,7 +100,7 @@ export class RelationCountAttribute {
      */
     get metadata(): EntityMetadata {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new Error(`Given value is a string representation of alias property`);
+            throw new TypeORMError(`Given value is a string representation of alias property`);
 
         const parentAlias = this.relationName.split(".")[0];
         const selection = this.expressionMap.findAliasByName(parentAlias);

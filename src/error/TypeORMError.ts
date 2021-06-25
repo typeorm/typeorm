@@ -1,4 +1,4 @@
-export abstract class TypeORMError extends Error {
+export class TypeORMError extends Error {
     get name() {
         return this.constructor.name;
     }

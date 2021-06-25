@@ -9,6 +9,7 @@ import {EntityManager} from "../entity-manager/EntityManager";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
+import { TypeORMError } from "../error/TypeORMError";
 
 export abstract class BaseQueryRunner {
 
@@ -206,7 +207,7 @@ export abstract class BaseQueryRunner {
             this.loadedViews.push(foundViews[0]);
             return foundViews[0];
         } else {
-            throw new Error(`View "${viewName}" does not exist.`);
+            throw new TypeORMError(`View "${viewName}" does not exist.`);
         }
     }
 
@@ -222,7 +223,7 @@ export abstract class BaseQueryRunner {
             this.loadedTables.push(foundTables[0]);
             return foundTables[0];
         } else {
-            throw new Error(`Table "${tableName}" does not exist.`);
+            throw new TypeORMError(`Table "${tableName}" does not exist.`);
         }
     }
 

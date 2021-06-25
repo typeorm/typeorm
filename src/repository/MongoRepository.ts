@@ -36,6 +36,7 @@ import {
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import { TypeORMError } from "../error/TypeORMError";
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
@@ -60,7 +61,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      * Calling this method will return an error.
      */
     query(query: string, parameters?: any[]): Promise<any> {
-        throw new Error(`Queries aren't supported by MongoDB.`);
+        throw new TypeORMError(`Queries aren't supported by MongoDB.`);
     }
 
     /**
@@ -68,7 +69,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
      * Calling this method will return an error.
      */
     createQueryBuilder(alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
-        throw new Error(`Query Builder is not supported by MongoDB.`);
+        throw new TypeORMError(`Query Builder is not supported by MongoDB.`);
     }
 
     /**

@@ -21,6 +21,7 @@ import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import { TypeORMError } from "../../error";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -193,7 +194,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * If database parameter specified, returns schemas of that database.
      */
     async getSchemas(database?: string): Promise<string[]> {
-        throw new Error(`MySql driver does not support table schemas`);
+        throw new TypeORMError(`MySql driver does not support table schemas`);
     }
 
     /**
@@ -216,7 +217,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
-        throw new Error(`MySql driver does not support table schemas`);
+        throw new TypeORMError(`MySql driver does not support table schemas`);
     }
 
     /**
@@ -270,14 +271,14 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Creates a new table schema.
      */
     async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
-        throw new Error(`Schema create queries are not supported by MySql driver.`);
+        throw new TypeORMError(`Schema create queries are not supported by MySql driver.`);
     }
 
     /**
      * Drops table schema.
      */
     async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
-        throw new Error(`Schema drop queries are not supported by MySql driver.`);
+        throw new TypeORMError(`Schema drop queries are not supported by MySql driver.`);
     }
 
     /**
@@ -527,7 +528,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const oldColumn = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName : table.columns.find(c => c.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         let newColumn: TableColumn|undefined = undefined;
         if (newTableColumnOrName instanceof TableColumn) {
@@ -553,7 +554,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
             ? oldColumnOrName
             : table.columns.find(column => column.name === oldColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new TypeORMError(`Column "${oldColumnOrName}" was not found in the "${table.name}" table.`);
 
         if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid")
             || oldColumn.type !== newColumn.type
@@ -742,7 +743,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const column = columnOrName instanceof TableColumn ? columnOrName : table.findColumnByName(columnOrName);
         if (!column)
-            throw new Error(`Column "${columnOrName}" was not found in table "${table.name}"`);
+            throw new TypeORMError(`Column "${columnOrName}" was not found in table "${table.name}"`);
 
         const clonedTable = table.clone();
         const upQueries: Query[] = [];
@@ -922,84 +923,84 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Creates a new unique constraint.
      */
     async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
-        throw new Error(`MySql does not support unique constraints. Use unique index instead.`);
+        throw new TypeORMError(`MySql does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Creates a new unique constraints.
      */
     async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        throw new Error(`MySql does not support unique constraints. Use unique index instead.`);
+        throw new TypeORMError(`MySql does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Drops an unique constraint.
      */
     async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
-        throw new Error(`MySql does not support unique constraints. Use unique index instead.`);
+        throw new TypeORMError(`MySql does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Drops an unique constraints.
      */
     async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        throw new Error(`MySql does not support unique constraints. Use unique index instead.`);
+        throw new TypeORMError(`MySql does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Creates a new check constraint.
      */
     async createCheckConstraint(tableOrName: Table|string, checkConstraint: TableCheck): Promise<void> {
-        throw new Error(`MySql does not support check constraints.`);
+        throw new TypeORMError(`MySql does not support check constraints.`);
     }
 
     /**
      * Creates a new check constraints.
      */
     async createCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
-        throw new Error(`MySql does not support check constraints.`);
+        throw new TypeORMError(`MySql does not support check constraints.`);
     }
 
     /**
      * Drops check constraint.
      */
     async dropCheckConstraint(tableOrName: Table|string, checkOrName: TableCheck|string): Promise<void> {
-        throw new Error(`MySql does not support check constraints.`);
+        throw new TypeORMError(`MySql does not support check constraints.`);
     }
 
     /**
      * Drops check constraints.
      */
     async dropCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
-        throw new Error(`MySql does not support check constraints.`);
+        throw new TypeORMError(`MySql does not support check constraints.`);
     }
 
     /**
      * Creates a new exclusion constraint.
      */
     async createExclusionConstraint(tableOrName: Table|string, exclusionConstraint: TableExclusion): Promise<void> {
-        throw new Error(`MySql does not support exclusion constraints.`);
+        throw new TypeORMError(`MySql does not support exclusion constraints.`);
     }
 
     /**
      * Creates a new exclusion constraints.
      */
     async createExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        throw new Error(`MySql does not support exclusion constraints.`);
+        throw new TypeORMError(`MySql does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraint.
      */
     async dropExclusionConstraint(tableOrName: Table|string, exclusionOrName: TableExclusion|string): Promise<void> {
-        throw new Error(`MySql does not support exclusion constraints.`);
+        throw new TypeORMError(`MySql does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraints.
      */
     async dropExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        throw new Error(`MySql does not support exclusion constraints.`);
+        throw new TypeORMError(`MySql does not support exclusion constraints.`);
     }
 
     /**
@@ -1033,7 +1034,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const foreignKey = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName : table.foreignKeys.find(fk => fk.name === foreignKeyOrName);
         if (!foreignKey)
-            throw new Error(`Supplied foreign key was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied foreign key was not found in table ${table.name}`);
 
         const up = this.dropForeignKeySql(table, foreignKey);
         const down = this.createForeignKeySql(table, foreignKey);
@@ -1080,7 +1081,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new Error(`Supplied index was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied index was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);
@@ -1116,7 +1117,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
             if (!isDatabaseExist)
                 return Promise.resolve();
         } else {
-            throw new Error(`Can not clear database. No database is specified`);
+            throw new TypeORMError(`Can not clear database. No database is specified`);
         }
 
         await this.startTransaction();

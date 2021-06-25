@@ -38,6 +38,7 @@ import {ObjectUtils} from "../util/ObjectUtils";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
+import { TypeORMError } from "../error/TypeORMError";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -138,7 +139,7 @@ export class Connection {
      */
     get mongoManager(): MongoEntityManager {
         if (!(this.manager instanceof MongoEntityManager))
-            throw new Error(`MongoEntityManager is only available for MongoDB databases.`);
+            throw new TypeORMError(`MongoEntityManager is only available for MongoDB databases.`);
 
         return this.manager as MongoEntityManager;
     }
@@ -150,7 +151,7 @@ export class Connection {
      */
     get sqljsManager(): SqljsEntityManager {
         if (!(this.manager instanceof SqljsEntityManager))
-            throw new Error(`SqljsEntityManager is only available for Sqljs databases.`);
+            throw new TypeORMError(`SqljsEntityManager is only available for Sqljs databases.`);
 
         return this.manager as SqljsEntityManager;
     }
@@ -352,7 +353,7 @@ export class Connection {
      */
     getMongoRepository<Entity>(target: EntityTarget<Entity>): MongoRepository<Entity> {
         if (!(this.driver instanceof MongoDriver))
-            throw new Error(`You can use getMongoRepository only for MongoDB connections.`);
+            throw new TypeORMError(`You can use getMongoRepository only for MongoDB connections.`);
 
         return this.manager.getRepository(target) as any;
     }
@@ -385,7 +386,7 @@ export class Connection {
      */
     async query(query: string, parameters?: any[], queryRunner?: QueryRunner): Promise<any> {
         if (this instanceof MongoEntityManager)
-            throw new Error(`Queries aren't supported by MongoDB.`);
+            throw new TypeORMError(`Queries aren't supported by MongoDB.`);
 
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
@@ -416,7 +417,7 @@ export class Connection {
      */
     createQueryBuilder<Entity>(entityOrRunner?: EntityTarget<Entity>|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         if (this instanceof MongoEntityManager)
-            throw new Error(`Query Builder is not supported by MongoDB.`);
+            throw new TypeORMError(`Query Builder is not supported by MongoDB.`);
 
         if (alias) {
             const metadata = this.getMetadata(entityOrRunner as EntityTarget<Entity>);
@@ -452,9 +453,9 @@ export class Connection {
     getManyToManyMetadata(entityTarget: EntityTarget<any>, relationPropertyPath: string) {
         const relationMetadata = this.getMetadata(entityTarget).findRelationWithPropertyPath(relationPropertyPath);
         if (!relationMetadata)
-            throw new Error(`Relation "${relationPropertyPath}" was not found in ${entityTarget} entity.`);
+            throw new TypeORMError(`Relation "${relationPropertyPath}" was not found in ${entityTarget} entity.`);
         if (!relationMetadata.isManyToMany)
-            throw new Error(`Relation "${entityTarget}#${relationPropertyPath}" does not have a many-to-many relationship.` +
+            throw new TypeORMError(`Relation "${entityTarget}#${relationPropertyPath}" does not have a many-to-many relationship.` +
                 `You can use this method only on many-to-many relations.`);
 
         return relationMetadata.junctionEntityMetadata;

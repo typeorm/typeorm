@@ -3,6 +3,7 @@ import {EntityMetadata} from "./EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {UniqueMetadataArgs} from "../metadata-args/UniqueMetadataArgs";
+import { TypeORMError } from "../error";
 
 /**
  * Unique metadata contains all information about table's unique constraints.
@@ -124,7 +125,7 @@ export class UniqueMetadata {
                 }
                 const indexName = this.givenName ? "\"" + this.givenName + "\" " : "";
                 const entityName = this.entityMetadata.targetName;
-                throw new Error(`Unique constraint ${indexName}contains column that is missing in the entity (${entityName}): ` + propertyName);
+                throw new TypeORMError(`Unique constraint ${indexName}contains column that is missing in the entity (${entityName}): ` + propertyName);
             })
             .reduce((a, b) => a.concat(b));
         }

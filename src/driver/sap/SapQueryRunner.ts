@@ -2,7 +2,6 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {QueryFailedError} from "../../error/QueryFailedError";
 import {ColumnType} from "../types/ColumnTypes";
 import {ReadStream} from "../../platform/PlatformTools";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
@@ -23,6 +22,7 @@ import {IsolationLevel} from "../types/IsolationLevel";
 import {SapDriver} from "./SapDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import { QueryFailedError, TypeORMError } from "../../error";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -251,7 +251,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Returns raw data stream.
      */
     async stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
-        throw new Error(`Stream is not supported by SAP driver.`);
+        throw new TypeORMError(`Stream is not supported by SAP driver.`);
     }
 
     /**
@@ -688,7 +688,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const oldColumn = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName : table.columns.find(c => c.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         let newColumn: TableColumn|undefined = undefined;
         if (newTableColumnOrName instanceof TableColumn) {
@@ -714,7 +714,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             ? oldTableColumnOrName
             : table.columns.find(column => column.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid") || newColumn.type !== oldColumn.type || newColumn.length !== oldColumn.length) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
@@ -927,7 +927,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const parsedTableName = this.parseTableName(table);
         const column = columnOrName instanceof TableColumn ? columnOrName : table.findColumnByName(columnOrName);
         if (!column)
-            throw new Error(`Column "${columnOrName}" was not found in table "${table.name}"`);
+            throw new TypeORMError(`Column "${columnOrName}" was not found in table "${table.name}"`);
 
         const clonedTable = table.clone();
         const upQueries: Query[] = [];
@@ -1189,28 +1189,28 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new unique constraint.
      */
     async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
-        throw new Error(`SAP HANA does not support unique constraints. Use unique index instead.`);
+        throw new TypeORMError(`SAP HANA does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Creates a new unique constraints.
      */
     async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        throw new Error(`SAP HANA does not support unique constraints. Use unique index instead.`);
+        throw new TypeORMError(`SAP HANA does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Drops unique constraint.
      */
     async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
-        throw new Error(`SAP HANA does not support unique constraints. Use unique index instead.`);
+        throw new TypeORMError(`SAP HANA does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Drops an unique constraints.
      */
     async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        throw new Error(`SAP HANA does not support unique constraints. Use unique index instead.`);
+        throw new TypeORMError(`SAP HANA does not support unique constraints. Use unique index instead.`);
     }
 
     /**
@@ -1244,7 +1244,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const checkConstraint = checkOrName instanceof TableCheck ? checkOrName : table.checks.find(c => c.name === checkOrName);
         if (!checkConstraint)
-            throw new Error(`Supplied check constraint was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied check constraint was not found in table ${table.name}`);
 
         const up = this.dropCheckConstraintSql(table, checkConstraint);
         const down = this.createCheckConstraintSql(table, checkConstraint);
@@ -1264,28 +1264,28 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new exclusion constraint.
      */
     async createExclusionConstraint(tableOrName: Table|string, exclusionConstraint: TableExclusion): Promise<void> {
-        throw new Error(`SAP HANA does not support exclusion constraints.`);
+        throw new TypeORMError(`SAP HANA does not support exclusion constraints.`);
     }
 
     /**
      * Creates a new exclusion constraints.
      */
     async createExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        throw new Error(`SAP HANA does not support exclusion constraints.`);
+        throw new TypeORMError(`SAP HANA does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraint.
      */
     async dropExclusionConstraint(tableOrName: Table|string, exclusionOrName: TableExclusion|string): Promise<void> {
-        throw new Error(`SAP HANA does not support exclusion constraints.`);
+        throw new TypeORMError(`SAP HANA does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraints.
      */
     async dropExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        throw new Error(`SAP HANA does not support exclusion constraints.`);
+        throw new TypeORMError(`SAP HANA does not support exclusion constraints.`);
     }
 
     /**
@@ -1319,7 +1319,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const foreignKey = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName : table.foreignKeys.find(fk => fk.name === foreignKeyOrName);
         if (!foreignKey)
-            throw new Error(`Supplied foreign key was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied foreign key was not found in table ${table.name}`);
 
         const up = this.dropForeignKeySql(table, foreignKey);
         const down = this.createForeignKeySql(table, foreignKey);
@@ -1366,7 +1366,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new Error(`Supplied index was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied index was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);

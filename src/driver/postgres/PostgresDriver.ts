@@ -20,6 +20,7 @@ import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredenti
 import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
 import {DriverUtils} from "../DriverUtils";
+import { TypeORMError } from "../../error";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -994,7 +995,7 @@ export class PostgresDriver implements Driver {
             return PlatformTools.load("pg-query-stream");
 
         } catch (e) { // todo: better error for browser env
-            throw new Error(`To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`);
+            throw new TypeORMError(`To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`);
         }
     }
 

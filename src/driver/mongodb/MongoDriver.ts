@@ -18,6 +18,7 @@ import {ObjectUtils} from "../../util/ObjectUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {DriverUtils} from "../DriverUtils";
+import { TypeORMError } from "../../error";
 
 /**
  * Organizes communication with MongoDB.
@@ -278,7 +279,7 @@ export class MongoDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        throw new Error(`This operation is not supported by Mongodb driver.`);
+        throw new TypeORMError(`This operation is not supported by Mongodb driver.`);
     }
 
     /**
@@ -318,35 +319,35 @@ export class MongoDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {
-        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+        throw new TypeORMError(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
      * Normalizes "default" value of the column.
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
-        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+        throw new TypeORMError(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
-        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+        throw new TypeORMError(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+        throw new TypeORMError(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
      * Normalizes "default" value of the column.
      */
     createFullType(column: TableColumn): string {
-        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+        throw new TypeORMError(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
@@ -379,7 +380,7 @@ export class MongoDriver implements Driver {
      * and returns only changed.
      */
     findChangedColumns(tableColumns: TableColumn[], columnMetadatas: ColumnMetadata[]): ColumnMetadata[] {
-        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+        throw new TypeORMError(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
@@ -455,7 +456,7 @@ export class MongoDriver implements Driver {
         } else {
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}`;
         }
-            
+
         return connectionString;
     }
 

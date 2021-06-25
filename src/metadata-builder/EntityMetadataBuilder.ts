@@ -24,6 +24,7 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {ExclusionMetadata} from "../metadata/ExclusionMetadata";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { TypeORMError } from "../error";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -677,7 +678,7 @@ export class EntityMetadataBuilder {
             // compute inverse side (related) entity metadatas for all relation metadatas
             const inverseEntityMetadata = entityMetadatas.find(m => m.target === relation.type || (typeof relation.type === "string" && (m.targetName === relation.type || m.givenTableName === relation.type)));
             if (!inverseEntityMetadata)
-                throw new Error("Entity metadata for " + entityMetadata.name + "#" + relation.propertyPath + " was not found. Check if you specified a correct entity object and if it's connected in the connection options.");
+                throw new TypeORMError("Entity metadata for " + entityMetadata.name + "#" + relation.propertyPath + " was not found. Check if you specified a correct entity object and if it's connected in the connection options.");
 
             relation.inverseEntityMetadata = inverseEntityMetadata;
             relation.inverseSidePropertyPath = relation.buildInverseSidePropertyPath();

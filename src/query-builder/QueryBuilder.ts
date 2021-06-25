@@ -23,6 +23,7 @@ import {EntitySchema} from "../entity-schema/EntitySchema";
 import {FindOperator} from "../find-options/FindOperator";
 import {In} from "../find-options/operator/In";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
+import { TypeORMError } from "../error";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -120,7 +121,7 @@ export abstract class QueryBuilder<Entity> {
      */
     get alias(): string {
         if (!this.expressionMap.mainAlias)
-            throw new Error(`Main alias is not set`); // todo: better exception
+            throw new TypeORMError(`Main alias is not set`); // todo: better exception
 
         return this.expressionMap.mainAlias.name;
     }
@@ -329,7 +330,7 @@ export abstract class QueryBuilder<Entity> {
      */
     setParameter(key: string, value: any): this {
         if (value instanceof Function) {
-            throw new Error(`Function parameter isn't supported in the parameters. Please check "${key}" parameter.`);
+            throw new TypeORMError(`Function parameter isn't supported in the parameters. Please check "${key}" parameter.`);
         }
 
         if (this.parentQueryBuilder) {
@@ -527,7 +528,7 @@ export abstract class QueryBuilder<Entity> {
      */
     protected getMainTableName(): string {
         if (!this.expressionMap.mainAlias)
-            throw new Error(`Entity where values should be inserted is not specified. Call "qb.into(entity)" method to specify it.`);
+            throw new TypeORMError(`Entity where values should be inserted is not specified. Call "qb.into(entity)" method to specify it.`);
 
         if (this.expressionMap.mainAlias.hasMetadata)
             return this.expressionMap.mainAlias.metadata.tablePath;

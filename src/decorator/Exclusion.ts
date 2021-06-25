@@ -1,5 +1,6 @@
 import {getMetadataArgsStorage} from "../globals";
 import {ExclusionMetadataArgs} from "../metadata-args/ExclusionMetadataArgs";
+import { TypeORMError } from "../error";
 
 /**
  * Creates a database exclusion.
@@ -26,7 +27,7 @@ export function Exclusion(nameOrExpression: string, maybeExpression?: string): C
     const expression = maybeExpression ? maybeExpression : nameOrExpression;
 
     if (!expression)
-        throw new Error(`Exclusion expression is required`);
+        throw new TypeORMError(`Exclusion expression is required`);
 
     return function (clsOrObject: Function|Object, propertyName?: string | symbol) {
 

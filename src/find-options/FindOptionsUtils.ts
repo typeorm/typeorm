@@ -4,6 +4,7 @@ import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {DriverUtils} from "../driver/DriverUtils";
+import { TypeORMError } from "../error";
 
 /**
  * Utilities to work with FindOptions.
@@ -99,7 +100,7 @@ export class FindOptionsUtils {
             qb.select([]);
             options.select.forEach(select => {
                 if (!metadata.findColumnWithPropertyPath(String(select)))
-                    throw new Error(`${select} column was not found in the ${metadata.name} entity.`);
+                    throw new TypeORMError(`${select} column was not found in the ${metadata.name} entity.`);
 
                 qb.addSelect(qb.alias + "." + select);
             });
@@ -119,7 +120,7 @@ export class FindOptionsUtils {
                 const order = ((options as FindOneOptions<T>).order as any)[key as any];
 
                 if (!metadata.findColumnWithPropertyPath(key))
-                    throw new Error(`${key} column was not found in the ${metadata.name} entity.`);
+                    throw new TypeORMError(`${key} column was not found in the ${metadata.name} entity.`);
 
                 switch (order) {
                     case 1:
@@ -187,7 +188,7 @@ export class FindOptionsUtils {
                         return alias.metadata.tableNameWithoutPrefix === table;
                     });
                     if (!tableAlias) {
-                        throw new Error(`"${table}" is not part of this query`);
+                        throw new TypeORMError(`"${table}" is not part of this query`);
                     }
                     return qb.escape(tableAlias.name);
                 }) : undefined;

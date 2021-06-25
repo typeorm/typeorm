@@ -10,6 +10,7 @@ import {SelectQuery} from "./SelectQuery";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
+import { TypeORMError } from "../error";
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -363,7 +364,7 @@ export class QueryExpressionMap {
     findAliasByName(aliasName: string): Alias {
         const alias = this.aliases.find(alias => alias.name === aliasName);
         if (!alias)
-            throw new Error(`"${aliasName}" alias was not found. Maybe you forgot to join it?`);
+            throw new TypeORMError(`"${aliasName}" alias was not found. Maybe you forgot to join it?`);
 
         return alias;
     }
@@ -381,11 +382,11 @@ export class QueryExpressionMap {
      */
     get relationMetadata(): RelationMetadata {
         if (!this.mainAlias)
-            throw new Error(`Entity to work with is not specified!`); // todo: better message
+            throw new TypeORMError(`Entity to work with is not specified!`); // todo: better message
 
         const relationMetadata = this.mainAlias.metadata.findRelationWithPropertyPath(this.relationPropertyPath);
         if (!relationMetadata)
-            throw new Error(`Relation ${this.relationPropertyPath} was not found in entity ${this.mainAlias.name}`); // todo: better message
+            throw new TypeORMError(`Relation ${this.relationPropertyPath} was not found in entity ${this.mainAlias.name}`); // todo: better message
 
         return relationMetadata;
     }

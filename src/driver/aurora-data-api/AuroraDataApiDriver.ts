@@ -17,6 +17,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { TypeORMError } from "../../error";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -661,7 +662,7 @@ export class AuroraDataApiDriver implements Driver {
                     err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
                 });
             } else {
-                fail(new Error(`Connection is not established with mysql database`));
+                fail(new TypeORMError(`Connection is not established with mysql database`));
             }
         });
     }

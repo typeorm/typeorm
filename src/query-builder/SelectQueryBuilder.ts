@@ -38,6 +38,7 @@ import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {EntityNotFoundError} from "../error/EntityNotFoundError";
+import { TypeORMError } from "../error";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -879,9 +880,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     orderBy(sort?: string|OrderByCondition, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
         if (order !== undefined && order !== "ASC" && order !== "DESC")
-            throw new Error(`SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`);
+            throw new TypeORMError(`SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`);
         if (nulls !== undefined && nulls !== "NULLS FIRST" && nulls !== "NULLS LAST")
-            throw new Error(`SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`);
+            throw new TypeORMError(`SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`);
 
         if (sort) {
             if (sort instanceof Object) {
@@ -904,9 +905,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     addOrderBy(sort: string, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
         if (order !== undefined && order !== "ASC" && order !== "DESC")
-            throw new Error(`SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`);
+            throw new TypeORMError(`SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`);
         if (nulls !== undefined && nulls !== "NULLS FIRST" && nulls !== "NULLS LAST")
-            throw new Error(`SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`);
+            throw new TypeORMError(`SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`);
 
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls };
@@ -925,7 +926,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     limit(limit?: number): this {
         this.expressionMap.limit = this.normalizeNumber(limit);
         if (this.expressionMap.limit !== undefined && isNaN(this.expressionMap.limit))
-            throw new Error(`Provided "limit" value is not a number. Please provide a numeric value.`);
+            throw new TypeORMError(`Provided "limit" value is not a number. Please provide a numeric value.`);
 
         return this;
     }
@@ -939,7 +940,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     offset(offset?: number): this {
         this.expressionMap.offset = this.normalizeNumber(offset);
         if (this.expressionMap.offset !== undefined && isNaN(this.expressionMap.offset))
-            throw new Error(`Provided "offset" value is not a number. Please provide a numeric value.`);
+            throw new TypeORMError(`Provided "offset" value is not a number. Please provide a numeric value.`);
 
         return this;
     }
@@ -950,7 +951,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     take(take?: number): this {
         this.expressionMap.take = this.normalizeNumber(take);
         if (this.expressionMap.take !== undefined && isNaN(this.expressionMap.take))
-            throw new Error(`Provided "take" value is not a number. Please provide a numeric value.`);
+            throw new TypeORMError(`Provided "take" value is not a number. Please provide a numeric value.`);
 
         return this;
     }
@@ -961,7 +962,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     skip(skip?: number): this {
         this.expressionMap.skip = this.normalizeNumber(skip);
         if (this.expressionMap.skip !== undefined && isNaN(this.expressionMap.skip))
-            throw new Error(`Provided "skip" value is not a number. Please provide a numeric value.`);
+            throw new TypeORMError(`Provided "skip" value is not a number. Please provide a numeric value.`);
 
         return this;
     }
@@ -1384,7 +1385,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected createSelectExpression() {
 
         if (!this.expressionMap.mainAlias)
-            throw new Error("Cannot build query because main alias is not set (call qb#from method)");
+            throw new TypeORMError("Cannot build query because main alias is not set (call qb#from method)");
 
         // todo throw exception if selects or from is missing
 
@@ -1680,10 +1681,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         if (this.expressionMap.lockTables) {
             if (!(driver instanceof PostgresDriver)) {
-                throw new Error("Lock tables not supported in selected driver");
+                throw new TypeORMError("Lock tables not supported in selected driver");
             }
             if (this.expressionMap.lockTables.length < 1) {
-                throw new Error("lockTables cannot be an empty array");
+                throw new TypeORMError("lockTables cannot be an empty array");
             }
             lockTablesClause = " OF " + this.expressionMap.lockTables.join(", ");
         }
@@ -1922,7 +1923,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected async executeEntitiesAndRawResults(queryRunner: QueryRunner): Promise<{ entities: Entity[], raw: any[] }> {
 
         if (!this.expressionMap.mainAlias)
-            throw new Error(`Alias is not set. Use "from" method to set an alias.`);
+            throw new TypeORMError(`Alias is not set. Use "from" method to set an alias.`);
 
         if ((this.expressionMap.lockMode === "pessimistic_read" || this.expressionMap.lockMode === "pessimistic_write" || this.expressionMap.lockMode === "pessimistic_partial_write" || this.expressionMap.lockMode === "pessimistic_write_or_fail" || this.expressionMap.lockMode === "for_no_key_update") && !queryRunner.isTransactionActive)
             throw new PessimisticLockTransactionRequiredError();
