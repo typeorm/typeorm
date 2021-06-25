@@ -112,13 +112,13 @@
     "sqlite3": "^5.0.2",
     "ts-node": "^9.1.1",
     "typeorm-aurora-data-api-driver": "^2.0.0",
-    "typescript": "^4.2.2"
+    "typescript": "^4.2.2",
+    "date-fns": "2.22.1"
   },
   "peerDependencies": {
     "@sap/hana-client": "*",
     "better-sqlite3": "*",
     "hdb-pool": "*",
-    "ioredis": "*",
     "ioredis": "*",
     "ioredis/cluster": "*",
     "mongodb": "*",
@@ -141,9 +141,6 @@
       "optional": true
     },
     "hdb-pool": {
-      "optional": true
-    },
-    "ioredis": {
       "optional": true
     },
     "ioredis": {
