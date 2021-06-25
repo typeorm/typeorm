@@ -1,17 +1,18 @@
 import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
 import {expect} from "chai";
-import {EntityNotFoundError} from "../../../../src/error/EntityNotFoundError";
+import { EntityNotFoundError, Connection, IsNull, In, Raw } from "../../../../src";
 import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
+import { Category } from "./entity/Category";
+import {Post} from "./entity/Post";
+import { Tag } from "./entity/Tag";
+import { HeroImage } from "./entity/HeroImage";
 
 describe("query builder > select", () => {
-
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mysql"]
+        entities: [Category, Post, Tag, HeroImage],
+        enabledDrivers: ["sqlite"],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -26,6 +27,7 @@ describe("query builder > select", () => {
             "post.description AS post_description, " +
             "post.rating AS post_rating, " +
             "post.version AS post_version, " +
+            "post.heroImageId AS post_heroImageId, " +
             "post.categoryId AS post_categoryId " +
             "FROM post post");
     })));
@@ -41,6 +43,7 @@ describe("query builder > select", () => {
             "post.description AS post_description, " +
             "post.rating AS post_rating, " +
             "post.version AS post_version, " +
+            "post.heroImageId AS post_heroImageId, " +
             "post.categoryId AS post_categoryId " +
             "FROM post post");
     })));
@@ -56,10 +59,11 @@ describe("query builder > select", () => {
             "post.description AS post_description, " +
             "post.rating AS post_rating, " +
             "post.version AS post_version, " +
+            "post.heroImageId AS post_heroImageId, " +
             "post.categoryId AS post_categoryId, " +
             "category.id AS category_id, " +
-            "category.name AS category_name," +
-            " category.description AS category_description, " +
+            "category.name AS category_name, " +
+            "category.description AS category_description, " +
             "category.version AS category_version " +
             "FROM post post LEFT JOIN category category");
     })));
@@ -76,6 +80,7 @@ describe("query builder > select", () => {
             "category.name AS category_name " +
             "FROM post post LEFT JOIN category category");
     })));
+
 
     it("should append entity mapped columns to select statement, if they passed as array", () => Promise.all(connections.map(async connection => {
         const sql = connection.createQueryBuilder(Post, "post")
@@ -113,48 +118,277 @@ describe("query builder > select", () => {
         expect(sql).to.equal("SELECT post.name FROM post post");
     })));
 
-    it("should return a single entity for getOne when found", () => Promise.all(connections.map(async connection => {
-        await connection.getRepository(Post).save({ id: 1, title: "Hello", description: 'World', rating: 0 });
+    describe("with relations and where clause", () => {
+        describe("many-to-one", () => {
+            it("should craft query with exact value", () => Promise.all(connections.map(async connection => {
+                // For github issues #2707
 
-        const entity = await connection.createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
-            .getOne();
+                const [sql, params] = connection.createQueryBuilder(Post, "post")
+                    .select("post.id")
+                    .leftJoin("post.category", "category_join")
+                    .where({
+                        "category": {
+                            "name": "Foo"
+                        }
+                    })
+                    .getQueryAndParameters();
 
-        expect(entity).not.to.be.undefined;
-        expect(entity!.id).to.equal(1);
-        expect(entity!.title).to.equal("Hello");
-    })));
+                expect(sql).to.equal(
+                    'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                    'LEFT JOIN "category" "category_join" ON "category_join"."id"="post"."categoryId" ' +
+                    'WHERE "category_join"."name" = ?'
+                );
 
-    it("should return undefined for getOne when not found", () => Promise.all(connections.map(async connection => {
-        await connection.getRepository(Post).save({ id: 1, title: "Hello", description: 'World', rating: 0 });
+                expect(params).to.eql(["Foo"]);
+            })));
 
-        const entity = await connection.createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 2 })
-            .getOne();
+            it("should craft query with FindOperator", () => Promise.all(connections.map(async connection => {
+                const [sql, params] = connection.createQueryBuilder(Post, "post")
+                    .select("post.id")
+                    .leftJoin("post.category", "category_join")
+                    .where({
+                        "category": {
+                            "name": IsNull()
+                        }
+                    })
+                    .getQueryAndParameters();
 
-        expect(entity).to.be.undefined;
-    })));
+                expect(sql).to.equal(
+                    'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                    'LEFT JOIN "category" "category_join" ON "category_join"."id"="post"."categoryId" ' +
+                    'WHERE "category_join"."name" IS NULL'
+                );
 
-    it("should return a single entity for getOneOrFail when found", () => Promise.all(connections.map(async connection => {
-        await connection.getRepository(Post).save({ id: 1, title: "Hello", description: 'World', rating: 0 });
+                expect(params).to.eql([]);
+            })));
 
-        const entity = await connection.createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
-            .getOneOrFail();
+            it("should craft query with Raw", () => Promise.all(connections.map(async connection => {
+                // For github issue #6264
+                const [sql, params] = connection.createQueryBuilder(Post, "post")
+                    .select("post.id")
+                    .leftJoin("post.category", "category_join")
+                    .where({
+                        "category": {
+                            "name": Raw(path => `SOME_FUNCTION(${path})`)
+                        }
+                    })
+                    .getQueryAndParameters();
 
-        expect(entity.id).to.equal(1);
-        expect(entity.title).to.equal("Hello");
-    })));
+                expect(sql).to.equal(
+                    'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                    'LEFT JOIN "category" "category_join" ON "category_join"."id"="post"."categoryId" ' +
+                    'WHERE SOME_FUNCTION("category_join"."name")'
+                );
 
-    it("should throw an Error for getOneOrFail when not found", () => Promise.all(connections.map(async connection => {
-        await connection.getRepository(Post).save({ id: 1, title: "Hello", description: 'World', rating: 0 });
+                expect(params).to.eql([]);
+            })));
+        })
 
-        await expect(
-            connection.createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 2 })
-            .getOneOrFail()
-        ).to.be.rejectedWith(EntityNotFoundError);
-    })));
+        describe("one-to-many", () => {
+            it("should craft query with exact value", () => Promise.all(connections.map(async connection => {
+                expect(() => {
+                    connection.createQueryBuilder(Category, "category")
+                        .select("category.id")
+                        .leftJoin("category.posts", "posts")
+                        .where({
+                            posts: {
+                                id: 10
+                            }
+                        })
+                        .getQueryAndParameters();
+                }).to.throw();
+            })));
+
+            it("should craft query with FindOperator", () => Promise.all(connections.map(async connection => {
+                // For github issue #6647
+
+                expect(() => {
+                    connection.createQueryBuilder(Category, "category")
+                        .select("category.id")
+                        .leftJoin("category.posts", "posts")
+                        .where({
+                            posts: {
+                                id: IsNull()
+                            }
+                        })
+                        .getQueryAndParameters();
+                }).to.throw();
+            })));
+        });
+
+        describe("many-to-many", () => {
+            it("should craft query with exact value", () => Promise.all(connections.map(async connection => {
+
+                expect(() => {
+                    connection.createQueryBuilder(Post, "post")
+                        .select("post.id")
+                        .leftJoin("post.tags", "tags_join")
+                        .where({
+                            "tags": {
+                                "name": "Foo"
+                            }
+                        })
+                        .getQueryAndParameters();
+                }).to.throw();
+            })));
+
+            it("should craft query with FindOperator", () => Promise.all(connections.map(async connection => {
+                expect(() => {
+                    connection.createQueryBuilder(Post, "post")
+                        .select("post.id")
+                        .leftJoin("post.tags", "tags_join")
+                        .where({
+                            "tags": {
+                                "name": IsNull()
+                            }
+                        })
+                        .getQueryAndParameters();
+                }).to.throw();
+            })));
+        });
+
+        describe("one-to-one", () => {
+            it("should craft query with exact value", () => Promise.all(connections.map(async connection => {
+                const [sql, params] = connection.createQueryBuilder(Post, "post")
+                    .select("post.id")
+                    .leftJoin("post.heroImage", "hero_join")
+                    .where({
+                        heroImage: {
+                            url: "Foo"
+                        }
+                    })
+                    .getQueryAndParameters();
+
+                expect(sql).to.equal(
+                    'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                    'LEFT JOIN "hero_image" "hero_join" ON "hero_join"."id"="post"."heroImageId" ' +
+                    'WHERE "hero_join"."url" = ?'
+                );
+
+                expect(params).to.eql(["Foo"]);
+            })));
+
+            it("should craft query with FindOperator", () => Promise.all(connections.map(async connection => {
+                const [sql, params] = connection.createQueryBuilder(Post, "post")
+                    .select("post.id")
+                    .leftJoin("post.heroImage", "hero_join")
+                    .where({
+                        heroImage: {
+                            url: IsNull()
+                        }
+                    })
+                    .getQueryAndParameters();
+
+                expect(sql).to.equal(
+                    'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                    'LEFT JOIN "hero_image" "hero_join" ON "hero_join"."id"="post"."heroImageId" ' +
+                    'WHERE "hero_join"."url" IS NULL'
+                );
+
+                expect(params).to.eql([]);
+            })));
+        });
+
+        describe("deeply nested relations", () => {
+            it("should craft query with exact value", () => Promise.all(connections.map(async connection => {
+                // For github issue #7251
+
+                const [sql, params] = connection.createQueryBuilder(HeroImage, "hero")
+                    .leftJoin("hero.post", "posts")
+                    .leftJoin("posts.category", "category")
+                    .where({
+                        post: {
+                            category: {
+                                name: "Foo"
+                            }
+                        }
+                    })
+                    .getQueryAndParameters();
+
+                expect(sql).to.equal(
+                    'SELECT "hero"."id" AS "hero_id", "hero"."url" AS "hero_url" ' +
+                    'FROM "hero_image" "hero" ' +
+                    'LEFT JOIN "post" "posts" ON "posts"."heroImageId"="hero"."id"  ' +
+                    'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId" ' +
+                    'WHERE "category"."name" = ?'
+                );
+
+                expect(params).to.eql(["Foo"]);
+            })));
+
+            it("should craft query with FindOperator", () => Promise.all(connections.map(async connection => {
+                // For github issue #4906
+
+                const [sql, params] = connection.createQueryBuilder(HeroImage, "hero")
+                    .leftJoin("hero.post", "posts")
+                    .leftJoin("posts.category", "category")
+                    .where({
+                        post: {
+                            category: {
+                                name: In(["Foo", "Bar", "Baz"])
+                            }
+                        }
+                    })
+                    .getQueryAndParameters();
+
+                expect(sql).to.equal(
+                    'SELECT "hero"."id" AS "hero_id", "hero"."url" AS "hero_url" ' +
+                    'FROM "hero_image" "hero" ' +
+                    'LEFT JOIN "post" "posts" ON "posts"."heroImageId"="hero"."id"  ' +
+                    'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId" ' +
+                    'WHERE "category"."name" IN (?, ?, ?)'
+                );
+
+                expect(params).to.eql(["Foo", "Bar", "Baz"]);
+            })));
+        });
+    });
+
+    describe("query execution and retrieval", () => {
+        it("should return a single entity for getOne when found", () => Promise.all(connections.map(async connection => {
+            await connection.getRepository(Post).save({ id: 1, title: "Hello", description: "World", rating: 0 });
+
+            const entity = await connection.createQueryBuilder(Post, "post")
+                .where("post.id = :id", { id: 1 })
+                .getOne();
+
+            expect(entity).not.to.be.undefined;
+            expect(entity!.id).to.equal(1);
+            expect(entity!.title).to.equal("Hello");
+        })));
+
+        it("should return undefined for getOne when not found", () => Promise.all(connections.map(async connection => {
+            await connection.getRepository(Post).save({ id: 1, title: "Hello", description: "World", rating: 0 });
+
+            const entity = await connection.createQueryBuilder(Post, "post")
+                .where("post.id = :id", { id: 2 })
+                .getOne();
+
+            expect(entity).to.be.undefined;
+        })));
+
+        it("should return a single entity for getOneOrFail when found", () => Promise.all(connections.map(async connection => {
+            await connection.getRepository(Post).save({ id: 1, title: "Hello", description: "World", rating: 0 });
+
+            const entity = await connection.createQueryBuilder(Post, "post")
+                .where("post.id = :id", { id: 1 })
+                .getOneOrFail();
+
+            expect(entity.id).to.equal(1);
+            expect(entity.title).to.equal("Hello");
+        })));
+
+        it("should throw an Error for getOneOrFail when not found", () => Promise.all(connections.map(async connection => {
+            await connection.getRepository(Post).save({ id: 1, title: "Hello", description: "World", rating: 0 });
+
+            await expect(
+                connection.createQueryBuilder(Post, "post")
+                    .where("post.id = :id", { id: 2 })
+                    .getOneOrFail()
+            ).to.be.rejectedWith(EntityNotFoundError);
+        })));
+
+    })
 
     it("Support max execution time", () => Promise.all(connections.map(async connection => {
         // MAX_EXECUTION_TIME supports only in MySQL

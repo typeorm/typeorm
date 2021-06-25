@@ -9,7 +9,6 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {WhereExpression} from "./WhereExpression";
 import {Brackets} from "./Brackets";
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {UpdateResult} from "./result/UpdateResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
 import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
@@ -398,7 +397,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const updateColumnAndValues: string[] = [];
         const updatedColumns: ColumnMetadata[] = [];
         if (metadata) {
-            EntityMetadata.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
+            this.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
                 // todo: make this and other query builder to work with properly with tables without metadata
                 const columns = metadata.findColumnsWithPropertyPath(propertyPath);
 

@@ -160,7 +160,10 @@ userRepository.find({
     relations: ["profile", "photos", "videos"],
     where: {
         firstName: "Timber",
-        lastName: "Saw"
+        lastName: "Saw",
+        profile: {
+          userName: "tshaw"
+        }
     },
     order: {
         name: "ASC",

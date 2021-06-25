@@ -655,6 +655,14 @@ export class EntityMetadata {
     }
 
     /**
+     * Checks if there is a column or relationship with a given property path.
+     */
+    hasColumnWithPropertyPath(propertyPath: string): boolean {
+        const hasColumn = this.columns.some(column => column.propertyPath === propertyPath);
+        return hasColumn || this.hasRelationWithPropertyPath(propertyPath);
+    }
+
+    /**
      * Finds column with a given property path.
      */
     findColumnWithPropertyPath(propertyPath: string): ColumnMetadata|undefined {
@@ -682,11 +690,18 @@ export class EntityMetadata {
 
         // in the case if column with property path was not found, try to find a relation with such property path
         // if we find relation and it has a single join column then its the column user was seeking
-        const relation = this.relations.find(relation => relation.propertyPath === propertyPath);
+        const relation = this.findRelationWithPropertyPath(propertyPath);
         if (relation && relation.joinColumns)
             return relation.joinColumns;
 
         return [];
+    }
+
+    /**
+     * Checks if there is a relation with the given property path.
+     */
+    hasRelationWithPropertyPath(propertyPath: string): boolean {
+        return this.relations.some(relation => relation.propertyPath === propertyPath);
     }
 
     /**
@@ -740,6 +755,8 @@ export class EntityMetadata {
 
     /**
      * Creates a property paths for a given entity.
+     *
+     * @deprecated
      */
     static createPropertyPath(metadata: EntityMetadata, entity: ObjectLiteral, prefix: string = "") {
         const paths: string[] = [];

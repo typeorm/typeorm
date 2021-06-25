@@ -99,47 +99,19 @@ export class FindOptionsUtils {
         if (options.select) {
             qb.select([]);
             options.select.forEach(select => {
-                if (!metadata.findColumnWithPropertyPath(String(select)))
+                if (!metadata.hasColumnWithPropertyPath(`${select}`))
                     throw new TypeORMError(`${select} column was not found in the ${metadata.name} entity.`);
 
-                qb.addSelect(qb.alias + "." + select);
+                const columns = metadata.findColumnsWithPropertyPath(`${select}`);
+
+                for (const column of columns) {
+                    qb.addSelect(qb.alias + "." + column.propertyPath);
+                }
             });
         }
 
-        if (options.where)
-            qb.where(options.where);
-
-        if ((options as FindManyOptions<T>).skip)
-            qb.skip((options as FindManyOptions<T>).skip!);
-
-        if ((options as FindManyOptions<T>).take)
-            qb.take((options as FindManyOptions<T>).take!);
-
-        if (options.order)
-            Object.keys(options.order).forEach(key => {
-                const order = ((options as FindOneOptions<T>).order as any)[key as any];
-
-                if (!metadata.findColumnWithPropertyPath(key))
-                    throw new TypeORMError(`${key} column was not found in the ${metadata.name} entity.`);
-
-                switch (order) {
-                    case 1:
-                        qb.addOrderBy(qb.alias + "." + key, "ASC");
-                        break;
-                    case -1:
-                        qb.addOrderBy(qb.alias + "." + key, "DESC");
-                        break;
-                    case "ASC":
-                        qb.addOrderBy(qb.alias + "." + key, "ASC");
-                        break;
-                    case "DESC":
-                        qb.addOrderBy(qb.alias + "." + key, "DESC");
-                        break;
-                }
-            });
-
         if (options.relations) {
-            const allRelations = options.relations.map(relation => relation);
+            const allRelations = options.relations;
             this.applyRelationsRecursively(qb, allRelations, qb.expressionMap.mainAlias!.name, qb.expressionMap.mainAlias!.metadata, "");
             // recursive removes found relations from allRelations array
             // if there are relations left in this array it means those relations were not found in the entity structure
@@ -206,6 +178,38 @@ export class FindOptionsUtils {
         } else if (options.loadRelationIds instanceof Object) {
             qb.loadAllRelationIds(options.loadRelationIds as any);
         }
+
+        if (options.where)
+            qb.where(options.where);
+
+        if ((options as FindManyOptions<T>).skip)
+            qb.skip((options as FindManyOptions<T>).skip!);
+
+        if ((options as FindManyOptions<T>).take)
+            qb.take((options as FindManyOptions<T>).take!);
+
+        if (options.order)
+            Object.keys(options.order).forEach(key => {
+                const order = ((options as FindOneOptions<T>).order as any)[key as any];
+
+                if (!metadata.findColumnWithPropertyPath(key))
+                    throw new Error(`${key} column was not found in the ${metadata.name} entity.`);
+
+                switch (order) {
+                    case 1:
+                        qb.addOrderBy(qb.alias + "." + key, "ASC");
+                        break;
+                    case -1:
+                        qb.addOrderBy(qb.alias + "." + key, "DESC");
+                        break;
+                    case "ASC":
+                        qb.addOrderBy(qb.alias + "." + key, "ASC");
+                        break;
+                    case "DESC":
+                        qb.addOrderBy(qb.alias + "." + key, "DESC");
+                        break;
+                }
+            });
 
         return qb;
     }
