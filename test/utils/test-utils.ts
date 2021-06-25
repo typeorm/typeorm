@@ -8,7 +8,7 @@ import {createConnections} from "../../src/index";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
 import {QueryResultCache} from "../../src/cache/QueryResultCache";
 import {Logger} from "../../src/logger/Logger";
-import {CockroachDriver} from "../../src/driver/cockroachdb/CockroachDriver.js";
+import {CockroachDriver} from "../../src/driver/cockroachdb/CockroachDriver";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.

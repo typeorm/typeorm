@@ -221,7 +221,7 @@ export class MongoEntityManager extends EntityManager {
 
         } else {
             const metadata = this.connection.getMetadata(target);
-            await this.updateOne(target, this.convertMixedCriteria(metadata, criteria), { $set: partialEntity });
+            await this.updateMany(target, this.convertMixedCriteria(metadata, criteria), { $set: partialEntity });
         }
 
         return new UpdateResult();
