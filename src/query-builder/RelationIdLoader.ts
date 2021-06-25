@@ -1,4 +1,5 @@
-import {Connection, ObjectLiteral} from "../";
+import {Connection} from "../connection/Connection";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 

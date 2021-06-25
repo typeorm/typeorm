@@ -51,7 +51,7 @@ import { InsertResult } from "../query-builder/result/InsertResult";
 import { UpdateResult } from "../query-builder/result/UpdateResult";
 import { DeleteResult } from "../query-builder/result/DeleteResult";
 import { EntityMetadata } from "../metadata/EntityMetadata";
-import { FindConditions } from "../index";
+import { FindConditions } from "../find-options/FindConditions";
 import { BroadcasterResult } from "../subscriber/BroadcasterResult";
 
 /**

@@ -1,5 +1,5 @@
 import {EntityTarget} from "../common/EntityTarget";
-import {EntitySchema} from "../index";
+import {EntitySchema} from "../entity-schema/EntitySchema";
 import {TypeORMError} from "./TypeORMError";
 
 export class EntityMetadataNotFoundError extends TypeORMError {

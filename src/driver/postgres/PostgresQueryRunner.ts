@@ -3,7 +3,7 @@ import {QueryFailedError} from "../../error/QueryFailedError";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {ColumnType} from "../../index";
+import {ColumnType} from "../types/ColumnTypes";
 import {ReadStream} from "../../platform/PlatformTools";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {QueryRunner} from "../../query-runner/QueryRunner";

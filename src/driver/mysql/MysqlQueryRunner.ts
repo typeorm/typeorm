@@ -17,7 +17,7 @@ import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions"
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {Broadcaster} from "../../subscriber/Broadcaster";
-import {ColumnType} from "../../index";
+import {ColumnType} from "../types/ColumnTypes";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";

@@ -17,7 +17,7 @@ import {Broadcaster} from "../../subscriber/Broadcaster";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
-import {ColumnType} from "../../index";
+import {ColumnType} from "../types/ColumnTypes";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";

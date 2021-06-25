@@ -19,7 +19,7 @@ import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {EntitySchema} from "../";
+import {EntitySchema} from "../entity-schema/EntitySchema";
 import {FindOperator} from "../find-options/FindOperator";
 import {In} from "../find-options/operator/In";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";

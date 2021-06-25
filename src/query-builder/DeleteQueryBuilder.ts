@@ -14,7 +14,7 @@ import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNo
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
-import {EntitySchema} from "../index";
+import {EntitySchema} from "../entity-schema/EntitySchema";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver";
 

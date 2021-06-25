@@ -16,7 +16,6 @@ import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
 import {CustomRepositoryNotFoundError} from "../error/CustomRepositoryNotFoundError";
-import {EntitySchema, getMetadataArgsStorage, ObjectLiteral} from "../index";
 import {AbstractRepository} from "../repository/AbstractRepository";
 import {CustomRepositoryCannotInheritRepositoryError} from "../error/CustomRepositoryCannotInheritRepositoryError";
 import {QueryRunner} from "../query-runner/QueryRunner";
@@ -35,6 +34,9 @@ import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {FindConditions} from "../find-options/FindConditions";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {ObjectUtils} from "../util/ObjectUtils";
+import {EntitySchema} from "../entity-schema/EntitySchema";
+import {ObjectLiteral} from "../common/ObjectLiteral";
+import {getMetadataArgsStorage} from "../globals";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,

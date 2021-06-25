@@ -1,7 +1,8 @@
-import {ColumnOptions, getMetadataArgsStorage} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {PrimaryGeneratedColumnNumericOptions} from "../options/PrimaryGeneratedColumnNumericOptions";
 import {PrimaryGeneratedColumnUUIDOptions} from "../options/PrimaryGeneratedColumnUUIDOptions";
 import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
+import { ColumnOptions } from "../options/ColumnOptions";
 
 /**
  * Column decorator is used to mark a specific class property as a table column.

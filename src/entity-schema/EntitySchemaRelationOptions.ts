@@ -4,7 +4,8 @@ import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMul
 import {DeferrableType} from "../metadata/types/DeferrableType";
 import {OnDeleteType} from "../metadata/types/OnDeleteType";
 import {OnUpdateType} from "../metadata/types/OnUpdateType";
-import {JoinTableOptions} from "../index";
+import { JoinTableOptions } from "../decorator/options/JoinTableOptions";
+
 
 export interface EntitySchemaRelationOptions {
 

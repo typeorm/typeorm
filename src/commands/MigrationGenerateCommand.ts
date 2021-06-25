@@ -1,6 +1,6 @@
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
-import {createConnection} from "../index";
+import {createConnection} from "../globals";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {camelCase} from "../util/StringUtils";
 import * as yargs from "yargs";
