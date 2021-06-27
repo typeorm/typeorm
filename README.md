@@ -1130,7 +1130,7 @@ It will also modify the `photo` table, adding a new `author` column and creating
 
 ### Creating a many-to-many relation
 
-Let's create a many-to-one / many-to-many relation.
+Let's create a many-to-many relation.
 Let's say a photo can be in many albums, and each album can contain many photos.
 Let's create an `Album` class:
 
