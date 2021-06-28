@@ -67,6 +67,11 @@ export abstract class QueryBuilder<Entity> {
      */
     protected queryRunner?: QueryRunner;
 
+    /**
+     * If QueryBuilder was created in a subquery mode then its parent QueryBuilder (who created subquery) will be stored here.
+     */
+    protected parentQueryBuilder: QueryBuilder<any>;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -340,8 +345,8 @@ export abstract class QueryBuilder<Entity> {
         });
 
         // set parent query builder parameters as well in sub-query mode
-        if (this.expressionMap.parentQueryBuilder)
-            this.expressionMap.parentQueryBuilder.setParameters(parameters);
+        if (this.parentQueryBuilder)
+            this.parentQueryBuilder.setParameters(parameters);
 
         Object.keys(parameters).forEach(key => this.setParameter(key, parameters[key]));
         return this;
@@ -353,8 +358,8 @@ export abstract class QueryBuilder<Entity> {
     setNativeParameters(parameters: ObjectLiteral): this {
 
         // set parent query builder parameters as well in sub-query mode
-        if (this.expressionMap.parentQueryBuilder)
-            this.expressionMap.parentQueryBuilder.setNativeParameters(parameters);
+        if (this.parentQueryBuilder)
+            this.parentQueryBuilder.setNativeParameters(parameters);
 
         Object.keys(parameters).forEach(key => {
             this.expressionMap.nativeParameters[key] = parameters[key];
