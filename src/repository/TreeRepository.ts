@@ -122,7 +122,6 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                         .from(this.metadata.target, this.metadata.targetName)
                         .whereInIds(this.metadata.getEntityIdMap(entity));
 
-                    qb.setNativeParameters(subQuery.expressionMap.nativeParameters);
                     if (this.manager.connection.driver instanceof AbstractSqliteDriver) {
                         return `${alias}.${this.metadata.materializedPathColumn!.propertyPath} LIKE ${subQuery.getQuery()} || '%'`;
                     } else {
@@ -219,7 +218,6 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                         .from(this.metadata.target, this.metadata.targetName)
                         .whereInIds(this.metadata.getEntityIdMap(entity));
 
-                    qb.setNativeParameters(subQuery.expressionMap.nativeParameters);
                     if (this.manager.connection.driver instanceof AbstractSqliteDriver) {
                         return `${subQuery.getQuery()} LIKE ${alias}.${this.metadata.materializedPathColumn!.propertyPath} || '%'`;
 

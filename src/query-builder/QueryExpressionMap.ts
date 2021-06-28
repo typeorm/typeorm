@@ -271,7 +271,8 @@ export class QueryExpressionMap {
 
     /**
      * Extra parameters.
-     * Used in InsertQueryBuilder to avoid default parameters mechanizm and execute high performance insertions.
+     *
+     * @deprecated Use standard parameters instead
      */
     nativeParameters: ObjectLiteral = {};
 
@@ -279,6 +280,13 @@ export class QueryExpressionMap {
      * Query Comment to include extra information for debugging or other purposes.
      */
     comment?: string;
+
+    /**
+     * Items from an entity that have been locally generated & are recorded here for later use.
+     * Examples include the UUID generation when the database does not natively support it.
+     * These are included in the entity index order.
+     */
+    locallyGenerated: { [key: number]: ObjectLiteral } = {};
 
     // -------------------------------------------------------------------------
     // Constructor

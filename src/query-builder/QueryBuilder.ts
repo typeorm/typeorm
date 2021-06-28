@@ -72,6 +72,11 @@ export abstract class QueryBuilder<Entity> {
      */
     protected parentQueryBuilder: QueryBuilder<any>;
 
+    /**
+     * Memo to help keep place of current parameter index for `createParameter`
+     */
+    private parameterIndex = 0;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -325,6 +330,13 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
+     * Check the existence of a parameter for this query builder.
+     */
+    hasParameter(key: string): boolean {
+        return this.parentQueryBuilder?.hasParameter(key) || key in this.expressionMap.parameters;
+    }
+
+    /**
      * Sets parameter name and its value.
      */
     setParameter(key: string, value: any): this {
@@ -351,8 +363,22 @@ export abstract class QueryBuilder<Entity> {
         return this;
     }
 
+    protected createParameter(value: any): string {
+        let parameterName;
+
+        do {
+            parameterName = `orm_param_${this.parameterIndex++}`;
+        } while (this.hasParameter(parameterName));
+
+        this.setParameter(parameterName, value);
+
+        return `:${parameterName}`;
+    }
+
     /**
      * Adds native parameters from the given object.
+     *
+     * @deprecated Use `setParameters` instead
      */
     setNativeParameters(parameters: ObjectLiteral): this {
 
@@ -734,9 +760,7 @@ export abstract class QueryBuilder<Entity> {
 
             if (driver instanceof OracleDriver) {
                 columnsExpression += " INTO " + columns.map(column => {
-                    const parameterName = "output_" + column.databaseName;
-                    this.expressionMap.nativeParameters[parameterName] = { type: driver.columnTypeToNativeParameter(column.type), dir: driver.oracle.BIND_OUT };
-                    return this.connection.driver.createParameter(parameterName, Object.keys(this.expressionMap.nativeParameters).length);
+                    return this.createParameter({ type: driver.columnTypeToNativeParameter(column.type), dir: driver.oracle.BIND_OUT });
                 }).join(", ");
             }
 
@@ -813,15 +837,12 @@ export abstract class QueryBuilder<Entity> {
 
         // create shortcuts for better readability
         const alias = this.expressionMap.aliasNamePrefixingEnabled ? this.escape(this.expressionMap.mainAlias!.name) + "." : "";
-        let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
         const whereStrings = normalized.map((id, index) => {
             const whereSubStrings: string[] = [];
             metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
-                const parameterName = "id_" + index + "_" + secondIndex;
+                const parameterName = this.createParameter(primaryColumn.getEntityValue(id, true));
                 // whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
-                whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + " = " + this.connection.driver.createParameter(parameterName, parameterIndex));
-                this.expressionMap.nativeParameters[parameterName] = primaryColumn.getEntityValue(id, true);
-                parameterIndex++;
+                whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + " = " + parameterName);
             });
             return whereSubStrings.join(" AND ");
         });
@@ -859,7 +880,6 @@ export abstract class QueryBuilder<Entity> {
         } else if (where instanceof Object) {
             const wheres: ObjectLiteral[] = Array.isArray(where) ? where : [where];
             let andConditions: string[];
-            let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
 
             if (this.expressionMap.mainAlias!.hasMetadata) {
                 andConditions = wheres.map((where, whereIndex) => {
@@ -876,8 +896,6 @@ export abstract class QueryBuilder<Entity> {
 
                             const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
                             let parameterValue = column.getEntityValue(where, true);
-                            const parameterName = "where_" + whereIndex + "_" + propertyIndex + "_" + columnIndex;
-                            const parameterBaseCount = Object.keys(this.expressionMap.nativeParameters).filter(x => x.startsWith(parameterName)).length;
 
                             if (parameterValue === null) {
                                 return `${aliasPath} IS NULL`;
@@ -890,19 +908,17 @@ export abstract class QueryBuilder<Entity> {
                                     } else {
                                         const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
                                         realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
-                                            this.expressionMap.nativeParameters[parameterName + (parameterBaseCount + realParameterValueIndex)] = realParameterValue;
-                                            parameterIndex++;
-                                            parameters.push(this.connection.driver.createParameter(parameterName + (parameterBaseCount + realParameterValueIndex), parameterIndex - 1));
+
+                                            const parameterName = this.createParameter(realParameterValue);
+                                            parameters.push(parameterName);
                                         });
                                     }
                                 }
 
                                 return this.computeFindOperatorExpression(parameterValue, aliasPath, parameters);
                             } else {
-                                this.expressionMap.nativeParameters[parameterName] = parameterValue;
-                                parameterIndex++;
-                                const parameter = this.connection.driver.createParameter(parameterName, parameterIndex - 1);
-                                return `${aliasPath} = ${parameter}`;
+                                const parameterName = this.createParameter(parameterValue);
+                                return `${aliasPath} = ${parameterName}`;
                             }
 
                         }).filter(expression => !!expression).join(" AND ");
@@ -918,10 +934,8 @@ export abstract class QueryBuilder<Entity> {
                             return `${aliasPath} IS NULL`;
 
                         } else {
-                            const parameterName = "where_" + whereIndex + "_" + parameterIndex;
-                            this.expressionMap.nativeParameters[parameterName] = parameterValue;
-                            parameterIndex++;
-                            return `${aliasPath} = ${this.connection.driver.createParameter(parameterName, parameterIndex - 1)}`;
+                            const parameterName = this.createParameter(parameterValue);
+                            return `${aliasPath} = ${parameterName}`;
                         }
                     }).join(" AND ");
                 });
