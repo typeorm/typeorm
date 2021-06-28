@@ -840,12 +840,17 @@ export abstract class QueryBuilder<Entity> {
 
         if (where instanceof Brackets) {
             const whereQueryBuilder = this.createQueryBuilder();
+
+            whereQueryBuilder.parentQueryBuilder = this;
+
             whereQueryBuilder.expressionMap.mainAlias = this.expressionMap.mainAlias;
             whereQueryBuilder.expressionMap.aliasNamePrefixingEnabled = this.expressionMap.aliasNamePrefixingEnabled;
+            whereQueryBuilder.expressionMap.parameters = this.expressionMap.parameters;
             whereQueryBuilder.expressionMap.nativeParameters = this.expressionMap.nativeParameters;
+
             where.whereFactory(whereQueryBuilder as any);
+
             const whereString = whereQueryBuilder.createWhereExpressionString();
-            this.setParameters(whereQueryBuilder.getParameters());
             return whereString ? "(" + whereString + ")" : "";
 
         } else if (where instanceof Function) {
