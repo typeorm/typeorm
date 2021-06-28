@@ -328,6 +328,14 @@ export abstract class QueryBuilder<Entity> {
      * Sets parameter name and its value.
      */
     setParameter(key: string, value: any): this {
+        if (value instanceof Function) {
+            throw new Error(`Function parameter isn't supported in the parameters. Please check "${key}" parameter.`);
+        }
+
+        if (this.parentQueryBuilder) {
+            this.parentQueryBuilder.setParameter(key, value);
+        }
+
         this.expressionMap.parameters[key] = value;
         return this;
     }
@@ -336,19 +344,10 @@ export abstract class QueryBuilder<Entity> {
      * Adds all parameters from the given object.
      */
     setParameters(parameters: ObjectLiteral): this {
+        for (const [key, value] of Object.entries(parameters)) {
+            this.setParameter(key, value);
+        }
 
-        // remove function parameters
-        Object.keys(parameters).forEach(key => {
-            if (parameters[key] instanceof Function) {
-                throw new Error(`Function parameter isn't supported in the parameters. Please check "${key}" parameter.`);
-            }
-        });
-
-        // set parent query builder parameters as well in sub-query mode
-        if (this.parentQueryBuilder)
-            this.parentQueryBuilder.setParameters(parameters);
-
-        Object.keys(parameters).forEach(key => this.setParameter(key, parameters[key]));
         return this;
     }
 
@@ -358,8 +357,9 @@ export abstract class QueryBuilder<Entity> {
     setNativeParameters(parameters: ObjectLiteral): this {
 
         // set parent query builder parameters as well in sub-query mode
-        if (this.parentQueryBuilder)
+        if (this.parentQueryBuilder) {
             this.parentQueryBuilder.setNativeParameters(parameters);
+        }
 
         Object.keys(parameters).forEach(key => {
             this.expressionMap.nativeParameters[key] = parameters[key];
