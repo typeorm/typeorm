@@ -173,7 +173,7 @@ describe("github issues > #7161 Add support for non-distinct count in getCount()
             })
         ));
 
-    it("QueryBuilder.getCount()", () =>
+    it("QueryBuilder.getCount() with setOption()", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const users = await createData(connection);
@@ -241,4 +241,68 @@ describe("github issues > #7161 Add support for non-distinct count in getCount()
             })
         ));
 
+    it("QueryBuilder.getCount(options)", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const users = await createData(connection);
+                const userA = users[0];
+
+                const userRepository = connection.getRepository(User);
+                const userCount = await userRepository
+                    .createQueryBuilder("user")
+                    .getCount({distinct: true});
+                userCount.should.eql(3);
+
+                const orderRepository = connection.getRepository(Order);
+                const orderByUser = await orderRepository
+                    .createQueryBuilder("order")
+                    .leftJoin("order.user", "user")
+                    .where("user.id = :id", { id: userA.id })
+                    .getCount({distinct: true});
+                orderByUser.should.eql(2);
+
+                const orderByUserWithoutDistinct = await orderRepository
+                    .createQueryBuilder("order")
+                    .leftJoin("order.user", "user")
+                    .where("user.id = :id", { id: userA.id })
+                    .getCount({distinct: false});
+                orderByUserWithoutDistinct.should.eql(2);
+
+                const orderWithProducts = await orderRepository
+                    .createQueryBuilder("order")
+                    .leftJoin("order.user", "user")
+                    .leftJoin("order.products", "product")
+                    .where("user.id = :id", { id: userA.id })
+                    .getCount({distinct: true});
+                orderWithProducts.should.eql(2);
+
+                const orderWithProductsWithoutDistinct = await orderRepository
+                    .createQueryBuilder("order")
+                    .leftJoin("order.user", "user")
+                    .leftJoin("order.products", "product")
+                    .where("user.id = :id", { id: userA.id })
+                    .getCount({distinct: false});
+                orderWithProductsWithoutDistinct.should.eql(4);
+
+                const compositeOrderRepository =
+                    connection.getRepository(COrder);
+                const compositeOrderWithProducts =
+                    await compositeOrderRepository
+                        .createQueryBuilder("c_order")
+                        .leftJoin("c_order.user", "user")
+                        .leftJoin("c_order.products", "product")
+                        .where("user.id = :id", { id: userA.id })
+                        .getCount({distinct: true});
+                compositeOrderWithProducts.should.eql(2);
+
+                const compositeOrderWithProductsWithoutDistinct =
+                    await compositeOrderRepository
+                        .createQueryBuilder("c_order")
+                        .leftJoin("c_order.user", "user")
+                        .leftJoin("c_order.products", "product")
+                        .where("user.id = :id", { id: userA.id })
+                        .getCount({distinct: false});
+                compositeOrderWithProductsWithoutDistinct.should.eql(6);
+            })
+        ));
 });
