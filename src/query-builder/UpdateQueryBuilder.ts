@@ -213,21 +213,21 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds new AND WHERE with conditions for the given ids.
      */
     whereInIds(ids: any|any[]): this {
-        return this.where(this.createWhereIdsExpression(ids));
+        return this.where(this.getWhereInIdsCondition(ids));
     }
 
     /**
      * Adds new AND WHERE with conditions for the given ids.
      */
     andWhereInIds(ids: any|any[]): this {
-        return this.andWhere(this.createWhereIdsExpression(ids));
+        return this.andWhere(this.getWhereInIdsCondition(ids));
     }
 
     /**
      * Adds new OR WHERE with conditions for the given ids.
      */
     orWhereInIds(ids: any|any[]): this {
-        return this.orWhere(this.createWhereIdsExpression(ids));
+        return this.orWhere(this.getWhereInIdsCondition(ids));
     }
     /**
      * Optional returning/output clause.

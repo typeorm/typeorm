@@ -813,44 +813,35 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
-     * Creates "WHERE" expression and variables for the given "ids".
+     * Creates "WHERE" condition for an in-ids condition.
      */
-    protected createWhereIdsExpression(ids: any|any[]): string {
+    protected getWhereInIdsCondition(ids: any|any[]): ObjectLiteral | Brackets  {
         const metadata = this.expressionMap.mainAlias!.metadata;
         const normalized = (Array.isArray(ids) ? ids : [ids]).map(id => metadata.ensureEntityIdMap(id));
 
         // using in(...ids) for single primary key entities
-        if (!metadata.hasMultiplePrimaryKeys
-            && metadata.embeddeds.length === 0
-        ) {
+        if (!metadata.hasMultiplePrimaryKeys) {
             const primaryColumn = metadata.primaryColumns[0];
 
             // getEntityValue will try to transform `In`, it is a bug
             // todo: remove this transformer check after #2390 is fixed
-            if (!primaryColumn.transformer) {
-                return this.computeWhereParameter({
+            // This also fails for embedded & relation, so until that is fixed skip it.
+            if (!primaryColumn.transformer && !primaryColumn.relationMetadata && !primaryColumn.embeddedMetadata) {
+                return {
                     [primaryColumn.propertyName]: In(
                         normalized.map(id => primaryColumn.getEntityValue(id, false))
                     )
-                });
+                };
             }
         }
 
-        // create shortcuts for better readability
-        const alias = this.expressionMap.aliasNamePrefixingEnabled ? this.escape(this.expressionMap.mainAlias!.name) + "." : "";
-        const whereStrings = normalized.map((id, index) => {
-            const whereSubStrings: string[] = [];
-            metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
-                const parameterName = this.createParameter(primaryColumn.getEntityValue(id, true));
-                // whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
-                whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + " = " + parameterName);
-            });
-            return whereSubStrings.join(" AND ");
+        return new Brackets((qb) => {
+            for (const data of normalized) {
+                qb.orWhere(new Brackets(
+                    (qb) => qb.where(data)
+                ));
+            }
         });
-
-        return whereStrings.length > 1
-            ? "(" + whereStrings.map(whereString => "(" + whereString + ")").join(" OR ") + ")"
-            : whereStrings[0];
     }
 
     private findColumnsForPropertyPath(propertyPath: string): [ Alias, string[], ColumnMetadata[] ] {

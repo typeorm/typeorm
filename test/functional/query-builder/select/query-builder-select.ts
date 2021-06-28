@@ -7,11 +7,12 @@ import { Category } from "./entity/Category";
 import {Post} from "./entity/Post";
 import { Tag } from "./entity/Tag";
 import { HeroImage } from "./entity/HeroImage";
+import { ExternalPost } from "./entity/ExternalPost";
 
 describe("query builder > select", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Category, Post, Tag, HeroImage],
+        entities: [Category, Post, Tag, HeroImage, ExternalPost],
         enabledDrivers: ["sqlite"],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
@@ -388,6 +389,51 @@ describe("query builder > select", () => {
             ).to.be.rejectedWith(EntityNotFoundError);
         })));
 
+    })
+
+    describe("where-in-ids", () => {
+        it("should create expected query with simple primary keys", () => Promise.all(connections.map(async connection => {
+            const [sql, params] = connection.createQueryBuilder(Post, "post")
+                .select("post.id")
+                .whereInIds([ 1, 2, 5, 9 ])
+                .disableEscaping()
+                .getQueryAndParameters();
+
+            expect(sql).to.equal("SELECT post.id AS post_id FROM post post WHERE post.id IN (?, ?, ?, ?)")
+            expect(params).to.eql([ 1, 2, 5, 9 ])
+        })))
+
+        it("should create expected query with composite primary keys", () => Promise.all(connections.map(async connection => {
+            const [sql, params] = connection.createQueryBuilder(ExternalPost, "post")
+                .select("post.id")
+                .whereInIds([ { outlet: "foo", id: 1 }, { outlet: "bar", id: 2 }, { outlet: "baz", id: 5 } ])
+                .disableEscaping()
+                .getQueryAndParameters();
+
+            expect(sql).to.equal(
+                'SELECT post.id AS post_id FROM external_post post WHERE ' +
+                '((post.outlet = ? AND post.id = ?) OR ' +
+                '(post.outlet = ? AND post.id = ?) OR ' +
+                '(post.outlet = ? AND post.id = ?))'
+            )
+            expect(params).to.eql([ "foo", 1, "bar", 2, "baz", 5 ])
+        })))
+
+        it("should create expected query with composite primary keys with missing value", () => Promise.all(connections.map(async connection => {
+            const [sql, params] = connection.createQueryBuilder(ExternalPost, "post")
+                .select("post.id")
+                .whereInIds([ { outlet: "foo", id: 1 }, { outlet: "bar", id: 2 }, { id: 5 } ])
+                .disableEscaping()
+                .getQueryAndParameters();
+
+            expect(sql).to.equal(
+                'SELECT post.id AS post_id FROM external_post post WHERE ' +
+                '((post.outlet = ? AND post.id = ?) OR ' +
+                '(post.outlet = ? AND post.id = ?) OR ' +
+                '(post.id = ?))'
+            )
+            expect(params).to.eql([ "foo", 1, "bar", 2, 5 ])
+        })))
     })
 
     it("Support max execution time", () => Promise.all(connections.map(async connection => {
