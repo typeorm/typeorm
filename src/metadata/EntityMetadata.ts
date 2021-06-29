@@ -798,7 +798,7 @@ export class EntityMetadata {
             if (map === undefined || value === null || value === undefined)
                 return undefined;
 
-            return column.isObjectId ? Object.assign(map, value) : OrmUtils.mergeDeep(map, value);
+            return OrmUtils.mergeDeep(map, value);
         }, {} as ObjectLiteral|undefined);
     }
 
