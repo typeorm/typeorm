@@ -763,21 +763,20 @@ export class PostgresDriver implements Driver {
      * Compares "default" value of the column.
      * Postgres sorts json values before it is saved, so in that case a deep comparison has to be performed to see if has changed.
      */
-    defaultEqual(columnMetadata: ColumnMetadata, tableColumn: TableColumn): boolean {
-      if (Array<ColumnType>("json", "jsonb").indexOf(columnMetadata.type) >= 0
-       && typeof columnMetadata.default !== "function"
-       && columnMetadata.default !== undefined) {
-        let columnDefault = columnMetadata.default;
-        if (typeof columnDefault !== "object") {
-          columnDefault = JSON.parse(columnMetadata.default);
+    private defaultEqual(columnMetadata: ColumnMetadata, tableColumn: TableColumn): boolean {
+        if (
+            ["json", "jsonb"].includes(columnMetadata.type as string)
+            && !["function", "undefined"].includes(typeof columnMetadata.default)
+        ) {
+            const tableColumnDefault = typeof tableColumn.default === "string" ?
+                JSON.parse(tableColumn.default.substring(1, tableColumn.default.length-1)) :
+                tableColumn.default;
+
+            return OrmUtils.deepCompare(columnMetadata.default, tableColumnDefault);
         }
-        let tableDefault = JSON.parse(tableColumn.default.substring(1, tableColumn.default.length-1));
-        return OrmUtils.deepCompare(columnDefault, tableDefault);
-      }
-      else {
+
         const columnDefault = this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata));
-        return (columnDefault === tableColumn.default);
-      }
+        return columnDefault === tableColumn.default;
     }
 
     /**
