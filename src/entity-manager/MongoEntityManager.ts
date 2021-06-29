@@ -240,7 +240,7 @@ export class MongoEntityManager extends EntityManager {
             }));
 
         } else {
-            await this.deleteOne(target, this.convertMixedCriteria(this.connection.getMetadata(target), criteria));
+            await this.deleteMany(target, this.convertMixedCriteria(this.connection.getMetadata(target), criteria));
         }
 
         return new DeleteResult();
