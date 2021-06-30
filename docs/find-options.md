@@ -408,7 +408,7 @@ If you need to provide user input, you should not include the user input directl
 import {Raw} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    currentDate: Raw(alias =>`${alias} > ':date'`, { date: "2020-10-06" })
+    currentDate: Raw(alias =>`${alias} > :date`, { date: "2020-10-06" })
 });
 ```
 
