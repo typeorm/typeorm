@@ -70,7 +70,6 @@ export class DocumentToEntityTransformer {
         metadata.ownColumns.forEach(column => {
             const valueInObject = document[column.databaseNameWithoutPrefixes];
             if (valueInObject !== undefined &&
-                valueInObject !== null &&
                 column.propertyName &&
                 !column.isVirtual) {
                 // const value = this.driver.prepareHydratedValue(valueInObject, column);
