@@ -31,7 +31,6 @@ import {QueryResultCacheFactory} from "../cache/QueryResultCacheFactory";
 import {QueryResultCache} from "../cache/QueryResultCache";
 import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
 import {RelationLoader} from "../query-builder/RelationLoader";
-import {RelationIdLoader} from "../query-builder/RelationIdLoader";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
@@ -112,11 +111,6 @@ export class Connection {
      */
     readonly relationLoader: RelationLoader;
 
-    /**
-     * Used to load relation ids of specific entity relations.
-     */
-    readonly relationIdLoader: RelationIdLoader;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -130,7 +124,6 @@ export class Connection {
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
         this.queryResultCache = options.cache ? new QueryResultCacheFactory(this).create() : undefined;
         this.relationLoader = new RelationLoader(this);
-        this.relationIdLoader = new RelationIdLoader(this);
         this.isConnected = false;
     }
 
