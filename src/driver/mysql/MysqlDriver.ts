@@ -167,6 +167,7 @@ export class MysqlDriver implements Driver {
      * Gets list of column data types that support length by a driver.
      */
     withWidthColumnTypes: ColumnType[] = [
+        "boolean",
         "bit",
         "tinyint",
         "smallint",
@@ -280,6 +281,7 @@ export class MysqlDriver implements Driver {
         "time": { precision: 0 },
         "datetime": { precision: 0 },
         "timestamp": { precision: 0 },
+        "boolean": { width: 1 },
         "bit": { width: 1 },
         "int": { width: 11 },
         "integer": { width: 11 },
@@ -543,7 +545,7 @@ export class MysqlDriver implements Driver {
             return "blob";
 
         } else if (column.type === Boolean) {
-            return "tinyint";
+            return "boolean";
 
         } else if (column.type === "uuid") {
             return "varchar";
@@ -570,7 +572,7 @@ export class MysqlDriver implements Driver {
             return "decimal";
 
         } else if (column.type === "bool" || column.type === "boolean") {
-            return "tinyint";
+            return "boolean";
 
         } else if (column.type === "nvarchar" || column.type === "national varchar") {
             return "varchar";
