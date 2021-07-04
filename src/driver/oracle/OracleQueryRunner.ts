@@ -206,7 +206,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     ok(result.rows || result.outBinds || result.rowsAffected);
                 };
                 const executionOptions = {
-                    autoCommit: this.isTransactionActive ? false : true
+                    autoCommit: this.isTransactionActive ? false : true,
+                    outFormat: this.driver.oracle.OBJECT,
                 };
 
                 const databaseConnection = await this.connect();

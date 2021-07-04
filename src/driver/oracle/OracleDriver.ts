@@ -222,9 +222,6 @@ export class OracleDriver implements Driver {
         // load oracle package
         this.loadDependencies();
 
-        // extra oracle setup
-        this.oracle.outFormat = this.oracle.OBJECT;
-
         this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
 
         // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
