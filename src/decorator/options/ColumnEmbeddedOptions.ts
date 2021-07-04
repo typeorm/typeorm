@@ -9,4 +9,10 @@ export interface ColumnEmbeddedOptions {
      */
     prefix?: string | boolean;
 
+    /**
+     * Indicates if this embedded is in array mode.
+     *
+     * This option works only in mongodb.
+     */
+    array?: boolean;
 }

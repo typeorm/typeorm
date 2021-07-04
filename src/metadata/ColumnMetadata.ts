@@ -526,31 +526,40 @@ export class ColumnMetadata {
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
             const propertyNames = [...this.embeddedMetadata.parentPropertyNames];
+            const isEmbeddedArray = this.embeddedMetadata.isArray;
 
             // now need to access post[data][information][counters] to get column value from the counters
             // and on each step we need to create complex literal object, e.g. first { data },
             // then { data: { information } }, then { data: { information: { counters } } },
             // then { data: { information: { counters: [this.propertyName]: entity[data][information][counters][this.propertyName] } } }
             // this recursive function helps doing that
-            const extractEmbeddedColumnValue = (propertyNames: string[], value: ObjectLiteral, map: ObjectLiteral): any => {
+            const extractEmbeddedColumnValue = (propertyNames: string[], value: ObjectLiteral): ObjectLiteral => {
+                if (value === undefined) {
+                    return {};
+                }
+
                 const propertyName = propertyNames.shift();
-                if (value === undefined)
-                    return map;
 
                 if (propertyName) {
-                    const submap: ObjectLiteral = {};
-                    extractEmbeddedColumnValue(propertyNames, value[propertyName], submap);
+                    const submap = extractEmbeddedColumnValue(propertyNames, value[propertyName]);
                     if (Object.keys(submap).length > 0) {
-                        map[propertyName] = submap;
+                        return { [propertyName]: submap };
                     }
-                    return map;
+                    return {};
                 }
-                if (value[this.propertyName] !== undefined && (returnNulls === false || value[this.propertyName] !== null))
-                    map[this.propertyName] = value[this.propertyName];
-                return map;
+
+                if (isEmbeddedArray && Array.isArray(value)) {
+                    return value.map(v => ({ [this.propertyName]: v[this.propertyName] }));
+                }
+
+                if (value[this.propertyName] !== undefined && (returnNulls === false || value[this.propertyName] !== null)) {
+                    return { [this.propertyName]: value[this.propertyName] };
+                }
+
+                return {};
             };
-            const map: ObjectLiteral = {};
-            extractEmbeddedColumnValue(propertyNames, entity, map);
+            const map = extractEmbeddedColumnValue(propertyNames, entity);
+
             return Object.keys(map).length > 0 ? map : undefined;
 
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
@@ -589,6 +598,7 @@ export class ColumnMetadata {
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
             const propertyNames = [...this.embeddedMetadata.parentPropertyNames];
+            const isEmbeddedArray = this.embeddedMetadata.isArray;
 
             // next we need to access post[data][information][counters][this.propertyName] to get column value from the counters
             // this recursive function takes array of generated property names and gets the post[data][information][counters] embed
@@ -616,6 +626,8 @@ export class ColumnMetadata {
                 } else if (this.referencedColumn) {
                     value = this.referencedColumn.getEntityValue(embeddedObject[this.propertyName]);
 
+                } else if (isEmbeddedArray && Array.isArray(embeddedObject)) {
+                    value = embeddedObject.map(o => o[this.propertyName]);
                 } else {
                     value = embeddedObject[this.propertyName];
                 }
