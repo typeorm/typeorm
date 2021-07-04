@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import {expect} from "chai";
 import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Post} from "./entity/Post";
@@ -111,5 +112,21 @@ describe("mongodb > MongoRepository", () => {
         loadedPosts[0].text.should.be.equal("Everything and more about post #1");
         loadedPosts[1].text.should.be.equal("Everything about post #2");
 
+    })));
+
+    it("should ignore non-column properties", () => Promise.all(connections.map(async connection => {
+        // Github issue #5321
+        const postRepository = connection.getMongoRepository(Post);
+
+        await postRepository.save({
+            title: "Hello",
+            text: "World",
+            unreal: "Not a Column"
+        });
+
+        const loadedPosts = await postRepository.find();
+
+        expect(loadedPosts).to.have.length(1);
+        expect(loadedPosts[0]).to.not.have.property("unreal");
     })));
 });

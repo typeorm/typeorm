@@ -25,10 +25,10 @@ export class Post {
     @Column()
     booleans: boolean[];
 
-    @Column(type => Counters)
+    @Column(type => Counters, { array: true })
     other1: Counters[];
 
-    @Column(type => Counters)
+    @Column(type => Counters, { array: true })
     other2: Counters[];
 
 }
