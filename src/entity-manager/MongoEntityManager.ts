@@ -133,10 +133,21 @@ export class MongoEntityManager extends EntityManager {
         const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
         query["_id"] = {
             $in: ids.map(id => {
-                if (id instanceof objectIdInstance)
-                    return id;
+                if (typeof id === "string") {
+                    return new objectIdInstance(id);
+                }
 
-                return id[metadata.objectIdColumn!.propertyName];
+                if (typeof id === "object") {
+                    if (id instanceof objectIdInstance) {
+                        return id;
+                    }
+
+                    const propertyName = metadata.objectIdColumn!.propertyName;
+
+                    if (id[propertyName] instanceof objectIdInstance) {
+                        return id[propertyName];
+                    }
+                }
             })
         };
 
