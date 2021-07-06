@@ -26,7 +26,7 @@ import {OrderByCondition} from "../find-options/OrderByCondition";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {EntityTarget} from "../common/EntityTarget";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {WhereExpression} from "./WhereExpression";
+import {WhereExpressionBuilder} from "./WhereExpressionBuilder";
 import {Brackets} from "./Brackets";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
@@ -43,7 +43,7 @@ import { TypeORMError } from "../error";
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
+export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpressionBuilder {
 
     // -------------------------------------------------------------------------
     // Public Implemented Methods
@@ -718,7 +718,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     where(where: Brackets|string|((qb: this) => string)|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
         this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
-        const condition = this.computeWhereParameter(where);
+        const condition = this.getWhereCondition(where);
         if (condition)
             this.expressionMap.wheres = [{ type: "simple", condition: condition }];
         if (parameters)
@@ -731,7 +731,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Additionally you can add parameters used in where expression.
      */
     andWhere(where: string|Brackets|((qb: this) => string)|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
+        this.expressionMap.wheres.push({ type: "and", condition: this.getWhereCondition(where) });
         if (parameters) this.setParameters(parameters);
         return this;
     }
@@ -741,7 +741,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Additionally you can add parameters used in where expression.
      */
     orWhere(where: Brackets|string|((qb: this) => string)|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "or", condition: this.computeWhereParameter(where) });
+        this.expressionMap.wheres.push({ type: "or", condition: this.getWhereCondition(where) });
         if (parameters) this.setParameters(parameters);
         return this;
     }

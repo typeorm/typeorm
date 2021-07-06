@@ -11,6 +11,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import { TypeORMError } from "../error";
+import { WhereClause } from "./WhereClause";
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -115,7 +116,7 @@ export class QueryExpressionMap {
     /**
      * WHERE queries.
      */
-    wheres: { type: "simple"|"and"|"or", condition: string }[] = [];
+    wheres: WhereClause[] = [];
 
     /**
      * HAVING queries.

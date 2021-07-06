@@ -6,7 +6,7 @@ import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {WhereExpression} from "./WhereExpression";
+import {WhereExpressionBuilder} from "./WhereExpressionBuilder";
 import {Brackets} from "./Brackets";
 import {UpdateResult} from "./result/UpdateResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
@@ -25,7 +25,7 @@ import { TypeORMError } from "../error";
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
+export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpressionBuilder {
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -157,7 +157,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
      */
     where(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
         this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
-        const condition = this.computeWhereParameter(where);
+        const condition = this.getWhereCondition(where);
         if (condition)
             this.expressionMap.wheres = [{ type: "simple", condition: condition }];
         if (parameters)
@@ -170,7 +170,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
      * Additionally you can add parameters used in where expression.
      */
     andWhere(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
+        this.expressionMap.wheres.push({ type: "and", condition: this.getWhereCondition(where) });
         if (parameters) this.setParameters(parameters);
         return this;
     }
@@ -180,7 +180,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
      * Additionally you can add parameters used in where expression.
      */
     orWhere(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "or", condition: this.computeWhereParameter(where) });
+        this.expressionMap.wheres.push({ type: "or", condition: this.getWhereCondition(where) });
         if (parameters) this.setParameters(parameters);
         return this;
     }

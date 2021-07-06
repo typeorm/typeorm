@@ -7,7 +7,7 @@ import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {WhereExpression} from "./WhereExpression";
+import {WhereExpressionBuilder} from "./WhereExpressionBuilder";
 import {Brackets} from "./Brackets";
 import {DeleteResult} from "./result/DeleteResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
@@ -21,7 +21,7 @@ import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver"
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
+export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpressionBuilder {
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -153,7 +153,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     where(where: Brackets|string|((qb: this) => string)|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
         this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
-        const condition = this.computeWhereParameter(where);
+        const condition = this.getWhereCondition(where);
         if (condition)
             this.expressionMap.wheres = [{ type: "simple", condition: condition }];
         if (parameters)
@@ -166,7 +166,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Additionally you can add parameters used in where expression.
      */
     andWhere(where: Brackets|string|((qb: this) => string)|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
+        this.expressionMap.wheres.push({ type: "and", condition: this.getWhereCondition(where) });
         if (parameters) this.setParameters(parameters);
         return this;
     }
@@ -176,7 +176,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Additionally you can add parameters used in where expression.
      */
     orWhere(where: Brackets|string|((qb: this) => string)|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "or", condition: this.computeWhereParameter(where) });
+        this.expressionMap.wheres.push({ type: "or", condition: this.getWhereCondition(where) });
         if (parameters) this.setParameters(parameters);
         return this;
     }
