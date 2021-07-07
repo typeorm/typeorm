@@ -100,13 +100,15 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // console.time(".getting query and parameters");
             const [insertSql, parameters] = this.getQueryAndParameters();
             // console.timeEnd(".getting query and parameters");
-            const insertResult = new InsertResult();
+
             // console.time(".query execution by database");
             const statements = [declareSql, insertSql, selectOutputSql];
-            insertResult.raw = await queryRunner.query(
-                statements.filter(sql => sql != null).join(";\n\n"),
-                parameters,
-            );
+            const sql = statements.filter(s => s != null).join(";\n\n");
+
+            const queryResult = await queryRunner.query(sql, parameters, true);
+
+            const insertResult = InsertResult.from(queryResult);
+
             // console.timeEnd(".query execution by database");
 
             // load returning results and set them to the entity if entity updation is enabled

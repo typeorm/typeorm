@@ -21,7 +21,6 @@ import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver";
 import { TypeORMError } from "../error";
 
 /**
@@ -93,32 +92,14 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // execute update query
             const [updateSql, parameters] = this.getQueryAndParameters();
-            const updateResult = new UpdateResult();
+
             const statements = [declareSql, updateSql, selectOutputSql];
-            const result = await queryRunner.query(
+            const queryResult = await queryRunner.query(
                 statements.filter(sql => sql != null).join(";\n\n"),
                 parameters,
+                true
             );
-
-            if (this.connection.driver instanceof PostgresDriver) {
-                updateResult.raw = result[0];
-                updateResult.affected = result[1];
-            }
-            else if (this.connection.driver instanceof MysqlDriver) {
-                updateResult.raw = result;
-                updateResult.affected = result.affectedRows;
-            }
-            else if (this.connection.driver instanceof AuroraDataApiDriver) {
-                updateResult.raw = result;
-                updateResult.affected = result.numberOfRecordsUpdated;
-            }
-            else if (this.connection.driver instanceof BetterSqlite3Driver) { // only works for better-sqlite3
-                updateResult.raw = result;
-                updateResult.affected = result.changes;
-            }
-            else {
-                updateResult.raw = result;
-            }
+            const updateResult = UpdateResult.from(queryResult);
 
             // if we are updating entities and entity updation is enabled we must update some of entity columns (like version, update date, etc.)
             if (this.expressionMap.updateEntity === true &&

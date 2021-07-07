@@ -5,6 +5,7 @@ import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryR
 import {CordovaDriver} from "./CordovaDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
 import { TypeORMError } from "../../error";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -30,15 +31,15 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise<any[]>(async (ok, fail) => {
+        return new Promise(async (ok, fail) => {
             const databaseConnection = await this.connect();
             this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
-            databaseConnection.executeSql(query, parameters, (result: any) => {
+            databaseConnection.executeSql(query, parameters, (raw: any) => {
 
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
@@ -47,16 +48,24 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                 if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
                     this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
+                const result = new QueryResult();
+
                 if (query.substr(0, 11) === "INSERT INTO") {
-                    ok(result.insertId);
-                }
-                else {
+                    result.raw = raw.insertId;
+                } else {
                     let resultSet = [];
-                    for (let i = 0; i < result.rows.length; i++) {
-                        resultSet.push(result.rows.item(i));
+                    for (let i = 0; i < raw.rows.length; i++) {
+                        resultSet.push(raw.rows.item(i));
                     }
 
-                    ok(resultSet);
+                    result.records = resultSet;
+                    result.raw = resultSet;
+                }
+
+                if (useStructuredResult) {
+                    ok(result);
+                } else {
+                    ok(result.raw);
                 }
             }, (err: any) => {
                 this.driver.connection.logger.logQueryError(err, query, parameters, this);

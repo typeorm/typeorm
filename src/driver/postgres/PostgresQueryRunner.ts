@@ -24,6 +24,7 @@ import {PostgresDriver} from "./PostgresDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { TypeORMError } from "../../error";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -209,7 +210,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Executes a given SQL query.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult: boolean = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -218,7 +219,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         this.driver.connection.logger.logQuery(query, parameters, this);
         try {
             const queryStartTime = +new Date();
-            const result = await databaseConnection.query(query, parameters);
+            const raw = await databaseConnection.query(query, parameters);
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
             const queryEndTime = +new Date();
@@ -226,15 +227,31 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
                 this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-            switch (result.command) {
+            const result = new QueryResult();
+
+            if (raw?.hasOwnProperty('rows')) {
+                result.records = raw.rows;
+            }
+
+            if (raw?.hasOwnProperty('rowCount')) {
+                result.affected = raw.rowCount;
+            }
+
+            switch (raw.command) {
                 case "DELETE":
                 case "UPDATE":
                     // for UPDATE and DELETE query additionally return number of affected rows
-                    return [result.rows, result.rowCount];
+                    result.raw = [raw.rows, raw.rowCount];
                     break;
                 default:
-                    return result.rows;
+                    result.raw = raw.rows;
             }
+
+            if (!useStructuredResult) {
+                return result.raw;
+            }
+
+            return result;
         } catch (err) {
             this.driver.connection.logger.logQueryError(err, query, parameters, this);
             throw new QueryFailedError(query, parameters, err);

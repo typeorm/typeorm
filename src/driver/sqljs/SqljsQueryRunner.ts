@@ -3,6 +3,7 @@ import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryR
 import {SqljsDriver} from "./SqljsDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
 import {QueryFailedError} from "../../error/QueryFailedError";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -58,13 +59,13 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters: any[] = []): Promise<any> {
+    query(query: string, parameters: any[] = [], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         const command = query.trim().split(" ", 1)[0];
 
-        return new Promise<any[]>(async (ok, fail) => {
+        return new Promise(async (ok, fail) => {
             const databaseConnection = this.driver.databaseConnection;
             this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
@@ -84,11 +85,17 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
                     this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-                const result: any[] = [];
+                const records: any[] = [];
 
                 while (statement.step()) {
-                    result.push(statement.getAsObject());
+                    records.push(statement.getAsObject());
                 }
+
+                const result = new QueryResult();
+
+                result.affected = databaseConnection.getRowsModified();
+                result.records = records;
+                result.raw = records;
 
                 statement.free();
 
@@ -96,9 +103,12 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                     this.isDirty = true;
                 }
 
-                ok(result);
-            }
-            catch (e) {
+                if (useStructuredResult) {
+                    ok(result);
+                } else {
+                    ok(result.raw);
+                }
+            } catch (e) {
                 if (statement) {
                     statement.free();
                 }

@@ -23,6 +23,7 @@ import {SapDriver} from "./SapDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { QueryFailedError, TypeORMError } from "../../error";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -170,7 +171,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Executes a given SQL query.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -192,7 +193,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
 
                const statement = databaseConnection.prepare(query);
-               statement.exec(parameters, (err: any, result: any) => {
+               statement.exec(parameters, (err: any, raw: any) => {
 
                    // log slow queries if maxQueryExecution time is set
                    const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
@@ -217,21 +218,43 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                        return fail(new QueryFailedError(query, parameters, err));
 
                    } else {
+                       const result = new QueryResult();
+
+                       if (typeof raw === "number") {
+                           result.affected = raw;
+                       } else if (Array.isArray(raw)) {
+                           result.records = raw;
+                       }
+
                        if (isInsertQuery) {
                            const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`;
                            this.driver.connection.logger.logQuery(lastIdQuery, [], this);
-                           databaseConnection.exec(lastIdQuery, (err: any, result: { "CURRENT_IDENTITY_VALUE()": number }[]) => {
+                           databaseConnection.exec(lastIdQuery, (err: any, identityValueResult: { "CURRENT_IDENTITY_VALUE()": number }[]) => {
                                if (err) {
                                    this.driver.connection.logger.logQueryError(err, lastIdQuery, [], this);
                                    resolveChain();
                                    fail(new QueryFailedError(lastIdQuery, [], err));
                                    return;
                                }
-                               ok(result[0]["CURRENT_IDENTITY_VALUE()"]);
+
+                               result.raw = identityValueResult[0]["CURRENT_IDENTITY_VALUE()"];
+                               result.records = identityValueResult;
+
+                               if (useStructuredResult) {
+                                   ok(result);
+                               } else {
+                                   ok(result.raw);
+                               }
                                resolveChain();
                            });
                        } else {
-                           ok(result);
+                           result.raw = raw;
+
+                           if (useStructuredResult) {
+                               ok(result);
+                           } else {
+                               ok(result.raw);
+                           }
                            resolveChain();
                        }
                    }

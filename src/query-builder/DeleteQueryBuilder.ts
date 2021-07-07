@@ -1,5 +1,4 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityTarget} from "../common/EntityTarget";
@@ -11,11 +10,8 @@ import {WhereExpressionBuilder} from "./WhereExpressionBuilder";
 import {Brackets} from "./Brackets";
 import {DeleteResult} from "./result/DeleteResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../entity-schema/EntitySchema";
-import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -68,33 +64,8 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
 
             // execute query
-            const deleteResult = new DeleteResult();
-            const result = await queryRunner.query(sql, parameters);
-
-            const driver = queryRunner.connection.driver;
-            if (driver instanceof MysqlDriver) {
-                deleteResult.raw = result;
-                deleteResult.affected = result.affectedRows;
-
-            } else if (driver instanceof AuroraDataApiDriver) {
-                deleteResult.raw = result;
-                deleteResult.affected = result.numberOfRecordsUpdated;
-
-            } else if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
-                deleteResult.raw = result[0] ? result[0] : null;
-                // don't return 0 because it could confuse. null means that we did not receive this value
-                deleteResult.affected = typeof result[1] === "number" ? result[1] : null;
-
-            } else if (driver instanceof OracleDriver) {
-                deleteResult.affected = result;
-
-            } else if (driver instanceof BetterSqlite3Driver) { // only works for better-sqlite3
-                deleteResult.raw = result;
-                deleteResult.affected = result.changes;
-
-            } else {
-                deleteResult.raw = result;
-            }
+            const queryResult = await queryRunner.query(sql, parameters, true);
+            const deleteResult = DeleteResult.from(queryResult);
 
             // call after deletion methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {

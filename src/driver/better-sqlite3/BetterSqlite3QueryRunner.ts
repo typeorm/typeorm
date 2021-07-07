@@ -3,6 +3,7 @@ import { QueryFailedError } from "../../error/QueryFailedError";
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import { Broadcaster } from "../../subscriber/Broadcaster";
 import { BetterSqlite3Driver } from "./BetterSqlite3Driver";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -60,12 +61,12 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         const connection = this.driver.connection;
-        
+
         parameters = parameters || [];
         for (let i = 0; i < parameters.length; i++) {
             // in "where" clauses the parameters are not escaped by the driver
@@ -79,15 +80,21 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
         const stmt = await this.getStmt(query);
 
         try {
+            const result = new QueryResult();
 
-            let result: any;
             if (stmt.reader) {
-                result = stmt.all.apply(stmt, parameters);
-            } else {
-                result = stmt.run.apply(stmt, parameters);
-                if (query.substr(0, 6) === "INSERT") {
-                    result = result.lastInsertRowid;
+                const raw = stmt.all.apply(stmt, parameters);
+
+                result.raw = raw;
+
+                if (Array.isArray(raw)) {
+                    result.records = raw;
                 }
+
+            } else {
+                const raw = stmt.run.apply(stmt, parameters);
+                result.affected = raw.changes;
+                result.raw = raw.lastInsertRowid;
             }
 
             // log slow queries if maxQueryExecution time is set
@@ -96,6 +103,10 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             const queryExecutionTime = queryEndTime - queryStartTime;
             if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
                 connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+
+            if (!useStructuredResult) {
+                return result.raw;
+            }
 
             return result;
         } catch (err) {

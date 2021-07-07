@@ -1,4 +1,5 @@
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {QueryResult} from "../../query-runner/QueryResult";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
@@ -195,7 +196,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     /**
      * Executes a given SQL query.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -228,7 +229,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     });
                 }
                 const queryStartTime = +new Date();
-                request.query(query, (err: any, result: any) => {
+                request.query(query, (err: any, raw: any) => {
 
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
@@ -253,14 +254,30 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         return fail(new QueryFailedError(query, parameters, err));
                     }
 
+                    const result = new QueryResult();
+
+                    if (raw?.hasOwnProperty('recordset')) {
+                        result.records = raw.recordset;
+                    }
+
+                    if (raw?.hasOwnProperty('rowsAffected')) {
+                        result.affected = raw.rowsAffected[0];
+                    }
+
                     const queryType = query.slice(0, query.indexOf(" "));
                     switch (queryType) {
                         case "DELETE":
                             // for DELETE query additionally return number of affected rows
-                            ok([result.recordset, result.rowsAffected[0]]);
+                            result.raw = [raw.recordset, raw.rowsAffected[0]];
                             break;
                         default:
-                            ok(result.recordset);
+                            result.raw = raw.recordset;
+                    }
+
+                    if (useStructuredResult) {
+                        ok(result);
+                    } else {
+                        ok(result.raw);
                     }
                     resolveChain();
                 });

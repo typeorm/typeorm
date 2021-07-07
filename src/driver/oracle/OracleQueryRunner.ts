@@ -23,6 +23,7 @@ import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { TypeORMError } from "../../error";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -180,7 +181,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -189,7 +190,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 this.driver.connection.logger.logQuery(query, parameters, this);
                 const queryStartTime = +new Date();
 
-                const handler = (err: any, result: any) => {
+                const handler = (err: any, raw: any) => {
 
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
@@ -202,8 +203,28 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         this.driver.connection.logger.logQueryError(err, query, parameters, this);
                         return fail(new QueryFailedError(query, parameters, err));
                     }
-                    // TODO: find better solution. Must return result instead of properties
-                    ok(result.rows || result.outBinds || result.rowsAffected);
+
+                    const result = new QueryResult();
+
+                    result.raw = raw.rows || raw.outBinds || raw.rowsAffected;
+
+                    if (raw?.hasOwnProperty('rows') && Array.isArray(raw.rows)) {
+                        result.records = raw.rows;
+                    }
+
+                    if (raw?.hasOwnProperty('outBinds') && Array.isArray(raw.outBinds)) {
+                        result.records = raw.outBinds;
+                    }
+
+                    if (raw?.hasOwnProperty('rowsAffected')) {
+                        result.affected = raw.rowsAffected;
+                    }
+
+                    if (useStructuredResult) {
+                        ok(result);
+                    } else {
+                        ok(result.raw);
+                    }
                 };
                 const executionOptions = {
                     autoCommit: this.isTransactionActive ? false : true,

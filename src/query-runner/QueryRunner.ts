@@ -13,6 +13,7 @@ import {Broadcaster} from "../subscriber/Broadcaster";
 import {TableCheck} from "../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {TableExclusion} from "../schema-builder/table/TableExclusion";
+import {QueryResult} from "./QueryResult";
 
 /**
  * Runs queries on a single database connection.
@@ -96,6 +97,11 @@ export interface QueryRunner {
      * Error will be thrown if transaction was not started.
      */
     rollbackTransaction(): Promise<void>;
+
+    /**
+     * Executes a given SQL query and returns raw database results.
+     */
+    query(query: string, parameters: any[] | undefined, useStructuredResult: true): Promise<QueryResult>;
 
     /**
      * Executes a given SQL query and returns raw database results.

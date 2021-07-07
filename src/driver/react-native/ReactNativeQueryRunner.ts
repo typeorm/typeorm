@@ -4,17 +4,18 @@ import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {ReactNativeDriver} from "./ReactNativeDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Runs queries on a single sqlite database connection.
  */
 export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
-    
+
     /**
      * Database driver used by connection.
      */
     driver: ReactNativeDriver;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -29,15 +30,15 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise<any[]>(async (ok, fail) => {
+        return new Promise(async (ok, fail) => {
             const databaseConnection = await this.connect();
             this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
-            databaseConnection.executeSql(query, parameters, (result: any) => {
+            databaseConnection.executeSql(query, parameters, (raw: any) => {
 
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
@@ -46,17 +47,31 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                 if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
                     this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
+                const result = new QueryResult();
+
                 // return id of inserted row, if query was insert statement.
                 if (query.substr(0, 11) === "INSERT INTO") {
-                    ok(result.insertId);
+                    result.raw = raw.insertId;
                 }
-                else {
-                    let resultSet = [];
-                    for (let i = 0; i < result.rows.length; i++) {
-                        resultSet.push(result.rows.item(i));
+
+                if (raw?.hasOwnProperty('rowsAffected')) {
+                    result.affected = raw.rowsAffected;
+                }
+
+                if (raw?.hasOwnProperty('rows')) {
+                    let records = [];
+                    for (let i = 0; i < raw.rows.length; i++) {
+                        records.push(raw.rows.item(i));
                     }
-                    
-                    ok(resultSet);
+
+                    result.raw = records;
+                    result.records = records;
+                }
+
+                if (useStructuredResult) {
+                    ok(result);
+                } else {
+                    ok(result.raw);
                 }
             }, (err: any) => {
                 this.driver.connection.logger.logQueryError(err, query, parameters, this);

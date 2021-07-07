@@ -1,3 +1,4 @@
+import {QueryResult} from "../../query-runner/QueryResult";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
@@ -171,7 +172,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Executes a raw SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -180,7 +181,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const databaseConnection = await this.connect();
                 this.driver.connection.logger.logQuery(query, parameters, this);
                 const queryStartTime = +new Date();
-                databaseConnection.query(query, parameters, (err: any, result: any) => {
+                databaseConnection.query(query, parameters, (err: any, raw: any) => {
 
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
@@ -194,7 +195,25 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         return fail(new QueryFailedError(query, parameters, err));
                     }
 
-                    ok(result);
+                    const result = new QueryResult();
+
+                    result.raw = raw;
+
+                    try {
+                        result.records = Array.from(raw);
+                    } catch {
+                        // Do nothing.
+                    }
+
+                    if (raw?.hasOwnProperty('affectedRows')) {
+                        result.affected = raw.affectedRows;
+                    }
+
+                    if (useStructuredResult) {
+                        ok(result);
+                    } else {
+                        ok(result.raw);
+                    }
                 });
 
             } catch (err) {

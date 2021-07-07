@@ -92,7 +92,7 @@ export abstract class BaseQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    abstract query(query: string, parameters?: any[]): Promise<any>;
+    abstract query(query: string, parameters?: any[], useStructuredResult?: boolean): Promise<any>;
 
     // -------------------------------------------------------------------------
     // Protected Abstract Methods

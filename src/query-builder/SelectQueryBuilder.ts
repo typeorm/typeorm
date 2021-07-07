@@ -2101,8 +2101,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     query: queryId,
                     duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
                 }, queryRunner);
-                if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
+                if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions)) {
                     return JSON.parse(savedQueryResultCacheOptions.result);
+                }
             } catch(error) {
                 if (!cacheOptions.ignoreErrors) {
                     throw error;
@@ -2111,7 +2112,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
         }
 
-        const results = await queryRunner.query(sql, parameters);
+        const results = await queryRunner.query(sql, parameters, true);
 
         if (!cacheError && this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
             try {
@@ -2120,7 +2121,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     query: queryId,
                     time: new Date().getTime(),
                     duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
-                    result: JSON.stringify(results)
+                    result: JSON.stringify(results.records)
                 }, savedQueryResultCacheOptions, queryRunner);
             } catch(error) {
                 if (!cacheOptions.ignoreErrors) {
@@ -2129,7 +2130,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
         }
 
-        return results;
+        return results.records;
     }
 
     /**

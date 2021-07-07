@@ -5,6 +5,7 @@ import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
 import {SqliteDriver} from "./SqliteDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
 import { ConnectionIsNotSetError } from '../../error/ConnectionIsNotSetError';
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -33,7 +34,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -44,7 +45,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
             throw new ConnectionIsNotSetError('sqlite')
         }
 
-        return new Promise<any[]>(async (ok, fail) => {
+        return new Promise(async (ok, fail) => {
 
             const databaseConnection = await this.connect();
             this.driver.connection.logger.logQuery(query, parameters, this);
@@ -59,7 +60,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                 }
             };
 
-            const handler = function (err: any, result: any) {
+            const handler = function (err: any, rows: any) {
                 if (err && err.toString().indexOf("SQLITE_BUSY:") !== -1) {
                     if (typeof options.busyErrorRetry === "number" && options.busyErrorRetry > 0) {
                         setTimeout(execute, options.busyErrorRetry);
@@ -78,7 +79,26 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                     connection.logger.logQueryError(err, query, parameters, this);
                     fail(new QueryFailedError(query, parameters, err));
                 } else {
-                    ok(isInsertQuery ? this["lastID"] : result);
+                    const result = new QueryResult();
+
+                    if (isInsertQuery) {
+                        result.raw = this["lastID"];
+                    } else {
+                        result.raw = rows;
+                    }
+
+                    if (Array.isArray(rows)) {
+
+                        result.records = rows;
+                    }
+
+                    result.affected = this["changes"];
+
+                    if (useStructuredResult) {
+                        ok(result);
+                    } else {
+                        ok(result.raw);
+                    }
                 }
             };
 

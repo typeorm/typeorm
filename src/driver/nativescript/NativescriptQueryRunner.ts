@@ -4,6 +4,7 @@ import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {NativescriptDriver} from "./NativescriptDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -29,16 +30,16 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         const connection = this.driver.connection;
 
-        return new Promise<any[]>( (ok, fail) => {
+        return new Promise( (ok, fail) => {
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
 
-            const handler = function (err: any, result: any) {
+            const handler = function (err: any, raw: any) {
 
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime = connection.options.maxQueryExecutionTime;
@@ -51,8 +52,19 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
                     connection.logger.logQueryError(err, query, parameters, this);
                     fail(new QueryFailedError(query, parameters, err));
                 } else {
-                    // when isInsertQuery == true, result is the id
-                    ok(result);
+                    const result = new QueryResult();
+
+                    result.raw = raw;
+
+                    if (!isInsertQuery && Array.isArray(raw)) {
+                        result.records = raw;
+                    }
+
+                    if (useStructuredResult) {
+                        ok(result);
+                    } else {
+                        ok(result.raw);
+                    }
                 }
             };
             this.driver.connection.logger.logQuery(query, parameters, this);

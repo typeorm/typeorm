@@ -450,7 +450,6 @@ export abstract class QueryBuilder<Entity> {
         const queryRunner = this.obtainQueryRunner();
         try {
             return await queryRunner.query(sql, parameters);  // await is needed here because we are using finally
-
         } finally {
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
                 await queryRunner.release();

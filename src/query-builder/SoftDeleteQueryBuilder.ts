@@ -81,17 +81,9 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
 
             // execute update query
             const [sql, parameters] = this.getQueryAndParameters();
-            const updateResult = new UpdateResult();
-            const result = await queryRunner.query(sql, parameters);
 
-            const driver = queryRunner.connection.driver;
-            if (driver instanceof PostgresDriver) {
-                updateResult.raw = result[0];
-                updateResult.affected = result[1];
-            }
-            else {
-                updateResult.raw = result;
-            }
+            const queryResult = await queryRunner.query(sql, parameters, true);
+            const updateResult = UpdateResult.from(queryResult);
 
             // if we are updating entities and entity updation is enabled we must update some of entity columns (like version, update date, etc.)
             if (this.expressionMap.updateEntity === true &&

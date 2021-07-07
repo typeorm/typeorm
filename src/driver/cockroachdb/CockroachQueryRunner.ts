@@ -1,3 +1,4 @@
+import {QueryResult} from "../../query-runner/QueryResult";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
@@ -209,17 +210,17 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[], options?: {  }): Promise<any> {
+    query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise<any[]>(async (ok, fail) => {
+        return new Promise<QueryResult>(async (ok, fail) => {
             try {
                 const databaseConnection = await this.connect();
                 this.driver.connection.logger.logQuery(query, parameters, this);
                 const queryStartTime = +new Date();
 
-                databaseConnection.query(query, parameters, (err: any, result: any) => {
+                databaseConnection.query(query, parameters, (err: any, raw: any) => {
                     if (this.isTransactionActive && this.storeQueries)
                         this.queries.push({ query, parameters });
 
@@ -235,13 +236,29 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                             this.driver.connection.logger.logQueryError(err, query, parameters, this);
                         fail(new QueryFailedError(query, parameters, err));
                     } else {
-                        switch (result.command) {
+                        const result = new QueryResult();
+
+                        if (raw.hasOwnProperty('rowCount')) {
+                            result.affected = raw.rowCount;
+                        }
+
+                        if (raw.hasOwnProperty('rows')) {
+                            result.records = raw.rows;
+                        }
+
+                        switch (raw.command) {
                             case "DELETE":
                                 // for DELETE query additionally return number of affected rows
-                                ok([result.rows, result.rowCount]);
+                                result.raw = [raw.rows, raw.rowCount]
                                 break;
                             default:
-                                ok(result.rows);
+                                result.raw = raw.rows;
+                        }
+
+                        if (useStructuredResult) {
+                            ok(result);
+                        } else {
+                            ok(result.raw);
                         }
                     }
                 });
