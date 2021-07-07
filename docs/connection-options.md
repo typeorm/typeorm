@@ -186,6 +186,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 * `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
 
 * `installExtensions` - A boolean to control whether to install necessary postgres extensions automatically or not (default: `true`)
+
 ## `sqlite` connection options
 
 * `database` - Database path. For example "./mydb.sql"
