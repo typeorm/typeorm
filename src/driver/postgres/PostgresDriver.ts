@@ -659,10 +659,16 @@ export class PostgresDriver implements Driver {
 
     /**
      * Build full table name with schema name and table name.
-     * E.g. "mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string): string {
-        return schema ? `${schema}.${tableName}` : tableName;
+        let tablePath = [ tableName ];
+
+        if (schema) {
+            tablePath.unshift(schema);
+        }
+
+        return tablePath.join('.');
     }
 
     /**

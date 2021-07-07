@@ -292,7 +292,7 @@ export class MongoDriver implements Driver {
 
     /**
      * Build full table name with database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
         return tableName;

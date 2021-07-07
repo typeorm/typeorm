@@ -347,21 +347,24 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Build full table name with database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
-        let fullName = tableName;
-        if (schema)
-            fullName = schema + "." + tableName;
-        if (database) {
-            if (!schema) {
-                fullName = database + ".." + tableName;
-            } else {
-                fullName = database + "." + fullName;
-            }
+        let tablePath = [ tableName ];
+
+        if (schema) {
+            tablePath.unshift(schema);
         }
 
-        return fullName;
+        if (database) {
+            if (!schema) {
+                tablePath.unshift('')
+            }
+
+            tablePath.unshift(database);
+        }
+
+        return tablePath.join('.');
     }
 
     /**

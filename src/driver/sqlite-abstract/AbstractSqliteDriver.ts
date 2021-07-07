@@ -404,7 +404,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Build full table name with database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      *
      * Returns only simple table name because all inherited drivers does not supports schema and database.
      */
