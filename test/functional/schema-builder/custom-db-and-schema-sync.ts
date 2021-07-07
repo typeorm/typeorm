@@ -33,27 +33,28 @@ describe("schema builder > custom-db-and-schema-sync", () => {
             photoMetadata.database = "secondDB";
             photoMetadata.schema = "photo-schema";
             photoMetadata.tablePath = "secondDB.photo-schema.photo";
-            photoMetadata.schemaPath = "secondDB.photo-schema";
+            const photoMetadataSchemaPath = "secondDB.photo-schema";
 
             albumMetadata.database = "secondDB";
             albumMetadata.schema = "album-schema";
             albumMetadata.tablePath = "secondDB.album-schema.album";
-            albumMetadata.schemaPath = "secondDB.album-schema";
+            const albumMetadataSchemaPath = "secondDB.album-schema";
 
             await queryRunner.createDatabase(photoMetadata.database, true);
-            await queryRunner.createSchema(photoMetadata.schemaPath, true);
-            await queryRunner.createSchema(albumMetadata.schemaPath, true);
+            await queryRunner.createSchema(photoMetadataSchemaPath, true);
+            await queryRunner.createSchema(albumMetadataSchemaPath, true);
 
         } else if (connection.driver instanceof PostgresDriver || connection.driver instanceof SapDriver) {
             photoMetadata.schema = "photo-schema";
             photoMetadata.tablePath = "photo-schema.photo";
-            photoMetadata.schemaPath = "photo-schema";
+            const photoMetadataSchemaPath = "photo-schema";
 
             albumMetadata.schema = "album-schema";
             albumMetadata.tablePath = "album-schema.album";
-            albumMetadata.schemaPath = "album-schema";
-            await queryRunner.createSchema(photoMetadata.schemaPath, true);
-            await queryRunner.createSchema(albumMetadata.schemaPath, true);
+            const albumMetadataSchemaPath = "album-schema";
+
+            await queryRunner.createSchema(photoMetadataSchemaPath, true);
+            await queryRunner.createSchema(albumMetadataSchemaPath, true);
 
         } else if (connection.driver instanceof MysqlDriver) {
             photoMetadata.database = "secondDB";

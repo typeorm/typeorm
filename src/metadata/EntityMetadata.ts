@@ -130,12 +130,6 @@ export class EntityMetadata {
     tablePath: string;
 
     /**
-     * Entity schema path. Contains database name and schema name.
-     * E.g. myDB.mySchema
-     */
-    schemaPath?: string;
-
-    /**
      * Gets the table name without global table prefix.
      * When querying table you need a table name with prefix, but in some scenarios,
      * for example when you want to name a junction table that contains names of two other tables,
@@ -842,7 +836,6 @@ export class EntityMetadata {
         this.expression = this.tableMetadataArgs.expression;
         this.withoutRowid = this.tableMetadataArgs.withoutRowid === true ? true : false;
         this.tablePath = this.buildTablePath();
-        this.schemaPath = this.buildSchemaPath();
         this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
 
         if (entitySkipConstructor !== undefined) {
@@ -904,15 +897,4 @@ export class EntityMetadata {
 
         return tablePath;
     }
-
-    /**
-     * Builds table path using schema name and database name.
-     */
-    protected buildSchemaPath(): string|undefined {
-        if (!this.schema)
-            return undefined;
-
-        return this.database && !(this.connection.driver instanceof PostgresDriver) ? this.database + "." + this.schema : this.schema;
-    }
-
 }
