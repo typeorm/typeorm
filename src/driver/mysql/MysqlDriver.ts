@@ -753,14 +753,9 @@ export class MysqlDriver implements Driver {
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            let columnMetadataLength = columnMetadata.length;
-            if (!columnMetadataLength && columnMetadata.generationStrategy === "uuid") { // fixing #3374
-                columnMetadataLength = this.getColumnLength(columnMetadata);
-            }
-
             const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadataLength
+                || tableColumn.length !== this.getColumnLength(columnMetadata)
                 || tableColumn.width !== columnMetadata.width
                 || (columnMetadata.precision !== undefined && tableColumn.precision !== columnMetadata.precision)
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
