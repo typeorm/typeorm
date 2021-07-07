@@ -14,7 +14,6 @@ import {Brackets} from "./Brackets";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -454,9 +453,6 @@ export abstract class QueryBuilder<Entity> {
         } finally {
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
                 await queryRunner.release();
-            }
-            if (this.connection.driver instanceof SqljsDriver) {
-                await this.connection.driver.autoSave();
             }
         }
     }

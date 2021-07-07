@@ -8,12 +8,17 @@ import {QueryFailedError} from "../../error/QueryFailedError";
  * Runs queries on a single sqlite database connection.
  */
 export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
-    
+
+    /**
+     * Flag to determine if a modification has happened since the last time this query runner has requested a save.
+     */
+    private isDirty = false;
+
     /**
      * Database driver used by connection.
      */
     driver: SqljsDriver;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -28,14 +33,26 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     // -------------------------------------------------------------------------
     // Public methods
     // -------------------------------------------------------------------------
-    
+
+    private async flush() {
+        if (this.isDirty) {
+            await this.driver.autoSave();
+            this.isDirty = false;
+        }
+    }
+
+    async release(): Promise<void> {
+        await this.flush();
+        return super.release();
+    }
+
     /**
      * Commits transaction.
      * Error will be thrown if transaction was not started.
      */
     async commitTransaction(): Promise<void> {
         await super.commitTransaction();
-        await this.driver.autoSave();
+        await this.flush();
     }
 
     /**
@@ -44,6 +61,8 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     query(query: string, parameters: any[] = []): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
+
+        const command = query.trim().split(" ", 1)[0];
 
         return new Promise<any[]>(async (ok, fail) => {
             const databaseConnection = this.driver.databaseConnection;
@@ -57,7 +76,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
 
                     statement.bind(parameters);
                 }
-                
+
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
                 const queryEndTime = +new Date();
@@ -70,8 +89,13 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 while (statement.step()) {
                     result.push(statement.getAsObject());
                 }
-                
+
                 statement.free();
+
+                if (command !== "SELECT") {
+                    this.isDirty = true;
+                }
+
                 ok(result);
             }
             catch (e) {
