@@ -200,7 +200,8 @@ export class MongoDriver implements Driver {
         "monitorCommands",
         "useNewUrlParser",
         "useUnifiedTopology",
-        "autoEncryption"
+        "autoEncryption",
+        "retryWrites"
     ];
 
     // -------------------------------------------------------------------------
