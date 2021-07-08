@@ -1,8 +1,8 @@
 import "reflect-metadata";
+import {expect} from "chai";
 import {Connection} from "../../../src";
 import {Post} from "./entity/Post";
 import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../utils/test-utils";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 
 describe("github issues > #7100 MSSQL error when user requests additional columns to be returned", () => {
 
@@ -12,25 +12,14 @@ describe("github issues > #7100 MSSQL error when user requests additional column
         connections = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
-            dropSchema: true
+            dropSchema: true,
+            enabledDrivers: [ "mssql" ]
         });
     });
-    beforeEach(async () => {
-        await reloadTestingDatabases(connections);
-
-        return Promise.all(connections.map(async connection => {
-            if (!(connection.driver instanceof SqlServerDriver)) {
-                return;
-            }
-        }));
-    });
+    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should return user requested columns", () => Promise.all(connections.map(async connection => {
-        if (!(connection.driver instanceof SqlServerDriver)) {
-            return;
-        }
-
         const post = new Post();
         post.title = "title";
         post.text = "text"
@@ -47,11 +36,12 @@ describe("github issues > #7100 MSSQL error when user requests additional column
         await connection.createQueryBuilder(Post, "post")
             .update()
             .set({ title: "TITLE" })
-            .returning(["text"])
+            .returning(["title", "text"])
             .whereEntity(post)
             .updateEntity(true)
             .execute();
 
-        post.text.should.be.equal("text");
+        expect(post.title).to.be.equal("TITLE")
+        expect(post.text).to.be.equal("text");
     })));
 });

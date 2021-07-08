@@ -85,14 +85,30 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // if update entity mode is enabled we may need extra columns for the returning statement
             // console.time(".prepare returning statement");
             const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(queryRunner, this.expressionMap);
+
+            const returningColumns: ColumnMetadata[] = [];
+
+            if (Array.isArray(this.expressionMap.returning) && this.expressionMap.mainAlias!.hasMetadata) {
+                for (const columnPath of this.expressionMap.returning) {
+                    returningColumns.push(
+                        ...this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(columnPath)
+                    );
+                }
+            }
+
             if (this.expressionMap.updateEntity === true && this.expressionMap.mainAlias!.hasMetadata) {
                 if (!(valueSets.length > 1 && this.connection.driver instanceof OracleDriver)) {
                     this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getInsertionReturningColumns();
                 }
-                if (this.expressionMap.extraReturningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
-                    declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", this.expressionMap.extraReturningColumns);
-                    selectOutputSql = `SELECT * FROM @OutputTable`;
-                }
+
+                returningColumns.push(...this.expressionMap.extraReturningColumns.filter(
+                    c => !returningColumns.includes(c)
+                ));
+            }
+
+            if (returningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
+                declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", returningColumns);
+                selectOutputSql = `SELECT * FROM @OutputTable`;
             }
             // console.timeEnd(".prepare returning statement");
 
