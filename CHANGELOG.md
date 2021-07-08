@@ -1,3 +1,9 @@
+## [0.2.34](https://github.com/typeorm/typeorm/compare/0.2.33...0.2.34) (2021-06-03)
+
+### Bug Fixes
+
+* restored `buildColumnAlias` for backward compatibility ([#7706](https://github.com/typeorm/typeorm/issues/7706)) ([36ceefa](https://github.com/typeorm/typeorm/commit/36ceefa710c0994e054c8e267a1fb1bdf4b25c39))
+
 ## [0.2.33](https://github.com/typeorm/typeorm/compare/0.2.32...0.2.33) (2021-06-01)
 
 ### Bug Fixes

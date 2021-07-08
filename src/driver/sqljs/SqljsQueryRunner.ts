@@ -3,17 +3,23 @@ import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryR
 import {SqljsDriver} from "./SqljsDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
 import {QueryFailedError} from "../../error/QueryFailedError";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Runs queries on a single sqlite database connection.
  */
 export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
-    
+
+    /**
+     * Flag to determine if a modification has happened since the last time this query runner has requested a save.
+     */
+    private isDirty = false;
+
     /**
      * Database driver used by connection.
      */
     driver: SqljsDriver;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -28,24 +34,38 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     // -------------------------------------------------------------------------
     // Public methods
     // -------------------------------------------------------------------------
-    
+
+    private async flush() {
+        if (this.isDirty) {
+            await this.driver.autoSave();
+            this.isDirty = false;
+        }
+    }
+
+    async release(): Promise<void> {
+        await this.flush();
+        return super.release();
+    }
+
     /**
      * Commits transaction.
      * Error will be thrown if transaction was not started.
      */
     async commitTransaction(): Promise<void> {
         await super.commitTransaction();
-        await this.driver.autoSave();
+        await this.flush();
     }
 
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters: any[] = []): Promise<any> {
+    query(query: string, parameters: any[] = [], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise<any[]>(async (ok, fail) => {
+        const command = query.trim().split(" ", 1)[0];
+
+        return new Promise(async (ok, fail) => {
             const databaseConnection = this.driver.databaseConnection;
             this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
@@ -57,7 +77,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
 
                     statement.bind(parameters);
                 }
-                
+
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
                 const queryEndTime = +new Date();
@@ -65,16 +85,30 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
                     this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-                const result: any[] = [];
+                const records: any[] = [];
 
                 while (statement.step()) {
-                    result.push(statement.getAsObject());
+                    records.push(statement.getAsObject());
                 }
-                
+
+                const result = new QueryResult();
+
+                result.affected = databaseConnection.getRowsModified();
+                result.records = records;
+                result.raw = records;
+
                 statement.free();
-                ok(result);
-            }
-            catch (e) {
+
+                if (command !== "SELECT") {
+                    this.isDirty = true;
+                }
+
+                if (useStructuredResult) {
+                    ok(result);
+                } else {
+                    ok(result.raw);
+                }
+            } catch (e) {
                 if (statement) {
                     statement.free();
                 }

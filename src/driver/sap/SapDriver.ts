@@ -12,6 +12,7 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {SapConnectionOptions} from "./SapConnectionOptions";
 import {SapQueryRunner} from "./SapQueryRunner";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {DriverUtils} from "../DriverUtils";
 
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -198,6 +199,8 @@ export class SapDriver implements Driver {
         this.connection = connection;
         this.options = connection.options as SapConnectionOptions;
         this.loadDependencies();
+
+        this.database = DriverUtils.buildDriverOptions(this.options).database;
     }
 
     // -------------------------------------------------------------------------
@@ -283,7 +286,7 @@ export class SapDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        const builtParameters: any[] = Object.keys(nativeParameters).map(key => {
+        const escapedParameters: any[] = Object.keys(nativeParameters).map(key => {
 
             if (nativeParameters[key] instanceof Date)
                 return DateUtils.mixedDateToDatetimeString(nativeParameters[key], true);
@@ -292,39 +295,36 @@ export class SapDriver implements Driver {
         });
 
         if (!parameters || !Object.keys(parameters).length)
-            return [sql, builtParameters];
+            return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
-            let value: any;
-            let isArray = false;
-            if (key.substr(0, 4) === ":...") {
-                isArray = true;
-                value = parameters[key.substr(4)];
-            } else {
-                value = parameters[key.substr(1)];
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_]+)/g, (full, isArray: string, key: string): string => {
+            if (!parameters.hasOwnProperty(key)) {
+                return full;
             }
+
+            let value: any = parameters[key];
 
             if (isArray) {
                 return value.map((v: any) => {
-                    builtParameters.push(v);
-                    return "?";
-                    // return "$" + builtParameters.length;
+                    escapedParameters.push(v);
+                    return this.createParameter(key, escapedParameters.length - 1);
                 }).join(", ");
 
-            } else if (value instanceof Function) {
+            }
+
+            if (value instanceof Function) {
                 return value();
 
-            } else if (value instanceof Date) {
-                return DateUtils.mixedDateToDatetimeString(value, true);
-
-            } else {
-                builtParameters.push(value);
-                return "?";
-                // return "$" + builtParameters.length;
             }
+
+            if (value instanceof Date) {
+                return DateUtils.mixedDateToDatetimeString(value, true);
+            }
+
+            escapedParameters.push(value);
+            return this.createParameter(key, escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
-        return [sql, builtParameters];
+        return [sql, escapedParameters];
     }
 
     /**
@@ -461,20 +461,26 @@ export class SapDriver implements Driver {
         const defaultValue = columnMetadata.default;
 
         if (typeof defaultValue === "number") {
-            return "" + defaultValue;
-
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "true" : "false";
-
-        } else if (typeof defaultValue === "function") {
-            return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else {
-            return defaultValue;
+            return `${defaultValue}`;
         }
+
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "true" : "false";
+        }
+
+        if (typeof defaultValue === "function") {
+            return defaultValue();
+        }
+
+        if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
+        }
+
+        if (defaultValue === null || defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**

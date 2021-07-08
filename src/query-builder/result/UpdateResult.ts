@@ -1,9 +1,16 @@
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Result object returned by UpdateQueryBuilder execution.
  */
 export class UpdateResult {
+    static from(queryResult: QueryResult) {
+        const result = new this();
+        result.raw = queryResult.records;
+        result.affected = queryResult.affected;
+        return result;
+    }
 
     /**
      * Raw SQL result returned by executed query.

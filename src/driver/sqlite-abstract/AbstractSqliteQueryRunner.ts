@@ -19,6 +19,7 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import { TypeORMError } from "../../error";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -73,7 +74,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         if (isolationLevel) {
             if (isolationLevel !== "READ UNCOMMITTED" && isolationLevel !== "SERIALIZABLE") {
-                throw new Error(`SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation`);
+                throw new TypeORMError(`SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation`);
             }
 
             if (isolationLevel === "READ UNCOMMITTED") {
@@ -141,7 +142,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * Returns raw data stream.
      */
     stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
-        throw new Error(`Stream is not supported by sqlite driver.`);
+        throw new TypeORMError(`Stream is not supported by sqlite driver.`);
     }
 
     /**
@@ -177,7 +178,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
-        throw new Error(`This driver does not support table schemas`);
+        throw new TypeORMError(`This driver does not support table schemas`);
     }
 
     /**
@@ -381,7 +382,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const oldColumn = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName : table.columns.find(c => c.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         let newColumn: TableColumn|undefined = undefined;
         if (newTableColumnOrName instanceof TableColumn) {
@@ -401,7 +402,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const oldColumn = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName : table.columns.find(c => c.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         await this.changeColumns(table, [{oldColumn, newColumn}]);
     }
@@ -448,7 +449,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const column = columnOrName instanceof TableColumn ? columnOrName : table.findColumnByName(columnOrName);
         if (!column)
-            throw new Error(`Column "${columnOrName}" was not found in table "${table.name}"`);
+            throw new TypeORMError(`Column "${columnOrName}" was not found in table "${table.name}"`);
 
         await this.dropColumns(table, [column]);
     }
@@ -550,7 +551,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
         if (!uniqueConstraint)
-            throw new Error(`Supplied unique constraint was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied unique constraint was not found in table ${table.name}`);
 
         await this.dropUniqueConstraints(table, [uniqueConstraint]);
     }
@@ -594,7 +595,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const checkConstraint = checkOrName instanceof TableCheck ? checkOrName : table.checks.find(c => c.name === checkOrName);
         if (!checkConstraint)
-            throw new Error(`Supplied check constraint was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied check constraint was not found in table ${table.name}`);
 
         await this.dropCheckConstraints(table, [checkConstraint]);
     }
@@ -616,28 +617,28 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * Creates a new exclusion constraint.
      */
     async createExclusionConstraint(tableOrName: Table|string, exclusionConstraint: TableExclusion): Promise<void> {
-        throw new Error(`Sqlite does not support exclusion constraints.`);
+        throw new TypeORMError(`Sqlite does not support exclusion constraints.`);
     }
 
     /**
      * Creates a new exclusion constraints.
      */
     async createExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        throw new Error(`Sqlite does not support exclusion constraints.`);
+        throw new TypeORMError(`Sqlite does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraint.
      */
     async dropExclusionConstraint(tableOrName: Table|string, exclusionOrName: TableExclusion|string): Promise<void> {
-        throw new Error(`Sqlite does not support exclusion constraints.`);
+        throw new TypeORMError(`Sqlite does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraints.
      */
     async dropExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        throw new Error(`Sqlite does not support exclusion constraints.`);
+        throw new TypeORMError(`Sqlite does not support exclusion constraints.`);
     }
 
     /**
@@ -666,7 +667,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const foreignKey = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName : table.foreignKeys.find(fk => fk.name === foreignKeyOrName);
         if (!foreignKey)
-            throw new Error(`Supplied foreign key was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied foreign key was not found in table ${table.name}`);
 
         await this.dropForeignKeys(tableOrName, [foreignKey]);
     }
@@ -715,7 +716,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new Error(`Supplied index was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied index was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(index);
         const down = this.createIndexSql(table, index);
@@ -1005,7 +1006,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const hasAutoIncrement = primaryColumns.find(column => column.isGenerated && column.generationStrategy === "increment");
         const skipPrimary = primaryColumns.length > 1;
         if (skipPrimary && hasAutoIncrement)
-            throw new Error(`Sqlite does not support AUTOINCREMENT on composite primary key`);
+            throw new TypeORMError(`Sqlite does not support AUTOINCREMENT on composite primary key`);
 
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, skipPrimary)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;

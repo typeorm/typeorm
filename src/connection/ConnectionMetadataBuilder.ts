@@ -2,7 +2,7 @@ import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoad
 import {OrmUtils} from "../util/OrmUtils";
 import {getFromContainer} from "../container";
 import {MigrationInterface} from "../migration/MigrationInterface";
-import {getMetadataArgsStorage} from "../index";
+import {getMetadataArgsStorage} from "../globals";
 import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {EntitySchemaTransformer} from "../entity-schema/EntitySchemaTransformer";
 import {Connection} from "./Connection";

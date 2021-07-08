@@ -14,7 +14,6 @@ import {InsertValuesMissingError} from "../error/InsertValuesMissingError";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
-import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
@@ -101,13 +100,15 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // console.time(".getting query and parameters");
             const [insertSql, parameters] = this.getQueryAndParameters();
             // console.timeEnd(".getting query and parameters");
-            const insertResult = new InsertResult();
+
             // console.time(".query execution by database");
             const statements = [declareSql, insertSql, selectOutputSql];
-            insertResult.raw = await queryRunner.query(
-                statements.filter(sql => sql != null).join(";\n\n"),
-                parameters,
-            );
+            const sql = statements.filter(s => s != null).join(";\n\n");
+
+            const queryResult = await queryRunner.query(sql, parameters, true);
+
+            const insertResult = InsertResult.from(queryResult);
+
             // console.timeEnd(".query execution by database");
 
             // load returning results and set them to the entity if entity updation is enabled
@@ -150,9 +151,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // console.time(".releasing connection");
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
                 await queryRunner.release();
-            }
-            if (this.connection.driver instanceof SqljsDriver && !queryRunner.isTransactionActive) {
-                await this.connection.driver.autoSave();
             }
             // console.timeEnd(".releasing connection");
             // console.timeEnd("QueryBuilder.execute");
@@ -427,7 +425,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         // if column metadatas are given then apply all necessary operations with values
         if (columns.length > 0) {
             let expression = "";
-            let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
             valueSets.forEach((valueSet, valueSetIndex) => {
                 columns.forEach((column, columnIndex) => {
                     if (columnIndex === 0) {
@@ -437,7 +434,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                             expression += "(";
                         }
                     }
-                    const paramName = "i" + valueSetIndex + "_" + column.databaseName;
 
                     // extract real value from the entity
                     let value = column.getEntityValue(valueSet);
@@ -473,9 +469,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     //     expression += subQuery;
 
                     } else if (column.isDiscriminator) {
-                        this.expressionMap.nativeParameters["discriminator_value_" + parametersCount] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
-                        expression += this.connection.driver.createParameter("discriminator_value_" + parametersCount, parametersCount);
-                        parametersCount++;
+                        expression += this.createParameter(this.expressionMap.mainAlias!.metadata.discriminatorValue);
                         // return "1";
 
                     // for create and update dates we insert current date
@@ -487,13 +481,15 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
                     } else if (column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.isUUIDGenerationSupported() && value === undefined) {
 
-                        const paramName = "uuid_" + column.databaseName + valueSetIndex;
                         value = RandomGenerator.uuid4();
-                        this.expressionMap.nativeParameters[paramName] = value;
-                        expression += this.connection.driver.createParameter(paramName, parametersCount);
-                        parametersCount++;
+                        expression += this.createParameter(value);
 
-                    // if value for this column was not provided then insert default value
+                        if (!(valueSetIndex in this.expressionMap.locallyGenerated)) {
+                            this.expressionMap.locallyGenerated[valueSetIndex] = {};
+                        }
+                        column.setEntityValue(this.expressionMap.locallyGenerated[valueSetIndex], value);
+
+                        // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
                         if ((this.connection.driver instanceof OracleDriver && valueSets.length > 1) || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof SapDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
                             if (column.default !== undefined && column.default !== null) { // try to use default defined in the column
@@ -519,27 +515,28 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         // if (value instanceof Array)
                         //     value = new ArrayParameter(value);
 
-                        this.expressionMap.nativeParameters[paramName] = value;
+
+                        const paramName = this.createParameter(value);
+
                         if ((this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             const useLegacy = this.connection.driver.options.legacySpatialSupport;
                             const geomFromText = useLegacy ? "GeomFromText" : "ST_GeomFromText";
                             if (column.srid != null) {
-                                expression += `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount)}, ${column.srid})`;
+                                expression += `${geomFromText}(${paramName}, ${column.srid})`;
                             } else {
-                                expression += `${geomFromText}(${this.connection.driver.createParameter(paramName, parametersCount)})`;
+                                expression += `${geomFromText}(${paramName})`;
                             }
                         } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             if (column.srid != null) {
-                              expression += `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)}), ${column.srid})::${column.type}`;
+                              expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`;
                             } else {
-                              expression += `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)})::${column.type}`;
+                              expression += `ST_GeomFromGeoJSON(${paramName})::${column.type}`;
                             }
                         } else if (this.connection.driver instanceof SqlServerDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                            expression += column.type + "::STGeomFromText(" + this.connection.driver.createParameter(paramName, parametersCount) + ", " + (column.srid || "0") + ")";
+                            expression += column.type + "::STGeomFromText(" + paramName + ", " + (column.srid || "0") + ")";
                         } else {
-                            expression += this.connection.driver.createParameter(paramName, parametersCount);
+                            expression += paramName;
                         }
-                        parametersCount++;
                     }
 
                     if (columnIndex === columns.length - 1) {
@@ -568,7 +565,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         } else { // for tables without metadata
             // get values needs to be inserted
             let expression = "";
-            let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
 
             valueSets.forEach((valueSet, insertionIndex) => {
                 const columns = Object.keys(valueSet);
@@ -576,7 +572,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     if (columnIndex === 0) {
                         expression += "(";
                     }
-                    const paramName = "i" + insertionIndex + "_" + columnName;
+
                     const value = valueSet[columnName];
 
                     // support for SQL expressions in queries
@@ -594,9 +590,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     // just any other regular value
                     } else {
-                        this.expressionMap.nativeParameters[paramName] = value;
-                        expression += this.connection.driver.createParameter(paramName, parametersCount);
-                        parametersCount++;
+                        expression += this.createParameter(value);
                     }
 
                     if (columnIndex === Object.keys(valueSet).length - 1) {
@@ -632,15 +626,15 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     /**
      * Checks if column is an auto-generated primary key, but the current insertion specifies a value for it.
-     * 
+     *
      * @param column
      */
     protected isOverridingAutoIncrementBehavior(column: ColumnMetadata): boolean {
-        return column.isPrimary 
-                && column.isGenerated 
+        return column.isPrimary
+                && column.isGenerated
                 && column.generationStrategy === "increment"
-                && this.getValueSets().some((valueSet) => 
-                    column.getEntityValue(valueSet) !== undefined 
+                && this.getValueSets().some((valueSet) =>
+                    column.getEntityValue(valueSet) !== undefined
                     && column.getEntityValue(valueSet) !== null
                 );
     }

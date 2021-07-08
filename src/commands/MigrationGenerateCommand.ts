@@ -1,6 +1,6 @@
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
-import {createConnection} from "../index";
+import {createConnection} from "../globals";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {camelCase} from "../util/StringUtils";
 import * as yargs from "yargs";
@@ -73,7 +73,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
         const timestamp = new Date().getTime();
         const extension = args.outputJs ? ".js" : ".ts";
         const filename = timestamp + "-" + args.name + extension;
-        let directory = args.dir;
+        let directory = args.dir as string | undefined;
 
         // if directory is not set then try to open tsconfig and find default path there
         if (!directory) {
@@ -152,7 +152,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             const fileContent = args.outputJs ?
                 MigrationGenerateCommand.getJavascriptTemplate(args.name as any, timestamp, upSqls, downSqls.reverse()) :
                 MigrationGenerateCommand.getTemplate(args.name as any, timestamp, upSqls, downSqls.reverse());
-            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+            if (directory && !directory.startsWith("/")) {
+                directory = process.cwd() + "/" + directory;
+            }
+            const path = (directory ? (directory + "/") : "") + filename;
 
             if (args.check) {
                 console.log(chalk.yellow(`Unexpected changes in database schema were found in check mode:\n\n${chalk.white(fileContent)}`));

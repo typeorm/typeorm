@@ -17,4 +17,9 @@ export class Record {
     @Column({ type: "jsonb", nullable: true })
     data: any;
 
+    @Column({ type: "jsonb", nullable: true, default: { hello: "world", foo: "bar" } })
+    dataWithDefaultObject: any;
+
+    @Column({ type: "jsonb", nullable: true, default: null })
+    dataWithDefaultNull: any;
 }

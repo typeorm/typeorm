@@ -67,7 +67,13 @@ export class DriverFactory {
             case "capacitor":
                 return new CapacitorDriver(connection);
             default:
-                throw new MissingDriverError(type);
+                throw new MissingDriverError(
+                    type,
+                    [
+                        "cordova", "expo", "mariadb", "mongodb", "mssql", "mysql", "oracle", "postgres",
+                        "sqlite", "better-sqlite3", "sqljs", "react-native", "aurora-data-api", "aurora-data-api-pg"
+                    ]
+                );
         }
     }
 

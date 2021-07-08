@@ -18,14 +18,14 @@ export class ConnectionOptionsYmlReader {
         const contentsBuffer = PlatformTools.readFileSync(path);
         const contents = contentsBuffer.toString();
 
-        const config: undefined | string | {[key: string]: any} = ymlParser.loadAll(contents);
+        const config = ymlParser.load(contents);
 
-        if (typeof config !== 'object') {
+        if (!config || typeof config !== 'object') {
             return [];
         }
 
         return Object.keys(config).map(connectionName => {
-            return Object.assign({ name: connectionName }, config[connectionName]);
+            return Object.assign({ name: connectionName }, (config as any)[connectionName]);
         });
     }
 

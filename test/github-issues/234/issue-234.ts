@@ -19,7 +19,6 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
     it("should correctly load from one-to-many and many-to-one sides", () => Promise.all(connections.map(async connection => {
 
         // pre-populate database first
-        const promises: Promise<any>[] = [];
         for (let i = 1; i <= 10; i++) {
             const post = new Post();
             post.title = "fake post # " + i;
@@ -28,9 +27,8 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
                 category.name = "fake category!";
                 post.category = Promise.resolve(category);
             }
-            promises.push(connection.manager.save(post));
+            await connection.manager.save(post);
         }
-        await Promise.all(promises);
 
         // create objects to save
         const category1 = new Category();
@@ -78,7 +76,6 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
     it("should correctly load from both many-to-many sides", () => Promise.all(connections.map(async connection => {
 
         // pre-populate database first
-        const promises: Promise<any>[] = [];
         for (let i = 1; i <= 10; i++) {
             const post = new Post();
             post.title = "fake post # " + i;
@@ -87,9 +84,8 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
                 tag.name = "fake tag!";
                 post.tags = Promise.resolve((await post.tags).concat([tag]));
             }
-            promises.push(connection.manager.save(post));
+            await connection.manager.save(post);
         }
-        await Promise.all(promises);
 
         // create objects to save
         const tag1_1 = new Tag();

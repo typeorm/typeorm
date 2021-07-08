@@ -387,7 +387,7 @@ export class SubjectExecutor {
 
             // for mongodb we have a bit different updation logic
             if (this.queryRunner instanceof MongoQueryRunner) {
-                const partialEntity = OrmUtils.mergeDeep({}, subject.entity!);
+                const partialEntity = this.cloneMongoSubjectEntity(subject);
                 if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
                     delete partialEntity[subject.metadata.objectIdColumn.propertyName];
                 }
@@ -540,6 +540,18 @@ export class SubjectExecutor {
         }
     }
 
+    private cloneMongoSubjectEntity(subject: Subject): ObjectLiteral {
+        const target: ObjectLiteral = {};
+
+        if (subject.entity) {
+            for (const column of subject.metadata.columns) {
+                OrmUtils.mergeDeep(target, column.getEntityValueMap(subject.entity));
+            }
+        }
+
+        return target;
+    }
+
     /**
      * Soft-removes all given subjects in the database.
      */
@@ -551,7 +563,7 @@ export class SubjectExecutor {
 
             // for mongodb we have a bit different updation logic
             if (this.queryRunner instanceof MongoQueryRunner) {
-                const partialEntity = OrmUtils.mergeDeep({}, subject.entity!);
+                const partialEntity = this.cloneMongoSubjectEntity(subject);
                 if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
                     delete partialEntity[subject.metadata.objectIdColumn.propertyName];
                 }
@@ -631,7 +643,7 @@ export class SubjectExecutor {
 
             // for mongodb we have a bit different updation logic
             if (this.queryRunner instanceof MongoQueryRunner) {
-                const partialEntity = OrmUtils.mergeDeep({}, subject.entity!);
+                const partialEntity = this.cloneMongoSubjectEntity(subject);
                 if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
                     delete partialEntity[subject.metadata.objectIdColumn.propertyName];
                 }

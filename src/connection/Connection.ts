@@ -31,15 +31,14 @@ import {QueryResultCacheFactory} from "../cache/QueryResultCacheFactory";
 import {QueryResultCache} from "../cache/QueryResultCache";
 import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
 import {RelationLoader} from "../query-builder/RelationLoader";
-import {RelationIdLoader} from "../query-builder/RelationIdLoader";
-import {EntitySchema} from "../";
+import {EntitySchema} from "../entity-schema/EntitySchema";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import {DriverUtils} from "../driver/DriverUtils";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
+import { TypeORMError } from "../error/TypeORMError";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -112,11 +111,6 @@ export class Connection {
      */
     readonly relationLoader: RelationLoader;
 
-    /**
-     * Used to load relation ids of specific entity relations.
-     */
-    readonly relationIdLoader: RelationIdLoader;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -130,7 +124,6 @@ export class Connection {
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
         this.queryResultCache = options.cache ? new QueryResultCacheFactory(this).create() : undefined;
         this.relationLoader = new RelationLoader(this);
-        this.relationIdLoader = new RelationIdLoader(this);
         this.isConnected = false;
     }
 
@@ -146,7 +139,7 @@ export class Connection {
      */
     get mongoManager(): MongoEntityManager {
         if (!(this.manager instanceof MongoEntityManager))
-            throw new Error(`MongoEntityManager is only available for MongoDB databases.`);
+            throw new TypeORMError(`MongoEntityManager is only available for MongoDB databases.`);
 
         return this.manager as MongoEntityManager;
     }
@@ -158,7 +151,7 @@ export class Connection {
      */
     get sqljsManager(): SqljsEntityManager {
         if (!(this.manager instanceof SqljsEntityManager))
-            throw new Error(`SqljsEntityManager is only available for Sqljs databases.`);
+            throw new TypeORMError(`SqljsEntityManager is only available for Sqljs databases.`);
 
         return this.manager as SqljsEntityManager;
     }
@@ -360,7 +353,7 @@ export class Connection {
      */
     getMongoRepository<Entity>(target: EntityTarget<Entity>): MongoRepository<Entity> {
         if (!(this.driver instanceof MongoDriver))
-            throw new Error(`You can use getMongoRepository only for MongoDB connections.`);
+            throw new TypeORMError(`You can use getMongoRepository only for MongoDB connections.`);
 
         return this.manager.getRepository(target) as any;
     }
@@ -393,7 +386,7 @@ export class Connection {
      */
     async query(query: string, parameters?: any[], queryRunner?: QueryRunner): Promise<any> {
         if (this instanceof MongoEntityManager)
-            throw new Error(`Queries aren't supported by MongoDB.`);
+            throw new TypeORMError(`Queries aren't supported by MongoDB.`);
 
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
@@ -424,7 +417,7 @@ export class Connection {
      */
     createQueryBuilder<Entity>(entityOrRunner?: EntityTarget<Entity>|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         if (this instanceof MongoEntityManager)
-            throw new Error(`Query Builder is not supported by MongoDB.`);
+            throw new TypeORMError(`Query Builder is not supported by MongoDB.`);
 
         if (alias) {
             const metadata = this.getMetadata(entityOrRunner as EntityTarget<Entity>);
@@ -460,9 +453,9 @@ export class Connection {
     getManyToManyMetadata(entityTarget: EntityTarget<any>, relationPropertyPath: string) {
         const relationMetadata = this.getMetadata(entityTarget).findRelationWithPropertyPath(relationPropertyPath);
         if (!relationMetadata)
-            throw new Error(`Relation "${relationPropertyPath}" was not found in ${entityTarget} entity.`);
+            throw new TypeORMError(`Relation "${relationPropertyPath}" was not found in ${entityTarget} entity.`);
         if (!relationMetadata.isManyToMany)
-            throw new Error(`Relation "${entityTarget}#${relationPropertyPath}" does not have a many-to-many relationship.` +
+            throw new TypeORMError(`Relation "${entityTarget}#${relationPropertyPath}" does not have a many-to-many relationship.` +
                 `You can use this method only on many-to-many relations.`);
 
         return relationMetadata.junctionEntityMetadata;
@@ -521,28 +514,7 @@ export class Connection {
         const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
         ObjectUtils.assign(this, { migrations: migrations });
 
-        this.driver.database = this.getDatabaseName();
-
         // validate all created entity metadatas to make sure user created entities are valid and correct
         entityMetadataValidator.validateMany(this.entityMetadatas.filter(metadata => metadata.tableType !== "view"), this.driver);
     }
-
-    // This database name property is nested for replication configs.
-    protected getDatabaseName(): string {
-        const options = this.options;
-        switch (options.type) {
-            case "mysql" :
-            case "mariadb" :
-            case "postgres":
-            case "cockroachdb":
-            case "mssql":
-            case "oracle":
-                return DriverUtils.buildDriverOptions(options.replication ? options.replication.master : options).database;
-            case "mongodb":
-                return DriverUtils.buildMongoDBDriverOptions(options).database;
-            default:
-                return DriverUtils.buildDriverOptions(options).database;
-    }
-}
-
 }

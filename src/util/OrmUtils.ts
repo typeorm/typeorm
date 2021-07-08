@@ -58,41 +58,101 @@ export class OrmUtils {
         }, [] as T[]);
     }
 
-    static isObject(item: any) {
-        return (item && typeof item === "object" && !Array.isArray(item));
+    // Checks if it's an object made by Object.create(null), {} or new Object()
+    private static isPlainObject(item: any) {
+        if (item === null || item === undefined) {
+            return false;
+        }
+
+        return !item.constructor || item.constructor === Object;
+    }
+
+    private static mergeArrayKey(target: any, key: number, value: any, memo: Map<any, any>) {
+        // Have we seen this before?  Prevent infinite recursion.
+        if (memo.has(value)) {
+            target[key] = memo.get(value);
+            return;
+        }
+
+        if (value instanceof Promise) {
+            // Skip promises entirely.
+            // This is a hold-over from the old code & is because we don't want to pull in
+            // the lazy fields.  Ideally we'd remove these promises via another function first
+            // but for now we have to do it here.
+            return;
+        }
+
+
+        if (!this.isPlainObject(value) && !Array.isArray(value)) {
+            target[key] = value;
+            return;
+        }
+
+        if (!target[key]) {
+            target[key] = Array.isArray(value) ? [] : {};
+        }
+
+        memo.set(value, target[key]);
+        this.merge(target[key], value, memo);
+        memo.delete(value);
+    }
+
+    private static mergeObjectKey(target: any, key: string, value: any, memo: Map<any, any>) {
+        // Have we seen this before?  Prevent infinite recursion.
+        if (memo.has(value)) {
+            Object.assign(target, { [key]: memo.get(value) });
+            return;
+        }
+
+        if (value instanceof Promise) {
+            // Skip promises entirely.
+            // This is a hold-over from the old code & is because we don't want to pull in
+            // the lazy fields.  Ideally we'd remove these promises via another function first
+            // but for now we have to do it here.
+            return;
+        }
+
+        if (!this.isPlainObject(value) && !Array.isArray(value)) {
+            Object.assign(target, { [key]: value });
+            return;
+        }
+
+        if (!target[key]) {
+            Object.assign(target, { [key]: Array.isArray(value) ? [] : {} });
+        }
+
+        memo.set(value, target[key]);
+        this.merge(target[key], value, memo);
+        memo.delete(value);
+    }
+
+    private static merge(target: any, source: any, memo: Map<any, any> = new Map()): any {
+        if (this.isPlainObject(target) && this.isPlainObject(source)) {
+            for (const key of Object.keys(source)) {
+                this.mergeObjectKey(target, key, source[key], memo);
+            }
+        }
+
+        if (Array.isArray(target) && Array.isArray(source)) {
+            for (let key = 0; key < source.length; key++) {
+                this.mergeArrayKey(target, key, source[key], memo);
+            }
+        }
     }
 
     /**
      * Deep Object.assign.
-     *
-     * @see http://stackoverflow.com/a/34749873
      */
     static mergeDeep(target: any, ...sources: any[]): any {
-        if (!sources.length) return target;
-        const source = sources.shift();
-
-        if (this.isObject(target) && this.isObject(source)) {
-            for (const key in source) {
-                const value = source[key];
-                if (key === "__proto__" || value instanceof Promise)
-                    continue;
-
-                if (this.isObject(value)
-                && !(value instanceof Map)
-                && !(value instanceof Set)
-                && !(value instanceof Date)
-                && !(value instanceof Buffer)
-                && !(value instanceof RegExp)) {
-                    if (!target[key])
-                        Object.assign(target, { [key]: Object.create(Object.getPrototypeOf(value)) });
-                    this.mergeDeep(target[key], value);
-                } else {
-                    Object.assign(target, { [key]: value });
-                }
-            }
+        if (!sources.length) {
+            return target;
         }
 
-        return this.mergeDeep(target, ...sources);
+        for (const source of sources) {
+            OrmUtils.merge(target, source);
+        }
+
+        return target;
     }
 
     /**

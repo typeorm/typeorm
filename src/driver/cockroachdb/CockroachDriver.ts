@@ -20,6 +20,7 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {CockroachQueryRunner} from "./CockroachQueryRunner";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { TypeORMError } from "../../error";
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -220,6 +221,8 @@ export class CockroachDriver implements Driver {
         // load postgres package
         this.loadDependencies();
 
+        this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
+
         // ObjectUtils.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
@@ -378,36 +381,34 @@ export class CockroachDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        const builtParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
+        const escapedParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
         if (!parameters || !Object.keys(parameters).length)
-            return [sql, builtParameters];
+            return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
-            let value: any;
-            let isArray = false;
-            if (key.substr(0, 4) === ":...") {
-                isArray = true;
-                value = parameters[key.substr(4)];
-            } else {
-                value = parameters[key.substr(1)];
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_]+)/g, (full, isArray: string, key: string): string => {
+            if (!parameters.hasOwnProperty(key)) {
+                return full;
             }
+
+            let value: any = parameters[key];
 
             if (isArray) {
                 return value.map((v: any) => {
-                    builtParameters.push(v);
-                    return "$" + builtParameters.length;
+                    escapedParameters.push(v);
+                    return this.createParameter(key, escapedParameters.length - 1);
                 }).join(", ");
 
-            } else if (value instanceof Function) {
+            }
+
+            if (value instanceof Function) {
                 return value();
 
-            } else {
-                builtParameters.push(value);
-                return "$" + builtParameters.length;
             }
+
+            escapedParameters.push(value);
+            return this.createParameter(key, escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
-        return [sql, builtParameters];
+        return [sql, escapedParameters];
     }
 
     /**
@@ -485,11 +486,13 @@ export class CockroachDriver implements Driver {
 
         if (typeof defaultValue === "number") {
             return `(${defaultValue})`;
+        }
 
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "true" : "false";
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "true" : "false";
+        }
 
-        } else if (typeof defaultValue === "function") {
+        if (typeof defaultValue === "function") {
             const value = defaultValue();
             if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
                 return "current_timestamp()";
@@ -497,16 +500,21 @@ export class CockroachDriver implements Driver {
                 return "current_date()";
             }
             return value;
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'${arrayCast}`;
-
-        } else if (typeof defaultValue === "object" && defaultValue !== null) {
-            return `'${JSON.stringify(defaultValue)}'`;
-
-        } else {
-            return defaultValue;
         }
+
+        if (typeof defaultValue === "string") {
+            return `'${defaultValue}'${arrayCast}`;
+        }
+
+        if (typeof defaultValue === "object" && defaultValue !== null) {
+            return `'${JSON.stringify(defaultValue)}'`;
+        }
+
+        if (defaultValue === undefined || defaultValue === null) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**
@@ -679,7 +687,7 @@ export class CockroachDriver implements Driver {
             return PlatformTools.load("pg-query-stream");
 
         } catch (e) { // todo: better error for browser env
-            throw new Error(`To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`);
+            throw new TypeORMError(`To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`);
         }
     }
 

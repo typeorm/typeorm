@@ -3,7 +3,7 @@ import {QueryFailedError} from "../../error/QueryFailedError";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {ColumnType} from "../../index";
+import {ColumnType} from "../types/ColumnTypes";
 import {ReadStream} from "../../platform/PlatformTools";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {QueryRunner} from "../../query-runner/QueryRunner";
@@ -23,6 +23,8 @@ import {IsolationLevel} from "../types/IsolationLevel";
 import {PostgresDriver} from "./PostgresDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import { TypeORMError } from "../../error";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -50,7 +52,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Special callback provided by a driver used to release a created connection.
      */
-    protected releaseCallback: Function;
+    protected releaseCallback?: (err: any) => void;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -84,7 +86,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 this.driver.connectedQueryRunners.push(this);
                 this.databaseConnection = connection;
 
-                const onErrorCallback = () => this.release();
+                const onErrorCallback = (err: Error) => this.releasePostgresConnection(err);
                 this.releaseCallback = () => {
                     this.databaseConnection.removeListener("error", onErrorCallback);
                     release();
@@ -99,7 +101,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 this.driver.connectedQueryRunners.push(this);
                 this.databaseConnection = connection;
 
-                const onErrorCallback = () => this.release();
+                const onErrorCallback = (err: Error) => this.releasePostgresConnection(err);
                 this.releaseCallback = () => {
                     this.databaseConnection.removeListener("error", onErrorCallback);
                     release();
@@ -114,22 +116,33 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
+     * Release a connection back to the pool, optionally specifying an Error to release with.
+     * Per pg-pool documentation this will prevent the pool from re-using the broken connection.
+     */
+    private async releasePostgresConnection(err?: Error) {
+        if (this.isReleased) {
+            return
+        }
+
+        this.isReleased = true;
+        if (this.releaseCallback) {
+            this.releaseCallback(err);
+            this.releaseCallback = undefined
+        }
+
+        const index = this.driver.connectedQueryRunners.indexOf(this);
+
+        if (index !== -1) {
+            this.driver.connectedQueryRunners.splice(index, 1);
+        }
+    }
+
+    /**
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
     release(): Promise<void> {
-        if (this.isReleased) {
-            return Promise.resolve();
-        }
-
-        this.isReleased = true;
-        if (this.releaseCallback)
-            this.releaseCallback();
-
-        const index = this.driver.connectedQueryRunners.indexOf(this);
-        if (index !== -1) this.driver.connectedQueryRunners.splice(index, 1);
-
-        return Promise.resolve();
+        return this.releasePostgresConnection();
     }
 
     /**
@@ -197,7 +210,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Executes a given SQL query.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult: boolean = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -206,7 +219,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         this.driver.connection.logger.logQuery(query, parameters, this);
         try {
             const queryStartTime = +new Date();
-            const result = await databaseConnection.query(query, parameters);
+            const raw = await databaseConnection.query(query, parameters);
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
             const queryEndTime = +new Date();
@@ -214,15 +227,31 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
                 this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-            switch (result.command) {
+            const result = new QueryResult();
+
+            if (raw?.hasOwnProperty('rows')) {
+                result.records = raw.rows;
+            }
+
+            if (raw?.hasOwnProperty('rowCount')) {
+                result.affected = raw.rowCount;
+            }
+
+            switch (raw.command) {
                 case "DELETE":
                 case "UPDATE":
                     // for UPDATE and DELETE query additionally return number of affected rows
-                    return [result.rows, result.rowCount];
+                    result.raw = [raw.rows, raw.rowCount];
                     break;
                 default:
-                    return result.rows;
+                    result.raw = raw.rows;
             }
+
+            if (!useStructuredResult) {
+                return result.raw;
+            }
+
+            return result;
         } catch (err) {
             this.driver.connection.logger.logQueryError(err, query, parameters, this);
             throw new QueryFailedError(query, parameters, err);
@@ -656,7 +685,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const oldColumn = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName : table.columns.find(c => c.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         let newColumn;
         if (newTableColumnOrName instanceof TableColumn) {
@@ -683,7 +712,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             ? oldTableColumnOrName
             : table.columns.find(column => column.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         if (oldColumn.type !== newColumn.type || oldColumn.length !== newColumn.length || newColumn.isArray !== oldColumn.isArray) {
             // To avoid data conversion, we just recreate column
@@ -991,7 +1020,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const column = columnOrName instanceof TableColumn ? columnOrName : table.findColumnByName(columnOrName);
         if (!column)
-            throw new Error(`Column "${columnOrName}" was not found in table "${table.name}"`);
+            throw new TypeORMError(`Column "${columnOrName}" was not found in table "${table.name}"`);
 
         const clonedTable = table.clone();
         const upQueries: Query[] = [];
@@ -1168,7 +1197,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
         if (!uniqueConstraint)
-            throw new Error(`Supplied unique constraint was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied unique constraint was not found in table ${table.name}`);
 
         const up = this.dropUniqueConstraintSql(table, uniqueConstraint);
         const down = this.createUniqueConstraintSql(table, uniqueConstraint);
@@ -1216,7 +1245,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const checkConstraint = checkOrName instanceof TableCheck ? checkOrName : table.checks.find(c => c.name === checkOrName);
         if (!checkConstraint)
-            throw new Error(`Supplied check constraint was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied check constraint was not found in table ${table.name}`);
 
         const up = this.dropCheckConstraintSql(table, checkConstraint);
         const down = this.createCheckConstraintSql(table, checkConstraint);
@@ -1263,7 +1292,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const exclusionConstraint = exclusionOrName instanceof TableExclusion ? exclusionOrName : table.exclusions.find(c => c.name === exclusionOrName);
         if (!exclusionConstraint)
-            throw new Error(`Supplied exclusion constraint was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied exclusion constraint was not found in table ${table.name}`);
 
         const up = this.dropExclusionConstraintSql(table, exclusionConstraint);
         const down = this.createExclusionConstraintSql(table, exclusionConstraint);
@@ -1311,7 +1340,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const foreignKey = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName : table.foreignKeys.find(fk => fk.name === foreignKeyOrName);
         if (!foreignKey)
-            throw new Error(`Supplied foreign key was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied foreign key was not found in table ${table.name}`);
 
         const up = this.dropForeignKeySql(table, foreignKey);
         const down = this.createForeignKeySql(table, foreignKey);
@@ -1360,7 +1389,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new Error(`Supplied index was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied index was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);

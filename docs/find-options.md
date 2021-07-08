@@ -160,7 +160,10 @@ userRepository.find({
     relations: ["profile", "photos", "videos"],
     where: {
         firstName: "Timber",
-        lastName: "Saw"
+        lastName: "Saw",
+        profile: {
+          userName: "tshaw"
+        }
     },
     order: {
         name: "ASC",
@@ -408,7 +411,7 @@ If you need to provide user input, you should not include the user input directl
 import {Raw} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    currentDate: Raw(alias =>`${alias} > ':date'`, { date: "2020-10-06" })
+    currentDate: Raw(alias =>`${alias} > :date`, { date: "2020-10-06" })
 });
 ```
 

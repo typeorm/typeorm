@@ -16,7 +16,6 @@ import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
 import {CustomRepositoryNotFoundError} from "../error/CustomRepositoryNotFoundError";
-import {EntitySchema, getMetadataArgsStorage, ObjectLiteral} from "../index";
 import {AbstractRepository} from "../repository/AbstractRepository";
 import {CustomRepositoryCannotInheritRepositoryError} from "../error/CustomRepositoryCannotInheritRepositoryError";
 import {QueryRunner} from "../query-runner/QueryRunner";
@@ -35,6 +34,10 @@ import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {FindConditions} from "../find-options/FindConditions";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {ObjectUtils} from "../util/ObjectUtils";
+import {EntitySchema} from "../entity-schema/EntitySchema";
+import {ObjectLiteral} from "../common/ObjectLiteral";
+import {getMetadataArgsStorage} from "../globals";
+import { TypeORMError } from "../error";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -113,17 +116,17 @@ export class EntityManager {
         const runInTransaction = typeof isolationOrRunInTransaction === "function" ? isolationOrRunInTransaction : runInTransactionParam;
 
         if (!runInTransaction) {
-            throw new Error(`Transaction method requires callback in second paramter if isolation level is supplied.`);
+            throw new TypeORMError(`Transaction method requires callback in second paramter if isolation level is supplied.`);
         }
 
         if (this.connection.driver instanceof MongoDriver)
-            throw new Error(`Transactions aren't supported by MongoDB.`);
+            throw new TypeORMError(`Transactions aren't supported by MongoDB.`);
 
         if (this.queryRunner && this.queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
         if (this.queryRunner && this.queryRunner.isTransactionActive)
-            throw new Error(`Cannot start transaction because its already started`);
+            throw new TypeORMError(`Cannot start transaction because its already started`);
 
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection
         // if its not defined we create a new query runner - single connection where we'll execute all our operations
@@ -490,7 +493,7 @@ export class EntityManager {
             criteria === "" ||
             (Array.isArray(criteria) && criteria.length === 0)) {
 
-            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the update method.`));
+            return Promise.reject(new TypeORMError(`Empty criteria(s) are not allowed for the update method.`));
         }
 
         if (typeof criteria === "string" ||
@@ -528,7 +531,7 @@ export class EntityManager {
             criteria === "" ||
             (Array.isArray(criteria) && criteria.length === 0)) {
 
-            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
+            return Promise.reject(new TypeORMError(`Empty criteria(s) are not allowed for the delete method.`));
         }
 
         if (typeof criteria === "string" ||
@@ -566,7 +569,7 @@ export class EntityManager {
             criteria === "" ||
             (Array.isArray(criteria) && criteria.length === 0)) {
 
-            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
+            return Promise.reject(new TypeORMError(`Empty criteria(s) are not allowed for the delete method.`));
         }
 
         if (typeof criteria === "string" ||
@@ -604,7 +607,7 @@ export class EntityManager {
             criteria === "" ||
             (Array.isArray(criteria) && criteria.length === 0)) {
 
-            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
+            return Promise.reject(new TypeORMError(`Empty criteria(s) are not allowed for the delete method.`));
         }
 
         if (typeof criteria === "string" ||
@@ -859,10 +862,10 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const column = metadata.findColumnWithPropertyPath(propertyPath);
         if (!column)
-            throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
+            throw new TypeORMError(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
 
         if (isNaN(Number(value)))
-            throw new Error(`Value "${value}" is not a number.`);
+            throw new TypeORMError(`Value "${value}" is not a number.`);
 
         // convert possible embeded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath
@@ -891,10 +894,10 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const column = metadata.findColumnWithPropertyPath(propertyPath);
         if (!column)
-            throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
+            throw new TypeORMError(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
 
         if (isNaN(Number(value)))
-            throw new Error(`Value "${value}" is not a number.`);
+            throw new TypeORMError(`Value "${value}" is not a number.`);
 
         // convert possible embeded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath

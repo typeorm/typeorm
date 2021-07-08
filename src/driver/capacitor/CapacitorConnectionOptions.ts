@@ -18,4 +18,15 @@ export interface CapacitorConnectionOptions extends BaseConnectionOptions {
      * The capacitor-sqlite instance. For example, `new SQLiteConnection(CapacitorSQLite)`.
      */
     readonly driver: any;
+
+    /**
+     * The SQLite journal mode (optional)
+     */
+    readonly journalMode?:
+        | "DELETE"
+        | "TRUNCATE"
+        | "PERSIST"
+        | "MEMORY"
+        | "WAL"
+        | "OFF";
 }

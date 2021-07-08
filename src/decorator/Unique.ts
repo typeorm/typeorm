@@ -1,4 +1,4 @@
-import { getMetadataArgsStorage } from "../index";
+import { getMetadataArgsStorage } from "../globals";
 import { UniqueMetadataArgs } from "../metadata-args/UniqueMetadataArgs";
 
 /**

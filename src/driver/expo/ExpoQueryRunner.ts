@@ -6,6 +6,7 @@ import {TransactionNotStartedError} from "../../error/TransactionNotStartedError
 import {ExpoDriver} from "./ExpoDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 // Needed to satisfy the Typescript compiler
 interface IResultSet {
@@ -128,7 +129,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -142,7 +143,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                     this.startTransaction();
                     this.transaction = transaction;
                 }
-                this.transaction.executeSql(query, parameters, (t: ITransaction, result: IResultSet) => {
+                this.transaction.executeSql(query, parameters, (t: ITransaction, raw: IResultSet) => {
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
                     const queryEndTime = +new Date();
@@ -151,16 +152,31 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                         this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
                     }
 
+                    const result = new QueryResult();
+
                     // return id of inserted row, if query was insert statement.
                     if (query.substr(0, 11) === "INSERT INTO") {
-                        ok(result.insertId);
+                        result.raw = raw.insertId;
                     }
-                    else {
+
+                    if (raw?.hasOwnProperty('rowsAffected')) {
+                        result.affected = raw.rowsAffected;
+                    }
+
+                    if (raw?.hasOwnProperty('rows')) {
                         let resultSet = [];
-                        for (let i = 0; i < result.rows.length; i++) {
-                            resultSet.push(result.rows.item(i));
+                        for (let i = 0; i < raw.rows.length; i++) {
+                            resultSet.push(raw.rows.item(i));
                         }
-                        ok(resultSet);
+
+                        result.raw = resultSet;
+                        result.records = resultSet;
+                    }
+
+                    if (useStructuredResult) {
+                        ok(result);
+                    } else {
+                        ok(result.raw);
                     }
                 }, (t: ITransaction, err: any) => {
                     this.driver.connection.logger.logQueryError(err, query, parameters, this);

@@ -67,8 +67,15 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         this.queryRunner = this.connection.createQueryRunner();
         // CockroachDB implements asynchronous schema sync operations which can not been executed in transaction.
         // E.g. if you try to DROP column and ADD it again in the same transaction, crdb throws error.
-        if (!(this.connection.driver instanceof CockroachDriver))
+        const isUsingTransactions = (
+            !(this.connection.driver instanceof CockroachDriver) &&
+            this.connection.options.migrationsTransactionMode !== "none"
+        );
+
+        if (isUsingTransactions) {
             await this.queryRunner.startTransaction();
+        }
+
         try {
             const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
             // TODO: typeorm_metadata table needs only for Views for now.
@@ -83,14 +90,16 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (this.connection.queryResultCache)
                 await this.connection.queryResultCache.synchronize(this.queryRunner);
 
-            if (!(this.connection.driver instanceof CockroachDriver))
+            if (isUsingTransactions) {
                 await this.queryRunner.commitTransaction();
+            }
 
         } catch (error) {
 
             try { // we throw original error even if rollback thrown an error
-                if (!(this.connection.driver instanceof CockroachDriver))
+                if (isUsingTransactions) {
                     await this.queryRunner.rollbackTransaction();
+                }
             } catch (rollbackError) { }
             throw error;
 

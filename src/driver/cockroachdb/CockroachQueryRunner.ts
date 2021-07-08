@@ -1,3 +1,4 @@
+import {QueryResult} from "../../query-runner/QueryResult";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
@@ -18,11 +19,12 @@ import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
-import {ColumnType} from "../../index";
+import {ColumnType} from "../types/ColumnTypes";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import { TypeORMError } from "../../error";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -208,17 +210,17 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[], options?: {  }): Promise<any> {
+    query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise<any[]>(async (ok, fail) => {
+        return new Promise<QueryResult>(async (ok, fail) => {
             try {
                 const databaseConnection = await this.connect();
                 this.driver.connection.logger.logQuery(query, parameters, this);
                 const queryStartTime = +new Date();
 
-                databaseConnection.query(query, parameters, (err: any, result: any) => {
+                databaseConnection.query(query, parameters, (err: any, raw: any) => {
                     if (this.isTransactionActive && this.storeQueries)
                         this.queries.push({ query, parameters });
 
@@ -234,13 +236,29 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                             this.driver.connection.logger.logQueryError(err, query, parameters, this);
                         fail(new QueryFailedError(query, parameters, err));
                     } else {
-                        switch (result.command) {
+                        const result = new QueryResult();
+
+                        if (raw.hasOwnProperty('rowCount')) {
+                            result.affected = raw.rowCount;
+                        }
+
+                        if (raw.hasOwnProperty('rows')) {
+                            result.records = raw.rows;
+                        }
+
+                        switch (raw.command) {
                             case "DELETE":
                                 // for DELETE query additionally return number of affected rows
-                                ok([result.rows, result.rowCount]);
+                                result.raw = [raw.rows, raw.rowCount]
                                 break;
                             default:
-                                ok(result.rows);
+                                result.raw = raw.rows;
+                        }
+
+                        if (useStructuredResult) {
+                            ok(result);
+                        } else {
+                            ok(result.raw);
                         }
                     }
                 });
@@ -571,7 +589,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const downQueries: Query[] = [];
 
         if (column.generationStrategy === "increment") {
-            throw new Error(`Adding sequential generated columns into existing table is not supported`);
+            throw new TypeORMError(`Adding sequential generated columns into existing table is not supported`);
         }
 
         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(table, column)}`));
@@ -654,7 +672,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const oldColumn = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName : table.columns.find(c => c.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         let newColumn;
         if (newTableColumnOrName instanceof TableColumn) {
@@ -680,7 +698,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             ? oldTableColumnOrName
             : table.columns.find(column => column.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         if (oldColumn.type !== newColumn.type || oldColumn.length !== newColumn.length) {
             // To avoid data conversion, we just recreate column
@@ -855,7 +873,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             if (oldColumn.isGenerated !== newColumn.isGenerated && newColumn.generationStrategy !== "uuid") {
                 if (newColumn.isGenerated) {
                     if (newColumn.generationStrategy === "increment") {
-                        throw new Error(`Adding sequential generated columns into existing table is not supported`);
+                        throw new TypeORMError(`Adding sequential generated columns into existing table is not supported`);
 
                     } else if (newColumn.generationStrategy === "rowid") {
                         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT unique_rowid()`));
@@ -906,7 +924,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const column = columnOrName instanceof TableColumn ? columnOrName : table.findColumnByName(columnOrName);
         if (!column)
-            throw new Error(`Column "${columnOrName}" was not found in table "${table.name}"`);
+            throw new TypeORMError(`Column "${columnOrName}" was not found in table "${table.name}"`);
 
         const clonedTable = table.clone();
         const upQueries: Query[] = [];
@@ -1080,7 +1098,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
         if (!uniqueConstraint)
-            throw new Error(`Supplied unique constraint was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied unique constraint was not found in table ${table.name}`);
 
         // CockroachDB creates index for UNIQUE constraint.
         // We must use DROP INDEX ... CASCADE instead of DROP CONSTRAINT.
@@ -1130,7 +1148,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const checkConstraint = checkOrName instanceof TableCheck ? checkOrName : table.checks.find(c => c.name === checkOrName);
         if (!checkConstraint)
-            throw new Error(`Supplied check constraint was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied check constraint was not found in table ${table.name}`);
 
         const up = this.dropCheckConstraintSql(table, checkConstraint);
         const down = this.createCheckConstraintSql(table, checkConstraint);
@@ -1150,28 +1168,28 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates new exclusion constraint.
      */
     async createExclusionConstraint(tableOrName: Table|string, exclusionConstraint: TableExclusion): Promise<void> {
-        throw new Error(`CockroachDB does not support exclusion constraints.`);
+        throw new TypeORMError(`CockroachDB does not support exclusion constraints.`);
     }
 
     /**
      * Creates new exclusion constraints.
      */
     async createExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        throw new Error(`CockroachDB does not support exclusion constraints.`);
+        throw new TypeORMError(`CockroachDB does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraint.
      */
     async dropExclusionConstraint(tableOrName: Table|string, exclusionOrName: TableExclusion|string): Promise<void> {
-        throw new Error(`CockroachDB does not support exclusion constraints.`);
+        throw new TypeORMError(`CockroachDB does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraints.
      */
     async dropExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        throw new Error(`CockroachDB does not support exclusion constraints.`);
+        throw new TypeORMError(`CockroachDB does not support exclusion constraints.`);
     }
 
     /**
@@ -1206,7 +1224,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const foreignKey = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName : table.foreignKeys.find(fk => fk.name === foreignKeyOrName);
         if (!foreignKey)
-            throw new Error(`Supplied foreign key was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied foreign key was not found in table ${table.name}`);
 
         const up = this.dropForeignKeySql(table, foreignKey);
         const down = this.createForeignKeySql(table, foreignKey);
@@ -1270,7 +1288,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new Error(`Supplied index was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied index was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);

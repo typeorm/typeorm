@@ -14,6 +14,8 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {DriverUtils} from "../DriverUtils";
+import { TypeORMError } from "../../error";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -206,6 +208,8 @@ export abstract class AbstractSqliteDriver implements Driver {
     constructor(connection: Connection) {
         this.connection = connection;
         this.options = connection.options as BaseConnectionOptions;
+
+        this.database = DriverUtils.buildDriverOptions(this.options).database;
     }
 
     // -------------------------------------------------------------------------
@@ -353,7 +357,7 @@ export abstract class AbstractSqliteDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        const builtParameters: any[] = Object.keys(nativeParameters).map(key => {
+        const escapedParameters: any[] = Object.keys(nativeParameters).map(key => {
             // Mapping boolean values to their numeric representation
             if (typeof nativeParameters[key] === "boolean") {
                 return nativeParameters[key] === true ? 1 : 0;
@@ -363,36 +367,32 @@ export abstract class AbstractSqliteDriver implements Driver {
         });
 
         if (!parameters || !Object.keys(parameters).length)
-            return [sql, builtParameters];
+            return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
-            let value: any;
-            let isArray = false;
-            if (key.substr(0, 4) === ":...") {
-                isArray = true;
-                value = parameters[key.substr(4)];
-            } else {
-                value = parameters[key.substr(1)];
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_]+)/g, (full, isArray: string, key: string): string => {
+            if (!parameters.hasOwnProperty(key)) {
+                return full;
             }
+
+            let value: any = parameters[key];
 
             if (isArray) {
                 return value.map((v: any) => {
-                    builtParameters.push(v);
-                    return "?";
-                    // return "$" + builtParameters.length;
+                    escapedParameters.push(v);
+                    return this.createParameter(key, escapedParameters.length - 1);
                 }).join(", ");
 
-            } else if (value instanceof Function) {
+            }
+
+            if (value instanceof Function) {
                 return value();
 
-            } else {
-                builtParameters.push(value);
-                return "?";
-                // return "$" + builtParameters.length;
             }
+
+            escapedParameters.push(value);
+            return this.createParameter(key, escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
-        return [sql, builtParameters];
+        return [sql, escapedParameters];
     }
 
     /**
@@ -453,22 +453,25 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
-
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
-
-        } else if (typeof defaultValue === "function") {
-            return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else if (defaultValue === null) {
-            return undefined;
-
-        } else {
-            return defaultValue;
         }
+
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "1" : "0";
+        }
+
+        if (typeof defaultValue === "function") {
+            return defaultValue();
+        }
+
+        if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
+        }
+
+        if (defaultValue === null || defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**
@@ -624,7 +627,7 @@ export abstract class AbstractSqliteDriver implements Driver {
      * Creates connection with the database.
      */
     protected createDatabaseConnection() {
-        throw new Error("Do not use AbstractSqlite directly, it has to be used with one of the sqlite drivers");
+        throw new TypeORMError("Do not use AbstractSqlite directly, it has to be used with one of the sqlite drivers");
     }
 
     /**

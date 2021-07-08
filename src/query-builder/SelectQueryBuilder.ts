@@ -26,7 +26,7 @@ import {OrderByCondition} from "../find-options/OrderByCondition";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {EntityTarget} from "../common/EntityTarget";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {WhereExpression} from "./WhereExpression";
+import {WhereExpressionBuilder} from "./WhereExpressionBuilder";
 import {Brackets} from "./Brackets";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
@@ -38,11 +38,12 @@ import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {EntityNotFoundError} from "../error/EntityNotFoundError";
+import { TypeORMError } from "../error";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
+export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpressionBuilder {
 
     // -------------------------------------------------------------------------
     // Public Implemented Methods
@@ -77,7 +78,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     subQuery(): SelectQueryBuilder<any> {
         const qb = this.createQueryBuilder();
         qb.expressionMap.subQuery = true;
-        qb.expressionMap.parentQueryBuilder = this;
+        qb.parentQueryBuilder = this;
         return qb;
     }
 
@@ -717,7 +718,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     where(where: Brackets|string|((qb: this) => string)|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
         this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
-        const condition = this.computeWhereParameter(where);
+        const condition = this.getWhereCondition(where);
         if (condition)
             this.expressionMap.wheres = [{ type: "simple", condition: condition }];
         if (parameters)
@@ -729,8 +730,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    andWhere(where: string|Brackets|((qb: this) => string), parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
+    andWhere(where: string|Brackets|((qb: this) => string)|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
+        this.expressionMap.wheres.push({ type: "and", condition: this.getWhereCondition(where) });
         if (parameters) this.setParameters(parameters);
         return this;
     }
@@ -739,8 +740,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
-    orWhere(where: Brackets|string|((qb: this) => string), parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "or", condition: this.computeWhereParameter(where) });
+    orWhere(where: Brackets|string|((qb: this) => string)|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
+        this.expressionMap.wheres.push({ type: "or", condition: this.getWhereCondition(where) });
         if (parameters) this.setParameters(parameters);
         return this;
     }
@@ -754,7 +755,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     whereInIds(ids: any|any[]): this {
-        return this.where(this.createWhereIdsExpression(ids));
+        return this.where(this.getWhereInIdsCondition(ids));
     }
 
     /**
@@ -766,7 +767,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     andWhereInIds(ids: any|any[]): this {
-        return this.andWhere(this.createWhereIdsExpression(ids));
+        return this.andWhere(this.getWhereInIdsCondition(ids));
     }
 
     /**
@@ -778,7 +779,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     orWhereInIds(ids: any|any[]): this {
-        return this.orWhere(this.createWhereIdsExpression(ids));
+        return this.orWhere(this.getWhereInIdsCondition(ids));
     }
 
     /**
@@ -879,9 +880,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     orderBy(sort?: string|OrderByCondition, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
         if (order !== undefined && order !== "ASC" && order !== "DESC")
-            throw new Error(`SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`);
+            throw new TypeORMError(`SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`);
         if (nulls !== undefined && nulls !== "NULLS FIRST" && nulls !== "NULLS LAST")
-            throw new Error(`SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`);
+            throw new TypeORMError(`SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`);
 
         if (sort) {
             if (sort instanceof Object) {
@@ -904,9 +905,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     addOrderBy(sort: string, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
         if (order !== undefined && order !== "ASC" && order !== "DESC")
-            throw new Error(`SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`);
+            throw new TypeORMError(`SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`);
         if (nulls !== undefined && nulls !== "NULLS FIRST" && nulls !== "NULLS LAST")
-            throw new Error(`SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`);
+            throw new TypeORMError(`SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`);
 
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls };
@@ -925,7 +926,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     limit(limit?: number): this {
         this.expressionMap.limit = this.normalizeNumber(limit);
         if (this.expressionMap.limit !== undefined && isNaN(this.expressionMap.limit))
-            throw new Error(`Provided "limit" value is not a number. Please provide a numeric value.`);
+            throw new TypeORMError(`Provided "limit" value is not a number. Please provide a numeric value.`);
 
         return this;
     }
@@ -939,7 +940,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     offset(offset?: number): this {
         this.expressionMap.offset = this.normalizeNumber(offset);
         if (this.expressionMap.offset !== undefined && isNaN(this.expressionMap.offset))
-            throw new Error(`Provided "offset" value is not a number. Please provide a numeric value.`);
+            throw new TypeORMError(`Provided "offset" value is not a number. Please provide a numeric value.`);
 
         return this;
     }
@@ -950,7 +951,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     take(take?: number): this {
         this.expressionMap.take = this.normalizeNumber(take);
         if (this.expressionMap.take !== undefined && isNaN(this.expressionMap.take))
-            throw new Error(`Provided "take" value is not a number. Please provide a numeric value.`);
+            throw new TypeORMError(`Provided "take" value is not a number. Please provide a numeric value.`);
 
         return this;
     }
@@ -961,7 +962,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     skip(skip?: number): this {
         this.expressionMap.skip = this.normalizeNumber(skip);
         if (this.expressionMap.skip !== undefined && isNaN(this.expressionMap.skip))
-            throw new Error(`Provided "skip" value is not a number. Please provide a numeric value.`);
+            throw new TypeORMError(`Provided "skip" value is not a number. Please provide a numeric value.`);
 
         return this;
     }
@@ -997,7 +998,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Gets first raw result returned by execution of generated query builder sql.
      */
-    async getRawOne<T = any>(): Promise<T> {
+    async getRawOne<T = any>(): Promise<T|undefined> {
         return (await this.getRawMany())[0];
     }
 
@@ -1384,7 +1385,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected createSelectExpression() {
 
         if (!this.expressionMap.mainAlias)
-            throw new Error("Cannot build query because main alias is not set (call qb#from method)");
+            throw new TypeORMError("Cannot build query because main alias is not set (call qb#from method)");
 
         // todo throw exception if selects or from is missing
 
@@ -1680,10 +1681,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         if (this.expressionMap.lockTables) {
             if (!(driver instanceof PostgresDriver)) {
-                throw new Error("Lock tables not supported in selected driver");
+                throw new TypeORMError("Lock tables not supported in selected driver");
             }
             if (this.expressionMap.lockTables.length < 1) {
-                throw new Error("lockTables cannot be an empty array");
+                throw new TypeORMError("lockTables cannot be an empty array");
             }
             lockTablesClause = " OF " + this.expressionMap.lockTables.join(", ");
         }
@@ -1922,7 +1923,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected async executeEntitiesAndRawResults(queryRunner: QueryRunner): Promise<{ entities: Entity[], raw: any[] }> {
 
         if (!this.expressionMap.mainAlias)
-            throw new Error(`Alias is not set. Use "from" method to set an alias.`);
+            throw new TypeORMError(`Alias is not set. Use "from" method to set an alias.`);
 
         if ((this.expressionMap.lockMode === "pessimistic_read" || this.expressionMap.lockMode === "pessimistic_write" || this.expressionMap.lockMode === "pessimistic_partial_write" || this.expressionMap.lockMode === "pessimistic_write_or_fail" || this.expressionMap.lockMode === "for_no_key_update") && !queryRunner.isTransactionActive)
             throw new PessimisticLockTransactionRequiredError();
@@ -2100,8 +2101,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     query: queryId,
                     duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
                 }, queryRunner);
-                if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
+                if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions)) {
                     return JSON.parse(savedQueryResultCacheOptions.result);
+                }
             } catch(error) {
                 if (!cacheOptions.ignoreErrors) {
                     throw error;
@@ -2110,7 +2112,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
         }
 
-        const results = await queryRunner.query(sql, parameters);
+        const results = await queryRunner.query(sql, parameters, true);
 
         if (!cacheError && this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
             try {
@@ -2119,7 +2121,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     query: queryId,
                     time: new Date().getTime(),
                     duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
-                    result: JSON.stringify(results)
+                    result: JSON.stringify(results.records)
                 }, savedQueryResultCacheOptions, queryRunner);
             } catch(error) {
                 if (!cacheOptions.ignoreErrors) {
@@ -2128,7 +2130,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
         }
 
-        return results;
+        return results.records;
     }
 
     /**

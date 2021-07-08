@@ -51,7 +51,7 @@ import { InsertResult } from "../query-builder/result/InsertResult";
 import { UpdateResult } from "../query-builder/result/UpdateResult";
 import { DeleteResult } from "../query-builder/result/DeleteResult";
 import { EntityMetadata } from "../metadata/EntityMetadata";
-import { FindConditions } from "../index";
+import { FindConditions } from "../find-options/FindConditions";
 import { BroadcasterResult } from "../subscriber/BroadcasterResult";
 
 /**
@@ -221,7 +221,7 @@ export class MongoEntityManager extends EntityManager {
 
         } else {
             const metadata = this.connection.getMetadata(target);
-            await this.updateOne(target, this.convertMixedCriteria(metadata, criteria), { $set: partialEntity });
+            await this.updateMany(target, this.convertMixedCriteria(metadata, criteria), { $set: partialEntity });
         }
 
         return new UpdateResult();
@@ -240,7 +240,7 @@ export class MongoEntityManager extends EntityManager {
             }));
 
         } else {
-            await this.deleteOne(target, this.convertMixedCriteria(this.connection.getMetadata(target), criteria));
+            await this.deleteMany(target, this.convertMixedCriteria(this.connection.getMetadata(target), criteria));
         }
 
         return new DeleteResult();

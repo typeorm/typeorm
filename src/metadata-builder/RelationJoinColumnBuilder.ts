@@ -7,6 +7,7 @@ import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { TypeORMError } from "../error";
 
 /**
  * Builds join column for the many-to-one and one-to-one owner relations.
@@ -114,7 +115,7 @@ export class RelationJoinColumnBuilder {
             return joinColumns.map(joinColumn => {
                 const referencedColumn = relation.inverseEntityMetadata.ownColumns.find(column => column.propertyName === joinColumn.referencedColumnName); // todo: can we also search in relations?
                 if (!referencedColumn)
-                    throw new Error(`Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`);
+                    throw new TypeORMError(`Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`);
 
                 return referencedColumn;
             });
