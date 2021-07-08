@@ -16,10 +16,13 @@ export function camelCase(str: string, firstCapital: boolean = false): string {
 /**
  * Converts string into snake_case.
  *
- * @see https://regex101.com/r/QeSm2I/1
+ * @see https://regex101.com/r/OcnrZ2/1
+ * @see https://regex101.com/r/PwRjxu/1
  */
-export function snakeCase(str: string) {
-    return str.replace(/(?:([a-z])([A-Z]))|(?:((?!^)[A-Z])([a-z]))/g, "$1_$3$2$4").toLowerCase();
+ export function snakeCase(str: string): string{
+    return str.replace(/(?:((?!^)[A-Z])([a-z])([A-Z]))/g, "$1$2_$3")
+              .replace(/(?:([a-z])([A-Z]))|(?:((?!^)(?<!_)[A-Z])([a-z]))/g, "$1_$3$2$4")
+              .toLowerCase();
 }
 
 /**
