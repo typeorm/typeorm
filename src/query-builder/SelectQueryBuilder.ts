@@ -998,7 +998,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Gets first raw result returned by execution of generated query builder sql.
      */
-    async getRawOne<T = any>(): Promise<T> {
+    async getRawOne<T = any>(): Promise<T|undefined> {
         return (await this.getRawMany())[0];
     }
 
