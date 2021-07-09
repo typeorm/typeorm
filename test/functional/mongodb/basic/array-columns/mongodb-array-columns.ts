@@ -118,4 +118,25 @@ describe("mongodb > array columns", () => {
 
     })));
 
+    it("should retrieve arrays from the column metadata", () => Promise.all(connections.map(async connection => {
+        const post = new Post();
+        post.title = "Post";
+        post.names = ["umed", "dima", "bakhrom"];
+        post.numbers = [1, 0, 1];
+        post.booleans = [true, false, false];
+        post.counters = [
+            new Counters(1, "number #1"),
+            new Counters(2, "number #2"),
+            new Counters(3, "number #3"),
+        ];
+        post.other1 = [];
+
+        const column = connection.getMetadata(Post)
+            .columns
+            .find(c => c.propertyPath === 'counters.text')!;
+
+        const value = column.getEntityValue(post);
+
+        expect(value).to.eql([ "number #1", "number #2", "number #3" ]);
+    })));
 });

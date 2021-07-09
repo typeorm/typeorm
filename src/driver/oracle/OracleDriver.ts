@@ -222,9 +222,6 @@ export class OracleDriver implements Driver {
         // load oracle package
         this.loadDependencies();
 
-        // extra oracle setup
-        this.oracle.outFormat = this.oracle.OBJECT;
-
         this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
 
         // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
@@ -352,7 +349,17 @@ export class OracleDriver implements Driver {
      * Oracle does not support table schemas. One user can have only one schema.
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
-        return tableName;
+        let tablePath = [ tableName ];
+
+        if (schema) {
+            tablePath.unshift(schema);
+        }
+
+        if (database) {
+            tablePath.unshift(database);
+        }
+
+        return tablePath.join('.');
     }
 
     /**
@@ -470,22 +477,25 @@ export class OracleDriver implements Driver {
 
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
-
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
-
-        } else if (typeof defaultValue === "function") {
-            return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else if (defaultValue === null) {
-            return undefined;
-
-        } else {
-            return defaultValue;
         }
+
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "1" : "0";
+        }
+
+        if (typeof defaultValue === "function") {
+            return defaultValue();
+        }
+
+        if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
+        }
+
+        if (defaultValue === null || defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**

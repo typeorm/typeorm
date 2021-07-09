@@ -23,6 +23,7 @@ import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { TypeORMError } from "../../error";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -180,7 +181,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -189,10 +190,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 this.driver.connection.logger.logQuery(query, parameters, this);
                 const queryStartTime = +new Date();
 
-                const handler = (err: any, result: any) => {
+                const handler = (err: any, raw: any) => {
 
                     // log slow queries if maxQueryExecution time is set
-                    const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+                    const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
                     const queryEndTime = +new Date();
                     const queryExecutionTime = queryEndTime - queryStartTime;
                     if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
@@ -202,11 +203,32 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         this.driver.connection.logger.logQueryError(err, query, parameters, this);
                         return fail(new QueryFailedError(query, parameters, err));
                     }
-                    // TODO: find better solution. Must return result instead of properties
-                    ok(result.rows || result.outBinds || result.rowsAffected);
+
+                    const result = new QueryResult();
+
+                    result.raw = raw.rows || raw.outBinds || raw.rowsAffected;
+
+                    if (raw?.hasOwnProperty('rows') && Array.isArray(raw.rows)) {
+                        result.records = raw.rows;
+                    }
+
+                    if (raw?.hasOwnProperty('outBinds') && Array.isArray(raw.outBinds)) {
+                        result.records = raw.outBinds;
+                    }
+
+                    if (raw?.hasOwnProperty('rowsAffected')) {
+                        result.affected = raw.rowsAffected;
+                    }
+
+                    if (useStructuredResult) {
+                        ok(result);
+                    } else {
+                        ok(result.raw);
+                    }
                 };
                 const executionOptions = {
-                    autoCommit: this.isTransactionActive ? false : true
+                    autoCommit: this.isTransactionActive ? false : true,
+                    outFormat: this.driver.oracle.OBJECT,
                 };
 
                 const databaseConnection = await this.connect();
@@ -1145,7 +1167,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
     async clearTable(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE "${tableName}"`);
+        await this.query(`TRUNCATE TABLE ${this.escapePath(tableName)}`);
     }
 
     /**
@@ -1189,7 +1211,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             return Promise.resolve([]);
 
         const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
-        let query = `SELECT "T".* FROM "${this.getTypeormMetadataTableName()}" "T" ` +
+        let query = `SELECT "T".* FROM ${this.escapePath(this.getTypeormMetadataTableName())} "T" ` +
             `INNER JOIN "USER_OBJECTS" "O" ON "O"."OBJECT_NAME" = "T"."name" AND "O"."OBJECT_TYPE" IN ( 'MATERIALIZED VIEW', 'VIEW' ) ` +
             `WHERE "T"."type" IN ( 'MATERIALIZED_VIEW', 'VIEW' )`;
         if (viewNamesString.length > 0)
@@ -1375,7 +1397,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
-        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
+        let sql = `CREATE TABLE ${this.escapePath(table.name)} (${columnDefinitions}`;
 
         table.columns
             .filter(column => column.isUnique)
@@ -1439,17 +1461,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds drop table sql.
      */
     protected dropTableSql(tableOrName: Table|string, ifExist?: boolean): Query {
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const query = ifExist ? `DROP TABLE IF EXISTS "${tableName}"` : `DROP TABLE "${tableName}"`;
+        const query = ifExist ? `DROP TABLE IF EXISTS ${this.escapePath(tableOrName)}` : `DROP TABLE ${this.escapePath(tableOrName)}`;
         return new Query(query);
     }
 
     protected createViewSql(view: View): Query {
         const materializedClause = view.materialized ? "MATERIALIZED " : "";
         if (typeof view.expression === "string") {
-            return new Query(`CREATE ${materializedClause}VIEW "${view.name}" AS ${view.expression}`);
+            return new Query(`CREATE ${materializedClause}VIEW ${this.escapePath(view)} AS ${view.expression}`);
         } else {
-            return new Query(`CREATE ${materializedClause}VIEW "${view.name}" AS ${view.expression(this.connection).getQuery()}`);
+            return new Query(`CREATE ${materializedClause}VIEW ${this.escapePath(view)} AS ${view.expression(this.connection).getQuery()}`);
         }
     }
 
@@ -1470,7 +1491,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropViewSql(view: View): Query {
         const materializedClause = view.materialized ? "MATERIALIZED " : "";
-        return new Query(`DROP ${materializedClause}VIEW "${view.name}"`);
+        return new Query(`DROP ${materializedClause}VIEW ${this.escapePath(view)}`);
     }
 
     /**
@@ -1510,7 +1531,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
         const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
         const columnNamesString = columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return new Query(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNamesString})`);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNamesString})`);
     }
 
     /**
@@ -1519,7 +1540,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected dropPrimaryKeySql(table: Table): Query {
         const columnNames = table.primaryColumns.map(column => column.name);
         const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
-        return new Query(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${primaryKeyName}"`);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${primaryKeyName}"`);
     }
 
     /**
@@ -1527,7 +1548,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createUniqueConstraintSql(table: Table, uniqueConstraint: TableUnique): Query {
         const columnNames = uniqueConstraint.columnNames.map(column => `"` + column + `"`).join(", ");
-        return new Query(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`);
     }
 
     /**
@@ -1535,14 +1556,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropUniqueConstraintSql(table: Table, uniqueOrName: TableUnique|string): Query {
         const uniqueName = uniqueOrName instanceof TableUnique ? uniqueOrName.name : uniqueOrName;
-        return new Query(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${uniqueName}"`);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueName}"`);
     }
 
     /**
      * Builds create check constraint sql.
      */
     protected createCheckConstraintSql(table: Table, checkConstraint: TableCheck): Query {
-        return new Query(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${checkConstraint.name}" CHECK (${checkConstraint.expression})`);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${checkConstraint.name}" CHECK (${checkConstraint.expression})`);
     }
 
     /**
@@ -1550,7 +1571,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropCheckConstraintSql(table: Table, checkOrName: TableCheck|string): Query {
         const checkName = checkOrName instanceof TableCheck ? checkOrName.name : checkOrName;
-        return new Query(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${checkName}"`);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${checkName}"`);
     }
 
     /**
@@ -1559,7 +1580,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): Query {
         const columnNames = foreignKey.columnNames.map(column => `"` + column + `"`).join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
-        let sql = `ALTER TABLE "${table.name}" ADD CONSTRAINT "${foreignKey.name}" FOREIGN KEY (${columnNames}) ` +
+        let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${foreignKey.name}" FOREIGN KEY (${columnNames}) ` +
             `REFERENCES "${foreignKey.referencedTableName}" (${referencedColumnNames})`;
         // Oracle does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
         if (foreignKey.onDelete && foreignKey.onDelete !== "NO ACTION")
@@ -1573,7 +1594,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropForeignKeySql(table: Table, foreignKeyOrName: TableForeignKey|string): Query {
         const foreignKeyName = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName.name : foreignKeyOrName;
-        return new Query(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${foreignKeyName}"`);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${foreignKeyName}"`);
     }
 
     /**
@@ -1595,5 +1616,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         return c;
     }
 
+    /**
+     * Escapes given table or view path.
+     */
+    protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
+        let tableName = target instanceof Table || target instanceof View ? target.name : target;
+        tableName = tableName.indexOf(".") === -1 && this.driver.options.schema ? `${this.driver.options.schema}.${tableName}` : tableName;
+
+        return tableName.split(".").map(i => {
+            return disableEscape ? i : `"${i}"`;
+        }).join(".");
+    }
 
 }

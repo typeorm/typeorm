@@ -1,3 +1,4 @@
+import {QueryResult} from "../../query-runner/QueryResult";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
@@ -148,14 +149,26 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     /**
      * Executes a raw SQL query.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const result = await this.client.query(query, parameters);
+        const raw = await this.client.query(query, parameters);
 
-        if (result.records) {
-            return result.records;
+        const result = new QueryResult();
+
+        result.raw = raw;
+
+        if (raw?.hasOwnProperty('records') && Array.isArray(raw.records)) {
+            result.records = raw.records;
+        }
+
+        if (raw?.hasOwnProperty('numberOfRecordsUpdated')) {
+            result.affected = raw.numberOfRecordsUpdated;
+        }
+
+        if (!useStructuredResult) {
+            return result.raw;
         }
 
         return result;

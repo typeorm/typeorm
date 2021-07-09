@@ -192,8 +192,6 @@
 
 - `pool.priorityRange` - 1和x之间的int值  - 如果设置了且没有可用资源，则borrowers可以在队列中指定其相对优先级(默认 `1`)。
 
-- `pool.autostart` - 布尔值，一旦调用构造函数，池应该开始创建资源等（默认为`true`）。
-
 - `pool.victionRunIntervalMillis` - 多久检查一次eviction checks。 默认值：`0`（不运行）。
 
 - `pool.numTestsPerRun` - 每次eviction checks资源数量。 默认值：`3`。

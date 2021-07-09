@@ -92,7 +92,7 @@ export abstract class BaseQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    abstract query(query: string, parameters?: any[]): Promise<any>;
+    abstract query(query: string, parameters?: any[], useStructuredResult?: boolean): Promise<any>;
 
     // -------------------------------------------------------------------------
     // Protected Abstract Methods
@@ -304,8 +304,12 @@ export abstract class BaseQueryRunner {
         if (this.connection.hasMetadata(table.name)) {
             const metadata = this.connection.getMetadata(table.name);
             const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
-            if (columnMetadata && columnMetadata.length)
-                return false;
+
+            if (columnMetadata) {
+                const columnMetadataLength = this.connection.driver.getColumnLength(columnMetadata);
+                if (columnMetadataLength)
+                    return false;
+            }
         }
 
         if (this.connection.driver.dataTypeDefaults

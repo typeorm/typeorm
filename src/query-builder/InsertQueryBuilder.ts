@@ -14,7 +14,6 @@ import {InsertValuesMissingError} from "../error/InsertValuesMissingError";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
-import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
@@ -86,14 +85,30 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // if update entity mode is enabled we may need extra columns for the returning statement
             // console.time(".prepare returning statement");
             const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(queryRunner, this.expressionMap);
+
+            const returningColumns: ColumnMetadata[] = [];
+
+            if (Array.isArray(this.expressionMap.returning) && this.expressionMap.mainAlias!.hasMetadata) {
+                for (const columnPath of this.expressionMap.returning) {
+                    returningColumns.push(
+                        ...this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(columnPath)
+                    );
+                }
+            }
+
             if (this.expressionMap.updateEntity === true && this.expressionMap.mainAlias!.hasMetadata) {
                 if (!(valueSets.length > 1 && this.connection.driver instanceof OracleDriver)) {
                     this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getInsertionReturningColumns();
                 }
-                if (this.expressionMap.extraReturningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
-                    declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", this.expressionMap.extraReturningColumns);
-                    selectOutputSql = `SELECT * FROM @OutputTable`;
-                }
+
+                returningColumns.push(...this.expressionMap.extraReturningColumns.filter(
+                    c => !returningColumns.includes(c)
+                ));
+            }
+
+            if (returningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
+                declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", returningColumns);
+                selectOutputSql = `SELECT * FROM @OutputTable`;
             }
             // console.timeEnd(".prepare returning statement");
 
@@ -101,13 +116,15 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // console.time(".getting query and parameters");
             const [insertSql, parameters] = this.getQueryAndParameters();
             // console.timeEnd(".getting query and parameters");
-            const insertResult = new InsertResult();
+
             // console.time(".query execution by database");
             const statements = [declareSql, insertSql, selectOutputSql];
-            insertResult.raw = await queryRunner.query(
-                statements.filter(sql => sql != null).join(";\n\n"),
-                parameters,
-            );
+            const sql = statements.filter(s => s != null).join(";\n\n");
+
+            const queryResult = await queryRunner.query(sql, parameters, true);
+
+            const insertResult = InsertResult.from(queryResult);
+
             // console.timeEnd(".query execution by database");
 
             // load returning results and set them to the entity if entity updation is enabled
@@ -150,9 +167,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // console.time(".releasing connection");
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
                 await queryRunner.release();
-            }
-            if (this.connection.driver instanceof SqljsDriver && !queryRunner.isTransactionActive) {
-                await this.connection.driver.autoSave();
             }
             // console.timeEnd(".releasing connection");
             // console.timeEnd("QueryBuilder.execute");

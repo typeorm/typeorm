@@ -14,7 +14,6 @@ import {Brackets} from "./Brackets";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -24,6 +23,7 @@ import {FindOperator} from "../find-options/FindOperator";
 import {In} from "../find-options/operator/In";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import { TypeORMError } from "../error";
+import { WhereClause, WhereClauseCondition } from "./WhereClause";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -450,13 +450,9 @@ export abstract class QueryBuilder<Entity> {
         const queryRunner = this.obtainQueryRunner();
         try {
             return await queryRunner.query(sql, parameters);  // await is needed here because we are using finally
-
         } finally {
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
                 await queryRunner.release();
-            }
-            if (this.connection.driver instanceof SqljsDriver) {
-                await this.connection.driver.autoSave();
             }
         }
     }
@@ -689,8 +685,11 @@ export abstract class QueryBuilder<Entity> {
     protected createWhereExpression() {
         const conditionsArray = [];
 
-        const whereExpression = this.createWhereExpressionString();
-        whereExpression.trim() && conditionsArray.push(this.createWhereExpressionString());
+        const whereExpression = this.createWhereClausesExpression(this.expressionMap.wheres);
+
+        if (whereExpression.length > 0 && whereExpression !== "1=1") {
+            conditionsArray.push(this.replacePropertyNames(whereExpression));
+        }
 
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata;
@@ -796,20 +795,80 @@ export abstract class QueryBuilder<Entity> {
         return columns;
     }
 
-    /**
-     * Concatenates all added where expressions into one string.
-     */
-    protected createWhereExpressionString(): string {
-        return this.expressionMap.wheres.map((where, index) => {
-            switch (where.type) {
+    protected createWhereClausesExpression(clauses: WhereClause[]): string {
+        return clauses.map((clause, index) => {
+            const expression = this.createWhereConditionExpression(clause.condition);
+
+            switch (clause.type) {
                 case "and":
-                    return (index > 0 ? "AND " : "") + this.replacePropertyNames(where.condition);
+                    return (index > 0 ? "AND " : "") + expression;
                 case "or":
-                    return (index > 0 ? "OR " : "") + this.replacePropertyNames(where.condition);
-                default:
-                    return this.replacePropertyNames(where.condition);
+                    return (index > 0 ? "OR " : "") + expression;
             }
-        }).join(" ");
+
+            return expression;
+        }).join(" ").trim();
+    }
+
+    /**
+     * Computes given where argument - transforms to a where string all forms it can take.
+     */
+    protected createWhereConditionExpression(condition: WhereClauseCondition): string {
+        if (typeof condition === "string")
+            return condition;
+
+        if (Array.isArray(condition)) {
+            if (condition.length === 0) {
+                return "1=1";
+            }
+
+            if (condition.length === 1) {
+                return this.createWhereClausesExpression(condition);
+            }
+
+            return "(" + this.createWhereClausesExpression(condition) + ")";
+        }
+
+        const { driver } = this.connection;
+
+        switch (condition.operator) {
+            case "lessThan":
+                return `${condition.parameters[0]} < ${condition.parameters[1]}`;
+            case "lessThanOrEqual":
+                return `${condition.parameters[0]} <= ${condition.parameters[1]}`;
+            case "moreThan":
+                return `${condition.parameters[0]} > ${condition.parameters[1]}`;
+            case "moreThanOrEqual":
+                return `${condition.parameters[0]} >= ${condition.parameters[1]}`;
+            case "notEqual":
+                return `${condition.parameters[0]} != ${condition.parameters[1]}`;
+            case "equal":
+                return `${condition.parameters[0]} = ${condition.parameters[1]}`;
+            case "ilike":
+                if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
+                    return `${condition.parameters[0]} ILIKE ${condition.parameters[1]}`;
+                }
+
+                return `UPPER(${condition.parameters[0]}) LIKE UPPER(${condition.parameters[1]})`;
+            case "like":
+                return `${condition.parameters[0]} LIKE ${condition.parameters[1]}`;
+            case "between":
+                return `${condition.parameters[0]} BETWEEN ${condition.parameters[1]} AND ${condition.parameters[2]}`;
+            case "in":
+                if (condition.parameters.length <= 1) {
+                    return "0=1";
+                }
+                return `${condition.parameters[0]} IN (${condition.parameters.slice(1).join(", ")})`;
+            case "any":
+                return `${condition.parameters[0]} = ANY(${condition.parameters[1]})`;
+            case "isNull":
+                return `${condition.parameters[0]} IS NULL`;
+
+            case "not":
+                return `NOT(${this.createWhereConditionExpression(condition.condition)})`;
+        }
+
+        throw new TypeError(`Unsupported FindOperator ${FindOperator.constructor.name}`);
     }
 
     /**
@@ -992,12 +1051,118 @@ export abstract class QueryBuilder<Entity> {
         return paths;
     }
 
-    /**
-     * Computes given where argument - transforms to a where string all forms it can take.
-     */
-    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[]) {
-        if (typeof where === "string")
+    protected *getPredicates(where: ObjectLiteral) {
+        if (this.expressionMap.mainAlias!.hasMetadata) {
+            const propertyPaths = this.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
+
+            for (const propertyPath of propertyPaths) {
+                const [ alias, aliasPropertyPath, columns ] = this.findColumnsForPropertyPath(propertyPath);
+
+                for (const column of columns) {
+                    let containedWhere = where;
+
+                    for (const part of aliasPropertyPath) {
+                        if (!containedWhere || !(part in containedWhere)) {
+                            containedWhere = {};
+                            break;
+                        }
+
+                        containedWhere = containedWhere[part];
+                    }
+
+                    // Use the correct alias & the property path from the column
+                    const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ?
+                        `${alias.name}.${column.propertyPath}` :
+                        column.propertyPath;
+
+                    const parameterValue = column.getEntityValue(containedWhere, true);
+
+                    yield [aliasPath, parameterValue];
+                }
+            }
+        } else {
+            for (const key of Object.keys(where)) {
+                const parameterValue = where[key];
+                const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${key}` : key;
+
+                yield [aliasPath, parameterValue];
+            }
+        }
+    }
+
+    protected getWherePredicateCondition(aliasPath: string, parameterValue: any): WhereClauseCondition {
+        if (parameterValue instanceof FindOperator) {
+            let parameters: any[] = [];
+            if (parameterValue.useParameter) {
+                if (parameterValue.objectLiteralParameters) {
+                    this.setParameters(parameterValue.objectLiteralParameters);
+                } else if (parameterValue.multipleParameters) {
+                    for (const v of parameterValue.value) {
+                        parameters.push(this.createParameter(v));
+                    }
+                } else {
+                    parameters.push(this.createParameter(parameterValue.value));
+                }
+            }
+
+            if (parameterValue.type === "raw") {
+                if (parameterValue.getSql) {
+                    return parameterValue.getSql(aliasPath);
+                } else {
+                    return {
+                        operator: "equal",
+                        parameters: [
+                            aliasPath,
+                            parameterValue.value,
+                        ]
+                    };
+                }
+            } else if (parameterValue.type === "not") {
+                if (parameterValue.child) {
+                    return {
+                        operator: parameterValue.type,
+                        condition: this.getWherePredicateCondition(aliasPath, parameterValue.child),
+                    };
+                } else {
+                    return {
+                        operator: "notEqual",
+                        parameters: [
+                            aliasPath,
+                            ...parameters,
+                        ]
+                    };
+                }
+            } else {
+                return {
+                    operator: parameterValue.type,
+                    parameters: [
+                        aliasPath,
+                        ...parameters,
+                    ]
+                };
+            }
+        } else if (parameterValue === null) {
+            return {
+                operator: "isNull",
+                parameters: [
+                    aliasPath,
+                ]
+            };
+        } else {
+            return {
+                operator: "equal",
+                parameters: [
+                    aliasPath,
+                    this.createParameter(parameterValue),
+                ]
+            };
+        }
+    }
+
+    protected getWhereCondition(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[]): WhereClauseCondition {
+        if (typeof where === "string") {
             return where;
+        }
 
         if (where instanceof Brackets) {
             const whereQueryBuilder = this.createQueryBuilder();
@@ -1009,147 +1174,40 @@ export abstract class QueryBuilder<Entity> {
             whereQueryBuilder.expressionMap.parameters = this.expressionMap.parameters;
             whereQueryBuilder.expressionMap.nativeParameters = this.expressionMap.nativeParameters;
 
+            whereQueryBuilder.expressionMap.wheres = [];
+
             where.whereFactory(whereQueryBuilder as any);
 
-            const whereString = whereQueryBuilder.createWhereExpressionString();
-            return whereString ? "(" + whereString + ")" : "";
+            return whereQueryBuilder.expressionMap.wheres;
+        }
 
-        } else if (where instanceof Function) {
+        if (where instanceof Function) {
             return where(this);
+        }
 
-        } else if (where instanceof Object) {
-            const wheres: ObjectLiteral[] = Array.isArray(where) ? where : [where];
-            let andConditions: string[];
+        const wheres: ObjectLiteral[] = Array.isArray(where) ? where : [where];
+        const clauses: WhereClause[] = [];
 
-            if (this.expressionMap.mainAlias!.hasMetadata) {
-                andConditions = wheres.map((where, whereIndex) => {
-                    const propertyPaths = this.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
+        for (const where of wheres) {
+            const conditions: WhereClauseCondition = [];
 
-                    return propertyPaths.map((propertyPath, propertyIndex) => {
-                        const [ alias, aliasPropertyPath, columns ] = this.findColumnsForPropertyPath(propertyPath);
-
-                        return columns.map((column, columnIndex) => {
-
-                            // Use the correct alias & the property path from the column
-                            const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${alias.name}.${column.propertyPath}` : column.propertyPath;
-
-                            let containedWhere = where;
-
-                            for (const part of aliasPropertyPath) {
-                                if (!containedWhere || !(part in containedWhere)) {
-                                    containedWhere = {};
-                                    break;
-                                }
-
-                                containedWhere = containedWhere[part];
-                            }
-
-                            let parameterValue = column.getEntityValue(containedWhere, true);
-
-                            if (parameterValue === null) {
-                                return `${aliasPath} IS NULL`;
-
-                            } else if (parameterValue instanceof FindOperator) {
-                                let parameters: any[] = [];
-                                if (parameterValue.useParameter) {
-                                    if (parameterValue.objectLiteralParameters) {
-                                        this.setParameters(parameterValue.objectLiteralParameters);
-                                    } else {
-                                        const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
-                                        realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
-
-                                            const parameterName = this.createParameter(realParameterValue);
-                                            parameters.push(parameterName);
-                                        });
-                                    }
-                                }
-
-                                return this.computeFindOperatorExpression(parameterValue, aliasPath, parameters);
-                            } else {
-                                const parameterName = this.createParameter(parameterValue);
-                                return `${aliasPath} = ${parameterName}`;
-                            }
-
-                        }).filter(expression => !!expression).join(" AND ");
-                    }).filter(expression => !!expression).join(" AND ");
-                });
-
-            } else {
-                andConditions = wheres.map((where, whereIndex) => {
-                    return Object.keys(where).map((key, parameterIndex) => {
-                        const parameterValue = where[key];
-                        const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${key}` : key;
-                        if (parameterValue === null) {
-                            return `${aliasPath} IS NULL`;
-
-                        } else {
-                            const parameterName = this.createParameter(parameterValue);
-                            return `${aliasPath} = ${parameterName}`;
-                        }
-                    }).join(" AND ");
+            // Filter the conditions and set up the parameter values
+            for (const [aliasPath, parameterValue] of this.getPredicates(where)) {
+                conditions.push({
+                    type: "and",
+                    condition: this.getWherePredicateCondition(aliasPath, parameterValue),
                 });
             }
 
-            if (andConditions.length > 1)
-                return andConditions.map(where => "(" + where + ")").join(" OR ");
+            clauses.push({ type: "or", condition: conditions });
 
-            return andConditions.join("");
         }
 
-        return "";
-    }
-
-    /**
-     * Gets SQL needs to be inserted into final query.
-     */
-    protected computeFindOperatorExpression(operator: FindOperator<any>, aliasPath: string, parameters: any[]): string {
-        const { driver } = this.connection;
-
-        switch (operator.type) {
-            case "not":
-                if (operator.child) {
-                    return `NOT(${this.computeFindOperatorExpression(operator.child, aliasPath, parameters)})`;
-                } else {
-                    return `${aliasPath} != ${parameters[0]}`;
-                }
-            case "lessThan":
-                return `${aliasPath} < ${parameters[0]}`;
-            case "lessThanOrEqual":
-                return `${aliasPath} <= ${parameters[0]}`;
-            case "moreThan":
-                return `${aliasPath} > ${parameters[0]}`;
-            case "moreThanOrEqual":
-                return `${aliasPath} >= ${parameters[0]}`;
-            case "equal":
-                return `${aliasPath} = ${parameters[0]}`;
-            case "ilike":
-                if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
-                    return `${aliasPath} ILIKE ${parameters[0]}`;
-                }
-
-                return `UPPER(${aliasPath}) LIKE UPPER(${parameters[0]})`;
-            case "like":
-                return `${aliasPath} LIKE ${parameters[0]}`;
-            case "between":
-                return `${aliasPath} BETWEEN ${parameters[0]} AND ${parameters[1]}`;
-            case "in":
-                if (parameters.length === 0) {
-                    return "0=1";
-                }
-                return `${aliasPath} IN (${parameters.join(", ")})`;
-            case "any":
-                return `${aliasPath} = ANY(${parameters[0]})`;
-            case "isNull":
-                return `${aliasPath} IS NULL`;
-            case "raw":
-                if (operator.getSql) {
-                    return operator.getSql(aliasPath);
-                } else {
-                    return `${aliasPath} = ${operator.value}`;
-                }
+        if (clauses.length === 1) {
+            return clauses[0].condition;
         }
 
-        throw new TypeError(`Unsupported FindOperator ${FindOperator.constructor.name}`);
+        return clauses;
     }
 
     /**

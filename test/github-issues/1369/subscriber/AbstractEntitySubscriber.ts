@@ -10,9 +10,11 @@ export class AbstractEntitySubscriber implements EntitySubscriberInterface<Abstr
     this.updateFullName(event.entity);
   }
   async beforeUpdate(event: UpdateEvent<AbstractEntity>) {
-    this.updateFullName(event.entity);
+    if(event.entity) {
+      this.updateFullName(event.entity);
+    }
   }
-  updateFullName(o: AbstractEntity) {
+  updateFullName(o: Partial<AbstractEntity>) {
     o.fullname = o.firstname + " " + o.lastname;
   }
 }

@@ -8,8 +8,10 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
     }
 
     beforeUpdate(event: UpdateEvent<Post>) {
-        event.entity.updatedColumns = event.updatedColumns.length;
-        event.entity.updatedRelations = event.updatedRelations.length;
+        if(event.entity) {
+            event.entity.updatedColumns = event.updatedColumns.length;
+            event.entity.updatedRelations = event.updatedRelations.length;
+        }
     }
 
 }

@@ -6,12 +6,11 @@ import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {WhereExpression} from "./WhereExpression";
+import {WhereExpressionBuilder} from "./WhereExpressionBuilder";
 import {Brackets} from "./Brackets";
 import {UpdateResult} from "./result/UpdateResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
 import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
-import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {OrderByCondition} from "../find-options/OrderByCondition";
@@ -25,7 +24,7 @@ import { TypeORMError } from "../error";
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
+export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpressionBuilder {
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -82,17 +81,9 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
 
             // execute update query
             const [sql, parameters] = this.getQueryAndParameters();
-            const updateResult = new UpdateResult();
-            const result = await queryRunner.query(sql, parameters);
 
-            const driver = queryRunner.connection.driver;
-            if (driver instanceof PostgresDriver) {
-                updateResult.raw = result[0];
-                updateResult.affected = result[1];
-            }
-            else {
-                updateResult.raw = result;
-            }
+            const queryResult = await queryRunner.query(sql, parameters, true);
+            const updateResult = UpdateResult.from(queryResult);
 
             // if we are updating entities and entity updation is enabled we must update some of entity columns (like version, update date, etc.)
             if (this.expressionMap.updateEntity === true &&
@@ -128,9 +119,6 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
                 await queryRunner.release();
             }
-            if (this.connection.driver instanceof SqljsDriver && !queryRunner.isTransactionActive) {
-                await this.connection.driver.autoSave();
-            }
         }
     }
 
@@ -157,7 +145,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
      */
     where(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
         this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
-        const condition = this.computeWhereParameter(where);
+        const condition = this.getWhereCondition(where);
         if (condition)
             this.expressionMap.wheres = [{ type: "simple", condition: condition }];
         if (parameters)
@@ -170,7 +158,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
      * Additionally you can add parameters used in where expression.
      */
     andWhere(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "and", condition: this.computeWhereParameter(where) });
+        this.expressionMap.wheres.push({ type: "and", condition: this.getWhereCondition(where) });
         if (parameters) this.setParameters(parameters);
         return this;
     }
@@ -180,7 +168,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
      * Additionally you can add parameters used in where expression.
      */
     orWhere(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[], parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres.push({ type: "or", condition: this.computeWhereParameter(where) });
+        this.expressionMap.wheres.push({ type: "or", condition: this.getWhereCondition(where) });
         if (parameters) this.setParameters(parameters);
         return this;
     }

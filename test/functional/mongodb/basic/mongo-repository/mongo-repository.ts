@@ -86,7 +86,7 @@ describe("mongodb > MongoRepository", () => {
         loadedPosts[0].text.should.be.equal("Everything about post #1");
 
     })));
-
+  
     it("should be able to use findByIds with both objectId and strings", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getMongoRepository(Post);
 
@@ -107,4 +107,46 @@ describe("mongodb > MongoRepository", () => {
         expect(await postRepository.findByIds([ undefined ])).to.have.length(0);
     })));
 
+    // todo: cover other methods as well
+    it("should be able to save and update mongo entities", () => Promise.all(connections.map(async connection => {
+        const postRepository = connection.getMongoRepository(Post);
+
+        // save few posts
+        const firstPost = new Post();
+        firstPost.title = "Post #1";
+        firstPost.text = "Everything about post #1";
+        await postRepository.save(firstPost);
+
+        const secondPost = new Post();
+        secondPost.title = "Post #2";
+        secondPost.text = "Everything about post #2";
+        await postRepository.save(secondPost);
+
+        // save few posts
+        firstPost.text = "Everything and more about post #1";
+        await postRepository.save(firstPost);
+
+        const loadedPosts = await postRepository.find();
+
+        loadedPosts.length.should.be.equal(2);
+        loadedPosts[0].text.should.be.equal("Everything and more about post #1");
+        loadedPosts[1].text.should.be.equal("Everything about post #2");
+
+    })));
+
+    it("should ignore non-column properties", () => Promise.all(connections.map(async connection => {
+        // Github issue #5321
+        const postRepository = connection.getMongoRepository(Post);
+
+        await postRepository.save({
+            title: "Hello",
+            text: "World",
+            unreal: "Not a Column"
+        });
+
+        const loadedPosts = await postRepository.find();
+
+        expect(loadedPosts).to.have.length(1);
+        expect(loadedPosts[0]).to.not.have.property("unreal");
+    })));
 });

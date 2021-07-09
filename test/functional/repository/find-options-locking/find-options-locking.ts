@@ -73,7 +73,7 @@ describe("repository > find options > locking", () => {
 
         await connection.manager.transaction(entityManager => {
             const originalQuery = entityManager.queryRunner!.query.bind(entityManager.queryRunner);
-            entityManager.queryRunner!.query = (...args) => {
+            entityManager.queryRunner!.query = (...args: any[]) => {
                 executedSql.push(args[0]);
                 return originalQuery(...args);
             };
@@ -106,7 +106,7 @@ describe("repository > find options > locking", () => {
 
         await connection.manager.transaction(entityManager => {
             const originalQuery = entityManager.queryRunner!.query.bind(entityManager.queryRunner);
-            entityManager.queryRunner!.query = (...args) => {
+            entityManager.queryRunner!.query = (...args: any[]) => {
                 executedSql.push(args[0]);
                 return originalQuery(...args);
             };
@@ -132,7 +132,7 @@ describe("repository > find options > locking", () => {
 
         await connection.manager.transaction(entityManager => {
             const originalQuery = entityManager.queryRunner!.query.bind(entityManager.queryRunner);
-            entityManager.queryRunner!.query = (...args) => {
+            entityManager.queryRunner!.query = (...args: any[]) => {
                 executedSql.push(args[0]);
                 return originalQuery(...args);
             };

@@ -632,7 +632,7 @@ export class EntityMetadataBuilder {
         entityMetadata.treeParentRelation = entityMetadata.relations.find(relation => relation.isTreeParent);
         entityMetadata.treeChildrenRelation = entityMetadata.relations.find(relation => relation.isTreeChildren);
         entityMetadata.columns = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), entityMetadata.ownColumns);
-        entityMetadata.listeners = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.listenersFromTree), entityMetadata.ownListeners);
+        entityMetadata.listeners = entityMetadata.embeddeds.reduce((listeners, embedded) => listeners.concat(embedded.listenersFromTree), entityMetadata.ownListeners);
         entityMetadata.afterLoadListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.AFTER_LOAD);
         entityMetadata.afterInsertListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.AFTER_INSERT);
         entityMetadata.afterUpdateListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE);
@@ -640,8 +640,8 @@ export class EntityMetadataBuilder {
         entityMetadata.beforeInsertListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT);
         entityMetadata.beforeUpdateListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE);
         entityMetadata.beforeRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE);
-        entityMetadata.indices = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
-        entityMetadata.uniques = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.uniquesFromTree), entityMetadata.ownUniques);
+        entityMetadata.indices = entityMetadata.embeddeds.reduce((indices, embedded) => indices.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
+        entityMetadata.uniques = entityMetadata.embeddeds.reduce((uniques, embedded) => uniques.concat(embedded.uniquesFromTree), entityMetadata.ownUniques);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
         entityMetadata.nonVirtualColumns = entityMetadata.columns.filter(column => !column.isVirtual);
         entityMetadata.ancestorColumns = entityMetadata.columns.filter(column => column.closureType === "ancestor");

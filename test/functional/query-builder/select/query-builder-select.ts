@@ -430,7 +430,7 @@ describe("query builder > select", () => {
                 'SELECT post.id AS post_id FROM external_post post WHERE ' +
                 '((post.outlet = ? AND post.id = ?) OR ' +
                 '(post.outlet = ? AND post.id = ?) OR ' +
-                '(post.id = ?))'
+                'post.id = ?)'
             )
             expect(params).to.eql([ "foo", 1, "bar", 2, 5 ])
         })))

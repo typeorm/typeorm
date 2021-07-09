@@ -80,11 +80,6 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
         readonly priorityRange?: number;
 
         /**
-         * Should the pool start creating resources etc once the constructor is called, (default true)
-         */
-        readonly autostart?: number;
-
-        /**
          * How often to run eviction checks. Default: 0 (does not run).
          */
         readonly evictionRunIntervalMillis?: number;

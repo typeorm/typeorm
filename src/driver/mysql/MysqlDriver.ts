@@ -435,10 +435,16 @@ export class MysqlDriver implements Driver {
 
     /**
      * Build full table name with database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
-        return database ? `${database}.${tableName}` : tableName;
+        let tablePath = [ tableName ];
+
+        if (database) {
+            tablePath.unshift(database);
+        }
+
+        return tablePath.join('.');
     }
 
     /**
@@ -591,29 +597,38 @@ export class MysqlDriver implements Driver {
 
         if (defaultValue === null) {
             return undefined
+        }
 
-        } else if (
+        if (
             (columnMetadata.type === "enum"
             || columnMetadata.type === "simple-enum"
             || typeof defaultValue === "string")
             && defaultValue !== undefined) {
             return `'${defaultValue}'`;
+        }
 
-        } else if ((columnMetadata.type === "set") && defaultValue !== undefined) {
+        if ((columnMetadata.type === "set") && defaultValue !== undefined) {
             return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
+        }
 
-        } else if (typeof defaultValue === "number") {
+        if (typeof defaultValue === "number") {
             return `'${defaultValue.toFixed(columnMetadata.scale)}'`;
+        }
 
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "1" : "0";
+        }
 
-        } else if (typeof defaultValue === "function") {
+        if (typeof defaultValue === "function") {
             const value = defaultValue();
             return this.normalizeDatetimeFunction(value)
-        } else {
-            return defaultValue;
         }
+
+        if (defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**
@@ -744,14 +759,9 @@ export class MysqlDriver implements Driver {
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            let columnMetadataLength = columnMetadata.length;
-            if (!columnMetadataLength && columnMetadata.generationStrategy === "uuid") { // fixing #3374
-                columnMetadataLength = this.getColumnLength(columnMetadata);
-            }
-
             const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadataLength
+                || tableColumn.length !== this.getColumnLength(columnMetadata)
                 || tableColumn.width !== columnMetadata.width
                 || (columnMetadata.precision !== undefined && tableColumn.precision !== columnMetadata.precision)
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)

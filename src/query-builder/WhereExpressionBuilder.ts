@@ -4,7 +4,7 @@ import {Brackets} from "./Brackets";
 /**
  * Query Builders can implement this interface to support where expression
  */
-export interface WhereExpression {
+export interface WhereExpressionBuilder {
 
     /**
      * Sets WHERE condition in the query builder.
