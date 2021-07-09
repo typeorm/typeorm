@@ -3,20 +3,21 @@ import { createTestingConnections, closeTestingConnections, reloadTestingDatabas
 import { Connection } from "../../../src/connection/Connection";
 import { expect } from "chai";
 import { Post } from "./entity/Post";
+import { Example } from "./entity/Example";
 import { Between } from "../../../src";
 
 describe("github issues > #2286 find operators like MoreThan and LessThan doesn't work properly for date fields", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
+        entities: [ Post, Example ],
         schemaCreate: true,
         dropSchema: true,
         /* Test not eligible for better-sql where binding Dates is impossible */
         enabledDrivers: ["sqlite"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
-    
+
     after(() => closeTestingConnections(connections));
 
     it("should find a record by its datetime value with find options", () => Promise.all(connections.map(async connection => {
@@ -51,5 +52,29 @@ describe("github issues > #2286 find operators like MoreThan and LessThan doesn'
             .where("post.dateTimeColumn = :now", { now })
             .getOne();
         expect(postByDateEquals).to.not.be.undefined;
+    })));
+
+    it("should save, update, and load with a date PK", () => Promise.all(connections.map(async connection => {
+        const start = new Date("2000-01-01");
+        const middle = new Date("2000-06-30");
+        const end = new Date("2001-01-01");
+
+        await connection.manager.save(Example, { id: start, text: "start" });
+        await connection.manager.save(Example, { id: middle, text: "middle" });
+        await connection.manager.save(Example, { id: end, text: "end" });
+
+        const repo = connection.manager.getRepository(Example);
+
+        let example = await repo.findOneOrFail({ id: middle });
+
+        expect(example.text).to.be.equal("middle");
+
+        example.text = "in between";
+
+        await repo.save(example);
+
+        example = await repo.findOneOrFail({ id: middle });
+
+        expect(example.text).to.be.equal("in between");
     })));
 });
