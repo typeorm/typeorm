@@ -4,7 +4,7 @@ import { Connection } from "../../../src";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { TestEntity } from "./entity/test.entity";
 
-describe("github issues > #7809 MongoDB delete make changes only to first matched document", () => {
+describe("github issues > #7849 Handle query builder to accomodate zero limit and zero offset", () => {
 
     let connections: Connection[];
     before(async () => {
