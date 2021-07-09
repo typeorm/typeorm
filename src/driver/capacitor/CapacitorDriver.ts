@@ -74,8 +74,8 @@ export class CapacitorDriver extends AbstractSqliteDriver {
      * Creates connection with the database.
      */
     protected async createDatabaseConnection() {
-        const isDatabaseEncryted = this.options.encrypted || false;
         const databaseMode = this.options.mode || "no-encryption";
+        const isDatabaseEncryted = databaseMode !== "no-encryption";
         const databaseVersion =
             typeof this.options.version === "undefined"
                 ? 1
@@ -92,15 +92,10 @@ export class CapacitorDriver extends AbstractSqliteDriver {
         // working properly. this also makes onDelete to work with sqlite.
         await connection.query(`PRAGMA foreign_keys = ON`);
 
-        if (
-            this.options.journalMode &&
-            ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"].indexOf(
-                this.options.journalMode
-            ) !== -1
-        ) {
-            await connection.query(
-                `PRAGMA journal_mode = ${this.options.journalMode}`
-            );
+        if (this.options.journalMode) {
+            await connection.query(`PRAGMA journal_mode = ?`, [
+                this.options.journalMode,
+            ]);
         }
 
         return connection;

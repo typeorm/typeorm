@@ -20,11 +20,6 @@ export interface CapacitorConnectionOptions extends BaseConnectionOptions {
     readonly database: string;
 
     /**
-     * Set to true for database encryption
-     */
-    readonly encrypted?: boolean;
-
-    /**
      * Set the mode for database encryption
      */
     readonly mode?: "no-encryption" | "encryption" | "secret" | "newsecret";
