@@ -69,7 +69,7 @@ export class EntityMetadata {
     inheritanceTree: Function[] = [];
 
     /**
-     * Table type. Tables can be abstract, closure, junction, embedded, etc.
+     * Table type. Tables can be closure, junction, etc.
      */
     tableType: TableType = "regular";
 
