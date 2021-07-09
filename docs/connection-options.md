@@ -271,8 +271,6 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
  
 * `pool.priorityRange` - int between 1 and x - if set, borrowers can specify their relative priority in the queue if no
  resources are available. see example. (default `1`).
- 
-* `pool.autostart` - boolean, should the pool start creating resources etc once the constructor is called, (default `true`).
 
 * `pool.evictionRunIntervalMillis` - How often to run eviction checks. Default: `0` (does not run).
 
