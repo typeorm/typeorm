@@ -91,12 +91,16 @@ export class QueryExpressionMap {
     /**
      * Optional on ignore statement used in insertion query in databases.
      */
-    onIgnore: string|boolean = false;
+    onIgnore: boolean = false;
 
     /**
      * Optional on update statement used in insertion query in databases.
      */
-    onUpdate: { columns?: string, conflict?: string, overwrite?: string };
+    onUpdate: {
+        conflict?: string | string[],
+        columns?: string[],
+        overwrite?: string[],
+    };
 
     /**
      * JOIN queries.

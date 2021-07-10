@@ -262,6 +262,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     /**
      * Adds additional ON CONFLICT statement supported in postgres and cockroach.
+     *
+     * @deprecated Use `orIgnore` or `orUpdate`
      */
     onConflict(statement: string): this {
         this.expressionMap.onConflict = statement;
@@ -272,31 +274,36 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Adds additional ignore statement supported in databases.
      */
     orIgnore(statement: string | boolean = true): this {
-        this.expressionMap.onIgnore = statement;
+        this.expressionMap.onIgnore = !!statement;
         return this;
     }
 
     /**
+     * @deprecated
+     */
+    orUpdate(statement?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] }): this;
+
+    orUpdate(overwrite: string[], conflictTarget?: string | string[]): this;
+
+    /**
      * Adds additional update statement supported in databases.
      */
-    orUpdate(statement?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] }): this {
-      this.expressionMap.onUpdate = {};
-      if (statement && Array.isArray(statement.conflict_target))
-          this.expressionMap.onUpdate.conflict = ` ( ${statement.conflict_target.map((columnName) => this.escape(columnName)).join(", ")} ) `;
-      if (statement && typeof statement.conflict_target === "string")
-          this.expressionMap.onUpdate.conflict = ` ON CONSTRAINT ${this.escape(statement.conflict_target)} `;
-      if (statement && Array.isArray(statement.columns))
-          this.expressionMap.onUpdate.columns = statement.columns.map(column => `${this.escape(column)} = :${column}`).join(", ");
-      if (statement && Array.isArray(statement.overwrite)) {
-        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
-          this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = VALUES(${column})`).join(", ");
-        } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
-          this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${this.escape(column)} = EXCLUDED.${this.escape(column)}`).join(", ");
+    orUpdate(statementOrOverwrite?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] } | string[], conflictTarget?: string | string[]): this {
+        if (!Array.isArray(statementOrOverwrite)) {
+            this.expressionMap.onUpdate = {
+                conflict: statementOrOverwrite?.conflict_target,
+                columns: statementOrOverwrite?.columns,
+                overwrite: statementOrOverwrite?.overwrite,
+            };
+            return this;
         }
-      }
-      return this;
-  }
 
+        this.expressionMap.onUpdate = {
+            overwrite: statementOrOverwrite,
+            conflict: conflictTarget,
+        };
+        return this;
+    }
 
     // -------------------------------------------------------------------------
     // Protected Methods
@@ -346,18 +353,46 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             }
         }
         if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
-          query += `${this.expressionMap.onIgnore ? " ON CONFLICT DO NOTHING " : ""}`;
-          query += `${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
-          if (this.expressionMap.onUpdate) {
-            const { overwrite, columns, conflict } = this.expressionMap.onUpdate;
-            query += `${columns ? " ON CONFLICT " + conflict + " DO UPDATE SET " + columns : ""}`;
-            query += `${overwrite ? " ON CONFLICT " + conflict + " DO UPDATE SET " + overwrite : ""}`;
-          }
-        } else if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
+            if (this.expressionMap.onIgnore) {
+                query += " ON CONFLICT DO NOTHING ";
+            } else if (this.expressionMap.onConflict) {
+                query += ` ON CONFLICT ${this.expressionMap.onConflict} `;
+            } else if (this.expressionMap.onUpdate) {
+                const { overwrite, columns, conflict } = this.expressionMap.onUpdate;
+
+                let conflictTarget = "ON CONFLICT";
+
+                if (Array.isArray(conflict)) {
+                    conflictTarget += ` ( ${conflict.map((column) => this.escape(column)).join(", ")} )`;
+                } else if (conflict) {
+                    conflictTarget += ` ON CONSTRAINT ${this.escape(conflict)}`;
+                }
+
+                if (Array.isArray(overwrite)) {
+                    query += ` ${conflictTarget} DO UPDATE SET `;
+                    query += overwrite?.map(column => `${this.escape(column)} = EXCLUDED.${this.escape(column)}`).join(", ");
+                    query += " ";
+                } else if (columns) {
+                    query += ` ${conflictTarget} DO UPDATE SET `;
+                    query += columns.map(column => `${this.escape(column)} = :${column}`).join(", ");
+                    query += " ";
+                }
+            }
+        }
+
+        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
             if (this.expressionMap.onUpdate) {
-              const { overwrite, columns } = this.expressionMap.onUpdate;
-              query += `${columns ? " ON DUPLICATE KEY UPDATE " + columns : ""}`;
-              query += `${overwrite ? " ON DUPLICATE KEY UPDATE " + overwrite : ""}`;
+                const { overwrite, columns } = this.expressionMap.onUpdate;
+
+                if (Array.isArray(overwrite)) {
+                    query += " ON DUPLICATE KEY UPDATE ";
+                    query += overwrite.map(column => `${this.escape(column)} = VALUES(${this.escape(column)})`).join(", ");
+                    query += " ";
+                } else if (Array.isArray(columns)) {
+                    query += " ON DUPLICATE KEY UPDATE ";
+                    query += columns.map(column => `${this.escape(column)} = :${column}`).join(", ");
+                    query += " ";
+                }
             }
         }
 
