@@ -674,11 +674,12 @@ export class EntityManager {
     async find<Entity>(entityClass: EntityTarget<Entity>, optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder<Entity>(entityClass as any, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
+        FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
 
         if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
             FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
 
-        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
+        return qb.getMany();
     }
 
     /**
@@ -703,11 +704,12 @@ export class EntityManager {
     async findAndCount<Entity>(entityClass: EntityTarget<Entity>, optionsOrConditions?: FindConditions<Entity>|FindManyOptions<Entity>): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder<Entity>(entityClass as any, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
+        FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
 
         if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
             FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
 
-        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
+        return qb.getManyAndCount();
     }
 
     /**
@@ -782,9 +784,6 @@ export class EntityManager {
         }
         const qb = this.createQueryBuilder<Entity>(entityClass as any, alias);
 
-        if (!findOptions || findOptions.loadEagerRelations !== false)
-            FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
-
         const passedId = typeof idOrOptionsOrConditions === "string" || typeof idOrOptionsOrConditions === "number" || (idOrOptionsOrConditions as any) instanceof Date;
 
         if (!passedId) {
@@ -795,6 +794,10 @@ export class EntityManager {
         }
 
         FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
+
+        if (!findOptions || findOptions.loadEagerRelations !== false) {
+            FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
+        }
 
         if (options) {
             qb.where(options);
