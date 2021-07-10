@@ -18,8 +18,13 @@ export function camelCase(str: string, firstCapital: boolean = false): string {
  *
  * @see https://regex101.com/r/QeSm2I/1
  */
-export function snakeCase(str: string) {
-    return str.replace(/(?:([a-z])([A-Z]))|(?:((?!^)[A-Z])([a-z]))/g, "$1_$3$2$4").toLowerCase();
+export function snakeCase(str: string): string{
+    return str
+        // ABc -> ab_c
+        .replace(/([A-Z])([A-Z])([a-z])/g, "$1_$2$3")
+        // aC -> a_c
+        .replace(/([a-z])([A-Z])/g, "$1_$2")
+        .toLowerCase();
 }
 
 /**
