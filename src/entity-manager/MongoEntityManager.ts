@@ -225,17 +225,26 @@ export class MongoEntityManager extends EntityManager {
      * Does not check if entity exist in the database.
      */
     async update<Entity>(target: EntityTarget<Entity>, criteria: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindConditions<Entity>, partialEntity: QueryDeepPartialEntity<Entity>): Promise<UpdateResult> {
+        const result = new UpdateResult();
+
         if (Array.isArray(criteria)) {
-            await Promise.all((criteria as any[]).map(criteriaItem => {
+            const updateResults = await Promise.all((criteria as any[]).map(criteriaItem => {
                 return this.update(target, criteriaItem, partialEntity);
             }));
 
+            result.raw = updateResults.map(r => r.raw);
+            result.affected = updateResults.map(r => (r.affected || 0)).reduce(( c, r) => c + r, 0);
+            result.generatedMaps = updateResults.reduce((c, r) => c.concat(r.generatedMaps), [] as ObjectLiteral[]);
+
         } else {
             const metadata = this.connection.getMetadata(target);
-            await this.updateMany(target, this.convertMixedCriteria(metadata, criteria), { $set: partialEntity });
+            const mongoResult = await this.updateMany(target, this.convertMixedCriteria(metadata, criteria), { $set: partialEntity });
+
+            result.raw = mongoResult;
+            result.affected = mongoResult.modifiedCount;
         }
 
-        return new UpdateResult();
+        return result;
     }
 
     /**
@@ -245,16 +254,24 @@ export class MongoEntityManager extends EntityManager {
      * Does not check if entity exist in the database.
      */
     async delete<Entity>(target: EntityTarget<Entity>, criteria: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindConditions<Entity>): Promise<DeleteResult> {
+        const result = new DeleteResult();
+
         if (Array.isArray(criteria)) {
-            await Promise.all((criteria as any[]).map(criteriaItem => {
+            const deleteResults = await Promise.all((criteria as any[]).map(criteriaItem => {
                 return this.delete(target, criteriaItem);
             }));
 
+            result.raw = deleteResults.map(r => r.raw);
+            result.affected = deleteResults.map(r => (r.affected || 0)).reduce((c, r) => c + r, 0);
+
         } else {
-            await this.deleteMany(target, this.convertMixedCriteria(this.connection.getMetadata(target), criteria));
+            const mongoResult = await this.deleteMany(target, this.convertMixedCriteria(this.connection.getMetadata(target), criteria));
+
+            result.raw = mongoResult;
+            result.affected = mongoResult.deletedCount;
         }
 
-        return new DeleteResult();
+        return result;
     }
 
     // -------------------------------------------------------------------------
