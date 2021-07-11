@@ -805,8 +805,21 @@ export class SqlServerDriver implements Driver {
         }, options.extra || {});
 
         // set default useUTC option if it hasn't been set
-        if (!connectionOptions.options) connectionOptions.options = { useUTC: false };
-        else if (!connectionOptions.options.useUTC) connectionOptions.options.useUTC = false;
+        if (!connectionOptions.options) {
+            connectionOptions.options = { useUTC: false };
+        } else if (!connectionOptions.options.useUTC) {
+            Object.assign(
+                connectionOptions.options,
+                { useUTC: false }
+            )
+        }
+
+        // Match the next release of tedious for configuration options
+        // Also prevents warning messages.
+        Object.assign(
+            connectionOptions.options,
+            { enableArithAbort: true }
+        )
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
