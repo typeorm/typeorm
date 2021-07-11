@@ -26,7 +26,7 @@ import {SqlServerDriver} from "./SqlServerDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { TypeORMError } from "../../error";
-import { PassThrough } from "stream";
+import { QueryLock } from "../../query-runner/QueryLock";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -43,17 +43,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     driver: SqlServerDriver;
 
     // -------------------------------------------------------------------------
-    // Protected Properties
+    // Private Properties
     // -------------------------------------------------------------------------
 
-    /**
-     * Last executed query in a transaction.
-     * This is needed because in transaction mode mssql cannot execute parallel queries,
-     * that's why we store last executed query promise to wait it when we execute next query.
-     *
-     * @see https://github.com/patriksimek/node-mssql/issues/491
-     */
-    protected queryResponsibilityChain: Promise<any>[] = [];
+    private lock: QueryLock = new QueryLock();
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -201,96 +194,78 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        let waitingOkay: Function;
-        const waitingPromise = new Promise((ok) => waitingOkay = ok);
-        if (this.queryResponsibilityChain.length) {
-            const otherWaitingPromises = [...this.queryResponsibilityChain];
-            this.queryResponsibilityChain.push(waitingPromise);
-            await Promise.all(otherWaitingPromises);
-        }
+        const release = await this.lock.acquire();
 
-        const promise = new Promise(async (ok, fail) => {
-            try {
-                this.driver.connection.logger.logQuery(query, parameters, this);
-                const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
-                const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
-                if (parameters && parameters.length) {
-                    parameters.forEach((parameter, index) => {
-                        const parameterName = index.toString();
-                        if (parameter instanceof MssqlParameter) {
-                            const mssqlParameter = this.mssqlParameterToNativeParameter(parameter);
-                            if (mssqlParameter) {
-                                request.input(parameterName, mssqlParameter, parameter.value);
-                            } else {
-                                request.input(parameterName, parameter.value);
-                            }
+        try {
+            this.driver.connection.logger.logQuery(query, parameters, this);
+            const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
+            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
+            if (parameters && parameters.length) {
+                parameters.forEach((parameter, index) => {
+                    const parameterName = index.toString();
+                    if (parameter instanceof MssqlParameter) {
+                        const mssqlParameter = this.mssqlParameterToNativeParameter(parameter);
+                        if (mssqlParameter) {
+                            request.input(parameterName, mssqlParameter, parameter.value);
                         } else {
-                            request.input(parameterName, parameter);
+                            request.input(parameterName, parameter.value);
                         }
-                    });
-                }
-                const queryStartTime = +new Date();
-                request.query(query, (err: any, raw: any) => {
+                    } else {
+                        request.input(parameterName, parameter);
+                    }
+                });
+            }
+            const queryStartTime = +new Date();
 
+            const raw = await new Promise<any>((ok, fail) => {
+                request.query(query, (err: any, raw: any) => {
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
                     const queryEndTime = +new Date();
                     const queryExecutionTime = queryEndTime - queryStartTime;
-                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
                         this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                    }
 
-                    const resolveChain = () => {
-                        if (promiseIndex !== -1)
-                            this.queryResponsibilityChain.splice(promiseIndex, 1);
-                        if (waitingPromiseIndex !== -1)
-                            this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
-                        waitingOkay();
-                    };
-
-                    let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
-                    let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                     if (err) {
-                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                        resolveChain();
-                        return fail(new QueryFailedError(query, parameters, err));
+                        fail(new QueryFailedError(query, parameters, err))
                     }
 
-                    const result = new QueryResult();
-
-                    if (raw?.hasOwnProperty('recordset')) {
-                        result.records = raw.recordset;
-                    }
-
-                    if (raw?.hasOwnProperty('rowsAffected')) {
-                        result.affected = raw.rowsAffected[0];
-                    }
-
-                    const queryType = query.slice(0, query.indexOf(" "));
-                    switch (queryType) {
-                        case "DELETE":
-                            // for DELETE query additionally return number of affected rows
-                            result.raw = [raw.recordset, raw.rowsAffected[0]];
-                            break;
-                        default:
-                            result.raw = raw.recordset;
-                    }
-
-                    if (useStructuredResult) {
-                        ok(result);
-                    } else {
-                        ok(result.raw);
-                    }
-                    resolveChain();
+                    ok(raw);
                 });
+            });
 
-            } catch (err) {
-                fail(err);
+            const result = new QueryResult();
+
+            if (raw?.hasOwnProperty('recordset')) {
+                result.records = raw.recordset;
             }
-        });
-        // with this condition, Promise.all causes unexpected behavior.
-        // if (this.isTransactionActive)
-        this.queryResponsibilityChain.push(promise);
-        return promise;
+
+            if (raw?.hasOwnProperty('rowsAffected')) {
+                result.affected = raw.rowsAffected[0];
+            }
+
+            const queryType = query.slice(0, query.indexOf(" "));
+            switch (queryType) {
+                case "DELETE":
+                    // for DELETE query additionally return number of affected rows
+                    result.raw = [raw.recordset, raw.rowsAffected[0]];
+                    break;
+                default:
+                    result.raw = raw.recordset;
+            }
+
+            if (useStructuredResult) {
+                return result;
+            } else {
+                return result.raw;
+            }
+        } catch (err) {
+            this.driver.connection.logger.logQueryError(err, query, parameters, this);
+            throw err;
+        } finally {
+            release();
+        }
     }
 
     /**
@@ -300,72 +275,47 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        let promise: Promise<ReadStream>;
+        const release = await this.lock.acquire();
 
-        let waitingOkay: Function;
-        const waitingPromise = new Promise((ok) => waitingOkay = ok);
-        if (this.queryResponsibilityChain.length) {
-            const otherWaitingPromises = [...this.queryResponsibilityChain];
-            this.queryResponsibilityChain.push(waitingPromise);
-            await Promise.all(otherWaitingPromises);
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
+        const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
+        request.stream = true;
+        if (parameters && parameters.length) {
+            parameters.forEach((parameter, index) => {
+                const parameterName = index.toString();
+                if (parameter instanceof MssqlParameter) {
+                    request.input(parameterName, this.mssqlParameterToNativeParameter(parameter), parameter.value);
+                } else {
+                    request.input(parameterName, parameter);
+                }
+            });
         }
 
-        const resolveChain = () => {
-            let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
-            let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
+        request.query(query);
 
-            if (promiseIndex !== -1)
-                this.queryResponsibilityChain.splice(promiseIndex, 1);
-            if (waitingPromiseIndex !== -1)
-                this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
-            waitingOkay();
-        };
+        // Any event should release the lock.
+        request.once("row", release);
+        request.once("rowsaffected", release);
+        request.once("done", release);
+        request.once("error", release);
 
-        promise = new Promise<ReadStream>(async (ok, fail) => {
-
-            this.driver.connection.logger.logQuery(query, parameters, this);
-            const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
-            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
-            request.stream = true;
-            if (parameters && parameters.length) {
-                parameters.forEach((parameter, index) => {
-                    const parameterName = index.toString();
-                    if (parameter instanceof MssqlParameter) {
-                        request.input(parameterName, this.mssqlParameterToNativeParameter(parameter), parameter.value);
-                    } else {
-                        request.input(parameterName, parameter);
-                    }
-                });
-            }
-
-            request.query(query);
-
-            // Any event should release the lock.
-            request.once("row", resolveChain);
-            request.once("rowsaffected", resolveChain);
-            request.once("done", resolveChain);
-            request.once("error", resolveChain);
-
-            request.on("error", (err: any) => {
-                this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                fail(err);
-            })
-
-            if (onEnd) {
-                request.on("done", onEnd);
-            }
-
-            if (onError) {
-                request.on("error", onError);
-            }
-
-            // This can be done with request.getReadStream() in node-mssql 7.0.0
-            ok(request.pipe(new PassThrough({ objectMode: true })));
+        request.on("error", (err: any) => {
+            this.driver.connection.logger.logQueryError(err, query, parameters, this);
         });
-        if (this.isTransactionActive)
-            this.queryResponsibilityChain.push(promise);
 
-        return promise;
+        if (onEnd) {
+            request.on("done", onEnd);
+        }
+
+        if (onError) {
+            request.on("error", onError);
+        }
+
+        // This can be done with request.getReadStream() in node-mssql 7.0.0
+        // Also, use `require` here to prevent importing it unless we actually need it.
+        const { PassThrough } = require("stream");
+        return request.pipe(new PassThrough({ objectMode: true }));
     }
 
     /**

@@ -24,6 +24,7 @@ import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { QueryFailedError, TypeORMError } from "../../error";
 import { QueryResult } from "../../query-runner/QueryResult";
+import { QueryLock } from "../../query-runner/QueryLock";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -44,16 +45,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Last executed query in a transaction.
-     * This is needed because we cannot rely on parallel queries because we use second query
-     * to select CURRENT_IDENTITY_VALUE()
-     */
-    protected queryResponsibilityChain: Promise<any>[] = [];
-
-    /**
      * Promise used to obtain a database connection from a pool for a first time.
      */
     protected databaseConnectionPromise: Promise<any>;
+
+    private lock: QueryLock = new QueryLock();
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -175,118 +171,81 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        let waitingOkay: Function;
-        const waitingPromise = new Promise((ok) => waitingOkay = ok);
-        if (this.queryResponsibilityChain.length) {
-            const otherWaitingPromises = [...this.queryResponsibilityChain];
-            this.queryResponsibilityChain.push(waitingPromise);
-            await Promise.all(otherWaitingPromises);
-        }
+        const release = await this.lock.acquire();
 
-        const promise = new Promise(async (ok, fail) => {
-            const resolveChain = () => {
-                let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
-                let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
+        let statement: any;
+        const result = new QueryResult();
 
-                if (promiseIndex !== -1)
-                    this.queryResponsibilityChain.splice(promiseIndex, 1);
-                if (waitingPromiseIndex !== -1)
-                    this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
+        try {
+            const databaseConnection = await this.connect();
+            // we disable autocommit because ROLLBACK does not work in autocommit mode
+            databaseConnection.setAutoCommit(!this.isTransactionActive);
+            this.driver.connection.logger.logQuery(query, parameters, this);
+            const queryStartTime = +new Date();
+            const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
 
-                waitingOkay();
-            };
+            statement = databaseConnection.prepare(query);
 
-            let statement: any;
-
-            const dropStatement = async () => {
-                return new Promise<void>((ok, fail) => {
-                    if (!statement?.drop) {
-                        ok();
-                    }
-
-                    statement.drop(() => ok());
-                });
-            };
-
-            try {
-                const databaseConnection = await this.connect();
-                // we disable autocommit because ROLLBACK does not work in autocommit mode
-                databaseConnection.setAutoCommit(!this.isTransactionActive);
-                this.driver.connection.logger.logQuery(query, parameters, this);
-                const queryStartTime = +new Date();
-                const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
-
-                statement = databaseConnection.prepare(query);
+            const raw = await new Promise<any>((ok, fail) => {
                 statement.exec(parameters, async (err: any, raw: any) => {
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
                     const queryEndTime = +new Date();
                     const queryExecutionTime = queryEndTime - queryStartTime;
-                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
                         this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                    }
 
                     if (err) {
-                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                        await dropStatement();
-                        resolveChain();
                         fail(new QueryFailedError(query, parameters, err));
-                        return;
                     }
 
-                    const result = new QueryResult();
-
-                    if (typeof raw === "number") {
-                        result.affected = raw;
-                    } else if (Array.isArray(raw)) {
-                        result.records = raw;
-                    }
-
-                    result.raw = raw;
-
-                    if (isInsertQuery) {
-                        const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`;
-                        this.driver.connection.logger.logQuery(lastIdQuery, [], this);
-                        databaseConnection.exec(lastIdQuery, async (err: any, identityValueResult: { "CURRENT_IDENTITY_VALUE()": number }[]) => {
-                            if (err) {
-                                this.driver.connection.logger.logQueryError(err, lastIdQuery, [], this);
-                                await dropStatement();
-                                resolveChain();
-                                fail(new QueryFailedError(lastIdQuery, [], err));
-                                return;
-                            }
-
-                            result.raw = identityValueResult[0]["CURRENT_IDENTITY_VALUE()"];
-                            result.records = identityValueResult;
-
-                            await dropStatement();
-                            if (useStructuredResult) {
-                                ok(result);
-                            } else {
-                                ok(result.raw);
-                            }
-                            resolveChain();
-                        });
-                    } else {
-                        await dropStatement();
-                        if (useStructuredResult) {
-                            ok(result);
-                        } else {
-                            ok(result.raw);
-                        }
-                        resolveChain();
-                    }
+                    ok(raw);
                 });
-            } catch (err) {
-                await dropStatement();
-                resolveChain();
-                fail(err);
-            }
-        });
+            });
 
-        // with this condition, Promise.all causes unexpected behavior.
-        // if (this.isTransactionActive)
-        this.queryResponsibilityChain.push(promise);
-        return promise;
+            if (typeof raw === "number") {
+                result.affected = raw;
+            } else if (Array.isArray(raw)) {
+                result.records = raw;
+            }
+
+            result.raw = raw;
+
+            if (isInsertQuery) {
+                const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`;
+                this.driver.connection.logger.logQuery(lastIdQuery, [], this);
+                const identityValueResult = await new Promise<any>((ok, fail) => {
+                    databaseConnection.exec(parameters, async (err: any, raw: any) => {
+                        if (err) {
+                            fail(new QueryFailedError(lastIdQuery, [], err));
+                        }
+
+                        ok(raw);
+                    });
+                });
+
+                result.raw = identityValueResult[0]["CURRENT_IDENTITY_VALUE()"];
+                result.records = identityValueResult;
+            }
+        } catch (e) {
+            this.driver.connection.logger.logQueryError(e, query, parameters, this);
+            throw e;
+        } finally {
+            // Never forget to drop the statement we reserved
+            if (statement?.drop) {
+                await new Promise<void>((ok) => statement.drop(() => ok()));
+            }
+
+            // Always release the lock.
+            release();
+        }
+
+        if (useStructuredResult) {
+            return result;
+        } else {
+            return result.raw;
+        }
     }
 
     /**
