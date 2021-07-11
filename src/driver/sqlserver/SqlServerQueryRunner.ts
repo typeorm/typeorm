@@ -26,6 +26,7 @@ import {SqlServerDriver} from "./SqlServerDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { TypeORMError } from "../../error";
+import { PassThrough } from "stream";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -299,6 +300,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
+        let promise: Promise<ReadStream>;
+
         let waitingOkay: Function;
         const waitingPromise = new Promise((ok) => waitingOkay = ok);
         if (this.queryResponsibilityChain.length) {
@@ -307,7 +310,18 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             await Promise.all(otherWaitingPromises);
         }
 
-        const promise = new Promise<ReadStream>(async (ok, fail) => {
+        const resolveChain = () => {
+            let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
+            let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
+
+            if (promiseIndex !== -1)
+                this.queryResponsibilityChain.splice(promiseIndex, 1);
+            if (waitingPromiseIndex !== -1)
+                this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
+            waitingOkay();
+        };
+
+        promise = new Promise<ReadStream>(async (ok, fail) => {
 
             this.driver.connection.logger.logQuery(query, parameters, this);
             const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
@@ -323,30 +337,30 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     }
                 });
             }
-            request.query(query, (err: any, result: any) => {
 
-                const resolveChain = () => {
-                    if (promiseIndex !== -1)
-                        this.queryResponsibilityChain.splice(promiseIndex, 1);
-                    if (waitingPromiseIndex !== -1)
-                        this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
-                    waitingOkay();
-                };
+            request.query(query);
 
-                let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
-                let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
-                if (err) {
-                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                    resolveChain();
-                    return fail(err);
-                }
+            // Any event should release the lock.
+            request.once("row", resolveChain);
+            request.once("rowsaffected", resolveChain);
+            request.once("done", resolveChain);
+            request.once("error", resolveChain);
 
-                ok(result.recordset);
-                resolveChain();
-            });
-            if (onEnd) request.on("done", onEnd);
-            if (onError) request.on("error", onError);
-            ok(request as ReadStream);
+            request.on("error", (err: any) => {
+                this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                fail(err);
+            })
+
+            if (onEnd) {
+                request.on("done", onEnd);
+            }
+
+            if (onError) {
+                request.on("error", onError);
+            }
+
+            // This can be done with request.getReadStream() in node-mssql 7.0.0
+            ok(request.pipe(new PassThrough({ objectMode: true })));
         });
         if (this.isTransactionActive)
             this.queryResponsibilityChain.push(promise);
