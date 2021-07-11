@@ -1336,14 +1336,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         joinAttribute.mapToProperty = mapToProperty;
         joinAttribute.isMappingMany = isMappingMany;
         joinAttribute.entityOrProperty = entityOrProperty; // relationName
-        joinAttribute.condition = condition; // joinInverseSideCondition
+        joinAttribute.condition = condition ? condition : undefined; // joinInverseSideCondition
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
         this.expressionMap.joinAttributes.push(joinAttribute);
 
         if (joinAttribute.metadata) {
            if (joinAttribute.metadata.deleteDateColumn && !this.expressionMap.withDeleted) {
                 const conditionDeleteColumn = `${aliasName}.${joinAttribute.metadata.deleteDateColumn.propertyName} IS NULL`;
-                joinAttribute.condition += joinAttribute.condition ? ` AND ${conditionDeleteColumn}`: `${conditionDeleteColumn}`;
+                joinAttribute.condition = joinAttribute.condition ? ` ${joinAttribute.condition} AND ${conditionDeleteColumn}`: `${conditionDeleteColumn}`;
             }
             // todo: find and set metadata right there?
             joinAttribute.alias = this.expressionMap.createAlias({
