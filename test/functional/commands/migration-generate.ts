@@ -1,15 +1,103 @@
 import sinon from "sinon";
 import { ConnectionOptions, ConnectionOptionsReader, DatabaseType } from "../../../src";
-import { 
-    setupTestingConnections, 
-    createTestingConnections, 
-    closeTestingConnections, 
-    reloadTestingDatabases 
+import {
+    setupTestingConnections,
+    createTestingConnections,
+    closeTestingConnections,
+    reloadTestingDatabases
 } from "../../utils/test-utils";
 import { CommandUtils } from "../../../src/commands/CommandUtils";
 import { MigrationGenerateCommand } from "../../../src/commands/MigrationGenerateCommand";
 import { Post } from "./entity/Post";
 import { resultsTemplates } from "./templates/result-templates-generate";
+
+describe("github issues > #7889 commands - migration generate without name", () => {
+    let connectionOptions: ConnectionOptions[];
+    let createFileStub: sinon.SinonStub;
+    let timerStub: sinon.SinonFakeTimers;
+    let getConnectionOptionsStub: sinon.SinonStub;
+    let migrationGenerateCommand: MigrationGenerateCommand;
+    let connectionOptionsReader: ConnectionOptionsReader;
+    let baseConnectionOptions: ConnectionOptions;
+
+    const enabledDrivers = [
+        "mysql",
+    ] as DatabaseType[];
+
+    // simulate args: `npm run typeorm migration:run -- -d test-directory`
+    const testHandlerArgs = (options: Record<string, any>) => ({
+        "$0": "test",
+        "_": ["test"],
+        "dir": "test-directory",
+        ...options
+    });
+
+    before(async () => {
+        // clean out db from any prior tests in case previous state impacts the generated migrations
+        const connections = await createTestingConnections({
+            entities: [],
+            enabledDrivers
+        });
+        await reloadTestingDatabases(connections);
+        await closeTestingConnections(connections);
+
+        connectionOptions = setupTestingConnections({
+            entities: [Post],
+            enabledDrivers
+        });
+        connectionOptionsReader = new ConnectionOptionsReader();
+        migrationGenerateCommand = new MigrationGenerateCommand();
+        createFileStub = sinon.stub(CommandUtils, "createFile");
+
+        timerStub = sinon.useFakeTimers(1610975184784);
+    });
+
+    after(async () => {
+        timerStub.restore();
+        createFileStub.restore();
+    });
+
+    it("migration without params -n define", async () => {
+        const spy = sinon.spy(process, "exit");
+        for (const connectionOption of connectionOptions) {
+            createFileStub.resetHistory();
+
+            baseConnectionOptions = await connectionOptionsReader.get(connectionOption.name as string);
+            getConnectionOptionsStub = sinon.stub(ConnectionOptionsReader.prototype, "get").resolves({
+                ...baseConnectionOptions,
+                entities: [Post]
+            });
+
+            await migrationGenerateCommand.handler(testHandlerArgs({
+                "connection": connectionOption.name
+            }));
+            // assert(process.exit.isSinonProxy);
+            // sinon.assert.called(process.exit);
+            sinon.assert.calledWith(spy, 1);
+            getConnectionOptionsStub.restore();
+        }
+    });
+
+    it("migration with -n define but no value", async () => {
+        const spy = sinon.spy(process, "exit");
+        for (const connectionOption of connectionOptions) {
+            createFileStub.resetHistory();
+
+            baseConnectionOptions = await connectionOptionsReader.get(connectionOption.name as string);
+            getConnectionOptionsStub = sinon.stub(ConnectionOptionsReader.prototype, "get").resolves({
+                ...baseConnectionOptions,
+                entities: [Post]
+            });
+
+            await migrationGenerateCommand.handler(testHandlerArgs({
+                "name": "",
+                "connection": connectionOption.name
+            }));
+            sinon.assert.calledWith(spy, 1);
+            getConnectionOptionsStub.restore();
+        }
+    });
+});
 
 describe("commands - migration generate", () => {
     let connectionOptions: ConnectionOptions[];
@@ -97,7 +185,7 @@ describe("commands - migration generate", () => {
                 "connection": connectionOption.name,
                 "outputJs": true
             }));
-            
+
             // compare against "pretty" test strings in results-templates.ts
             sinon.assert.calledWith(
                 createFileStub,
