@@ -551,6 +551,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                    deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "), // "CHECK_TIME" is "INITIALLY_IMMEDIATE" or "INITIALLY DEFERRED"
                 });
             });
 
@@ -656,6 +657,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                             referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                             onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                             onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                            deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                         });
                     });
 
@@ -995,6 +997,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                         onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                         onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                        deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                     });
                 });
 
@@ -1132,6 +1135,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                    deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                 });
             });
 
@@ -1200,6 +1204,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                    deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                 });
             });
 
@@ -1707,6 +1712,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                    deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                 });
             });
 
@@ -1799,6 +1805,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 if (fk.onUpdate) {
                     const onUpdate = fk.onUpdate === "NO ACTION" ? "RESTRICT" : fk.onUpdate;
                     constraint += ` ON UPDATE ${onUpdate}`;
+                }
+                if (fk.deferrable) {
+                    constraint += ` ${fk.deferrable}`;
                 }
 
                 return constraint;
@@ -1974,6 +1983,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (foreignKey.onUpdate) {
             const onUpdate = foreignKey.onUpdate === "NO ACTION" ? "RESTRICT" : foreignKey.onUpdate;
             sql += ` ON UPDATE ${onUpdate}`;
+        }
+
+        if (foreignKey.deferrable) {
+            sql += ` ${foreignKey.deferrable}`;
         }
 
         return new Query(sql);
