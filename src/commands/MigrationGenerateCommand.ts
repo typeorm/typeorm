@@ -69,6 +69,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
         if (args._[0] === "migrations:generate") {
             console.log("'migrations:generate' is deprecated, please use 'migration:generate' instead");
         }
+        if (args.name === null || args.name === "") {
+            console.log(chalk.yellow(`A migration name is required, for example:\n\n${chalk.white(`migrations:generate -n "<MIGRATION NAME>"`)}`));
+            process.exit(1);
+        }
 
         const timestamp = new Date().getTime();
         const extension = args.outputJs ? ".js" : ".ts";
