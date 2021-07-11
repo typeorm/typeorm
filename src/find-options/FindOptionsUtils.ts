@@ -111,7 +111,8 @@ export class FindOptionsUtils {
         }
 
         if (options.relations) {
-            const allRelations = options.relations;
+            // Copy because `applyRelationsRecursively` modifies it
+            const allRelations = [...options.relations];
             this.applyRelationsRecursively(qb, allRelations, qb.expressionMap.mainAlias!.name, qb.expressionMap.mainAlias!.metadata, "");
             // recursive removes found relations from allRelations array
             // if there are relations left in this array it means those relations were not found in the entity structure
