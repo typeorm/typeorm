@@ -1620,7 +1620,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (offset === undefined && limit === undefined && this.expressionMap.joinAttributes.length === 0) {
             offset = this.expressionMap.skip;
             limit = this.expressionMap.take;
-            return "";
         }
         if (this.connection.driver instanceof SqlServerDriver) {
             // Due to a limitation in SQL Server's parser implementation it does not support using
