@@ -119,6 +119,7 @@
     "better-sqlite3": "*",
     "hdb-pool": "*",
     "ioredis": "*",
+    "ioredis": "*",
     "ioredis/cluster": "*",
     "mongodb": "*",
     "mssql": "*",
@@ -140,6 +141,9 @@
       "optional": true
     },
     "hdb-pool": {
+      "optional": true
+    },
+    "ioredis": {
       "optional": true
     },
     "ioredis": {
