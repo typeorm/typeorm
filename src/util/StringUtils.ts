@@ -16,11 +16,10 @@ export function camelCase(str: string, firstCapital: boolean = false): string {
 /**
  * Converts string into snake_case.
  *
- * @see https://regex101.com/r/QeSm2I/1
  */
 export function snakeCase(str: string): string{
     return str
-        // ABc -> ab_c
+        // ABc -> a_bc
         .replace(/([A-Z])([A-Z])([a-z])/g, "$1_$2$3")
         // aC -> a_c
         .replace(/([a-z])([A-Z])/g, "$1_$2")
