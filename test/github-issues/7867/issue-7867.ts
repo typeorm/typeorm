@@ -4,42 +4,79 @@ import { closeTestingConnections, createTestingConnections, reloadTestingDatabas
 import { Example } from "./entity/Example";
 import { expect } from "chai";
 
-describe("github issues > #7867 Column not renamed when schema is set in Postgres", () => {
+describe("github issues > #7867 Column not renamed when schema/database is set", () => {
 
-    let connections: Connection[];
-    before(async () => {
-        connections = await createTestingConnections({
-            entities: [ Example ],
-            schemaCreate: true,
-            dropSchema: true,
-            driverSpecific: {
-                schema: "public"
-            },
-            enabledDrivers: [ "postgres" ],
+    describe('schema is set', () => {
+        let connections: Connection[];
+        before(async () => {
+            connections = await createTestingConnections({
+                entities: [ Example ],
+                schemaCreate: true,
+                dropSchema: true,
+                driverSpecific: {
+                    schema: "public"
+                },
+                enabledDrivers: [ "postgres" ],
+            });
         });
+        beforeEach(() => reloadTestingDatabases(connections));
+        after(() => closeTestingConnections(connections));
+
+        it("should correctly change column name", () => Promise.all(connections.map(async connection => {
+            const postMetadata = connection.getMetadata(Example);
+            const nameColumn = postMetadata.findColumnWithPropertyName("name")!;
+            nameColumn.propertyName = "title";
+            nameColumn.build(connection);
+
+            await connection.synchronize();
+
+            const queryRunner = connection.createQueryRunner();
+            const postTable = await queryRunner.getTable("example");
+            await queryRunner.release();
+
+            expect(postTable!.findColumnByName("name")).to.be.undefined;
+            postTable!.findColumnByName("title")!.should.be.exist;
+
+            // revert changes
+            nameColumn.propertyName = "name";
+            nameColumn.build(connection);
+        })));
     });
-    beforeEach(() => reloadTestingDatabases(connections));
-    after(() => closeTestingConnections(connections));
 
-    it("should correctly change column name", () => Promise.all(connections.map(async connection => {
-        const postMetadata = connection.getMetadata(Example);
-        const nameColumn = postMetadata.findColumnWithPropertyName("name")!;
-        nameColumn.propertyName = "title";
-        nameColumn.build(connection);
+    describe('database is set', () => {
+        let connections: Connection[];
+        before(async () => {
+            connections = await createTestingConnections({
+                entities: [ Example ],
+                schemaCreate: true,
+                dropSchema: true,
+                driverSpecific: {
+                    database: "test"
+                },
+                enabledDrivers: [ "mysql" ],
+            });
+        });
+        beforeEach(() => reloadTestingDatabases(connections));
+        after(() => closeTestingConnections(connections));
 
-        await connection.synchronize();
+        it("should correctly change column name", () => Promise.all(connections.map(async connection => {
+            const postMetadata = connection.getMetadata(Example);
+            const nameColumn = postMetadata.findColumnWithPropertyName("name")!;
+            nameColumn.propertyName = "title";
+            nameColumn.build(connection);
 
-        const queryRunner = connection.createQueryRunner();
-        const postTable = await queryRunner.getTable("example");
-        await queryRunner.release();
+            await connection.synchronize();
 
-        expect(postTable!.findColumnByName("name")).to.be.undefined;
-        postTable!.findColumnByName("title")!.should.be.exist;
+            const queryRunner = connection.createQueryRunner();
+            const postTable = await queryRunner.getTable("example");
+            await queryRunner.release();
 
-        // revert changes
-        nameColumn.propertyName = "name";
-        nameColumn.build(connection);
-    })));
+            expect(postTable!.findColumnByName("name")).to.be.undefined;
+            postTable!.findColumnByName("title")!.should.be.exist;
 
-
+            // revert changes
+            nameColumn.propertyName = "name";
+            nameColumn.build(connection);
+        })));
+    });
 });
