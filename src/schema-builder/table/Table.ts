@@ -302,8 +302,11 @@ export class Table {
      * Creates table from a given entity metadata.
      */
     static create(entityMetadata: EntityMetadata, driver: Driver): Table {
+        const database = entityMetadata.database === driver.database ? undefined : entityMetadata.database;
+        const schema = entityMetadata.schema === (driver.options as any).schema ? undefined : entityMetadata.schema;
+
         const options: TableOptions = {
-            name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
+            name: driver.buildTableName(entityMetadata.tableName, schema, database),
             engine: entityMetadata.engine,
             columns: entityMetadata.columns
                 .filter(column => column)

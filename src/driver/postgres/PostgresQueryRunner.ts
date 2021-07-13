@@ -1470,13 +1470,18 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected async loadViews(viewNames: string[]): Promise<View[]> {
+    protected async loadViews(viewNames?: string[]): Promise<View[]> {
         const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
+
         if (!hasTable)
-            return Promise.resolve([]);
+            return [];
+
+        if (!viewNames) {
+            viewNames = [];
+        }
 
         const currentSchema = await this.getCurrentSchema()
-        const viewsCondition = viewNames.map(viewName => {
+        const viewsCondition = viewNames.length === 0 ? "1=1" : viewNames.map(viewName => {
             let [schema, name] = viewName.split(".");
             if (!name) {
                 name = schema;
@@ -1504,29 +1509,48 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
      */
-    protected async loadTables(tableNames: string[]): Promise<Table[]> {
+    protected async loadTables(tableNames?: string[]): Promise<Table[]> {
 
         // if no tables given then no need to proceed
-        if (!tableNames || !tableNames.length)
+        if (tableNames && tableNames.length === 0) {
             return [];
+        }
 
         const currentSchema = await this.getCurrentSchema()
 
-        const tablesCondition = tableNames.map(tableName => {
-            let [schema, name] = tableName.split(".");
-            if (!name) {
-                name = schema;
-                schema = this.driver.options.schema || currentSchema;
-            }
-            return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
-        }).join(" OR ");
-        const tablesSql = `SELECT * FROM "information_schema"."tables" WHERE ` + tablesCondition;
+        const dbTables: { table_schema: string, table_name: string }[] = [];
+
+        if (!tableNames) {
+            const tablesSql = `SELECT "table_schema", "table_name" FROM "information_schema"."tables"`
+            dbTables.push(...await this.query(tablesSql));
+        } else {
+            const tablesCondition = tableNames.map(tableName => {
+                let [schema, name] = tableName.split(".");
+                if (!name) {
+                    name = schema;
+                    schema = this.driver.options.schema || currentSchema;
+                }
+                return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
+
+            }).join(" OR ");
+
+            const tablesSql = `SELECT "table_schema", "table_name" FROM "information_schema"."tables" WHERE ` + tablesCondition;
+            dbTables.push(...await this.query(tablesSql));
+        }
+
+        // if tables were not found in the db, no need to proceed
+        if (dbTables.length === 0) {
+            return [];
+        }
 
         /**
          * Uses standard SQL information_schema.columns table and postgres-specific
          * pg_catalog.pg_attribute table to get column information.
          * @see https://stackoverflow.com/a/19541865
          */
+        const columnsCondition = dbTables.map(({ table_schema, table_name }) => {
+            return `("table_schema" = '${table_schema}' AND "table_name" = '${table_name}')`;
+        }).join(" OR ");
         const columnsSql = `SELECT columns.*, pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) AS description, ` +
                 `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype" AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
             `FROM "information_schema"."columns" ` +
@@ -1537,15 +1561,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     `WHERE "cls"."relname" = "columns"."table_name" ` +
                     `AND "ns"."nspname" = "columns"."table_schema" `+
                 `) ` +
-            `WHERE ` + tablesCondition;
+            `WHERE ` + columnsCondition;
 
-        const constraintsCondition = tableNames.map(tableName => {
-            let [schema, name] = tableName.split(".");
-            if (!name) {
-                name = schema;
-                schema = this.driver.options.schema || currentSchema;
-            }
-            return `("ns"."nspname" = '${schema}' AND "t"."relname" = '${name}')`;
+        const constraintsCondition = dbTables.map(({ table_schema, table_name }) => {
+            return `("ns"."nspname" = '${table_schema}' AND "t"."relname" = '${table_name}')`;
         }).join(" OR ");
 
         const constraintsSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "cnst"."conname" AS "constraint_name", ` +
@@ -1569,13 +1588,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
             `WHERE "t"."relkind" IN ('r', 'p') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`;
 
-        const foreignKeysCondition = tableNames.map(tableName => {
-            let [schema, name] = tableName.split(".");
-            if (!name) {
-                name = schema;
-                schema = this.driver.options.schema || currentSchema;
-            }
-            return `("ns"."nspname" = '${schema}' AND "cl"."relname" = '${name}')`;
+        const foreignKeysCondition = dbTables.map(({ table_schema, table_name }) => {
+            return `("ns"."nspname" = '${table_schema}' AND "cl"."relname" = '${table_name}')`;
         }).join(" OR ");
 
         const hasRelispartitionColumn = await this.hasSupportForPartitionedTables();
@@ -1600,16 +1614,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
             `INNER JOIN "pg_attribute" "att2" ON "att2"."attrelid" = "con"."conrelid" AND "att2"."attnum" = "con"."parent"`;
 
-        const [dbTables, dbColumns, dbConstraints, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
-            this.query(tablesSql),
+        const [dbColumns, dbConstraints, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(columnsSql),
             this.query(constraintsSql),
             this.query(indicesSql),
             this.query(foreignKeysSql),
         ]);
-        // if tables were not found in the db, no need to proceed
-        if (!dbTables.length)
-            return [];
 
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
@@ -1621,18 +1631,19 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     : dbObject[key]
             };
             // We do not need to join schema name, when database is by default.
-            // In this case we need local variable `tableFullName` for below comparison.
             const schema = getSchemaFromKey(dbTable, "table_schema");
             table.name = this.driver.buildTableName(dbTable["table_name"], schema);
-            const tableFullName = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
 
             // create columns from the loaded columns
             table.columns = await Promise.all(dbColumns
-                .filter(dbColumn => this.driver.buildTableName(dbColumn["table_name"], dbColumn["table_schema"]) === tableFullName)
+                .filter(dbColumn => (dbColumn["table_name"] === dbTable["table_name"] && dbColumn["table_schema"] === dbTable["table_schema"]))
                 .map(async dbColumn => {
-
                     const columnConstraints = dbConstraints.filter(dbConstraint => {
-                        return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName && dbConstraint["column_name"] === dbColumn["column_name"];
+                        return (
+                            dbConstraint["table_name"] === dbColumn["table_name"] &&
+                            dbConstraint["table_schema"] === dbColumn["table_schema"] &&
+                            dbConstraint["column_name"] === dbColumn["column_name"]
+                        );
                     });
 
                     const tableColumn = new TableColumn();
@@ -1701,11 +1712,17 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                           "type"
                         FROM "geometry_columns"
                       ) AS _
-                      WHERE (${tablesCondition}) AND "column_name" = '${tableColumn.name}' AND "table_name" = '${dbTable["table_name"]}'`;
+                      WHERE
+                          "column_name" = '${dbColumn["column_name"]}' AND
+                          "table_schema" = '${dbColumn["table_schema"]}' AND
+                          "table_name" = '${dbColumn["table_name"]}'`;
 
                         const results: ObjectLiteral[] = await this.query(geometryColumnSql);
-                        tableColumn.spatialFeatureType = results[0].type;
-                        tableColumn.srid = results[0].srid;
+
+                        if (results.length > 0) {
+                            tableColumn.spatialFeatureType = results[0].type;
+                            tableColumn.srid = results[0].srid;
+                        }
                     }
 
                     if (tableColumn.type === "geography") {
@@ -1718,11 +1735,17 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                           "type"
                         FROM "geography_columns"
                       ) AS _
-                      WHERE (${tablesCondition}) AND "column_name" = '${tableColumn.name}' AND "table_name" = '${dbTable["table_name"]}'`;
+                      WHERE
+                          "column_name" = '${dbColumn["column_name"]}' AND
+                          "table_schema" = '${dbColumn["table_schema"]}' AND
+                          "table_name" = '${dbColumn["table_name"]}'`;
 
                         const results: ObjectLiteral[] = await this.query(geographyColumnSql);
-                        tableColumn.spatialFeatureType = results[0].type;
-                        tableColumn.srid = results[0].srid;
+
+                        if (results.length > 0) {
+                            tableColumn.spatialFeatureType = results[0].type;
+                            tableColumn.srid = results[0].srid;
+                        }
                     }
 
                     // check only columns that have length property
@@ -1774,8 +1797,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             // find unique constraints of table, group them by constraint name and build TableUnique.
             const tableUniqueConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName
-                    && dbConstraint["constraint_type"] === "UNIQUE";
+                return (
+                    dbConstraint["table_name"] === dbTable["table_name"] &&
+                    dbConstraint["table_schema"] === dbTable["table_schema"] &&
+                    dbConstraint["constraint_type"] === "UNIQUE"
+                );
             }), dbConstraint => dbConstraint["constraint_name"]);
 
             table.uniques = tableUniqueConstraints.map(constraint => {
@@ -1788,8 +1814,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             // find check constraints of table, group them by constraint name and build TableCheck.
             const tableCheckConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName
-                    && dbConstraint["constraint_type"] === "CHECK";
+                return (
+                    dbConstraint["table_name"] === dbTable["table_name"] &&
+                    dbConstraint["table_schema"] === dbTable["table_schema"] &&
+                    dbConstraint["constraint_type"] === "CHECK"
+                );
             }), dbConstraint => dbConstraint["constraint_name"]);
 
             table.checks = tableCheckConstraints.map(constraint => {
@@ -1803,8 +1832,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             // find exclusion constraints of table, group them by constraint name and build TableExclusion.
             const tableExclusionConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName
-                    && dbConstraint["constraint_type"] === "EXCLUDE";
+                return (
+                    dbConstraint["table_name"] === dbTable["table_name"] &&
+                    dbConstraint["table_schema"] === dbTable["table_schema"] &&
+                    dbConstraint["constraint_type"] === "EXCLUDE"
+                );
             }), dbConstraint => dbConstraint["constraint_name"]);
 
             table.exclusions = tableExclusionConstraints.map(constraint => {
@@ -1816,7 +1848,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
             const tableForeignKeyConstraints = OrmUtils.uniq(dbForeignKeys.filter(dbForeignKey => {
-                return this.driver.buildTableName(dbForeignKey["table_name"], dbForeignKey["table_schema"]) === tableFullName;
+                return (
+                    dbForeignKey["table_name"] === dbTable["table_name"] &&
+                    dbForeignKey["table_schema"] === dbTable["table_schema"]
+                );
             }), dbForeignKey => dbForeignKey["constraint_name"]);
 
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
@@ -1839,7 +1874,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             // find index constraints of table, group them by constraint name and build TableIndex.
             const tableIndexConstraints = OrmUtils.uniq(dbIndices.filter(dbIndex => {
-                return this.driver.buildTableName(dbIndex["table_name"], dbIndex["table_schema"]) === tableFullName;
+                return (
+                    dbIndex["table_name"] === dbTable["table_name"] &&
+                    dbIndex["table_schema"] === dbTable["table_schema"]
+                );
             }), dbIndex => dbIndex["constraint_name"]);
 
             table.indices = tableIndexConstraints.map(constraint => {

@@ -54,11 +54,15 @@ export interface QueryRunner {
 
     /**
      * All synchronized tables in the database.
+     *
+     * @deprecated Call `getTables()`
      */
     loadedTables: Table[];
 
     /**
      * All synchronized views in the database.
+     *
+     * @deprecated Call `getViews()`
      */
     loadedViews: View[];
 
@@ -132,10 +136,8 @@ export interface QueryRunner {
 
     /**
      * Loads all tables from the database and returns them.
-     *
-     * todo: make tablePaths optional
      */
-    getTables(tablePaths: string[]): Promise<Table[]>;
+    getTables(tablePaths?: string[]): Promise<Table[]>;
 
     /**
      * Loads a view by a given name from the database.
@@ -145,7 +147,7 @@ export interface QueryRunner {
     /**
      * Loads all views from the database and returns them.
      */
-    getViews(viewPaths: string[]): Promise<View[]>;
+    getViews(viewPaths?: string[]): Promise<View[]>;
 
     /**
      * Checks if a database with the given name exist.

@@ -1205,10 +1205,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected async loadViews(viewNames: string[]): Promise<View[]> {
+    protected async loadViews(viewNames?: string[]): Promise<View[]> {
         const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
-        if (!hasTable)
-            return Promise.resolve([]);
+        if (!hasTable) {
+            return [];
+        }
+
+        if (!viewNames) {
+            viewNames = [];
+        }
 
         const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
         let query = `SELECT "T".* FROM ${this.escapePath(this.getTypeormMetadataTableName())} "T" ` +
@@ -1229,65 +1234,100 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
      */
-    protected async loadTables(tableNames: string[]): Promise<Table[]> {
-
-        // if no tables given then no need to proceed
-        if (!tableNames || !tableNames.length)
+    protected async loadTables(tableNames?: string[]): Promise<Table[]> {
+        if (tableNames && tableNames.length === 0) {
             return [];
+        }
+
+        const dbTables: { TABLE_NAME: string, OWNER: string }[] = []
+
+        const currentSchema = await this.getCurrentSchema();
+
+        if (!tableNames) {
+            const tablesSql = `SELECT "TABLE_NAME", "OWNER" FROM "ALL_TABLES"`;
+            dbTables.push(...await this.query(tablesSql));
+        } else {
+            const tablesCondition = tableNames.map(tableName => {
+                let [schema, name] = tableName.split(".");
+                if (!name) {
+                    name = schema;
+                    schema = this.driver.options.schema || currentSchema;
+                }
+
+                return `("OWNER" = '${schema}' AND "TABLE_NAME" = '${name}')`
+            }).join(" OR ");
+            const tablesSql = `SELECT "TABLE_NAME", "OWNER" FROM "ALL_TABLES" WHERE ${tablesCondition}`;
+            dbTables.push(...await this.query(tablesSql));
+        }
+
+        // if tables were not found in the db, no need to proceed
+        if (dbTables.length === 0) {
+            return [];
+        }
 
         // load tables, columns, indices and foreign keys
-        const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
-        const tablesSql = `SELECT * FROM "USER_TABLES" WHERE "TABLE_NAME" IN (${tableNamesString})`;
-        const columnsSql = `SELECT * FROM "USER_TAB_COLS" WHERE "TABLE_NAME" IN (${tableNamesString})`;
+        const columnsCondition = dbTables.map(({ TABLE_NAME, OWNER }) => {
+            return `("C"."OWNER" = '${OWNER}' AND "C"."TABLE_NAME" = '${TABLE_NAME}')`;
+        }).join(" OR ");
+        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition})`;
 
-        const indicesSql = `SELECT "IND"."INDEX_NAME", "IND"."TABLE_NAME", "IND"."UNIQUENESS", ` +
+        const indicesSql = `SELECT "C"."INDEX_NAME", "C"."OWNER", "C"."TABLE_NAME", "C"."UNIQUENESS", ` +
             `LISTAGG ("COL"."COLUMN_NAME", ',') WITHIN GROUP (ORDER BY "COL"."COLUMN_NAME") AS "COLUMN_NAMES" ` +
-            `FROM "USER_INDEXES" "IND" ` +
-            `INNER JOIN "USER_IND_COLUMNS" "COL" ON "COL"."INDEX_NAME" = "IND"."INDEX_NAME" ` +
-            `LEFT JOIN "USER_CONSTRAINTS" "CON" ON "CON"."CONSTRAINT_NAME" = "IND"."INDEX_NAME" ` +
-            `WHERE "IND"."TABLE_NAME" IN (${tableNamesString}) AND "CON"."CONSTRAINT_NAME" IS NULL ` +
-            `GROUP BY "IND"."INDEX_NAME", "IND"."TABLE_NAME", "IND"."UNIQUENESS"`;
+            `FROM "ALL_INDEXES" "C" ` +
+            `INNER JOIN "ALL_IND_COLUMNS" "COL" ON "COL"."INDEX_OWNER" = "C"."OWNER" AND "COL"."INDEX_NAME" = "C"."INDEX_NAME" ` +
+            `LEFT JOIN "ALL_CONSTRAINTS" "CON" ON "CON"."OWNER" = "C"."OWNER" AND "CON"."CONSTRAINT_NAME" = "C"."INDEX_NAME" ` +
+            `WHERE (${columnsCondition}) AND "CON"."CONSTRAINT_NAME" IS NULL ` +
+            `GROUP BY "C"."INDEX_NAME", "C"."OWNER", "C"."TABLE_NAME", "C"."UNIQUENESS"`;
 
-        const foreignKeysSql = `SELECT "C"."CONSTRAINT_NAME", "C"."TABLE_NAME", "COL"."COLUMN_NAME", "REF_COL"."TABLE_NAME" AS "REFERENCED_TABLE_NAME", ` +
+
+        const foreignKeysSql = `SELECT "C"."CONSTRAINT_NAME", "C"."OWNER", "C"."TABLE_NAME", "COL"."COLUMN_NAME", "REF_COL"."TABLE_NAME" AS "REFERENCED_TABLE_NAME", ` +
             `"REF_COL"."COLUMN_NAME" AS "REFERENCED_COLUMN_NAME", "C"."DELETE_RULE" AS "ON_DELETE" ` +
-            `FROM "USER_CONSTRAINTS" "C" ` +
-            `INNER JOIN "USER_CONS_COLUMNS" "COL" ON "COL"."OWNER" = "C"."OWNER" AND "COL"."CONSTRAINT_NAME" = "C"."CONSTRAINT_NAME" ` +
-            `INNER JOIN "USER_CONS_COLUMNS" "REF_COL" ON "REF_COL"."OWNER" = "C"."R_OWNER" AND "REF_COL"."CONSTRAINT_NAME" = "C"."R_CONSTRAINT_NAME" AND "REF_COL"."POSITION" = "COL"."POSITION" ` +
-            `WHERE "C"."TABLE_NAME" IN (${tableNamesString}) AND "C"."CONSTRAINT_TYPE" = 'R'`;
+            `FROM "ALL_CONSTRAINTS" "C" ` +
+            `INNER JOIN "ALL_CONS_COLUMNS" "COL" ON "COL"."OWNER" = "C"."OWNER" AND "COL"."CONSTRAINT_NAME" = "C"."CONSTRAINT_NAME" ` +
+            `INNER JOIN "ALL_CONS_COLUMNS" "REF_COL" ON "REF_COL"."OWNER" = "C"."R_OWNER" AND "REF_COL"."CONSTRAINT_NAME" = "C"."R_CONSTRAINT_NAME" AND "REF_COL"."POSITION" = "COL"."POSITION" ` +
+            `WHERE (${columnsCondition}) AND "C"."CONSTRAINT_TYPE" = 'R'`;
 
-        const constraintsSql = `SELECT "C"."CONSTRAINT_NAME", "C"."CONSTRAINT_TYPE", "C"."TABLE_NAME", "COL"."COLUMN_NAME", "C"."SEARCH_CONDITION" ` +
-            `FROM "USER_CONSTRAINTS" "C" ` +
-            `INNER JOIN "USER_CONS_COLUMNS" "COL" ON "COL"."OWNER" = "C"."OWNER" AND "COL"."CONSTRAINT_NAME" = "C"."CONSTRAINT_NAME" ` +
-            `WHERE "C"."TABLE_NAME" IN (${tableNamesString}) AND "C"."CONSTRAINT_TYPE" IN ('C', 'U', 'P') AND "C"."GENERATED" = 'USER NAME'`;
+        const constraintsSql = `SELECT "C"."CONSTRAINT_NAME", "C"."CONSTRAINT_TYPE", "C"."OWNER", "C"."TABLE_NAME", "COL"."COLUMN_NAME", "C"."SEARCH_CONDITION" ` +
+            `FROM "ALL_CONSTRAINTS" "C" ` +
+            `INNER JOIN "ALL_CONS_COLUMNS" "COL" ON "COL"."OWNER" = "C"."OWNER" AND "COL"."CONSTRAINT_NAME" = "C"."CONSTRAINT_NAME" ` +
+            `WHERE (${columnsCondition}) AND "C"."CONSTRAINT_TYPE" IN ('C', 'U', 'P') AND "C"."GENERATED" = 'USER NAME'`;
 
-        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbConstraints]: ObjectLiteral[][] = await Promise.all([
-            this.query(tablesSql),
+        const [dbColumns, dbIndices, dbForeignKeys, dbConstraints]: ObjectLiteral[][] = await Promise.all([
             this.query(columnsSql),
             this.query(indicesSql),
             this.query(foreignKeysSql),
             this.query(constraintsSql),
         ]);
 
-        // if tables were not found in the db, no need to proceed
-        if (!dbTables.length)
-            return [];
-
         // create tables for loaded tables
         return dbTables.map(dbTable => {
             const table = new Table();
-            table.name = dbTable["TABLE_NAME"];
+
+            const owner = dbTable["OWNER"] === currentSchema && (!this.driver.options.schema || this.driver.options.schema === currentSchema) ? undefined : dbTable["OWNER"];
+            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], owner);
 
             // create columns from the loaded columns
             table.columns = dbColumns
                 .filter(dbColumn => dbColumn["TABLE_NAME"] === table.name)
                 .map(dbColumn => {
-                    const columnConstraints = dbConstraints.filter(dbConstraint => dbConstraint["TABLE_NAME"] === table.name && dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]);
+                    const columnConstraints = dbConstraints.filter(
+                        dbConstraint => (
+                            dbConstraint["OWNER"] === dbTable["OWNER"] &&
+                            dbConstraint["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                            dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
+                        )
+                    );
 
                     const uniqueConstraint = columnConstraints.find(constraint => constraint["CONSTRAINT_TYPE"] === "U");
                     const isConstraintComposite = uniqueConstraint
-                        ? !!dbConstraints.find(dbConstraint => dbConstraint["CONSTRAINT_TYPE"] === "U"
-                            && dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"]
-                            && dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
+                        ? !!dbConstraints.find(dbConstraint => (
+                                dbConstraint["OWNER"] === dbTable["OWNER"] &&
+                                dbConstraint["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                                dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"] &&
+                                dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"] &&
+                                dbConstraint["CONSTRAINT_TYPE"] === "U"
+                            )
+                        )
                         : false;
                     const isUnique = !!uniqueConstraint && !isConstraintComposite;
 
@@ -1335,7 +1375,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // find unique constraints of table, group them by constraint name and build TableUnique.
             const tableUniqueConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return dbConstraint["TABLE_NAME"] === table.name && dbConstraint["CONSTRAINT_TYPE"] === "U";
+                return (
+                    dbConstraint["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                    dbConstraint["OWNER"] === dbTable["OWNER"] &&
+                    dbConstraint["CONSTRAINT_TYPE"] === "U"
+                );
             }), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
 
             table.uniques = tableUniqueConstraints.map(constraint => {
@@ -1348,7 +1392,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // find check constraints of table, group them by constraint name and build TableCheck.
             const tableCheckConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return dbConstraint["TABLE_NAME"] === table.name && dbConstraint["CONSTRAINT_TYPE"] === "C";
+                return (
+                    dbConstraint["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                    dbConstraint["OWNER"] === dbTable["OWNER"] &&
+                    dbConstraint["CONSTRAINT_TYPE"] === "C");
             }), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
 
             table.checks = tableCheckConstraints.map(constraint => {
@@ -1366,7 +1413,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             }), dbForeignKey => dbForeignKey["CONSTRAINT_NAME"]);
 
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
-                const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
+                const foreignKeys = dbForeignKeys.filter(dbFk => (
+                    dbFk["TABLE_NAME"] === dbForeignKey["TABLE_NAME"] &&
+                    dbFk["OWNER"] === dbForeignKey["OWNER"] &&
+                    dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]
+                ));
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
@@ -1379,7 +1430,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // create TableIndex objects from the loaded indices
             table.indices = dbIndices
-                .filter(dbIndex => dbIndex["TABLE_NAME"] === table.name)
+                .filter(dbIndex => dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] && dbIndex["OWNER"] === dbTable["OWNER"])
                 .map(dbIndex => {
                     return new TableIndex({
                         name: dbIndex["INDEX_NAME"],
