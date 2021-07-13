@@ -272,7 +272,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Loads currently using database
      */
-    async getCurrentDatabase(): Promise<undefined> {
+    async getCurrentDatabase(): Promise<string> {
         const query = await this.query(`SELECT SYS_CONTEXT('USERENV','DB_NAME') AS "db_name" FROM dual`)
         return query[0]["db_name"]
     }
@@ -439,17 +439,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Renames the given table.
      */
-    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
+    async renameTable(oldTableOrName: Table|string, newTableName: string): Promise<void> {
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         let newTable = oldTable.clone();
+        const dbName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
 
-        if (newTableOrName instanceof Table) {
-            newTable = newTableOrName;
-        } else {
-            newTable.name = newTableOrName;
-        }
+        newTable.path = this.driver.buildTableName(newTableName, newTable.schema, newTable.database);
+        newTable.name = dbName ? `${dbName}.${newTableName}` : newTableName;
 
         // rename table
         upQueries.push(new Query(`ALTER TABLE "${oldTable.name}" RENAME TO "${newTable.name}"`));
@@ -1275,6 +1273,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         // create tables for loaded tables
         return dbTables.map(dbTable => {
             const table = new Table();
+            table.schema = dbTable["TABLESPACE_NAME"];
+            table.path = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLESPACE_NAME"]);
             table.name = dbTable["TABLE_NAME"];
 
             // create columns from the loaded columns

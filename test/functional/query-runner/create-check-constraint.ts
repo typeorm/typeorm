@@ -26,6 +26,11 @@ describe("query runner > create check constraint", () => {
 
         const queryRunner = connection.createQueryRunner();
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                "question",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "question",
             columns: [
                 {

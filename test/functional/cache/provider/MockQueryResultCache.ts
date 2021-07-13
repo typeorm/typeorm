@@ -62,6 +62,7 @@ export class MockQueryResultCache implements QueryResultCache {
 
         await queryRunner.createTable(new Table(
             {
+                path: this.queryResultCacheTable,
                 name: this.queryResultCacheTable,
                 columns: [
                     {

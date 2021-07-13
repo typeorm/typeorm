@@ -86,6 +86,11 @@ describe("database schema > column types > postgres-enum", () => {
 
         const queryRunner = connection.createQueryRunner();
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                "question",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "question",
             columns: [
                 {
@@ -253,6 +258,11 @@ describe("database schema > column types > postgres-enum", () => {
         const queryRunner = connection.createQueryRunner();
 
         const table = new Table({
+            path: connection.driver.buildTableName(
+                "my_table",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "my_table",
             columns: [
                 {

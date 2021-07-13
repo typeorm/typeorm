@@ -25,6 +25,11 @@ describe("query runner > create primary key", () => {
 
         const queryRunner = connection.createQueryRunner();
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                "category",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "category",
             columns: [
                 {
@@ -39,6 +44,11 @@ describe("query runner > create primary key", () => {
         }), true);
 
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                "person",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "person",
             columns: [
                 {

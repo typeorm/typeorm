@@ -480,6 +480,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const newTable = oldTable.clone();
         const oldTableName = oldTable.name.indexOf(".") === -1 ? oldTable.name : oldTable.name.split(".")[1];
         const schemaName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
+
+        newTable.path = this.driver.buildTableName(newTableName, newTable.schema);
         newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
 
         // rename table
@@ -575,6 +577,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.executeQueries(upQueries, downQueries);
 
         // rename old table and replace it in cached tabled;
+        oldTable.path = newTable.path;
         oldTable.name = newTable.name;
         this.replaceCachedTable(oldTable, newTable);
     }
@@ -1540,8 +1543,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             // We do not need to join schema name, when database is by default.
             // In this case we need local variable `tableFullName` for below comparision.
             const schema = getSchemaFromKey(dbTable, "SCHEMA_NAME");
+            table.schema = dbTable["SCHEMA_NAME"];
+            table.path = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["SCHEMA_NAME"])
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema);
-            const tableFullName = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["SCHEMA_NAME"]);
+            const tableFullName = table.path;
 
             // create columns from the loaded columns
             table.columns = await Promise.all(dbColumns
@@ -1656,7 +1661,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
 
                 // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                const schema = getSchemaFromKey(dbTable, "REFERENCED_SCHEMA_NAME");
+                const schema = getSchemaFromKey(dbForeignKey, "REFERENCED_SCHEMA_NAME");
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], schema);
 
                 return new TableForeignKey({
