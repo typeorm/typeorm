@@ -25,6 +25,7 @@ describe("github issues > #2259 Missing type for generated columns", () => {
             isPrimary: true
         });
         const client = new Table({
+            path: "public.table",
             name: "table",
             columns: [id]
         });

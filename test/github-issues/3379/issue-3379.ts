@@ -36,6 +36,11 @@ describe("github issues > #3379 Migration will keep create and drop indexes if i
         }
 
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                postTableName,
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: postTableName,
             columns: [
                 {
@@ -56,6 +61,11 @@ describe("github issues > #3379 Migration will keep create and drop indexes if i
         // Only MySQL and SQLServer allows non unique index names
         if (connection.driver instanceof MysqlDriver || connection.driver instanceof SqlServerDriver) {
             await queryRunner.createTable(new Table({
+                path: connection.driver.buildTableName(
+                    "category",
+                    await queryRunner.getCurrentSchema(),
+                    await queryRunner.getCurrentDatabase()
+                ),
                 name: "category",
                 columns: [
                     {

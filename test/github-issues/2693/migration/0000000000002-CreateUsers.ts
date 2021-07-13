@@ -6,6 +6,7 @@ export class CreateUsers0000000000002 implements MigrationInterface {
     public up(queryRunner: QueryRunner): Promise<any> {
         return queryRunner.createTable(
             new Table({
+                path: "public.users",
                 name: "users",
                 columns: [
                     {

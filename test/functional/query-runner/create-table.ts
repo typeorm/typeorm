@@ -28,6 +28,11 @@ describe("query runner > create table", () => {
 
         const queryRunner = connection.createQueryRunner();
         const options: TableOptions = {
+            path: connection.driver.buildTableName(
+                "category",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "category",
             columns: [
                 {
@@ -97,6 +102,11 @@ describe("query runner > create table", () => {
         const queryRunner = connection.createQueryRunner();
 
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                "person",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "person",
             columns: [
                 {
@@ -116,7 +126,12 @@ describe("query runner > create table", () => {
             ]
         }), true);
 
-        const questionTableOptions = <TableOptions>{
+        const questionTableOptions: TableOptions = {
+            path: connection.driver.buildTableName(
+                "question",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "question",
             columns: [
                 {
@@ -163,7 +178,12 @@ describe("query runner > create table", () => {
 
         await queryRunner.createTable(new Table(questionTableOptions), true);
 
-        const categoryTableOptions = <TableOptions>{
+        const categoryTableOptions: TableOptions = {
+            path: connection.driver.buildTableName(
+                "category",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "category",
             columns: [
                 {

@@ -103,6 +103,7 @@ describe("github issues > #1997 enum type not working in postgres when defined i
 
         const queryRunner = connection.createQueryRunner();
         await queryRunner.createTable(new Table({
+            path: "schema.question",
             name: "schema.question",
             columns: [
                 {

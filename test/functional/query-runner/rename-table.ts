@@ -155,6 +155,11 @@ describe("query runner > rename table", () => {
         }
 
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                questionTableName,
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: questionTableName,
             columns: [
                 {
@@ -173,6 +178,11 @@ describe("query runner > rename table", () => {
         }), true);
 
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                categoryTableName,
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: categoryTableName,
             columns: [
                 {

@@ -17,6 +17,11 @@ describe("github issues > #1863 createTable.uniques doesn't work when the column
     it("should correctly create table with unique constraint", () => Promise.all(connections.map(async connection => {
         const queryRunner = connection.createQueryRunner();
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                "post",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "post",
             columns: [
                 {

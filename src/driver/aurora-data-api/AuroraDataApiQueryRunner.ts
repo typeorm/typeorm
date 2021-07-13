@@ -236,9 +236,8 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     /**
      * Loads currently using database schema
      */
-    async getCurrentSchema(): Promise<string> {
-        const query = await this.query(`SELECT SCHEMA() AS \`schema_name\``);
-        return query[0]["schema_name"];
+    async getCurrentSchema(): Promise<string|undefined> {
+        return undefined;
     }
 
     /**
@@ -390,6 +389,8 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
         const dbName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
+
+        newTable.path = this.driver.buildTableName(newTableName, undefined, newTable.database);
         newTable.name = dbName ? `${dbName}.${newTableName}` : newTableName;
 
         // rename table
@@ -449,6 +450,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         await this.executeQueries(upQueries, downQueries);
 
         // rename old table and replace it in cached tabled;
+        oldTable.path = newTable.path;
         oldTable.name = newTable.name;
         this.replaceCachedTable(oldTable, newTable);
     }
@@ -1266,8 +1268,10 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
             // We do not need to join database name, when database is by default.
             // In this case we need local variable `tableFullName` for below comparision.
             const db = dbTable["TABLE_SCHEMA"] === currentDatabase ? undefined : dbTable["TABLE_SCHEMA"];
+            table.database = dbTable["TABLE_SCHEMA"];
+            table.path = this.driver.buildTableName(dbTable["TABLE_NAME"], undefined, dbTable["TABLE_SCHEMA"]);
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], undefined, db);
-            const tableFullName = this.driver.buildTableName(dbTable["TABLE_NAME"], undefined, dbTable["TABLE_SCHEMA"]);
+            const tableFullName = table.path;
 
             // create columns from the loaded columns
             table.columns = dbColumns

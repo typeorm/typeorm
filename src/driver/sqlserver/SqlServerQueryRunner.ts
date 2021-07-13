@@ -645,6 +645,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             oldTableName = splittedName[1];
         }
 
+        newTable.path = this.driver.buildTableName(newTableName, newTable.schema, newTable.database);
         newTable.name = this.driver.buildTableName(newTableName, schemaName, dbName);
 
         // if we have tables with database which differs from database specified in config, we must change currently used database.
@@ -719,6 +720,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         await this.executeQueries(upQueries, downQueries);
 
         // rename old table and replace it in cached tabled;
+        oldTable.path = newTable.path;
         oldTable.name = newTable.name;
         this.replaceCachedTable(oldTable, newTable);
     }
@@ -1701,8 +1703,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             // In this case we need local variable `tableFullName` for below comparision.
             const db = dbTable["TABLE_CATALOG"] === currentDatabase ? undefined : dbTable["TABLE_CATALOG"];
             const schema = getSchemaFromKey(dbTable, "TABLE_SCHEMA");
+            table.database = dbTable["TABLE_CATALOG"];
+            table.schema = dbTable["TABLE_SCHEMA"];
+            table.path = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLE_SCHEMA"], dbTable["TABLE_CATALOG"]);
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema, db);
-            const tableFullName = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLE_SCHEMA"], dbTable["TABLE_CATALOG"]);
+            const tableFullName = table.path;
             const defaultCollation = dbCollations.find(dbCollation => dbCollation["NAME"] === dbTable["TABLE_CATALOG"])!;
 
             // create columns from the loaded columns

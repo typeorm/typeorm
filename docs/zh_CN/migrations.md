@@ -197,6 +197,7 @@ export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
+        path: "question",
         name: "question",
         columns: [
           {
@@ -223,6 +224,7 @@ export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
 
     await queryRunner.createTable(
       new Table({
+        path: "answer",
         name: "answer",
         columns: [
           {

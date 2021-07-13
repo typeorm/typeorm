@@ -4,7 +4,7 @@ import { closeTestingConnections, createTestingConnections, reloadTestingDatabas
 import { Example } from "./entity/Example";
 import { expect } from "chai";
 
-describe.only("github issues > #7867 Column not renamed when schema is set in Postgres", () => {
+describe("github issues > #7867 Column not renamed when schema is set in Postgres", () => {
 
     let connections: Connection[];
     before(async () => {

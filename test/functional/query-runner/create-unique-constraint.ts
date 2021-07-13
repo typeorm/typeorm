@@ -22,6 +22,11 @@ describe("query runner > create unique constraint", () => {
 
         const queryRunner = connection.createQueryRunner();
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                "category",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "category",
             columns: [
                 {
@@ -37,6 +42,11 @@ describe("query runner > create unique constraint", () => {
         }), true);
 
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                "question",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "question",
             columns: [
                 {

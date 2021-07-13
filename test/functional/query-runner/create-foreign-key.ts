@@ -22,6 +22,11 @@ describe("query runner > create foreign key", () => {
 
         const queryRunner = connection.createQueryRunner();
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                "question",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "question",
             columns: [
                 {
@@ -37,6 +42,11 @@ describe("query runner > create foreign key", () => {
         }), true);
 
         await queryRunner.createTable(new Table({
+            path: connection.driver.buildTableName(
+                "answer",
+                await queryRunner.getCurrentSchema(),
+                await queryRunner.getCurrentDatabase()
+            ),
             name: "answer",
             columns: [
                 {
