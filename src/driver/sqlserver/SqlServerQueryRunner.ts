@@ -670,7 +670,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         // rename old table and replace it in cached tabled;
         oldTable.name = newTable.name;
-        this.replaceCachedTable(oldTable, newTable);
+        this.invalidateCachedTable(oldTable);
     }
 
     /**
@@ -730,7 +730,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         await this.executeQueries(upQueries, downQueries);
 
         clonedTable.addColumn(column);
-        this.replaceCachedTable(table, clonedTable);
+        this.invalidateCachedTable(table);
     }
 
     /**
@@ -998,7 +998,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             }
 
             await this.executeQueries(upQueries, downQueries);
-            this.replaceCachedTable(table, clonedTable);
+            this.invalidateCachedTable(table);
         }
     }
 
@@ -1081,7 +1081,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         await this.executeQueries(upQueries, downQueries);
 
         clonedTable.removeColumn(column);
-        this.replaceCachedTable(table, clonedTable);
+        this.invalidateCachedTable(table);
     }
 
     /**
@@ -1110,7 +1110,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const down = this.dropPrimaryKeySql(clonedTable);
 
         await this.executeQueries(up, down);
-        this.replaceCachedTable(table, clonedTable);
+        this.invalidateCachedTable(table);
     }
 
     /**
@@ -1143,7 +1143,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
 
         await this.executeQueries(upQueries, downQueries);
-        this.replaceCachedTable(table, clonedTable);
+        this.invalidateCachedTable(table);
     }
 
     /**

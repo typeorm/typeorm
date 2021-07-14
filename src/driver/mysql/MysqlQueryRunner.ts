@@ -501,7 +501,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // rename old table and replace it in cached tabled;
         oldTable.name = newTable.name;
-        this.replaceCachedTable(oldTable, newTable);
+        this.invalidateCachedTable(oldTable);
     }
 
     /**
@@ -573,7 +573,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.executeQueries(upQueries, downQueries);
 
         clonedTable.addColumn(column);
-        this.replaceCachedTable(table, clonedTable);
+        this.invalidateCachedTable(table);
     }
 
     /**
@@ -790,7 +790,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         await this.executeQueries(upQueries, downQueries);
-        this.replaceCachedTable(table, clonedTable);
+        this.invalidateCachedTable(table);
     }
 
     /**
@@ -884,7 +884,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.executeQueries(upQueries, downQueries);
 
         clonedTable.removeColumn(column);
-        this.replaceCachedTable(table, clonedTable);
+        this.invalidateCachedTable(table);
     }
 
     /**
@@ -911,7 +911,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (columnNames.find(columnName => columnName === column.name))
                 column.isPrimary = true;
         });
-        this.replaceCachedTable(table, clonedTable);
+        this.invalidateCachedTable(table);
     }
 
     /**
@@ -969,7 +969,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         await this.executeQueries(upQueries, downQueries);
-        this.replaceCachedTable(table, clonedTable);
+        this.invalidateCachedTable(table);
     }
 
     /**

@@ -1239,7 +1239,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         });
 
         await this.executeQueries(upQueries, downQueries);
-        this.replaceCachedTable(oldTable, newTable);
+        this.invalidateCachedTable(oldTable);
     }
 
 }

@@ -236,18 +236,11 @@ export abstract class BaseQueryRunner {
     /**
      * Replaces loaded table with given changed table.
      */
-    protected replaceCachedTable(table: Table, changedTable: Table): void {
-        const foundTable = this.loadedTables.find(loadedTable => loadedTable.name === table.name);
-        if (foundTable) {
-            foundTable.name = changedTable.name;
-            foundTable.columns = changedTable.columns;
-            foundTable.indices = changedTable.indices;
-            foundTable.foreignKeys = changedTable.foreignKeys;
-            foundTable.uniques = changedTable.uniques;
-            foundTable.checks = changedTable.checks;
-            foundTable.justCreated = changedTable.justCreated;
-            foundTable.engine = changedTable.engine;
-        }
+    protected invalidateCachedTable(table: Table): void {
+        this.loadedTables.splice(
+            this.loadedTables.findIndex(t => t.name === table.name),
+            1
+        );
     }
 
     protected getTypeormMetadataTableName(): string {
