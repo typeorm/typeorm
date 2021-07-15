@@ -439,6 +439,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
         const dbName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
+
+        newTable.path = this.driver.buildTableName(newTableName, newTable.schema, newTable.database);
         newTable.name = dbName ? `${dbName}.${newTableName}` : newTableName;
 
         // rename table
@@ -500,6 +502,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.executeQueries(upQueries, downQueries);
 
         // rename old table and replace it in cached tabled;
+        oldTable.path = newTable.path;
         oldTable.name = newTable.name;
         this.replaceCachedTable(oldTable, newTable);
     }
@@ -1448,6 +1451,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // We do not need to join database name, when database is by default.
             const db = dbTable["TABLE_SCHEMA"] === currentDatabase ? undefined : dbTable["TABLE_SCHEMA"];
+            table.database = dbTable["TABLE_SCHEMA"];
+            table.path = this.driver.buildTableName(dbTable["TABLE_NAME"], undefined, dbTable["TABLE_SCHEMA"]);
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], undefined, db);
 
             // create columns from the loaded columns

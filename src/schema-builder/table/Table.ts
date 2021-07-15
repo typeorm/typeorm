@@ -19,10 +19,27 @@ export class Table {
     // -------------------------------------------------------------------------
 
     /**
-     * Contains database name, schema name and table name.
+     * Database name that this table resides in if it applies.
+     */
+    database?: string;
+
+    /**
+     * Schema name that this table resides in if it applies.
+     */
+    schema?: string;
+
+    /**
+     * May contain database name, schema name and table name, unless they're the current database.
+     *
      * E.g. myDB.mySchema.myTable
      */
     name: string;
+
+    /**
+     * Contains database name, schema name and table name.
+     * E.g. myDB.mySchema.myTable
+     */
+    path: string;
 
     /**
      * Table columns.
@@ -72,6 +89,12 @@ export class Table {
 
     constructor(options?: TableOptions) {
         if (options) {
+            this.database = options.database;
+
+            this.schema = options.schema;
+
+            this.path = options.path || options.name;
+
             this.name = options.name;
 
             if (options.columns)
@@ -115,7 +138,10 @@ export class Table {
      * Clones this table to a new table with all properties cloned.
      */
     clone(): Table {
-        return new Table(<TableOptions>{
+        return new Table({
+            schema: this.schema,
+            database: this.database,
+            path: this.path,
             name: this.name,
             columns: this.columns.map(column => column.clone()),
             indices: this.indices.map(constraint => constraint.clone()),
@@ -306,6 +332,9 @@ export class Table {
         const schema = entityMetadata.schema === (driver.options as any).schema ? undefined : entityMetadata.schema;
 
         const options: TableOptions = {
+            database: entityMetadata.database,
+            schema: entityMetadata.schema,
+            path: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
             name: driver.buildTableName(entityMetadata.tableName, schema, database),
             engine: entityMetadata.engine,
             columns: entityMetadata.columns

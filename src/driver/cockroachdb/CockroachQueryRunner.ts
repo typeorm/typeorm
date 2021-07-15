@@ -518,6 +518,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const newTable = oldTable.clone();
         const oldTableName = oldTable.name.indexOf(".") === -1 ? oldTable.name : oldTable.name.split(".")[1];
         const schemaName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
+
+        newTable.path = this.driver.buildTableName(newTableName, newTable.schema);
         newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
 
         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(oldTable)} RENAME TO "${newTableName}"`));
@@ -1404,6 +1406,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         const currentSchema = await this.getCurrentSchema();
+        const currentDatabase = await this.getCurrentDatabase();
 
         const dbTables: { table_schema: string, table_name: string }[] = [];
 
@@ -1501,6 +1504,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
             // We do not need to join schema name, when database is by default.
             const schema = getSchemaFromKey(dbTable, "table_schema");
+            table.database = currentDatabase;
+            table.schema = dbTable["table_schema"];
+            table.path = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
             table.name = this.driver.buildTableName(dbTable["table_name"], schema);
 
             // create columns from the loaded columns

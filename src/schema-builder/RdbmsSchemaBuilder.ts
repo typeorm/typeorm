@@ -1,7 +1,5 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
-import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {SapDriver} from "../driver/sap/SapDriver";
-import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {Table} from "./table/Table";
 import {TableColumn} from "./table/TableColumn";
 import {TableForeignKey} from "./table/TableForeignKey";
@@ -759,11 +757,15 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates typeorm service table for storing user defined Views.
      */
     protected async createTypeormMetadataTable() {
-        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
-        const typeormMetadataTable = this.connection.driver.buildTableName("typeorm_metadata", options.schema, options.database);
+        const { schema } = this.connection.driver.options as any;
+        const database = this.connection.driver.database;
+        const typeormMetadataTable = this.connection.driver.buildTableName("typeorm_metadata", schema, database);
 
         await this.queryRunner.createTable(new Table(
             {
+                database: database,
+                schema: schema,
+                path: typeormMetadataTable,
                 name: typeormMetadataTable,
                 columns: [
                     {

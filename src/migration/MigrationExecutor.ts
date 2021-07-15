@@ -5,8 +5,6 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
-import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
-import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
 import { TypeORMError } from "../error";
@@ -32,6 +30,8 @@ export class MigrationExecutor {
     // Private Properties
     // -------------------------------------------------------------------------
 
+    private readonly migrationsDatabase?: string;
+    private readonly migrationsSchema?: string;
     private readonly migrationsTable: string;
     private readonly migrationsTableName: string;
 
@@ -42,9 +42,12 @@ export class MigrationExecutor {
     constructor(protected connection: Connection,
                 protected queryRunner?: QueryRunner) {
 
-        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
+        const { schema } = this.connection.driver.options as any;
+        const database = this.connection.driver.database;
+        this.migrationsDatabase = database;
+        this.migrationsSchema = schema;
         this.migrationsTableName = connection.options.migrationsTableName || "migrations";
-        this.migrationsTable = this.connection.driver.buildTableName(this.migrationsTableName, options.schema, options.database);
+        this.migrationsTable = this.connection.driver.buildTableName(this.migrationsTableName, schema, database);
     }
 
     // -------------------------------------------------------------------------
@@ -346,6 +349,9 @@ export class MigrationExecutor {
         if (!tableExist) {
             await queryRunner.createTable(new Table(
                 {
+                    database: this.migrationsDatabase,
+                    schema: this.migrationsSchema,
+                    path: this.migrationsTable,
                     name: this.migrationsTable,
                     columns: [
                         {

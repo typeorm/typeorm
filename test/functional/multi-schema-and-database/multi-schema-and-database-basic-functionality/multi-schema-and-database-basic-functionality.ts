@@ -27,6 +27,15 @@ describe("multi-schema-and-database > basic-functionality", () => {
         beforeEach(() => reloadTestingDatabases(connections));
         after(() => closeTestingConnections(connections));
 
+        it("should set the table database / schema", () => Promise.all(connections.map(async connection => {
+            const queryRunner = connection.createQueryRunner();
+            const table = (await queryRunner.getTable("post"))!;
+            await queryRunner.release();
+
+            expect(table.database).to.not.be.undefined;
+            expect(table.schema).to.be.equal("custom");
+        })));
+
         it("should correctly get the table primary keys when custom table schema used", () => Promise.all(connections.map(async connection => {
             const queryRunner = connection.createQueryRunner();
             const table = (await queryRunner.getTable("post"))!;
@@ -170,6 +179,16 @@ describe("multi-schema-and-database > basic-functionality", () => {
         });
         beforeEach(() => reloadTestingDatabases(connections));
         after(() => closeTestingConnections(connections));
+
+        it("should set the table database / schema", () => Promise.all(connections.map(async connection => {
+            const queryRunner = connection.createQueryRunner();
+            const table = (await queryRunner.getTable("testDB.questions.question"))!;
+            await queryRunner.release();
+
+            expect(table.database).to.be.equal("testDB");
+            expect(table.schema).to.be.equal("questions");
+            expect(table.path).to.be.equal("testDB.questions.question");
+        })));
 
         it("should correctly get the table primary keys when custom table schema used", () => Promise.all(connections.map(async connection => {
             const queryRunner = connection.createQueryRunner();

@@ -1,9 +1,7 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
-import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Table} from "../schema-builder/table/Table";
@@ -21,17 +19,24 @@ export class DbQueryResultCache implements QueryResultCache {
 
     private queryResultCacheTable: string;
 
+    private queryResultCacheDatabase?: string;
+
+    private queryResultCacheSchema?: string;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection) {
 
-        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
+        const { schema } = (this.connection.driver.options as any);
+        const database = this.connection.driver.database;
         const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
         const cacheTableName = cacheOptions.tableName || "query-result-cache";
 
-        this.queryResultCacheTable = this.connection.driver.buildTableName(cacheTableName, options.schema, options.database);
+        this.queryResultCacheDatabase = database;
+        this.queryResultCacheSchema = schema;
+        this.queryResultCacheTable = this.connection.driver.buildTableName(cacheTableName, schema, database);
     }
 
     // -------------------------------------------------------------------------
@@ -62,6 +67,9 @@ export class DbQueryResultCache implements QueryResultCache {
 
         await queryRunner.createTable(new Table(
             {
+                database: this.queryResultCacheDatabase,
+                schema: this.queryResultCacheSchema,
+                path: this.queryResultCacheTable,
                 name: this.queryResultCacheTable,
                 columns: [
                     {

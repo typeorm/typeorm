@@ -328,6 +328,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     async renameTable(oldTableOrName: Table|string, newTableName: string): Promise<void> {
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
+
+        newTable.path = newTableName;
         newTable.name = newTableName;
 
         // rename table
@@ -336,6 +338,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         await this.executeQueries(up, down);
 
         // rename old table;
+        oldTable.path = newTable.path;
         oldTable.name = newTable.name;
 
         // rename unique constraints
@@ -825,7 +828,11 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
-            const table = new Table({name: dbTable["name"]});
+            const table = new Table();
+
+            table.path = dbTable["name"];
+            table.name = dbTable["name"];
+
             const sql = dbTable["sql"];
 
             // load columns and indices
@@ -1195,6 +1202,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         });
 
         // change table name into 'temporary_table'
+        newTable.path = "temporary_" + newTable.path;
         newTable.name = "temporary_" + newTable.name;
 
         // create new table
@@ -1227,6 +1235,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         // rename old table
         upQueries.push(new Query(`ALTER TABLE "${newTable.name}" RENAME TO "${oldTable.name}"`));
         downQueries.push(new Query(`ALTER TABLE "${oldTable.name}" RENAME TO "${newTable.name}"`));
+
+        newTable.path = oldTable.path;
         newTable.name = oldTable.name;
 
         // recreate table indices
