@@ -1639,7 +1639,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             return `SELECT "TABLE_CATALOG", "TABLE_SCHEMA", "COLUMN_NAME", "TABLE_NAME" ` +
                 `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
                 `WHERE ` +
-                `COLUMNPROPERTY(object_id("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME"), "COLUMN_NAME", 'IsIdentity') = 1 AND ` +
+                `EXISTS(SELECT 1 FROM "${TABLE_CATALOG}"."SYS"."COLUMNS" "S" WHERE OBJECT_ID("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME") = "S"."OBJECT_ID" AND "COLUMN_NAME" = "S"."NAME" AND "S"."is_identity" = 1) AND ` +
                 `(${conditions})`;
         }).join(" UNION ALL ");
 

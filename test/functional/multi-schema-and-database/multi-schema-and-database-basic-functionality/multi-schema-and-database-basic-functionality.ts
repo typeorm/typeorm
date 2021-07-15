@@ -27,6 +27,15 @@ describe("multi-schema-and-database > basic-functionality", () => {
         beforeEach(() => reloadTestingDatabases(connections));
         after(() => closeTestingConnections(connections));
 
+        it("should correctly get the table primary keys when custom table schema used", () => Promise.all(connections.map(async connection => {
+            const queryRunner = connection.createQueryRunner();
+            const table = (await queryRunner.getTable("post"))!;
+            await queryRunner.release();
+
+            expect(table.primaryColumns).to.have.length(1);
+            expect(table.findColumnByName("id")?.isGenerated).to.be.true;
+        })));
+
         it("should correctly create tables when custom table schema used", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
@@ -161,6 +170,15 @@ describe("multi-schema-and-database > basic-functionality", () => {
         });
         beforeEach(() => reloadTestingDatabases(connections));
         after(() => closeTestingConnections(connections));
+
+        it("should correctly get the table primary keys when custom table schema used", () => Promise.all(connections.map(async connection => {
+            const queryRunner = connection.createQueryRunner();
+            const table = (await queryRunner.getTable("testDB.questions.question"))!;
+            await queryRunner.release();
+
+            expect(table.primaryColumns).to.have.length(1);
+            expect(table.findColumnByName("id")?.isGenerated).to.be.true;
+        })));
 
         it("should correctly create tables when custom database and custom schema used in Entity decorator", () => Promise.all(connections.map(async connection => {
 
