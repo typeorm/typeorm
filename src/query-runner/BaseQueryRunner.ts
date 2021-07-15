@@ -85,6 +85,8 @@ export abstract class BaseQueryRunner {
      */
     protected mode: ReplicationMode;
 
+    private cachedTablePaths: Record<string, string> = {};
+
     // -------------------------------------------------------------------------
     // Public Abstract Methods
     // -------------------------------------------------------------------------
@@ -221,11 +223,19 @@ export abstract class BaseQueryRunner {
      * Gets table from previously loaded tables, otherwise loads it from database.
      */
     protected async getCachedTable(tableName: string): Promise<Table> {
-        const table = this.loadedTables.find(table => table.name === tableName);
-        if (table) return table;
+        if (tableName in this.cachedTablePaths) {
+            const tablePath = this.cachedTablePaths[tableName];
+            const table = this.loadedTables.find(table => table.path === tablePath);
+
+            if (table) {
+                return table;
+            }
+        }
 
         const foundTables = await this.loadTables([tableName]);
+
         if (foundTables.length > 0) {
+            this.cachedTablePaths[tableName] = foundTables[0].path;
             this.loadedTables.push(foundTables[0]);
             return foundTables[0];
         } else {
@@ -237,7 +247,15 @@ export abstract class BaseQueryRunner {
      * Replaces loaded table with given changed table.
      */
     protected replaceCachedTable(table: Table, changedTable: Table): void {
-        const foundTable = this.loadedTables.find(loadedTable => loadedTable.name === table.name);
+        const foundTable = this.loadedTables.find(loadedTable => loadedTable.path === table.path);
+
+        // Clean up the lookup cache..
+        for (const [key, cachedPath] of Object.entries(this.cachedTablePaths)) {
+            if (cachedPath === table.path) {
+                this.cachedTablePaths[key] = changedTable.path;
+            }
+        }
+
         if (foundTable) {
             foundTable.database = changedTable.database;
             foundTable.schema = changedTable.schema;

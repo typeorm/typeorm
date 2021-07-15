@@ -120,6 +120,8 @@ export class EntityMetadata {
     /**
      * Entity table path. Contains database name, schema name and table name.
      * E.g. myDB.mySchema.myTable
+     *
+     * @deprecated
      */
     tablePath: string;
 
