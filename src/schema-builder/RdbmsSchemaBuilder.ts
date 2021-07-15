@@ -12,7 +12,6 @@ import {SqlInMemory} from "../driver/SqlInMemory";
 import {TableUtils} from "./util/TableUtils";
 import {TableColumnOptions} from "./options/TableColumnOptions";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {TableUnique} from "./table/TableUnique";
 import {TableCheck} from "./table/TableCheck";
@@ -402,7 +401,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             // check if view does not exist yet
             const existView = this.queryRunner.loadedViews.find(view => {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
+                const schema = metadata.schema || this.connection.driver.schema;
                 const fullViewName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
                 const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
                 const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
@@ -425,7 +424,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         for (const view of this.queryRunner.loadedViews) {
             const existViewMetadata = this.viewEntityToSyncMetadatas.find(metadata => {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
+                const schema = metadata.schema || this.connection.driver.schema;
                 const fullViewName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
                 const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
                 const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();

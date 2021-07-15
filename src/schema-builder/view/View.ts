@@ -62,8 +62,11 @@ export class View {
      * Creates view from a given entity metadata.
      */
     static create(entityMetadata: EntityMetadata, driver: Driver): View {
+        const database = entityMetadata.database === driver.database ? undefined : entityMetadata.database;
+        const schema = entityMetadata.schema === driver.schema ? undefined : entityMetadata.schema;
+
         const options: ViewOptions = {
-            name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
+            name: driver.buildTableName(entityMetadata.tableName, schema, database),
             expression: entityMetadata.expression!,
             materialized: entityMetadata.tableMetadataArgs.materialized
         };

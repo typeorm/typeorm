@@ -56,9 +56,14 @@ export class SapDriver implements Driver {
     options: SapConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Database name used to perform all write queries.
      */
     database?: string;
+
+    /**
+     * Schema name used to perform all write queries.
+     */
+    schema?: string;
 
     /**
      * Indicates if replication is enabled.
@@ -248,7 +253,13 @@ export class SapDriver implements Driver {
         // create the pool
         this.master = this.client.createPool(dbParams, options);
 
-        this.database = this.options.database;
+        const queryRunner = await this.createQueryRunner("master");
+
+        // Ask the database for where we've connected to
+        this.database = await queryRunner.getCurrentDatabase();
+        this.schema = await queryRunner.getCurrentSchema();
+
+        await queryRunner.release();
     }
 
     /**

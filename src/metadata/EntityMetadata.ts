@@ -802,15 +802,19 @@ export class EntityMetadata {
         const entitySkipConstructor = this.connection.options.entitySkipConstructor;
 
         this.engine = this.tableMetadataArgs.engine;
-        this.database = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.database : this.tableMetadataArgs.database;
-        if (this.tableMetadataArgs.schema) {
+
+        if ((this.tableMetadataArgs.type === "entity-child") && this.parentEntityMetadata?.database) {
+            this.database = this.parentEntityMetadata.database;
+        } else if (this.tableMetadataArgs.database) {
+            this.database = this.tableMetadataArgs.database;
+        }
+
+        if ((this.tableMetadataArgs.type === "entity-child") && this.parentEntityMetadata?.schema) {
+            this.schema = this.parentEntityMetadata.schema;
+        } else if (this.tableMetadataArgs.schema) {
             this.schema = this.tableMetadataArgs.schema;
         }
-        else if ((this.tableMetadataArgs.type === "entity-child") && this.parentEntityMetadata) {
-            this.schema = this.parentEntityMetadata.schema;
-        } else if (this.connection.options?.hasOwnProperty("schema")) {
-            this.schema = (this.connection.options as any).schema;
-        }
+
         this.givenTableName = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.givenTableName : this.tableMetadataArgs.name;
         this.synchronize = this.tableMetadataArgs.synchronize === false ? false : true;
         this.targetName = this.tableMetadataArgs.target instanceof Function ? (this.tableMetadataArgs.target as any).name : this.tableMetadataArgs.target;
@@ -830,7 +834,7 @@ export class EntityMetadata {
         this.name = this.targetName ? this.targetName : this.tableName;
         this.expression = this.tableMetadataArgs.expression;
         this.withoutRowid = this.tableMetadataArgs.withoutRowid === true ? true : false;
-        this.tablePath = this.connection.driver.buildTableName(this.tableName, this.schema, this.database);
+        this.tablePath = this.connection.driver.buildTableName(this.tableName, this.schema || (this.connection.options as any).schema, this.database);
         this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
 
         if (entitySkipConstructor !== undefined) {

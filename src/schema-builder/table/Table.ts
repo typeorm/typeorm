@@ -329,12 +329,16 @@ export class Table {
      */
     static create(entityMetadata: EntityMetadata, driver: Driver): Table {
         const database = entityMetadata.database === driver.database ? undefined : entityMetadata.database;
-        const schema = entityMetadata.schema === (driver.options as any).schema ? undefined : entityMetadata.schema;
+        const schema = entityMetadata.schema === driver.schema ? undefined : entityMetadata.schema;
 
         const options: TableOptions = {
             database: entityMetadata.database,
             schema: entityMetadata.schema,
-            path: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
+            path: driver.buildTableName(
+                entityMetadata.tableName,
+                entityMetadata.schema || driver.schema,
+                entityMetadata.database || driver.database
+            ),
             name: driver.buildTableName(entityMetadata.tableName, schema, database),
             engine: entityMetadata.engine,
             columns: entityMetadata.columns

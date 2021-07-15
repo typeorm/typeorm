@@ -252,7 +252,11 @@ export async function createTestingConnections(options?: TestingOptions): Promis
         const queryRunner = connection.createQueryRunner();
 
         for (const database of databases) {
-            await queryRunner.createDatabase(database, true);
+            try {
+                await queryRunner.createDatabase(database, true);
+            } catch (e) {
+                // Do nothing
+            }
         }
 
         if (connection.driver instanceof CockroachDriver) {
@@ -289,7 +293,7 @@ export async function createTestingConnections(options?: TestingOptions): Promis
                 undefined;
 
         if (schema) {
-            schemaPaths.add(schema);
+            schemaPaths.add(connection.driver.database ? `${connection.driver.database}.${schema}` : schema);
         }
 
         for (const schemaPath of schemaPaths) {

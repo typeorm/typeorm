@@ -67,9 +67,14 @@ export class PostgresDriver implements Driver {
     options: PostgresConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Database name used to perform all write queries.
      */
     database?: string;
+
+    /**
+     * Schema name used to perform all write queries.
+     */
+    schema?: string;
 
     /**
      * Indicates if replication is enabled.
@@ -294,12 +299,22 @@ export class PostgresDriver implements Driver {
                 return this.createPool(this.options, slave);
             }));
             this.master = await this.createPool(this.options, this.options.replication.master);
-            this.database = this.options.replication.master.database;
-
         } else {
             this.master = await this.createPool(this.options, this.options);
-            this.database = this.options.database;
         }
+
+        const queryRunner = await this.createQueryRunner("master");
+
+        // Ask the database for where we've connected to
+        this.database = await queryRunner.getCurrentDatabase();
+
+        if (this.connection.options.hasOwnProperty("schema")) {
+            this.schema = (this.connection.options as any).schema;
+        } else {
+            this.schema = await queryRunner.getCurrentSchema();
+        }
+
+        await queryRunner.release();
     }
 
     /**
