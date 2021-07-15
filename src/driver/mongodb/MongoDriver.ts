@@ -448,15 +448,16 @@ export class MongoDriver implements Driver {
             ? `${options.username}:${options.password}@`
             : "";
 
-        let connectionString = undefined;
+
         const portUrlPart = (schemaUrlPart === "mongodb+srv")
             ? ""
             : `:${options.port || "27017"}`;
 
+        let connectionString: string;
         if(options.replicaSet) {
-            connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.hostReplicaSet || options.host + portUrlPart || "127.0.0.1" + portUrlPart}/${options.database || ""}`;
+            connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.hostReplicaSet || options.host + portUrlPart || "127.0.0.1" + portUrlPart}/${options.database || ""}?replicaSet=${options.replicaSet}${options.tls ? "&tls=true" : ""}`;
         } else {
-            connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}`;
+            connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}${options.tls ? "?tls=true" : ""}`;
         }
 
         return connectionString;
