@@ -382,7 +382,7 @@ export class MigrationExecutor {
             return await mongoRunner.databaseConnection
             .db(this.connection.driver.database!)
             .collection(this.migrationsTableName)
-            .find<Migration>()
+            .find<Migration>({})
             .sort({"_id": -1})
             .toArray();
         } else {
