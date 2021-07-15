@@ -17,12 +17,12 @@ describe("mongodb > MongoRepository", () => {
 
     it("connection should return mongo repository when requested", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getMongoRepository(Post);
-        postRepository.should.be.instanceOf(MongoRepository);
+        expect(postRepository).to.be.instanceOf(MongoRepository);
     })));
 
     it("entity manager should return mongo repository when requested", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.manager.getMongoRepository(Post);
-        postRepository.should.be.instanceOf(MongoRepository);
+        expect(postRepository).to.be.instanceOf(MongoRepository);
     })));
 
     it("should be able to use entity cursor which will return instances of entity classes", () => Promise.all(connections.map(async connection => {
@@ -44,11 +44,11 @@ describe("mongodb > MongoRepository", () => {
         });
 
         const loadedPosts = await cursor.toArray();
-        loadedPosts.length.should.be.equal(1);
-        loadedPosts[0].should.be.instanceOf(Post);
-        loadedPosts[0].id.should.be.eql(firstPost.id);
-        loadedPosts[0].title.should.be.equal("Post #1");
-        loadedPosts[0].text.should.be.equal("Everything about post #1");
+        expect(loadedPosts).to.have.length(1);
+        expect(loadedPosts[0]).to.be.instanceOf(Post);
+        expect(loadedPosts[0].id).to.eql(firstPost.id);
+        expect(loadedPosts[0].title).to.eql("Post #1");
+        expect(loadedPosts[0].text).to.eql("Everything about post #1");
 
     })));
 
@@ -79,14 +79,13 @@ describe("mongodb > MongoRepository", () => {
             }
         });
 
-        loadedPosts.length.should.be.equal(1);
-        loadedPosts[0].should.be.instanceOf(Post);
-        loadedPosts[0].id.should.be.eql(firstPost.id);
-        loadedPosts[0].title.should.be.equal("Post #1");
-        loadedPosts[0].text.should.be.equal("Everything about post #1");
-
+        expect(loadedPosts).to.have.length(1);
+        expect(loadedPosts[0]).to.be.instanceOf(Post);
+        expect(loadedPosts[0].id).to.eql(firstPost.id);
+        expect(loadedPosts[0].title).to.eql("Post #1");
+        expect(loadedPosts[0].text).to.eql("Everything about post #1");
     })));
-  
+
     it("should be able to use findByIds with both objectId and strings", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getMongoRepository(Post);
 
@@ -128,10 +127,9 @@ describe("mongodb > MongoRepository", () => {
 
         const loadedPosts = await postRepository.find();
 
-        loadedPosts.length.should.be.equal(2);
-        loadedPosts[0].text.should.be.equal("Everything and more about post #1");
-        loadedPosts[1].text.should.be.equal("Everything about post #2");
-
+        expect(loadedPosts).to.have.length(2);
+        expect(loadedPosts[0].text).to.eql("Everything and more about post #1");
+        expect(loadedPosts[1].text).to.eql("Everything about post #2");
     })));
 
     it("should ignore non-column properties", () => Promise.all(connections.map(async connection => {
