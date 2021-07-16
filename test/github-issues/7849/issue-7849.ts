@@ -10,7 +10,6 @@ describe("github issues > #7849 Handle query builder to accomodate zero limit an
     
     before(async () => {
         connections = await createTestingConnections({
-            enabledDrivers: ["postgres"],
             entities: [TestEntity],
             schemaCreate: true,
             dropSchema: true
