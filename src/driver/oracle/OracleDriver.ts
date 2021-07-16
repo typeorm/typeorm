@@ -370,10 +370,6 @@ export class OracleDriver implements Driver {
             tablePath.unshift(schema);
         }
 
-        if (database) {
-            tablePath.unshift(database);
-        }
-
         return tablePath.join('.');
     }
 
