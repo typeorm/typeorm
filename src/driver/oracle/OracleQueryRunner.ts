@@ -310,7 +310,24 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new database.
      */
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
-        await this.query(`CREATE DATABASE IF NOT EXISTS "${database}"`);
+        // Even with `IF NOT EXISTS` we get:
+        //   ORA-01501: CREATE DATABASE failed
+        //   ORA-01100: database already mounted
+        if (ifNotExist) {
+            try {
+                await this.query(`CREATE DATABASE IF NOT EXISTS "${database}";`);
+            } catch (e) {
+                if (e instanceof QueryFailedError) {
+                    if (e.message.includes("ORA-01100: database already mounted")) {
+                        return;
+                    }
+                }
+
+                throw e;
+            }
+        } else {
+            await this.query(`CREATE DATABASE "${database}"`);
+        }
     }
 
     /**
