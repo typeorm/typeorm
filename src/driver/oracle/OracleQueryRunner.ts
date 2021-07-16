@@ -1258,13 +1258,20 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             dbTables.push(...await this.query(tablesSql));
         } else {
             const tablesCondition = tableNames.map(tableName => {
-                let [schema, name] = tableName.split(".");
-                if (!name) {
-                    name = schema;
-                    schema = this.driver.options.schema || currentSchema;
-                }
+                const parts = tableName.split(".");
 
-                return `("OWNER" = '${schema}' AND "TABLE_NAME" = '${name}')`
+                if (parts.length >= 3) {
+                    const [ , schema, name ] = parts;
+                    return `("OWNER" = '${schema}' AND "TABLE_NAME" = '${name}')`
+                } else if (parts.length === 2) {
+                    const [ schema, name ] = parts;
+                    return `("OWNER" = '${schema}' AND "TABLE_NAME" = '${name}')`
+                } else if (parts.length === 1) {
+                    const [ name ] = parts;
+                    return `("TABLE_NAME" = '${name}')`
+                } else {
+                    return `(1=0)`
+                }
             }).join(" OR ");
             const tablesSql = `SELECT "TABLE_NAME", "OWNER" FROM "ALL_TABLES" WHERE ${tablesCondition}`;
             dbTables.push(...await this.query(tablesSql));
@@ -1324,8 +1331,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 .map(dbColumn => {
                     const columnConstraints = dbConstraints.filter(
                         dbConstraint => (
-                            dbConstraint["OWNER"] === dbTable["OWNER"] &&
-                            dbConstraint["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                            dbConstraint["OWNER"] === dbColumn["OWNER"] &&
+                            dbConstraint["TABLE_NAME"] === dbColumn["TABLE_NAME"] &&
                             dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
                         )
                     );
@@ -1333,8 +1340,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const uniqueConstraint = columnConstraints.find(constraint => constraint["CONSTRAINT_TYPE"] === "U");
                     const isConstraintComposite = uniqueConstraint
                         ? !!dbConstraints.find(dbConstraint => (
-                                dbConstraint["OWNER"] === dbTable["OWNER"] &&
-                                dbConstraint["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                                dbConstraint["OWNER"] === dbColumn["OWNER"] &&
+                                dbConstraint["TABLE_NAME"] === dbColumn["TABLE_NAME"] &&
                                 dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"] &&
                                 dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"] &&
                                 dbConstraint["CONSTRAINT_TYPE"] === "U"
