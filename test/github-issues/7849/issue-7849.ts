@@ -114,7 +114,7 @@ describe("github issues > #7849 Handle query builder to have only offset for mys
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
     
-    it("should build query with positive offset", () => Promise.all(connections.map(async connection => {
+    it("should throw error", () => Promise.all(connections.map(async connection => {
         try {
             await saveData(connection);
             await connection.createQueryBuilder().from("test", "test").offset(1).execute();
