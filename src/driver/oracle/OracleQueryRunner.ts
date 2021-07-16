@@ -252,7 +252,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Checks if database with the given name exist.
      */
     async hasDatabase(database: string): Promise<boolean> {
-        return Promise.resolve(false);
+        try {
+            const query = await this.query(
+                `SELECT 1 AS "exists" FROM global_name@"${database}"`
+            )
+
+            return query.length > 0;
+        } catch (e) {
+            return false;
+        }
     }
 
     /**
