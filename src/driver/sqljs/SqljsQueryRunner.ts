@@ -35,6 +35,20 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     // Public methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Called before migrations are run.
+     */
+    async beforeMigration(): Promise<void> {
+        await this.query(`PRAGMA foreign_keys = OFF`);
+    }
+
+    /**
+     * Called after migrations are run.
+     */
+    async afterMigration(): Promise<void> {
+        await this.query(`PRAGMA foreign_keys = ON`);
+    }
+
     private async flush() {
         if (this.isDirty) {
             await this.driver.autoSave();

@@ -68,6 +68,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             this.connection.options.migrationsTransactionMode !== "none"
         );
 
+        await this.queryRunner.beforeMigration();
+
         if (isUsingTransactions) {
             await this.queryRunner.startTransaction();
         }
@@ -102,6 +104,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             throw error;
 
         } finally {
+
+            await this.queryRunner.afterMigration();
+
             await this.queryRunner.release();
         }
     }

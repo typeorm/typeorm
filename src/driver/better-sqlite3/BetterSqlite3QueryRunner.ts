@@ -59,6 +59,20 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
     }
 
     /**
+     * Called before migrations are run.
+     */
+    async beforeMigration(): Promise<void> {
+        await this.query(`PRAGMA foreign_keys = OFF`);
+    }
+
+    /**
+     * Called after migrations are run.
+     */
+    async afterMigration(): Promise<void> {
+        await this.query(`PRAGMA foreign_keys = ON`);
+    }
+
+    /**
      * Executes a given SQL query.
      */
     async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {

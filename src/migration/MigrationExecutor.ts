@@ -60,7 +60,9 @@ export class MigrationExecutor {
     public async executeMigration(migration: Migration): Promise<Migration> {
         return this.withQueryRunner(async (queryRunner) => {
             await this.createMigrationsTableIfNotExist(queryRunner);
+            await queryRunner.beforeMigration();
             await (migration.instance as any).up(queryRunner);
+            await queryRunner.afterMigration();
             await this.insertExecutedMigration(queryRunner, migration);
 
             return migration;
@@ -308,7 +310,10 @@ export class MigrationExecutor {
         }
 
         try {
+            await queryRunner.beforeMigration();
             await migrationToRevert.instance!.down(queryRunner);
+            await queryRunner.afterMigration();
+
             await this.deleteExecutedMigration(queryRunner, migrationToRevert);
             this.connection.logger.logSchemaBuild(`Migration ${migrationToRevert.name} has been reverted successfully.`);
 
