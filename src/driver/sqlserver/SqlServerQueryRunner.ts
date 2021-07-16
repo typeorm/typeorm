@@ -1607,12 +1607,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
             return `SELECT "columnUsages".*, "tableConstraints"."CONSTRAINT_TYPE", "chk"."definition" ` +
                 `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."CONSTRAINT_COLUMN_USAGE" "columnUsages" ` +
-                `INNER JOIN "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."TABLE_CONSTRAINTS" "tableConstraints"
-                    ON
-                        "tableConstraints"."CONSTRAINT_NAME" = "columnUsages"."CONSTRAINT_NAME" AND
-                        "tableConstraints"."TABLE_SCHEMA" = "columnUsages"."TABLE_SCHEMA" AND
-                        "tableConstraints"."TABLE_NAME" = "columnUsages"."TABLE_NAME"` +
-                `LEFT JOIN "${TABLE_CATALOG}"."sys"."check_constraints" "chk" ON "chk"."name" = "columnUsages"."CONSTRAINT_NAME" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."TABLE_CONSTRAINTS" "tableConstraints" ` +
+                `ON ` +
+                `"tableConstraints"."CONSTRAINT_NAME" = "columnUsages"."CONSTRAINT_NAME" AND ` +
+                `"tableConstraints"."TABLE_SCHEMA" = "columnUsages"."TABLE_SCHEMA" AND ` +
+                `"tableConstraints"."TABLE_NAME" = "columnUsages"."TABLE_NAME" ` +
+                `LEFT JOIN "${TABLE_CATALOG}"."sys"."check_constraints" "chk" ` +
+                `ON ` +
+                `"chk"."object_id" = OBJECT_ID("columnUsages"."TABLE_CATALOG" + '.' + "columnUsages"."TABLE_SCHEMA" + '.' + "columnUsages"."CONSTRAINT_NAME") ` +
                 `WHERE ` +
                 `(${conditions}) AND ` +
                 `"tableConstraints"."CONSTRAINT_TYPE" IN ('PRIMARY KEY', 'UNIQUE', 'CHECK')`;
