@@ -475,7 +475,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // build new constraint name
             const columnNames = foreignKey.columnNames.map(column => `\`${column}\``).join(", ");
             const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `\`${column}\``).join(",");
-            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTablePath, foreignKey.referencedColumnNames);
 
             // build queries
             let up = `ALTER TABLE ${this.escapePath(newTable)} DROP FOREIGN KEY \`${foreignKey.name}\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
@@ -671,7 +671,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     foreignKey.columnNames.push(newColumn.name);
                     const columnNames = foreignKey.columnNames.map(column => `\`${column}\``).join(", ");
                     const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `\`${column}\``).join(",");
-                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames, foreignKey.referencedTablePath, foreignKey.referencedColumnNames);
 
                     // build queries
                     let up = `ALTER TABLE ${this.escapePath(table)} DROP FOREIGN KEY \`${foreignKey.name}\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
@@ -1080,7 +1080,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames, foreignKey.referencedTablePath, foreignKey.referencedColumnNames);
 
         const up = this.createForeignKeySql(table, foreignKey);
         const down = this.dropForeignKeySql(table, foreignKey);
@@ -1582,11 +1582,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // if referenced table located in currently used db, we don't need to concat db name to table name.
                 const database = dbForeignKey["REFERENCED_TABLE_SCHEMA"] === currentDatabase ? undefined : dbForeignKey["REFERENCED_TABLE_SCHEMA"];
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], undefined, database);
+                const referencedTablePath = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], undefined, dbForeignKey["REFERENCED_TABLE_SCHEMA"]);
 
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: dbForeignKey["REFERENCED_TABLE_SCHEMA"],
                     referencedTableName: referencedTableName,
+                    referencedTablePath: referencedTablePath,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["ON_DELETE"],
                     onUpdate: dbForeignKey["ON_UPDATE"]
@@ -1686,7 +1689,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `\`${columnName}\``).join(", ");
                 if (!fk.name)
-                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames, fk.referencedTablePath, fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `\`${columnName}\``).join(", ");
 
                 let constraint = `CONSTRAINT \`${fk.name}\` FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(fk.referencedTableName)} (${referencedColumnNames})`;

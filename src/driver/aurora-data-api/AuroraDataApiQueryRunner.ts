@@ -1398,11 +1398,14 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
                 // if referenced table located in currently used db, we don't need to concat db name to table name.
                 const database = dbForeignKey["REFERENCED_TABLE_SCHEMA"] === currentDatabase ? undefined : dbForeignKey["REFERENCED_TABLE_SCHEMA"];
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], undefined, database);
+                const referencedTablePath = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], undefined, dbForeignKey["REFERENCED_TABLE_SCHEMA"]);
 
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: dbForeignKey["REFERENCED_TABLE_SCHEMA"],
                     referencedTableName: referencedTableName,
+                    referencedTablePath: referencedTablePath,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["ON_DELETE"],
                     onUpdate: dbForeignKey["ON_UPDATE"]

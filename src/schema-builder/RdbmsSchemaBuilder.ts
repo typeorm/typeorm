@@ -695,7 +695,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
         this.queryRunner.loadedTables.forEach(loadedTable => {
             const dependForeignKeys = loadedTable.foreignKeys.filter(foreignKey => {
-                return foreignKey.referencedTableName === tablePath && foreignKey.referencedColumnNames.indexOf(columnName) !== -1;
+                return foreignKey.referencedTablePath === tablePath && foreignKey.referencedColumnNames.indexOf(columnName) !== -1;
             });
 
             if (dependForeignKeys.length > 0) {
@@ -809,5 +809,5 @@ function foreignKeysMatch(
     tableForeignKey: TableForeignKey, metadataForeignKey: ForeignKeyMetadata
 ): boolean {
     return (tableForeignKey.name === metadataForeignKey.name)
-        && (tableForeignKey.referencedTableName === metadataForeignKey.referencedTablePath);
+        && (tableForeignKey.referencedTablePath === metadataForeignKey.referencedTablePath);
 }
