@@ -1605,7 +1605,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * @param value - indicates the value provided for limit or offset
      */
     protected validateLimitAndOffset(value: number | undefined): boolean {
-        if (value === undefined || value < 0) return false;
+        if (value === null || value === undefined || value < 0) return false;
         return true;
     }
 

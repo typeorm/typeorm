@@ -42,4 +42,19 @@ describe("github issues > #7849 Handle query builder to accomodate zero limit an
         expect(typeof loadedEntities).to.be.eql("string");
         expect(loadedEntities).to.be.eql('SELECT * FROM "test" "test" LIMIT 1 OFFSET 1');
     })));
+    it("should build query with undefined limit", () => Promise.all(connections.map(async connection => {
+        const loadedEntities = await connection.createQueryBuilder().from("test", "test").limit(undefined).getQuery();
+        expect(typeof loadedEntities).to.be.eql("string");
+        expect(loadedEntities).to.be.eql('SELECT * FROM "test" "test"');
+    })));
+    it("should build query with negative limit", () => Promise.all(connections.map(async connection => {
+        const loadedEntities = await connection.createQueryBuilder().from("test", "test").limit(-1).getQuery();
+        expect(typeof loadedEntities).to.be.eql("string");
+        expect(loadedEntities).to.be.eql('SELECT * FROM "test" "test"');
+    })));
+    it("should build query with null limit", () => Promise.all(connections.map(async connection => {
+        const loadedEntities = await connection.createQueryBuilder().from("test", "test").limit(null as any).getQuery();
+        expect(typeof loadedEntities).to.be.eql("string");
+        expect(loadedEntities).to.be.eql('SELECT * FROM "test" "test"');
+    })));
 });
