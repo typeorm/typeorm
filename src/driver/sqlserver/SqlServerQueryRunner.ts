@@ -1850,7 +1850,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                 // if referenced table located in currently used db and schema, we don't need to concat db and schema names to table name.
                 const db = dbForeignKey["TABLE_CATALOG"] === currentDatabase ? undefined : dbForeignKey["TABLE_CATALOG"];
-                const schema = getSchemaFromKey(dbTable, "REF_SCHEMA");
+                const schema = getSchemaFromKey(dbForeignKey, "REF_SCHEMA");
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["REF_TABLE"], schema, db);
 
                 return new TableForeignKey({

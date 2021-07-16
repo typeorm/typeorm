@@ -1658,7 +1658,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["constraint_name"] === dbForeignKey["constraint_name"]);
 
                 // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                const schema = getSchemaFromKey(dbTable, "referenced_table_schema");
+                const schema = getSchemaFromKey(dbForeignKey, "referenced_table_schema");
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["referenced_table_name"], schema);
 
                 return new TableForeignKey({
