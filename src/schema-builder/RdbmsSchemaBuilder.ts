@@ -18,7 +18,6 @@ import {TableCheck} from "./table/TableCheck";
 import {TableExclusion} from "./table/TableExclusion";
 import {View} from "./view/View";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -204,7 +203,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // find foreign keys that exist in the schemas but does not exist in the entity metadata
             const tableForeignKeysToDrop = table.foreignKeys.filter(tableForeignKey => {
-                const metadataFK = metadata.foreignKeys.find(metadataForeignKey => foreignKeysMatch(tableForeignKey, metadataForeignKey));
+                const metadataFK = metadata.foreignKeys.find(metadataForeignKey => (
+                    (tableForeignKey.name === metadataForeignKey.name) &&
+                    (tableForeignKey.referencedTablePath === this.getTablePath(metadataForeignKey.referencedEntityMetadata))
+                ));
                 return !metadataFK
                     || (metadataFK.onDelete && metadataFK.onDelete !== tableForeignKey.onDelete)
                     || (metadataFK.onUpdate && metadataFK.onUpdate !== tableForeignKey.onUpdate);
@@ -668,7 +670,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             const newKeys = metadata.foreignKeys
                 .filter(foreignKey => {
-                return !table.foreignKeys.find(dbForeignKey => foreignKeysMatch(dbForeignKey, foreignKey));
+                return !table.foreignKeys.find(dbForeignKey => (
+                    (dbForeignKey.name === foreignKey.name) &&
+                    (dbForeignKey.referencedTablePath === this.getTablePath(foreignKey.referencedEntityMetadata))
+                ));
             });
             if (newKeys.length === 0)
                 continue;
@@ -698,7 +703,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
         for (const loadedTable of this.queryRunner.loadedTables) {
             const dependForeignKeys = loadedTable.foreignKeys.filter(foreignKey => {
-                return foreignKey.referencedTableName === tablePath && foreignKey.referencedColumnNames.indexOf(columnName) !== -1;
+                return foreignKey.referencedTablePath === tablePath && foreignKey.referencedColumnNames.indexOf(columnName) !== -1;
             });
 
             if (dependForeignKeys.length > 0) {
@@ -806,11 +811,4 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         ), true);
     }
 
-}
-
-function foreignKeysMatch(
-    tableForeignKey: TableForeignKey, metadataForeignKey: ForeignKeyMetadata
-): boolean {
-    return (tableForeignKey.name === metadataForeignKey.name)
-        && (tableForeignKey.referencedTableName === metadataForeignKey.referencedTablePath);
 }

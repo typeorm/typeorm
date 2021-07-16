@@ -508,7 +508,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: newTable.database,
+                    referencedSchema: newTable.schema,
                     referencedTableName: newTable.name, // we use renamed table name
+                    referencedTablePath: newTable.path,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
@@ -543,7 +546,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         // recreate foreign keys with new constraint names
         newTable.foreignKeys.forEach(foreignKey => {
             // replace constraint name
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTablePath, foreignKey.referencedColumnNames);
 
             // create new FK's
             upQueries.push(this.createForeignKeySql(newTable, foreignKey));
@@ -614,7 +617,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         return new TableForeignKey({
                             name: dbForeignKey["CONSTRAINT_NAME"],
                             columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                            referencedDatabase: table.database,
+                            referencedSchema: table.schema,
                             referencedTableName: table.name,
+                            referencedTablePath: table.path,
                             referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                             onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                             onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
@@ -784,7 +790,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     // build new constraint name
                     foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
                     foreignKey.columnNames.push(newColumn.name);
-                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames, foreignKey.referencedTablePath, foreignKey.referencedColumnNames);
 
                     upQueries.push(this.dropForeignKeySql(clonedTable, foreignKey));
                     downQueries.push(this.createForeignKeySql(clonedTable, foreignKey));
@@ -1090,7 +1096,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: table.database,
+                    referencedSchema: table.schema,
                     referencedTableName: table.name,
+                    referencedTablePath: table.path,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
@@ -1158,7 +1167,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: table.database,
+                    referencedSchema: table.schema,
                     referencedTableName: table.name,
+                    referencedTablePath: table.path,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
@@ -1300,7 +1312,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table, foreignKey.columnNames, foreignKey.referencedTablePath, foreignKey.referencedColumnNames);
 
         const up = this.createForeignKeySql(table, foreignKey);
         const down = this.dropForeignKeySql(table, foreignKey);
@@ -1670,11 +1682,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // if referenced table located in currently used schema, we don't need to concat schema name to table name.
                 const schema = getSchemaFromKey(dbForeignKey, "REFERENCED_SCHEMA_NAME");
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], schema);
+                const referencedTablePath = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], dbForeignKey["REFERENCED_SCHEMA_NAME"]);
 
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: table.database,
+                    referencedSchema: dbForeignKey["REFERENCED_SCHEMA_NAME"],
                     referencedTableName: referencedTableName,
+                    referencedTablePath: referencedTablePath,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
@@ -1759,7 +1775,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
                 if (!fk.name)
-                    fk.name = this.connection.namingStrategy.foreignKeyName(table, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table, fk.columnNames, fk.referencedTablePath, fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
 
                 let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(fk.referencedTableName)} (${referencedColumnNames})`;

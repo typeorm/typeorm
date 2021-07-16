@@ -51,6 +51,8 @@ export class ForeignKeyMetadata {
 
     /**
      * Gets the table name to which this foreign key is referenced.
+     *
+     * @deprecated
      */
     referencedTablePath: string;
 

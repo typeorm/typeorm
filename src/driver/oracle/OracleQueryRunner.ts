@@ -505,7 +505,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         // rename foreign key constraints
         newTable.foreignKeys.forEach(foreignKey => {
             // build new constraint name
-            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTablePath, foreignKey.referencedColumnNames);
 
             // build queries
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`));
@@ -690,7 +690,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     // build new constraint name
                     foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
                     foreignKey.columnNames.push(newColumn.name);
-                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames, foreignKey.referencedTablePath, foreignKey.referencedColumnNames);
 
                     // build queries
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`));
@@ -1085,7 +1085,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table, foreignKey.columnNames, foreignKey.referencedTablePath, foreignKey.referencedColumnNames);
 
         const up = this.createForeignKeySql(table, foreignKey);
         const down = this.dropForeignKeySql(table, foreignKey);
@@ -1437,10 +1437,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     dbFk["OWNER"] === dbForeignKey["OWNER"] &&
                     dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]
                 ));
+
+                const referencedTablePath = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], dbForeignKey["OWNER"], table.database);
+
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: table.database,
+                    referencedSchema: dbForeignKey["OWNER"],
                     referencedTableName: dbForeignKey["REFERENCED_TABLE_NAME"],
+                    referencedTablePath: referencedTablePath,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["ON_DELETE"],
                     onUpdate: "NO ACTION", // Oracle does not have onUpdate option in FK's, but we need it for proper synchronization
@@ -1503,7 +1509,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
                 if (!fk.name)
-                    fk.name = this.connection.namingStrategy.foreignKeyName(table, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table, fk.columnNames, fk.referencedTablePath, fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
                 let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES "${fk.referencedTableName}" (${referencedColumnNames})`;
                 if (fk.onDelete && fk.onDelete !== "NO ACTION") // Oracle does not support NO ACTION, but we set NO ACTION by default in EntityMetadata

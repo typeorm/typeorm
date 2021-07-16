@@ -18,9 +18,24 @@ export interface TableForeignKeyOptions {
     columnNames: string[];
 
     /**
+     * Database of the Table referenced in the foreign key.
+     */
+    referencedDatabase?: string;
+
+    /**
+     * Schema of the Table referenced in the foreign key.
+     */
+    referencedSchema?: string;
+
+    /**
      * Table referenced in the foreign key.
      */
     referencedTableName: string;
+
+    /**
+     * Table path referenced in the foreign key.
+     */
+    referencedTablePath?: string;
 
     /**
      * Column names which included by this foreign key.
