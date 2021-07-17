@@ -1,5 +1,6 @@
 import {ForeignKeyMetadata} from "../../metadata/ForeignKeyMetadata";
 import {TableForeignKeyOptions} from "../options/TableForeignKeyOptions";
+import { Driver } from "../../driver/Driver";
 
 /**
  * Foreign key from the database stored in this class.
@@ -109,15 +110,18 @@ export class TableForeignKey {
     /**
      * Creates a new table foreign key from the given foreign key metadata.
      */
-    static create(metadata: ForeignKeyMetadata): TableForeignKey {
+    static create(metadata: ForeignKeyMetadata, driver: Driver): TableForeignKey {
+        const database = metadata.referencedEntityMetadata.database === driver.database ? undefined : metadata.referencedEntityMetadata.database;
+        const schema = metadata.referencedEntityMetadata.schema === driver.schema ? undefined : metadata.referencedEntityMetadata.schema;
+
         return new TableForeignKey(<TableForeignKeyOptions>{
             name: metadata.name,
             columnNames: metadata.columnNames,
             referencedColumnNames: metadata.referencedColumnNames,
             referencedDatabase: metadata.referencedEntityMetadata.database,
             referencedSchema: metadata.referencedEntityMetadata.schema,
-            referencedTableName: metadata.referencedEntityMetadata.tableName,
-            referencedTablePath: metadata.referencedTablePath,
+            referencedTableName: driver.buildTableName(metadata.referencedEntityMetadata.tableName, schema, database),
+            referencedTablePath: driver.buildTableName(metadata.referencedEntityMetadata.tableName, metadata.referencedEntityMetadata.schema, metadata.referencedEntityMetadata.database),
             onDelete: metadata.onDelete,
             onUpdate: metadata.onUpdate,
             deferrable: metadata.deferrable,
