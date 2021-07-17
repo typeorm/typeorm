@@ -378,7 +378,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Creates a new table schema.
      */
-    async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
+    async createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void> {
+        const schema = schemaPath.indexOf(".") === -1 ? schemaPath : schemaPath.split(".")[1];
+
         const up = ifNotExist ? `CREATE SCHEMA IF NOT EXISTS "${schema}"` : `CREATE SCHEMA "${schema}"`;
         const down = `DROP SCHEMA "${schema}" CASCADE`;
         await this.executeQueries(new Query(up), new Query(down));
@@ -388,7 +390,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Drops table schema.
      */
     async dropSchema(schemaPath: string, ifExist?: boolean, isCascade?: boolean): Promise<void> {
-        const schema = schemaPath.indexOf(".") === -1 ? schemaPath : schemaPath.split(".")[0];
+        const schema = schemaPath.indexOf(".") === -1 ? schemaPath : schemaPath.split(".")[1];
+
         const up = ifExist ? `DROP SCHEMA IF EXISTS "${schema}" ${isCascade ? "CASCADE" : ""}` : `DROP SCHEMA "${schema}" ${isCascade ? "CASCADE" : ""}`;
         const down = `CREATE SCHEMA "${schema}"`;
         await this.executeQueries(new Query(up), new Query(down));

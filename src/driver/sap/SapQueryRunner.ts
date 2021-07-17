@@ -342,7 +342,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new table schema.
      */
-    async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
+    async createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void> {
+        const schema = schemaPath.indexOf(".") === -1 ? schemaPath : schemaPath.split(".")[1];
+
         let exist = false;
         if (ifNotExist) {
             const result = await this.query(`SELECT * FROM "SYS"."SCHEMAS" WHERE "SCHEMA_NAME" = '${schema}'`);
