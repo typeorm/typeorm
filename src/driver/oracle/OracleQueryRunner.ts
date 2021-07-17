@@ -455,14 +455,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         let newTable = oldTable.clone();
-        const dbName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
 
         newTable.path = this.driver.buildTableName(newTableName, newTable.schema, newTable.database);
-        newTable.name = dbName ? `${dbName}.${newTableName}` : newTableName;
+        newTable.name = newTableName;
 
         // rename table
-        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(oldTable)} RENAME TO ${this.escapePath(newTable)}`));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME TO ${this.escapePath(oldTable)}`));
+        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(oldTable)} RENAME TO "${newTable.name}"`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME TO "${oldTable.name}"`));
 
         // rename primary key constraint
         if (newTable.primaryColumns.length > 0) {
@@ -1250,7 +1249,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const dbTables: { TABLE_NAME: string, OWNER: string }[] = []
 
-        const currentSchema = await this.getCurrentSchema();
         const currentDatabase = await this.getCurrentDatabase();
 
         if (!tableNames) {
@@ -1319,11 +1317,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         // create tables for loaded tables
         return dbTables.map(dbTable => {
             const table = new Table();
-            const owner = dbTable["OWNER"] === currentSchema && (!this.driver.options.schema || this.driver.options.schema === currentSchema) ? undefined : dbTable["OWNER"];
             table.database = currentDatabase;
             table.schema = dbTable["OWNER"];
             table.path = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["OWNER"], currentDatabase);
-            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], owner);
+            table.name = dbTable["TABLE_NAME"];
 
             // create columns from the loaded columns
             table.columns = dbColumns

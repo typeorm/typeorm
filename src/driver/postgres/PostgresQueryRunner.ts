@@ -517,14 +517,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
-        const oldTableName = oldTable.name.indexOf(".") === -1 ? oldTable.name : oldTable.name.split(".")[1];
-        const schemaName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
 
         newTable.path = this.driver.buildTableName(newTableName, newTable.schema);
-        newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
+        newTable.name = newTableName;
 
-        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(oldTable)} RENAME TO "${newTableName}"`));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME TO "${oldTableName}"`));
+        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(oldTable)} RENAME TO "${newTable.name}"`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME TO "${oldTable.name}"`));
 
         // rename column primary key constraint
         if (newTable.primaryColumns.length > 0) {
@@ -543,8 +541,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const seqName = this.buildSequenceName(oldTable, col.name, undefined, true, true);
                 const newSeqName = this.buildSequenceName(newTable, col.name, undefined, true, true);
 
-                const up = schemaName ? `ALTER SEQUENCE "${schemaName}"."${seqName}" RENAME TO "${newSeqName}"` : `ALTER SEQUENCE "${seqName}" RENAME TO "${newSeqName}"`;
-                const down = schemaName ? `ALTER SEQUENCE "${schemaName}"."${newSeqName}" RENAME TO "${seqName}"` : `ALTER SEQUENCE "${newSeqName}" RENAME TO "${seqName}"`;
+                const up = oldTable.schema ? `ALTER SEQUENCE "${oldTable.schema}"."${seqName}" RENAME TO "${newSeqName}"` : `ALTER SEQUENCE "${seqName}" RENAME TO "${newSeqName}"`;
+                const down = newTable.schema ? `ALTER SEQUENCE "${newTable.schema}"."${newSeqName}" RENAME TO "${seqName}"` : `ALTER SEQUENCE "${newSeqName}" RENAME TO "${seqName}"`;
 
                 upQueries.push(new Query(up));
                 downQueries.push(new Query(down));
@@ -567,7 +565,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         // rename index constraints
         newTable.indices.forEach(index => {
             // build new constraint name
-            const schema = this.extractSchema(newTable);
+            const schema = newTable.schema;
             const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
             // build queries
@@ -761,7 +759,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                 // rename column sequence
                 if (oldColumn.isGenerated === true && newColumn.generationStrategy === "increment") {
-                    const schema = this.extractSchema(table);
+                    const schema = table.schema;
 
                     // building sequence name. Sequence without schema needed because it must be supplied in RENAME TO without
                     // schema name, but schema needed in ALTER SEQUENCE argument.
@@ -794,7 +792,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     // build new constraint name
                     index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
                     index.columnNames.push(newColumn.name);
-                    const schema = this.extractSchema(table);
+                    const schema = table.schema;
                     const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
                     // build queries
@@ -1631,17 +1629,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
 
-            const getSchemaFromKey = (dbObject: any, key: string) => {
-                return dbObject[key] === currentSchema && (!this.driver.options.schema || this.driver.options.schema === currentSchema)
-                    ? undefined
-                    : dbObject[key]
-            };
-            // We do not need to join schema name, when database is by default.
-            const schema = getSchemaFromKey(dbTable, "table_schema");
             table.database = currentDatabase;
             table.schema = dbTable["table_schema"];
             table.path = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
-            table.name = this.driver.buildTableName(dbTable["table_name"], schema);
+            table.name = dbTable["table_name"];
 
             // create columns from the loaded columns
             table.columns = await Promise.all(dbColumns
@@ -1866,16 +1857,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["constraint_name"] === dbForeignKey["constraint_name"]);
 
-                // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                const schema = getSchemaFromKey(dbForeignKey, "referenced_table_schema");
-                const referencedTableName = this.driver.buildTableName(dbForeignKey["referenced_table_name"], schema);
                 const referencedTablePath = this.driver.buildTableName(dbForeignKey["referenced_table_name"], dbForeignKey["referenced_table_schema"]);
 
                 return new TableForeignKey({
                     name: dbForeignKey["constraint_name"],
                     columnNames: foreignKeys.map(dbFk => dbFk["column_name"]),
                     referencedSchema: dbForeignKey["referenced_table_schema"],
-                    referencedTableName: referencedTableName,
+                    referencedTableName: dbForeignKey["referenced_table_name"],
                     referencedTablePath: referencedTablePath,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["referenced_column_name"]),
                     onDelete: dbForeignKey["on_delete"],
@@ -2070,14 +2058,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
-     * Extracts schema name from given Table object or table name string.
-     */
-    protected extractSchema(target: Table|string): string|undefined {
-        const tableName = target instanceof Table ? target.name : target;
-        return tableName.indexOf(".") === -1 ? this.driver.options.schema : tableName.split(".")[0];
-    }
-
-    /**
      * Drops ENUM type from given schemas.
      */
     protected async dropEnumTypes(schemaNames: string): Promise<void> {
@@ -2132,7 +2112,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected dropIndexSql(table: Table, indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        const schema = this.extractSchema(table);
+        const schema = table.schema;
         return schema ? new Query(`DROP INDEX "${schema}"."${indexName}"`) : new Query(`DROP INDEX "${indexName}"`);
     }
 
@@ -2231,21 +2211,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected buildSequenceName(table: Table, columnOrName: TableColumn|string, currentSchema?: string, disableEscape?: true, skipSchema?: boolean): string {
         const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
-        let schema: string|undefined = undefined;
-        let tableName: string|undefined = undefined;
+        let schema: string|undefined = table.schema;
+        let tableName: string|undefined = table.name;
 
-        if (table.name.indexOf(".") === -1) {
-            tableName = table.name;
-        } else {
-            schema = table.name.split(".")[0];
-            tableName = table.name.split(".")[1];
-        }
-
-        let seqName = `${tableName}_${columnName}_seq`;
+        let seqName = `${table.name}_${columnName}_seq`;
         if (seqName.length > this.connection.driver.maxAliasLength!) // note doesn't yet handle corner cases where .length differs from number of UTF-8 bytes
-            seqName=`${tableName.substring(0,29)}_${columnName.substring(0,Math.max(29,63-tableName.length-5))}_seq`;
+            seqName=`${table.name.substring(0,29)}_${columnName.substring(0,Math.max(29,63-tableName.length-5))}_seq`;
 
-        if (schema && schema !== currentSchema && !skipSchema) {
+        if (schema && !skipSchema) {
             return disableEscape ? `${schema}.${seqName}` : `"${schema}"."${seqName}"`;
         } else {
             return disableEscape ? `${seqName}` : `"${seqName}"`;
@@ -2256,11 +2229,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds ENUM type name from given table and column.
      */
     protected buildEnumName(table: Table, column: TableColumn, withSchema: boolean = true, disableEscape?: boolean, toOld?: boolean): string {
-        const schema = table.name.indexOf(".") === -1 ? this.driver.options.schema : table.name.split(".")[0];
-        const tableName = table.name.indexOf(".") === -1 ? table.name : table.name.split(".")[1];
-        let enumName = column.enumName ? column.enumName : `${tableName}_${column.name.toLowerCase()}_enum`;
-        if (schema && withSchema)
-            enumName = `${schema}.${enumName}`
+        let enumName = column.enumName ? column.enumName : `${table.name}_${column.name.toLowerCase()}_enum`;
+        if (table.schema && withSchema)
+            enumName = `${table.schema}.${enumName}`
         if (toOld)
             enumName = enumName + "_old";
         return enumName.split(".").map(i => {
@@ -2269,14 +2240,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     protected async getUserDefinedTypeName(table: Table, column: TableColumn) {
-        const currentSchema = await this.getCurrentSchema()
-        let [schema, name] = table.name.split(".");
-        if (!name) {
-            name = schema;
-            schema = this.driver.options.schema || currentSchema;
-        }
         const result = await this.query(`SELECT "udt_schema", "udt_name" ` +
-            `FROM "information_schema"."columns" WHERE "table_schema" = '${schema}' AND "table_name" = '${name}' AND "column_name"='${column.name}'`);
+            `FROM "information_schema"."columns" WHERE "table_schema" = '${table.schema}' AND "table_name" = '${table.name}' AND "column_name"='${column.name}'`);
 
         // docs: https://www.postgresql.org/docs/current/xtypes.html
         // When you define a new base type, PostgreSQL automatically provides support for arrays of that type.

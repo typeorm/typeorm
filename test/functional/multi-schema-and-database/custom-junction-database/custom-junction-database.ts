@@ -26,23 +26,34 @@ describe("multi-schema-and-database > custom-junction-database", () => {
             const junctionMetadata = connection.getManyToManyMetadata(Post, "categories")!;
             const junctionTable = await queryRunner.getTable("yoman.." + junctionMetadata.tableName);
             expect(postTable).not.to.be.undefined;
-            postTable!.name!.should.be.equal("yoman..post");
+            expect(postTable!.name).to.be.equal("post");
+            expect(postTable!.database).to.be.equal("yoman");
+
             expect(categoryTable).not.to.be.undefined;
-            categoryTable!.name!.should.be.equal("yoman..category");
+            expect(categoryTable!.name).to.be.equal("category");
+            expect(categoryTable!.database).to.be.equal("yoman");
+
             expect(junctionTable).not.to.be.undefined;
-            junctionTable!.name!.should.be.equal("yoman.." + junctionMetadata.tableName);
+            expect(categoryTable!.name).to.be.equal(junctionMetadata.tableName);
+            expect(categoryTable!.database).to.be.equal("yoman");
 
         } else { // mysql
             const postTable = await queryRunner.getTable("yoman.post");
             const categoryTable = await queryRunner.getTable("yoman.category");
             const junctionMetadata = connection.getManyToManyMetadata(Post, "categories")!;
             const junctionTable = await queryRunner.getTable("yoman." + junctionMetadata.tableName);
+
             expect(postTable).not.to.be.undefined;
-            postTable!.name!.should.be.equal("yoman.post");
+            expect(postTable!.name).to.be.equal("post");
+            expect(postTable!.database).to.be.equal("yoman");
+
             expect(categoryTable).not.to.be.undefined;
-            categoryTable!.name!.should.be.equal("yoman.category");
+            expect(categoryTable!.name).to.be.equal("category");
+            expect(categoryTable!.database).to.be.equal("yoman");
+
             expect(junctionTable).not.to.be.undefined;
-            junctionTable!.name!.should.be.equal("yoman." + junctionMetadata.tableName);
+            expect(junctionTable!.name).to.be.equal(junctionMetadata.tableName);
+            expect(junctionTable!.database).to.be.equal("yoman");
         }
         await queryRunner.release();
     })));

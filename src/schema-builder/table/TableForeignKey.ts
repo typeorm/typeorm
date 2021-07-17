@@ -111,17 +111,18 @@ export class TableForeignKey {
      * Creates a new table foreign key from the given foreign key metadata.
      */
     static create(metadata: ForeignKeyMetadata, driver: Driver): TableForeignKey {
-        const database = metadata.referencedEntityMetadata.database === driver.database ? undefined : metadata.referencedEntityMetadata.database;
-        const schema = metadata.referencedEntityMetadata.schema === driver.schema ? undefined : metadata.referencedEntityMetadata.schema;
+        const referencedDatabase = metadata.referencedEntityMetadata.database || driver.database;
+        const referencedSchema = metadata.referencedEntityMetadata.schema || driver.schema;
+        const referencedTableName = metadata.referencedEntityMetadata.tableName;
 
         return new TableForeignKey(<TableForeignKeyOptions>{
             name: metadata.name,
             columnNames: metadata.columnNames,
             referencedColumnNames: metadata.referencedColumnNames,
-            referencedDatabase: metadata.referencedEntityMetadata.database,
-            referencedSchema: metadata.referencedEntityMetadata.schema,
-            referencedTableName: driver.buildTableName(metadata.referencedEntityMetadata.tableName, schema, database),
-            referencedTablePath: driver.buildTableName(metadata.referencedEntityMetadata.tableName, metadata.referencedEntityMetadata.schema, metadata.referencedEntityMetadata.database),
+            referencedDatabase,
+            referencedSchema,
+            referencedTableName,
+            referencedTablePath: driver.buildTableName(referencedTableName, referencedSchema, referencedDatabase),
             onDelete: metadata.onDelete,
             onUpdate: metadata.onUpdate,
             deferrable: metadata.deferrable,

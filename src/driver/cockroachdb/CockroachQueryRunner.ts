@@ -519,14 +519,12 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
-        const oldTableName = oldTable.name.indexOf(".") === -1 ? oldTable.name : oldTable.name.split(".")[1];
-        const schemaName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
 
         newTable.path = this.driver.buildTableName(newTableName, newTable.schema);
-        newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
+        newTable.name = newTableName;
 
-        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(oldTable)} RENAME TO "${newTableName}"`));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME TO "${oldTableName}"`));
+        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(oldTable)} RENAME TO "${newTable.name}"`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME TO "${oldTable.name}"`));
 
         // rename column primary key constraint
         if (newTable.primaryColumns.length > 0) {
@@ -1499,18 +1497,10 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
 
-            const getSchemaFromKey = (dbObject: any, key: string) => {
-                return dbObject[key] === currentSchema && (!this.driver.options.schema || this.driver.options.schema === currentSchema)
-                    ? undefined
-                    : dbObject[key]
-            };
-
-            // We do not need to join schema name, when database is by default.
-            const schema = getSchemaFromKey(dbTable, "table_schema");
             table.database = currentDatabase;
             table.schema = dbTable["table_schema"];
             table.path = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
-            table.name = this.driver.buildTableName(dbTable["table_name"], schema);
+            table.name = dbTable["table_name"];
 
             // create columns from the loaded columns
             table.columns = await Promise.all(dbColumns
@@ -1660,16 +1650,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["constraint_name"] === dbForeignKey["constraint_name"]);
 
-                // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                const schema = getSchemaFromKey(dbForeignKey, "referenced_table_schema");
-                const referencedTableName = this.driver.buildTableName(dbForeignKey["referenced_table_name"], schema);
                 const referencedTablePath = this.driver.buildTableName(dbForeignKey["referenced_table_name"], dbForeignKey["referenced_table_schema"]);
 
                 return new TableForeignKey({
                     name: dbForeignKey["constraint_name"],
                     columnNames: foreignKeys.map(dbFk => dbFk["column_name"]),
                     referencedSchema: dbForeignKey["referenced_table_schema"],
-                    referencedTableName: referencedTableName,
+                    referencedTableName: dbForeignKey["referenced_table_name"],
                     referencedTablePath: referencedTablePath,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["referenced_column_name"]),
                     onDelete: dbForeignKey["on_delete"],

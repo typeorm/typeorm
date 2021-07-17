@@ -582,33 +582,21 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         // we need database name and schema name to rename FK constraints
         let dbName: string|undefined = undefined;
         let schemaName: string|undefined = undefined;
-        let oldTableName: string = oldTable.name;
-        const splittedName = oldTable.name.split(".");
-        if (splittedName.length === 3) {
-            dbName = splittedName[0];
-            oldTableName = splittedName[2];
-            if (splittedName[1] !== "")
-                schemaName = splittedName[1];
-
-        } else if (splittedName.length === 2) {
-            schemaName = splittedName[0];
-            oldTableName = splittedName[1];
-        }
 
         newTable.path = this.driver.buildTableName(newTableName, newTable.schema, newTable.database);
-        newTable.name = this.driver.buildTableName(newTableName, schemaName, dbName);
+        newTable.name = newTableName;
 
         // if we have tables with database which differs from database specified in config, we must change currently used database.
         // This need because we can not rename objects from another database.
         const currentDB = await this.getCurrentDatabase();
-        if (dbName && dbName !== currentDB) {
-            upQueries.push(new Query(`USE "${dbName}"`));
+        if (oldTable.database !== currentDB) {
+            upQueries.push(new Query(`USE "${oldTable.database}"`));
             downQueries.push(new Query(`USE "${currentDB}"`));
         }
 
         // rename table
-        upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(oldTable, true)}", "${newTableName}"`));
-        downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}", "${oldTableName}"`));
+        upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(oldTable, true)}", "${newTable.name}"`));
+        downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}", "${oldTable.name}"`));
 
         // rename primary key constraint
         if (newTable.primaryColumns.length > 0) {
@@ -654,7 +642,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTablePath, foreignKey.referencedColumnNames);
 
             // build queries
-            upQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(foreignKey.name!, schemaName, dbName)}", "${newForeignKeyName}"`));
+            upQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(foreignKey.name!, oldTable.schema, oldTable.database)}", "${newForeignKeyName}"`));
             downQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(newForeignKeyName, schemaName, dbName)}", "${foreignKey.name}"`));
 
             // replace constraint name
@@ -662,9 +650,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         });
 
         // change currently used database back to default db.
-        if (dbName && dbName !== currentDB) {
+        if (oldTable.database && oldTable.database !== currentDB) {
             upQueries.push(new Query(`USE "${currentDB}"`));
-            downQueries.push(new Query(`USE "${dbName}"`));
+            downQueries.push(new Query(`USE "${oldTable.database}"`));
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -790,25 +778,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         } else {
             if (newColumn.name !== oldColumn.name) {
-
-                // we need database name and schema name to rename FK constraints
-                let dbName: string|undefined = undefined;
-                let schemaName: string|undefined = undefined;
-                const splittedName = table.name.split(".");
-                if (splittedName.length === 3) {
-                    dbName = splittedName[0];
-                    if (splittedName[1] !== "")
-                        schemaName = splittedName[1];
-
-                } else if (splittedName.length === 2) {
-                    schemaName = splittedName[0];
-                }
-
                 // if we have tables with database which differs from database specified in config, we must change currently used database.
                 // This need because we can not rename objects from another database.
                 const currentDB = await this.getCurrentDatabase();
-                if (dbName && dbName !== currentDB) {
-                    upQueries.push(new Query(`USE "${dbName}"`));
+                if (table.database !== currentDB) {
+                    upQueries.push(new Query(`USE "${table.database}"`));
                     downQueries.push(new Query(`USE "${currentDB}"`));
                 }
 
@@ -858,8 +832,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames, foreignKey.referencedTablePath, foreignKey.referencedColumnNames);
 
                     // build queries
-                    upQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(foreignKey.name!, schemaName, dbName)}", "${newForeignKeyName}"`));
-                    downQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(newForeignKeyName, schemaName, dbName)}", "${foreignKey.name}"`));
+                    upQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(foreignKey.name!, table.schema, table.database)}", "${newForeignKeyName}"`));
+                    downQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(newForeignKeyName, table.schema, table.database)}", "${foreignKey.name}"`));
 
                     // replace constraint name
                     foreignKey.name = newForeignKeyName;
@@ -908,9 +882,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 }
 
                 // change currently used database back to default db.
-                if (dbName && dbName !== currentDB) {
+                if (table.database !== currentDB) {
                     upQueries.push(new Query(`USE "${currentDB}"`));
-                    downQueries.push(new Query(`USE "${dbName}"`));
+                    downQueries.push(new Query(`USE "${table.database}"`));
                 }
 
                 // rename old column in the Table object
@@ -1519,7 +1493,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         const currentSchema = await this.getCurrentSchema();
-        const currentDatabase = await this.getCurrentDatabase();
 
         const dbTables: { TABLE_CATALOG: string, TABLE_SCHEMA: string, TABLE_NAME: string }[] = [];
 
@@ -1684,19 +1657,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         return await Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
 
-            const getSchemaFromKey = (dbObject: any, key: string) => {
-                return dbObject[key] === currentSchema && (!this.driver.options.schema || this.driver.options.schema === currentSchema)
-                    ? undefined
-                    : dbObject[key]
-            };
-
-            // We do not need to join schema and database names, when db or schema is by default.
-            const db = dbTable["TABLE_CATALOG"] === currentDatabase ? undefined : dbTable["TABLE_CATALOG"];
-            const schema = getSchemaFromKey(dbTable, "TABLE_SCHEMA");
             table.database = dbTable["TABLE_CATALOG"];
             table.schema = dbTable["TABLE_SCHEMA"];
             table.path = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLE_SCHEMA"], dbTable["TABLE_CATALOG"]);
-            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema, db);
+            table.name = dbTable["TABLE_NAME"];
 
             const defaultCollation = dbCollations.find(dbCollation => dbCollation["NAME"] === dbTable["TABLE_CATALOG"])!;
 
@@ -1848,10 +1812,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["FK_NAME"] === dbForeignKey["FK_NAME"]);
 
-                // if referenced table located in currently used db and schema, we don't need to concat db and schema names to table name.
-                const db = dbForeignKey["TABLE_CATALOG"] === currentDatabase ? undefined : dbForeignKey["TABLE_CATALOG"];
-                const schema = getSchemaFromKey(dbForeignKey, "REF_SCHEMA");
-                const referencedTableName = this.driver.buildTableName(dbForeignKey["REF_TABLE"], schema, db);
                 const referencedTablePath = this.driver.buildTableName(dbForeignKey["REF_TABLE"], dbForeignKey["REF_SCHEMA"], dbForeignKey["TABLE_CATALOG"]);
 
                 return new TableForeignKey({
@@ -1859,7 +1819,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
                     referencedDatabase: dbForeignKey["TABLE_CATALOG"],
                     referencedSchema: dbForeignKey["REF_SCHEMA"],
-                    referencedTableName: referencedTableName,
+                    referencedTableName: dbForeignKey["REF_TABLE"],
                     referencedTablePath: referencedTablePath,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REF_COLUMN"]),
                     onDelete: dbForeignKey["ON_DELETE"].replace("_", " "), // SqlServer returns NO_ACTION, instead of NO ACTION
@@ -2154,7 +2114,15 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     protected parseTableName(target: Table|View|string, schema?: string) {
-        const tableName = (target instanceof Table || target instanceof View) ? target.name : target;
+        if (target instanceof Table) {
+            return {
+                database: target.database,
+                schema: target.schema,
+                name: target.name,
+            };
+        }
+
+        const tableName = (target instanceof View) ? target.name : target;
         if (tableName.split(".").length === 3) {
             return {
                 database: tableName.split(".")[0],

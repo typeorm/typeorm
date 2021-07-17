@@ -438,10 +438,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
-        const dbName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
 
         newTable.path = this.driver.buildTableName(newTableName, newTable.schema, newTable.database);
-        newTable.name = dbName ? `${dbName}.${newTableName}` : newTableName;
+        newTable.name = newTableName;
 
         // rename table
         upQueries.push(new Query(`RENAME TABLE ${this.escapePath(oldTable)} TO ${this.escapePath(newTable)}`));
@@ -1450,10 +1449,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const defaultCharset = dbCollation["CHARSET"];
 
             // We do not need to join database name, when database is by default.
-            const db = dbTable["TABLE_SCHEMA"] === currentDatabase ? undefined : dbTable["TABLE_SCHEMA"];
             table.database = dbTable["TABLE_SCHEMA"];
             table.path = this.driver.buildTableName(dbTable["TABLE_NAME"], undefined, dbTable["TABLE_SCHEMA"]);
-            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], undefined, db);
+            table.name = dbTable["TABLE_NAME"];
 
             // create columns from the loaded columns
             table.columns = dbColumns
@@ -1579,16 +1577,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
 
-                // if referenced table located in currently used db, we don't need to concat db name to table name.
-                const database = dbForeignKey["REFERENCED_TABLE_SCHEMA"] === currentDatabase ? undefined : dbForeignKey["REFERENCED_TABLE_SCHEMA"];
-                const referencedTableName = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], undefined, database);
                 const referencedTablePath = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], undefined, dbForeignKey["REFERENCED_TABLE_SCHEMA"]);
 
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
                     referencedDatabase: dbForeignKey["REFERENCED_TABLE_SCHEMA"],
-                    referencedTableName: referencedTableName,
+                    referencedTableName: dbForeignKey["REFERENCED_TABLE_NAME"],
                     referencedTablePath: referencedTablePath,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["ON_DELETE"],

@@ -480,11 +480,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
-        const oldTableName = oldTable.name.indexOf(".") === -1 ? oldTable.name : oldTable.name.split(".")[1];
-        const schemaName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
 
         newTable.path = this.driver.buildTableName(newTableName, newTable.schema);
-        newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
+        newTable.name = newTableName;
 
         // rename table
         upQueries.push(new Query(`RENAME TABLE ${this.escapePath(oldTable)} TO ${this.escapePath(newTable)}`));
@@ -498,7 +496,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // SAP HANA does not allow to drop PK's which is referenced by foreign keys.
         // To avoid this, we must drop all referential foreign keys and recreate them later
-        const referencedForeignKeySql = `SELECT * FROM "SYS"."REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = '${schemaName}' AND "REFERENCED_TABLE_NAME" = '${oldTableName}'`;
+        const referencedForeignKeySql = `SELECT * FROM "SYS"."REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = '${oldTable.schema}' AND "REFERENCED_TABLE_NAME" = '${oldTable.name}'`;
         const dbForeignKeys: ObjectLiteral[] = await this.query(referencedForeignKeySql);
         let referencedForeignKeys: TableForeignKey[] = [];
         const referencedForeignKeyTableMapping: { tableName: string, fkName: string }[] = [];
@@ -1552,18 +1550,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
-            const getSchemaFromKey = (dbObject: any, key: string) => {
-                return dbObject[key] === currentSchema && (!this.driver.options.schema || this.driver.options.schema === currentSchema)
-                    ? undefined
-                    : dbObject[key]
-            };
 
-            // We do not need to join schema name, when database is by default.
-            const schema = getSchemaFromKey(dbTable, "SCHEMA_NAME");
             table.database = currentDatabase;
             table.schema = dbTable["SCHEMA_NAME"];
             table.path = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["SCHEMA_NAME"])
-            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema);
+            table.name = dbTable["TABLE_NAME"];
 
             // create columns from the loaded columns
             table.columns = await Promise.all(dbColumns
@@ -1681,9 +1672,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
 
-                // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                const schema = getSchemaFromKey(dbForeignKey, "REFERENCED_SCHEMA_NAME");
-                const referencedTableName = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], schema);
                 const referencedTablePath = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], dbForeignKey["REFERENCED_SCHEMA_NAME"]);
 
                 return new TableForeignKey({
@@ -1691,7 +1679,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
                     referencedDatabase: table.database,
                     referencedSchema: dbForeignKey["REFERENCED_SCHEMA_NAME"],
-                    referencedTableName: referencedTableName,
+                    referencedTableName: dbForeignKey["REFERENCED_TABLE_NAME"],
                     referencedTablePath: referencedTablePath,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
