@@ -1672,7 +1672,24 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Escapes given table or view path.
      */
     protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
-        const tableName = target instanceof Table || target instanceof View ? target.name : target;
+        let tableName: string;
+
+        if (target instanceof Table) {
+            tableName = target.name;
+
+            if (target.database) {
+                tableName = `${target.database}.${tableName}`
+            }
+        } else if (target instanceof View) {
+            tableName = target.name;
+        } else {
+            tableName = target;
+        }
+
+        if (tableName.indexOf(".") === -1 && this.driver.database) {
+            tableName = `${this.driver.database}.${tableName}`;
+        }
+
         return tableName.split(".").map(i => disableEscape ? i : `\`${i}\``).join(".");
     }
 

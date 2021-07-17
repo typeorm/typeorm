@@ -2312,8 +2312,23 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Escapes given table or view path.
      */
     protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
-        let tableName = target instanceof Table || target instanceof View ? target.name : target;
-        tableName = tableName.indexOf(".") === -1 && this.driver.schema ? `${this.driver.schema}.${tableName}` : tableName;
+        let tableName: string;
+
+        if (target instanceof Table) {
+            tableName = target.name;
+
+            if (target.schema) {
+                tableName = `${target.schema}.${tableName}`;
+            }
+        } else if (target instanceof View) {
+            tableName = target.name;
+        } else {
+            tableName = target;
+        }
+
+        if (tableName.indexOf(".") === -1 && this.driver.schema) {
+            tableName = `${this.driver.schema}.${tableName}`;
+        }
 
         return tableName.split(".").map(i => {
             return disableEscape ? i : `"${i}"`;

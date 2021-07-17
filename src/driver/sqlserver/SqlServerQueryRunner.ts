@@ -2110,19 +2110,42 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Escapes given table or View path.
      */
     protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
-        let name = target instanceof Table || target instanceof View ? target.name : target;
-        if (this.driver.options.schema) {
-            if (name.indexOf(".") === -1) {
-                name = `${this.driver.options.schema}.${name}`;
-            } else if (name.split(".").length === 3) {
-                const splittedName = name.split(".");
-                const dbName = splittedName[0];
-                const tableName = splittedName[2];
-                name = `${dbName}.${this.driver.options.schema}.${tableName}`;
+        let tableName: string;
+
+        if (target instanceof Table) {
+            tableName = target.name;
+
+            if (target.schema) {
+                tableName = `${target.schema}.${tableName}`;
+            } else if (target.database) {
+                tableName = `.${tableName}`;
+            }
+
+            if (target.database) {
+                tableName = `${target.database}.${tableName}`;
+            }
+        } else if (target instanceof View) {
+            tableName = target.name;
+        } else {
+            tableName = target;
+        }
+
+        const splitTableName = tableName.split(".");
+
+        if (splitTableName.length === 1) {
+            if (this.driver.database) {
+                splitTableName.unshift(
+                    this.driver.database,
+                    this.driver.schema || ""
+                );
+            }
+        } else if (splitTableName.length === 3) {
+            if (splitTableName[1] === "" && this.driver.schema) {
+                splitTableName[1] = this.driver.schema;
             }
         }
 
-        return name.split(".").map(i => {
+        return splitTableName.map(i => {
             // this condition need because when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
             if (i === "")
                 return i;
