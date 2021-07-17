@@ -560,7 +560,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         } else if (column.isUnique) {
             const uniqueIndex = new TableIndex({
-                name: this.connection.namingStrategy.indexName(table.name, [column.name]),
+                name: this.connection.namingStrategy.indexName(table, [column.name]),
                 columnNames: [column.name],
                 isUnique: true
             });
@@ -765,7 +765,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
                     const uniqueIndex = new TableIndex({
-                        name: this.connection.namingStrategy.indexName(table.name, [newColumn.name]),
+                        name: this.connection.namingStrategy.indexName(table, [newColumn.name]),
                         columnNames: [newColumn.name],
                         isUnique: true
                     });
@@ -867,12 +867,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         } else if (column.isUnique) {
             // we splice constraints both from table uniques and indices.
-            const uniqueName = this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]);
+            const uniqueName = this.connection.namingStrategy.uniqueConstraintName(table, [column.name]);
             const foundUnique = clonedTable.uniques.find(unique => unique.name === uniqueName);
             if (foundUnique)
                 clonedTable.uniques.splice(clonedTable.uniques.indexOf(foundUnique), 1);
 
-            const indexName = this.connection.namingStrategy.indexName(table.name, [column.name]);
+            const indexName = this.connection.namingStrategy.indexName(table, [column.name]);
             const foundIndex = clonedTable.indices.find(index => index.name === indexName);
             if (foundIndex)
                 clonedTable.indices.splice(clonedTable.indices.indexOf(foundIndex), 1);
@@ -1080,7 +1080,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
 
         const up = this.createForeignKeySql(table, foreignKey);
         const down = this.dropForeignKeySql(table, foreignKey);
@@ -1127,7 +1127,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // new index may be passed without name. In this case we generate index name manually.
         if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
+            index.name = this.connection.namingStrategy.indexName(table, index.columnNames, index.where);
 
         const up = this.createIndexSql(table, index);
         const down = this.dropIndexSql(table, index);
@@ -1641,7 +1641,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 });
                 if (!isUniqueIndexExist && !isUniqueConstraintExist)
                     table.indices.push(new TableIndex({
-                        name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),
+                        name: this.connection.namingStrategy.uniqueConstraintName(table, [column.name]),
                         columnNames: [column.name],
                         isUnique: true
                     }));
@@ -1665,7 +1665,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const indicesSql = table.indices.map(index => {
                 const columnNames = index.columnNames.map(columnName => `\`${columnName}\``).join(", ");
                 if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
+                    index.name = this.connection.namingStrategy.indexName(table, index.columnNames, index.where);
 
                 let indexType = "";
                 if (index.isUnique)
@@ -1686,7 +1686,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `\`${columnName}\``).join(", ");
                 if (!fk.name)
-                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `\`${columnName}\``).join(", ");
 
                 let constraint = `CONSTRAINT \`${fk.name}\` FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(fk.referencedTableName)} (${referencedColumnNames})`;
