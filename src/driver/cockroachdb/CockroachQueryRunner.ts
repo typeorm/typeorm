@@ -413,8 +413,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         table.columns
             .filter(column => column.isGenerated && column.generationStrategy === "increment")
             .forEach(column => {
-                upQueries.push(new Query(`CREATE SEQUENCE ${this.buildSequenceName(table, column)}`));
-                downQueries.push(new Query(`DROP SEQUENCE ${this.buildSequenceName(table, column)}`));
+                upQueries.push(new Query(`CREATE SEQUENCE ${this.escapePath(this.buildSequencePath(table, column))}`));
+                downQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, column))}`));
             });
 
         upQueries.push(this.createTableSql(table, createForeignKeys));
@@ -475,8 +475,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         table.columns
             .filter(column => column.isGenerated && column.generationStrategy === "increment")
             .forEach(column => {
-                upQueries.push(new Query(`DROP SEQUENCE ${this.buildSequenceName(table, column)}`));
-                downQueries.push(new Query(`CREATE SEQUENCE ${this.buildSequenceName(table, column)}`));
+                upQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, column))}`));
+                downQueries.push(new Query(`CREATE SEQUENCE ${this.escapePath(this.buildSequencePath(table, column))}`));
             });
 
         await this.executeQueries(upQueries, downQueries);
@@ -982,8 +982,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(table, column)}`));
 
         if (column.generationStrategy === "increment") {
-            upQueries.push(new Query(`DROP SEQUENCE ${this.buildSequenceName(table, column)}`));
-            downQueries.push(new Query(`CREATE SEQUENCE ${this.buildSequenceName(table, column)}`));
+            upQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, column))}`));
+            downQueries.push(new Query(`CREATE SEQUENCE ${this.escapePath(this.buildSequencePath(table, column))}`));
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -1941,9 +1941,14 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     /**
      * Builds sequence name from given table and column.
      */
-    protected buildSequenceName(table: Table, columnOrName: TableColumn|string, disableEscape?: true): string {
+    protected buildSequenceName(table: Table, columnOrName: TableColumn|string): string {
         const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
-        return disableEscape ? `${table.name}_${columnName}_seq` : `"${table.name}_${columnName}_seq"`;
+        return `${table.name}_${columnName}_seq`;
+    }
+
+    protected buildSequencePath(table: Table, columnOrName: TableColumn|string): string {
+        const sequenceName = this.buildSequenceName(table, columnOrName);
+        return table.schema ? `${table.schema}.${sequenceName}` : sequenceName;
     }
 
     /**
