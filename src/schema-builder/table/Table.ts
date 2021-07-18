@@ -95,7 +95,11 @@ export class Table {
 
             this.path = options.path || options.name;
 
-            this.name = options.name;
+            if (options.name.indexOf(".") !== -1) {
+                this.name = options.name.split(".").pop()!;
+            } else {
+                this.name = options.name;
+            }
 
             if (options.columns)
                 this.columns = options.columns.map(column => new TableColumn(column));
