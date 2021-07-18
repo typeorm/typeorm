@@ -538,11 +538,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         // rename sequences
         newTable.columns.map(col => {
             if (col.isGenerated && col.generationStrategy === "increment") {
-                const seqName = this.buildSequenceName(oldTable, col.name, undefined, true, true);
-                const newSeqName = this.buildSequenceName(newTable, col.name, undefined, true, true);
+                const sequencePath = this.buildSequencePath(oldTable, col.name);
+                const sequenceName = this.buildSequenceName(oldTable, col.name);
 
-                const up = oldTable.schema ? `ALTER SEQUENCE "${oldTable.schema}"."${seqName}" RENAME TO "${newSeqName}"` : `ALTER SEQUENCE "${seqName}" RENAME TO "${newSeqName}"`;
-                const down = newTable.schema ? `ALTER SEQUENCE "${newTable.schema}"."${newSeqName}" RENAME TO "${seqName}"` : `ALTER SEQUENCE "${newSeqName}" RENAME TO "${seqName}"`;
+                const newSequencePath = this.buildSequencePath(newTable, col.name);
+                const newSequenceName = this.buildSequenceName(newTable, col.name);
+
+                const up = `ALTER SEQUENCE ${this.escapePath(sequencePath)} RENAME TO "${newSequenceName}"`;
+                const down = `ALTER SEQUENCE ${this.escapePath(newSequencePath)} RENAME TO "${sequenceName}"`;
 
                 upQueries.push(new Query(up));
                 downQueries.push(new Query(down));
@@ -759,15 +762,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                 // rename column sequence
                 if (oldColumn.isGenerated === true && newColumn.generationStrategy === "increment") {
-                    const schema = table.schema;
+                    const sequencePath = this.buildSequencePath(table, oldColumn.name);
+                    const sequenceName = this.buildSequenceName(table, oldColumn.name);
 
-                    // building sequence name. Sequence without schema needed because it must be supplied in RENAME TO without
-                    // schema name, but schema needed in ALTER SEQUENCE argument.
-                    const seqName = this.buildSequenceName(table, oldColumn.name, undefined, true, true);
-                    const newSeqName = this.buildSequenceName(table, newColumn.name, undefined, true, true);
+                    const newSequencePath = this.buildSequencePath(table, newColumn.name);
+                    const newSequenceName = this.buildSequenceName(table, newColumn.name);
 
-                    const up = schema ? `ALTER SEQUENCE "${schema}"."${seqName}" RENAME TO "${newSeqName}"` : `ALTER SEQUENCE "${seqName}" RENAME TO "${newSeqName}"`;
-                    const down = schema ? `ALTER SEQUENCE "${schema}"."${newSeqName}" RENAME TO "${seqName}"` : `ALTER SEQUENCE "${newSeqName}" RENAME TO "${seqName}"`;
+                    const up = `ALTER SEQUENCE ${this.escapePath(sequencePath)} RENAME TO "${newSequenceName}"`;
+                    const down = `ALTER SEQUENCE ${this.escapePath(newSequencePath)} RENAME TO "${sequenceName}"`;
                     upQueries.push(new Query(up));
                     downQueries.push(new Query(down));
                 }
@@ -964,18 +966,18 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             if (oldColumn.isGenerated !== newColumn.isGenerated && newColumn.generationStrategy !== "uuid") {
                 if (newColumn.isGenerated === true) {
-                    upQueries.push(new Query(`CREATE SEQUENCE ${this.buildSequenceName(table, newColumn)} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
-                    downQueries.push(new Query(`DROP SEQUENCE ${this.buildSequenceName(table, newColumn)}`));
+                    upQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
+                    downQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
 
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.buildSequenceName(table, newColumn, undefined, true)}')`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.buildSequencePath(table, newColumn)}')`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
 
                 } else {
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.buildSequenceName(table, newColumn, undefined, true)}')`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.buildSequencePath(table, newColumn)}')`));
 
-                    upQueries.push(new Query(`DROP SEQUENCE ${this.buildSequenceName(table, newColumn)}`));
-                    downQueries.push(new Query(`CREATE SEQUENCE ${this.buildSequenceName(table, newColumn)} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
+                    upQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
+                    downQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
                 }
             }
 
@@ -1773,7 +1775,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
 
                     if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
-                        if (dbColumn["column_default"].replace(/"/gi, "") === `nextval('${this.buildSequenceName(table, dbColumn["column_name"], currentSchema, true)}'::regclass)`) {
+                        const serialDefaultName = `nextval('${this.buildSequenceName(table, dbColumn["column_name"])}'::regclass)`;
+                        const serialDefaultPath = `nextval('${this.buildSequencePath(table, dbColumn["column_name"])}'::regclass)`;
+
+                        const defaultWithoutQuotes = dbColumn["column_default"].replace(/"/g, "");
+
+                        if (defaultWithoutQuotes === serialDefaultName || defaultWithoutQuotes === serialDefaultPath) {
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "increment";
                         } else if (dbColumn["column_default"] === "gen_random_uuid()" || /^uuid_generate_v\d\(\)/.test(dbColumn["column_default"])) {
@@ -2209,20 +2216,21 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Builds sequence name from given table and column.
      */
-    protected buildSequenceName(table: Table, columnOrName: TableColumn|string, currentSchema?: string, disableEscape?: true, skipSchema?: boolean): string {
+    protected buildSequenceName(table: Table, columnOrName: TableColumn|string): string {
         const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
-        let schema: string|undefined = table.schema;
-        let tableName: string|undefined = table.name;
 
         let seqName = `${table.name}_${columnName}_seq`;
-        if (seqName.length > this.connection.driver.maxAliasLength!) // note doesn't yet handle corner cases where .length differs from number of UTF-8 bytes
-            seqName=`${table.name.substring(0,29)}_${columnName.substring(0,Math.max(29,63-tableName.length-5))}_seq`;
 
-        if (schema && !skipSchema) {
-            return disableEscape ? `${schema}.${seqName}` : `"${schema}"."${seqName}"`;
-        } else {
-            return disableEscape ? `${seqName}` : `"${seqName}"`;
+        if (seqName.length > this.connection.driver.maxAliasLength!) {
+            // note doesn't yet handle corner cases where .length differs from number of UTF-8 bytes
+            seqName = `${table.name.substring(0,29)}_${columnName.substring(0,Math.max(29,63 - (table.name.length) - 5))}_seq`;
         }
+
+        return seqName;
+    }
+
+    protected buildSequencePath(table: Table, columnOrName: TableColumn|string): string {
+        return table.schema ? `${table.schema}.${this.buildSequenceName(table, columnOrName)}` : this.buildSequenceName(table, columnOrName);
     }
 
     /**
