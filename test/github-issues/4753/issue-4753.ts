@@ -3,7 +3,7 @@ import { Connection } from "../../../src/connection/Connection";
 import { closeTestingConnections } from "../../utils/test-utils";
 import { User } from "./entity/User";
 
-describe("github issues > #4753 MySQL Replication Config broken", () => {
+describe.skip("github issues > #4753 MySQL Replication Config broken", () => {
     let connections: Connection[] = [];
     after(() => closeTestingConnections(connections));
 
