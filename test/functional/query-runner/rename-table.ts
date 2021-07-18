@@ -125,36 +125,68 @@ describe("query runner > rename table", () => {
         const queryRunner = connection.createQueryRunner();
         let table: Table|undefined;
 
+        let questionTableDatabase: string | undefined;
+        let questionTableSchema: string | undefined;
+        let questionTablePath: string = "question";
         let questionTableName: string = "question";
-        let renamedQuestionTableName: string = "renamedQuestion";
+
+        let renamedQuestionTablePath: string = "renamedQuestion";
+
+        let categoryTableDatabase: string | undefined;
+        let categoryTableSchema: string | undefined;
+        let categoryTablePath: string = "category";
         let categoryTableName: string = "category";
-        let renamedCategoryTableName: string = "renamedCategory";
+
+        let renamedCategoryTablePath: string = "renamedCategory";
 
         // create different names to test renaming with custom schema and database.
         if (connection.driver instanceof SqlServerDriver) {
-            questionTableName = "testDB.testSchema.question";
-            renamedQuestionTableName = "testDB.testSchema.renamedQuestion";
-            categoryTableName = "testDB.testSchema.category";
-            renamedCategoryTableName = "testDB.testSchema.renamedCategory";
+            questionTableDatabase = "testDB";
+            questionTableSchema = "testSchema";
+            questionTablePath = "testDB.testSchema.question";
+
+            renamedQuestionTablePath = "testDB.testSchema.renamedQuestion";
+
+            categoryTableDatabase = "testDB";
+            categoryTableSchema = "testSchema";
+            categoryTablePath = "testDB.testSchema.category";
+
+            renamedCategoryTablePath = "testDB.testSchema.renamedCategory";
+
             await queryRunner.createDatabase("testDB", true);
             await queryRunner.createSchema("testDB.testSchema", true);
 
         } else if (connection.driver instanceof PostgresDriver || connection.driver instanceof SapDriver) {
-            questionTableName = "testSchema.question";
-            renamedQuestionTableName = "testSchema.renamedQuestion";
-            categoryTableName = "testSchema.category";
-            renamedCategoryTableName = "testSchema.renamedCategory";
+            questionTableSchema = "testSchema";
+            questionTablePath = "testSchema.question";
+
+            renamedQuestionTablePath = "testSchema.renamedQuestion";
+
+            categoryTableSchema = "testSchema";
+            categoryTablePath = "testSchema.category";
+
+            renamedCategoryTablePath = "testSchema.renamedCategory";
+
             await queryRunner.createSchema("testSchema", true);
 
         } else if (connection.driver instanceof MysqlDriver) {
-            questionTableName = "testDB.question";
-            renamedQuestionTableName = "testDB.renamedQuestion";
-            categoryTableName = "testDB.category";
-            renamedCategoryTableName = "testDB.renamedCategory";
+            questionTableDatabase = "testDB";
+            questionTablePath = "testDB.question";
+
+            renamedQuestionTablePath = "testDB.renamedQuestion";
+
+            categoryTableDatabase = "testDB";
+            categoryTablePath = "testDB.category";
+
+            renamedCategoryTablePath = "testDB.renamedCategory";
+
             await queryRunner.createDatabase("testDB", true);
         }
 
         await queryRunner.createTable(new Table({
+            database: questionTableDatabase,
+            schema: questionTableSchema,
+            path: questionTablePath,
             name: questionTableName,
             columns: [
                 {
@@ -173,6 +205,9 @@ describe("query runner > rename table", () => {
         }), true);
 
         await queryRunner.createTable(new Table({
+            database: categoryTableDatabase,
+            schema: categoryTableSchema,
+            path: categoryTablePath,
             name: categoryTableName,
             columns: [
                 {
@@ -200,13 +235,14 @@ describe("query runner > rename table", () => {
         // clear sqls in memory to avoid removing tables when down queries executed.
         queryRunner.clearSqlMemory();
 
-        await queryRunner.renameTable(questionTableName, "renamedQuestion");
-        table = await queryRunner.getTable(renamedQuestionTableName);
+        await queryRunner.renameTable(questionTablePath, "renamedQuestion");
+
+        table = await queryRunner.getTable(renamedQuestionTablePath);
         const newIndexName = connection.namingStrategy.indexName(table!, ["name"]);
         table!.indices[0].name!.should.be.equal(newIndexName);
 
         await queryRunner.renameTable(categoryTableName, "renamedCategory");
-        table = await queryRunner.getTable(renamedCategoryTableName);
+        table = await queryRunner.getTable(renamedCategoryTablePath);
         const newForeignKeyName = connection.namingStrategy.foreignKeyName(table!, ["questionId"], "question", ["id"]);
         table!.foreignKeys[0].name!.should.be.equal(newForeignKeyName);
 
