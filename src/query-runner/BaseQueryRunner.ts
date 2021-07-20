@@ -10,6 +10,8 @@ import {TableColumn} from "../schema-builder/table/TableColumn";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
 import { TypeORMError } from "../error/TypeORMError";
+import { EntityMetadata } from "../metadata/EntityMetadata";
+import { TableForeignKey } from "../schema-builder/table/TableForeignKey";
 
 export abstract class BaseQueryRunner {
 
@@ -250,6 +252,22 @@ export abstract class BaseQueryRunner {
             foundTable.justCreated = changedTable.justCreated;
             foundTable.engine = changedTable.engine;
         }
+    }
+
+    protected getTablePath(target: EntityMetadata | Table | TableForeignKey | string): string {
+        if (target instanceof Table) {
+            return target.name;
+        }
+
+        if (target instanceof TableForeignKey) {
+            return target.referencedTableName;
+        }
+
+        if (target instanceof EntityMetadata) {
+            return target.tablePath;
+        }
+
+        return target;
     }
 
     protected getTypeormMetadataTableName(): string {
