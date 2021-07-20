@@ -482,7 +482,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // build queries
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable.name)} RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`));
 
             // replace constraint name
             unique.name = newUniqueName;
@@ -1466,7 +1466,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
-        let sql = `CREATE TABLE ${this.escapePath(table.name)} (${columnDefinitions}`;
+        let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`;
 
         table.columns
             .filter(column => column.isUnique)

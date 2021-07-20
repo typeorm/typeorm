@@ -443,8 +443,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         newTable.name = dbName ? `${dbName}.${newTableName}` : newTableName;
 
         // rename table
-        upQueries.push(new Query(`RENAME TABLE ${this.escapePath(oldTable.name)} TO ${this.escapePath(newTable.name)}`));
-        downQueries.push(new Query(`RENAME TABLE ${this.escapePath(newTable.name)} TO ${this.escapePath(oldTable.name)}`));
+        upQueries.push(new Query(`RENAME TABLE ${this.escapePath(oldTable)} TO ${this.escapePath(newTable)}`));
+        downQueries.push(new Query(`RENAME TABLE ${this.escapePath(newTable)} TO ${this.escapePath(oldTable)}`));
 
         // rename index constraints
         newTable.indices.forEach(index => {
